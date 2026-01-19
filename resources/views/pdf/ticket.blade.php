@@ -65,7 +65,7 @@
             color: #02245b;
             margin: 20px 0;
             padding: 10px 0;
-            border-bottom: 2px solid #f3f4f6;
+            border-bottom: 0px solid #f3f4f6;
         }
 
         /* QR Code section */
@@ -127,9 +127,9 @@
                     <span>Référence:</span>
                     <strong>{{ $reservation->reference }}</strong>
                 </div>
-                <div style="font-size: 14px; color: #6b7280; margin-top: 10px;">
+                {{-- <div style="font-size: 14px; color: #6b7280; margin-top: 10px;">
                     Document officiel - CAR 225 Plateforme de Transport
-                </div>
+                </div> --}}
             </div>
 
             <!-- Itinéraire -->
@@ -137,6 +137,12 @@
             <div>
                 <p>Départ: {{ $programme->point_depart }} - Arrivée: {{ $programme->point_arrive }}</p>
                 <p>Date: {{ date('d/m/Y', strtotime($reservation->date_voyage)) }}</p>
+                @if($seatNumber)
+                    <p
+                        style="background: #fea219; color: white; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 25px; text-align: center; margin-top: 15px;">
+                        <i class="fas fa-chair"></i> Place N° {{ $seatNumber }}
+                    </p>
+                @endif
             </div>
 
             <!-- QR Code -->

@@ -1,6 +1,7 @@
 <aside class="mdc-drawer mdc-drawer--dismissible mdc-drawer--open" style="background-color: red">
     <div class="mdc-drawer__header" style="padding: 20px 0;">
-        <a href="{{ route('compagnie.dashboard') }}" class="brand-logo d-flex justify-content-center align-items-center">
+        <a href="{{ route('compagnie.dashboard') }}"
+            class="brand-logo d-flex justify-content-center align-items-center">
             @if (Auth::guard('compagnie')->user()->path_logo)
                 <img src="{{ asset('storage/' . Auth::guard('compagnie')->user()->path_logo) }}"
                     style="width: 120px; height: 120px; object-fit: contain; border-radius: 10px; border: 3px solid white; background: white;"
@@ -26,91 +27,26 @@
                         Tableau de bord
                     </a>
                 </div>
-                {{-- <div class="mdc-list-item mdc-drawer-item">
-              <a class="mdc-drawer-link" href="#">
-                <i class="material-icons mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true">save</i>
-                Demandes 
-              </a>
-            </div> --}}
-                {{-- <div class="mdc-list-item mdc-drawer-item">
-              <a class="mdc-drawer-link" href="{{route('compagnie.permanent-personnel.create')}}">
-                <i class="material-icons mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true">dashboard</i>
-                Personnel permanent
-              </a>
-            </div> --}}
-                {{-- <div class="mdc-list-item mdc-drawer-item">
-              <a class="mdc-drawer-link" href="#">
-                <i class="material-icons mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true">dashboard</i>
-                Historiques des visites
-              </a>
-            </div> --}}
                 <div class="mdc-list-item mdc-drawer-item">
                     <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel"
-                        data-target="ui-sub-perso">
-                        <i class="fas fa-route mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
-                        Itinéraire
-                        <i class="mdc-drawer-arrow material-icons">chevron_right</i>
-                    </a>
-                    <div class="mdc-expansion-panel" id="ui-sub-perso">
-                        <nav class="mdc-list mdc-drawer-submenu">
-                            <div class="mdc-list-item mdc-drawer-item">
-                                <a class="mdc-drawer-link" href="{{route('itineraire.create')}}">
-                                    Ajouter
-                                </a>
-                            </div>
-                            <div class="mdc-list-item mdc-drawer-item">
-                                <a class="mdc-drawer-link" href="{{route('itineraire.index')}}">
-                                    Liste
-                                </a>
-                            </div>
-                            {{-- <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-drawer-link" href="#">
-                      Structure desactivées
-                    </a>
-                  </div> --}}
-                        </nav>
-                    </div>
-                </div>
-                <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel"
-                        data-target="ui-sub-agent">
-                        <i class="fas fa-car mdc-list-item__start-detail mdc-drawer-item-icon"
+                        data-target="ui-sub-reservations">
+                        <i class="fas fa-ticket-alt mdc-list-item__start-detail mdc-drawer-item-icon"
                             aria-hidden="true"></i>
-                        Véhicule 
+                        Réservations
                         <i class="mdc-drawer-arrow material-icons">chevron_right</i>
                     </a>
-                    <div class="mdc-expansion-panel" id="ui-sub-agent">
+                    <div class="mdc-expansion-panel" id="ui-sub-reservations">
                         <nav class="mdc-list mdc-drawer-submenu">
                             <div class="mdc-list-item mdc-drawer-item">
-                                <a class="mdc-drawer-link" href="{{route('vehicule.create')}}">
-                                    Ajouter
+                                <a class="mdc-drawer-link"
+                                    href="{{ route('company.reservation.index', ['tab' => 'en-cours']) }}">
+                                    En cours
                                 </a>
                             </div>
                             <div class="mdc-list-item mdc-drawer-item">
-                                <a class="mdc-drawer-link" href="{{route('vehicule.index')}}">
-                                    Liste
-                                </a>
-                            </div>
-                        </nav>
-                    </div>
-                </div>
-                <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel"
-                        data-target="ui-sub-colis">
-                        <i class="fas fa-user-tie mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
-                        Personnel
-                        <i class="mdc-drawer-arrow material-icons">chevron_right</i>
-                    </a>
-                    <div class="mdc-expansion-panel" id="ui-sub-colis">
-                        <nav class="mdc-list mdc-drawer-submenu">
-                            <div class="mdc-list-item mdc-drawer-item">
-                                <a class="mdc-drawer-link" href="{{route('personnel.create')}}">
-                                    Ajouter
-                                </a>
-                            </div>
-                            <div class="mdc-list-item mdc-drawer-item">
-                                <a class="mdc-drawer-link" href="{{route('personnel.index')}}">
-                                    Liste
+                                <a class="mdc-drawer-link"
+                                    href="{{ route('company.reservation.index', ['tab' => 'terminees']) }}">
+                                    Terminées
                                 </a>
                             </div>
                         </nav>
@@ -145,7 +81,107 @@
                 </div>
                 <div class="mdc-list-item mdc-drawer-item">
                     <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel"
-                        data-target="ui-sub-menu">
+                        data-target="ui-sub-agentss">
+                        <i class="fas fa-users mdc-list-item__start-detail mdc-drawer-item-icon"
+                            aria-hidden="true"></i>
+                        Agent
+                        <i class="mdc-drawer-arrow material-icons">chevron_right</i>
+                    </a>
+                    <div class="mdc-expansion-panel" id="ui-sub-agentss">
+                        <nav class="mdc-list mdc-drawer-submenu">
+                            <div class="mdc-list-item mdc-drawer-item">
+                                <a class="mdc-drawer-link"
+                                    href="{{ route('compagnie.agents.create') }}">
+                                    Ajouter
+                                </a>
+                            </div>
+                            <div class="mdc-list-item mdc-drawer-item">
+                                <a class="mdc-drawer-link"
+                                    href="{{ route('compagnie.agents.index') }}">
+                                    Liste
+                                </a>
+                            </div>
+                        </nav>
+                    </div>
+                </div>
+                <div class="mdc-list-item mdc-drawer-item">
+                    <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel"
+                        data-target="ui-sub-colis">
+                        <i class="fas fa-user-tie mdc-list-item__start-detail mdc-drawer-item-icon"
+                            aria-hidden="true"></i>
+                        Personnel
+                        <i class="mdc-drawer-arrow material-icons">chevron_right</i>
+                    </a>
+                    <div class="mdc-expansion-panel" id="ui-sub-colis">
+                        <nav class="mdc-list mdc-drawer-submenu">
+                            <div class="mdc-list-item mdc-drawer-item">
+                                <a class="mdc-drawer-link" href="{{route('personnel.create')}}">
+                                    Ajouter
+                                </a>
+                            </div>
+                            <div class="mdc-list-item mdc-drawer-item">
+                                <a class="mdc-drawer-link" href="{{route('personnel.index')}}">
+                                    Liste
+                                </a>
+                            </div>
+                        </nav>
+                    </div>
+                </div>
+                <div class="mdc-list-item mdc-drawer-item">
+                    <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel"
+                        data-target="ui-sub-perso">
+                        <i class="fas fa-route mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
+                        Itinéraire
+                        <i class="mdc-drawer-arrow material-icons">chevron_right</i>
+                    </a>
+                    <div class="mdc-expansion-panel" id="ui-sub-perso">
+                        <nav class="mdc-list mdc-drawer-submenu">
+                            <div class="mdc-list-item mdc-drawer-item">
+                                <a class="mdc-drawer-link" href="{{route('itineraire.create')}}">
+                                    Ajouter
+                                </a>
+                            </div>
+                            <div class="mdc-list-item mdc-drawer-item">
+                                <a class="mdc-drawer-link" href="{{route('itineraire.index')}}">
+                                    Liste
+                                </a>
+                            </div>
+                        </nav>
+                    </div>
+                </div>
+                <div class="mdc-list-item mdc-drawer-item">
+                    <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel"
+                        data-target="ui-sub-agent">
+                        <i class="fas fa-car mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
+                        Véhicule
+                        <i class="mdc-drawer-arrow material-icons">chevron_right</i>
+                    </a>
+                    <div class="mdc-expansion-panel" id="ui-sub-agent">
+                        <nav class="mdc-list mdc-drawer-submenu">
+                            <div class="mdc-list-item mdc-drawer-item">
+                                <a class="mdc-drawer-link" href="{{route('vehicule.create')}}">
+                                    Ajouter
+                                </a>
+                            </div>
+                            <div class="mdc-list-item mdc-drawer-item">
+                                <a class="mdc-drawer-link" href="{{route('vehicule.index')}}">
+                                    Liste
+                                </a>
+                            </div>
+                        </nav>
+                    </div>
+                </div>
+                
+                <!-- Onglet Signalements -->
+                <div class="mdc-list-item mdc-drawer-item">
+                    <a class="mdc-drawer-link" href="{{ route('compagnie.signalements.index') }}">
+                        <i class="fas fa-exclamation-triangle mdc-list-item__start-detail mdc-drawer-item-icon text-danger"
+                            aria-hidden="true" style="color:red"></i>
+                        Signalements
+                    </a>
+                </div>
+                <!-- <div class="mdc-list-item mdc-drawer-item">
+                    <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel" data-target="ui-sub-menu">
                         <i class="fas fa-qrcode mdc-list-item__start-detail mdc-drawer-item-icon"
                             aria-hidden="true"></i>
                         Scanner
@@ -172,8 +208,7 @@
                     </div>
                 </div>
                 <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel"
-                        data-target="ui-sub-code">
+                    <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel" data-target="ui-sub-code">
                         <i class="fas fa-calendar-alt mdc-list-item__start-detail mdc-drawer-item-icon"
                             aria-hidden="true"></i>
                         Planning voyage
@@ -192,82 +227,12 @@
                                 </a>
                             </div>
                             {{-- <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-drawer-link" href="#">
-                      Structure desactivées
-                    </a>
-                  </div> --}}
+                                <a class="mdc-drawer-link" href="#">
+                                    Structure desactivées
+                                </a>
+                            </div> --}}
                         </nav>
                     </div>
-                </div>
-                <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-drawer-link" href="#">
-                        <i class="fas fa-user-tie mdc-list-item__start-detail mdc-drawer-item-icon"></i>
-                        Chauffeur
-                    </a>
-                </div>
-
-                <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel"
-                        data-target="ui-sub-pro">
-                        <i class="fas fa-calendar-alt mdc-list-item__start-detail mdc-drawer-item-icon"
-                            aria-hidden="true"></i>
-                        Programme
-                        <i class="mdc-drawer-arrow material-icons">chevron_right</i>
-                    </a>
-                    <div class="mdc-expansion-panel" id="ui-sub-pro">
-                        <nav class="mdc-list mdc-drawer-submenu">
-                            <div class="mdc-list-item mdc-drawer-item">
-                                <a class="mdc-drawer-link" href="#">
-                                    Planifier
-                                </a>
-                            </div>
-                            <div class="mdc-list-item mdc-drawer-item">
-                                <a class="mdc-drawer-link" href="#">
-                                    Liste
-                                </a>
-                            </div>
-                            {{-- <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-drawer-link" href="#">
-                      Structure desactivées
-                    </a>
-                  </div> --}}
-                        </nav>
-                    </div>
-                </div>
-                <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel"
-                        data-target="ui-sub-client">
-                        <i class="fas fa-calendar-alt mdc-list-item__start-detail mdc-drawer-item-icon"
-                            aria-hidden="true"></i>
-                        Type Client
-                        <i class="mdc-drawer-arrow material-icons">chevron_right</i>
-                    </a>
-                    <div class="mdc-expansion-panel" id="ui-sub-client">
-                        <nav class="mdc-list mdc-drawer-submenu">
-                            <div class="mdc-list-item mdc-drawer-item">
-                                <a class="mdc-drawer-link" href="#">
-                                    Client
-                                </a>
-                            </div>
-                            <div class="mdc-list-item mdc-drawer-item">
-                                <a class="mdc-drawer-link" href="#">
-                                    Prospect
-                                </a>
-                            </div>
-                            {{-- <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-drawer-link" href="#">
-                      Structure desactivées
-                    </a>
-                  </div> --}}
-                        </nav>
-                    </div>
-                </div>
-
-                <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-drawer-link" href="#">
-                        <i class="fas fa-box mdc-list-item__start-detail mdc-drawer-item-icon"></i>
-                        Récuperation demandé
-                    </a>
-                </div>
+                </div> -->
         </div>
 </aside>

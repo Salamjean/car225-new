@@ -3,18 +3,30 @@
 use App\Http\Controllers\Admin\AdminDashboard;
 use App\Http\Controllers\Admin\AuthenticateAdmin;
 use App\Http\Controllers\Admin\Itineraire\AdminItineraireController;
+use App\Http\Controllers\Agent\AgentController;
+use App\Http\Controllers\Agent\AgentDashboard;
+use App\Http\Controllers\Agent\AuthenticateAgent;
+use App\Http\Controllers\Compagnie\Agent\AgentCompagnieController;
 use App\Http\Controllers\Compagnie\CompagnieAuthenticate;
 use App\Http\Controllers\Compagnie\CompagnieController;
 use App\Http\Controllers\Compagnie\CompagnieDashboard;
 use App\Http\Controllers\Compagnie\Itineraire\ItineraireController;
 use App\Http\Controllers\Compagnie\Personnel\PersonnelController;
 use App\Http\Controllers\Compagnie\Programme\ProgrammeController;
+use App\Http\Controllers\Compagnie\ReservationController as CompagnieReservationController;
 use App\Http\Controllers\Compagnie\Vehicule\VehiculeController;
+use App\Http\Controllers\Compagnie\SignalementController as CompagnieSignalementController;
+use App\Http\Controllers\Home\AccueilController;
 use App\Http\Controllers\Home\HomeController;
 use App\Http\Controllers\User\Reservation\ReservationController;
 use App\Http\Controllers\User\UserAuthenticate;
 use App\Http\Controllers\User\UserController;
 use App\Models\Vehicule;
+use App\Http\Controllers\SignalementController;
+use App\Http\Controllers\SapeurPompier\SapeurPompierController;
+use App\Http\Controllers\SapeurPompier\SapeurPompierAuthenticate;
+use App\Models\Signalement;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 //Les routes de la pages 
@@ -23,8 +35,18 @@ Route::prefix('/')->group(function () {
     Route::get('/itineraires/search', [HomeController::class, 'search'])->name('programmes.search');
     Route::get('/itineraires', [HomeController::class, 'all'])->name('programmes.all');
     Route::get('/itineraires/{itineraire}', [HomeController::class, 'show'])->name('programmes.show');
+    Route::get('/vehicule/details/{id}', [HomeController::class, 'getVehicleDetails'])->name('home.vehicle.details');
+
+    //Les routes de la pages d'accueil
+    Route::get('/home/about', [AccueilController::class, 'about'])->name('home.about');
+    Route::get('/home/destination', [AccueilController::class, 'destination'])->name('home.destination');
+    Route::get('/home/compagny', [AccueilController::class, 'compagny'])->name('home.compagny');
+    Route::get('/home/infos', [AccueilController::class, 'infos'])->name('home.infos');
+    Route::get('/home/services', [AccueilController::class, 'services'])->name('home.services');
+    Route::get('/home/contact', [AccueilController::class, 'contact'])->name('home.contact');
+    Route::post('/home/contact/store', [AccueilController::class, 'storeContact'])->name('home.contact.store');
 });
-Route::get('/vehicule/details/{id}', [HomeController::class, 'getVehicleDetails'])->name('home.vehicle.details');
+
 //Les routes de gestion du @admin
 Route::prefix('admin')->group(function () {
     Route::get('/login', [AuthenticateAdmin::class, 'login'])->name('admin.login');
@@ -48,6 +70,9 @@ Route::middleware('admin')->prefix('admin')->group(function () {
 
     //Les routes pour voir les itineraires
     Route::get('/indeItinery', [AdminItineraireController::class, 'index'])->name('admin.itineraire.index');
+
+    // Gestion des Sapeurs Pompiers
+    Route::resource('sapeur-pompier', SapeurPompierController::class);
 });
 
 //Les routes de gestion du @admin
@@ -60,9 +85,17 @@ Route::middleware('compagnie')->prefix('company')->group(function () {
     Route::get('/dashboard', [CompagnieDashboard::class, 'dashboard'])->name('compagnie.dashboard');
     Route::get('/logout', [CompagnieDashboard::class, 'logout'])->name('compagnie.logout');
 
+    //les routes pour la gestion des agents 
+    Route::prefix('agent')->group(function () {
+        Route::get('/Plist', [AgentController::class, 'index'])->name('compagnie.agents.index');
+        Route::get('/AgentAdd', [AgentController::class, 'create'])->name('compagnie.agents.create');
+        Route::post('/store', [AgentController::class, 'store'])->name('compagnie.agents.store');
+        Route::delete('/{agent}', [AgentController::class, 'destroy'])->name('compagnie.agents.destroy');
+    });
+
     //Les routes pour la gestion des itineraires 
     Route::prefix('Itinerary')->group(function () {
-        Route::get('/all', [ItineraireController::class, 'index'])->name('itineraire.index');
+        Route::get('/ItAll', [ItineraireController::class, 'index'])->name('itineraire.index');
         Route::get('/create', [ItineraireController::class, 'create'])->name('itineraire.create');
         Route::post('/create', [ItineraireController::class, 'store'])->name('itineraire.store');
         Route::get('/{itineraire}', [ItineraireController::class, 'show'])->name('itineraire.show');
@@ -98,7 +131,7 @@ Route::middleware('compagnie')->prefix('company')->group(function () {
     Route::prefix('programme')->group(function () {
         Route::get('/prgramme', [ProgrammeController::class, 'index'])->name('programme.index');
         Route::get('/hsi', [ProgrammeController::class, 'history'])->name('programme.history');
-        Route::get('/createPro', [ProgrammeController::class, 'create'])->name('programme.create');
+        Route::get('/addPro', [ProgrammeController::class, 'create'])->name('programme.create');
         Route::post('/createPro', [ProgrammeController::class, 'store'])->name('programme.store');
         Route::get('/{programme}/api', [ProgrammeController::class, 'showApi'])->name('api.show');
         Route::get('/{programme}/edit', [ProgrammeController::class, 'edit'])->name('programme.edit');
@@ -111,6 +144,27 @@ Route::middleware('compagnie')->prefix('company')->group(function () {
     Route::get('/programme/{programme}/vehicules-disponibles', [ProgrammeController::class, 'vehiculesDisponibles'])->name('programme.vehicules-disponibles');
     Route::patch('/programme/{programme}/changer-chauffeur', [ProgrammeController::class, 'changerChauffeur'])->name('programme.changer-chauffeur');
     Route::patch('/programme/{programme}/changer-vehicule', [ProgrammeController::class, 'changerVehicule'])->name('programme.changer-vehicule');
+
+    //Les routes de gestion des réservations
+    Route::prefix('booking')->group(function () {
+        Route::get('/all', [CompagnieReservationController::class, 'index'])->name('company.reservation.index');
+    });
+
+    // Routes de gestion des signalements pour la compagnie
+    Route::prefix('signalements')->group(function () {
+        Route::get('/', [CompagnieSignalementController::class, 'index'])->name('compagnie.signalements.index');
+        Route::get('/{id}', [CompagnieSignalementController::class, 'show'])->name('compagnie.signalements.show');
+    });
+});
+
+//Les routes de gestion des @agents
+Route::prefix('agent')->group(function () {
+    Route::get('/login', [AuthenticateAgent::class, 'login'])->name('agent.login');
+    Route::post('/login', [AuthenticateAgent::class, 'handleLogin'])->name('agent.handleLogin');
+});
+Route::middleware('agent')->prefix('agent')->group(function () {
+    Route::get('/dashboard', [AgentDashboard::class, 'dashboard'])->name('agent.dashboard');
+    Route::get('/logout', [AgentDashboard::class, 'logout'])->name('agent.logout');
 });
 
 //Les routes de gestion du @user
@@ -120,6 +174,7 @@ Route::prefix('user')->group(function () {
     Route::get('/register', [UserAuthenticate::class, 'register'])->name('user.register');
     Route::post('/register', [UserAuthenticate::class, 'handleRegister'])->name('user.handleRegister');
 });
+
 Route::middleware('auth')->prefix('user')->group(function () {
     Route::get('/dashboard', [UserController::class, 'dashboard'])->name('user.dashboard');
     Route::get('/logout', [UserController::class, 'logout'])->name('user.logout');
@@ -139,15 +194,70 @@ Route::middleware('auth')->prefix('user')->group(function () {
     });
     Route::get('/programmes/{programme}/recalculate-status', [ReservationController::class, 'recalculateProgramStatus'])->name('programmes.recalculate-status');
     Route::get('/programmes/{programme}/status-for-date/{date}', [ReservationController::class, 'getProgramStatusForDate'])->name('programmes.status-for-date');
+
+    // Signalement de problèmes
+    Route::prefix('signalement')->group(function () {
+        Route::get('/create', [SignalementController::class, 'create'])->name('signalement.create');
+        Route::post('/store', [SignalementController::class, 'store'])->name('signalement.store');
+    });
 });
 
-//Les routes definition du accès 
-Route::get('/validate-compagny-account/{email}', [CompagnieAuthenticate::class, 'defineAccess']);
-Route::post('/validate-compagny-account/{email}', [CompagnieAuthenticate::class, 'submitDefineAccess'])->name('compagnie.validate');
+
+// Routes Sapeur Pompier (Interface dédiée)
+Route::prefix('sapeur-pompier')->group(function () {
+    Route::get('/login', [SapeurPompierAuthenticate::class, 'login'])->name('sapeur-pompier.login');
+    Route::post('/login', [SapeurPompierAuthenticate::class, 'handleLogin']);
+    Route::get('/define-access/{email}', [SapeurPompierAuthenticate::class, 'defineAccess'])->name('sapeur-pompier.define-access');
+    Route::post('/define-access', [SapeurPompierAuthenticate::class, 'submitDefineAccess'])->name('sapeur-pompier.submit-define-access');
+    Route::get('/logout', [SapeurPompierAuthenticate::class, 'logout'])->name('sapeur-pompier.logout');
+
+    Route::middleware('sapeur_pompier')->group(function () {
+        Route::get('/dashboard', function (\Illuminate\Http\Request $request) {
+            $query = Signalement::where('sapeur_pompier_id', Auth::guard('sapeur_pompier')->id());
+
+            if ($request->has('status')) {
+                $query->where('statut', $request->status);
+                $filterTitle = $request->status == 'nouveau' ? 'Nouveaux Signalements' : 'Signalements Traités';
+            } else {
+                // Par défaut : Seulement les accidents non traités
+                $query->where('type', 'accident')->where('statut', 'nouveau');
+                $filterTitle = 'Accidents en cours (Non traités)';
+            }
+
+            $signalements = $query->latest()->get();
+            return view('sapeur_pompier.dashboard', compact('signalements', 'filterTitle'));
+        })->name('sapeur-pompier.dashboard');
+
+        Route::get('/signalements/{signalement}', function (Signalement $signalement) {
+            // Vérifier que le signalement appartient bien à ce pompier
+            if ($signalement->sapeur_pompier_id !== Auth::guard('sapeur_pompier')->id()) {
+                abort(403);
+            }
+            return view('sapeur_pompier.signalement.show', compact('signalement'));
+        })->name('sapeur-pompier.signalement.show');
+
+        // Route pour marquer comme traité
+        Route::patch('/signalements/{signalement}/mark-as-treated', function (\Illuminate\Http\Request $request, \App\Models\Signalement $signalement) {
+            if ($signalement->sapeur_pompier_id !== Auth::guard('sapeur_pompier')->id()) {
+                abort(403);
+            }
+
+            $signalement->nombre_morts = $request->input('nombre_morts', 0);
+            $signalement->nombre_blesses = $request->input('nombre_blesses', 0);
+            $signalement->details_intervention = $request->input('details_intervention');
+            $signalement->statut = 'traite';
+
+            $signalement->save();
+            return back()->with('success', 'Intervention clôturée et bilan enregistré avec succès.');
+        })->name('sapeur-pompier.signalement.mark-as-treated');
+    });
+});
 
 
 
 Route::prefix('api')->group(function () {
+    Route::get('/company/{compagnieId}/vehicles', [SignalementController::class, 'getCompanyVehicles']);
+
     Route::get('/vehicules/{id}', function ($id) {
         $vehicule = Vehicule::find($id);
 
@@ -168,3 +278,9 @@ Route::prefix('api')->group(function () {
         ]);
     });
 });
+
+//Les routes definition du accès 
+Route::get('/validate-compagny-account/{email}', [CompagnieAuthenticate::class, 'defineAccess']);
+Route::post('/validate-compagny-account/{email}', [CompagnieAuthenticate::class, 'submitDefineAccess'])->name('compagnie.validate');
+Route::get('/validate-agent-account/{email}', [AuthenticateAgent::class, 'defineAccess']);
+Route::post('/validate-agent-account/{email}', [AuthenticateAgent::class, 'submitDefineAccess'])->name('agent.validate');

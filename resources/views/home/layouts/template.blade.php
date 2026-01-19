@@ -44,11 +44,6 @@
   @include('home.layouts.navbar')
 
   <main class="main">
-
-    <!-- Travel Hero Section -->
-    @include('home.layouts.carrousel')
-    <!-- /Travel Hero Section -->
-
     <!-- Why Us Section -->
     @yield('content')
     <!-- /Call To Action Section -->

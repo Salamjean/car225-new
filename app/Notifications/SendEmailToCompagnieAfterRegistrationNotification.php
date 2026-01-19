@@ -42,7 +42,7 @@ class SendEmailToCompagnieAfterRegistrationNotification extends Notification
     {
         return (new MailMessage)
             ->subject('CAR 225: Votre compagnie a été enregistrer.') 
-            ->from('contact@edemarchee-ci.com', 'CAR 225')
+            ->from('contact@maelysimo.com', 'CAR 225')
             ->view('emails.compagnie_registration', [
                 'code' => $this->code,
                 'email' => $this->email,

@@ -33,6 +33,10 @@ class ReservationController extends Controller
             ->orderBy('created_at', 'desc');
 
         // Appliquer les filtres
+        if ($request->filled('reference')) {
+            $query->where('reference', 'like', '%' . $request->reference . '%');
+        }
+
         if ($request->filled('statut')) {
             $query->where('statut', $request->statut);
         }
@@ -97,7 +101,7 @@ class ReservationController extends Controller
         return response()->download($path, 'billet-' . $reservation->reference . '.png');
     }
 
-    public function ticket(Reservation $reservation)
+    public function ticket(Request $request, Reservation $reservation)
     {
         // Vérifier que la réservation appartient à l'utilisateur
         if ($reservation->user_id !== Auth::id()) {
@@ -106,11 +110,19 @@ class ReservationController extends Controller
 
         $reservation->load(['programme', 'programme.compagnie', 'user']);
 
+        // Récupérer le numéro de place via la requête
+        $seatNumber = $request->query('seat_number');
+
         // Calculer les montants
         $prixUnitaire = (float) $reservation->programme->montant_billet;
         $isAllerRetour = (bool) $reservation->programme->is_aller_retour;
         $tripType = $isAllerRetour ? 'Aller-Retour' : 'Aller Simple';
         $prixTotalIndividuel = $isAllerRetour ? $prixUnitaire * 2 : $prixUnitaire;
+
+        $nomFichier = 'billet-' . $reservation->reference;
+        if ($seatNumber) {
+            $nomFichier .= '-Place-' . $seatNumber;
+        }
 
         // Générer le PDF du billet
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.ticket', [
@@ -118,14 +130,21 @@ class ReservationController extends Controller
             'programme' => $reservation->programme,
             'user' => $reservation->user,
             'compagnie' => $reservation->programme->compagnie,
-            'qrCodeBase64' => $reservation->qr_code ? base64_encode($reservation->qr_code) : null,
+            'qrCodeBase64' => $reservation->qr_code,
             'tripType' => $tripType,
             'prixUnitaire' => $prixUnitaire,
             'prixTotalIndividuel' => $prixTotalIndividuel,
             'isAllerRetour' => $isAllerRetour,
-        ])->setPaper('a4', 'portrait');
+            'seatNumber' => $seatNumber,
+        ])->setPaper('a4', 'portrait')
+            ->setOptions([
+                'defaultFont' => 'sans-serif',
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+                'dpi' => 150,
+            ]);
 
-        return $pdf->download('billet-' . $reservation->reference . '.pdf');
+        return $pdf->stream($nomFichier . '.pdf');
     }
 
     public function cancel(Request $request, Reservation $reservation)
@@ -278,32 +297,32 @@ class ReservationController extends Controller
                     })
                         // Programmes récurrents
                         ->orWhere(function ($q) use ($formattedDate) {
-                        $joursFrancais = [
-                            'monday' => 'lundi',
-                            'tuesday' => 'mardi',
-                            'wednesday' => 'mercredi',
-                            'thursday' => 'jeudi',
-                            'friday' => 'vendredi',
-                            'saturday' => 'samedi',
-                            'sunday' => 'dimanche'
-                        ];
-                        $jourAnglais = strtolower(date('l', strtotime($formattedDate)));
-                        $jour_semaine = $joursFrancais[$jourAnglais] ?? $jourAnglais;
+                            $joursFrancais = [
+                                'monday' => 'lundi',
+                                'tuesday' => 'mardi',
+                                'wednesday' => 'mercredi',
+                                'thursday' => 'jeudi',
+                                'friday' => 'vendredi',
+                                'saturday' => 'samedi',
+                                'sunday' => 'dimanche'
+                            ];
+                            $jourAnglais = strtolower(date('l', strtotime($formattedDate)));
+                            $jour_semaine = $joursFrancais[$jourAnglais] ?? $jourAnglais;
 
-                        $q->where('type_programmation', 'recurrent')
-                            ->whereRaw('DATE(date_depart) <= ?', [$formattedDate])
-                            ->where(function ($dateCheck) use ($formattedDate) {
-                                $dateCheck->where(function ($subDate) use ($formattedDate) {
-                                    $subDate->whereNotNull('date_fin_programmation')
-                                        ->whereRaw('DATE(date_fin_programmation) >= ?', [$formattedDate]);
+                            $q->where('type_programmation', 'recurrent')
+                                ->whereRaw('DATE(date_depart) <= ?', [$formattedDate])
+                                ->where(function ($dateCheck) use ($formattedDate) {
+                                    $dateCheck->where(function ($subDate) use ($formattedDate) {
+                                        $subDate->whereNotNull('date_fin_programmation')
+                                            ->whereRaw('DATE(date_fin_programmation) >= ?', [$formattedDate]);
+                                    })
+                                        ->orWhereNull('date_fin_programmation');
                                 })
-                                    ->orWhereNull('date_fin_programmation');
-                            })
-                            ->where(function ($dayCheck) use ($jour_semaine) {
-                                $dayCheck->whereJsonContains('jours_recurrence', $jour_semaine)
-                                    ->orWhere('jours_recurrence', 'like', "%{$jour_semaine}%");
-                            });
-                    });
+                                ->where(function ($dayCheck) use ($jour_semaine) {
+                                    $dayCheck->whereJsonContains('jours_recurrence', $jour_semaine)
+                                        ->orWhere('jours_recurrence', 'like', "%{$jour_semaine}%");
+                                });
+                        });
                 })
                 ->get();
 
@@ -409,12 +428,13 @@ class ReservationController extends Controller
             $query = Reservation::where('programme_id', $programId)
                 ->where('statut', '!=', 'annulee');
 
-            // Filtrer par date si c'est un programme récurrent
-            if ($programme->type_programmation == 'recurrent') {
+            // Filtrer par date (systématiquement pour éviter toute confusion)
+            if ($formattedDate) {
+                // Vérifier si la colonne existe pour éviter les erreurs SQL (sécurité supp)
                 $query->where('date_voyage', $formattedDate);
-            } else {
-                // Pour programme ponctuel, toutes les réservations du programme
-                // (pas de filtre par date)
+            } else if ($programme->type_programmation == 'recurrent') {
+                // Fallback si pas de date fournie mais récurrent (ne devrait pas arriver avec if !$dateVoyage au début)
+                Log::warning('Programme récurrent demandé sans date dans getReservedSeats');
             }
 
             $reservedSeats = $query->pluck('places')
@@ -631,16 +651,17 @@ class ReservationController extends Controller
             $this->updateProgramStatus($programme, $dateVoyage);
 
             // ENVOYER LA NOTIFICATION PAR EMAIL AVEC PDF
-            // Envoyer uniquement aux passagers individuels
+            // Envoyer uniquement aux passagers individuels avec leur numéro de place
             $passagers = $request->passagers ?? [];
             foreach ($passagers as $passager) {
-                if (!empty($passager['email'])) {
+                if (!empty($passager['email']) && isset($passager['seat_number'])) {
                     $this->sendReservationEmail(
                         $reservation,
                         $programme,
                         $qrCodeData['base64'],
                         $passager['email'],
-                        $passager['prenom'] . ' ' . $passager['nom']
+                        $passager['prenom'] . ' ' . $passager['nom'],
+                        $passager['seat_number']
                     );
                 }
             }
@@ -793,8 +814,8 @@ class ReservationController extends Controller
             $qrCode = QrCode::create($qrContent);
 
             // Configurer le QR Code
-            $qrCode->setSize(300);
-            $qrCode->setMargin(10);
+            $qrCode->setSize(180);
+            $qrCode->setMargin(5);
 
             // Écrire le QR Code en PNG
             $writer = new PngWriter();
@@ -842,7 +863,7 @@ class ReservationController extends Controller
     /**
      * Envoyer l'email de confirmation avec PDF et QR Code
      */
-    private function sendReservationEmail(Reservation $reservation, Programme $programme, string $qrCodeBase64, string $recipientEmail = null, string $recipientName = null): void
+    private function sendReservationEmail(Reservation $reservation, Programme $programme, string $qrCodeBase64, string $recipientEmail = null, string $recipientName = null, int $seatNumber = null): void
     {
         try {
             $email = $recipientEmail ?: (Auth::user()->email ?? null);
@@ -856,12 +877,13 @@ class ReservationController extends Controller
             Log::info('Envoi de la notification à:', [
                 'email' => $email,
                 'name' => $name,
-                'reservation_id' => $reservation->id
+                'reservation_id' => $reservation->id,
+                'seat_number' => $seatNumber
             ]);
 
             // Envoyer la notification à l'email spécifié
             // Note: On peut utiliser Notification::route('mail', $email) pour envoyer à une adresse arbitraire
-            Notification::route('mail', $email)->notify(new ReservationConfirmeeNotification($reservation, $programme, $qrCodeBase64, $name));
+            Notification::route('mail', $email)->notify(new ReservationConfirmeeNotification($reservation, $programme, $qrCodeBase64, $name, $seatNumber));
 
             Log::info('Notification envoyée avec succès');
         } catch (\Exception $e) {
@@ -1006,9 +1028,9 @@ class ReservationController extends Controller
             $expectedHash = hash(
                 'sha256',
                 $qrData['reference'] .
-                $qrData['reservation_id'] .
-                $qrData['date_voyage'] .
-                config('app.key')
+                    $qrData['reservation_id'] .
+                    $qrData['date_voyage'] .
+                    config('app.key')
             );
 
             if ($qrData['verification_hash'] !== $expectedHash) {

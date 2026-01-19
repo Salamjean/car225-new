@@ -40,7 +40,7 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
-        
+
         'admin' => [
             'driver' => 'session',
             'provider' => 'admins',
@@ -49,6 +49,15 @@ return [
         'compagnie' => [
             'driver' => 'session',
             'provider' => 'compagnies',
+        ],
+
+        'sapeur_pompier' => [
+            'driver' => 'session',
+            'provider' => 'sapeur_pompiers',
+        ],
+        'agent' => [
+            'driver' => 'session',
+            'provider' => 'agents',
         ],
     ],
 
@@ -83,6 +92,15 @@ return [
         'compagnies' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', App\Models\Compagnie::class),
+        ],
+
+        'sapeur_pompiers' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\SapeurPompier::class,
+        ],
+        'agents' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Agent::class,
         ],
 
         // 'users' => [

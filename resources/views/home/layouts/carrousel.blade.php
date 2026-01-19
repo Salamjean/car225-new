@@ -61,26 +61,6 @@
                                 <div class="form-text">Choisissez si vous voulez un aller-retour ou non</div>
                             </div>
 
-                            {{-- <div class="form-group mb-3">
-                                <label for="durer_parcours">Durée Approximative</label>
-                                <select name="durer_parcours" id="durer_parcours" class="form-select" required>
-                                    <option value="">Choisir la durée</option>
-                                    <option value="1-2 heures" {{ old('durer_parcours')=='1-2 heures' ? 'selected' : ''
-                                        }}>1-2 heures</option>
-                                    <option value="2-4 heures" {{ old('durer_parcours')=='2-4 heures' ? 'selected' : ''
-                                        }}>2-4 heures</option>
-                                    <option value="4-6 heures" {{ old('durer_parcours')=='4-6 heures' ? 'selected' : ''
-                                        }}>4-6 heures</option>
-                                    <option value="6-8 heures" {{ old('durer_parcours')=='6-8 heures' ? 'selected' : ''
-                                        }}>6-8 heures</option>
-                                    <option value="8+ heures" {{ old('durer_parcours')=='8+ heures' ? 'selected' : ''
-                                        }}>8+ heures</option>
-                                    <option value="Toute durée" {{ old('durer_parcours')=='Toute durée' ? 'selected'
-                                        : '' }}>Toute durée</option>
-                                </select>
-                                <div class="form-text">Sélectionnez la durée estimée du trajet</div>
-                            </div> --}}
-
                             <button type="submit" class="btn btn-primary w-100">
                                 <i class="fas fa-search me-2"></i>
                                 Rechercher des Programmes
@@ -123,3 +103,28 @@
     </div>
 
 </section>
+
+<!-- Intégration Google Maps Autocomplete -->
+<script
+    src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google_maps.key') }}&libraries=places&loading=async&callback=initAutocomplete"
+    async defer></script>
+
+<script>
+    function initAutocomplete() {
+        const options = {
+            componentRestrictions: { country: "ci" }, // Restreindre à la Côte d'Ivoire
+            fields: ["formatted_address", "geometry", "name"],
+        };
+
+        const inputDepart = document.getElementById("point_depart");
+        const inputArrive = document.getElementById("point_arrive");
+
+        if (inputDepart) {
+            new google.maps.places.Autocomplete(inputDepart, options);
+        }
+
+        if (inputArrive) {
+            new google.maps.places.Autocomplete(inputArrive, options);
+        }
+    }
+</script>

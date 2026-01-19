@@ -19,16 +19,18 @@ class ReservationConfirmeeNotification extends Notification
     public $qrCodeBase64;
     public $pdfContent;
     public $recipientName;
+    public $seatNumber;
 
     /**
      * Create a new notification instance.
      */
-    public function __construct(Reservation $reservation, Programme $programme, string $qrCodeBase64, string $recipientName = null)
+    public function __construct(Reservation $reservation, Programme $programme, string $qrCodeBase64, string $recipientName = null, int $seatNumber = null)
     {
         $this->reservation = $reservation;
         $this->programme = $programme;
         $this->qrCodeBase64 = $qrCodeBase64;
         $this->recipientName = $recipientName;
+        $this->seatNumber = $seatNumber;
     }
 
     /**
@@ -60,6 +62,7 @@ class ReservationConfirmeeNotification extends Notification
             'heureDepart' => date('H:i', strtotime($this->programme->heure_depart)),
             'places' => json_decode($this->reservation->places, true) ?? [],
             'compagnie' => $this->programme->compagnie ?? null,
+            'seatNumber' => $this->seatNumber,
         ];
 
         // Générer le PDF
@@ -68,7 +71,7 @@ class ReservationConfirmeeNotification extends Notification
         // Envoyer l'email
         $mail = (new MailMessage)
             ->subject('CAR 225 : Confirmation de votre réservation N°' . $this->reservation->reference)
-            ->from('contact@edemarchee-ci.com', 'CAR 225')
+            ->from('contact@maelysimo.com', 'CAR 225')
             ->view('emails.reservation_confirmee', $emailData);
 
         // Attacher le PDF
@@ -98,16 +101,17 @@ class ReservationConfirmeeNotification extends Notification
             'prixUnitaire' => $prixUnitaire,
             'prixTotalIndividuel' => $this->programme->is_aller_retour ? $prixUnitaire * 2 : $prixUnitaire,
             'isAllerRetour' => (bool) $this->programme->is_aller_retour,
+            'seatNumber' => $this->seatNumber,
         ];
 
         return Pdf::loadView('pdf.ticket', $data)
             ->setPaper('a4', 'portrait')
             ->setOptions([
-                'defaultFont' => 'sans-serif',
-                'isHtml5ParserEnabled' => true,
-                'isRemoteEnabled' => true,
-                'dpi' => 150,
-            ])
+                    'defaultFont' => 'sans-serif',
+                    'isHtml5ParserEnabled' => true,
+                    'isRemoteEnabled' => true,
+                    'dpi' => 150,
+                ])
             ->output();
     }
 

@@ -74,9 +74,9 @@
                     </div>
                 </div>
                 <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-drawer-link" href="#">
-                        <i class="fas fa-box mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
-                        Suivi de colis
+                    <a class="mdc-drawer-link" href="{{ route('signalement.create') }}">
+                        <i class="fas fa-exclamation-triangle mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
+                       Signaler un problème
                     </a>
                 </div>
                 {{-- <div class="mdc-list-item mdc-drawer-item">
@@ -91,7 +91,7 @@
                 Mes factures
               </a>
             </div> --}}
-                <div class="mdc-list-item mdc-drawer-item">
+                <!-- <div class="mdc-list-item mdc-drawer-item">
                     <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel"
                         data-target="ui-sub-agent">
                         <i class="material-icons mdc-list-item__start-detail mdc-drawer-item-icon"
@@ -118,7 +118,7 @@
                   </div> --}}
                         </nav>
                     </div>
-                </div>
+                </div> -->
                 {{-- <div class="mdc-list-item mdc-drawer-item">
               <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel" data-target="ui-sub-menu">
                 <i class="material-icons mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true">home</i>

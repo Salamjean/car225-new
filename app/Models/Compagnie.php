@@ -49,4 +49,9 @@ class Compagnie extends Authenticatable
         'password' => 'hashed',
         'statut' => 'string',
     ];
+
+    public function agents()
+    {
+        return $this->hasMany(Agent::class);
+    }
 }
