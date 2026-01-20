@@ -164,7 +164,7 @@
                                     </td>
                                     <td class="px-8 py-4 text-center">
                                         <span
-                                            class="font-black text-gray-900">{{ number_format($res->montant_total, 0, ',', ' ') }}
+                                            class="font-black text-gray-900">{{ number_format($res->montant, 0, ',', ' ') }}
                                             <span class="text-[10px]">CFA</span></span>
                                     </td>
                                     <td class="px-8 py-4 text-center">

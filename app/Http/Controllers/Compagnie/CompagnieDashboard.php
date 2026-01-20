@@ -21,7 +21,7 @@ class CompagnieDashboard extends Controller
         // 1. Statistiques Globales
         $totalRevenue = Reservation::whereHas('programme', function ($q) use ($compagnieId) {
             $q->where('compagnie_id', $compagnieId);
-        })->where('statut', 'confirmee')->sum('montant_total');
+        })->whereNotIn('statut', ['annulee'])->sum('montant');
 
         $totalReservations = Reservation::whereHas('programme', function ($q) use ($compagnieId) {
             $q->where('compagnie_id', $compagnieId);
@@ -59,9 +59,9 @@ class CompagnieDashboard extends Controller
             $revenue = Reservation::whereHas('programme', function ($q) use ($compagnieId) {
                 $q->where('compagnie_id', $compagnieId);
             })
-                ->where('statut', 'confirmee')
+                ->whereNotIn('statut', ['annulee'])
                 ->whereDate('created_at', $date)
-                ->sum('montant_total');
+                ->sum('montant');
 
             $revenuePerDay[] = (float) $revenue;
         }

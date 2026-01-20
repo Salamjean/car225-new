@@ -63,7 +63,7 @@ class ReservationController extends Controller
             'confirmed' => Reservation::where('user_id', $user->id)->where('statut', 'confirmee')->count(),
             'pending' => Reservation::where('user_id', $user->id)->where('statut', 'en_attente')->count(),
             'cancelled' => Reservation::where('user_id', $user->id)->where('statut', 'annulee')->count(),
-            'total_amount' => Reservation::where('user_id', $user->id)->where('statut', 'confirmee')->sum('montant_total'),
+            'total_amount' => Reservation::where('user_id', $user->id)->where('statut', 'confirmee')->sum('montant'),
         ];
 
         return view('user.reservation.index', compact('reservations', 'stats'));
@@ -234,7 +234,7 @@ class ReservationController extends Controller
                 });
             });
 
-            if ($request->has('is_aller_retour') && $request->is_aller_retour !== '') {
+            if ($request->filled('is_aller_retour')) {
                 $query->where('is_aller_retour', $request->is_aller_retour);
             }
 
@@ -409,7 +409,6 @@ class ReservationController extends Controller
 
             $formattedDate = date('Y-m-d', strtotime($dateVoyage));
 
-            // Récupérer le programme pour connaître son type
             $programme = Programme::find($programId);
 
             if (!$programme) {
@@ -425,26 +424,11 @@ class ReservationController extends Controller
                 'type' => $programme->type_programmation
             ]);
 
-            $query = Reservation::where('programme_id', $programId)
-                ->where('statut', '!=', 'annulee');
-
-            // Filtrer par date (systématiquement pour éviter toute confusion)
-            if ($formattedDate) {
-                // Vérifier si la colonne existe pour éviter les erreurs SQL (sécurité supp)
-                $query->where('date_voyage', $formattedDate);
-            } else if ($programme->type_programmation == 'recurrent') {
-                // Fallback si pas de date fournie mais récurrent (ne devrait pas arriver avec if !$dateVoyage au début)
-                Log::warning('Programme récurrent demandé sans date dans getReservedSeats');
-            }
-
-            $reservedSeats = $query->pluck('places')
-                ->flatMap(function ($places) {
-                    try {
-                        return json_decode($places, true) ?? [];
-                    } catch (\Exception $e) {
-                        return [];
-                    }
-                })
+            // Nouvelle logique: chaque réservation = 1 place (seat_number)
+            $reservedSeats = Reservation::where('programme_id', $programId)
+                ->where('statut', '!=', 'annulee')
+                ->where('date_voyage', $formattedDate)
+                ->pluck('seat_number')
                 ->toArray();
 
             Log::info('Places réservées trouvées:', $reservedSeats);
@@ -467,10 +451,10 @@ class ReservationController extends Controller
         }
     }
 
-    // Stocker la réservation avec PDF et QR Code
+    // Stocker la réservation avec PDF et QR Code - UNE RESERVATION PAR PLACE
     public function store(Request $request)
     {
-        Log::info('=== DEBUT RESERVATION ===');
+        Log::info('=== DEBUT RESERVATION (NOUVELLE LOGIQUE: 1 LIGNE PAR PLACE) ===');
         Log::info('User ID:', ['id' => Auth::id()]);
         Log::info('Données reçues:', $request->all());
 
@@ -485,6 +469,7 @@ class ReservationController extends Controller
             'passagers.*.email' => 'required|email',
             'passagers.*.telephone' => 'required|string',
             'passagers.*.urgence' => 'required|string',
+            'passagers.*.seat_number' => 'required|integer',
         ]);
 
         Log::info('Validation passée');
@@ -506,10 +491,6 @@ class ReservationController extends Controller
         // Pour les programmes ponctuels : vérifier la date exacte
         if ($programme->type_programmation == 'ponctuel') {
             if ($dateVoyage != $dateDepartProgramme) {
-                Log::warning('Date invalide pour programme ponctuel:', [
-                    'date_voyage' => $dateVoyage,
-                    'date_programme' => $dateDepartProgramme
-                ]);
                 return response()->json([
                     'success' => false,
                     'message' => 'La date sélectionnée ne correspond pas à la date du programme ponctuel.'
@@ -532,28 +513,18 @@ class ReservationController extends Controller
             $jourAnglais = strtolower(date('l', strtotime($dateVoyage)));
             $jourSemaine = $joursFrancais[$jourAnglais] ?? $jourAnglais;
 
-            // Vérifier si le programme a lieu ce jour-là
             $joursRecurrence = json_decode($programme->jours_recurrence, true) ?? [];
 
             if (!in_array($jourSemaine, $joursRecurrence)) {
-                Log::warning('Jour invalide pour programme récurrent:', [
-                    'jour' => $jourSemaine,
-                    'jours_recurrence' => $joursRecurrence
-                ]);
                 return response()->json([
                     'success' => false,
                     'message' => 'Le programme n\'a pas lieu le ' . $jourSemaine . '.'
                 ], 422);
             }
 
-            // Vérifier si la date est dans la plage de validité
             if ($programme->date_fin_programmation) {
                 $dateFin = date('Y-m-d', strtotime($programme->date_fin_programmation));
                 if ($dateVoyage > $dateFin) {
-                    Log::warning('Date après fin de programmation:', [
-                        'date_voyage' => $dateVoyage,
-                        'date_fin' => $dateFin
-                    ]);
                     return response()->json([
                         'success' => false,
                         'message' => 'La date sélectionnée est après la fin de la programmation récurrente.'
@@ -561,12 +532,7 @@ class ReservationController extends Controller
                 }
             }
 
-            // Vérifier si la date est après le début
             if ($dateVoyage < $dateDepartProgramme) {
-                Log::warning('Date avant début de programmation:', [
-                    'date_voyage' => $dateVoyage,
-                    'date_debut' => $dateDepartProgramme
-                ]);
                 return response()->json([
                     'success' => false,
                     'message' => 'La date sélectionnée est avant le début de la programmation récurrente.'
@@ -574,18 +540,11 @@ class ReservationController extends Controller
             }
         }
 
-        // Vérifier si les places sont encore disponibles pour cette date spécifique
+        // Vérifier si les places sont encore disponibles
         $reservedSeats = Reservation::where('programme_id', $request->programme_id)
             ->where('statut', '!=', 'annulee')
             ->where('date_voyage', $dateVoyage)
-            ->pluck('places')
-            ->flatMap(function ($places) {
-                try {
-                    return json_decode($places, true) ?? [];
-                } catch (\Exception $e) {
-                    return [];
-                }
-            })
+            ->pluck('seat_number')
             ->toArray();
 
         Log::info('Places déjà réservées pour le ' . $dateVoyage . ':', $reservedSeats);
@@ -593,7 +552,6 @@ class ReservationController extends Controller
 
         foreach ($request->seats as $seat) {
             if (in_array($seat, $reservedSeats)) {
-                Log::warning('Place déjà réservée:', ['place' => $seat, 'date' => $dateVoyage]);
                 return response()->json([
                     'success' => false,
                     'message' => "La place $seat n'est plus disponible pour le " . date('d/m/Y', strtotime($dateVoyage))
@@ -602,78 +560,86 @@ class ReservationController extends Controller
         }
 
         try {
-            // Générer une référence unique
-            $reference = 'RES-' . date('Ymd') . '-' . strtoupper(Str::random(6));
-
-            // Calculer le montant total (doublé si le programme est un aller-retour)
+            // Calculer le prix par place
             $prixUnitaire = $programme->montant_billet;
             if ($programme->is_aller_retour) {
                 $prixUnitaire *= 2;
             }
-            $montantTotal = $prixUnitaire * $request->nombre_places;
 
-            // Créer la réservation d'abord pour avoir l'ID
-            $reservation = Reservation::create([
-                'user_id' => Auth::id(),
-                'programme_id' => $request->programme_id,
-                'nombre_places' => $request->nombre_places,
-                'places' => json_encode($request->seats),
-                'places_reservees' => json_encode($request->seats),
-                'passagers' => $request->passagers,
-                'is_aller_retour' => $programme->is_aller_retour,
-                'montant_total' => $montantTotal,
-                'statut' => 'confirmee',
-                'date_reservation' => now(),
-                'reference' => $reference,
-                'date_voyage' => $dateVoyage,
-                'date_depart' => $dateVoyage,
-            ]);
+            // Générer un identifiant de groupe pour lier les réservations
+            $groupId = strtoupper(Str::random(6));
+            
+            $createdReservations = [];
+            $passagers = $request->passagers;
 
-            // Générer et sauvegarder le QR Code
-            $qrCodeData = $this->generateAndSaveQRCode($reference, $reservation->id, $dateVoyage);
+            foreach ($passagers as $index => $passager) {
+                $seatNumber = $passager['seat_number'];
+                
+                // Générer une référence unique pour cette place
+                $reference = 'RES-' . date('Ymd') . '-' . $groupId . '-' . $seatNumber;
 
-            // Mettre à jour la réservation avec les données du QR Code
-            $reservation->update([
-                'qr_code' => $qrCodeData['base64'],
-                'qr_code_path' => $qrCodeData['path'],
-                'qr_code_data' => json_encode($qrCodeData['qr_data']),
-            ]);
+                // Créer la réservation pour cette place
+                $reservation = Reservation::create([
+                    'user_id' => Auth::id(),
+                    'programme_id' => $request->programme_id,
+                    'seat_number' => $seatNumber,
+                    'passager_nom' => $passager['nom'],
+                    'passager_prenom' => $passager['prenom'],
+                    'passager_email' => $passager['email'],
+                    'passager_telephone' => $passager['telephone'],
+                    'passager_urgence' => $passager['urgence'],
+                    'is_aller_retour' => $programme->is_aller_retour,
+                    'montant' => $prixUnitaire,
+                    'statut' => 'confirmee',
+                    'reference' => $reference,
+                    'date_voyage' => $dateVoyage,
+                ]);
 
-            Log::info('Réservation créée:', [
-                'id' => $reservation->id,
-                'reference' => $reference,
-                'date_voyage' => $dateVoyage,
-                'type_programme' => $programme->type_programmation,
-                'qr_code_generated' => true
-            ]);
+                // Générer et sauvegarder le QR Code pour cette réservation
+                $qrCodeData = $this->generateAndSaveQRCode($reference, $reservation->id, $dateVoyage);
+
+                // Mettre à jour la réservation avec les données du QR Code
+                $reservation->update([
+                    'qr_code' => $qrCodeData['base64'],
+                    'qr_code_path' => $qrCodeData['path'],
+                    'qr_code_data' => $qrCodeData['qr_data'],
+                ]);
+
+                Log::info('Réservation créée:', [
+                    'id' => $reservation->id,
+                    'reference' => $reference,
+                    'seat_number' => $seatNumber,
+                    'passager' => $passager['prenom'] . ' ' . $passager['nom'],
+                ]);
+
+                // Envoyer l'email au passager avec SON QR code
+                $this->sendReservationEmail(
+                    $reservation,
+                    $programme,
+                    $qrCodeData['base64'],
+                    $passager['email'],
+                    $passager['prenom'] . ' ' . $passager['nom'],
+                    $seatNumber
+                );
+
+                $createdReservations[] = [
+                    'id' => $reservation->id,
+                    'reference' => $reference,
+                    'seat_number' => $seatNumber,
+                    'passager' => $passager['prenom'] . ' ' . $passager['nom'],
+                ];
+            }
 
             // Mettre à jour le statut du programme si nécessaire
             $this->updateProgramStatus($programme, $dateVoyage);
 
-            // ENVOYER LA NOTIFICATION PAR EMAIL AVEC PDF
-            // Envoyer uniquement aux passagers individuels avec leur numéro de place
-            $passagers = $request->passagers ?? [];
-            foreach ($passagers as $passager) {
-                if (!empty($passager['email']) && isset($passager['seat_number'])) {
-                    $this->sendReservationEmail(
-                        $reservation,
-                        $programme,
-                        $qrCodeData['base64'],
-                        $passager['email'],
-                        $passager['prenom'] . ' ' . $passager['nom'],
-                        $passager['seat_number']
-                    );
-                }
-            }
-
-            Log::info('=== FIN RESERVATION ===');
+            Log::info('=== FIN RESERVATION: ' . count($createdReservations) . ' réservations créées ===');
 
             return response()->json([
                 'success' => true,
-                'message' => 'Réservation créée avec succès. Les billets ont été envoyés aux passagers.',
-                'reservation_id' => $reservation->id,
-                'reference' => $reference,
-                'qr_code_url' => url('/api/reservations/qrcode/' . $reference)
+                'message' => 'Réservation créée avec succès. ' . count($createdReservations) . ' billet(s) envoyé(s) par email.',
+                'reservations' => $createdReservations,
+                'group_id' => $groupId,
             ]);
         } catch (\Exception $e) {
             Log::error('Erreur création réservation:', [
@@ -1137,8 +1103,8 @@ class ReservationController extends Controller
                     'details' => [
                         'nombre_places' => $reservation->nombre_places,
                         'places' => $places,
-                        'montant_total' => $reservation->montant_total,
-                        'montant_formatte' => number_format((float) $reservation->montant_total, 0, ',', ' ') . ' FCFA'
+                        'montant_total' => $reservation->montant,
+                        'montant_formatte' => number_format((float) $reservation->montant, 0, ',', ' ') . ' FCFA'
                     ],
                     'verification' => [
                         'timestamp' => now()->toDateTimeString(),
@@ -1422,5 +1388,32 @@ class ReservationController extends Controller
     ';
 
         return $html;
+    }
+
+    public function apiProgrammes()
+    {
+        // Récupérer tous les programmes actifs avec les détails nécessaires
+        $programmes = Programme::with(['compagnie', 'vehicule', 'itineraire'])
+            ->where(function ($q) {
+                // Programmes ponctuels futurs
+                $q->where('type_programmation', 'ponctuel')
+                  ->where('date_depart', '>=', now()->format('Y-m-d'));
+            })
+            ->orWhere(function ($q) {
+                // Programmes récurrents encore valides
+                $q->where('type_programmation', 'recurrent')
+                  ->where(function ($sub) {
+                      $sub->whereNull('date_fin_programmation')
+                          ->orWhere('date_fin_programmation', '>=', now()->format('Y-m-d'));
+                  });
+            })
+            ->orderBy('date_depart', 'asc')
+            ->orderBy('heure_depart', 'asc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'programmes' => $programmes
+        ]);
     }
 }

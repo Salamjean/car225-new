@@ -5,17 +5,20 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-
 class Reservation extends Model
 {
     protected $fillable = [
         'user_id',
         'programme_id',
-        'places_reservees',
-        'places',
+        'seat_number',
+        'passager_nom',
+        'passager_prenom',
+        'passager_email',
+        'passager_telephone',
+        'passager_urgence',
+        'is_aller_retour',
         'date_voyage',
-        'nombre_places',
-        'montant_total',
+        'montant',
         'statut',
         'reference',
         'qr_code',
@@ -25,21 +28,19 @@ class Reservation extends Model
         'embarquement_agent_id',
         'embarquement_location',
         'embarquement_status',
-        'passagers',
-        'is_aller_retour',
     ];
 
     protected $casts = [
-        'places_reservees' => 'array',
-        'passagers' => 'array',
-        'montant_total' => 'decimal:2',
+        'montant' => 'decimal:2',
         'is_aller_retour' => 'boolean',
+        'date_voyage' => 'date',
+        'embarquement_scanned_at' => 'datetime',
+        'qr_code_data' => 'array',
     ];
 
     /**
      * Relation avec l'utilisateur
      */
-
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -54,33 +55,36 @@ class Reservation extends Model
     }
 
     /**
-     * Générer une référence unique
+     * Relation avec l'agent qui a scanné
      */
-    public static function generateReference(): string
+    public function agentEmbarquement()
     {
-        return 'RES-' . time() . '-' . strtoupper(Str::random(6));
+        return $this->belongsTo(Agent::class, 'embarquement_agent_id');
     }
 
     /**
-     * Accessor pour les places réservées formatées
+     * Générer une référence unique pour une réservation
+     * Format: RES-YYYYMMDD-RANDOM-SEAT
      */
-    public function getPlacesReserveesFormattedAttribute(): string
+    public static function generateReference(int $seatNumber = 1): string
     {
-        $places = $this->places_reservees ?? [];
-        if (empty($places)) {
-            return 'Aucune';
-        }
+        return 'RES-' . date('Ymd') . '-' . strtoupper(Str::random(6)) . '-' . $seatNumber;
+    }
 
-        sort($places);
-        return implode(', ', $places);
+    /**
+     * Nom complet du passager
+     */
+    public function getPassagerNomCompletAttribute(): string
+    {
+        return $this->passager_prenom . ' ' . $this->passager_nom;
     }
 
     /**
      * Accessor pour le montant formaté
      */
-    public function getMontantTotalFormattedAttribute(): string
+    public function getMontantFormattedAttribute(): string
     {
-        return number_format((float) $this->montant_total, 0, ',', ' ') . ' FCFA';
+        return number_format((float) $this->montant, 0, ',', ' ') . ' FCFA';
     }
 
     /**
@@ -89,6 +93,14 @@ class Reservation extends Model
     public function isConfirmed(): bool
     {
         return $this->statut === 'confirmee';
+    }
+
+    /**
+     * Vérifier si la réservation est terminée (scannée)
+     */
+    public function isTerminee(): bool
+    {
+        return $this->statut === 'terminee';
     }
 
     /**
@@ -105,5 +117,21 @@ class Reservation extends Model
     public function isPending(): bool
     {
         return $this->statut === 'en_attente';
+    }
+
+    /**
+     * Scope pour les réservations confirmées (prêtes à scanner)
+     */
+    public function scopeConfirmees($query)
+    {
+        return $query->where('statut', 'confirmee');
+    }
+
+    /**
+     * Scope pour les réservations terminées (déjà scannées)
+     */
+    public function scopeTerminees($query)
+    {
+        return $query->where('statut', 'terminee');
     }
 }

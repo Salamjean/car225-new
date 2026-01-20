@@ -313,18 +313,18 @@
                                                 <td class="align-middle" style="display: flex; justify-content:center">
                                                     @if($reservation->statut == 'confirmee')
                                                         <span
-                                                            class="badge bg-success bg-opacity-10 text-white border border-success border-opacity-25 px-3 py-2">
+                                                            class="badge bg-warning bg-opacity-10 text-white border border-warning border-opacity-25 px-3 py-2">
                                                             <i class="fas fa-check-circle me-1"></i> Confirmée
                                                         </span>
-                                                    @elseif($reservation->statut == 'en_attente')
+                                                    @elseif($reservation->statut == 'terminee')
                                                         <span
-                                                            class="badge bg-warning bg-opacity-10 text-white border border-warning border-opacity-25 px-3 py-2">
-                                                            <i class="fas fa-clock me-1"></i> En attente
+                                                            class="badge bg-success bg-opacity-10 text-white border border-success border-opacity-25 px-3 py-2">
+                                                            <i class="fas fa-clock me-1"></i> Terminée
                                                         </span>
                                                     @else
-                                                        <span
-                                                            class="badge bg-danger bg-opacity-10 text-white border border-danger border-opacity-25 px-3 py-2">
-                                                            <i class="fas fa-times-circle me-1"></i> Annulée
+                                                       <span
+                                                            class="badge bg-warning bg-opacity-10 text-white border border-warning border-opacity-25 px-3 py-2">
+                                                            <i class="fas fa-check-circle me-1"></i> Confirmée
                                                         </span>
                                                     @endif
 

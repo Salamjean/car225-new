@@ -125,7 +125,7 @@ class ReservationConfirmeeNotification extends Notification
             'reference' => $this->reservation->reference,
             'programme' => $this->programme->point_depart . ' → ' . $this->programme->point_arrive,
             'date_voyage' => $this->reservation->date_voyage,
-            'montant' => $this->reservation->montant_total,
+            'montant' => $this->reservation->montant,
             'status' => 'confirmed',
             'is_aller_retour' => $this->programme->is_aller_retour,
         ];

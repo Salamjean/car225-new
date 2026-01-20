@@ -70,12 +70,17 @@
                             </div>
                         </div>
 
-                        <!-- Bouton de recherche -->
-                        <div class="mt-6 sm:mt-8 text-center">
+                        <!-- Boutons d'action -->
+                        <div class="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-4 justify-center items-center">
                             <button type="submit"
-                                class="bg-[#fea219] text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl font-bold hover:bg-orange-600 transition-all duration-300 transform hover:-translate-y-1 shadow-lg hover:shadow-xl flex items-center justify-center gap-3 mx-auto text-sm sm:text-base">
+                                class="bg-[#fea219] text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl font-bold hover:bg-orange-600 transition-all duration-300 transform hover:-translate-y-1 shadow-lg hover:shadow-xl flex items-center justify-center gap-3 text-sm sm:text-base">
                                 <i class="fas fa-search"></i>
                                 <span>Rechercher un programme</span>
+                            </button>
+                            <button type="button" onclick="openProgramsListModal()"
+                                class="bg-white text-[#fea219] border-2 border-[#fea219] px-6 sm:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl font-bold transition-all duration-300 transform hover:-translate-y-1 shadow-md hover:shadow-xl flex items-center justify-center gap-3 text-sm sm:text-base hover:bg-[#fea219] hover:text-white group">
+                                <i class="fas fa-list group-hover:text-white transition-colors"></i>
+                                <span>Voir tous les programmes</span>
                             </button>
                         </div>
                     </form>
@@ -859,6 +864,9 @@
                 btn.classList.remove('active');
             });
         }
+        
+        // Exposer la fonction globalement pour qu'elle soit accessible depuis les autres scripts
+        window.openReservationModal = showReservationModal;
 
 
 
@@ -1453,7 +1461,269 @@
                 }
             });
         });
+        
+        // ============================================
+        // FONCTION 13: Gestion modale liste programmes
+        // ============================================
+        let currentSelectedProgram = null;
+
+        function openProgramsListModal() {
+            document.getElementById('programsListModal').classList.remove('hidden');
+            fetchProgramsList();
+        }
+
+        function closeProgramsListModal() {
+            document.getElementById('programsListModal').classList.add('hidden');
+        }
+
+        async function fetchProgramsList() {
+            const container = document.getElementById('programsListContent');
+            
+            try {
+                const response = await fetch('{{ route("api.programmes") }}');
+                const data = await response.json();
+                
+                if (data.success && data.programmes.length > 0) {
+                    renderProgramsList(data.programmes);
+                } else {
+                    container.innerHTML = `
+                        <div class="col-span-full text-center py-8">
+                            <i class="fas fa-search text-gray-300 text-4xl"></i>
+                            <p class="mt-2 text-gray-500">Aucun programme disponible pour le moment.</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-8 text-red-500">
+                        <i class="fas fa-exclamation-triangle text-4xl mb-2"></i>
+                        <p>Impossible de charger les programmes.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderProgramsList(programmes) {
+            const container = document.getElementById('programsListContent');
+            container.innerHTML = programmes.map(prog => {
+                const isRecurrent = prog.type_programmation === 'recurrent';
+                const dateDisplay = isRecurrent ? 
+                    '<span class="text-blue-600 font-bold">Récurrent</span>' : 
+                    new Date(prog.date_depart).toLocaleDateString('fr-FR');
+                
+                const recDays = isRecurrent && prog.jours_recurrence ? 
+                    JSON.parse(prog.jours_recurrence).join(', ') : '';
+
+                return `
+                    <div class="bg-blue-50 rounded-lg p-4 border border-blue-100 hover:shadow-md transition-shadow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-bold text-gray-800">${prog.compagnie?.name || 'Compagnie'}</h4>
+                            <span class="text-xs bg-white px-2 py-1 rounded border text-gray-500">${prog.vehicule?.type_range || 'Standard'}</span>
+                        </div>
+                        
+                        <div class="flex items-center gap-2 mb-3 text-sm">
+                            <i class="fas fa-map-marker-alt text-[#fea219]"></i>
+                            <span>${prog.point_depart} <i class="fas fa-arrow-right text-xs mx-1"></i> ${prog.point_arrive}</span>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-3">
+                            <div class="flex items-center gap-1">
+                                <i class="fas fa-calendar-alt text-blue-500"></i>
+                                ${dateDisplay}
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <i class="fas fa-clock text-green-500"></i>
+                                ${prog.heure_depart}
+                            </div>
+                        </div>
+
+                        ${isRecurrent ? `
+                            <div class="text-xs text-blue-600 mb-3 bg-white p-1 rounded">
+                                <i class="fas fa-redo-alt mr-1"></i> ${recDays}
+                            </div>
+                        ` : ''}
+                        
+                        <button onclick='selectProgramFromList(${JSON.stringify(prog).replace(/'/g, "&#39;")})' 
+                            class="w-full bg-[#fea219] text-white py-2 rounded font-bold hover:bg-orange-600 transition-colors text-sm">
+                            Choisir ce programme
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectProgramFromList(program) {
+            currentSelectedProgram = program;
+            
+            if (program.type_programmation === 'recurrent') {
+                document.getElementById('programsListModal').classList.add('hidden');
+                openDateSelectionModal(program);
+            } else {
+                document.getElementById('programsListModal').classList.add('hidden');
+                // Pour ponctuel, utiliser directement la date de départ
+                // S'assurer que la date est au format YYYY-MM-DD
+                const dateDepart = program.date_depart.split('T')[0];
+                openReservationModal(program.id, dateDepart);
+            }
+        }
+
+        // ============================================
+        // FONCTION 14: Gestion modale sélection date
+        // ============================================
+        function openDateSelectionModal(program) {
+            const modal = document.getElementById('dateSelectionModal');
+            const select = document.getElementById('recurrenceDateSelect');
+            
+            // Gestion robuste du champ jours_recurrence (peut être string JSON ou déjà objet)
+            let allowedDays = [];
+            if (program.jours_recurrence) {
+                if (typeof program.jours_recurrence === 'string') {
+                    try {
+                        allowedDays = JSON.parse(program.jours_recurrence);
+                    } catch (e) {
+                        console.error("Erreur parsing jours_recurrence:", e);
+                        allowedDays = [];
+                    }
+                } else if (Array.isArray(program.jours_recurrence)) {
+                    allowedDays = program.jours_recurrence;
+                }
+            }
+            
+            // Normaliser en minuscules pour comparaison
+             allowedDays = allowedDays.map(d => d.toLowerCase());
+            
+            console.log("Jours autorisés:", allowedDays); // Debug
+
+            // Map simple : Index Javascript (0=Dimanche) vers nom du jour
+            const daysMap = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+            
+            // Générer les prochaines dates disponibles
+            const dates = [];
+            const today = new Date();
+            // Commencer à chercher dès aujourd'hui (ou demain si heure passée ? Simplifions : dès aujourd'hui)
+            let currentDate = new Date(today);
+            
+            // Chercher pour les 60 prochains jours pour trouver au moins 10 dates
+            let limit = 60; 
+            
+            while (dates.length < 10 && limit > 0) {
+                const dayIndex = currentDate.getDay(); // 0 à 6
+                const dayName = daysMap[dayIndex];
+                
+                if (allowedDays.includes(dayName)) {
+                    // Vérifier si la date est dans la plage de validité du programme
+                    // Comparaison de dates sans l'heure pour éviter les soucis
+                    const checkDateStr = currentDate.toISOString().split('T')[0];
+                    let isValid = true;
+                    
+                    if (program.date_fin_programmation) {
+                        // Comparaison de string YYYY-MM-DD fonctionne très bien
+                        if (checkDateStr > program.date_fin_programmation) isValid = false;
+                    }
+                    
+                    // Optionnel: ne pas proposer aujourd'hui si l'heure est passée
+                    // (Laissez simple pour l'instant)
+
+                    if (isValid) {
+                        dates.push({
+                            value: checkDateStr,
+                            label: currentDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+                        });
+                    }
+                }
+                
+                // Jour suivant
+                currentDate.setDate(currentDate.getDate() + 1);
+                limit--;
+            }
+            
+            // Remplir le select
+            select.innerHTML = '<option value="">Choisir une date...</option>';
+            if (dates.length > 0) {
+                dates.forEach(d => {
+                    // Capitaliser la première lettre
+                    const label = d.label.charAt(0).toUpperCase() + d.label.slice(1);
+                    select.innerHTML += `<option value="${d.value}">${label}</option>`;
+                });
+            } else {
+                select.innerHTML += '<option value="" disabled>Aucune date disponible prochainement</option>';
+            }
+            
+            document.getElementById('recurrenceDateError').classList.add('hidden');
+            modal.classList.remove('hidden');
+        }
+
+        function closeDateSelectionModal() {
+            document.getElementById('dateSelectionModal').classList.add('hidden');
+            currentSelectedProgram = null;
+        }
+
+        function confirmDateSelection() {
+            const select = document.getElementById('recurrenceDateSelect');
+            const selectedDate = select.value;
+            
+            if (!selectedDate) {
+                document.getElementById('recurrenceDateError').classList.remove('hidden');
+                return;
+            }
+
+            document.getElementById('dateSelectionModal').classList.add('hidden');
+            openReservationModal(currentSelectedProgram.id, selectedDate);
+        }
     </script>
+
+    <!-- Modal Liste des programmes -->
+    <div id="programsListModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-[60]">
+        <div class="relative top-20 mx-auto p-5 border w-11/12 lg:w-3/4 shadow-lg rounded-md bg-white">
+            <div class="flex flex-col gap-4">
+                <div class="flex justify-between items-center border-b pb-4">
+                    <h3 class="text-xl font-bold text-gray-900">Tous les programmes disponibles</h3>
+                    <button onclick="closeProgramsListModal()" class="text-gray-400 hover:text-gray-500">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <div id="programsListContent" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[70vh] overflow-y-auto p-2">
+                    <!-- Le contenu sera injecté via JS -->
+                    <div class="col-span-full text-center py-8">
+                        <i class="fas fa-spinner fa-spin text-4xl text-[#fea219]"></i>
+                        <p class="mt-2 text-gray-500">Chargement des programmes...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Sélection de date pour récurrents -->
+    <div id="dateSelectionModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-[70] flex items-center justify-center">
+        <div class="relative w-96 mx-auto p-6 border shadow-2xl rounded-2xl bg-white">
+            <div class="flex flex-col gap-4">
+                <div class="border-b pb-4">
+                    <h3 class="text-xl font-bold text-gray-900">Choisir une date de voyage</h3>
+                    <p class="text-sm text-gray-500 mt-1">Ce programme est récurrent.</p>
+                </div>
+                
+                <div class="py-4">
+                    <label for="recurrenceDateSelect" class="block text-sm font-medium text-gray-700 mb-2">Sélectionnez une date parmi les prochains jours disponibles :</label>
+                    <div class="relative">
+                        <select id="recurrenceDateSelect" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent appearance-none bg-white">
+                            <!-- Options générées par JS -->
+                        </select>
+                        <div class="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                            <i class="fas fa-chevron-down text-gray-400"></i>
+                        </div>
+                    </div>
+                    <p id="recurrenceDateError" class="text-red-500 text-xs mt-1 hidden">Veuillez choisir une date.</p>
+                </div>
+
+                <div class="flex justify-end gap-3 border-t pt-4">
+                    <button onclick="closeDateSelectionModal()" class="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors">Annuler</button>
+                    <button onclick="confirmDateSelection()" class="px-5 py-2.5 bg-[#fea219] text-white rounded-xl font-bold hover:bg-orange-600 transition-colors shadow-lg hover:shadow-xl">Confirmer</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Intégration Google Maps Autocomplete -->
     <script

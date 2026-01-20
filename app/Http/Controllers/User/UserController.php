@@ -19,7 +19,7 @@ class UserController extends Controller
 
         $totalSpent = Reservation::where('user_id', $user->id)
             ->where('statut', 'confirmee')
-            ->sum('montant_total');
+            ->sum('montant');
 
         $activeReservations = Reservation::where('user_id', $user->id)
             ->where('statut', 'confirmee')

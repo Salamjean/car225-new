@@ -168,22 +168,22 @@
                 <div class="card-body text-center">
                     @if($reservation->statut == 'confirmee')
                         <div class="status-confirmed mb-3">
-                            <i class="fas fa-check-circle fa-4x text-success"></i>
+                            <i class="fas fa-check-circle fa-4x text-warning"></i>
                         </div>
-                        <h4 class="text-success mb-2">Réservation Confirmée</h4>
+                        <h4 class="text-warning mb-2">Réservation Confirmée</h4>
                         <p class="text-muted">Votre réservation a été confirmée avec succès.</p>
-                    @elseif($reservation->statut == 'en_attente')
+                    @elseif($reservation->statut == 'terminee')
                         <div class="status-pending mb-3">
-                            <i class="fas fa-clock fa-4x text-warning"></i>
+                            <i class="fas fa-clock fa-4x text-success"></i>
                         </div>
-                        <h4 class="text-warning mb-2">En Attente de Confirmation</h4>
-                        <p class="text-muted">Votre réservation est en cours de traitement.</p>
+                        <h4 class="text-success mb-2">Réservation Terminée</h4>
+                        <p class="text-muted">Votre réservation est terminée.</p>
                     @else
-                        <div class="status-cancelled mb-3">
-                            <i class="fas fa-times-circle fa-4x text-danger"></i>
+                        <div class="status-confirmed mb-3">
+                            <i class="fas fa-check-circle fa-4x text-warning"></i>
                         </div>
-                        <h4 class="text-danger mb-2">Réservation Annulée</h4>
-                        <p class="text-muted">Cette réservation a été annulée.</p>
+                        <h4 class="text-warning mb-2">Réservation Confirmée</h4>
+                        <p class="text-muted">Votre réservation a été confirmée avec succès.</p>
                     @endif
 
                     <div class="mt-4">

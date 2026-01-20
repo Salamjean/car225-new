@@ -165,6 +165,14 @@ Route::prefix('agent')->group(function () {
 Route::middleware('agent')->prefix('agent')->group(function () {
     Route::get('/dashboard', [AgentDashboard::class, 'dashboard'])->name('agent.dashboard');
     Route::get('/logout', [AgentDashboard::class, 'logout'])->name('agent.logout');
+
+    // Gestion des réservations
+    Route::prefix('reservations')->group(function () {
+        Route::get('/', [App\Http\Controllers\Agent\ReservationController::class, 'index'])->name('agent.reservations.index');
+        Route::post('/scan', [App\Http\Controllers\Agent\ReservationController::class, 'scan'])->name('agent.reservations.scan');
+        Route::post('/search', [App\Http\Controllers\Agent\ReservationController::class, 'search'])->name('agent.reservations.search');
+        Route::post('/confirm', [App\Http\Controllers\Agent\ReservationController::class, 'confirm'])->name('agent.reservations.confirm');
+    });
 });
 
 //Les routes de gestion du @user
@@ -191,6 +199,7 @@ Route::middleware('auth')->prefix('user')->group(function () {
         Route::get('/reservations/{reservation}/download', [ReservationController::class, 'download'])->name('reservations.download');
         Route::get('/reservations/{reservation}/ticket', [ReservationController::class, 'ticket'])->name('reservations.ticket');
         Route::delete('/reservations/{reservation}', [ReservationController::class, 'cancel'])->name('reservations.cancel');
+        Route::get('/api/programmes', [ReservationController::class, 'apiProgrammes'])->name('api.programmes');
     });
     Route::get('/programmes/{programme}/recalculate-status', [ReservationController::class, 'recalculateProgramStatus'])->name('programmes.recalculate-status');
     Route::get('/programmes/{programme}/status-for-date/{date}', [ReservationController::class, 'getProgramStatusForDate'])->name('programmes.status-for-date');

@@ -37,12 +37,12 @@
                     <div class="mdc-expansion-panel" id="ui-sub-reservations">
                         <nav class="mdc-list mdc-drawer-submenu">
                             <div class="mdc-list-item mdc-drawer-item">
-                                <a class="mdc-drawer-link" href="#">
+                                <a class="mdc-drawer-link" href="{{ route('agent.reservations.index') }}#en-cours">
                                     En cours
                                 </a>
                             </div>
                             <div class="mdc-list-item mdc-drawer-item">
-                                <a class="mdc-drawer-link" href="#">
+                                <a class="mdc-drawer-link" href="{{ route('agent.reservations.index') }}#terminees">
                                     Terminées
                                 </a>
                             </div>

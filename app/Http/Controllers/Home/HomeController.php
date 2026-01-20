@@ -154,10 +154,20 @@ class HomeController extends Controller
     public function all()
     {
         $programmes = Programme::with(['compagnie', 'vehicule', 'itineraire'])
-            ->whereDate('date_depart', '>=', now()->format('Y-m-d'))
+            ->where(function ($query) {
+                $query->whereNull('date_fin_programmation')
+                      ->orWhereDate('date_fin_programmation', '>=', now());
+            })
+            ->where(function ($query) {
+                $query->where(function ($sub) {
+                    $sub->where('type_programmation', 'ponctuel')
+                        ->whereDate('date_depart', '>=', now());
+                })
+                ->orWhere('type_programmation', 'recurrent');
+            })
             ->orderBy('date_depart', 'asc')
             ->orderBy('heure_depart', 'asc')
-            ->paginate(15);
+            ->paginate(12);
 
         return view('home.programmes.all', compact('programmes'));
     }
@@ -165,9 +175,9 @@ class HomeController extends Controller
     /**
      * Afficher les détails d'un programme
      */
-    public function showProgramme(Programme $programme)
+    public function show(Programme $programme)
     {
-        $programme->load(['compagnie', 'vehicule', 'itineraire', 'personnel', 'convoyeur']);
+        $programme->load(['compagnie', 'vehicule', 'itineraire', 'chauffeur', 'convoyeur']);
         return view('home.programmes.show', compact('programme'));
     }
 

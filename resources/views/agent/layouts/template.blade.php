@@ -55,5 +55,12 @@
   <!-- Custom js for this page-->
   <script src="{{asset('assetsPoster/assets/js/dashboard.js')}}"></script>
   <!-- End custom js for this page-->
+  
+  <!-- Bootstrap 4 JS for modals and other components -->
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.min.js"></script>
+  
+  <!-- Page-specific scripts -->
+  @stack('scripts')
 </body>
 </html> 
