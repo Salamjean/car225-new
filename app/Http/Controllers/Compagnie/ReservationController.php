@@ -22,21 +22,19 @@ class ReservationController extends Controller
         })->with(['programme', 'user', 'programme.itineraire']);
 
         // Séparer "En cours" et "Terminées"
-        // En cours: 'en_attente', 'confirmee'
-        // Terminées: 'annulee', ou date passée
+        // En cours: 'en_attente', 'confirmee' ET date_voyage >= aujourd'hui
+        // Terminées: 'terminee', 'annulee', OU date_voyage passée
 
         $reservationsEnCours = (clone $query)
-            ->where(function ($q) {
-                $q->where('statut', 'en_attente')
-                    ->orWhere('statut', 'confirmee');
-            })
+            ->whereIn('statut', ['en_attente', 'confirmee'])
             ->whereDate('date_voyage', '>=', now())
             ->orderBy('date_voyage', 'asc')
             ->paginate(10, ['*'], 'page_cours');
 
+        // Terminées = statut terminee OU statut annulee OU date passée (peu importe le statut)
         $reservationsTerminees = (clone $query)
             ->where(function ($q) {
-                $q->where('statut', 'annulee')
+                $q->whereIn('statut', ['terminee', 'annulee'])
                     ->orWhereDate('date_voyage', '<', now());
             })
             ->orderBy('date_voyage', 'desc')

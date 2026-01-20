@@ -9,7 +9,7 @@
                     <!-- En-tête avec bouton Scanner -->
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h6 class="card-title mb-0">Gestion des Réservations</h6>
-                        <button type="button" class="btn btn-primary btn-lg" id="openScannerBtn" style="font-size: 1.2rem; padding: 15px 30px;">
+                        <button type="button" class="btn btn-primary btn-lg" id="openVehicleSelectBtn" style="font-size: 1.2rem; padding: 15px 30px;">
                             <i class="material-icons mr-2" style="font-size: 28px; vertical-align: middle;">qr_code_scanner</i>
                             Scanner un QR Code
                         </button>
@@ -117,6 +117,7 @@
                                             <th>Passager</th>
                                             <th>Place</th>
                                             <th>Trajet</th>
+                                            <th>Véhicule</th>
                                             <th>Scanné le</th>
                                         </tr>
                                     </thead>
@@ -128,6 +129,13 @@
                                                 <td><span class="badge badge-success">{{ $reservation->seat_number }}</span></td>
                                                 <td>{{ $reservation->programme->point_depart ?? '?' }} → {{ $reservation->programme->point_arrive ?? '?' }}</td>
                                                 <td>
+                                                    @if($reservation->embarquementVehicule)
+                                                        <span class="badge badge-info">{{ $reservation->embarquementVehicule->immatriculation }}</span>
+                                                    @else
+                                                        -
+                                                    @endif
+                                                </td>
+                                                <td>
                                                     @if($reservation->embarquement_scanned_at)
                                                         {{ \Carbon\Carbon::parse($reservation->embarquement_scanned_at)->format('d/m/Y H:i') }}
                                                     @else
@@ -137,7 +145,7 @@
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="5" class="text-center py-4">
+                                                <td colspan="6" class="text-center py-4">
                                                     <i class="material-icons" style="font-size: 48px; color: #ccc;">inventory_2</i>
                                                     <p class="text-muted mt-2">Aucune réservation scannée.</p>
                                                 </td>
@@ -149,6 +157,71 @@
                         </div>
                     </div>
 
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Sélection Véhicule/Programme -->
+    <div class="modal fade" id="vehicleSelectModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header" style="background: #28a745; color: white;">
+                    <h5 class="modal-title">
+                        <i class="material-icons mr-2" style="vertical-align: middle;">directions_bus</i>
+                        Sélectionner le véhicule
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted mb-3">Choisissez le programme/véhicule pour lequel vous allez scanner les passagers:</p>
+                    
+                    <div id="programmesList">
+                        @if(isset($programmesDuJour) && $programmesDuJour->count() > 0)
+                            @foreach($programmesDuJour as $prog)
+                                <div class="programme-card p-3 mb-2 border rounded cursor-pointer" 
+                                     data-programme-id="{{ $prog->id }}"
+                                     data-vehicule-id="{{ $prog->vehicule_id }}"
+                                     data-vehicule-immat="{{ $prog->vehicule->immatriculation ?? 'N/A' }}"
+                                     style="cursor: pointer; transition: all 0.2s;"
+                                     onclick="selectProgramme(this)">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>{{ $prog->point_depart }} → {{ $prog->point_arrive }}</strong>
+                                            <br>
+                                            <small class="text-muted">
+                                                <i class="material-icons" style="font-size: 14px; vertical-align: middle;">schedule</i>
+                                                {{ $prog->heure_depart }}
+                                            </small>
+                                        </div>
+                                        <div class="text-right">
+                                            @if($prog->vehicule)
+                                                <span class="badge badge-primary">{{ $prog->vehicule->immatriculation }}</span>
+                                                <br>
+                                                <small class="text-muted">{{ $prog->vehicule->marque }} {{ $prog->vehicule->modele }}</small>
+                                            @else
+                                                <span class="badge badge-secondary">Pas de véhicule</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        @else
+                            <div class="alert alert-warning text-center">
+                                <i class="material-icons" style="font-size: 36px;">event_busy</i>
+                                <p class="mb-0 mt-2">Aucun programme prévu aujourd'hui</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-success" id="continueToScanBtn" disabled>
+                        <i class="material-icons mr-1" style="vertical-align: middle;">qr_code_scanner</i>
+                        Continuer vers le scan
+                    </button>
                 </div>
             </div>
         </div>
@@ -168,6 +241,12 @@
                     </button>
                 </div>
                 <div class="modal-body">
+                    <!-- Info véhicule sélectionné -->
+                    <div id="selectedVehicleInfo" class="alert alert-info mb-3" style="display: none;">
+                        <i class="material-icons mr-2" style="vertical-align: middle;">directions_bus</i>
+                        Véhicule: <strong id="selectedVehicleText"></strong>
+                    </div>
+                    
                     <div id="reader" style="width: 100%; min-height: 350px;"></div>
                     <p class="text-center mt-3 text-muted">
                         <i class="material-icons" style="vertical-align: middle;">camera_alt</i>
@@ -189,11 +268,28 @@
     <!-- HTML5-QRCode Library -->
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
+    <style>
+        .programme-card:hover {
+            background-color: #e8f5e9;
+            border-color: #28a745 !important;
+        }
+        .programme-card.selected {
+            background-color: #c8e6c9;
+            border-color: #28a745 !important;
+            box-shadow: 0 0 0 2px #28a745;
+        }
+    </style>
+
     <script>
+        // Variables globales pour la sélection
+        var selectedVehiculeId = null;
+        var selectedProgrammeId = null;
+        var selectedVehiculeImmat = null;
+        var currentReference = null;
+
         $(document).ready(function() {
             var html5Qrcode = null;
             var isScanning = false;
-            var currentReference = null;
 
             // Handle hash for tabs
             var hash = window.location.hash;
@@ -201,9 +297,23 @@
                 $('a[href="' + hash + '"]').tab('show');
             }
 
-            // Ouvrir le scanner
-            $('#openScannerBtn').click(function() {
-                $('#qrScannerModal').modal('show');
+            // Ouvrir le modal de sélection du véhicule
+            $('#openVehicleSelectBtn').click(function() {
+                $('#vehicleSelectModal').modal('show');
+            });
+
+            // Continuer vers le scan après sélection
+            $('#continueToScanBtn').click(function() {
+                if (!selectedVehiculeId) {
+                    alert('Veuillez sélectionner un programme/véhicule');
+                    return;
+                }
+                $('#vehicleSelectModal').modal('hide');
+                setTimeout(function() {
+                    $('#selectedVehicleText').text(selectedVehiculeImmat);
+                    $('#selectedVehicleInfo').show();
+                    $('#qrScannerModal').modal('show');
+                }, 300);
             });
 
             // Function to start camera
@@ -279,7 +389,9 @@
                     method: 'POST',
                     data: {
                         _token: '{{ csrf_token() }}',
-                        reference: reference
+                        reference: reference,
+                        vehicule_id: selectedVehiculeId,
+                        programme_id: selectedProgrammeId
                     },
                     success: function(response) {
                         if (response.success) {
@@ -330,6 +442,10 @@
                                 <td>Téléphone:</td>
                                 <td>${reservation.passager_telephone}</td>
                             </tr>
+                            <tr>
+                                <td>Véhicule:</td>
+                                <td><span class="badge badge-success">${selectedVehiculeImmat}</span></td>
+                            </tr>
                         </table>
                     </div>
                 `;
@@ -340,7 +456,17 @@
 
             // Confirmer l'embarquement
             $('#confirmEmbarquementBtn').click(function() {
-                if (!currentReference) return;
+                console.log('currentReference:', currentReference);
+                console.log('selectedVehiculeId:', selectedVehiculeId);
+                
+                if (!currentReference) {
+                    alert('Référence manquante pour la confirmation. currentReference=' + currentReference);
+                    return;
+                }
+                if (!selectedVehiculeId) {
+                    alert('Véhicule non sélectionné. selectedVehiculeId=' + selectedVehiculeId);
+                    return;
+                }
 
                 var btn = $(this);
                 btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm mr-2"></span>Confirmation...');
@@ -350,7 +476,8 @@
                     method: 'POST',
                     data: {
                         _token: '{{ csrf_token() }}',
-                        reference: currentReference
+                        reference: currentReference,
+                        vehicule_id: selectedVehiculeId
                     },
                     success: function(response) {
                         if (response.success) {
@@ -386,6 +513,34 @@
                 stopCamera();
                 $('#reader').html('');
             });
+
+            // Reset sélection visuelle quand on ferme le modal véhicule (mais garder les valeurs!)
+            $('#vehicleSelectModal').on('hidden.bs.modal', function () {
+                // Ne reset que l'affichage visuel, pas les variables
+                $('.programme-card').removeClass('selected');
+                $('#continueToScanBtn').prop('disabled', true);
+            });
         });
+
+        // Fonction pour sélectionner un programme
+        function selectProgramme(element) {
+            var $el = $(element);
+            var vehiculeId = $el.data('vehicule-id');
+            
+            if (!vehiculeId) {
+                alert('Ce programme n\'a pas de véhicule assigné');
+                return;
+            }
+            
+            $('.programme-card').removeClass('selected');
+            $el.addClass('selected');
+            
+            // Mettre à jour les variables globales
+            selectedVehiculeId = vehiculeId;
+            selectedProgrammeId = $el.data('programme-id');
+            selectedVehiculeImmat = $el.data('vehicule-immat');
+            
+            $('#continueToScanBtn').prop('disabled', false);
+        }
     </script>
 @endpush

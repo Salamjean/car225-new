@@ -26,6 +26,7 @@ class Reservation extends Model
         'qr_code_data',
         'embarquement_scanned_at',
         'embarquement_agent_id',
+        'embarquement_vehicule_id',
         'embarquement_location',
         'embarquement_status',
     ];
@@ -60,6 +61,14 @@ class Reservation extends Model
     public function agentEmbarquement()
     {
         return $this->belongsTo(Agent::class, 'embarquement_agent_id');
+    }
+
+    /**
+     * Relation avec le véhicule d'embarquement
+     */
+    public function embarquementVehicule()
+    {
+        return $this->belongsTo(Vehicule::class, 'embarquement_vehicule_id');
     }
 
     /**

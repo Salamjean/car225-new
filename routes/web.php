@@ -169,8 +169,11 @@ Route::middleware('agent')->prefix('agent')->group(function () {
     // Gestion des réservations
     Route::prefix('reservations')->group(function () {
         Route::get('/', [App\Http\Controllers\Agent\ReservationController::class, 'index'])->name('agent.reservations.index');
+        Route::get('/recherche', [App\Http\Controllers\Agent\ReservationController::class, 'recherchePage'])->name('agent.reservations.recherche');
+        Route::get('/programmes-for-scan', [App\Http\Controllers\Agent\ReservationController::class, 'getProgrammesForScan'])->name('agent.programmes.for-scan');
         Route::post('/scan', [App\Http\Controllers\Agent\ReservationController::class, 'scan'])->name('agent.reservations.scan');
         Route::post('/search', [App\Http\Controllers\Agent\ReservationController::class, 'search'])->name('agent.reservations.search');
+        Route::post('/search-by-reference', [App\Http\Controllers\Agent\ReservationController::class, 'searchByReference'])->name('agent.reservations.search-by-reference');
         Route::post('/confirm', [App\Http\Controllers\Agent\ReservationController::class, 'confirm'])->name('agent.reservations.confirm');
     });
 });

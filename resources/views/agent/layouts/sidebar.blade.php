@@ -46,6 +46,11 @@
                                     Terminées
                                 </a>
                             </div>
+                            <div class="mdc-list-item mdc-drawer-item">
+                                <a class="mdc-drawer-link" href="{{ route('agent.reservations.recherche') }}">
+                                    <i class="fas fa-search mr-2"></i> Rechercher
+                                </a>
+                            </div>
                         </nav>
                     </div>
                 </div>

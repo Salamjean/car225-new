@@ -51,7 +51,7 @@
                     <div>
                         <p class="text-sm font-medium text-gray-600">Revenus En Cours</p>
                         <p class="text-xl font-bold text-gray-900 mt-1">
-                            {{ number_format($reservationsEnCours->sum('montant_total'), 0, ',', ' ') }} FCFA
+                            {{ number_format($reservationsEnCours->sum('montant'), 0, ',', ' ') }} FCFA
                         </p>
                     </div>
                     <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
@@ -84,10 +84,11 @@
                             <table class="w-full">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Référence</th>
-                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Client</th>
+                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Réf</th>
+                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Passager</th>
+                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Trajet</th>
                                         <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Date & Heure</th>
-                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Passagers</th>
+                                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Place</th>
                                         <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Montant</th>
                                         <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Statut</th>
                                     </tr>
@@ -96,48 +97,51 @@
                                     @foreach($reservationsTerminees as $reservation)
                                     <tr class="hover:bg-gray-50 transition-colors duration-200">
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="font-bold text-gray-900">{{ $reservation->reference }}</span>
+                                            <span class="font-mono text-sm bg-gray-100 px-2 py-1 rounded">{{ $reservation->reference }}</span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm font-medium text-gray-900">{{ $reservation->user->name }}</div>
-                                            <div class="text-sm text-gray-500">{{ $reservation->user->email }}</div>
+                                            <div class="text-sm font-bold text-gray-900">{{ $reservation->passager_prenom }} {{ $reservation->passager_nom }}</div>
+                                            <div class="text-xs text-gray-500">{{ $reservation->passager_telephone ?? 'N/A' }}</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            @if($reservation->programme)
+                                                <div class="text-sm text-gray-900">
+                                                    {{ $reservation->programme->point_depart }} → {{ $reservation->programme->point_arrive }}
+                                                </div>
+                                            @else
+                                                <span class="text-gray-400">-</span>
+                                            @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-center">
                                             <div class="text-sm font-bold text-gray-900">
                                                 {{ \Carbon\Carbon::parse($reservation->date_voyage)->format('d/m/Y') }}
                                             </div>
-                                            <div class="text-sm text-gray-500">
-                                                {{ \Carbon\Carbon::parse($reservation->programme->heure_depart)->format('H:i') }}
+                                            @if($reservation->programme)
+                                            <div class="text-xs text-gray-500">
+                                                {{ $reservation->programme->heure_depart }}
                                             </div>
-                                        </td>
-                                        <td class="px-6 py-4 text-center">
-                                            @php 
-                                                $passagersList = is_array($reservation->passagers) ? $reservation->passagers : json_decode($reservation->passagers, true);
-                                                $vehicule = $reservation->programme->vehicule ?? null;
-                                            @endphp
-                                            <button onclick='showReservationFullDetails(
-                                                @json($passagersList), 
-                                                @json($vehicule), 
-                                                "{{ \Carbon\Carbon::parse($reservation->date_voyage)->format("d/m/Y") }}", 
-                                                "{{ \Carbon\Carbon::parse($reservation->programme->heure_depart)->format("H:i") }}",
-                                                "{{ $reservation->reference }}"
-                                            )'
-                                            class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded-full text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors">
-                                                <i class="mdi mdi-account-group mr-2 text-gray-500"></i>
-                                                {{ count($passagersList ?? []) }} Passager(s)
-                                            </button>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center font-bold text-gray-600">
-                                            {{ number_format($reservation->montant_total, 0, ',', ' ') }} FCFA
+                                            @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            @if($reservation->statut == 'annulee')
+                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 font-bold rounded">
+                                                {{ $reservation->seat_number }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-center font-bold text-gray-600">
+                                            {{ number_format($reservation->montant, 0, ',', ' ') }} F
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                                            @if($reservation->statut == 'terminee')
+                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                    <i class="mdi mdi-check-circle mr-1"></i> Scannée
+                                                </span>
+                                            @elseif($reservation->statut == 'annulee')
                                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                                    Annulée
+                                                    <i class="mdi mdi-close-circle mr-1"></i> Annulée
                                                 </span>
                                             @elseif(\Carbon\Carbon::parse($reservation->date_voyage)->isPast())
                                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                                    Terminée
+                                                    <i class="mdi mdi-clock-outline mr-1"></i> Passée
                                                 </span>
                                             @else
                                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -167,10 +171,10 @@
                             <table class="w-full">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Client</th>
-                                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Trajet</th>
+                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Passager</th>
+                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Trajet</th>
                                         <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Date & Heure</th>
-                                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Détails</th>
+                                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Place</th>
                                         <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Montant</th>
                                         <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Statut</th>
                                     </tr>
@@ -178,57 +182,47 @@
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     @foreach($reservationsEnCours as $reservation)
                                     <tr class="hover:bg-orange-50 transition-colors duration-200 group">
-                                        <td class="px-6 py-4 whitespace-nowrap" style="display: flex; align-items: center; justify-content: center;">
+                                        <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="flex items-center">
                                                 <div class="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-500 font-bold mr-3">
-                                                    {{ substr($reservation->user->name, 0, 1) }}
+                                                    {{ substr($reservation->passager_prenom, 0, 1) }}
                                                 </div>
                                                 <div>
-                                                    <div class="text-sm font-bold text-gray-900">{{ $reservation->user->name.' '.$reservation->user->prenom }}</div>
-                                                    <div class="text-xs text-gray-500">{{ $reservation->user->contact ?? 'Inconnu' }}</div>
+                                                    <div class="text-sm font-bold text-gray-900">{{ $reservation->passager_prenom }} {{ $reservation->passager_nom }}</div>
+                                                    <div class="text-xs text-gray-500">{{ $reservation->passager_telephone ?? 'N/A' }}</div>
+                                                    <div class="text-xs text-gray-400 font-mono">{{ $reservation->reference }}</div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            @if($reservation->programme->itineraire)
-                                                <div class="text-sm font-medium text-gray-900" style="display: flex; align-items: center; justify-content: center;">
-                                                    {{ $reservation->programme->itineraire->point_depart }} 
+                                            @if($reservation->programme)
+                                                <div class="text-sm font-medium text-gray-900">
+                                                    {{ $reservation->programme->point_depart }} 
                                                     <i class="mdi mdi-arrow-right mx-1 text-gray-400"></i>
-                                                    {{ $reservation->programme->itineraire->point_arrive }}
+                                                    {{ $reservation->programme->point_arrive }}
                                                 </div>
                                             @else
                                                 <span class="text-gray-400 italic">Trajet inconnu</span>
                                             @endif
-                                            <div class="text-xs text-gray-500 mt-1 text-center" >Ref: <span class="font-mono">{{ $reservation->reference }}</span></div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-center">
                                             <div class="text-sm font-bold text-gray-900">
                                                 {{ \Carbon\Carbon::parse($reservation->date_voyage)->format('d M') }}
                                             </div>
+                                            @if($reservation->programme)
                                             <div class="text-xs text-gray-500 font-medium bg-gray-100 rounded-lg px-2 py-1 inline-block mt-1">
-                                                {{ \Carbon\Carbon::parse($reservation->programme->heure_depart)->format('H:i') }}
+                                                {{ $reservation->programme->heure_depart }}
                                             </div>
+                                            @endif
                                         </td>
-                                        <td class="px-6 py-4 text-center">
-                                            @php 
-                                                $passagersList = is_array($reservation->passagers) ? $reservation->passagers : json_decode($reservation->passagers, true);
-                                                $vehicule = $reservation->programme->vehicule ?? null;
-                                            @endphp
-                                            <button onclick='showReservationFullDetails(
-                                                @json($passagersList), 
-                                                @json($vehicule), 
-                                                "{{ \Carbon\Carbon::parse($reservation->date_voyage)->format("d/m/Y") }}", 
-                                                "{{ \Carbon\Carbon::parse($reservation->programme->heure_depart)->format("H:i") }}",
-                                                "{{ $reservation->reference }}"
-                                            )'
-                                            class="inline-flex items-center px-3 py-1.5 border border-orange-200 shadow-sm text-xs font-medium rounded-full text-orange-700 bg-orange-50 hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors">
-                                                <i class="mdi mdi-eye mr-2"></i>
-                                                Voir {{ count($passagersList ?? []) }} Passager(s)
-                                            </button>
+                                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                                            <span class="inline-flex items-center justify-center w-10 h-10 bg-orange-100 text-orange-800 font-bold rounded-lg text-lg">
+                                                {{ $reservation->seat_number }}
+                                            </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-center">
                                             <div class="text-sm font-bold text-green-600">
-                                                {{ number_format($reservation->montant_total, 0, ',', ' ') }} F
+                                                {{ number_format($reservation->montant, 0, ',', ' ') }} F
                                             </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-center">
@@ -241,7 +235,7 @@
                                                     <span class="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span> En attente
                                                 </span>
                                             @else
-                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                                     {{ ucfirst($reservation->statut) }}
                                                 </span>
                                             @endif
@@ -265,87 +259,4 @@
         </div>
     </div>
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-    function showReservationFullDetails(passagers, vehicule, dateVoyage, heureDepart, reference) {
-        if (!passagers) passagers = [];
-        
-        // Construction de la section Véhicule
-        let vehiculeHtml = '';
-        if (vehicule) {
-            vehiculeHtml = `
-                <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-4 text-left">
-                    <div class="flex items-center mb-2">
-                        <i class="mdi mdi-bus text-orange-500 text-xl mr-2"></i>
-                        <span class="font-bold text-gray-800">Détails du Véhicule</span>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2 text-sm">
-                        <div>
-                            <span class="block text-xs text-gray-500">Marque/Modèle</span>
-                            <span class="font-medium text-gray-900">${vehicule.marque} ${vehicule.modele}</span>
-                        </div>
-                        <div>
-                            <span class="block text-xs text-gray-500">Immatriculation</span>
-                            <span class="font-medium text-gray-900 uppercase bg-white border px-1 rounded inline-block">${vehicule.immatriculation}</span>
-                        </div>
-                    </div>
-                    <div class="mt-2 text-sm border-t pt-2 border-gray-200">
-                        <div class="flex justify-between">
-                            <span class="text-gray-500">Date du voyage</span>
-                            <span class="font-bold text-gray-900">${dateVoyage} à ${heureDepart}</span>
-                        </div>
-                    </div>
-                </div>
-            `;
-        } else {
-             vehiculeHtml = `
-                <div class="bg-yellow-50 p-3 rounded-lg border border-yellow-200 mb-4 text-left">
-                    <span class="text-sm text-yellow-700 italic">Aucune information de véhicule disponible</span>
-                </div>
-            `;
-        }
-
-        // Construction de la liste des passagers
-        let passagersHtml = '<div class="text-left"><h4 class="font-bold text-gray-700 mb-2 flex items-center"><i class="mdi mdi-account-group mr-2"></i>Liste des Passagers (' + passagers.length + ')</h4><div class="space-y-2 max-h-60 overflow-y-auto pr-1">';
-        
-        passagers.forEach(p => {
-            passagersHtml += `
-                <div class="flex justify-between items-center bg-white border border-gray-200 p-2.5 rounded-lg shadow-sm hover:border-orange-300 transition-colors">
-                    <div class="text-left">
-                        <div class="font-bold text-gray-800">${p.prenom} ${p.nom}</div>
-                        <div class="text-xs text-gray-500 flex items-center mt-0.5">
-                            <i class="mdi mdi-phone mr-1"></i> ${p.telephone || 'Non renseigné'}
-                        </div>
-                    </div>
-                    <div class="flex flex-col items-end">
-                        <span class="text-xs font-mono bg-orange-100 text-orange-800 border border-orange-200 px-2 py-1 rounded mb-1">Siège ${p.seat_number || '?'}</span>
-                    </div>
-                </div>
-            `;
-        });
-        passagersHtml += '</div></div>';
-
-        Swal.fire({
-            title: `<div class="flex flex-col pb-2 border-b">
-                        <span class="text-lg text-gray-600 font-medium">Réservation</span>
-                        <span class="text-2xl font-bold text-orange-600">${reference}</span>
-                    </div>`,
-            html: `
-                <div class="mt-4">
-                    ${vehiculeHtml}
-                    ${passagersHtml}
-                </div>
-            `,
-            width: 550,
-            showCloseButton: true,
-            showConfirmButton: false,
-            focusConfirm: false,
-            customClass: {
-                popup: 'rounded-2xl shadow-2xl',
-                closeButton: 'text-gray-400 hover:text-gray-600'
-            }
-        });
-    }
-</script>
 @endsection
