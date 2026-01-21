@@ -25,7 +25,7 @@
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
             overflow: hidden;
             position: relative;
-            border: 5px solid #fea219;
+            border: 5px solid #e94e1a;
             /* Couleur de la bordure */
         }
 
@@ -36,14 +36,14 @@
         .header-section {
             text-align: center;
             margin-bottom: 30px;
-            border-bottom: 2px solid #fea219;
+            border-bottom: 2px solid #e94e1a;
             padding-bottom: 20px;
         }
 
         .ticket-title {
             font-size: 28px;
             font-weight: 800;
-            color: #fea219;
+            color: #e94e1a;
             margin-bottom: 10px;
         }
 
@@ -139,7 +139,7 @@
                 <p>Date: {{ date('d/m/Y', strtotime($reservation->date_voyage)) }}</p>
                 @if($seatNumber)
                     <p
-                        style="background: #fea219; color: white; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 25px; text-align: center; margin-top: 15px;">
+                        style="background: #e94e1a; color: white; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 25px; text-align: center; margin-top: 15px;">
                         <i class="fas fa-chair"></i> Place N° {{ $seatNumber }}
                     </p>
                 @endif

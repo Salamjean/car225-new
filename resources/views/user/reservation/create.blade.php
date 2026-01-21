@@ -13,12 +13,12 @@
                             <!-- Point de départ -->
                             <div class="relative">
                                 <label for="point_depart" class="block text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-map-marker-alt text-[#fea219] mr-2"></i>Point de départ
+                                    <i class="fas fa-map-marker-alt text-[#e94e1a] mr-2"></i>Point de départ
                                 </label>
                                 <div class="relative">
                                     <input type="text" id="point_depart" name="point_depart"
                                         value="{{ $searchParams['point_depart'] ?? '' }}"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 pl-12"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 pl-12"
                                         placeholder="Ville ou gare de départ" required>
                                 </div>
                             </div>
@@ -31,7 +31,7 @@
                                 <div class="relative">
                                     <input type="text" id="point_arrive" name="point_arrive"
                                         value="{{ $searchParams['point_arrive'] ?? '' }}"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 pl-12"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 pl-12"
                                         placeholder="Ville ou gare d'arrivée" required>
                                 </div>
                             </div>
@@ -44,7 +44,7 @@
                                 <div class="relative">
                                     <input type="date" id="date_depart" name="date_depart"
                                         value="{{ $searchParams['date_depart'] ?? date('Y-m-d') }}"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 pl-12"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 pl-12"
                                         min="{{ date('Y-m-d') }}" required>
                                 </div>
                             </div>
@@ -56,7 +56,7 @@
                                 </label>
                                 <div class="relative">
                                     <select id="is_aller_retour" name="is_aller_retour"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 pl-12 appearance-none">
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 pl-12 appearance-none">
                                         <option value="">Tous les types</option>
                                         <option value="0" {{ isset($searchParams['is_aller_retour']) && $searchParams['is_aller_retour'] === '0' ? 'selected' : '' }}>Aller Simple
                                         </option>
@@ -73,12 +73,12 @@
                         <!-- Boutons d'action -->
                         <div class="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-4 justify-center items-center">
                             <button type="submit"
-                                class="bg-[#fea219] text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl font-bold hover:bg-orange-600 transition-all duration-300 transform hover:-translate-y-1 shadow-lg hover:shadow-xl flex items-center justify-center gap-3 text-sm sm:text-base">
+                                class="bg-[#e94e1a] text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl font-bold hover:bg-orange-600 transition-all duration-300 transform hover:-translate-y-1 shadow-lg hover:shadow-xl flex items-center justify-center gap-3 text-sm sm:text-base">
                                 <i class="fas fa-search"></i>
                                 <span>Rechercher un programme</span>
                             </button>
                             <button type="button" onclick="openProgramsListModal()"
-                                class="bg-white text-[#fea219] border-2 border-[#fea219] px-6 sm:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl font-bold transition-all duration-300 transform hover:-translate-y-1 shadow-md hover:shadow-xl flex items-center justify-center gap-3 text-sm sm:text-base hover:bg-[#fea219] hover:text-white group">
+                                class="bg-white text-[#e94e1a] border-2 border-[#e94e1a] px-6 sm:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl font-bold transition-all duration-300 transform hover:-translate-y-1 shadow-md hover:shadow-xl flex items-center justify-center gap-3 text-sm sm:text-base hover:bg-[#e94e1a] hover:text-white group">
                                 <i class="fas fa-list group-hover:text-white transition-colors"></i>
                                 <span>Voir tous les programmes</span>
                             </button>
@@ -93,7 +93,7 @@
                     <div class="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100 mb-6">
                         <div class="flex justify-between items-center">
                             <h2 class="text-xl sm:text-2xl font-bold text-gray-900">Résultats de recherche</h2>
-                            <span class="bg-[#fea219] text-white px-4 py-2 rounded-xl font-bold text-lg">
+                            <span class="bg-[#e94e1a] text-white px-4 py-2 rounded-xl font-bold text-lg">
                                 {{ $programmes->total() }} programme(s) trouvé(s)
                             </span>
                         </div>
@@ -101,10 +101,10 @@
                         <!-- Filtres appliqués -->
                         <div class="mt-4 flex flex-wrap gap-2">
                             <div class="flex items-center gap-2 bg-orange-50 px-3 py-1 rounded-full">
-                                <i class="fas fa-map-marker-alt text-[#fea219]"></i>
+                                <i class="fas fa-map-marker-alt text-[#e94e1a]"></i>
                                 <span class="font-semibold">{{ $searchParams['point_depart'] }}</span>
                             </div>
-                            <i class="fas fa-arrow-right text-[#fea219] my-auto"></i>
+                            <i class="fas fa-arrow-right text-[#e94e1a] my-auto"></i>
                             <div class="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-full">
                                 <i class="fas fa-flag text-green-500"></i>
                                 <span class="font-semibold">{{ $searchParams['point_arrive'] }}</span>
@@ -125,7 +125,7 @@
                     <!-- Liste des programmes -->
                     <!-- En-tête de la liste (version desktop) -->
                     <div class="hidden md:block mb-4">
-                        <div class="bg-gradient-to-r from-[#fea219]/10 to-orange-500/10 rounded-xl p-4">
+                        <div class="bg-gradient-to-r from-[#e94e1a]/10 to-orange-500/10 rounded-xl p-4">
                             <div class="grid grid-cols-12 gap-4 text-sm font-semibold text-gray-700">
                                 <div class="col-span-3 text-center">Compagnie & Trajet</div>
                                 <div class="col-span-2 text-center">Date & Heure</div>
@@ -146,7 +146,7 @@
                                         <!-- En-tête mobile -->
                                         <div class="flex items-start gap-3 pb-3 border-b border-gray-100">
                                             <div
-                                                class="w-12 h-12 bg-gradient-to-r from-[#fea219] to-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                                class="w-12 h-12 bg-gradient-to-r from-[#e94e1a] to-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
                                                 <i class="fas fa-bus text-white text-lg"></i>
                                             </div>
                                             <div class="flex-1 min-w-0">
@@ -163,7 +163,7 @@
                                                 </div>
                                                 <div class="flex items-center gap-2 text-sm">
                                                     <span class="font-semibold text-gray-900">{{ $programme->point_depart }}</span>
-                                                    <i class="fas fa-arrow-right text-[#fea219] text-xs"></i>
+                                                    <i class="fas fa-arrow-right text-[#e94e1a] text-xs"></i>
                                                     <span class="font-semibold text-gray-900">{{ $programme->point_arrive }}</span>
                                                 </div>
                                             </div>
@@ -181,7 +181,7 @@
                                             </div>
                                             <div class="flex items-center gap-2 col-span-2">
                                                 <i class="fas fa-money-bill-wave text-red-500"></i>
-                                                <span class="font-bold text-lg text-[#fea219]">
+                                                <span class="font-bold text-lg text-[#e94e1a]">
                                                     @if($programme->is_aller_retour)
                                                         {{ number_format($programme->montant_billet * 2, 0, ',', ' ') }} FCFA
                                                     @else
@@ -229,7 +229,7 @@
                                             @if ($statut != 'rempli')
                                                 <button
                                                     onclick="showReservationModal({{ $programme->id }}, '{{ $searchParams['date_depart_formatted'] ?? $programme->date_depart }}')"
-                                                    class="flex-1 bg-[#fea219] text-white text-center py-2 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 flex items-center justify-center gap-2">
+                                                    class="flex-1 bg-[#e94e1a] text-white text-center py-2 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 flex items-center justify-center gap-2">
                                                     <i class="fas fa-ticket-alt"></i>
                                                     <span>Réserver</span>
                                                 </button>
@@ -243,7 +243,7 @@
                                             @endif
                                             <button
                                                 onclick="showVehicleDetails({{ $programme->vehicule_id ?? 'null' }}, {{ $programme->id }})"
-                                                class="w-12 bg-white text-[#fea219] border border-[#fea219] text-center py-2 rounded-lg font-bold hover:bg-gray-50 transition-all duration-300 flex items-center justify-center">
+                                                class="w-12 bg-white text-[#e94e1a] border border-[#e94e1a] text-center py-2 rounded-lg font-bold hover:bg-gray-50 transition-all duration-300 flex items-center justify-center">
                                                 <i class="fas fa-info-circle"></i>
                                             </button>
                                         </div>
@@ -257,7 +257,7 @@
                                         <div class="col-span-3">
                                             <div class="flex items-center gap-3">
                                                 <div
-                                                    class="w-12 h-12 bg-gradient-to-r from-[#fea219] to-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                                    class="w-12 h-12 bg-gradient-to-r from-[#e94e1a] to-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
                                                     <i class="fas fa-bus text-white text-lg"></i>
                                                 </div>
                                                 <div class="flex-1 min-w-0">
@@ -283,7 +283,7 @@
                                                         style="display:flex; justify-content:center">
                                                         <div class="font-semibold text-gray-900">{{ $programme->point_depart }}
                                                         </div>
-                                                        <i class="fas fa-arrow-right text-[#fea219] text-xs"></i>
+                                                        <i class="fas fa-arrow-right text-[#e94e1a] text-xs"></i>
                                                         <div class="font-semibold text-gray-900">{{ $programme->point_arrive }}
                                                         </div>
                                                     </div>
@@ -310,7 +310,7 @@
                                                 </div>
                                                 <div class="flex items-center gap-2">
                                                     <i class="fas fa-money-bill-wave text-red-500"></i>
-                                                    <span class="font-bold text-lg text-[#fea219]">
+                                                    <span class="font-bold text-lg text-[#e94e1a]">
                                                         @if($programme->is_aller_retour)
                                                             {{ number_format($programme->montant_billet * 2, 0, ',', ' ') }} FCFA
                                                         @else
@@ -338,7 +338,7 @@
                                             <div class="flex gap-2 justify-end">
                                                 <button
                                                     onclick="showVehicleDetails({{ $programme->vehicule_id ?? 'null' }}, {{ $programme->id }})"
-                                                    class="bg-white text-[#fea219] border border-[#fea219] px-4 py-2 rounded-lg font-bold hover:bg-gray-50 transition-all duration-300 flex items-center gap-2">
+                                                    class="bg-white text-[#e94e1a] border border-[#e94e1a] px-4 py-2 rounded-lg font-bold hover:bg-gray-50 transition-all duration-300 flex items-center gap-2">
                                                     <i class="fas fa-info-circle"></i>
                                                     <span>Détails véhicule</span>
                                                 </button>
@@ -346,7 +346,7 @@
                                                 @if ($statut != 'rempli')
                                                     <button
                                                         onclick="showReservationModal({{ $programme->id }}, '{{ $searchParams['date_depart_formatted'] ?? $programme->date_depart }}')"
-                                                        class="bg-[#fea219] text-white px-4 py-2 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 flex items-center gap-2">
+                                                        class="bg-[#e94e1a] text-white px-4 py-2 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 flex items-center gap-2">
                                                         <i class="fas fa-ticket-alt"></i>
                                                         <span>Réserver</span>
                                                     </button>
@@ -378,7 +378,7 @@
                 <div class="bg-white rounded-xl shadow-lg p-8 text-center">
                     <div
                         class="w-20 h-20 bg-gradient-to-br from-orange-100 to-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-route text-3xl text-[#fea219]"></i>
+                        <i class="fas fa-route text-3xl text-[#e94e1a]"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-2">Aucun programme trouvé</h3>
                     <p class="text-gray-600 mb-6">Essayez d'ajuster vos critères de recherche.</p>
@@ -392,7 +392,7 @@
         <div class="min-h-screen flex items-center justify-center p-4">
             <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden" style="max-height: 95vh;">
                 <!-- En-tête -->
-                <div class="bg-gradient-to-r from-[#fea219] to-orange-500 p-6 text-white">
+                <div class="bg-gradient-to-r from-[#e94e1a] to-orange-500 p-6 text-white">
                     <div class="flex justify-between items-center">
                         <h2 class="text-2xl font-bold">Réservation de places</h2>
                         <button onclick="closeReservationModal()" class="text-white hover:text-gray-200 text-2xl">
@@ -411,7 +411,7 @@
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                             @for ($i = 1; $i <= 8; $i++)
                                 <button onclick="selectNumberOfPlaces({{ $i }})"
-                                    class="place-count-btn p-4 border-2 border-gray-200 rounded-xl hover:border-[#fea219] hover:bg-orange-50 transition-all duration-300 text-center">
+                                    class="place-count-btn p-4 border-2 border-gray-200 rounded-xl hover:border-[#e94e1a] hover:bg-orange-50 transition-all duration-300 text-center">
                                     <div class="text-2xl font-bold text-gray-800">{{ $i }}</div>
                                     <div class="text-sm text-gray-600">place{{ $i > 1 ? 's' : '' }}</div>
                                 </button>
@@ -421,7 +421,7 @@
                         <!-- Bouton suivant -->
                         <div class="flex justify-end">
                             <button id="nextStepBtn" onclick="showSeatSelection()"
-                                class="bg-[#fea219] text-white px-6 py-3 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                class="bg-[#e94e1a] text-white px-6 py-3 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                 disabled>
                                 <span>Suivant</span>
                                 <i class="fas fa-arrow-right"></i>
@@ -434,7 +434,7 @@
                         <div class="flex justify-between items-center mb-6">
                             <h3 class="text-xl font-bold text-gray-900">Sélectionnez vos places</h3>
                             <div class="flex items-center gap-4">
-                                <span id="selectedSeatsCount" class="text-lg font-bold text-[#fea219]">0 place
+                                <span id="selectedSeatsCount" class="text-lg font-bold text-[#e94e1a]">0 place
                                     sélectionnée</span>
                                 <button onclick="backToStep1()"
                                     class="text-gray-600 hover:text-gray-800 flex items-center gap-2">
@@ -456,7 +456,7 @@
                                 <span class="text-sm">Place disponible</span>
                             </div>
                             <div class="flex items-center gap-2">
-                                <div class="w-8 h-8 bg-[#fea219] rounded"></div>
+                                <div class="w-8 h-8 bg-[#e94e1a] rounded"></div>
                                 <span class="text-sm">Place sélectionnée</span>
                             </div>
                             <div class="flex items-center gap-2">
@@ -477,7 +477,7 @@
                                 <span>Retour</span>
                             </button>
                             <button id="showPassengerInfoBtn" onclick="showPassengerInfo()"
-                                class="bg-[#fea219] text-white px-6 py-3 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                class="bg-[#e94e1a] text-white px-6 py-3 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                 disabled>
                                 <span>Informations passagers</span>
                                 <i class="fas fa-arrow-right"></i>
@@ -521,7 +521,7 @@
 
     <style>
         .place-count-btn.active {
-            border-color: #fea219;
+            border-color: #e94e1a;
             background-color: #fff7ed;
             box-shadow: 0 0 0 3px rgba(254, 162, 25, 0.2);
         }
@@ -582,7 +582,7 @@
                     icon: 'info',
                     title: 'Information',
                     text: 'Aucun véhicule associé à ce programme.',
-                    confirmButtonColor: '#fea219',
+                    confirmButtonColor: '#e94e1a',
                 });
                 return;
             }
@@ -636,7 +636,7 @@
                     icon: 'error',
                     title: 'Erreur',
                     text: error.message,
-                    confirmButtonColor: '#fea219',
+                    confirmButtonColor: '#e94e1a',
                 });
             }
         }
@@ -690,7 +690,7 @@
                 // Places côté gauche
                 for (let i = 0; i < placesGaucheCetteRanger; i++) {
                     html += `
-                                        <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #fea219, #e89116); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.1rem; box-shadow: 0 2px 4px rgba(254, 162, 25, 0.3); cursor: help;" title="Place ${numeroPlace + i}">
+                                        <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #e94e1a, #e89116); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.1rem; box-shadow: 0 2px 4px rgba(254, 162, 25, 0.3); cursor: help;" title="Place ${numeroPlace + i}">
                                             ${numeroPlace + i}
                                         </div>
                                     `;
@@ -732,7 +732,7 @@
                                 <!-- Légende -->
                                 <div style="display: flex; justify-content: center; gap: 20px; margin-top: 20px; padding: 15px; background: #f9fafb; border-radius: 8px;">
                                     <div style="display: flex; align-items: center; gap: 8px;">
-                                        <div style="width: 20px; height: 20px; background: linear-gradient(135deg, #fea219, #e89116); border-radius: 4px;"></div>
+                                        <div style="width: 20px; height: 20px; background: linear-gradient(135deg, #e94e1a, #e89116); border-radius: 4px;"></div>
                                         <span style="color: #4b5563; font-size: 0.9rem;">Côté gauche (conducteur)</span>
                                     </div>
                                     <div style="display: flex; align-items: center; gap: 8px;">
@@ -774,7 +774,7 @@
             window.currentReservationDate = null; // Reset date globale
 
             // Nettoyer l'interface visuelle immédiatement
-            document.getElementById('reservationProgramInfo').innerHTML = '<div class="text-center p-4"><i class="fas fa-spinner fa-spin text-2xl text-[#fea219]"></i><p>Chargement...</p></div>';
+            document.getElementById('reservationProgramInfo').innerHTML = '<div class="text-center p-4"><i class="fas fa-spinner fa-spin text-2xl text-[#e94e1a]"></i><p>Chargement...</p></div>';
             document.getElementById('selectedSeatsCount').textContent = '0 place sélectionnée';
             document.getElementById('seatSelectionArea').innerHTML = ''; // Vider la zone sièges
 
@@ -902,7 +902,7 @@
                     icon: 'error',
                     title: 'Erreur',
                     text: 'Aucun programme sélectionné.',
-                    confirmButtonColor: '#fea219',
+                    confirmButtonColor: '#e94e1a',
                 });
                 return;
             }
@@ -995,7 +995,7 @@
                                         </p>
                                     </div>
                                 `,
-                    confirmButtonColor: '#fea219',
+                    confirmButtonColor: '#e94e1a',
                 });
             }
         }
@@ -1067,7 +1067,7 @@
                     html += `
                                         <div class="seat w-14 h-14 rounded-lg flex flex-col items-center justify-center font-bold transition-all duration-200
                                                   ${isReserved ? 'bg-red-500 text-white cursor-not-allowed opacity-60' :
-                            isSelected ? 'bg-[#fea219] text-white shadow-lg transform scale-110' :
+                            isSelected ? 'bg-[#e94e1a] text-white shadow-lg transform scale-110' :
                                 'bg-blue-500 text-white hover:bg-blue-600 hover:shadow-md cursor-pointer'}"
                                              ${!isReserved ? `onclick="toggleSeat(${seatNumber})"` : ''}
                                              title="Place ${seatNumber}${isReserved ? ' (Réservée)' : ''}">
@@ -1100,7 +1100,7 @@
                     html += `
                                         <div class="seat w-14 h-14 rounded-lg flex flex-col items-center justify-center font-bold transition-all duration-200
                                                   ${isReserved ? 'bg-red-500 text-white cursor-not-allowed opacity-60' :
-                            isSelected ? 'bg-[#fea219] text-white shadow-lg transform scale-110' :
+                            isSelected ? 'bg-[#e94e1a] text-white shadow-lg transform scale-110' :
                                 'bg-green-500 text-white hover:bg-green-600 hover:shadow-md cursor-pointer'}"
                                              ${!isReserved ? `onclick="toggleSeat(${seatNumber})"` : ''}
                                              title="Place ${seatNumber}${isReserved ? ' (Réservée)' : ''}">
@@ -1150,7 +1150,7 @@
                         icon: 'warning',
                         title: 'Limite atteinte',
                         text: `Vous ne pouvez sélectionner que ${selectedNumberOfPlaces} place(s). Désélectionnez d'abord une place si vous voulez en choisir une autre.`,
-                        confirmButtonColor: '#fea219',
+                        confirmButtonColor: '#e94e1a',
                     });
                     return;
                 }
@@ -1165,7 +1165,7 @@
                 const isSelected = selectedSeats.includes(seatNumber);
                 const isLeftSide = seatNumber <= typeRangeConfig[vehicleDetails.type_range].placesGauche;
 
-                seatElement.classList.toggle('bg-[#fea219]', isSelected);
+                seatElement.classList.toggle('bg-[#e94e1a]', isSelected);
                 seatElement.classList.toggle('transform', isSelected);
                 seatElement.classList.toggle('scale-110', isSelected);
                 seatElement.classList.toggle('shadow-lg', isSelected);
@@ -1199,11 +1199,11 @@
                 `${count} place${count > 1 ? 's' : ''} sélectionnée${count > 1 ? 's' : ''} / ${selectedNumberOfPlaces} demandée${selectedNumberOfPlaces > 1 ? 's' : ''}`;
 
             // Mettre à jour le style du compteur
-            countElement.classList.remove('text-[#fea219]', 'text-red-500', 'text-green-500');
+            countElement.classList.remove('text-[#e94e1a]', 'text-red-500', 'text-green-500');
             if (count === 0) {
                 countElement.classList.add('text-gray-600');
             } else if (count < selectedNumberOfPlaces) {
-                countElement.classList.add('text-[#fea219]');
+                countElement.classList.add('text-[#e94e1a]');
             } else if (count === selectedNumberOfPlaces) {
                 countElement.classList.add('text-green-500');
             }
@@ -1243,38 +1243,38 @@
             sortedSeats.forEach((seat, index) => {
                 const passengerHtml = `
                                         <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                                            <h4 class="font-bold text-[#fea219] mb-4 flex items-center gap-2">
+                                            <h4 class="font-bold text-[#e94e1a] mb-4 flex items-center gap-2">
                                                 <i class="fas fa-user"></i> Passager pour la place n°${seat}
                                             </h4>
                                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 <div>
                                                     <label class="block text-sm font-medium text-gray-700 mb-1">Nom</label>
                                                     <input type="text" name="passenger_${seat}_nom" required
-                                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all"
+                                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all"
                                                         placeholder="Nom du passager">
                                                 </div>
                                                 <div>
                                                     <label class="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
                                                     <input type="text" name="passenger_${seat}_prenom" required
-                                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all"
+                                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all"
                                                         placeholder="Prénom du passager">
                                                 </div>
                                                 <div>
                                                     <label class="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
                                                     <input type="tel" name="passenger_${seat}_telephone" required
-                                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all"
+                                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all"
                                                         placeholder="Ex: 0700000000">
                                                 </div>
                                                 <div>
                                                     <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
                                                     <input type="email" name="passenger_${seat}_email" required
-                                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all"
+                                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all"
                                                         placeholder="email@exemple.com">
                                                 </div>
                                                 <div class="md:col-span-2">
                                                     <label class="block text-sm font-medium text-gray-700 mb-1">Contact d'urgence (Nom & Tél)</label>
                                                     <input type="text" name="passenger_${seat}_urgence" required
-                                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all"
+                                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all"
                                                         placeholder="Ex: Jean Dupont - 0500000000">
                                                 </div>
                                             </div>
@@ -1328,7 +1328,7 @@
                     icon: 'warning',
                     title: 'Informations manquantes',
                     text: 'Veuillez remplir toutes les informations pour chaque passager.',
-                    confirmButtonColor: '#fea219',
+                    confirmButtonColor: '#e94e1a',
                 });
                 return;
             }
@@ -1353,7 +1353,7 @@
                     icon: 'error',
                     title: 'Erreur',
                     text: 'Impossible de déterminer la date du voyage.',
-                    confirmButtonColor: '#fea219',
+                    confirmButtonColor: '#e94e1a',
                 });
                 return;
             }
@@ -1366,14 +1366,14 @@
                                                 <p class="font-semibold mb-2">Date du voyage :</p>
                                                 <p class="text-lg text-blue-600 font-bold">${dateVoyage}</p>
                                                 <p class="font-semibold mb-2 mt-4">Places :</p>
-                                                <p class="text-lg text-[#fea219] font-bold">${sortedSeats.join(', ')}</p>
+                                                <p class="text-lg text-[#e94e1a] font-bold">${sortedSeats.join(', ')}</p>
                                             </div>
                                             <p class="text-sm text-gray-600">Un ticket sera envoyé à l'email de chaque passager.</p>
                                         </div>
                                     `,
                 icon: 'question',
                 showCancelButton: true,
-                confirmButtonColor: '#fea219',
+                confirmButtonColor: '#e94e1a',
                 cancelButtonColor: '#6b7280',
                 confirmButtonText: 'Oui, confirmer',
                 cancelButtonText: 'Non, annuler',
@@ -1410,7 +1410,7 @@
                                 icon: 'success',
                                 title: 'Réservation confirmée !',
                                 text: data.message,
-                                confirmButtonColor: '#fea219',
+                                confirmButtonColor: '#e94e1a',
                             }).then(() => {
                                 window.location.reload();
                             });
@@ -1422,7 +1422,7 @@
                             icon: 'error',
                             title: 'Erreur',
                             text: error.message,
-                            confirmButtonColor: '#fea219',
+                            confirmButtonColor: '#e94e1a',
                         });
                     }
                 }
@@ -1523,7 +1523,7 @@
                         </div>
                         
                         <div class="flex items-center gap-2 mb-3 text-sm">
-                            <i class="fas fa-map-marker-alt text-[#fea219]"></i>
+                            <i class="fas fa-map-marker-alt text-[#e94e1a]"></i>
                             <span>${prog.point_depart} <i class="fas fa-arrow-right text-xs mx-1"></i> ${prog.point_arrive}</span>
                         </div>
 
@@ -1545,7 +1545,7 @@
                         ` : ''}
                         
                         <button onclick='selectProgramFromList(${JSON.stringify(prog).replace(/'/g, "&#39;")})' 
-                            class="w-full bg-[#fea219] text-white py-2 rounded font-bold hover:bg-orange-600 transition-colors text-sm">
+                            class="w-full bg-[#e94e1a] text-white py-2 rounded font-bold hover:bg-orange-600 transition-colors text-sm">
                             Choisir ce programme
                         </button>
                     </div>
@@ -1687,7 +1687,7 @@
                 <div id="programsListContent" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[70vh] overflow-y-auto p-2">
                     <!-- Le contenu sera injecté via JS -->
                     <div class="col-span-full text-center py-8">
-                        <i class="fas fa-spinner fa-spin text-4xl text-[#fea219]"></i>
+                        <i class="fas fa-spinner fa-spin text-4xl text-[#e94e1a]"></i>
                         <p class="mt-2 text-gray-500">Chargement des programmes...</p>
                     </div>
                 </div>
@@ -1707,7 +1707,7 @@
                 <div class="py-4">
                     <label for="recurrenceDateSelect" class="block text-sm font-medium text-gray-700 mb-2">Sélectionnez une date parmi les prochains jours disponibles :</label>
                     <div class="relative">
-                        <select id="recurrenceDateSelect" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent appearance-none bg-white">
+                        <select id="recurrenceDateSelect" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent appearance-none bg-white">
                             <!-- Options générées par JS -->
                         </select>
                         <div class="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
@@ -1719,7 +1719,7 @@
 
                 <div class="flex justify-end gap-3 border-t pt-4">
                     <button onclick="closeDateSelectionModal()" class="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors">Annuler</button>
-                    <button onclick="confirmDateSelection()" class="px-5 py-2.5 bg-[#fea219] text-white rounded-xl font-bold hover:bg-orange-600 transition-colors shadow-lg hover:shadow-xl">Confirmer</button>
+                    <button onclick="confirmDateSelection()" class="px-5 py-2.5 bg-[#e94e1a] text-white rounded-xl font-bold hover:bg-orange-600 transition-colors shadow-lg hover:shadow-xl">Confirmer</button>
                 </div>
             </div>
         </div>

@@ -2,14 +2,14 @@
 @section('content')
 
 <!-- Hero About -->
-<section class="about-hero-section" style="background: linear-gradient(135deg, #fea219 0%, #ff8c00 100%);">
+<section class="about-hero-section" style="background: linear-gradient(135deg, #e94e1a 0%, #ff8c00 100%);">
     <div class="container">
         <div class="row align-items-center min-vh-80">
             <div class="col-lg-8" data-aos="fade-right">
                 <h1 class="hero-title text-white mb-3">À propos de <span class="text-dark">Car225</span></h1>
                 <p class="hero-subtitle text-white mb-4">Votre partenaire de confiance pour les voyages en car en Côte d'Ivoire</p>
                 <div class="d-flex gap-3">
-                    <a href="#notre-mission" class="btn btn-light" style="color: #fea219;">
+                    <a href="#notre-mission" class="btn btn-light" style="color: #e94e1a;">
                         <i class="bi bi-compass me-2"></i>Notre mission
                     </a>
                     <a href="#notre-equipe" class="btn btn-outline-light">
@@ -31,8 +31,8 @@
     <div class="container">
         <div class="row align-items-center">
             <div class="col-lg-6" data-aos="fade-right">
-                <div class="section-tag" style="background-color: #fea219; color: white;">Notre histoire</div>
-                <h2 class="section-title mb-4">De l'idée à la <span style="color: #fea219;">réalité</span></h2>
+                <div class="section-tag" style="background-color: #e94e1a; color: white;">Notre histoire</div>
+                <h2 class="section-title mb-4">De l'idée à la <span style="color: #e94e1a;">réalité</span></h2>
                 <p class="lead mb-4">
                     Fondée en 2020, Car225 est née d'un constat simple : la réservation de billets de car en Côte d'Ivoire devait être simplifiée et digitalisée.
                 </p>
@@ -41,7 +41,7 @@
                 </p>
                 <div class="timeline-highlights">
                     <div class="timeline-item">
-                        <div class="timeline-year" style="background-color: #fea219;">2020</div>
+                        <div class="timeline-year" style="background-color: #e94e1a;">2020</div>
                         <h5>Lancement</h5>
                         <p>Première version avec 5 compagnies partenaires</p>
                     </div>
@@ -51,7 +51,7 @@
                         <p>25+ compagnies et 30+ villes desservies</p>
                     </div>
                     <div class="timeline-item">
-                        <div class="timeline-year" style="background-color: #fea219;">2024</div>
+                        <div class="timeline-year" style="background-color: #e94e1a;">2024</div>
                         <h5>Innovation</h5>
                         <p>Application mobile et paiement Mobile Money</p>
                     </div>
@@ -75,14 +75,14 @@
     <div class="container">
         <div class="section-header text-center mb-5" data-aos="fade-up">
             <div class="section-tag" style="background-color: #28a745; color: white; display: inline-block;">Notre mission</div>
-            <h2 class="section-title">Transformer l'expérience du <span style="color: #fea219;">voyageur</span></h2>
+            <h2 class="section-title">Transformer l'expérience du <span style="color: #e94e1a;">voyageur</span></h2>
             <p class="section-subtitle">Nous croyons que voyager devrait être simple, sûr et accessible à tous</p>
         </div>
         
         <div class="row g-4">
             <div class="col-lg-4" data-aos="fade-up">
                 <div class="mission-card">
-                    <div class="mission-icon" style="background-color: #fea219;">
+                    <div class="mission-icon" style="background-color: #e94e1a;">
                         <i class="bi bi-lightning-charge text-white"></i>
                     </div>
                     <h4>Simplifier</h4>
@@ -100,7 +100,7 @@
             </div>
             <div class="col-lg-4" data-aos="fade-up" data-aos-delay="200">
                 <div class="mission-card">
-                    <div class="mission-icon" style="background-color: #fea219;">
+                    <div class="mission-icon" style="background-color: #e94e1a;">
                         <i class="bi bi-people text-white"></i>
                     </div>
                     <h4>Connecter</h4>
@@ -114,7 +114,7 @@
                 <div class="values-list">
                     <h3 class="mb-4">Nos valeurs</h3>
                     <div class="value-item">
-                        <div class="value-icon" style="color: #fea219;">
+                        <div class="value-icon" style="color: #e94e1a;">
                             <i class="bi bi-heart"></i>
                         </div>
                         <div class="value-content">
@@ -132,7 +132,7 @@
                         </div>
                     </div>
                     <div class="value-item">
-                        <div class="value-icon" style="color: #fea219;">
+                        <div class="value-icon" style="color: #e94e1a;">
                             <i class="bi bi-rocket"></i>
                         </div>
                         <div class="value-content">
@@ -143,7 +143,7 @@
                 </div>
             </div>
             <div class="col-lg-6" data-aos="fade-left">
-                <div class="stats-card p-4 rounded" style="background: linear-gradient(135deg, #fea219 0%, #ff8c00 100%);">
+                <div class="stats-card p-4 rounded" style="background: linear-gradient(135deg, #e94e1a 0%, #ff8c00 100%);">
                     <h3 class="text-white mb-4">Car225 en chiffres</h3>
                     <div class="row g-3">
                         <div class="col-6">
@@ -181,8 +181,8 @@
 <section class="py-5 bg-white" id="notre-equipe">
     <div class="container">
         <div class="section-header text-center mb-5" data-aos="fade-up">
-            <div class="section-tag" style="background-color: #fea219; color: white; display: inline-block;">Notre équipe</div>
-            <h2 class="section-title">Rencontrez notre <span style="color: #fea219;">équipe</span></h2>
+            <div class="section-tag" style="background-color: #e94e1a; color: white; display: inline-block;">Notre équipe</div>
+            <h2 class="section-title">Rencontrez notre <span style="color: #e94e1a;">équipe</span></h2>
             <p class="section-subtitle">Des passionnés qui travaillent chaque jour pour améliorer votre expérience de voyage</p>
         </div>
         
@@ -205,7 +205,7 @@
                     </div>
                     <div class="team-info">
                         <h5>{{ $member['name'] }}</h5>
-                        <p class="team-role" style="color: #fea219;">{{ $member['role'] }}</p>
+                        <p class="team-role" style="color: #e94e1a;">{{ $member['role'] }}</p>
                     </div>
                 </div>
             </div>
@@ -235,7 +235,7 @@
 <section class="py-5 bg-white">
     <div class="container">
         <div class="section-header text-center mb-5" data-aos="fade-up">
-            <h2 class="section-title">Ils nous <span style="color: #fea219;">font confiance</span></h2>
+            <h2 class="section-title">Ils nous <span style="color: #e94e1a;">font confiance</span></h2>
             <p class="section-subtitle">Ce que disent nos partenaires</p>
         </div>
         
@@ -247,11 +247,11 @@
                         <div>
                             <h5>Union des Transports de Bouaké</h5>
                             <div class="rating">
-                                <i class="bi bi-star-fill" style="color: #fea219;"></i>
-                                <i class="bi bi-star-fill" style="color: #fea219;"></i>
-                                <i class="bi bi-star-fill" style="color: #fea219;"></i>
-                                <i class="bi bi-star-fill" style="color: #fea219;"></i>
-                                <i class="bi bi-star-fill" style="color: #fea219;"></i>
+                                <i class="bi bi-star-fill" style="color: #e94e1a;"></i>
+                                <i class="bi bi-star-fill" style="color: #e94e1a;"></i>
+                                <i class="bi bi-star-fill" style="color: #e94e1a;"></i>
+                                <i class="bi bi-star-fill" style="color: #e94e1a;"></i>
+                                <i class="bi bi-star-fill" style="color: #e94e1a;"></i>
                             </div>
                         </div>
                     </div>
@@ -265,11 +265,11 @@
                         <div>
                             <h5>Société des Transports de Cocody</h5>
                             <div class="rating">
-                                <i class="bi bi-star-fill" style="color: #fea219;"></i>
-                                <i class="bi bi-star-fill" style="color: #fea219;"></i>
-                                <i class="bi bi-star-fill" style="color: #fea219;"></i>
-                                <i class="bi bi-star-fill" style="color: #fea219;"></i>
-                                <i class="bi bi-star-half" style="color: #fea219;"></i>
+                                <i class="bi bi-star-fill" style="color: #e94e1a;"></i>
+                                <i class="bi bi-star-fill" style="color: #e94e1a;"></i>
+                                <i class="bi bi-star-fill" style="color: #e94e1a;"></i>
+                                <i class="bi bi-star-fill" style="color: #e94e1a;"></i>
+                                <i class="bi bi-star-half" style="color: #e94e1a;"></i>
                             </div>
                         </div>
                     </div>
@@ -283,11 +283,11 @@
                         <div>
                             <h5>Association des Voyageurs</h5>
                             <div class="rating">
-                                <i class="bi bi-star-fill" style="color: #fea219;"></i>
-                                <i class="bi bi-star-fill" style="color: #fea219;"></i>
-                                <i class="bi bi-star-fill" style="color: #fea219;"></i>
-                                <i class="bi bi-star-fill" style="color: #fea219;"></i>
-                                <i class="bi bi-star-fill" style="color: #fea219;"></i>
+                                <i class="bi bi-star-fill" style="color: #e94e1a;"></i>
+                                <i class="bi bi-star-fill" style="color: #e94e1a;"></i>
+                                <i class="bi bi-star-fill" style="color: #e94e1a;"></i>
+                                <i class="bi bi-star-fill" style="color: #e94e1a;"></i>
+                                <i class="bi bi-star-fill" style="color: #e94e1a;"></i>
                             </div>
                         </div>
                     </div>

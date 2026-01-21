@@ -5,7 +5,7 @@
     <div class="container mx-auto px-4">
         
         <!-- Retour -->
-        <a href="{{ url()->previous() }}" class="inline-flex items-center text-gray-600 hover:text-[#fea219] mb-6 transition-colors">
+        <a href="{{ url()->previous() }}" class="inline-flex items-center text-gray-600 hover:text-[#e94e1a] mb-6 transition-colors">
             <i class="fas fa-arrow-left mr-2"></i> Retour aux résultats
         </a>
 
@@ -15,7 +15,7 @@
             <div class="lg:col-span-1 space-y-6">
                 <!-- Carte Informations Programme -->
                 <div class="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
-                    <div class="bg-gradient-to-r from-[#fea219] to-orange-500 p-6 text-white text-center">
+                    <div class="bg-gradient-to-r from-[#e94e1a] to-orange-500 p-6 text-white text-center">
                         <h2 class="text-2xl font-bold mb-1">Détails du voyage</h2>
                         <p class="opacity-90">Réservez vos places maintenant</p>
                     </div>
@@ -23,7 +23,7 @@
                     <div class="p-6 space-y-6">
                         <!-- Compagnie -->
                         <div class="flex items-center gap-4 p-4 bg-orange-50 rounded-xl">
-                            <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm text-[#fea219] text-2xl">
+                            <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm text-[#e94e1a] text-2xl">
                                 <i class="fas fa-bus"></i>
                             </div>
                             <div>
@@ -35,8 +35,8 @@
                         <!-- Trajet -->
                         <div class="relative pl-8 border-l-2 border-gray-200 ml-4 space-y-8">
                             <div class="relative">
-                                <div class="absolute -left-[39px] bg-white border-2 border-[#fea219] w-6 h-6 rounded-full flex items-center justify-center">
-                                    <div class="w-2 h-2 bg-[#fea219] rounded-full"></div>
+                                <div class="absolute -left-[39px] bg-white border-2 border-[#e94e1a] w-6 h-6 rounded-full flex items-center justify-center">
+                                    <div class="w-2 h-2 bg-[#e94e1a] rounded-full"></div>
                                 </div>
                                 <h4 class="font-bold text-gray-900">{{ $programme->point_depart }}</h4>
                                 <div class="text-sm text-gray-500">
@@ -76,7 +76,7 @@
                         <!-- Prix -->
                         <div class="bg-gray-900 text-white p-4 rounded-xl text-center">
                             <div class="text-sm opacity-75 mb-1">Prix par personne</div>
-                            <div class="text-3xl font-bold text-[#fea219]">
+                            <div class="text-3xl font-bold text-[#e94e1a]">
                                 {{ number_format($programme->montant_billet, 0, ',', ' ') }} FCFA
                             </div>
                         </div>
@@ -87,7 +87,7 @@
                 @if($programme->vehicule)
                 <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
                     <h3 class="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <i class="fas fa-car text-[#fea219]"></i> Véhicule
+                        <i class="fas fa-car text-[#e94e1a]"></i> Véhicule
                     </h3>
                     <div class="space-y-3 text-sm">
                         <div class="flex justify-between">
@@ -116,7 +116,7 @@
                         <div class="mb-8">
                             <div class="flex items-center justify-between relative">
                                 <div class="absolute left-0 top-1/2 transform -translate-y-1/2 w-full h-1 bg-gray-200 -z-10"></div>
-                                <div class="step-indicator active bg-[#fea219] text-white w-10 h-10 rounded-full flex items-center justify-center font-bold relative z-10 transition-all duration-300" data-step="1">1</div>
+                                <div class="step-indicator active bg-[#e94e1a] text-white w-10 h-10 rounded-full flex items-center justify-center font-bold relative z-10 transition-all duration-300" data-step="1">1</div>
                                 <div class="step-indicator bg-white border-2 border-gray-300 text-gray-500 w-10 h-10 rounded-full flex items-center justify-center font-bold relative z-10 transition-all duration-300" data-step="2">2</div>
                                 <div class="step-indicator bg-white border-2 border-gray-300 text-gray-500 w-10 h-10 rounded-full flex items-center justify-center font-bold relative z-10 transition-all duration-300" data-step="3">3</div>
                             </div>
@@ -135,7 +135,7 @@
                             <div class="mb-6">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Choisir une date de voyage</label>
                                 <input type="date" id="date_voyage_input" 
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent"
                                     min="{{ date('Y-m-d') }}"
                                     value="{{ request('date') ?? date('Y-m-d') }}"
                                 >
@@ -147,7 +147,7 @@
                             <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
                                 @for ($i = 1; $i <= 8; $i++)
                                     <button onclick="selectNumberOfPlaces({{ $i }})"
-                                        class="place-count-btn p-4 border-2 border-gray-200 rounded-xl hover:border-[#fea219] hover:bg-orange-50 transition-all duration-300 text-center"
+                                        class="place-count-btn p-4 border-2 border-gray-200 rounded-xl hover:border-[#e94e1a] hover:bg-orange-50 transition-all duration-300 text-center"
                                         data-count="{{ $i }}">
                                         <div class="text-2xl font-bold text-gray-800">{{ $i }}</div>
                                         <div class="text-sm text-gray-600">place{{ $i > 1 ? 's' : '' }}</div>
@@ -157,7 +157,7 @@
 
                             <div class="flex justify-end">
                                 <button onclick="goToStep2()" id="btn-step1-next" disabled
-                                    class="bg-[#fea219] text-white px-8 py-3 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                                    class="bg-[#e94e1a] text-white px-8 py-3 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
                                     Suivant <i class="fas fa-arrow-right"></i>
                                 </button>
                             </div>
@@ -166,11 +166,11 @@
                         <!-- Étape 2: Sélection des places (Visuelle) -->
                         <div id="step2" class="step-content hidden">
                             <h3 class="text-xl font-bold text-gray-900 mb-2">Choisissez vos sièges</h3>
-                            <p class="text-gray-500 mb-6">Veuillez sélectionner <span id="nb-places-txt" class="font-bold text-[#fea219]">0</span> place(s) sur le plan.</p>
+                            <p class="text-gray-500 mb-6">Veuillez sélectionner <span id="nb-places-txt" class="font-bold text-[#e94e1a]">0</span> place(s) sur le plan.</p>
                             
                             <!-- Légende -->
                             <div class="flex flex-wrap gap-4 mb-6 text-sm justify-center bg-gray-50 p-3 rounded-lg">
-                                <div class="flex items-center gap-2"><div class="w-4 h-4 rounded bg-[#fea219]"></div> Disponible</div>
+                                <div class="flex items-center gap-2"><div class="w-4 h-4 rounded bg-[#e94e1a]"></div> Disponible</div>
                                 <div class="flex items-center gap-2"><div class="w-4 h-4 rounded bg-[#10b981]"></div> Sélectionné</div>
                                 <div class="flex items-center gap-2"><div class="w-4 h-4 rounded bg-red-400 opacity-50"></div> Indisponible</div>
                             </div>
@@ -178,7 +178,7 @@
                             <!-- Zone de visualisation -->
                             <div id="seat-visualization" class="mb-8 flex justify-center">
                                 <div class="text-center py-10">
-                                    <i class="fas fa-spinner fa-spin text-4xl text-[#fea219]"></i>
+                                    <i class="fas fa-spinner fa-spin text-4xl text-[#e94e1a]"></i>
                                     <p class="mt-2 text-gray-500">Chargement du plan...</p>
                                 </div>
                             </div>
@@ -188,7 +188,7 @@
                                     <i class="fas fa-arrow-left mr-2"></i> Retour
                                 </button>
                                 <button onclick="goToStep3()" id="btn-step2-next" disabled
-                                    class="bg-[#fea219] text-white px-8 py-3 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                                    class="bg-[#e94e1a] text-white px-8 py-3 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
                                     Continuer <i class="fas fa-arrow-right"></i>
                                 </button>
                             </div>
@@ -230,7 +230,7 @@
 <style>
     .place-count-btn.selected {
         background-color: #fff7ed;
-        border-color: #fea219;
+        border-color: #e94e1a;
         color: #c2410c;
         box-shadow: 0 0 0 2px rgba(254, 162, 25, 0.2);
     }
@@ -291,12 +291,12 @@
         // Indicateurs
         document.querySelectorAll('.step-indicator').forEach(el => {
             const s = parseInt(el.dataset.step);
-            el.classList.remove('bg-[#fea219]', 'text-white', 'bg-green-500');
+            el.classList.remove('bg-[#e94e1a]', 'text-white', 'bg-green-500');
             el.classList.add('bg-white', 'text-gray-500');
             
             if (s === step) {
                 el.classList.remove('bg-white', 'text-gray-500');
-                el.classList.add('bg-[#fea219]', 'text-white');
+                el.classList.add('bg-[#e94e1a]', 'text-white');
             } else if (s < step) {
                 el.classList.remove('bg-white', 'text-gray-500');
                 el.classList.add('bg-green-500', 'text-white', 'border-transparent');
@@ -422,7 +422,7 @@
             classes += "bg-[#10b981] text-white ring-2 ring-offset-1 ring-[#10b981]";
             onclick = `toggleSeat(${num})`;
         } else {
-            classes += "bg-gray-100 text-gray-600 hover:bg-[#fea219] hover:text-white";
+            classes += "bg-gray-100 text-gray-600 hover:bg-[#e94e1a] hover:text-white";
             onclick = `toggleSeat(${num})`;
         }
 
@@ -485,7 +485,7 @@
 
             const html = `
                 <div class="bg-gray-50 p-6 rounded-xl border border-gray-100 relative">
-                    <div class="absolute -top-3 -right-3 bg-[#fea219] text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-md">
+                    <div class="absolute -top-3 -right-3 bg-[#e94e1a] text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-md">
                         ${seatNum}
                     </div>
                     <h4 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -497,23 +497,23 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nom</label>
-                            <input type="text" name="passagers[${index}][nom]" required class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-[#fea219] focus:ring-1 focus:ring-[#fea219]" placeholder="Nom de famille" value="${prefill.nom}">
+                            <input type="text" name="passagers[${index}][nom]" required class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-[#e94e1a] focus:ring-1 focus:ring-[#e94e1a]" placeholder="Nom de famille" value="${prefill.nom}">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Prénom</label>
-                            <input type="text" name="passagers[${index}][prenom]" required class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-[#fea219] focus:ring-1 focus:ring-[#fea219]" placeholder="Prénoms" value="${prefill.prenom}">
+                            <input type="text" name="passagers[${index}][prenom]" required class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-[#e94e1a] focus:ring-1 focus:ring-[#e94e1a]" placeholder="Prénoms" value="${prefill.prenom}">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Email</label>
-                            <input type="email" name="passagers[${index}][email]" required class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-[#fea219] focus:ring-1 focus:ring-[#fea219]" placeholder="email@exemple.com" value="${prefill.email}">
+                            <input type="email" name="passagers[${index}][email]" required class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-[#e94e1a] focus:ring-1 focus:ring-[#e94e1a]" placeholder="email@exemple.com" value="${prefill.email}">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Téléphone</label>
-                            <input type="tel" name="passagers[${index}][telephone]" required class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-[#fea219] focus:ring-1 focus:ring-[#fea219]" placeholder="+225..." value="${prefill.phone}">
+                            <input type="tel" name="passagers[${index}][telephone]" required class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-[#e94e1a] focus:ring-1 focus:ring-[#e94e1a]" placeholder="+225..." value="${prefill.phone}">
                         </div>
                         <div class="md:col-span-2">
                             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Contact d'urgence</label>
-                            <input type="text" name="passagers[${index}][urgence]" required class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-[#fea219] focus:ring-1 focus:ring-[#fea219]" placeholder="Nom et Numéro à contacter">
+                            <input type="text" name="passagers[${index}][urgence]" required class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-[#e94e1a] focus:ring-1 focus:ring-[#e94e1a]" placeholder="Nom et Numéro à contacter">
                         </div>
                     </div>
                 </div>
@@ -577,7 +577,7 @@
                 icon: 'error',
                 title: 'Oups...',
                 text: error.message || 'Une erreur est survenue lors de la réservation.',
-                confirmButtonColor: '#fea219'
+                confirmButtonColor: '#e94e1a'
             });
             btn.disabled = false;
             btn.innerHTML = originalText;

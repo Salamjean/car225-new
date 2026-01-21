@@ -276,27 +276,11 @@ class HomeController extends Controller
 
                 // Pour chaque programme, récupérer les places réservées
                 foreach ($programmes as $programme) {
-                    $programReservations = Reservation::where('programme_id', $programme->id)
+                    // Nouvelle structure: 1 réservation = 1 siège (seat_number)
+                $programReservations = Reservation::where('programme_id', $programme->id)
                         ->where('statut', '!=', 'annulee')
-                        ->where(function ($query) use ($formattedDate) {
-                            // Vérifier si la colonne date_voyage existe
-                            $table = (new Reservation())->getTable();
-                            $columns = Schema::getColumnListing($table);
-
-                            if (in_array('date_voyage', $columns)) {
-                                $query->where('date_voyage', $formattedDate);
-                            } else {
-                                $query->where('date_depart', $formattedDate);
-                            }
-                        })
-                        ->pluck('places')
-                        ->flatMap(function ($places) {
-                            try {
-                                return json_decode($places, true) ?? [];
-                            } catch (\Exception $e) {
-                                return [];
-                            }
-                        })
+                        ->where('date_voyage', $formattedDate)
+                        ->pluck('seat_number')
                         ->toArray();
 
                     Log::info('Réservations pour programme ' . $programme->id . ':', [

@@ -14,7 +14,7 @@
 
                 <!-- Bouton d'ajout -->
                 <a href="{{ route('personnel.create') }}"
-                    class="inline-flex items-center px-6 py-4 bg-[#fea219] text-white font-bold rounded-xl hover:bg-[#e89116] transform hover:-translate-y-1 transition-all duration-200 shadow-lg hover:shadow-xl">
+                    class="inline-flex items-center px-6 py-4 bg-[#e94e1a] text-white font-bold rounded-xl hover:bg-[#d33d0f] transform hover:-translate-y-1 transition-all duration-200 shadow-lg hover:shadow-xl">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                     </svg>
@@ -25,14 +25,14 @@
             <!-- Statistiques -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <!-- Total Personnel -->
-                <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-[#fea219]">
+                <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-[#e94e1a]">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-600">Total Personnel</p>
                             <p class="text-2xl font-bold text-gray-900 mt-1">{{ $personnels->count() }}</p>
                         </div>
                         <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-                            <svg class="w-6 h-6 text-[#fea219]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-6 h-6 text-[#e94e1a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                             </svg>
@@ -104,7 +104,7 @@
                             <!-- Barre de recherche -->
                             <div class="relative">
                                 <input type="text" id="searchInput" placeholder="Rechercher un personnel..."
-                                    class="pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300">
+                                    class="pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300">
                                 <div class="absolute inset-y-0 left-0 flex items-center pl-3">
                                     <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
                                         viewBox="0 0 24 24">
@@ -116,7 +116,7 @@
 
                             <!-- Filtre par type -->
                             <select id="typeFilter"
-                                class="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300">
+                                class="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300">
                                 <option value="">Tous les types</option>
                                 <option value="Chauffeur">Chauffeurs</option>
                                 <option value="Convoyeur">Convoyeurs</option>
@@ -124,7 +124,7 @@
 
                             <!-- Filtre par statut -->
                             <select id="statutFilter"
-                                class="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300">
+                                class="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300">
                                 <option value="">Tous les statuts</option>
                                 <option value="disponible">Disponibles</option>
                                 <option value="indisponible">Indisponibles</option>
@@ -174,12 +174,12 @@
                                                         alt="{{ $personnel->prenom }} {{ $personnel->name }}"
                                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                                                     <div
-                                                        class="h-12 w-12 rounded-full bg-[#fea219] flex items-center justify-center text-white font-bold text-sm hidden">
+                                                        class="h-12 w-12 rounded-full bg-[#e94e1a] flex items-center justify-center text-white font-bold text-sm hidden">
                                                         {{ substr($personnel->prenom, 0, 1) }}{{ substr($personnel->name, 0, 1) }}
                                                     </div>
                                                 @else
                                                     <div
-                                                        class="h-12 w-12 rounded-full bg-[#fea219] flex items-center justify-center text-white font-bold text-sm">
+                                                        class="h-12 w-12 rounded-full bg-[#e94e1a] flex items-center justify-center text-white font-bold text-sm">
                                                         {{ substr($personnel->prenom, 0, 1) }}{{ substr($personnel->name, 0, 1) }}
                                                     </div>
                                                 @endif
@@ -307,7 +307,7 @@
                                             <p class="text-sm mb-4">Commencez par ajouter un nouveau membre à votre équipe.
                                             </p>
                                             <a href="{{ route('personnels.create') }}"
-                                                class="inline-flex items-center px-4 py-2 bg-[#fea219] text-white font-semibold rounded-lg hover:bg-[#e89116] transition-colors duration-200">
+                                                class="inline-flex items-center px-4 py-2 bg-[#e94e1a] text-white font-semibold rounded-lg hover:bg-[#d33d0f] transition-colors duration-200">
                                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -515,7 +515,7 @@
                 title: 'Succès !',
                 text: '{{ session('success') }}',
                 icon: 'success',
-                confirmButtonColor: '#fea219',
+                confirmButtonColor: '#e94e1a',
                 confirmButtonText: 'OK',
                 timer: 3000,
                 timerProgressBar: true

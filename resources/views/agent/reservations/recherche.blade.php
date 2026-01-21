@@ -66,6 +66,90 @@
                         <p class="text-muted">Format: RES-AAAAMMJJ-XXXXXX</p>
                     </div>
 
+                    <!-- Historique des tickets scannés -->
+                    <div class="mt-5">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="card-title mb-0">
+                                <i class="material-icons mr-2 text-primary" style="vertical-align: middle;">history</i>
+                                Derniers tickets scannés
+                            </h5>
+                            <span class="badge badge-pill badge-light border">
+                                {{ $terminees->total() }} total
+                            </span>
+                        </div>
+                        
+                        <div class="card border-0 shadow-sm" style="border-radius: 15px; overflow: hidden;">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="bg-light text-muted">
+                                        <tr>
+                                            <th class="font-weight-bold border-top-0">Référence</th>
+                                            <th class="font-weight-bold border-top-0">Passager</th>
+                                            <th class="font-weight-bold border-top-0 text-center">Place</th>
+                                            <th class="font-weight-bold border-top-0">Trajet</th>
+                                            <th class="font-weight-bold border-top-0">Véhicule</th>
+                                            <th class="font-weight-bold border-top-0 text-right">Scanné le</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($terminees as $resa)
+                                            <tr>
+                                                <td class="align-middle">
+                                                    <span class="badge badge-light border text-muted" style="font-family: monospace; font-size: 0.9em;">
+                                                        {{ $resa->reference }}
+                                                    </span>
+                                                </td>
+                                                <td class="align-middle">
+                                                    <div class="font-weight-bold text-dark">{{ $resa->passager_prenom }} {{ $resa->passager_nom }}</div>
+                                                    <small class="text-muted d-block">{{ $resa->passager_telephone }}</small>
+                                                </td>
+                                                <td class="align-middle text-center">
+                                                    <span class="badge badge-primary badge-pill px-3 py-2">{{ $resa->seat_number }}</span>
+                                                </td>
+                                                <td class="align-middle">
+                                                    <div class="d-flex align-items-center">
+                                                        <span class="font-weight-medium">{{ $resa->programme->point_depart }}</span>
+                                                        <i class="material-icons mx-2 text-muted" style="font-size:14px;">arrow_forward</i>
+                                                        <span class="font-weight-medium">{{ $resa->programme->point_arrive }}</span>
+                                                    </div>
+                                                </td>
+                                                <td class="align-middle">
+                                                    @if($resa->embarquementVehicule)
+                                                        <span class="badge badge-info">{{ $resa->embarquementVehicule->immatriculation }}</span>
+                                                    @else
+                                                        <span class="text-muted">-</span>
+                                                    @endif
+                                                </td>
+                                                <td class="align-middle text-right">
+                                                    <span class="text-dark font-weight-medium">
+                                                        {{ $resa->embarquement_scanned_at ? \Carbon\Carbon::parse($resa->embarquement_scanned_at)->format('H:i') : '-' }}
+                                                    </span>
+                                                    <small class="text-muted d-block">
+                                                        {{ $resa->embarquement_scanned_at ? \Carbon\Carbon::parse($resa->embarquement_scanned_at)->format('d/m/Y') : '' }}
+                                                    </small>
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="6" class="text-center py-5">
+                                                    <div class="text-muted">
+                                                        <i class="material-icons mb-2" style="font-size: 32px; opacity: 0.5;">history_edu</i>
+                                                        <p class="mb-0">Aucun ticket scanné récemment.</p>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        <div class="mt-4 d-flex justify-content-center">
+                            {{ $terminees->links() }}
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>

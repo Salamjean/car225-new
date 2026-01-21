@@ -326,29 +326,12 @@ class ReservationController extends Controller
                 })
                 ->get();
 
-            // Pour chaque programme, récupérer les places réservées
+            // Pour chaque programme, récupérer les places réservées (nouvelle structure: 1 réservation = 1 siège)
             foreach ($programmes as $programme) {
                 $programReservations = Reservation::where('programme_id', $programme->id)
                     ->where('statut', '!=', 'annulee')
-                    ->where(function ($query) use ($formattedDate) {
-                        // Vérifier si la colonne date_voyage existe
-                        $table = (new Reservation())->getTable();
-                        $columns = Schema::getColumnListing($table);
-
-                        if (in_array('date_voyage', $columns)) {
-                            $query->where('date_voyage', $formattedDate);
-                        } else {
-                            $query->where('date_depart', $formattedDate);
-                        }
-                    })
-                    ->pluck('places')
-                    ->flatMap(function ($places) {
-                        try {
-                            return json_decode($places, true) ?? [];
-                        } catch (\Exception $e) {
-                            return [];
-                        }
-                    })
+                    ->where('date_voyage', $formattedDate)
+                    ->pluck('seat_number')
                     ->toArray();
 
                 $reservedSeats = array_merge($reservedSeats, $programReservations);
@@ -1231,6 +1214,10 @@ class ReservationController extends Controller
         $placesParRanger = $placesGauche + $placesDroite;
         $totalPlaces = $vehicule->nombre_place;
         $nombreRanger = ceil($totalPlaces / $placesParRanger);
+        
+        // Calculer les statistiques de places
+        $totalOccupees = count($reservedSeats);
+        $totalDisponibles = $totalPlaces - $totalOccupees;
 
         // Afficher la date si fournie
         $dateInfo = '';
@@ -1369,19 +1356,35 @@ class ReservationController extends Controller
             </div>
         </div>
         
-        <!-- Légende -->
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 20px; padding: 15px; background: #f9fafb; border-radius: 8px;">
+        <!-- Légende avec compteurs -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; padding: 15px; background: #f9fafb; border-radius: 8px;">
             <div style="display: flex; align-items: center; gap: 8px;">
                 <div style="width: 20px; height: 20px; background: linear-gradient(135deg, #fea219, #e89116); border-radius: 4px;"></div>
-                <span style="color: #4b5563; font-size: 0.9rem;">Côté gauche (disponible)</span>
+                <span style="color: #4b5563; font-size: 0.9rem;">Côté gauche</span>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
                 <div style="width: 20px; height: 20px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 4px;"></div>
-                <span style="color: #4b5563; font-size: 0.9rem;">Côté droit (disponible)</span>
+                <span style="color: #4b5563; font-size: 0.9rem;">Côté droit</span>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
                 <div style="width: 20px; height: 20px; background: linear-gradient(135deg, #ef4444, #dc2626); border-radius: 4px; opacity: 0.7;"></div>
                 <span style="color: #4b5563; font-size: 0.9rem;">Place occupée</span>
+            </div>
+        </div>
+        
+        <!-- Statistiques des places -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 15px; padding: 20px; background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border-radius: 12px; border: 1px solid #bae6fd;">
+            <div style="text-align: center; padding: 10px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <div style="font-size: 1.8rem; font-weight: bold; color: #10b981;">' . $totalDisponibles . '</div>
+                <div style="font-size: 0.85rem; font-weight: 600; color: #059669;">Places disponibles</div>
+            </div>
+            <div style="text-align: center; padding: 10px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <div style="font-size: 1.8rem; font-weight: bold; color: #ef4444;">' . $totalOccupees . '</div>
+                <div style="font-size: 0.85rem; font-weight: 600; color: #dc2626;">Places occupées</div>
+            </div>
+            <div style="text-align: center; padding: 10px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <div style="font-size: 1.8rem; font-weight: bold; color: #3b82f6;">' . $totalPlaces . '</div>
+                <div style="font-size: 0.85rem; font-weight: 600; color: #1d4ed8;">Total places</div>
             </div>
         </div>
     </div>

@@ -15,11 +15,11 @@
 
 <style>
     :root {
-        --primary-color: #fea219;
-        --primary-light: #fea219;
+        --primary-color: #e94e1a;
+        --primary-light: #e94e1a;
         --primary-dark: #28a745;
         --light-color: #ffffff;
-        --dark-color: #fea219;
+        --dark-color: #e94e1a;
         --gray-color: #28a745;
         --error-color: #dc3545;
         --success-color: #28a745;
@@ -32,7 +32,7 @@
         justify-content: center;
         min-height: 100vh;
         background:
-            linear-gradient(rgba(0, 51, 196, 0.1), rgba(255, 136, 0, 0.9)),
+            linear-gradient(rgba(0, 51, 196, 0.1), rgba(233, 78, 26, 0.9)),
             url('{{ asset('assets/assets/img/arrierep.jpg') }}');
         background-size: cover;
         background-position: center;
@@ -109,7 +109,7 @@
     }
 
     .input-field:focus {
-        border-color: #fea219;
+        border-color: #e94e1a;
         box-shadow: 0 0 0 3px rgba(0, 51, 196, 0.1);
     }
 
@@ -134,7 +134,7 @@
     .auth-btn {
         width: 100%;
         height: 50px;
-        background-color: #fea219;
+        background-color: #e94e1a;
         color: white;
         border: none;
         border-radius: 10px;
@@ -149,7 +149,7 @@
     }
 
     .auth-btn:hover {
-        background-color: #f5ae45;
+        background-color: #d33d0f;
         transform: translateY(-2px);
     }
 

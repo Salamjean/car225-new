@@ -1,4 +1,4 @@
-<header class="mdc-top-app-bar" style="background-color: #fea219">
+<header class="mdc-top-app-bar" style="background-color: #e94e1a">
     <div class="mdc-top-app-bar__row">
         <div class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start">
             <button

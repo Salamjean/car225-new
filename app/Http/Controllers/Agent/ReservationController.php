@@ -75,7 +75,23 @@ class ReservationController extends Controller
      */
     public function recherchePage()
     {
-        return view('agent.reservations.recherche');
+        $agent = Auth::guard('agent')->user();
+        
+        $terminees = Reservation::with(['programme', 'user', 'embarquementVehicule'])
+            ->whereHas('programme', function($query) use ($agent) {
+                $query->where('compagnie_id', $agent->compagnie_id);
+            })
+            ->where('statut', 'terminee')
+            ->where('embarquement_agent_id', $agent->id) // Optionnel: voir seulement ceux scannés par cet agent ? Ou tous pour la compagnie ? Le user a dit "voir les ticket scanner", supposons par la compagnie ou l'agent.
+            // Si on veut tous ceux de la compagnie, on enlève embarquement_agent_id. 
+            // Mais généralement "mes scans" c'est mieux.
+            // Cependant, la vue précédente affichait $terminees qui venait de $reservations filtré par 'terminee' dans index(), 
+            // et index() prenait toutes les résa de la compagnie. Gardons la logique précédente.
+            // Correction: index() filtrait par compagnie seulement. Donc on garde ça.
+            ->orderBy('embarquement_scanned_at', 'desc')
+            ->paginate(5);
+
+        return view('agent.reservations.recherche', compact('terminees'));
     }
 
     /**
