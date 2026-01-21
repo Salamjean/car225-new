@@ -110,8 +110,9 @@ class ReservationController extends Controller
 
         $reservation->load(['programme', 'programme.compagnie', 'user']);
 
-        // Récupérer le numéro de place via la requête
-        $seatNumber = $request->query('seat_number');
+        // Récupérer le type de billet (aller ou retour)
+        $type = $request->query('type', 'aller');
+        $seatNumber = $request->query('seat_number') ?? $reservation->seat_number;
 
         // Calculer les montants
         $prixUnitaire = (float) $reservation->programme->montant_billet;
@@ -119,7 +120,21 @@ class ReservationController extends Controller
         $tripType = $isAllerRetour ? 'Aller-Retour' : 'Aller Simple';
         $prixTotalIndividuel = $isAllerRetour ? $prixUnitaire * 2 : $prixUnitaire;
 
+        // Déterminer la date et le QR code selon le type
+        $ticketType = 'ALLER';
+        $dateVoyage = $reservation->date_voyage;
+        $qrCode = $reservation->qr_code;
+
+        if ($type === 'retour' && $isAllerRetour) {
+            $ticketType = 'RETOUR';
+            $dateVoyage = $reservation->date_retour ?? $reservation->date_voyage;
+            $qrCode = $reservation->qr_code_retour ?? $reservation->qr_code;
+        }
+
         $nomFichier = 'billet-' . $reservation->reference;
+        if ($isAllerRetour) {
+            $nomFichier .= '-' . $ticketType;
+        }
         if ($seatNumber) {
             $nomFichier .= '-Place-' . $seatNumber;
         }
@@ -130,8 +145,10 @@ class ReservationController extends Controller
             'programme' => $reservation->programme,
             'user' => $reservation->user,
             'compagnie' => $reservation->programme->compagnie,
-            'qrCodeBase64' => $reservation->qr_code,
+            'qrCodeBase64' => $qrCode,
             'tripType' => $tripType,
+            'ticketType' => $ticketType,
+            'dateVoyage' => $dateVoyage,
             'prixUnitaire' => $prixUnitaire,
             'prixTotalIndividuel' => $prixTotalIndividuel,
             'isAllerRetour' => $isAllerRetour,
@@ -543,10 +560,31 @@ class ReservationController extends Controller
         }
 
         try {
+            // Utiliser le choix de l'utilisateur pour déterminer si c'est un aller-retour
+            // L'utilisateur peut choisir aller simple même sur un programme aller-retour
+            $isAllerRetour = $request->boolean('is_aller_retour');
+            
             // Calculer le prix par place
             $prixUnitaire = $programme->montant_billet;
-            if ($programme->is_aller_retour) {
+            if ($isAllerRetour) {
                 $prixUnitaire *= 2;
+            }
+
+            // Déterminer la date de retour pour les voyages aller-retour
+            $dateRetour = null;
+            if ($isAllerRetour) {
+                if ($programme->type_programmation == 'ponctuel') {
+                    // Pour les programmes ponctuels, le retour est le même jour
+                    $dateRetour = $dateVoyage;
+                } else {
+                    // Pour les programmes récurrents, utiliser la date fournie par l'utilisateur
+                    if ($request->filled('date_retour')) {
+                        $dateRetour = date('Y-m-d', strtotime($request->date_retour));
+                    } else {
+                        // Si pas de date retour fournie, utiliser le prochain jour de récurrence après date_voyage
+                        $dateRetour = $this->getNextRecurrenceDate($programme, $dateVoyage);
+                    }
+                }
             }
 
             // Générer un identifiant de groupe pour lier les réservations
@@ -562,7 +600,7 @@ class ReservationController extends Controller
                 $reference = 'RES-' . date('Ymd') . '-' . $groupId . '-' . $seatNumber;
 
                 // Créer la réservation pour cette place
-                $reservation = Reservation::create([
+                $reservationData = [
                     'user_id' => Auth::id(),
                     'programme_id' => $request->programme_id,
                     'seat_number' => $seatNumber,
@@ -571,35 +609,66 @@ class ReservationController extends Controller
                     'passager_email' => $passager['email'],
                     'passager_telephone' => $passager['telephone'],
                     'passager_urgence' => $passager['urgence'],
-                    'is_aller_retour' => $programme->is_aller_retour,
+                    'is_aller_retour' => $isAllerRetour,
                     'montant' => $prixUnitaire,
                     'statut' => 'confirmee',
                     'reference' => $reference,
                     'date_voyage' => $dateVoyage,
-                ]);
+                ];
 
-                // Générer et sauvegarder le QR Code pour cette réservation
-                $qrCodeData = $this->generateAndSaveQRCode($reference, $reservation->id, $dateVoyage);
+                // Ajouter les champs aller-retour si applicable
+                if ($isAllerRetour) {
+                    $reservationData['date_retour'] = $dateRetour;
+                    $reservationData['statut_aller'] = 'confirmee';
+                    $reservationData['statut_retour'] = 'confirmee';
+                    
+                    // Lier au programme retour si disponible
+                    if ($programme->programmeRetour) {
+                        $reservationData['programme_retour_id'] = $programme->programmeRetour->id;
+                    }
+                } else {
+                    $reservationData['statut_aller'] = 'confirmee';
+                }
 
-                // Mettre à jour la réservation avec les données du QR Code
-                $reservation->update([
-                    'qr_code' => $qrCodeData['base64'],
-                    'qr_code_path' => $qrCodeData['path'],
-                    'qr_code_data' => $qrCodeData['qr_data'],
-                ]);
+                $reservation = Reservation::create($reservationData);
+
+                // Générer et sauvegarder le QR Code ALLER pour cette réservation
+                $qrCodeAllerData = $this->generateAndSaveQRCodeWithType($reference, $reservation->id, $dateVoyage, 'aller');
+
+                // Mettre à jour la réservation avec les données du QR Code Aller
+                $updateData = [
+                    'qr_code' => $qrCodeAllerData['base64'],
+                    'qr_code_path' => $qrCodeAllerData['path'],
+                    'qr_code_data' => $qrCodeAllerData['qr_data'],
+                ];
+
+                // Si aller-retour, générer aussi le QR Code RETOUR
+                $qrCodeRetourData = null;
+                if ($isAllerRetour) {
+                    $qrCodeRetourData = $this->generateAndSaveQRCodeWithType($reference . '-R', $reservation->id, $dateRetour, 'retour');
+                    
+                    $updateData['qr_code_retour'] = $qrCodeRetourData['base64'];
+                    $updateData['qr_code_retour_path'] = $qrCodeRetourData['path'];
+                    $updateData['qr_code_retour_data'] = $qrCodeRetourData['qr_data'];
+                }
+
+                $reservation->update($updateData);
 
                 Log::info('Réservation créée:', [
                     'id' => $reservation->id,
                     'reference' => $reference,
                     'seat_number' => $seatNumber,
                     'passager' => $passager['prenom'] . ' ' . $passager['nom'],
+                    'is_aller_retour' => $isAllerRetour,
+                    'date_retour' => $dateRetour,
                 ]);
 
-                // Envoyer l'email au passager avec SON QR code
-                $this->sendReservationEmail(
+                // Envoyer l'email au passager avec les QR codes (aller et retour si applicable)
+                $this->sendReservationEmailWithRetour(
                     $reservation,
                     $programme,
-                    $qrCodeData['base64'],
+                    $qrCodeAllerData['base64'],
+                    $qrCodeRetourData ? $qrCodeRetourData['base64'] : null,
                     $passager['email'],
                     $passager['prenom'] . ' ' . $passager['nom'],
                     $seatNumber
@@ -610,6 +679,8 @@ class ReservationController extends Controller
                     'reference' => $reference,
                     'seat_number' => $seatNumber,
                     'passager' => $passager['prenom'] . ' ' . $passager['nom'],
+                    'is_aller_retour' => $isAllerRetour,
+                    'date_retour' => $dateRetour,
                 ];
             }
 
@@ -618,9 +689,14 @@ class ReservationController extends Controller
 
             Log::info('=== FIN RESERVATION: ' . count($createdReservations) . ' réservations créées ===');
 
+            $message = 'Réservation créée avec succès. ' . count($createdReservations) . ' billet(s) envoyé(s) par email.';
+            if ($programme->is_aller_retour) {
+                $message .= ' (Aller + Retour inclus)';
+            }
+
             return response()->json([
                 'success' => true,
-                'message' => 'Réservation créée avec succès. ' . count($createdReservations) . ' billet(s) envoyé(s) par email.',
+                'message' => $message,
                 'reservations' => $createdReservations,
                 'group_id' => $groupId,
             ]);
@@ -658,7 +734,7 @@ class ReservationController extends Controller
             // Pour programme ponctuel
             $totalReservedSeats = Reservation::where('programme_id', $programme->id)
                 ->where('statut', '!=', 'annulee')
-                ->sum('nombre_places');
+                ->count();
 
             $totalPlaces = $programme->vehicule->nombre_place ?? 50;
             $percentage = ($totalReservedSeats / $totalPlaces) * 100;
@@ -713,7 +789,7 @@ class ReservationController extends Controller
             $totalReservedSeats = Reservation::where('programme_id', $programme->id)
                 ->where('date_voyage', $date)
                 ->where('statut', '!=', 'annulee')
-                ->sum('nombre_places');
+                ->count();
 
             $totalPlaces = $programme->vehicule->nombre_place ?? 50;
             $percentage = ($totalReservedSeats / $totalPlaces) * 100;
@@ -846,6 +922,164 @@ class ReservationController extends Controller
     }
 
     /**
+     * Générer et sauvegarder le QR Code avec type (aller/retour)
+     */
+    private function generateAndSaveQRCodeWithType(string $reference, int $reservationId, string $dateVoyage, string $type = 'aller'): array
+    {
+        try {
+            // Données à encoder dans le QR Code avec le type de trajet
+            $qrData = [
+                'reference' => $reference,
+                'reservation_id' => $reservationId,
+                'user_id' => Auth::id(),
+                'date_voyage' => $dateVoyage,
+                'type' => $type, // 'aller' ou 'retour'
+                'timestamp' => time(),
+                'verification_hash' => hash('sha256', $reference . $reservationId . $dateVoyage . $type . config('app.key'))
+            ];
+
+            $qrContent = json_encode($qrData);
+
+            // Créer le QR Code
+            $qrCode = QrCode::create($qrContent);
+            $qrCode->setSize(180);
+            $qrCode->setMargin(5);
+
+            // Écrire le QR Code en PNG
+            $writer = new PngWriter();
+            $qrCodeResult = $writer->write($qrCode);
+            $qrCodeImage = $qrCodeResult->getString();
+
+            // Convertir en base64 pour stockage
+            $qrCodeBase64 = base64_encode($qrCodeImage);
+
+            // Chemin de sauvegarde avec suffixe pour le type
+            $suffix = $type === 'retour' ? '_retour' : '_aller';
+            $qrCodePath = 'qrcodes/' . $reference . $suffix . '.png';
+            $fullPath = storage_path('app/public/' . $qrCodePath);
+
+            // Créer le dossier si nécessaire
+            if (!file_exists(dirname($fullPath))) {
+                mkdir(dirname($fullPath), 0755, true);
+            }
+
+            // Sauvegarder le fichier
+            file_put_contents($fullPath, $qrCodeImage);
+
+            Log::info('QR Code ' . $type . ' généré et sauvegardé:', [
+                'reference' => $reference,
+                'path' => $qrCodePath,
+                'type' => $type
+            ]);
+
+            return [
+                'base64' => $qrCodeBase64,
+                'path' => $qrCodePath,
+                'qr_data' => $qrData,
+                'qr_content' => $qrContent
+            ];
+        } catch (\Exception $e) {
+            Log::error('Erreur génération QR Code ' . $type . ':', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            throw new \Exception('Erreur lors de la génération du QR Code ' . $type . ': ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Envoyer l'email de confirmation avec PDF et QR Codes (aller et retour si applicable)
+     */
+    private function sendReservationEmailWithRetour(Reservation $reservation, Programme $programme, string $qrCodeAllerBase64, ?string $qrCodeRetourBase64 = null, string $recipientEmail = null, string $recipientName = null, int $seatNumber = null): void
+    {
+        try {
+            $email = $recipientEmail ?: (Auth::user()->email ?? null);
+            $name = $recipientName ?: (Auth::user()->name ?? 'Client');
+
+            if (!$email) {
+                Log::warning('Tentative d\'envoi d\'email sans destinataire:', ['reservation_id' => $reservation->id]);
+                return;
+            }
+
+            Log::info('Envoi de la notification aller-retour à:', [
+                'email' => $email,
+                'name' => $name,
+                'reservation_id' => $reservation->id,
+                'seat_number' => $seatNumber,
+                'has_retour' => $qrCodeRetourBase64 !== null
+            ]);
+
+            // Envoyer la notification avec les deux QR codes
+            Notification::route('mail', $email)->notify(
+                new ReservationConfirmeeNotification(
+                    $reservation, 
+                    $programme, 
+                    $qrCodeAllerBase64, 
+                    $name, 
+                    $seatNumber,
+                    $qrCodeRetourBase64 // Nouveau paramètre pour le QR code retour
+                )
+            );
+
+            Log::info('Notification aller-retour envoyée avec succès');
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de l\'envoi de l\'email aller-retour:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'reservation_id' => $reservation->id,
+                'email' => $email ?? 'N/A'
+            ]);
+        }
+    }
+
+    /**
+     * Trouver la prochaine date de récurrence après une date donnée
+     */
+    private function getNextRecurrenceDate(Programme $programme, string $afterDate): string
+    {
+        $joursRecurrence = json_decode($programme->jours_recurrence, true) ?? [];
+        
+        if (empty($joursRecurrence)) {
+            return $afterDate; // Si pas de récurrence, retourner la même date
+        }
+
+        $joursFrancais = [
+            'lundi' => 1,
+            'mardi' => 2,
+            'mercredi' => 3,
+            'jeudi' => 4,
+            'vendredi' => 5,
+            'samedi' => 6,
+            'dimanche' => 0
+        ];
+
+        $startDate = new \DateTime($afterDate);
+        $startDate->modify('+1 day'); // Commencer par le jour suivant
+        
+        // Chercher sur les 14 prochains jours
+        for ($i = 0; $i < 14; $i++) {
+            $currentDay = strtolower($startDate->format('l'));
+            $currentDayFrench = array_search($startDate->format('w'), $joursFrancais);
+            
+            // Vérifier si ce jour est dans les jours de récurrence
+            foreach ($joursRecurrence as $jour) {
+                $jourNormalized = strtolower(trim($jour));
+                if ($jourNormalized === $currentDayFrench) {
+                    return $startDate->format('Y-m-d');
+                }
+            }
+            
+            $startDate->modify('+1 day');
+        }
+
+        // Si aucun jour trouvé, retourner la date de départ + 7 jours
+        $defaultDate = new \DateTime($afterDate);
+        $defaultDate->modify('+7 days');
+        return $defaultDate->format('Y-m-d');
+    }
+
+    /**
      * Mettre à jour le statut du programme
      */
     private function updateProgramStatus($programme, $dateVoyage = null): void
@@ -860,7 +1094,7 @@ class ReservationController extends Controller
                 $query->where('date_voyage', $dateVoyage);
             }
 
-            $totalReservedSeats = $query->sum('nombre_places');
+            $totalReservedSeats = $query->count();
             $totalPlaces = $programme->vehicule->nombre_place ?? 50;
 
             if ($totalPlaces == 0) {
@@ -1395,8 +1629,9 @@ class ReservationController extends Controller
 
     public function apiProgrammes()
     {
+         // AJOUT : 'programmeRetour' dans le with()
         // Récupérer tous les programmes actifs avec les détails nécessaires
-        $programmes = Programme::with(['compagnie', 'vehicule', 'itineraire'])
+        $programmes = Programme::with(['compagnie', 'vehicule', 'itineraire', 'programmeRetour'])
             ->where(function ($q) {
                 // Programmes ponctuels futurs
                 $q->where('type_programmation', 'ponctuel')

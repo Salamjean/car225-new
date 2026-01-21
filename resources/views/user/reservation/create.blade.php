@@ -227,12 +227,12 @@
                                         <!-- Actions mobile -->
                                         <div class="flex gap-2">
                                             @if ($statut != 'rempli')
-                                                <button
-                                                    onclick="showReservationModal({{ $programme->id }}, '{{ $searchParams['date_depart_formatted'] ?? $programme->date_depart }}')"
-                                                    class="flex-1 bg-[#e94e1a] text-white text-center py-2 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 flex items-center justify-center gap-2">
-                                                    <i class="fas fa-ticket-alt"></i>
-                                                    <span>Réserver</span>
-                                                </button>
+                                               <button
+    onclick="initiateReservationProcess({{ $programme->id }}, '{{ $searchParams['date_depart_formatted'] ?? (isset($programme->date_depart) ? date('Y-m-d', strtotime($programme->date_depart)) : '') }}')"
+    class="flex-1 bg-[#e94e1a] text-white text-center py-2 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 flex items-center justify-center gap-2">
+    <i class="fas fa-ticket-alt"></i>
+    <span>Réserver</span>
+</button>
                                             @else
                                                 <button
                                                     class="flex-1 bg-gray-400 text-white text-center py-2 rounded-lg font-bold cursor-not-allowed flex items-center justify-center gap-2"
@@ -344,12 +344,12 @@
                                                 </button>
 
                                                 @if ($statut != 'rempli')
-                                                    <button
-                                                        onclick="showReservationModal({{ $programme->id }}, '{{ $searchParams['date_depart_formatted'] ?? $programme->date_depart }}')"
-                                                        class="bg-[#e94e1a] text-white px-4 py-2 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 flex items-center gap-2">
-                                                        <i class="fas fa-ticket-alt"></i>
-                                                        <span>Réserver</span>
-                                                    </button>
+                                                   <button 
+    onclick="initiateReservationProcess({{ $programme->id }}, '{{ $searchParams['date_depart_formatted'] ?? (isset($programme->date_depart) ? date('Y-m-d', strtotime($programme->date_depart)) : '') }}')"
+    class="bg-[#e94e1a] text-white px-4 py-2 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 flex items-center gap-2"> <!-- Adaptez les classes CSS selon mobile/desktop -->
+    <i class="fas fa-ticket-alt"></i>
+    <span>Réserver</span>
+</button>
                                                 @else
                                                     <button
                                                         class="bg-gray-400 text-white px-4 py-2 rounded-lg font-bold cursor-not-allowed flex items-center gap-2"
@@ -754,7 +754,57 @@
 
         // NOUVEAU: ID de requête pour éviter les conflits asynchrones
         let currentRequestId = 0;
+   // --- NOUVELLE FONCTION PRINCIPALE D'INITIATION ---
+        // C'est elle qui est appelée par le bouton "Réserver"
+        async function initiateReservationProcess(programId, searchDateFormatted) {
+            console.log("Initiation réservation pour ID:", programId, "Date:", searchDateFormatted);
+            
+            // Reset des variables
+            userWantsAllerRetour = false;
+            window.userChoseAllerRetour = false;
+            window.selectedReturnDate = null;
+            
+            Swal.fire({
+                title: 'Chargement...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
 
+            try {
+                const response = await fetch(`/user/booking/program/${programId}`);
+                const data = await response.json();
+                
+                if (!data.success) throw new Error("Impossible de charger les détails du programme");
+                
+                const program = data.programme;
+                Swal.close();
+
+                // Stocker la date pour plus tard
+                window.selectedDepartureDate = searchDateFormatted;
+                currentSelectedProgram = program; // Important pour les modals suivants
+
+                // Logique de décision
+                if (program.is_aller_retour) {
+                    // Si c'est un programme avec option A/R, on propose TOUJOURS le choix
+                    openAllerRetourConfirmModal(program, searchDateFormatted);
+                } else if (program.type_programmation === 'recurrent' && !searchDateFormatted) {
+                    // Si récurrent sans date (via "Voir tous les programmes"), on demande la date
+                    openDateSelectionModal(program);
+                } else {
+                    // Sinon direct réservation (Aller simple ponctuel ou récurrent avec date déjà choisie)
+                    openReservationModal(programId, searchDateFormatted || program.date_depart.split('T')[0]);
+                }
+
+            } catch (error) {
+                console.error(error);
+                Swal.close();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erreur',
+                    text: 'Une erreur est survenue lors de l\'initialisation.'
+                });
+            }
+        }
         // ============================================
         // FONCTION 3: Ouvrir le modal de réservation
         // ============================================
@@ -824,6 +874,14 @@
 
                         // Formater la date pour l'affichage
                         const dateDisplay = new Date(dateVoyage).toLocaleDateString('fr-FR');
+                        
+                        // Calculer le prix selon le choix de l'utilisateur
+                        let prixAffiche = parseInt(program.montant_billet);
+                        let allerRetourBadge = '';
+                        if (window.userChoseAllerRetour) {
+                            prixAffiche = prixAffiche * 2;
+                            allerRetourBadge = '<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm"><i class="fas fa-exchange-alt me-1"></i>Aller-Retour</span>';
+                        }
 
                         // Mettre à jour l'info programme
                         document.getElementById('reservationProgramInfo').innerHTML = `
@@ -831,8 +889,9 @@
                                             <span><i class="fas fa-map-marker-alt"></i> ${program.point_depart} → ${program.point_arrive}</span>
                                             <span><i class="fas fa-calendar"></i> ${dateDisplay}</span>
                                             <span><i class="fas fa-clock"></i> ${program.heure_depart}</span>
-                                            <span><i class="fas fa-money-bill-wave"></i> ${parseInt(program.montant_billet).toLocaleString('fr-FR')} FCFA</span>
-                                            <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">
+                                            <span><i class="fas fa-money-bill-wave"></i> ${prixAffiche.toLocaleString('fr-FR')} FCFA</span>
+                                            ${allerRetourBadge}
+                                            <span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-sm">
                                                 ${program.type_programmation === 'recurrent' ? 'Programme récurrent' : 'Programme ponctuel'}
                                             </span>
                                         </div>
@@ -1399,6 +1458,8 @@
                                 seats: sortedSeats,
                                 nombre_places: selectedNumberOfPlaces,
                                 date_voyage: dateVoyage,
+                                date_retour: window.selectedReturnDate || null,
+                                is_aller_retour: window.userChoseAllerRetour || false,
                                 passagers: passengers
                             })
                         });
@@ -1504,7 +1565,7 @@
             }
         }
 
-        function renderProgramsList(programmes) {
+      function renderProgramsList(programmes) {
             const container = document.getElementById('programsListContent');
             container.innerHTML = programmes.map(prog => {
                 const isRecurrent = prog.type_programmation === 'recurrent';
@@ -1515,11 +1576,18 @@
                 const recDays = isRecurrent && prog.jours_recurrence ? 
                     JSON.parse(prog.jours_recurrence).join(', ') : '';
 
+                // NOUVEAU : Badge Aller-Retour plus visible
+                const allerRetourBadge = prog.is_aller_retour ? 
+                    `<div class="absolute top-2 right-2 bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-bold shadow-sm flex items-center gap-1 border border-purple-200">
+                        <i class="fas fa-exchange-alt"></i> Aller-Retour dispo
+                    </div>` : '';
+
                 return `
-                    <div class="bg-blue-50 rounded-lg p-4 border border-blue-100 hover:shadow-md transition-shadow">
-                        <div class="flex justify-between items-start mb-2">
-                            <h4 class="font-bold text-gray-800">${prog.compagnie?.name || 'Compagnie'}</h4>
-                            <span class="text-xs bg-white px-2 py-1 rounded border text-gray-500">${prog.vehicule?.type_range || 'Standard'}</span>
+                    <div class="relative bg-blue-50 rounded-lg p-4 border border-blue-100 hover:shadow-md transition-shadow">
+                        ${allerRetourBadge}
+                        <div class="flex justify-between items-start mb-2 pr-20"> <!-- Padding right pour éviter chevauchement avec badge -->
+                            <h4 class="font-bold text-gray-800 truncate max-w-[150px]">${prog.compagnie?.name || 'Compagnie'}</h4>
+                            <span class="text-xs bg-white px-2 py-1 rounded border text-gray-500 whitespace-nowrap">${prog.vehicule?.type_range || 'Standard'}</span>
                         </div>
                         
                         <div class="flex items-center gap-2 mb-3 text-sm">
@@ -1544,7 +1612,8 @@
                             </div>
                         ` : ''}
                         
-                        <button onclick='selectProgramFromList(${JSON.stringify(prog).replace(/'/g, "&#39;")})' 
+                         <button 
+                            onclick="initiateReservationProcess(${prog.id}, null)" 
                             class="w-full bg-[#e94e1a] text-white py-2 rounded font-bold hover:bg-orange-600 transition-colors text-sm">
                             Choisir ce programme
                         </button>
@@ -1552,18 +1621,240 @@
                 `;
             }).join('');
         }
-
         function selectProgramFromList(program) {
             currentSelectedProgram = program;
             
+            // Pour les programmes aller-retour, on demande d'abord la date (si récurrent)
+            // puis on propose le choix aller simple / aller-retour
+            proceedWithProgramSelection(program);
+        }
+
+        function proceedWithProgramSelection(program) {
             if (program.type_programmation === 'recurrent') {
                 document.getElementById('programsListModal').classList.add('hidden');
                 openDateSelectionModal(program);
             } else {
                 document.getElementById('programsListModal').classList.add('hidden');
-                // Pour ponctuel, utiliser directement la date de départ
-                // S'assurer que la date est au format YYYY-MM-DD
-                const dateDepart = program.date_depart.split('T')[0];
+                // Pour ponctuel aller-retour, afficher le modal de choix
+                if (program.is_aller_retour) {
+                    window.selectedDepartureDate = program.date_depart?.split('T')[0];
+                    openAllerRetourConfirmModal(program, window.selectedDepartureDate);
+                } else {
+                    const dateDepart = program.date_depart.split('T')[0];
+                    openReservationModal(program.id, dateDepart);
+                }
+            }
+        }
+
+        // ============================================
+        // FONCTION 14bis: Modal confirmation Aller-Retour
+        // ============================================
+        let userWantsAllerRetour = false; // Variable globale pour stocker le choix
+
+        function openAllerRetourConfirmModal(program, selectedDepartureDate = null) {
+            document.getElementById('programsListModal').classList.add('hidden');
+            
+            const modal = document.getElementById('allerRetourConfirmModal');
+            const infoDiv = document.getElementById('allerRetourTripInfo');
+            
+            // Calculer les prix
+            const prixSimple = parseInt(program.montant_billet);
+            const prixDouble = prixSimple * 2;
+            
+            // Stocker la date de départ sélectionnée
+            window.selectedDepartureDate = selectedDepartureDate || program.date_depart?.split('T')[0];
+            
+            // Afficher les infos du trajet
+            infoDiv.innerHTML = `
+                <div class="text-center">
+                    <div class="text-lg font-bold text-gray-800 mb-2">
+                        ${program.point_depart} <i class="fas fa-arrow-right text-gray-400 mx-2"></i> ${program.point_arrive}
+                    </div>
+                    <div class="text-sm text-gray-500 mb-3">${program.compagnie?.name || 'Compagnie'}</div>
+                </div>
+            `;
+            
+            // Réinitialiser le choix
+            userWantsAllerRetour = false;
+            document.getElementById('allerRetourChoice').value = 'aller_simple';
+            updateAllerRetourPriceDisplay(program);
+            document.getElementById('returnDateSection').classList.add('hidden');
+            
+            modal.classList.remove('hidden');
+        }
+
+        function onAllerRetourChoiceChange(program) {
+            const choice = document.getElementById('allerRetourChoice').value;
+            userWantsAllerRetour = (choice === 'aller_retour');
+            
+            updateAllerRetourPriceDisplay(currentSelectedProgram);
+            
+            const returnDateSection = document.getElementById('returnDateSection');
+            if (userWantsAllerRetour && currentSelectedProgram.type_programmation === 'recurrent') {
+                returnDateSection.classList.remove('hidden');
+                populateReturnDateSelect(currentSelectedProgram, window.selectedDepartureDate);
+            } else {
+                returnDateSection.classList.add('hidden');
+            }
+        }
+
+        function updateAllerRetourPriceDisplay(program) {
+            const priceDiv = document.getElementById('allerRetourPriceDisplay');
+            const prixSimple = parseInt(program.montant_billet);
+            const prixDouble = prixSimple * 2;
+            
+            if (userWantsAllerRetour) {
+                priceDiv.innerHTML = `
+                    <div class="bg-blue-50 rounded-lg p-3 border-2 border-blue-200">
+                        <div class="text-sm text-blue-600 mb-1"><i class="fas fa-exchange-alt me-1"></i> Prix Aller-Retour</div>
+                        <div class="text-2xl font-bold text-[#e94e1a]">${prixDouble.toLocaleString('fr-FR')} FCFA</div>
+                        <div class="text-xs text-gray-400">(${prixSimple.toLocaleString('fr-FR')} x 2)</div>
+                    </div>
+                `;
+            } else {
+                priceDiv.innerHTML = `
+                    <div class="bg-gray-50 rounded-lg p-3">
+                        <div class="text-sm text-gray-600 mb-1"><i class="fas fa-arrow-right me-1"></i> Prix Aller Simple</div>
+                        <div class="text-2xl font-bold text-[#e94e1a]">${prixSimple.toLocaleString('fr-FR')} FCFA</div>
+                    </div>
+                `;
+            }
+        }
+
+         function populateReturnDateSelect(program, departureDateStr) {
+            const select = document.getElementById('returnDateSelect');
+            
+            // LOGIQUE DE RÉCUPÉRATION DES JOURS
+            // Par défaut, on prend ceux du programme courant (aller)
+            let rawDays = program.jours_recurrence;
+            
+            // MAIS SI c'est un aller-retour lié, on doit prendre ceux du programme RETOUR
+            // car l'aller peut être Lundi/Mardi et le retour uniquement Mardi
+            if (program.programme_retour && program.programme_retour.jours_recurrence) {
+                console.log("Utilisation des jours du programme RETOUR");
+                rawDays = program.programme_retour.jours_recurrence;
+            }
+
+            let allowedDays = [];
+            if (rawDays) {
+                if (typeof rawDays === 'string') {
+                    try {
+                        allowedDays = JSON.parse(rawDays);
+                    } catch (e) {
+                        allowedDays = [];
+                    }
+                } else if (Array.isArray(rawDays)) {
+                    allowedDays = rawDays;
+                }
+            }
+            allowedDays = allowedDays.map(d => d.toLowerCase());
+            
+            console.log("Jours autorisés pour le retour :", allowedDays);
+
+            const daysMap = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+            
+            const dates = [];
+            
+            // Calcul de la date de début de recherche
+            let departureDate = departureDateStr ? new Date(departureDateStr) : new Date();
+            let currentDate = new Date(departureDate);
+            currentDate.setDate(currentDate.getDate() + 1); // Le retour doit être après le départ
+            
+            // CORRECTION IMPORTANTE : Vérifier la date de début de validité du programme RETOUR
+            // Si le programme retour commence plus tard que "demain", on avance jusqu'à cette date
+            if (program.programme_retour && program.programme_retour.date_depart) {
+                let returnStartDate = new Date(program.programme_retour.date_depart);
+                // On compare les dates sans l'heure (YYYY-MM-DD)
+                if (returnStartDate > currentDate) {
+                    currentDate = returnStartDate;
+                }
+            }
+
+            let limit = 60; // Chercher sur 2 mois
+            
+            while (dates.length < 10 && limit > 0) {
+                const dayIndex = currentDate.getDay();
+                const dayName = daysMap[dayIndex];
+                
+                // On vérifie si ce jour est dans la liste des jours autorisés pour le retour
+                if (allowedDays.includes(dayName)) {
+                    const checkDateStr = currentDate.toISOString().split('T')[0];
+                    let isValid = true;
+                    
+                    if (program.date_fin_programmation) {
+                        if (checkDateStr > program.date_fin_programmation) isValid = false;
+                    }
+                    
+                    if (isValid) {
+                        dates.push({
+                            value: checkDateStr,
+                            label: currentDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+                        });
+                    }
+                }
+                
+                currentDate.setDate(currentDate.getDate() + 1);
+                limit--;
+            }
+            
+            select.innerHTML = '<option value="">Choisir une date de retour...</option>';
+            if(dates.length === 0) {
+                 select.innerHTML += '<option value="" disabled>Aucun retour disponible après cette date</option>';
+            } else {
+                dates.forEach(d => {
+                    const label = d.label.charAt(0).toUpperCase() + d.label.slice(1);
+                    select.innerHTML += `<option value="${d.value}">${label}</option>`;
+                });
+            }
+        }
+
+        function closeAllerRetourConfirmModal() {
+            document.getElementById('allerRetourConfirmModal').classList.add('hidden');
+            currentSelectedProgram = null;
+            userWantsAllerRetour = false;
+        }
+
+        function confirmAllerRetour() {
+            const program = currentSelectedProgram;
+            
+            // Stocker le choix de l'utilisateur
+            window.userChoseAllerRetour = userWantsAllerRetour;
+            
+            if (userWantsAllerRetour) {
+                // L'utilisateur veut un aller-retour
+                if (program.type_programmation === 'recurrent') {
+                    const returnDateSelect = document.getElementById('returnDateSelect');
+                    const returnDate = returnDateSelect.value;
+                    
+                    if (!returnDate) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Date de retour requise',
+                            text: 'Veuillez sélectionner une date de retour pour votre voyage aller-retour.',
+                            confirmButtonColor: '#e94e1a',
+                        });
+                        return;
+                    }
+                    
+                    window.selectedReturnDate = returnDate;
+                } else {
+                    // Programme ponctuel: retour le même jour
+                    window.selectedReturnDate = window.selectedDepartureDate;
+                }
+            } else {
+                // L'utilisateur veut un aller simple
+                window.selectedReturnDate = null;
+            }
+            
+            document.getElementById('allerRetourConfirmModal').classList.add('hidden');
+            
+            // Continuer le flow
+            if (program.type_programmation === 'recurrent' && !window.selectedDepartureDate) {
+                // Si pas encore de date de départ, ouvrir la sélection
+                openDateSelectionModal(program);
+            } else {
+                // Ouvrir directement le modal de réservation
+                const dateDepart = window.selectedDepartureDate || program.date_depart.split('T')[0];
                 openReservationModal(program.id, dateDepart);
             }
         }
@@ -1669,8 +1960,21 @@
             }
 
             document.getElementById('dateSelectionModal').classList.add('hidden');
-            openReservationModal(currentSelectedProgram.id, selectedDate);
+            
+            // Stocker la date de départ sélectionnée
+            window.selectedDepartureDate = selectedDate;
+            
+            // Si c'est un programme aller-retour, afficher le modal de choix
+            if (currentSelectedProgram.is_aller_retour) {
+                openAllerRetourConfirmModal(currentSelectedProgram, selectedDate);
+            } else {
+                openReservationModal(currentSelectedProgram.id, selectedDate);
+            }
         }
+        // NOUVELLE FONCTION UNIFIÉE
+        // Cette fonction remplace l'appel direct showReservationModal depuis le bouton "Réserver"
+        // Elle vérifie d'abord les spécificités du programme (A/R, Récurrent)
+     
     </script>
 
     <!-- Modal Liste des programmes -->
@@ -1720,6 +2024,72 @@
                 <div class="flex justify-end gap-3 border-t pt-4">
                     <button onclick="closeDateSelectionModal()" class="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors">Annuler</button>
                     <button onclick="confirmDateSelection()" class="px-5 py-2.5 bg-[#e94e1a] text-white rounded-xl font-bold hover:bg-orange-600 transition-colors shadow-lg hover:shadow-xl">Confirmer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Confirmation Aller-Retour -->
+    <div id="allerRetourConfirmModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-[75] flex items-center justify-center">
+        <div class="relative w-[450px] mx-auto p-6 border shadow-2xl rounded-2xl bg-white">
+            <div class="flex flex-col gap-4">
+                <!-- En-tête -->
+                <div class="text-center border-b pb-4">
+                    <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-bus text-[#e94e1a] text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900">Ce programme propose un aller-retour</h3>
+                    <p class="text-sm text-gray-500 mt-1">Choisissez le type de voyage que vous souhaitez</p>
+                </div>
+                
+                <!-- Infos du trajet -->
+                <div id="allerRetourTripInfo" class="py-2">
+                    <!-- Contenu injecté par JS -->
+                </div>
+                
+                <!-- Choix du type de voyage -->
+                <div class="py-2">
+                    <label for="allerRetourChoice" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-route me-1"></i> Type de voyage
+                    </label>
+                    <div class="relative">
+                        <select id="allerRetourChoice" onchange="onAllerRetourChoiceChange()" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94e1a] focus:border-[#e94e1a] appearance-none bg-white font-medium text-gray-700">
+                            <option value="aller_simple">🚌 Aller Simple</option>
+                            <option value="aller_retour">🔄 Aller-Retour</option>
+                        </select>
+                        <div class="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                            <i class="fas fa-chevron-down text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Affichage du prix dynamique -->
+                <div id="allerRetourPriceDisplay" class="text-center">
+                    <!-- Contenu injecté par JS -->
+                </div>
+                
+                <!-- Sélection date retour (pour récurrents + aller-retour) -->
+                <div id="returnDateSection" class="hidden py-2 border-t">
+                    <label for="returnDateSelect" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-plane-arrival text-blue-500 me-1"></i> Date de retour
+                    </label>
+                    <div class="relative">
+                        <select id="returnDateSelect" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white">
+                            <option value="">Choisir une date de retour...</option>
+                        </select>
+                        <div class="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                            <i class="fas fa-chevron-down text-gray-400"></i>
+                        </div>
+                    </div>
+                    <p class="text-xs text-blue-500 mt-1"><i class="fas fa-info-circle"></i> La date de retour doit être après la date de départ</p>
+                </div>
+
+                <!-- Boutons -->
+                <div class="flex justify-end gap-3 border-t pt-4">
+                    <button onclick="closeAllerRetourConfirmModal()" class="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors">Annuler</button>
+                    <button onclick="confirmAllerRetour()" class="px-5 py-2.5 bg-[#e94e1a] text-white rounded-xl font-bold hover:bg-orange-600 transition-colors shadow-lg hover:shadow-xl">
+                        <i class="fas fa-check me-2"></i>Continuer
+                    </button>
                 </div>
             </div>
         </div>

@@ -28,6 +28,7 @@ class Programme extends Model
         'type_programmation',
         'jours_recurrence',
         'is_aller_retour',
+        'programme_retour_id',
     ];
 
     protected $casts = [
@@ -75,6 +76,31 @@ class Programme extends Model
     public function reservations()
     {
         return $this->hasMany(Reservation::class);
+    }
+
+    /**
+     * Programme retour lié (si ce programme est un aller)
+     */
+    public function programmeRetour()
+    {
+        return $this->belongsTo(Programme::class, 'programme_retour_id');
+    }
+
+    /**
+     * Programme aller lié (si ce programme est un retour)
+     * Trouve le programme qui a ce programme comme retour
+     */
+    public function programmeAller()
+    {
+        return $this->hasOne(Programme::class, 'programme_retour_id');
+    }
+
+    /**
+     * Vérifie si ce programme est un retour (a un programme aller lié)
+     */
+    public function isRetour(): bool
+    {
+        return $this->programmeAller()->exists();
     }
 
     /**

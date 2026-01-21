@@ -133,10 +133,17 @@
             </div>
 
             <!-- Itinéraire -->
-            <div class="section-title">Itinéraire du voyage</div>
+            <div class="section-title">
+                @if(isset($ticketType) && $ticketType === 'RETOUR')
+                    <span style="background: #3b82f6; color: white; padding: 5px 12px; border-radius: 20px; font-size: 14px; margin-right: 10px;">🔄 RETOUR</span>
+                @elseif(isset($ticketType) && $ticketType === 'ALLER' && $isAllerRetour)
+                    <span style="background: #10b981; color: white; padding: 5px 12px; border-radius: 20px; font-size: 14px; margin-right: 10px;">✈️ ALLER</span>
+                @endif
+                Itinéraire du voyage
+            </div>
             <div>
-                <p>Départ: {{ $programme->point_depart }} - Arrivée: {{ $programme->point_arrive }}</p>
-                <p>Date: {{ date('d/m/Y', strtotime($reservation->date_voyage)) }}</p>
+                <p><strong>Départ:</strong> {{ $pointDepart ?? $programme->point_depart }} → <strong>Arrivée:</strong> {{ $pointArrive ?? $programme->point_arrive }}</p>
+                <p><strong>Date:</strong> {{ date('d/m/Y', strtotime($dateVoyage)) }}</p>
                 @if($seatNumber)
                     <p
                         style="background: #e94e1a; color: white; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 25px; text-align: center; margin-top: 15px;">
@@ -145,11 +152,22 @@
                 @endif
             </div>
 
+            <!-- Infos Passager -->
+            <div class="section-title">Informations du passager</div>
+            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <p style="margin: 5px 0;"><strong>Nom:</strong> {{ $passagerNom ?? $reservation->passager_nom ?? 'N/A' }}</p>
+                <p style="margin: 5px 0;"><strong>Prénom:</strong> {{ $passagerPrenom ?? $reservation->passager_prenom ?? 'N/A' }}</p>
+                <p style="margin: 5px 0;"><strong>Téléphone:</strong> {{ $passagerTelephone ?? $reservation->passager_telephone ?? 'N/A' }}</p>
+            </div>
+
             <!-- QR Code -->
             <div class="qr-container">
                 <div
                     style="font-weight: 700; color: #1e40af; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;">
                     Type de voyage : {{ $tripType }}
+                    @if(isset($ticketType))
+                        <span style="color: {{ $ticketType === 'RETOUR' ? '#3b82f6' : '#10b981' }};">({{ $ticketType }})</span>
+                    @endif
                 </div>
                 <h3>Validation du billet</h3>
                 @if($qrCodeBase64)

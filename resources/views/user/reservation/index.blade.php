@@ -224,6 +224,11 @@
                                                         </div>
                                                         <div>
                                                             <span class="fw-bold">{{ $reservation->reference }}</span>
+                                                            @if($reservation->is_aller_retour)
+                                                                <span class="badge bg-info bg-opacity-75 text-white ms-2" style="font-size: 0.65rem;">
+                                                                    <i class="fas fa-exchange-alt"></i> A/R
+                                                                </span>
+                                                            @endif
                                                             <div class="small text-muted">
                                                                 {{ $reservation->created_at->format('d/m/Y H:i') }}
                                                             </div>
@@ -254,7 +259,18 @@
                                                             <i class="fas fa-calendar text-warning"></i>
                                                         </div>
                                                         <div>
-                                                            <span class="fw-bold">{{ $reservation->date_voyage }}</span>
+                                                            @if($reservation->is_aller_retour)
+                                                                <span class="fw-bold">
+                                                                    <i class="fas fa-plane-departure text-success" style="font-size: 0.7rem;"></i>
+                                                                    {{ $reservation->date_voyage ? $reservation->date_voyage->format('d/m/Y') : 'N/A' }}
+                                                                </span>
+                                                                <div class="small text-muted">
+                                                                    <i class="fas fa-plane-arrival text-info" style="font-size: 0.7rem;"></i>
+                                                                    {{ $reservation->date_retour ? $reservation->date_retour->format('d/m/Y') : ($reservation->date_voyage ? $reservation->date_voyage->format('d/m/Y') : 'N/A') }}
+                                                                </div>
+                                                            @else
+                                                                <span class="fw-bold">{{ $reservation->date_voyage ? $reservation->date_voyage->format('d/m/Y') : 'N/A' }}</span>
+                                                            @endif
                                                             <div class="small text-muted">
                                                                 {{ date('H:i', strtotime($reservation->programme->heure_depart)) }}
                                                             </div>
@@ -335,13 +351,45 @@
                                                             <i class="fas fa-eye"></i>
                                                         </a>
 
-                                                        @if($reservation->statut == 'confirmee' && $reservation->qr_code_path)
-                                                            <a href="{{ route('reservations.ticket', $reservation->id) }}" 
-                                                               class="btn btn-sm btn-outline-success"
-                                                               data-toggle="tooltip" 
-                                                               title="Télécharger le billet">
-                                                                <i class="fas fa-file-pdf"></i>
-                                                            </a>
+                                                        @if($reservation->is_aller_retour)
+                                                            {{-- Voyages Aller-Retour: deux boutons séparés --}}
+                                                            @if($reservation->canDownloadAller())
+                                                                <a href="{{ route('reservations.ticket', ['reservation' => $reservation->id, 'type' => 'aller']) }}" 
+                                                                   class="btn btn-sm btn-outline-success"
+                                                                   data-toggle="tooltip" 
+                                                                   title="Télécharger billet Aller">
+                                                                    <i class="fas fa-plane-departure"></i>
+                                                                </a>
+                                                            @else
+                                                                <span class="btn btn-sm btn-success disabled" title="Aller terminé">
+                                                                    <i class="fas fa-plane-departure"></i> <i class="fas fa-check"></i>
+                                                                </span>
+                                                            @endif
+                                                            
+                                                            @if($reservation->canDownloadRetour())
+                                                                <a href="{{ route('reservations.ticket', ['reservation' => $reservation->id, 'type' => 'retour']) }}" 
+                                                                   class="btn btn-sm btn-outline-info"
+                                                                   data-toggle="tooltip" 
+                                                                   title="Télécharger billet Retour">
+                                                                    <i class="fas fa-plane-arrival"></i>
+                                                                </a>
+                                                            @else
+                                                                @if($reservation->qr_code_retour_path)
+                                                                    <span class="btn btn-sm btn-info disabled" title="Retour terminé">
+                                                                        <i class="fas fa-plane-arrival"></i> <i class="fas fa-check"></i>
+                                                                    </span>
+                                                                @endif
+                                                            @endif
+                                                        @else
+                                                            {{-- Voyage Aller Simple: bouton unique --}}
+                                                            @if($reservation->statut == 'confirmee' && $reservation->qr_code_path)
+                                                                <a href="{{ route('reservations.ticket', $reservation->id) }}" 
+                                                                   class="btn btn-sm btn-outline-success"
+                                                                   data-toggle="tooltip" 
+                                                                   title="Télécharger le billet">
+                                                                    <i class="fas fa-file-pdf"></i>
+                                                                </a>
+                                                            @endif
                                                         @endif
 
                                                         @if($reservation->statut == 'en_attente')

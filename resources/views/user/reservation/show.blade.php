@@ -18,15 +18,37 @@
             
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h1 class="h3 mb-0">Détails de la Réservation</h1>
+                    <h1 class="h3 mb-0">
+                        Détails de la Réservation
+                        @if($reservation->is_aller_retour)
+                            <span class="badge bg-info text-white ms-2" style="font-size: 0.6em;">
+                                <i class="fas fa-exchange-alt"></i> Aller-Retour
+                            </span>
+                        @endif
+                    </h1>
                     <p class="text-muted mb-0">Référence : {{ $reservation->reference }}</p>
                 </div>
                 <div class="d-flex gap-2">
-                    @if($reservation->statut == 'confirmee')
-                        <a href="{{ route('reservations.ticket', $reservation->id) }}" 
-                           class="btn btn-primary" style="background-color: #e94e1a; border-color: #e94e1a;">
-                            <i class="fas fa-file-pdf me-2"></i> Télécharger le billet
-                        </a>
+                    @if($reservation->is_aller_retour)
+                        @if($reservation->canDownloadAller())
+                            <a href="{{ route('reservations.ticket', ['reservation' => $reservation->id, 'type' => 'aller']) }}" 
+                               class="btn btn-success" style="background-color: #28a745; border-color: #28a745;">
+                                <i class="fas fa-plane-departure me-2"></i> Billet Aller
+                            </a>
+                        @endif
+                        @if($reservation->canDownloadRetour())
+                            <a href="{{ route('reservations.ticket', ['reservation' => $reservation->id, 'type' => 'retour']) }}" 
+                               class="btn btn-info" style="background-color: #17a2b8; border-color: #17a2b8;">
+                                <i class="fas fa-plane-arrival me-2"></i> Billet Retour
+                            </a>
+                        @endif
+                    @else
+                        @if($reservation->statut == 'confirmee')
+                            <a href="{{ route('reservations.ticket', $reservation->id) }}" 
+                               class="btn btn-primary" style="background-color: #e94e1a; border-color: #e94e1a;">
+                                <i class="fas fa-file-pdf me-2"></i> Télécharger le billet
+                            </a>
+                        @endif
                     @endif
                     <a href="{{ route('reservation.index') }}" class="btn btn-outline-secondary">
                         <i class="fas fa-arrow-left me-2"></i> Retour
@@ -58,12 +80,30 @@
                         </div>
                         <div class="col-md-6 mb-4">
                             <div class="info-card">
-                                <div class="info-label">Date du voyage</div>
+                                <div class="info-label">
+                                    @if($reservation->is_aller_retour)
+                                        <i class="fas fa-plane-departure text-success"></i> Date Aller
+                                    @else
+                                        Date du voyage
+                                    @endif
+                                </div>
                                 <div class="info-value h5">
-                                    {{ $reservation->date_voyage }}
+                                    {{ $reservation->date_voyage ? $reservation->date_voyage->format('d/m/Y') : 'N/A' }}
                                 </div>
                             </div>
                         </div>
+                        @if($reservation->is_aller_retour)
+                            <div class="col-md-6 mb-4">
+                                <div class="info-card" style="border-left-color: #17a2b8;">
+                                    <div class="info-label">
+                                        <i class="fas fa-plane-arrival text-info"></i> Date Retour
+                                    </div>
+                                    <div class="info-value h5">
+                                        {{ $reservation->date_retour ? $reservation->date_retour->format('d/m/Y') : ($reservation->date_voyage ? $reservation->date_voyage->format('d/m/Y') : 'N/A') }}
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
                         <div class="col-md-6 mb-4">
                             <div class="info-card">
                                 <div class="info-label">Heure de départ</div>
@@ -238,39 +278,122 @@
                 </div>
             </div>
 
-            <!-- QR Code -->
-            @if($reservation->qr_code_path)
-            <div class="card shadow">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold" style="color: #e94e1a;">
-                        <i class="fas fa-qrcode me-2"></i> QR Code d'Embarquement
-                    </h6>
-                </div>
-                <div class="card-body text-center">
-                    <img src="{{ asset('storage/' . $reservation->qr_code_path) }}" 
-                         alt="QR Code" 
-                         class="img-fluid mb-3"
-                         style="max-width: 200px;">
-                    
-                    @if($reservation->embarquement_status == 'scanned')
-                        <div class="alert alert-success py-2 small">
-                            <i class="fas fa-check-circle me-1"></i>
-                            Validé le {{ $reservation->embarquement_scanned_at->format('d/m/Y H:i') }}
+            {{-- QR Code(s) --}}
+            @if($reservation->is_aller_retour)
+                {{-- QR Code Aller --}}
+                @if($reservation->qr_code_path)
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3" style="background: linear-gradient(135deg, #28a745 0%, #218838 100%);">
+                        <h6 class="m-0 font-weight-bold text-white">
+                            <i class="fas fa-plane-departure me-2"></i> QR Code ALLER
+                        </h6>
+                    </div>
+                    <div class="card-body text-center">
+                        <img src="{{ asset('storage/' . $reservation->qr_code_path) }}" 
+                             alt="QR Code Aller" 
+                             class="img-fluid mb-3"
+                             style="max-width: 180px;">
+                        
+                        <div class="mb-3">
+                            <span class="badge bg-light text-dark">
+                                {{ $reservation->date_voyage ? $reservation->date_voyage->format('d/m/Y') : 'N/A' }}
+                            </span>
                         </div>
-                    @else
-                        <p class="text-muted small">
-                            Présentez ce code à l'embarquement pour validation
-                        </p>
-                    @endif
-                    
-                    <div class="mt-3">
-                        <a href="{{ route('reservations.download', $reservation->id) }}" 
-                           class="btn btn-outline-primary btn-sm">
-                            <i class="fas fa-download me-1"></i> Télécharger le QR Code
-                        </a>
+                        
+                        @if($reservation->statut_aller == 'terminee')
+                            <div class="alert alert-success py-2 small">
+                                <i class="fas fa-check-circle me-1"></i>
+                                Trajet aller terminé
+                            </div>
+                        @else
+                            <p class="text-muted small">
+                                Présentez ce code à l'embarquement pour le trajet aller
+                            </p>
+                            @if($reservation->canDownloadAller())
+                                <a href="{{ route('reservations.ticket', ['reservation' => $reservation->id, 'type' => 'aller']) }}" 
+                                   class="btn btn-outline-success btn-sm">
+                                    <i class="fas fa-download me-1"></i> Billet Aller
+                                </a>
+                            @endif
+                        @endif
                     </div>
                 </div>
-            </div>
+                @endif
+
+                {{-- QR Code Retour --}}
+                @if($reservation->qr_code_retour_path)
+                <div class="card shadow">
+                    <div class="card-header py-3" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
+                        <h6 class="m-0 font-weight-bold text-white">
+                            <i class="fas fa-plane-arrival me-2"></i> QR Code RETOUR
+                        </h6>
+                    </div>
+                    <div class="card-body text-center">
+                        <img src="{{ asset('storage/' . $reservation->qr_code_retour_path) }}" 
+                             alt="QR Code Retour" 
+                             class="img-fluid mb-3"
+                             style="max-width: 180px;">
+                        
+                        <div class="mb-3">
+                            <span class="badge bg-light text-dark">
+                                {{ $reservation->date_retour ? $reservation->date_retour->format('d/m/Y') : ($reservation->date_voyage ? $reservation->date_voyage->format('d/m/Y') : 'N/A') }}
+                            </span>
+                        </div>
+                        
+                        @if($reservation->statut_retour == 'terminee')
+                            <div class="alert alert-info py-2 small">
+                                <i class="fas fa-check-circle me-1"></i>
+                                Trajet retour terminé
+                            </div>
+                        @else
+                            <p class="text-muted small">
+                                Présentez ce code à l'embarquement pour le trajet retour
+                            </p>
+                            @if($reservation->canDownloadRetour())
+                                <a href="{{ route('reservations.ticket', ['reservation' => $reservation->id, 'type' => 'retour']) }}" 
+                                   class="btn btn-outline-info btn-sm">
+                                    <i class="fas fa-download me-1"></i> Billet Retour
+                                </a>
+                            @endif
+                        @endif
+                    </div>
+                </div>
+                @endif
+            @else
+                {{-- QR Code Simple (Aller Simple) --}}
+                @if($reservation->qr_code_path)
+                <div class="card shadow">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold" style="color: #e94e1a;">
+                            <i class="fas fa-qrcode me-2"></i> QR Code d'Embarquement
+                        </h6>
+                    </div>
+                    <div class="card-body text-center">
+                        <img src="{{ asset('storage/' . $reservation->qr_code_path) }}" 
+                             alt="QR Code" 
+                             class="img-fluid mb-3"
+                             style="max-width: 200px;">
+                        
+                        @if($reservation->embarquement_status == 'scanned')
+                            <div class="alert alert-success py-2 small">
+                                <i class="fas fa-check-circle me-1"></i>
+                                Validé le {{ $reservation->embarquement_scanned_at->format('d/m/Y H:i') }}
+                            </div>
+                        @else
+                            <p class="text-muted small">
+                                Présentez ce code à l'embarquement pour validation
+                            </p>
+                        @endif
+                        
+                        <div class="mt-3">
+                            <a href="{{ route('reservations.download', $reservation->id) }}" 
+                               class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-download me-1"></i> Télécharger le QR Code
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                @endif
             @endif
         </div>
     </div>
