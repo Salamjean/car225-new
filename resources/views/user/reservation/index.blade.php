@@ -363,7 +363,7 @@
                                                                 class="btn btn-sm btn-outline-danger cancel-reservation-btn"
                                                                 data-id="{{ $reservation->id }}"
                                                                 data-reference="{{ $reservation->reference }}"
-                                                                data-cancel-url="{{ route('reservations.destroy', $reservation->id) }}"
+                                                                data-cancel-url="#"
                                                                 data-bs-toggle="tooltip" title="Annuler la réservation">
                                                                 <i class="fas fa-times"></i>
                                                             </button>

@@ -128,8 +128,8 @@
                                     <div class="text-right">
                                         <p class="text-xs font-black text-gray-400 uppercase">Montant</p>
                                         <p class="text-xl font-black text-gray-900">
-                                            {{ number_format($res->montant_total, 0, ',', ' ') }} <span
-                                                class="text-xs">CFA</span></p>
+                                            {{ number_format($res->montant, 0, ',', ' ') }} <span class="text-xs">CFA</span>
+                                        </p>
                                     </div>
                                     <a href="{{ route('reservations.show', $res->id) }}"
                                         class="w-12 h-12 bg-gray-900 text-white rounded-2xl flex items-center justify-center hover:bg-green-600 transition-all shadow-lg">

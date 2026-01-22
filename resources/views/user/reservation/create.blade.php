@@ -410,7 +410,7 @@
                         </h3>
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                             @for ($i = 1; $i <= 8; $i++)
-                                <button onclick="selectNumberOfPlaces({{ $i }})"
+                                <button onclick="selectNumberOfPlaces({{ $i }}, this)"
                                     class="place-count-btn p-4 border-2 border-gray-200 rounded-xl hover:border-[#fea219] hover:bg-orange-50 transition-all duration-300 text-center">
                                     <div class="text-2xl font-bold text-gray-800">{{ $i }}</div>
                                     <div class="text-sm text-gray-600">place{{ $i > 1 ? 's' : '' }}</div>
@@ -547,6 +547,7 @@
     </style>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.cinetpay.com/seamless/main.js"></script>
     <script>
         // Variables globales
         let currentProgramId = null;
@@ -576,7 +577,6 @@
         // ============================================
         async function showVehicleDetails(vehicleId, programId) {
             console.log(`[DETAILS] Demande détails véhicule ${vehicleId} pour programme ${programId}`);
-
             if (!vehicleId) {
                 Swal.fire({
                     icon: 'info',
@@ -586,7 +586,6 @@
                 });
                 return;
             }
-
             // Récupérer la date depuis le formulaire de recherche ou l'URL
             let dateVoyage = null;
             const urlParams = new URLSearchParams(window.location.search);
@@ -600,9 +599,7 @@
                     dateVoyage = new Date().toISOString().split('T')[0];
                 }
             }
-
             console.log(`[DETAILS] Date utilisée: ${dateVoyage}`);
-
             Swal.fire({
                 title: 'Chargement...',
                 text: 'Récupération des informations du véhicule',
@@ -611,17 +608,14 @@
                     Swal.showLoading();
                 }
             });
-
             try {
                 // CORRECTION: Passer l'ID et la date dans la route
                 const url = "{{ route('user.reservation.vehicle', ':id') }}".replace(':id', vehicleId);
                 const response = await fetch(url + `?date=${encodeURIComponent(dateVoyage)}`);
                 const data = await response.json();
-
                 if (!data.success) {
                     throw new Error(data.error || 'Véhicule non trouvé');
                 }
-
                 Swal.fire({
                     title: `<strong>${data.vehicule.marque} ${data.vehicule.modele}</strong>`,
                     html: data.html,
@@ -630,7 +624,6 @@
                     showCloseButton: true,
                     showConfirmButton: false,
                 });
-
             } catch (error) {
                 Swal.fire({
                     icon: 'error',
@@ -649,26 +642,24 @@
             if (!config) {
                 return '<p style="color: #ef4444;">Configuration non reconnue</p>';
             }
-
             const placesGauche = config.placesGauche;
             const placesDroite = config.placesDroite;
             const placesParRanger = placesGauche + placesDroite;
             const totalPlaces = parseInt(vehicle.nombre_place);
             const nombreRanger = Math.ceil(totalPlaces / placesParRanger);
-
             let html = `
-                                <div style="background: white; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
-                                    <!-- En-tête -->
-                                    <div style="display: grid; grid-template-columns: 100px 1fr 80px 1fr; gap: 10px; padding: 15px; background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
-                                        <div style="text-align: center; font-weight: 600; color: #4b5563;">Rangée</div>
-                                        <div style="text-align: center; font-weight: 600; color: #4b5563;">Côté gauche</div>
-                                        <div style="text-align: center; font-weight: 600; color: #4b5563;">Allée</div>
-                                        <div style="text-align: center; font-weight: 600; color: #4b5563;">Côté droit</div>
-                                    </div>
+                                                                                <div style="background: white; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
+                                                                                    <!-- En-tête -->
+                                                                                    <div style="display: grid; grid-template-columns: 100px 1fr 80px 1fr; gap: 10px; padding: 15px; background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
+                                                                                        <div style="text-align: center; font-weight: 600; color: #4b5563;">Rangée</div>
+                                                                                        <div style="text-align: center; font-weight: 600; color: #4b5563;">Côté gauche</div>
+                                                                                        <div style="text-align: center; font-weight: 600; color: #4b5563;">Allée</div>
+                                                                                        <div style="text-align: center; font-weight: 600; color: #4b5563;">Côté droit</div>
+                                                                                    </div>
 
-                                    <!-- Rangées -->
-                                    <div style="max-height: 400px; overflow-y: auto;">
-                            `;
+                                                                                    <!-- Rangées -->
+                                                                                    <div style="max-height: 400px; overflow-y:                                                 auto;">
+                                                                            `;
 
             let numeroPlace = 1;
 
@@ -679,68 +670,68 @@
                 const placesDroiteCetteRanger = Math.min(placesDroite, placesCetteRanger - placesGaucheCetteRanger);
 
                 html += `
-                                    <div style="display: grid; grid-template-columns: 100px 1fr 80px 1fr; gap: 10px; padding: 20px; align-items: center; ${ranger < nombreRanger ? 'border-bottom: 1px solid #e5e7eb;' : ''}">
-                                        <!-- Numéro de rangée -->
-                                        <div style="text-align: center; font-weight: 600; color: #6b7280;">Rangée ${ranger}</div>
+                                                                                    <div style="display: grid; grid-template-columns: 100px 1fr 80px 1fr; gap: 10px; padding: 20px; align-items: center; ${ranger < nombreRanger ? 'border-bottom: 1px solid #e5e7eb;' : ''}">
+                                                                                        <!-- Numéro de rangée -->
+                                                                                        <div style="text-align: center; font-weight: 600; color: #6b7280;">Rangée ${ranger}</div>
 
-                                        <!-- Places côté gauche -->
-                                        <div style="display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;">
-                                `;
+                                                                                        <!-- Places côté gauche -->
+                                                                                        <div style="display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;">
+                                                                                `;
 
                 // Places côté gauche
                 for (let i = 0; i < placesGaucheCetteRanger; i++) {
                     html += `
-                                        <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #fea219, #e89116); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.1rem; box-shadow: 0 2px 4px rgba(254, 162, 25, 0.3); cursor: help;" title="Place ${numeroPlace + i}">
-                                            ${numeroPlace + i}
-                                        </div>
-                                    `;
+                                                                                        <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #fea219, #e89116); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.1rem; box-shadow: 0 2px 4px rgba(254, 162, 25, 0.3); cursor: help;" title="Place ${numeroPlace + i}">
+                                                                                            ${numeroPlace + i}
+                                                                                        </div>
+                                                                                    `;
                 }
 
                 html += `
-                                        </div>
+                                                                                        </div>
 
-                                        <!-- Allée -->
-                                        <div style="text-align: center;">
-                                            <div style="width: 10px; height: 40px; background: #9ca3af; border-radius: 5px; margin: 0 auto;"></div>
-                                        </div>
+                                                                                        <!-- Allée -->
+                                                                                        <div style="text-align: center;">
+                                                                                            <div style="width: 10px; height: 40px; background: #9ca3af; border-radius: 5px; margin: 0 auto;"></div>
+                                                                                        </div>
 
-                                        <!-- Places côté droit -->
-                                        <div style="display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;">
-                                `;
+                                                                                        <!-- Places côté droit -->
+                                                                                        <div style="display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;">
+                                                                                `;
 
                 // Places côté droit
                 for (let i = 0; i < placesDroiteCetteRanger; i++) {
                     html += `
-                                        <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.1rem; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3); cursor: help;" title="Place ${numeroPlace + placesGaucheCetteRanger + i}">
-                                            ${numeroPlace + placesGaucheCetteRanger + i}
-                                        </div>
-                                    `;
+                                                                                        <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.1rem; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3); cursor: help;" title="Place ${numeroPlace + placesGaucheCetteRanger + i}">
+                                                                                            ${numeroPlace + placesGaucheCetteRanger + i}
+                                                                                        </div>
+                                                                                    `;
                 }
 
                 html += `
-                                        </div>
-                                    </div>
-                                `;
+                                                                                        </div>
+                                                                                    </div>
+                                                                                `;
 
                 numeroPlace += placesCetteRanger;
             }
 
             html += `
-                                    </div>
-                                </div>
+                                                                                    </div>
+                                                                                </div>
 
-                                <!-- Légende -->
-                                <div style="display: flex; justify-content: center; gap: 20px; margin-top: 20px; padding: 15px; background: #f9fafb; border-radius: 8px;">
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <div style="width: 20px; height: 20px; background: linear-gradient(135deg, #fea219, #e89116); border-radius: 4px;"></div>
-                                        <span style="color: #4b5563; font-size: 0.9rem;">Côté gauche (conducteur)</span>
-                                    </div>
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <div style="width: 20px; height: 20px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 4px;"></div>
-                                        <span style="color: #4b5563; font-size: 0.9rem;">Côté droit</span>
-                                    </div>
-                                </div>
-                            `;
+                                                                                <!-- Légende -->
+                                                                                <div style="display: flex; justify-content: center; gap: 20px; margin-top: 20px; padding: 15px; background: #f9fafb; border-radius: 8px;">
+                                                                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                                                                        <div style="width: 20px; height: 20px; background: linear-gradient(135deg, #fea219, #e89116); border-radius: 4px;"></div>
+                                                                                        <span style="color: #4b5563; font-size: 0.9rem;">Côté gauche (conducteur)</span>
+                                                                                    </div>
+                                                                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                                                                        <div style="width: 20px; height: 20px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 4px;"></div>
+                                                                                        <span style="color: #4b5563; font-size: 0.9rem;">Côté droit</span>
+                                                                                    </div>
+                                                                                </div>
+                                                                            `;
 
             return html;
         }
@@ -827,16 +818,16 @@
 
                         // Mettre à jour l'info programme
                         document.getElementById('reservationProgramInfo').innerHTML = `
-                                        <div class="flex flex-wrap gap-4">
-                                            <span><i class="fas fa-map-marker-alt"></i> ${program.point_depart} → ${program.point_arrive}</span>
-                                            <span><i class="fas fa-calendar"></i> ${dateDisplay}</span>
-                                            <span><i class="fas fa-clock"></i> ${program.heure_depart}</span>
-                                            <span><i class="fas fa-money-bill-wave"></i> ${parseInt(program.montant_billet).toLocaleString('fr-FR')} FCFA</span>
-                                            <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">
-                                                ${program.type_programmation === 'recurrent' ? 'Programme récurrent' : 'Programme ponctuel'}
-                                            </span>
-                                        </div>
-                                    `;
+                                                                                        <div class="flex flex-wrap gap-4">
+                                                                                            <span><i class="fas fa-map-marker-alt"></i> ${program.point_depart} → ${program.point_arrive}</span>
+                                                                                            <span><i class="fas fa-calendar"></i> ${dateDisplay}</span>
+                                                                                            <span><i class="fas fa-clock"></i> ${program.heure_depart}</span>
+                                                                                            <span><i class="fas fa-money-bill-wave"></i> ${parseInt(program.montant_billet).toLocaleString('fr-FR')} FCFA</span>
+                                                                                            <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">
+                                                                                                ${program.type_programmation === 'recurrent' ? 'Programme récurrent' : 'Programme ponctuel'}
+                                                                                            </span>
+                                                                                        </div>
+                                                                                    `;
 
                         // Fetch des places réservées (préchargement léger, le vrai fetch se fait à l'étape 2)
                         const seatsUrl = `/user/booking/reservation/reserved-seats/${programId}?date=${encodeURIComponent(dateVoyage)}`;
@@ -864,7 +855,7 @@
                 btn.classList.remove('active');
             });
         }
-        
+
         // Exposer la fonction globalement pour qu'elle soit accessible depuis les autres scripts
         window.openReservationModal = showReservationModal;
 
@@ -880,14 +871,19 @@
         // ============================================
         // FONCTION 5: Sélectionner le nombre de places
         // ============================================
-        function selectNumberOfPlaces(number) {
+        function selectNumberOfPlaces(number, element) {
             selectedNumberOfPlaces = number;
 
             // Activer le bouton sélectionné
             document.querySelectorAll('.place-count-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
-            event.target.classList.add('active');
+
+            if (element) {
+                element.classList.add('active');
+            } else if (window.event && window.event.target) {
+                window.event.target.closest('button').classList.add('active');
+            }
 
             // Activer le bouton suivant
             document.getElementById('nextStepBtn').disabled = false;
@@ -983,18 +979,18 @@
                     icon: 'error',
                     title: 'Erreur',
                     html: `
-                                    <div class="text-left">
-                                        <p class="mb-2">${error.message}</p>
-                                        <p class="text-sm text-gray-600 mt-2">
-                                            Vérifiez que :
-                                            <ul class="list-disc pl-5 mt-1">
-                                                <li>Vous êtes bien connecté</li>
-                                                <li>Le programme existe toujours</li>
-                                                <li>Le véhicule est associé au programme</li>
-                                            </ul>
-                                        </p>
-                                    </div>
-                                `,
+                                                                                    <div class="text-left">
+                                                                                        <p class="mb-2">${error.message}</p>
+                                                                                        <p class="text-sm text-gray-600 mt-2">
+                                                                                            Vérifiez que :
+                                                                                            <ul class="list-disc pl-5 mt-1">
+                                                                                                <li>Vous êtes bien connecté</li>
+                                                                                                <li>Le programme existe toujours</li>
+                                                                                                <li>Le véhicule est associé au programme</li>
+                                                                                            </ul>
+                                                                                        </p>
+                                                                                    </div>
+                                                                                `,
                     confirmButtonColor: '#fea219',
                 });
             }
@@ -1024,22 +1020,22 @@
             const nombreRanger = Math.ceil(totalPlaces / placesParRanger);
 
             let html = `
-                                <div class="bg-gray-50 p-6 rounded-xl mb-6">
-                                    <div class="text-center mb-4">
-                                        <h4 class="font-bold text-lg mb-2">${vehicleDetails.marque} ${vehicleDetails.modele} - ${vehicleDetails.immatriculation}</h4>
-                                        <p class="text-gray-600">Type: ${vehicleDetails.type_range} | Total places: ${totalPlaces}</p>
-                                    </div>
+                                                                                <div class="bg-gray-50 p-6 rounded-xl mb-6">
+                                                                                    <div class="text-center mb-4">
+                                                                                        <h4 class="font-bold text-lg mb-2">${vehicleDetails.marque} ${vehicleDetails.modele} - ${vehicleDetails.immatriculation}</h4>
+                                                                                        <p class="text-gray-600">Type: ${vehicleDetails.type_range} | Total places: ${totalPlaces}</p>
+                                                                                    </div>
 
-                                    <!-- Vue avant du bus -->
-                                    <div class="flex justify-center mb-8">
-                                        <div class="w-32 h-16 bg-gray-800 rounded-t-2xl flex items-center justify-center">
-                                            <i class="fas fa-bus text-white text-2xl"></i>
-                                        </div>
-                                    </div>
+                                                                                    <!-- Vue avant du bus -->
+                                                                                    <div class="flex justify-center mb-8">
+                                                                                        <div class="w-32 h-16 bg-gray-800 rounded-t-2xl flex items-center justify-center">
+                                                                                            <i class="fas fa-bus text-white text-2xl"></i>
+                                                                                        </div>
+                                                                                    </div>
 
-                                    <!-- Grille des places -->
-                                    <div class="overflow-x-auto">
-                            `;
+                                                                                    <!-- Grille des places -->
+                                                                                    <div class="overflow-x-auto">
+                                                                            `;
 
             let numeroPlace = 1;
 
@@ -1050,12 +1046,12 @@
                 const placesDroiteCetteRanger = Math.min(placesDroite, placesCetteRanger - placesGaucheCetteRanger);
 
                 html += `
-                                    <div class="flex items-center justify-center mb-8 gap-8">
-                                        <!-- Côté gauche -->
-                                        <div class="flex flex-col items-center">
-                                            <div class="text-sm text-gray-600 mb-2">Rangée ${ranger}</div>
-                                            <div class="flex gap-3">
-                                `;
+                                                                                    <div class="flex items-center justify-center mb-8 gap-8">
+                                                                                        <!-- Côté gauche -->
+                                                                                        <div class="flex flex-col items-center">
+                                                                                            <div class="text-sm text-gray-600 mb-2">Rangée ${ranger}</div>
+                                                                                            <div class="flex gap-3">
+                                                                                `;
 
                 // Places côté gauche
                 for (let i = 0; i < placesGaucheCetteRanger; i++) {
@@ -1065,30 +1061,30 @@
                     const canSelect = !isReserved && selectedSeats.length < selectedNumberOfPlaces;
 
                     html += `
-                                        <div class="seat w-14 h-14 rounded-lg flex flex-col items-center justify-center font-bold transition-all duration-200
-                                                  ${isReserved ? 'bg-red-500 text-white cursor-not-allowed opacity-60' :
+                                                                                        <div class="seat w-14 h-14 rounded-lg flex flex-col items-center justify-center font-bold transition-all duration-200
+                                                                                                  ${isReserved ? 'bg-red-500 text-white cursor-not-allowed opacity-60' :
                             isSelected ? 'bg-[#fea219] text-white shadow-lg transform scale-110' :
                                 'bg-blue-500 text-white hover:bg-blue-600 hover:shadow-md cursor-pointer'}"
-                                             ${!isReserved ? `onclick="toggleSeat(${seatNumber})"` : ''}
-                                             title="Place ${seatNumber}${isReserved ? ' (Réservée)' : ''}">
-                                            <span class="text-lg">${seatNumber}</span>
-                                            <span class="text-xs">${isReserved ? '✗' : (isSelected ? '✓' : '')}</span>
-                                        </div>
-                                    `;
+                                                                                             ${!isReserved ? `onclick="toggleSeat(${seatNumber})"` : ''}
+                                                                                             title="Place ${seatNumber}${isReserved ? ' (Réservée)' : ''}">
+                                                                                            <span class="text-lg">${seatNumber}</span>
+                                                                                            <span class="text-xs">${isReserved ? '✗' : (isSelected ? '✓' : '')}</span>
+                                                                                        </div>
+                                                                                    `;
                 }
 
                 html += `
-                                            </div>
-                                        </div>
+                                                                                            </div>
+                                                                                        </div>
 
-                                        <!-- Allée -->
-                                        <div class="w-20 h-2 bg-gray-400 rounded my-8"></div>
+                                                                                        <!-- Allée -->
+                                                                                        <div class="w-20 h-2 bg-gray-400 rounded my-8"></div>
 
-                                        <!-- Côté droit -->
-                                        <div class="flex flex-col items-center">
-                                            <div class="text-sm text-gray-600 mb-2">Rangée ${ranger}</div>
-                                            <div class="flex gap-3">
-                                `;
+                                                                                        <!-- Côté droit -->
+                                                                                        <div class="flex flex-col items-center">
+                                                                                            <div class="text-sm text-gray-600 mb-2">Rangée ${ranger}</div>
+                                                                                            <div class="flex gap-3">
+                                                                                `;
 
                 // Places côté droit
                 for (let i = 0; i < placesDroiteCetteRanger; i++) {
@@ -1098,40 +1094,40 @@
                     const canSelect = !isReserved && selectedSeats.length < selectedNumberOfPlaces;
 
                     html += `
-                                        <div class="seat w-14 h-14 rounded-lg flex flex-col items-center justify-center font-bold transition-all duration-200
-                                                  ${isReserved ? 'bg-red-500 text-white cursor-not-allowed opacity-60' :
+                                                                                        <div class="seat w-14 h-14 rounded-lg flex flex-col items-center justify-center font-bold transition-all duration-200
+                                                                                                  ${isReserved ? 'bg-red-500 text-white cursor-not-allowed opacity-60' :
                             isSelected ? 'bg-[#fea219] text-white shadow-lg transform scale-110' :
                                 'bg-green-500 text-white hover:bg-green-600 hover:shadow-md cursor-pointer'}"
-                                             ${!isReserved ? `onclick="toggleSeat(${seatNumber})"` : ''}
-                                             title="Place ${seatNumber}${isReserved ? ' (Réservée)' : ''}">
-                                            <span class="text-lg">${seatNumber}</span>
-                                            <span class="text-xs">${isReserved ? '✗' : (isSelected ? '✓' : '')}</span>
-                                        </div>
-                                    `;
+                                                                                             ${!isReserved ? `onclick="toggleSeat(${seatNumber})"` : ''}
+                                                                                             title="Place ${seatNumber}${isReserved ? ' (Réservée)' : ''}">
+                                                                                            <span class="text-lg">${seatNumber}</span>
+                                                                                            <span class="text-xs">${isReserved ? '✗' : (isSelected ? '✓' : '')}</span>
+                                                                                        </div>
+                                                                                    `;
                 }
 
                 html += `
-                                            </div>
-                                        </div>
-                                    </div>
-                                `;
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                `;
 
                 numeroPlace += placesCetteRanger;
             }
 
             html += `
-                                    </div>
+                                                                                    </div>
 
-                                    <!-- Information -->
-                                    <div class="mt-6 p-4 bg-blue-50 rounded-lg">
-                                        <p class="text-sm text-gray-700">
-                                            <i class="fas fa-info-circle text-blue-500 mr-2"></i>
-                                            Sélectionnez ${selectedNumberOfPlaces} place${selectedNumberOfPlaces > 1 ? 's' : ''} en cliquant sur les places disponibles.
-                                            Les places en rouge sont déjà réservées.
-                                        </p>
-                                    </div>
-                                </div>
-                            `;
+                                                                                    <!-- Information -->
+                                                                                    <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                                                                                        <p class="text-sm text-gray-700">
+                                                                                            <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+                                                                                            Sélectionnez ${selectedNumberOfPlaces} place${selectedNumberOfPlaces > 1 ? 's' : ''} en cliquant sur les places disponibles.
+                                                                                            Les places en rouge sont déjà réservées.
+                                                                                        </p>
+                                                                                    </div>
+                                                                                </div>
+                                                                            `;
 
             document.getElementById('seatSelectionArea').innerHTML = html;
             updateSelectedSeatsCount();
@@ -1242,44 +1238,44 @@
 
             sortedSeats.forEach((seat, index) => {
                 const passengerHtml = `
-                                        <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                                            <h4 class="font-bold text-[#fea219] mb-4 flex items-center gap-2">
-                                                <i class="fas fa-user"></i> Passager pour la place n°${seat}
-                                            </h4>
-                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div>
-                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nom</label>
-                                                    <input type="text" name="passenger_${seat}_nom" required
-                                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all"
-                                                        placeholder="Nom du passager">
-                                                </div>
-                                                <div>
-                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
-                                                    <input type="text" name="passenger_${seat}_prenom" required
-                                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all"
-                                                        placeholder="Prénom du passager">
-                                                </div>
-                                                <div>
-                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
-                                                    <input type="tel" name="passenger_${seat}_telephone" required
-                                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all"
-                                                        placeholder="Ex: 0700000000">
-                                                </div>
-                                                <div>
-                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                                                    <input type="email" name="passenger_${seat}_email" required
-                                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all"
-                                                        placeholder="email@exemple.com">
-                                                </div>
-                                                <div class="md:col-span-2">
-                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Contact d'urgence (Nom & Tél)</label>
-                                                    <input type="text" name="passenger_${seat}_urgence" required
-                                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all"
-                                                        placeholder="Ex: Jean Dupont - 0500000000">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    `;
+                                                                                        <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                                                                                            <h4 class="font-bold text-[#fea219] mb-4 flex items-center gap-2">
+                                                                                                <i class="fas fa-user"></i> Passager pour la place n°${seat}
+                                                                                            </h4>
+                                                                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                                                <div>
+                                                                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+                                                                                                    <input type="text" name="passenger_${seat}_nom" required
+                                                                                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all"
+                                                                                                        placeholder="Nom du passager">
+                                                                                                </div>
+                                                                                                <div>
+                                                                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
+                                                                                                    <input type="text" name="passenger_${seat}_prenom" required
+                                                                                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all"
+                                                                                                        placeholder="Prénom du passager">
+                                                                                                </div>
+                                                                                                <div>
+                                                                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
+                                                                                                    <input type="tel" name="passenger_${seat}_telephone" required
+                                                                                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all"
+                                                                                                        placeholder="Ex: 0700000000">
+                                                                                                </div>
+                                                                                                <div>
+                                                                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                                                                                    <input type="email" name="passenger_${seat}_email" required
+                                                                                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all"
+                                                                                                        placeholder="email@exemple.com">
+                                                                                                </div>
+                                                                                                <div class="md:col-span-2">
+                                                                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Contact d'urgence (Nom & Tél)</label>
+                                                                                                    <input type="text" name="passenger_${seat}_urgence" required
+                                                                                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all"
+                                                                                                        placeholder="Ex: Jean Dupont - 0500000000">
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    `;
                 formArea.insertAdjacentHTML('beforeend', passengerHtml);
             });
 
@@ -1360,17 +1356,17 @@
             Swal.fire({
                 title: 'Confirmer la réservation',
                 html: `
-                                        <div class="text-left">
-                                            <p class="mb-3">Voulez-vous confirmer la réservation de <strong>${selectedNumberOfPlaces} place(s)</strong> ?</p>
-                                            <div class="bg-gray-50 p-4 rounded-lg mb-4">
-                                                <p class="font-semibold mb-2">Date du voyage :</p>
-                                                <p class="text-lg text-blue-600 font-bold">${dateVoyage}</p>
-                                                <p class="font-semibold mb-2 mt-4">Places :</p>
-                                                <p class="text-lg text-[#fea219] font-bold">${sortedSeats.join(', ')}</p>
-                                            </div>
-                                            <p class="text-sm text-gray-600">Un ticket sera envoyé à l'email de chaque passager.</p>
-                                        </div>
-                                    `,
+                                                                                        <div class="text-left">
+                                                                                            <p class="mb-3">Voulez-vous confirmer la réservation de <strong>${selectedNumberOfPlaces} place(s)</strong> ?</p>
+                                                                                            <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                                                                                                <p class="font-semibold mb-2">Date du voyage :</p>
+                                                                                                <p class="text-lg text-blue-600 font-bold">${dateVoyage}</p>
+                                                                                                <p class="font-semibold mb-2 mt-4">Places :</p>
+                                                                                                <p class="text-lg text-[#fea219] font-bold">${sortedSeats.join(', ')}</p>
+                                                                                            </div>
+                                                                                            <p class="text-sm text-gray-600">Un ticket sera envoyé à l'email de chaque passager.</p>
+                                                                                        </div>
+                                                                                    `,
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#fea219',
@@ -1406,14 +1402,60 @@
                         const data = await response.json();
 
                         if (data.success) {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Réservation confirmée !',
-                                text: data.message,
-                                confirmButtonColor: '#fea219',
-                            }).then(() => {
-                                window.location.reload();
-                            });
+                            if (data.payment_url) {
+                                // Définir la configuration CinetPay
+                                CinetPay.setConfig({
+                                    apikey: '{{ $cinetpay_api_key }}',
+                                    site_id: '{{ $cinetpay_site_id }}',
+                                    notify_url: '{{ route("payment.notify") }}',
+                                    mode: '{{ $cinetpay_mode }}'
+                                });
+
+                                // Ouvrir le guichet de paiement
+                                CinetPay.getCheckout({
+                                    transaction_id: data.transaction_id,
+                                    amount: data.amount,
+                                    currency: data.currency,
+                                    channels: 'ALL',
+                                    description: data.description,
+                                    customer_name: data.customer_name,
+                                    customer_surname: data.customer_surname,
+                                    customer_email: data.customer_email,
+                                    customer_phone_number: data.customer_phone_number,
+                                    customer_address: 'Abidjan',
+                                    customer_city: 'Abidjan',
+                                    customer_country: 'CI',
+                                    customer_state: 'Abidjan',
+                                    customer_zip_code: '00225',
+                                });
+
+                                // Attendre le retour de CinetPay
+                                CinetPay.waitResponse(function (response) {
+                                    if (response.status === "ACCEPTED") {
+                                        // En local, le webhook notify ne fonctionne pas (localhost), 
+                                        // donc on redirige vers le return qui fait la vérification
+                                        window.location.href = "{{ route('payment.return') }}?transaction_id=" + data.transaction_id;
+                                    } else {
+                                        Swal.fire({
+                                            icon: 'error',
+                                            title: 'Échec du paiement',
+                                            text: 'Le paiement n\'a pas pu être finalisé.',
+                                            confirmButtonColor: '#fea219',
+                                        }).then(() => {
+                                            window.location.reload();
+                                        });
+                                    }
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Réservation confirmée !',
+                                    text: data.message,
+                                    confirmButtonColor: '#fea219',
+                                }).then(() => {
+                                    window.location.reload();
+                                });
+                            }
                         } else {
                             throw new Error(data.message || 'Erreur lors de la réservation');
                         }
@@ -1461,7 +1503,7 @@
                 }
             });
         });
-        
+
         // ============================================
         // FONCTION 13: Gestion modale liste programmes
         // ============================================
@@ -1478,29 +1520,29 @@
 
         async function fetchProgramsList() {
             const container = document.getElementById('programsListContent');
-            
+
             try {
                 const response = await fetch('{{ route("api.programmes") }}');
                 const data = await response.json();
-                
+
                 if (data.success && data.programmes.length > 0) {
                     renderProgramsList(data.programmes);
                 } else {
                     container.innerHTML = `
-                        <div class="col-span-full text-center py-8">
-                            <i class="fas fa-search text-gray-300 text-4xl"></i>
-                            <p class="mt-2 text-gray-500">Aucun programme disponible pour le moment.</p>
-                        </div>
-                    `;
+                                                                        <div class="col-span-full text-center py-8">
+                                                                            <i class="fas fa-search text-gray-300 text-4xl"></i>
+                                                                            <p class="mt-2 text-gray-500">Aucun programme disponible pour le moment.</p>
+                                                                        </div>
+                                                                    `;
                 }
             } catch (error) {
                 console.error('Erreur:', error);
                 container.innerHTML = `
-                    <div class="col-span-full text-center py-8 text-red-500">
-                        <i class="fas fa-exclamation-triangle text-4xl mb-2"></i>
-                        <p>Impossible de charger les programmes.</p>
-                    </div>
-                `;
+                                                                    <div class="col-span-full text-center py-8 text-red-500">
+                                                                        <i class="fas fa-exclamation-triangle text-4xl mb-2"></i>
+                                                                        <p>Impossible de charger les programmes.</p>
+                                                                    </div>
+                                                                `;
             }
         }
 
@@ -1508,54 +1550,54 @@
             const container = document.getElementById('programsListContent');
             container.innerHTML = programmes.map(prog => {
                 const isRecurrent = prog.type_programmation === 'recurrent';
-                const dateDisplay = isRecurrent ? 
-                    '<span class="text-blue-600 font-bold">Récurrent</span>' : 
+                const dateDisplay = isRecurrent ?
+                    '<span class="text-blue-600 font-bold">Récurrent</span>' :
                     new Date(prog.date_depart).toLocaleDateString('fr-FR');
-                
-                const recDays = isRecurrent && prog.jours_recurrence ? 
+
+                const recDays = isRecurrent && prog.jours_recurrence ?
                     JSON.parse(prog.jours_recurrence).join(', ') : '';
 
                 return `
-                    <div class="bg-blue-50 rounded-lg p-4 border border-blue-100 hover:shadow-md transition-shadow">
-                        <div class="flex justify-between items-start mb-2">
-                            <h4 class="font-bold text-gray-800">${prog.compagnie?.name || 'Compagnie'}</h4>
-                            <span class="text-xs bg-white px-2 py-1 rounded border text-gray-500">${prog.vehicule?.type_range || 'Standard'}</span>
-                        </div>
-                        
-                        <div class="flex items-center gap-2 mb-3 text-sm">
-                            <i class="fas fa-map-marker-alt text-[#fea219]"></i>
-                            <span>${prog.point_depart} <i class="fas fa-arrow-right text-xs mx-1"></i> ${prog.point_arrive}</span>
-                        </div>
+                                                                    <div class="bg-blue-50 rounded-lg p-4 border border-blue-100 hover:shadow-md transition-shadow">
+                                                                        <div class="flex justify-between items-start mb-2">
+                                                                            <h4 class="font-bold text-gray-800">${prog.compagnie?.name || 'Compagnie'}</h4>
+                                                                            <span class="text-xs bg-white px-2 py-1 rounded border text-gray-500">${prog.vehicule?.type_range || 'Standard'}</span>
+                                                                        </div>
 
-                        <div class="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-3">
-                            <div class="flex items-center gap-1">
-                                <i class="fas fa-calendar-alt text-blue-500"></i>
-                                ${dateDisplay}
-                            </div>
-                            <div class="flex items-center gap-1">
-                                <i class="fas fa-clock text-green-500"></i>
-                                ${prog.heure_depart}
-                            </div>
-                        </div>
+                                                                        <div class="flex items-center gap-2 mb-3 text-sm">
+                                                                            <i class="fas fa-map-marker-alt text-[#fea219]"></i>
+                                                                            <span>${prog.point_depart} <i class="fas fa-arrow-right text-xs mx-1"></i> ${prog.point_arrive}</span>
+                                                                        </div>
 
-                        ${isRecurrent ? `
-                            <div class="text-xs text-blue-600 mb-3 bg-white p-1 rounded">
-                                <i class="fas fa-redo-alt mr-1"></i> ${recDays}
-                            </div>
-                        ` : ''}
-                        
-                        <button onclick='selectProgramFromList(${JSON.stringify(prog).replace(/'/g, "&#39;")})' 
-                            class="w-full bg-[#fea219] text-white py-2 rounded font-bold hover:bg-orange-600 transition-colors text-sm">
-                            Choisir ce programme
-                        </button>
-                    </div>
-                `;
+                                                                        <div class="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-3">
+                                                                            <div class="flex items-center gap-1">
+                                                                                <i class="fas fa-calendar-alt text-blue-500"></i>
+                                                                                ${dateDisplay}
+                                                                            </div>
+                                                                            <div class="flex items-center gap-1">
+                                                                                <i class="fas fa-clock text-green-500"></i>
+                                                                                ${prog.heure_depart}
+                                                                            </div>
+                                                                        </div>
+
+                                                                        ${isRecurrent ? `
+                                                                            <div class="text-xs text-blue-600 mb-3 bg-white p-1 rounded">
+                                                                                <i class="fas fa-redo-alt mr-1"></i> ${recDays}
+                                                                            </div>
+                                                                        ` : ''}
+
+                                                                        <button onclick='selectProgramFromList(${JSON.stringify(prog).replace(/'/g, "&#39;")})' 
+                                                                            class="w-full bg-[#fea219] text-white py-2 rounded font-bold hover:bg-orange-600 transition-colors text-sm">
+                                                                            Choisir ce programme
+                                                                        </button>
+                                                                    </div>
+                                                                `;
             }).join('');
         }
 
         function selectProgramFromList(program) {
             currentSelectedProgram = program;
-            
+
             if (program.type_programmation === 'recurrent') {
                 document.getElementById('programsListModal').classList.add('hidden');
                 openDateSelectionModal(program);
@@ -1574,7 +1616,7 @@
         function openDateSelectionModal(program) {
             const modal = document.getElementById('dateSelectionModal');
             const select = document.getElementById('recurrenceDateSelect');
-            
+
             // Gestion robuste du champ jours_recurrence (peut être string JSON ou déjà objet)
             let allowedDays = [];
             if (program.jours_recurrence) {
@@ -1589,39 +1631,39 @@
                     allowedDays = program.jours_recurrence;
                 }
             }
-            
+
             // Normaliser en minuscules pour comparaison
-             allowedDays = allowedDays.map(d => d.toLowerCase());
-            
+            allowedDays = allowedDays.map(d => d.toLowerCase());
+
             console.log("Jours autorisés:", allowedDays); // Debug
 
             // Map simple : Index Javascript (0=Dimanche) vers nom du jour
             const daysMap = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
-            
+
             // Générer les prochaines dates disponibles
             const dates = [];
             const today = new Date();
             // Commencer à chercher dès aujourd'hui (ou demain si heure passée ? Simplifions : dès aujourd'hui)
             let currentDate = new Date(today);
-            
+
             // Chercher pour les 60 prochains jours pour trouver au moins 10 dates
-            let limit = 60; 
-            
+            let limit = 60;
+
             while (dates.length < 10 && limit > 0) {
                 const dayIndex = currentDate.getDay(); // 0 à 6
                 const dayName = daysMap[dayIndex];
-                
+
                 if (allowedDays.includes(dayName)) {
                     // Vérifier si la date est dans la plage de validité du programme
                     // Comparaison de dates sans l'heure pour éviter les soucis
                     const checkDateStr = currentDate.toISOString().split('T')[0];
                     let isValid = true;
-                    
+
                     if (program.date_fin_programmation) {
                         // Comparaison de string YYYY-MM-DD fonctionne très bien
                         if (checkDateStr > program.date_fin_programmation) isValid = false;
                     }
-                    
+
                     // Optionnel: ne pas proposer aujourd'hui si l'heure est passée
                     // (Laissez simple pour l'instant)
 
@@ -1632,12 +1674,12 @@
                         });
                     }
                 }
-                
+
                 // Jour suivant
                 currentDate.setDate(currentDate.getDate() + 1);
                 limit--;
             }
-            
+
             // Remplir le select
             select.innerHTML = '<option value="">Choisir une date...</option>';
             if (dates.length > 0) {
@@ -1649,7 +1691,7 @@
             } else {
                 select.innerHTML += '<option value="" disabled>Aucune date disponible prochainement</option>';
             }
-            
+
             document.getElementById('recurrenceDateError').classList.add('hidden');
             modal.classList.remove('hidden');
         }
@@ -1662,7 +1704,7 @@
         function confirmDateSelection() {
             const select = document.getElementById('recurrenceDateSelect');
             const selectedDate = select.value;
-            
+
             if (!selectedDate) {
                 document.getElementById('recurrenceDateError').classList.remove('hidden');
                 return;
@@ -1683,8 +1725,9 @@
                         <i class="fas fa-times text-xl"></i>
                     </button>
                 </div>
-                
-                <div id="programsListContent" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[70vh] overflow-y-auto p-2">
+
+                <div id="programsListContent"
+                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[70vh] overflow-y-auto p-2">
                     <!-- Le contenu sera injecté via JS -->
                     <div class="col-span-full text-center py-8">
                         <i class="fas fa-spinner fa-spin text-4xl text-[#fea219]"></i>
@@ -1696,18 +1739,21 @@
     </div>
 
     <!-- Modal Sélection de date pour récurrents -->
-    <div id="dateSelectionModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-[70] flex items-center justify-center">
+    <div id="dateSelectionModal"
+        class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-[70] flex items-center justify-center">
         <div class="relative w-96 mx-auto p-6 border shadow-2xl rounded-2xl bg-white">
             <div class="flex flex-col gap-4">
                 <div class="border-b pb-4">
                     <h3 class="text-xl font-bold text-gray-900">Choisir une date de voyage</h3>
                     <p class="text-sm text-gray-500 mt-1">Ce programme est récurrent.</p>
                 </div>
-                
+
                 <div class="py-4">
-                    <label for="recurrenceDateSelect" class="block text-sm font-medium text-gray-700 mb-2">Sélectionnez une date parmi les prochains jours disponibles :</label>
+                    <label for="recurrenceDateSelect" class="block text-sm font-medium text-gray-700 mb-2">Sélectionnez une
+                        date parmi les prochains jours disponibles :</label>
                     <div class="relative">
-                        <select id="recurrenceDateSelect" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent appearance-none bg-white">
+                        <select id="recurrenceDateSelect"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent appearance-none bg-white">
                             <!-- Options générées par JS -->
                         </select>
                         <div class="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
@@ -1718,8 +1764,10 @@
                 </div>
 
                 <div class="flex justify-end gap-3 border-t pt-4">
-                    <button onclick="closeDateSelectionModal()" class="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors">Annuler</button>
-                    <button onclick="confirmDateSelection()" class="px-5 py-2.5 bg-[#fea219] text-white rounded-xl font-bold hover:bg-orange-600 transition-colors shadow-lg hover:shadow-xl">Confirmer</button>
+                    <button onclick="closeDateSelectionModal()"
+                        class="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors">Annuler</button>
+                    <button onclick="confirmDateSelection()"
+                        class="px-5 py-2.5 bg-[#fea219] text-white rounded-xl font-bold hover:bg-orange-600 transition-colors shadow-lg hover:shadow-xl">Confirmer</button>
                 </div>
             </div>
         </div>

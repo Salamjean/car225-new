@@ -8,6 +8,8 @@ use Illuminate\Support\Str;
 class Reservation extends Model
 {
     protected $fillable = [
+        'paiement_id',
+        'payment_transaction_id',
         'user_id',
         'programme_id',
         'seat_number',
@@ -30,6 +32,15 @@ class Reservation extends Model
         'embarquement_location',
         'embarquement_status',
     ];
+
+    /**
+     * Relation avec le paiement
+     */
+    public function paiement()
+    {
+        return $this->belongsTo(Paiement::class);
+    }
+
 
     protected $casts = [
         'montant' => 'decimal:2',

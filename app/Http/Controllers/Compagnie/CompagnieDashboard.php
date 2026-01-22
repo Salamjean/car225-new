@@ -21,11 +21,11 @@ class CompagnieDashboard extends Controller
         // 1. Statistiques Globales
         $totalRevenue = Reservation::whereHas('programme', function ($q) use ($compagnieId) {
             $q->where('compagnie_id', $compagnieId);
-        })->whereNotIn('statut', ['annulee'])->sum('montant');
+        })->where('statut', 'confirmee')->sum('montant');
 
         $totalReservations = Reservation::whereHas('programme', function ($q) use ($compagnieId) {
             $q->where('compagnie_id', $compagnieId);
-        })->count();
+        })->where('statut', 'confirmee')->count();
 
         $totalVehicles = Vehicule::where('compagnie_id', $compagnieId)->count();
 
@@ -36,7 +36,8 @@ class CompagnieDashboard extends Controller
         // 2. Activités Récentes
         $recentReservations = Reservation::whereHas('programme', function ($q) use ($compagnieId) {
             $q->where('compagnie_id', $compagnieId);
-        })->with(['user', 'programme'])
+        })->where('statut', 'confirmee')
+            ->with(['user', 'programme'])
             ->orderBy('created_at', 'desc')
             ->take(5)
             ->get();
@@ -59,7 +60,7 @@ class CompagnieDashboard extends Controller
             $revenue = Reservation::whereHas('programme', function ($q) use ($compagnieId) {
                 $q->where('compagnie_id', $compagnieId);
             })
-                ->whereNotIn('statut', ['annulee'])
+                ->where('statut', 'confirmee')
                 ->whereDate('created_at', $date)
                 ->sum('montant');
 

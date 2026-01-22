@@ -26,7 +26,7 @@ class ReservationController extends Controller
         // Terminées: 'terminee', 'annulee', OU date_voyage passée
 
         $reservationsEnCours = (clone $query)
-            ->whereIn('statut', ['en_attente', 'confirmee'])
+            ->where('statut', 'confirmee')
             ->whereDate('date_voyage', '>=', now())
             ->orderBy('date_voyage', 'asc')
             ->paginate(10, ['*'], 'page_cours');

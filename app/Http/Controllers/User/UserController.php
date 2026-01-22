@@ -15,7 +15,9 @@ class UserController extends Controller
         $user = Auth::user();
 
         // 1. Statistiques Globales
-        $totalReservations = Reservation::where('user_id', $user->id)->count();
+        $totalReservations = Reservation::where('user_id', $user->id)
+            ->where('statut', 'confirmee')
+            ->count();
 
         $totalSpent = Reservation::where('user_id', $user->id)
             ->where('statut', 'confirmee')
@@ -30,6 +32,7 @@ class UserController extends Controller
 
         // 2. Activités Récentes
         $recentReservations = Reservation::where('user_id', $user->id)
+            ->where('statut', 'confirmee')
             ->with(['programme.compagnie', 'programme.vehicule'])
             ->orderBy('created_at', 'desc')
             ->take(3)

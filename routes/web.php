@@ -214,6 +214,12 @@ Route::middleware('auth')->prefix('user')->group(function () {
     });
 });
 
+// Paiement CinetPay (Hors Auth pour le webhook)
+Route::prefix('user')->group(function () {
+    Route::post('/payment/notify', [App\Http\Controllers\PaymentController::class, 'notify'])->name('payment.notify');
+    Route::get('/payment/return', [App\Http\Controllers\PaymentController::class, 'return'])->name('payment.return');
+});
+
 
 // Routes Sapeur Pompier (Interface dédiée)
 Route::prefix('sapeur-pompier')->group(function () {

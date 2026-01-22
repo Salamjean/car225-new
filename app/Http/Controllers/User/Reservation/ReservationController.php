@@ -32,6 +32,11 @@ class ReservationController extends Controller
             ->where('user_id', $user->id)
             ->orderBy('created_at', 'desc');
 
+        // Par défaut, n'afficher que les confirmées si pas de filtre
+        if (!$request->filled('statut')) {
+            $query->where('statut', 'confirmee');
+        }
+
         // Appliquer les filtres
         if ($request->filled('reference')) {
             $query->where('reference', 'like', '%' . $request->reference . '%');
@@ -248,11 +253,17 @@ class ReservationController extends Controller
                 'is_aller_retour' => $request->is_aller_retour,
             ];
 
-            return view('user.reservation.create', compact('programmes', 'searchParams'));
+            $cinetpay_site_id = config('services.cinetpay.site_id');
+            $cinetpay_api_key = config('services.cinetpay.api_key');
+            $cinetpay_mode = app()->environment('local') ? 'TEST' : 'PRODUCTION';
+            return view('user.reservation.create', compact('programmes', 'searchParams', 'cinetpay_site_id', 'cinetpay_api_key', 'cinetpay_mode'));
         }
 
         // Si pas de recherche, afficher le formulaire vide
-        return view('user.reservation.create');
+        $cinetpay_site_id = config('services.cinetpay.site_id');
+        $cinetpay_api_key = config('services.cinetpay.api_key');
+        $cinetpay_mode = app()->environment('local') ? 'TEST' : 'PRODUCTION';
+        return view('user.reservation.create', compact('cinetpay_site_id', 'cinetpay_api_key', 'cinetpay_mode'));
     }
 
 
@@ -297,39 +308,39 @@ class ReservationController extends Controller
                     })
                         // Programmes récurrents
                         ->orWhere(function ($q) use ($formattedDate) {
-                            $joursFrancais = [
-                                'monday' => 'lundi',
-                                'tuesday' => 'mardi',
-                                'wednesday' => 'mercredi',
-                                'thursday' => 'jeudi',
-                                'friday' => 'vendredi',
-                                'saturday' => 'samedi',
-                                'sunday' => 'dimanche'
-                            ];
-                            $jourAnglais = strtolower(date('l', strtotime($formattedDate)));
-                            $jour_semaine = $joursFrancais[$jourAnglais] ?? $jourAnglais;
+                        $joursFrancais = [
+                            'monday' => 'lundi',
+                            'tuesday' => 'mardi',
+                            'wednesday' => 'mercredi',
+                            'thursday' => 'jeudi',
+                            'friday' => 'vendredi',
+                            'saturday' => 'samedi',
+                            'sunday' => 'dimanche'
+                        ];
+                        $jourAnglais = strtolower(date('l', strtotime($formattedDate)));
+                        $jour_semaine = $joursFrancais[$jourAnglais] ?? $jourAnglais;
 
-                            $q->where('type_programmation', 'recurrent')
-                                ->whereRaw('DATE(date_depart) <= ?', [$formattedDate])
-                                ->where(function ($dateCheck) use ($formattedDate) {
-                                    $dateCheck->where(function ($subDate) use ($formattedDate) {
-                                        $subDate->whereNotNull('date_fin_programmation')
-                                            ->whereRaw('DATE(date_fin_programmation) >= ?', [$formattedDate]);
-                                    })
-                                        ->orWhereNull('date_fin_programmation');
+                        $q->where('type_programmation', 'recurrent')
+                            ->whereRaw('DATE(date_depart) <= ?', [$formattedDate])
+                            ->where(function ($dateCheck) use ($formattedDate) {
+                                $dateCheck->where(function ($subDate) use ($formattedDate) {
+                                    $subDate->whereNotNull('date_fin_programmation')
+                                        ->whereRaw('DATE(date_fin_programmation) >= ?', [$formattedDate]);
                                 })
-                                ->where(function ($dayCheck) use ($jour_semaine) {
-                                    $dayCheck->whereJsonContains('jours_recurrence', $jour_semaine)
-                                        ->orWhere('jours_recurrence', 'like', "%{$jour_semaine}%");
-                                });
-                        });
+                                    ->orWhereNull('date_fin_programmation');
+                            })
+                            ->where(function ($dayCheck) use ($jour_semaine) {
+                                $dayCheck->whereJsonContains('jours_recurrence', $jour_semaine)
+                                    ->orWhere('jours_recurrence', 'like', "%{$jour_semaine}%");
+                            });
+                    });
                 })
                 ->get();
 
             // Pour chaque programme, récupérer les places réservées
             foreach ($programmes as $programme) {
                 $programReservations = Reservation::where('programme_id', $programme->id)
-                    ->where('statut', '!=', 'annulee')
+                    ->where('statut', 'confirmee')
                     ->where(function ($query) use ($formattedDate) {
                         // Vérifier si la colonne date_voyage existe
                         $table = (new Reservation())->getTable();
@@ -426,7 +437,7 @@ class ReservationController extends Controller
 
             // Nouvelle logique: chaque réservation = 1 place (seat_number)
             $reservedSeats = Reservation::where('programme_id', $programId)
-                ->where('statut', '!=', 'annulee')
+                ->where('statut', 'confirmee')
                 ->where('date_voyage', $formattedDate)
                 ->pluck('seat_number')
                 ->toArray();
@@ -542,7 +553,7 @@ class ReservationController extends Controller
 
         // Vérifier si les places sont encore disponibles
         $reservedSeats = Reservation::where('programme_id', $request->programme_id)
-            ->where('statut', '!=', 'annulee')
+            ->where('statut', 'confirmee')
             ->where('date_voyage', $dateVoyage)
             ->pluck('seat_number')
             ->toArray();
@@ -566,20 +577,60 @@ class ReservationController extends Controller
                 $prixUnitaire *= 2;
             }
 
+            $montantTotal = $prixUnitaire * $request->nombre_places;
+
+            // Générer un identifiant de transaction unique pour CinetPay
+            $transactionId = 'TRANS-' . date('YmdHis') . '-' . strtoupper(Str::random(5));
+
+            // Créer l'enregistrement de paiement
+            $paiement = \App\Models\Paiement::create([
+                'user_id' => Auth::id(),
+                'amount' => $montantTotal,
+                'transaction_id' => $transactionId,
+                'status' => 'pending',
+                'currency' => 'XOF',
+            ]);
+
+            // Initialiser le paiement CinetPay
+            $cinetPayService = app(\App\Services\CinetPayService::class);
+            $paymentData = [
+                'transaction_id' => $transactionId,
+                'amount' => (int) $montantTotal,
+                'currency' => 'XOF',
+                'description' => 'Réservation de ' . $request->nombre_places . ' place(s) - ' . $programme->compagnie->name,
+                'customer_id' => Auth::id(),
+                'customer_name' => Auth::user()->name,
+                'customer_surname' => Auth::user()->name,
+                'customer_email' => Auth::user()->email,
+                'customer_phone_number' => Auth::user()->phone ?? '0000000000',
+                'customer_address' => 'Abidjan',
+                'customer_city' => 'Abidjan',
+                'customer_country' => 'CI',
+                'customer_state' => 'Abidjan',
+                'customer_zip_code' => '00225',
+            ];
+
+            // Note: On n'appelle plus initiatePayment ici car on utilise le SDK Seamless (Pop-up)
+            // L'initiation se fera côté client avec CinetPay.getCheckout()
+            // cela évite l'erreur "Transaction ID already exists"
+
+
             // Générer un identifiant de groupe pour lier les réservations
             $groupId = strtoupper(Str::random(6));
-            
+
             $createdReservations = [];
             $passagers = $request->passagers;
 
             foreach ($passagers as $index => $passager) {
                 $seatNumber = $passager['seat_number'];
-                
-                // Générer une référence unique pour cette place
-                $reference = 'RES-' . date('Ymd') . '-' . $groupId . '-' . $seatNumber;
 
-                // Créer la réservation pour cette place
+                // Générer une référence unique pour cette place basée sur l'ID de transaction
+                $reference = $transactionId . '-' . $seatNumber;
+
+                // Créer la réservation pour cette place (STATUT EN ATTENTE)
                 $reservation = Reservation::create([
+                    'paiement_id' => $paiement->id,
+                    'payment_transaction_id' => $transactionId,
                     'user_id' => Auth::id(),
                     'programme_id' => $request->programme_id,
                     'seat_number' => $seatNumber,
@@ -590,56 +641,40 @@ class ReservationController extends Controller
                     'passager_urgence' => $passager['urgence'],
                     'is_aller_retour' => $programme->is_aller_retour,
                     'montant' => $prixUnitaire,
-                    'statut' => 'confirmee',
+                    'statut' => 'en_attente', // En attente de paiement
                     'reference' => $reference,
                     'date_voyage' => $dateVoyage,
                 ]);
 
-                // Générer et sauvegarder le QR Code pour cette réservation
-                $qrCodeData = $this->generateAndSaveQRCode($reference, $reservation->id, $dateVoyage);
+                // On ne génère pas encore le QR Code, on le fera après confirmation du paiement
 
-                // Mettre à jour la réservation avec les données du QR Code
-                $reservation->update([
-                    'qr_code' => $qrCodeData['base64'],
-                    'qr_code_path' => $qrCodeData['path'],
-                    'qr_code_data' => $qrCodeData['qr_data'],
-                ]);
-
-                Log::info('Réservation créée:', [
+                Log::info('Réservation créée (en attente):', [
                     'id' => $reservation->id,
                     'reference' => $reference,
                     'seat_number' => $seatNumber,
-                    'passager' => $passager['prenom'] . ' ' . $passager['nom'],
                 ]);
-
-                // Envoyer l'email au passager avec SON QR code
-                $this->sendReservationEmail(
-                    $reservation,
-                    $programme,
-                    $qrCodeData['base64'],
-                    $passager['email'],
-                    $passager['prenom'] . ' ' . $passager['nom'],
-                    $seatNumber
-                );
 
                 $createdReservations[] = [
                     'id' => $reservation->id,
                     'reference' => $reference,
                     'seat_number' => $seatNumber,
-                    'passager' => $passager['prenom'] . ' ' . $passager['nom'],
                 ];
             }
 
-            // Mettre à jour le statut du programme si nécessaire
-            $this->updateProgramStatus($programme, $dateVoyage);
-
-            Log::info('=== FIN RESERVATION: ' . count($createdReservations) . ' réservations créées ===');
+            Log::info('=== FIN INITIALISATION RESERVATION: ' . count($createdReservations) . ' réservations créées ===');
 
             return response()->json([
                 'success' => true,
-                'message' => 'Réservation créée avec succès. ' . count($createdReservations) . ' billet(s) envoyé(s) par email.',
-                'reservations' => $createdReservations,
-                'group_id' => $groupId,
+                'message' => 'Réservations initialisées. Ouverture du paiement...',
+                'payment_url' => true,
+                'transaction_id' => $transactionId,
+                'amount' => (int) $montantTotal,
+                'currency' => 'XOF',
+                'description' => 'Réservation de ' . $request->nombre_places . ' place(s) - ' . $programme->compagnie->name,
+                'customer_name' => Auth::user()->name,
+                'customer_surname' => Auth::user()->name,
+                'customer_email' => Auth::user()->email,
+                'customer_phone_number' => Auth::user()->phone ?? '0000000000',
             ]);
         } catch (\Exception $e) {
             Log::error('Erreur création réservation:', [
@@ -652,6 +687,7 @@ class ReservationController extends Controller
                 'message' => 'Erreur lors de la création de la réservation: ' . $e->getMessage()
             ], 500);
         }
+
     }
 
     /**
@@ -674,8 +710,8 @@ class ReservationController extends Controller
 
             // Pour programme ponctuel
             $totalReservedSeats = Reservation::where('programme_id', $programme->id)
-                ->where('statut', '!=', 'annulee')
-                ->sum('nombre_places');
+                ->where('statut', 'confirmee')
+                ->count();
 
             $totalPlaces = $programme->vehicule->nombre_place ?? 50;
             $percentage = ($totalReservedSeats / $totalPlaces) * 100;
@@ -729,8 +765,8 @@ class ReservationController extends Controller
 
             $totalReservedSeats = Reservation::where('programme_id', $programme->id)
                 ->where('date_voyage', $date)
-                ->where('statut', '!=', 'annulee')
-                ->sum('nombre_places');
+                ->where('statut', 'confirmee')
+                ->count();
 
             $totalPlaces = $programme->vehicule->nombre_place ?? 50;
             $percentage = ($totalReservedSeats / $totalPlaces) * 100;
@@ -761,14 +797,14 @@ class ReservationController extends Controller
     /**
      * Générer et sauvegarder le QR Code avec Endroid (version simplifiée)
      */
-    private function generateAndSaveQRCode(string $reference, int $reservationId, string $dateVoyage): array
+    public function generateAndSaveQRCode(string $reference, int $reservationId, string $dateVoyage, int $userId = null): array
     {
         try {
             // Données à encoder dans le QR Code
             $qrData = [
                 'reference' => $reference,
                 'reservation_id' => $reservationId,
-                'user_id' => Auth::id(),
+                'user_id' => $userId ?: Auth::id(),
                 'date_voyage' => $dateVoyage,
                 'timestamp' => time(),
                 'verification_hash' => hash('sha256', $reference . $reservationId . $dateVoyage . config('app.key'))
@@ -829,7 +865,7 @@ class ReservationController extends Controller
     /**
      * Envoyer l'email de confirmation avec PDF et QR Code
      */
-    private function sendReservationEmail(Reservation $reservation, Programme $programme, string $qrCodeBase64, string $recipientEmail = null, string $recipientName = null, int $seatNumber = null): void
+    public function sendReservationEmail(Reservation $reservation, Programme $programme, string $qrCodeBase64, string $recipientEmail = null, string $recipientName = null, int $seatNumber = null): void
     {
         try {
             $email = $recipientEmail ?: (Auth::user()->email ?? null);
@@ -865,19 +901,19 @@ class ReservationController extends Controller
     /**
      * Mettre à jour le statut du programme
      */
-    private function updateProgramStatus($programme, $dateVoyage = null): void
+    public function updateProgramStatus($programme, $dateVoyage = null): void
     {
         try {
             // Calculer les places réservées
             $query = Reservation::where('programme_id', $programme->id)
-                ->where('statut', '!=', 'annulee');
+                ->where('statut', 'confirmee');
 
             if ($programme->type_programmation == 'recurrent' && $dateVoyage) {
                 // Pour les programmes récurrents, filtrer par date_voyage
                 $query->where('date_voyage', $dateVoyage);
             }
 
-            $totalReservedSeats = $query->sum('nombre_places');
+            $totalReservedSeats = $query->count();
             $totalPlaces = $programme->vehicule->nombre_place ?? 50;
 
             if ($totalPlaces == 0) {
@@ -994,9 +1030,9 @@ class ReservationController extends Controller
             $expectedHash = hash(
                 'sha256',
                 $qrData['reference'] .
-                    $qrData['reservation_id'] .
-                    $qrData['date_voyage'] .
-                    config('app.key')
+                $qrData['reservation_id'] .
+                $qrData['date_voyage'] .
+                config('app.key')
             );
 
             if ($qrData['verification_hash'] !== $expectedHash) {
@@ -1397,15 +1433,15 @@ class ReservationController extends Controller
             ->where(function ($q) {
                 // Programmes ponctuels futurs
                 $q->where('type_programmation', 'ponctuel')
-                  ->where('date_depart', '>=', now()->format('Y-m-d'));
+                    ->where('date_depart', '>=', now()->format('Y-m-d'));
             })
             ->orWhere(function ($q) {
                 // Programmes récurrents encore valides
                 $q->where('type_programmation', 'recurrent')
-                  ->where(function ($sub) {
-                      $sub->whereNull('date_fin_programmation')
-                          ->orWhere('date_fin_programmation', '>=', now()->format('Y-m-d'));
-                  });
+                    ->where(function ($sub) {
+                    $sub->whereNull('date_fin_programmation')
+                        ->orWhere('date_fin_programmation', '>=', now()->format('Y-m-d'));
+                });
             })
             ->orderBy('date_depart', 'asc')
             ->orderBy('heure_depart', 'asc')

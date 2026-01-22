@@ -204,7 +204,8 @@
                                                     <div class="text-sm text-gray-500 text-center">
                                                         {{ $programme->durer_parcours }}
                                                         @if ($programme->is_aller_retour)
-                                                            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                                            <span
+                                                                class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
                                                                 <i class="fas fa-exchange-alt mr-1"></i> Aller-Retour
                                                             </span>
                                                         @endif
@@ -252,10 +253,10 @@
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="text-sm text-gray-900" style="display: flex; justify-content:center">
                                                 <div class="flex items-center gap-2">
-                                                    <span class="font-medium">{{ $programme->chauffeur->prenom }}
-                                                        {{ $programme->chauffeur->name }}</span>
+                                                    <span class="font-medium">{{ $programme->chauffeur->prenom ?? 'Non' }}
+                                                        {{ $programme->chauffeur->name ?? 'Non' }}</span>
                                                     <button type="button"
-                                                        onclick="changerChauffeur({{ $programme->id }}, '{{ $programme->chauffeur->prenom }} {{ $programme->chauffeur->name }}')"
+                                                        onclick="changerChauffeur({{ $programme->id }}, '{{ $programme->chauffeur->prenom ?? 'Non' }} {{ $programme->chauffeur->name ?? 'Non' }}')"
                                                         class="text-blue-600 hover:text-blue-800 transition-colors duration-200"
                                                         title="Changer le chauffeur">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor"
@@ -270,8 +271,8 @@
                                                     <div class="flex items-center gap-2 mt-1"
                                                         style="display: flex; justify-content:center">
                                                         <span class="text-gray-500 text-xs">+
-                                                            {{ $programme->convoyeur->prenom }}
-                                                            {{ $programme->convoyeur->name }}</span>
+                                                            {{ $programme->convoyeur->prenom ?? 'Non' }}
+                                                            {{ $programme->convoyeur->name ?? 'Non' }}</span>
                                                         <button type="button"
                                                             onclick="changerConvoyeur({{ $programme->id }}, '{{ $programme->convoyeur->prenom }} {{ $programme->convoyeur->name }}')"
                                                             class="text-blue-600 hover:text-blue-800 transition-colors duration-200"
@@ -536,8 +537,8 @@
                 // Informations sur la récurrence
                 const recurrenceInfo = programme.type_programmation === 'recurrent' && programme.date_fin_programmation ?
                     `<div class="text-sm text-gray-600 mt-2">
-                <strong>Période :</strong> Du ${programme.date_depart_formatee} au ${programme.date_fin_programmation}
-            </div>` : '';
+                    <strong>Période :</strong> Du ${programme.date_depart_formatee} au ${programme.date_fin_programmation}
+                </div>` : '';
 
                 // Barre de progression des places
                 const pourcentageOccupation = Math.round((programme.nbre_siege_occupe / programme.vehicule.nombre_place) * 100);
@@ -546,100 +547,100 @@
                 Swal.fire({
                     title: `<div class="flex items-center space-x-3">
 
-                <div>
-                    <h2 class="text-xl font-bold text-gray-900 text-center"">${programme.point_depart} → ${programme.point_arrive}</h2>
-                    <div class="flex space-x-2 mt-1 justify-center">
-                        ${statutBadge}
-                        ${typeBadge}
-                        ${allerRetourBadge}
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900 text-center"">${programme.point_depart} → ${programme.point_arrive}</h2>
+                        <div class="flex space-x-2 mt-1 justify-center">
+                            ${statutBadge}
+                            ${typeBadge}
+                            ${allerRetourBadge}
+                        </div>
                     </div>
-                </div>
-            </div>`,
+                </div>`,
                     html: `
-                <div class="text-left space-y-6">
-                    <!-- Montant du billet -->
-                    <div class="space-y-2">
-                        <label class="block text-sm font-medium text-gray-700">Montant du billet</label>
-                        <div class="bg-yellow-50 p-3 rounded-lg border border-yellow-100">
-                            <p class="text-2xl font-bold text-[#fea219]">
-                                ${new Intl.NumberFormat('fr-FR').format(programme.montant_billet)} FCFA
-                            </p>
-                            <p class="text-sm text-gray-600 mt-1">Prix par passager</p>
-                        </div>
-                    </div>
-
-                    ${recurrenceInfo}
-
-                    <!-- Informations du trajet -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="text-left space-y-6">
+                        <!-- Montant du billet -->
                         <div class="space-y-2">
-                            <label class="block text-sm font-medium text-gray-700">Date de départ</label>
-                            <p class="text-sm text-gray-900 bg-gray-50 p-2 rounded-lg">${programme.date_depart_formatee}</p>
-                        </div>
-                        <div class="space-y-2">
-                            <label class="block text-sm font-medium text-gray-700">Durée</label>
-                            <p class="text-sm text-gray-900 bg-gray-50 p-2 rounded-lg">${programme.durer_parcours}</p>
-                        </div>
-                    </div>
-
-                    <!-- Horaires -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="space-y-2">
-                            <label class="block text-sm font-medium text-gray-700">Heure de départ</label>
-                            <p class="text-sm text-gray-900 bg-gray-50 p-2 rounded-lg">${programme.heure_depart}</p>
-                        </div>
-                        <div class="space-y-2">
-                            <label class="block text-sm font-medium text-gray-700">Heure d'arrivée</label>
-                            <p class="text-sm text-gray-900 bg-gray-50 p-2 rounded-lg">${programme.heure_arrive}</p>
-                        </div>
-                    </div>
-
-                    <!-- Véhicule -->
-                    <div class="space-y-2">
-                        <label class="block text-sm font-medium text-gray-700">Véhicule</label>
-                        <div class="bg-gray-50 p-3 rounded-lg">
-                            <p class="text-sm font-medium text-gray-900">${programme.vehicule.marque} ${programme.vehicule.modele}</p>
-                            <p class="text-sm text-gray-600">Immatriculation: ${programme.vehicule.immatriculation}</p>
-                            <p class="text-sm text-gray-600">${programme.vehicule.nombre_place} places totales</p>
-                        </div>
-                    </div>
-
-                    <!-- Équipage -->
-                    <div class="space-y-2">
-                        <label class="block text-sm font-medium text-gray-700">Équipage</label>
-                        <div class="bg-gray-50 p-3 rounded-lg space-y-2">
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm font-medium text-gray-900">Chauffeur:</span>
-                                <span class="text-sm text-gray-600">${programme.chauffeur.prenom} ${programme.chauffeur.name}</span>
+                            <label class="block text-sm font-medium text-gray-700">Montant du billet</label>
+                            <div class="bg-yellow-50 p-3 rounded-lg border border-yellow-100">
+                                <p class="text-2xl font-bold text-[#fea219]">
+                                    ${new Intl.NumberFormat('fr-FR').format(programme.montant_billet)} FCFA
+                                </p>
+                                <p class="text-sm text-gray-600 mt-1">Prix par passager</p>
                             </div>
-                            ${programme.convoyeur ? `
-                                                <div class="flex justify-between items-center">
-                                                    <span class="text-sm font-medium text-gray-900">Convoyeur:</span>
-                                                    <span class="text-sm text-gray-600">${programme.convoyeur.prenom} ${programme.convoyeur.name}</span>
-                                                </div>
-                                            ` : ''}
                         </div>
-                    </div>
 
-                    <!-- Places -->
-                    <div class="space-y-2">
-                        <label class="block text-sm font-medium text-gray-700">Occupation des places</label>
-                        <div class="bg-gray-50 p-3 rounded-lg">
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-sm font-medium text-gray-900">${programme.nbre_siege_occupe}/${programme.vehicule.nombre_place} places occupées</span>
-                                <span class="text-sm font-medium ${programme.staut_place === 'rempli' ? 'text-red-600' : programme.staut_place === 'presque_complet' ? 'text-yellow-600' : 'text-green-600'}">
-                                    ${pourcentageOccupation}%
-                                </span>
+                        ${recurrenceInfo}
+
+                        <!-- Informations du trajet -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="block text-sm font-medium text-gray-700">Date de départ</label>
+                                <p class="text-sm text-gray-900 bg-gray-50 p-2 rounded-lg">${programme.date_depart_formatee}</p>
                             </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="h-2 rounded-full ${programme.staut_place === 'rempli' ? 'bg-red-500' : programme.staut_place === 'presque_complet' ? 'bg-yellow-500' : 'bg-green-500'}" 
-                                     style="width: ${pourcentageOccupation}%"></div>
+                            <div class="space-y-2">
+                                <label class="block text-sm font-medium text-gray-700">Durée</label>
+                                <p class="text-sm text-gray-900 bg-gray-50 p-2 rounded-lg">${programme.durer_parcours}</p>
                             </div>
-                            <p class="text-xs text-gray-500 mt-2">${placesDisponibles} places disponibles</p>
+                        </div>
+
+                        <!-- Horaires -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="block text-sm font-medium text-gray-700">Heure de départ</label>
+                                <p class="text-sm text-gray-900 bg-gray-50 p-2 rounded-lg">${programme.heure_depart}</p>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-sm font-medium text-gray-700">Heure d'arrivée</label>
+                                <p class="text-sm text-gray-900 bg-gray-50 p-2 rounded-lg">${programme.heure_arrive}</p>
+                            </div>
+                        </div>
+
+                        <!-- Véhicule -->
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">Véhicule</label>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-sm font-medium text-gray-900">${programme.vehicule.marque} ${programme.vehicule.modele}</p>
+                                <p class="text-sm text-gray-600">Immatriculation: ${programme.vehicule.immatriculation}</p>
+                                <p class="text-sm text-gray-600">${programme.vehicule.nombre_place} places totales</p>
+                            </div>
+                        </div>
+
+                        <!-- Équipage -->
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">Équipage</label>
+                            <div class="bg-gray-50 p-3 rounded-lg space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm font-medium text-gray-900">Chauffeur:</span>
+                                    <span class="text-sm text-gray-600">${programme.chauffeur ? (programme.chauffeur.prenom + ' ' + programme.chauffeur.name) : 'Non défini'}</span>
+                                </div>
+                                ${programme.convoyeur ? `
+                                                    <div class="flex justify-between items-center">
+                                                        <span class="text-sm font-medium text-gray-900">Convoyeur:</span>
+                                                        <span class="text-sm text-gray-600">${programme.convoyeur ? (programme.convoyeur.prenom + ' ' + programme.convoyeur.name) : 'Non défini'}</span>
+                                                    </div>
+                                                ` : ''}
+                            </div>
+                        </div>
+
+                        <!-- Places -->
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">Occupation des places</label>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-sm font-medium text-gray-900">${programme.nbre_siege_occupe}/${programme.vehicule.nombre_place} places occupées</span>
+                                    <span class="text-sm font-medium ${programme.staut_place === 'rempli' ? 'text-red-600' : programme.staut_place === 'presque_complet' ? 'text-yellow-600' : 'text-green-600'}">
+                                        ${pourcentageOccupation}%
+                                    </span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="h-2 rounded-full ${programme.staut_place === 'rempli' ? 'bg-red-500' : programme.staut_place === 'presque_complet' ? 'bg-yellow-500' : 'bg-green-500'}" 
+                                         style="width: ${pourcentageOccupation}%"></div>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-2">${placesDisponibles} places disponibles</p>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `,
+                `,
                     width: 650,
                     padding: '2rem',
                     background: '#ffffff',
@@ -658,17 +659,17 @@
                 Swal.fire({
                     title: 'Êtes-vous sûr ?',
                     html: `
-                <div class="text-center">
-                    <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/>
-                        </svg>
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                            </svg>
+                        </div>
+                        <p class="text-lg font-medium text-gray-900 mb-2">Supprimer le programme</p>
+                        <p class="text-gray-600">"<strong>${programmeTrajet}</strong>" sera définitivement supprimé.</p>
+                        <p class="text-sm text-red-600 mt-2">Cette action est irréversible !</p>
                     </div>
-                    <p class="text-lg font-medium text-gray-900 mb-2">Supprimer le programme</p>
-                    <p class="text-gray-600">"<strong>${programmeTrajet}</strong>" sera définitivement supprimé.</p>
-                    <p class="text-sm text-red-600 mt-2">Cette action est irréversible !</p>
-                </div>
-            `,
+                `,
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#d33',
@@ -733,20 +734,20 @@
                         Swal.fire({
                             title: 'Changer le chauffeur',
                             html: `
-                        <div class="text-left space-y-4">
-                            <p class="text-sm text-gray-600">Chauffeur actuel: <strong>${chauffeurActuel}</strong></p>
-                            <div class="space-y-2">
-                                <label class="block text-sm font-medium text-gray-700">Nouveau chauffeur</label>
-                                <select id="nouveauChauffeur" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent">
-                                    ${optionsHTML}
-                                </select>
+                            <div class="text-left space-y-4">
+                                <p class="text-sm text-gray-600">Chauffeur actuel: <strong>${chauffeurActuel}</strong></p>
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium text-gray-700">Nouveau chauffeur</label>
+                                    <select id="nouveauChauffeur" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent">
+                                        ${optionsHTML}
+                                    </select>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium text-gray-700">Raison du changement (optionnel)</label>
+                                    <textarea id="raisonChauffeur" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent" placeholder="Ex: Chauffeur malade, changement de planning..."></textarea>
+                                </div>
                             </div>
-                            <div class="space-y-2">
-                                <label class="block text-sm font-medium text-gray-700">Raison du changement (optionnel)</label>
-                                <textarea id="raisonChauffeur" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent" placeholder="Ex: Chauffeur malade, changement de planning..."></textarea>
-                            </div>
-                        </div>
-                    `,
+                        `,
                             showCancelButton: true,
                             confirmButtonText: 'Modifier',
                             cancelButtonText: 'Annuler',
@@ -806,20 +807,20 @@
                         Swal.fire({
                             title: 'Changer le véhicule',
                             html: `
-                        <div class="text-left space-y-4">
-                            <p class="text-sm text-gray-600">Véhicule actuel: <strong>${vehiculeActuel}</strong></p>
-                            <div class="space-y-2">
-                                <label class="block text-sm font-medium text-gray-700">Nouveau véhicule</label>
-                                <select id="nouveauVehicule" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent">
-                                    ${optionsHTML}
-                                </select>
+                            <div class="text-left space-y-4">
+                                <p class="text-sm text-gray-600">Véhicule actuel: <strong>${vehiculeActuel}</strong></p>
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium text-gray-700">Nouveau véhicule</label>
+                                    <select id="nouveauVehicule" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent">
+                                        ${optionsHTML}
+                                    </select>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium text-gray-700">Raison du changement (optionnel)</label>
+                                    <textarea id="raisonVehicule" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent" placeholder="Ex: Véhicule en panne, maintenance..."></textarea>
+                                </div>
                             </div>
-                            <div class="space-y-2">
-                                <label class="block text-sm font-medium text-gray-700">Raison du changement (optionnel)</label>
-                                <textarea id="raisonVehicule" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent" placeholder="Ex: Véhicule en panne, maintenance..."></textarea>
-                            </div>
-                        </div>
-                    `,
+                        `,
                             showCancelButton: true,
                             confirmButtonText: 'Modifier',
                             cancelButtonText: 'Annuler',

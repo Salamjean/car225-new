@@ -25,7 +25,7 @@ class SignalementController extends Controller
         $reservations = \App\Models\Reservation::with(['programme.compagnie', 'programme.vehicule'])
             ->where('user_id', $user->id)
             ->whereDate('date_voyage', $today)
-            ->where('statut', '!=', 'annulee')
+            ->where('statut', 'confirmee')
             ->get();
 
         return view('user.signalement.create', compact('reservations'));

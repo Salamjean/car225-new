@@ -156,14 +156,14 @@ class HomeController extends Controller
         $programmes = Programme::with(['compagnie', 'vehicule', 'itineraire'])
             ->where(function ($query) {
                 $query->whereNull('date_fin_programmation')
-                      ->orWhereDate('date_fin_programmation', '>=', now());
+                    ->orWhereDate('date_fin_programmation', '>=', now());
             })
             ->where(function ($query) {
                 $query->where(function ($sub) {
                     $sub->where('type_programmation', 'ponctuel')
                         ->whereDate('date_depart', '>=', now());
                 })
-                ->orWhere('type_programmation', 'recurrent');
+                    ->orWhere('type_programmation', 'recurrent');
             })
             ->orderBy('date_depart', 'asc')
             ->orderBy('heure_depart', 'asc')
@@ -277,7 +277,7 @@ class HomeController extends Controller
                 // Pour chaque programme, récupérer les places réservées
                 foreach ($programmes as $programme) {
                     $programReservations = Reservation::where('programme_id', $programme->id)
-                        ->where('statut', '!=', 'annulee')
+                        ->where('statut', 'confirmee')
                         ->where(function ($query) use ($formattedDate) {
                             // Vérifier si la colonne date_voyage existe
                             $table = (new Reservation())->getTable();
@@ -289,14 +289,7 @@ class HomeController extends Controller
                                 $query->where('date_depart', $formattedDate);
                             }
                         })
-                        ->pluck('places')
-                        ->flatMap(function ($places) {
-                            try {
-                                return json_decode($places, true) ?? [];
-                            } catch (\Exception $e) {
-                                return [];
-                            }
-                        })
+                        ->pluck('seat_number')
                         ->toArray();
 
                     Log::info('Réservations pour programme ' . $programme->id . ':', [
