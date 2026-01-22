@@ -7,7 +7,7 @@
         <!-- Header -->
         <div class="mb-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-                <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Tableau de bord Administrateur</h1>
+                <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Tableau de bord</h1>
                 <p class="text-gray-500 mt-1">Vue d'ensemble complète du système CAR225</p>
             </div>
             <div class="flex items-center gap-3">
