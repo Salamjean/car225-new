@@ -260,7 +260,8 @@ class ProgrammeController extends Controller
     {
         Log::info('Début de la création du programme', ['request_data' => $request->all()]);
 
-        $validatedData = $request->validate([
+        // Règles de validation de base
+        $rules = [
             'itineraire_id' => 'required|exists:itineraires,id',
             'vehicule_id' => 'required|exists:vehicules,id',
             'personnel_id' => 'required|exists:personnels,id',
@@ -277,21 +278,45 @@ class ProgrammeController extends Controller
             'jours_recurrence' => 'nullable|array|required_if:type_programmation,recurrent',
             'jours_recurrence.*' => 'string|in:lundi,mardi,mercredi,jeudi,vendredi,samedi,dimanche',
             'is_aller_retour' => 'boolean',
-        ]);
+        ];
+
+        // Ajouter les règles de validation pour aller-retour si activé
+        if ($request->has('is_aller_retour')) {
+            if ($request->input('type_programmation') === 'ponctuel') {
+                // Ponctuel: date et heures spécifiques pour le retour
+                $rules['retour_date'] = 'required|date|after_or_equal:date_depart';
+                $rules['retour_heure_depart'] = 'required|string';
+                $rules['retour_heure_arrive'] = 'required|string';
+            } else {
+                // Récurrent: jours et heure unique pour tous les retours
+                // ICI: On valide que jours_retour est un tableau valide
+                $rules['jours_retour'] = 'required|array|min:1';
+                $rules['jours_retour.*'] = 'string|in:lundi,mardi,mercredi,jeudi,vendredi,samedi,dimanche';
+               // NOUVEAU : Validation de la date de début retour
+                $rules['retour_date_debut_recurrent'] = 'required|date|after_or_equal:date_depart';
+                $rules['retour_heure_depart_recurrent'] = 'required|string';
+                $rules['retour_heure_arrive_recurrent'] = 'required|string';
+            }
+        }
+
+        $validatedData = $request->validate($rules);
+
 
         Log::info('Données validées avec succès', ['validated_data' => $validatedData]);
 
         try {
             // Le statut des places sera "vide" par défaut au début
             $staut_place = 'vide';
+            $isAllerRetour = $request->has('is_aller_retour') ? true : false;
+            $compagnieId = Auth::guard('compagnie')->user()->id;
 
-            // Préparer les données pour la création
+            // Préparer les données pour la création du programme ALLER
             $programmeData = [
-                'compagnie_id' => Auth::guard('compagnie')->user()->id,
+                'compagnie_id' => $compagnieId,
                 'itineraire_id' => $validatedData['itineraire_id'],
                 'vehicule_id' => $validatedData['vehicule_id'],
                 'personnel_id' => $validatedData['personnel_id'],
-                'convoyeur_id' => $validatedData['convoyeur_id'],
+                'convoyeur_id' => $validatedData['convoyeur_id'] ?? null,
                 'point_depart' => $validatedData['point_depart'],
                 'point_arrive' => $validatedData['point_arrive'],
                 'durer_parcours' => $validatedData['durer_parcours'],
@@ -299,10 +324,10 @@ class ProgrammeController extends Controller
                 'heure_depart' => $validatedData['heure_depart'],
                 'heure_arrive' => $validatedData['heure_arrive'],
                 'montant_billet' => $validatedData['montant_billet'],
-                'nbre_siege_occupe' => 0, // Mettre 0 par défaut
+                'nbre_siege_occupe' => 0,
                 'staut_place' => $staut_place,
                 'type_programmation' => $validatedData['type_programmation'],
-                'is_aller_retour' => $request->has('is_aller_retour') ? true : false,
+                'is_aller_retour' => $isAllerRetour,
             ];
 
             // Ajouter les champs spécifiques aux programmations récurrentes
@@ -311,14 +336,89 @@ class ProgrammeController extends Controller
                 $programmeData['jours_recurrence'] = json_encode($validatedData['jours_recurrence']);
             }
 
-            Log::info('Tentative de création du programme', $programmeData);
+            Log::info('Tentative de création du programme ALLER', $programmeData);
 
-            $programme = Programme::create($programmeData);
+            // Créer le programme ALLER
+            $programmeAller = Programme::create($programmeData);
 
-            Log::info('Programme créé avec succès', ['programme_id' => $programme->id]);
+            Log::info('Programme ALLER créé avec succès', ['programme_id' => $programmeAller->id]);
+
+            // Si aller-retour, créer automatiquement le programme RETOUR avec configuration utilisateur
+            if ($isAllerRetour) {
+                // Trouver ou créer l'itinéraire inverse
+                $itineraireAller = Itineraire::find($validatedData['itineraire_id']);
+                
+                // Chercher l'itinéraire inverse (départ <-> arrivée)
+                $itineraireRetour = Itineraire::where('compagnie_id', $compagnieId)
+                    ->where('point_depart', $itineraireAller->point_arrive)
+                    ->where('point_arrive', $itineraireAller->point_depart)
+                    ->first();
+
+                // Si l'itinéraire inverse n'existe pas, le créer automatiquement
+                if (!$itineraireRetour) {
+                    $itineraireRetour = Itineraire::create([
+                        'compagnie_id' => $compagnieId,
+                        'point_depart' => $itineraireAller->point_arrive,
+                        'point_arrive' => $itineraireAller->point_depart,
+                        'durer_parcours' => $itineraireAller->durer_parcours,
+                    ]);
+                    Log::info('Itinéraire retour créé automatiquement', ['itineraire_retour_id' => $itineraireRetour->id]);
+                }
+
+                // Préparer les données du programme retour
+                $programmeRetourData = [
+                    'compagnie_id' => $compagnieId,
+                    'itineraire_id' => $itineraireRetour->id,
+                    'vehicule_id' => $validatedData['vehicule_id'],
+                    'personnel_id' => $validatedData['personnel_id'],
+                    'convoyeur_id' => $validatedData['convoyeur_id'] ?? null,
+                    'point_depart' => $validatedData['point_arrive'],
+                    'point_arrive' => $validatedData['point_depart'],
+                    'durer_parcours' => $validatedData['durer_parcours'],
+                    'montant_billet' => $validatedData['montant_billet'],
+                    'nbre_siege_occupe' => 0,
+                    'staut_place' => $staut_place,
+                    'type_programmation' => $validatedData['type_programmation'],
+                    'is_aller_retour' => false,
+                    'programme_retour_id' => $programmeAller->id,
+                ];
+
+                // Configurer les dates et heures selon le type de programmation
+                if ($validatedData['type_programmation'] === 'ponctuel') {
+                    // CAS PONCTUEL : On utilise explicitement la date de retour choisie par l'utilisateur
+                    $programmeRetourData['date_depart'] = $validatedData['retour_date'];
+                    $programmeRetourData['heure_depart'] = $validatedData['retour_heure_depart'];
+                    $programmeRetourData['heure_arrive'] = $validatedData['retour_heure_arrive'];
+                } else {
+                     // CAS RÉCURRENT :
+                    
+                    // CORRECTION ICI : On utilise la date spécifique fournie par l'utilisateur
+                    $programmeRetourData['date_depart'] = $validatedData['retour_date_debut_recurrent']; 
+                    
+                    $programmeRetourData['date_fin_programmation'] = $validatedData['date_fin_programmation'];
+                    $programmeRetourData['jours_recurrence'] = json_encode($validatedData['jours_retour']);
+                    $programmeRetourData['heure_depart'] = $validatedData['retour_heure_depart_recurrent'];
+                    $programmeRetourData['heure_arrive'] = $validatedData['retour_heure_arrive_recurrent'];
+                }
+                Log::info('Tentative de création du programme RETOUR', $programmeRetourData);
+
+                // Créer le programme RETOUR
+                $programmeRetour = Programme::create($programmeRetourData);
+
+                // Mettre à jour le programme ALLER pour le lier au RETOUR
+                $programmeAller->update(['programme_retour_id' => $programmeRetour->id]);
+
+                Log::info('Programme RETOUR créé et lié', [
+                    'programme_aller_id' => $programmeAller->id,
+                    'programme_retour_id' => $programmeRetour->id,
+                    'itineraire_retour_id' => $itineraireRetour->id
+                ]);
+            }
 
             return redirect()->route('programme.index')
-                ->with('success', 'Programme créé avec succès!');
+                ->with('success', $isAllerRetour 
+                    ? 'Programme aller-retour créé avec succès! (2 programmes créés avec itinéraire inversé)' 
+                    : 'Programme créé avec succès!');
         } catch (\Exception $e) {
             Log::error('Erreur lors de la création du programme', [
                 'error_message' => $e->getMessage(),

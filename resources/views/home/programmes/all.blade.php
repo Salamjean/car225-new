@@ -12,13 +12,13 @@
                         Découvrez tous les trajets disponibles proposés par nos compagnies partenaires.
                         Réservez votre place dès maintenant !
                     </p>
-                    <div class="inline-block bg-[#fea219] text-white px-4 py-2 rounded-xl font-bold text-lg shadow-md">
+                    <div class="inline-block bg-[#e94e1a] text-white px-4 py-2 rounded-xl font-bold text-lg shadow-md">
                         {{ $programmes->total() }} programme(s) disponible(s)
                     </div>
                     
                     <div class="mt-6 flex justify-center">
                          <a href="{{ url('/') }}#search-form"
-                            class="bg-white text-[#fea219] border border-[#fea219] px-6 py-2 rounded-xl hover:bg-[#fea219] hover:text-white transition-all duration-300 font-semibold text-base flex items-center gap-2">
+                            class="bg-white text-[#e94e1a] border border-[#e94e1a] px-6 py-2 rounded-xl hover:bg-[#e94e1a] hover:text-white transition-all duration-300 font-semibold text-base flex items-center gap-2">
                             <i class="fas fa-search"></i>
                             Faire une recherche spécifique
                         </a>
@@ -31,7 +31,7 @@
                 <div class="w-full mb-6 sm:mb-8">
                     <!-- En-tête de la liste (version desktop) -->
                     <div class="hidden md:block mb-4">
-                        <div class="bg-gradient-to-r from-[#fea219]/10 to-orange-500/10 rounded-xl p-4">
+                        <div class="bg-gradient-to-r from-[#e94e1a]/10 to-orange-500/10 rounded-xl p-4">
                             <div class="grid grid-cols-12 gap-4 text-sm font-semibold text-gray-700">
                                 <div class="col-span-3 text-center">Compagnie & Trajet</div>
                                 <div class="col-span-2 text-center">Date & Heure</div>
@@ -54,7 +54,7 @@
                                         <div class="flex justify-between items-start mb-3">
                                             <div class="flex items-center gap-2">
                                                 <div
-                                                    class="w-10 h-10 bg-gradient-to-r from-[#fea219] to-orange-500 rounded-full flex items-center justify-center">
+                                                    class="w-10 h-10 bg-gradient-to-r from-[#e94e1a] to-orange-500 rounded-full flex items-center justify-center">
                                                     <i class="fas fa-bus text-white"></i>
                                                 </div>
                                                 <div>
@@ -73,7 +73,7 @@
                                                 </div>
                                             </div>
                                             <div class="text-right">
-                                                <div class="text-lg font-bold text-[#fea219]">
+                                                <div class="text-lg font-bold text-[#e94e1a]">
                                                     {{ number_format($programme->montant_billet, 0, ',', ' ') }} FCFA
                                                 </div>
                                                 <div class="text-xs text-gray-500">Prix</div>
@@ -89,7 +89,7 @@
                                                     <div class="text-xs text-gray-500">Départ</div>
                                                 </div>
                                                 <div class="mx-2">
-                                                    <i class="fas fa-arrow-right text-[#fea219]"></i>
+                                                    <i class="fas fa-arrow-right text-[#e94e1a]"></i>
                                                 </div>
                                                 <div class="text-center">
                                                     <div class="font-bold text-gray-900">{{ $programme->point_arrive }}
@@ -159,7 +159,7 @@
                                         <div class="flex gap-2">
                                             @if ($programme->staut_place != 'rempli')
                                                 <a href="{{ route('reservation.create', ['programme_id' => $programme->id, 'date_depart' => $programme->date_depart ? \Carbon\Carbon::parse($programme->date_depart)->format('Y-m-d') : date('Y-m-d')]) }}"
-                                                    class="flex-1 bg-[#fea219] text-white text-center py-2 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 flex items-center justify-center gap-2">
+                                                    class="flex-1 bg-[#e94e1a] text-white text-center py-2 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 flex items-center justify-center gap-2">
                                                     <i class="fas fa-ticket-alt"></i>
                                                     <span>Réserver</span>
                                                 </a>
@@ -174,7 +174,7 @@
                                             <!-- Actions mobile - Modifiez le bouton info -->
                                             <a href="#"
                                                 onclick="showVehicleDetails({{ $programme->vehicule->id ?? 'null' }}, '{{ $programme->date_depart ? \Carbon\Carbon::parse($programme->date_depart)->format('Y-m-d') : date('Y-m-d') }}'); return false;"
-                                                class="w-12 bg-white text-[#fea219] border border-[#fea219] text-center py-2 rounded-lg font-bold hover:bg-gray-50 transition-all duration-300 flex items-center justify-center vehicle-details-btn"
+                                                class="w-12 bg-white text-[#e94e1a] border border-[#e94e1a] text-center py-2 rounded-lg font-bold hover:bg-gray-50 transition-all duration-300 flex items-center justify-center vehicle-details-btn"
                                                 data-vehicle-id="{{ $programme->vehicule->id ?? '' }}"
                                                 data-search-date="{{ $programme->date_depart ? \Carbon\Carbon::parse($programme->date_depart)->format('Y-m-d') : date('Y-m-d') }}">
                                                 <i class="fas fa-info-circle"></i>
@@ -190,7 +190,7 @@
                                         <div class="col-span-3">
                                             <div class="flex items-center gap-3">
                                                 <div
-                                                    class="w-12 h-12 bg-gradient-to-r from-[#fea219] to-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                                    class="w-12 h-12 bg-gradient-to-r from-[#e94e1a] to-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
                                                     <i class="fas fa-bus text-white text-lg"></i>
                                                 </div>
                                                 <div class="flex-1 min-w-0">
@@ -214,7 +214,7 @@
                                                         style="display:flex; justify-content:center">
                                                         <div class="font-semibold text-gray-900">
                                                             {{ $programme->point_depart }}</div>
-                                                        <i class="fas fa-arrow-right text-[#fea219] text-xs"></i>
+                                                        <i class="fas fa-arrow-right text-[#e94e1a] text-xs"></i>
                                                         <div class="font-semibold text-gray-900">
                                                             {{ $programme->point_arrive }}</div>
                                                     </div>
@@ -250,7 +250,7 @@
                                                 </div>
                                                 <div class="flex items-center gap-2">
                                                     <i class="fas fa-money-bill-wave text-red-500"></i>
-                                                    <span class="font-bold text-lg text-[#fea219]">
+                                                    <span class="font-bold text-lg text-[#e94e1a]">
                                                         {{ number_format($programme->montant_billet, 0, ',', ' ') }} FCFA
                                                     </span>
                                                 </div>
@@ -258,7 +258,7 @@
                                         </div>
 
                                         <!-- Statut -->
-                                        <div class="col-span-2" style="display:flex; justify-content:center">
+                                        <div class="col-span-2" style="display:flex; justify-content:center; flex-direction: column; align-items: center;">
                                             @php
                                                 $statusColors = [
                                                     'vide' => 'bg-green-100 text-green-800 border-green-200',
@@ -272,24 +272,44 @@
                                                     'rempli' => 'Complet',
                                                 ];
                                             @endphp
-                                            <div class="flex items-center gap-2">
-                                                <div
-                                                    class="w-3 h-3 rounded-full {{ $programme->staut_place == 'vide'
-                                                        ? 'bg-green-500'
-                                                        : ($programme->staut_place == 'presque_complet'
-                                                            ? 'bg-yellow-500'
-                                                            : 'bg-red-500') }}">
+                                            
+                                            @if($programme->type_programmation === 'recurrent' && $programme->jours_recurrence)
+                                                @php
+                                                    $joursRecurrence = json_decode($programme->jours_recurrence, true) ?? [];
+                                                @endphp
+                                                <div class="text-xs text-gray-600 mb-2 font-medium">Jours disponibles :</div>
+                                                <div class="flex flex-wrap gap-1 justify-center">
+                                                    @foreach($joursRecurrence as $jour)
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-800 cursor-pointer hover:bg-green-200 transition-all day-badge"
+                                                              data-programme-id="{{ $programme->id }}"
+                                                              data-vehicule-id="{{ $programme->vehicule->id ?? '' }}"
+                                                              data-jour="{{ $jour }}"
+                                                              onclick="openDetailsForNextDay('{{ $jour }}', {{ $programme->vehicule->id ?? 'null' }})">
+                                                            {{ ucfirst(substr($jour, 0, 3)) }}
+                                                        </span>
+                                                    @endforeach
                                                 </div>
-                                                <span
-                                                    class="font-semibold {{ $programme->staut_place == 'vide'
-                                                        ? 'text-green-600'
-                                                        : ($programme->staut_place == 'presque_complet'
-                                                            ? 'text-yellow-600'
-                                                            : 'text-red-600') }}">
-                                                    {{ $statusTexts[$programme->staut_place] ?? 'Statut inconnu' }}
-                                                </span>
-                                            </div>
-                                            @if ($programme->staut_place == 'presque_complet')
+                                            @else
+                                                <div class="flex items-center gap-2">
+                                                    <div
+                                                        class="w-3 h-3 rounded-full {{ $programme->staut_place == 'vide'
+                                                            ? 'bg-green-500'
+                                                            : ($programme->staut_place == 'presque_complet'
+                                                                ? 'bg-yellow-500'
+                                                                : 'bg-red-500') }}">
+                                                    </div>
+                                                    <span
+                                                        class="font-semibold {{ $programme->staut_place == 'vide'
+                                                            ? 'text-green-600'
+                                                            : ($programme->staut_place == 'presque_complet'
+                                                                ? 'text-yellow-600'
+                                                                : 'text-red-600') }}">
+                                                        {{ $statusTexts[$programme->staut_place] ?? 'Statut inconnu' }}
+                                                    </span>
+                                                </div>
+                                            @endif
+                                            
+                                            @if ($programme->staut_place == 'presque_complet' && $programme->type_programmation !== 'recurrent')
                                                 <div class="text-xs text-yellow-600 mt-1">
                                                     <i class="fas fa-exclamation-triangle"></i> Dernières places !
                                                 </div>
@@ -299,17 +319,26 @@
                                         <!-- Actions -->
                                         <div class="col-span-3" style="display:flex; justify-content:center">
                                             <div class="flex gap-2 justify-end">
-                                                <button
-                                                    onclick="showVehicleDetails({{ $programme->vehicule->id ?? 'null' }}, '{{ $programme->date_depart ? \Carbon\Carbon::parse($programme->date_depart)->format('Y-m-d') : date('Y-m-d') }}')"
-                                                    class="bg-white text-[#fea219] border border-[#fea219] px-4 py-2 rounded-lg font-bold hover:bg-gray-50 transition-all duration-300 flex items-center gap-2 vehicle-details-btn"
-                                                    data-vehicle-id="{{ $programme->vehicule->id ?? '' }}"
-                                                    data-search-date="{{ $programme->date_depart ? \Carbon\Carbon::parse($programme->date_depart)->format('Y-m-d') : date('Y-m-d') }}">
-                                                    <i class="fas fa-info-circle"></i>
-                                                    <span class="hidden lg:inline">Détails véhicule</span>
-                                                </button>
+                                                @if($programme->type_programmation === 'recurrent' && $programme->jours_recurrence)
+                                                    <button
+                                                        onclick="showDaySelectorForProgram({{ $programme->vehicule->id ?? 'null' }}, {{ $programme->id }}, {{ json_encode(json_decode($programme->jours_recurrence, true) ?? []) }})"
+                                                        class="bg-white text-[#e94e1a] border border-[#e94e1a] px-4 py-2 rounded-lg font-bold hover:bg-gray-50 transition-all duration-300 flex items-center gap-2">
+                                                        <i class="fas fa-calendar-day"></i>
+                                                        <span class="hidden lg:inline">Choisir un jour</span>
+                                                    </button>
+                                                @else
+                                                    <button
+                                                        onclick="showVehicleDetails({{ $programme->vehicule->id ?? 'null' }}, '{{ $programme->date_depart ? \Carbon\Carbon::parse($programme->date_depart)->format('Y-m-d') : date('Y-m-d') }}')"
+                                                        class="bg-white text-[#e94e1a] border border-[#e94e1a] px-4 py-2 rounded-lg font-bold hover:bg-gray-50 transition-all duration-300 flex items-center gap-2 vehicle-details-btn"
+                                                        data-vehicle-id="{{ $programme->vehicule->id ?? '' }}"
+                                                        data-search-date="{{ $programme->date_depart ? \Carbon\Carbon::parse($programme->date_depart)->format('Y-m-d') : date('Y-m-d') }}">
+                                                        <i class="fas fa-info-circle"></i>
+                                                        <span class="hidden lg:inline">Détails véhicule</span>
+                                                    </button>
+                                                @endif
                                                 @if ($programme->staut_place != 'rempli')
                                                     <a href="{{ route('reservation.create', ['programme_id' => $programme->id, 'date_depart' => $programme->date_depart ? \Carbon\Carbon::parse($programme->date_depart)->format('Y-m-d') : date('Y-m-d')]) }}"
-                                                        class="bg-[#fea219] text-white px-4 py-2 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 flex items-center gap-2">
+                                                        class="bg-[#e94e1a] text-white px-4 py-2 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 flex items-center gap-2">
                                                         <i class="fas fa-ticket-alt"></i>
                                                         <span class="hidden lg:inline">Réserver</span>
                                                     </a>
@@ -347,7 +376,7 @@
                     <div class="w-full max-w-4xl mx-auto">
                         <div
                             class="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-gradient-to-br from-orange-100 to-green-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
-                            <i class="fas fa-route text-2xl sm:text-3xl lg:text-4xl text-[#fea219]"></i>
+                            <i class="fas fa-route text-2xl sm:text-3xl lg:text-4xl text-[#e94e1a]"></i>
                         </div>
                         <h3 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">Aucun programme
                             disponible pour le moment</h3>
@@ -356,7 +385,7 @@
                         </p>
                         <div class="w-full flex justify-center">
                             <a href="{{ url('/') }}#search-form"
-                                class="bg-[#fea219] text-white px-4 sm:px-6 py-3 rounded-lg sm:rounded-xl font-bold hover:bg-orange-600 transition-all duration-300 transform hover:-translate-y-0.5 shadow-md flex items-center justify-center gap-2 text-sm sm:text-base">
+                                class="bg-[#e94e1a] text-white px-4 sm:px-6 py-3 rounded-lg sm:rounded-xl font-bold hover:bg-orange-600 transition-all duration-300 transform hover:-translate-y-0.5 shadow-md flex items-center justify-center gap-2 text-sm sm:text-base">
                                 <i class="fas fa-search"></i>
                                 Rechercher un trajet
                             </a>
@@ -406,16 +435,16 @@
         }
 
         .pagination li a:hover {
-            background-color: #fea219;
-            border-color: #fea219;
+            background-color: #e94e1a;
+            border-color: #e94e1a;
             color: white;
             transform: translateY(-1px);
             box-shadow: 0 2px 8px rgba(254, 162, 25, 0.3);
         }
 
         .pagination li span {
-            background-color: #fea219;
-            border-color: #fea219;
+            background-color: #e94e1a;
+            border-color: #e94e1a;
             color: white;
             box-shadow: 0 2px 8px rgba(254, 162, 25, 0.3);
         }
@@ -469,6 +498,98 @@
             }
         };
 
+        // Jours en français vers dates
+        const joursFrancais = {
+            'lundi': 1, 'mardi': 2, 'mercredi': 3, 'jeudi': 4,
+            'vendredi': 5, 'samedi': 6, 'dimanche': 0
+        };
+
+        // Fonction pour obtenir la prochaine date pour un jour de la semaine
+        function getNextDateForDay(jourFrancais) {
+            const dayIndex = joursFrancais[jourFrancais.toLowerCase()];
+            const today = new Date();
+            const todayDay = today.getDay();
+            
+            let daysUntil = dayIndex - todayDay;
+            if (daysUntil < 0) daysUntil += 7;
+            if (daysUntil === 0 && today.getHours() >= 18) daysUntil = 7; // Si c'est après 18h, prendre la semaine prochaine
+            
+            const nextDate = new Date(today);
+            nextDate.setDate(today.getDate() + daysUntil);
+            
+            return nextDate.toISOString().split('T')[0];
+        }
+
+        // Fonction pour ouvrir directement les détails pour la prochaine date d'un jour
+        function openDetailsForNextDay(jour, vehiculeId) {
+            if (!vehiculeId) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Information',
+                    text: 'Aucun véhicule associé à ce programme.',
+                    confirmButtonColor: '#e94e1a',
+                });
+                return;
+            }
+            
+            const nextDate = getNextDateForDay(jour);
+            showVehicleDetails(vehiculeId, nextDate);
+        }
+
+        // Fonction pour afficher le sélecteur de jour (bouton Actions)
+        function showDaySelectorForProgram(vehiculeId, programmeId, jours) {
+            if (!vehiculeId) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Information',
+                    text: 'Aucun véhicule associé à ce programme.',
+                    confirmButtonColor: '#e94e1a',
+                });
+                return;
+            }
+
+            if (!jours || jours.length === 0) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erreur',
+                    text: 'Aucun jour de récurrence défini.',
+                    confirmButtonColor: '#e94e1a',
+                });
+                return;
+            }
+
+            // Créer les boutons pour chaque jour
+            let joursHtml = '<div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">';
+            jours.forEach(jour => {
+                const nextDate = getNextDateForDay(jour);
+                const formattedDate = new Date(nextDate).toLocaleDateString('fr-FR', {
+                    day: 'numeric',
+                    month: 'short'
+                });
+                joursHtml += `
+                    <button type="button" 
+                            class="px-4 py-3 rounded-lg border-2 border-[#e94e1a] text-[#e94e1a] font-semibold hover:bg-[#e94e1a] hover:text-white transition-all duration-200 text-sm flex flex-col items-center w-full"
+                            onclick="Swal.close(); showVehicleDetails(${vehiculeId}, '${nextDate}')">
+                        <span class="text-base font-bold capitalize">${jour}</span>
+                        <span class="text-xs opacity-75">${formattedDate}</span>
+                    </button>
+                `;
+            });
+            joursHtml += '</div>';
+
+            Swal.fire({
+                title: '<i class="fas fa-calendar-alt text-[#e94e1a]"></i> Choisissez un jour',
+                html: `
+                    <p class="text-gray-600 mb-2">Sélectionnez le jour pour voir les places disponibles :</p>
+                    ${joursHtml}
+                `,
+                showConfirmButton: false,
+                showCancelButton: true,
+                cancelButtonText: 'Fermer',
+                cancelButtonColor: '#6b7280',
+            });
+        }
+
         // Fonction pour afficher les détails du véhicule avec les places réservées
         async function showVehicleDetails(vehicleId, dateVoyage) {
             if (!vehicleId) {
@@ -476,7 +597,7 @@
                     icon: 'info',
                     title: 'Information',
                     text: 'Aucun véhicule associé à ce programme.',
-                    confirmButtonColor: '#fea219',
+                    confirmButtonColor: '#e94e1a',
                 });
                 return;
             }
@@ -549,7 +670,7 @@
                             <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
                                 <div style="text-align: center;">
                                     <div style="color: #6b7280; font-size: 0.9rem;">Type de rangée</div>
-                                    <div style="color: #fea219; font-weight: bold; font-size: 1.2rem;">${vehicle.type_range}</div>
+                                    <div style="color: #e94e1a; font-weight: bold; font-size: 1.2rem;">${vehicle.type_range}</div>
                                 </div>
                                 <div style="text-align: center;">
                                     <div style="color: #6b7280; font-size: 0.9rem;">Rangées</div>
@@ -593,7 +714,7 @@
                     <p style="color: #6b7280; font-size: 0.9rem;">Détail: ${error.message}</p>
                 </div>
             `,
-                    confirmButtonColor: '#fea219',
+                    confirmButtonColor: '#e94e1a',
                 });
             }
         }
@@ -649,7 +770,7 @@
 
                     const bgColor = isReserved ?
                         'background: linear-gradient(135deg, #ef4444, #dc2626); opacity: 0.7;' :
-                        'background: linear-gradient(135deg, #fea219, #e89116);';
+                        'background: linear-gradient(135deg, #e94e1a, #e89116);';
 
                     const cursorStyle = isReserved ? 'cursor: not-allowed;' : 'cursor: help;';
                     const title = isReserved ? `Place ${seatNumber} (Occupée)` : `Place ${seatNumber}`;
@@ -675,7 +796,7 @@
 
                     const bgColor = isReserved ?
                         'background: linear-gradient(135deg, #ef4444, #dc2626); opacity: 0.7;' :
-                        'background: linear-gradient(135deg, #fea219, #e89116);';
+                        'background: linear-gradient(135deg, #e94e1a, #e89116);';
 
                     const cursorStyle = isReserved ? 'cursor: not-allowed;' : 'cursor: help;';
                     const title = isReserved ? `Place ${seatNumber} (Occupée)` : `Place ${seatNumber}`;
@@ -696,7 +817,7 @@
             </div>
             <div style="padding: 15px; background: #f9fafb; border-top: 1px solid #e5e7eb; display: flex; gap: 20px; justify-content: center;">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <div style="width: 20px; height: 20px; background: linear-gradient(135deg, #fea219, #e89116); border-radius: 4px;"></div>
+                    <div style="width: 20px; height: 20px; background: linear-gradient(135deg, #e94e1a, #e89116); border-radius: 4px;"></div>
                     <span style="font-size: 0.9rem; color: #4b5563;">Disponible</span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px;">

@@ -119,7 +119,7 @@
                                             <i class="far fa-calendar-alt mr-1"></i>
                                             {{ \Carbon\Carbon::parse($res->date_voyage)->format('d M Y') }}
                                             <span class="mx-2 text-gray-300">|</span>
-                                            <i class="fas fa-chair mr-1"></i> {{ $res->nombre_places }} places
+                                            <i class="fas fa-chair mr-1"></i> 1 place (Siège N° {{ $res->seat_number }})
                                         </p>
                                     </div>
                                 </div>
@@ -128,8 +128,13 @@
                                     <div class="text-right">
                                         <p class="text-xs font-black text-gray-400 uppercase">Montant</p>
                                         <p class="text-xl font-black text-gray-900">
+<<<<<<< HEAD
                                             {{ number_format($res->montant, 0, ',', ' ') }} <span class="text-xs">CFA</span>
                                         </p>
+=======
+                                            {{ number_format($res->montant, 0, ',', ' ') }} <span
+                                                class="text-xs">CFA</span></p>
+>>>>>>> origin/Car225m
                                     </div>
                                     <a href="{{ route('reservations.show', $res->id) }}"
                                         class="w-12 h-12 bg-gray-900 text-white rounded-2xl flex items-center justify-center hover:bg-green-600 transition-all shadow-lg">

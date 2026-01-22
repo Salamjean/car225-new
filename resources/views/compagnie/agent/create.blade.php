@@ -423,7 +423,7 @@
 <style>
     /* Variables de design */
     :root {
-        --primary-gradient: linear-gradient(135deg, #fea219 0%, #ffc107 100%);
+        --primary-gradient: linear-gradient(135deg, #e94e1a 0%, #ffc107 100%);
         --primary-hover: linear-gradient(135deg, #e6910a 0%, #e0a800 100%);
         --secondary-color: #0a8c5f;
         --secondary-light: rgba(10, 140, 95, 0.1);
@@ -696,7 +696,7 @@
     .form-control-modern:focus {
         outline: none;
         border-color: var(--primary-color);
-        box-shadow: 0 0 0 3px rgba(254, 162, 25, 0.15);
+        box-shadow: 0 0 0 3px rgba(233, 78, 26, 0.15);
     }
 
     .form-control-modern.is-invalid {
@@ -1201,7 +1201,7 @@ document.addEventListener('DOMContentLoaded', function() {
             icon: 'error',
             title: 'Erreur',
             text: '{{ session('error') }}',
-            confirmButtonColor: '#fea219',
+            confirmButtonColor: '#e94e1a',
             background: 'var(--light-bg)',
             color: 'var(--text-primary)'
         });
@@ -1230,7 +1230,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function highlight(e) {
         e.preventDefault();
         e.stopPropagation();
-        uploadArea.style.borderColor = '#fea219';
+        uploadArea.style.borderColor = '#e94e1a';
         uploadArea.style.background = 'rgba(254, 162, 25, 0.05)';
         uploadArea.style.transform = 'scale(1.02)';
     }
@@ -1268,7 +1268,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 icon: 'error',
                 title: 'Format invalide',
                 text: 'Veuillez sélectionner une image au format JPEG, PNG, JPG ou GIF.',
-                confirmButtonColor: '#fea219',
+                confirmButtonColor: '#e94e1a',
                 background: 'var(--light-bg)'
             });
             return;
@@ -1280,7 +1280,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 icon: 'error',
                 title: 'Fichier trop volumineux',
                 text: 'La taille maximale autorisée est de 2MB.',
-                confirmButtonColor: '#fea219',
+                confirmButtonColor: '#e94e1a',
                 background: 'var(--light-bg)'
             });
             return;
@@ -1312,7 +1312,7 @@ document.addEventListener('DOMContentLoaded', function() {
             text: 'Cette action est irréversible.',
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#fea219',
+            confirmButtonColor: '#e94e1a',
             cancelButtonColor: '#6c757d',
             confirmButtonText: 'Oui, supprimer',
             cancelButtonText: 'Annuler',
@@ -1381,7 +1381,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 icon: 'warning',
                 title: 'Champs manquants',
                 html: 'Veuillez remplir tous les champs obligatoires.<br>Les champs marqués d\'un <span style="color: var(--danger-color)">*</span> sont requis.',
-                confirmButtonColor: '#fea219',
+                confirmButtonColor: '#e94e1a',
                 background: 'var(--light-bg)'
             });
             return;
@@ -1405,7 +1405,7 @@ document.addEventListener('DOMContentLoaded', function() {
             text: 'Toutes les données saisies seront perdues.',
             icon: 'question',
             showCancelButton: true,
-            confirmButtonColor: '#fea219',
+            confirmButtonColor: '#e94e1a',
             cancelButtonColor: '#6c757d',
             confirmButtonText: 'Oui, réinitialiser',
             cancelButtonText: 'Annuler',

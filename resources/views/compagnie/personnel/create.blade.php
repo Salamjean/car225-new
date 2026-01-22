@@ -4,7 +4,7 @@
     <div class="mx-auto" style="width: 90%">
         <!-- En-tête -->
         <div class="text-center mb-12">
-            <div class="inline-flex items-center justify-center w-16 h-16 bg-[#fea219] rounded-2xl shadow-lg mb-4">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-[#e94e1a] rounded-2xl shadow-lg mb-4">
                 <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
                 </svg>
@@ -23,7 +23,7 @@
                 <!-- Section 1: Informations personnelles -->
                 <div class="mb-12">
                     <div class="flex items-center mb-6">
-                        <div class="w-2 h-8 bg-[#fea219] rounded-full mr-4"></div>
+                        <div class="w-2 h-8 bg-[#e94e1a] rounded-full mr-4"></div>
                         <h2 class="text-2xl font-bold text-gray-900">Informations personnelles</h2>
                     </div>
 
@@ -39,7 +39,7 @@
                                        name="name" 
                                        value="{{ old('name') }}"
                                        required
-                                       class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
+                                       class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
                                        placeholder="Entrez le nom">
                                 <div class="absolute inset-y-0 right-0 flex items-center pr-3">
                                     <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -63,7 +63,7 @@
                                        name="prenom" 
                                        value="{{ old('prenom') }}"
                                        required
-                                       class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
+                                       class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
                                        placeholder="Entrez le prénom">
                                 <div class="absolute inset-y-0 right-0 flex items-center pr-3">
                                     <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -84,7 +84,7 @@
                             </label>
                             <div class="relative">
                                 <select name="type_personnel" required
-                                        class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
+                                        class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
                                     <option value="">Sélectionnez un type</option>
                                     <option value="Chauffeur" {{ old('type_personnel') == 'Chauffeur' ? 'selected' : '' }}>Chauffeur</option>
                                     <option value="Convoyeur" {{ old('type_personnel') == 'Convoyeur' ? 'selected' : '' }}>Convoyeur</option>
@@ -121,7 +121,7 @@
                                        name="email" 
                                        value="{{ old('email') }}"
                                        required
-                                       class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
+                                       class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
                                        placeholder="email@exemple.com">
                                 <div class="absolute inset-y-0 right-0 flex items-center pr-3">
                                     <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -144,7 +144,7 @@
                                 <!-- Code Pays -->
                                 <div class="w-32">
                                     <select name="country_code" required
-                                        class="w-full px-3 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
+                                        class="w-full px-3 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
                                         <option value="+225" selected>🇨🇮 +225</option>
                                         <option value="+33">🇫🇷 +33</option>
                                         <option value="+1">🇺🇸 +1</option>
@@ -157,7 +157,7 @@
                                            name="contact" 
                                            value="{{ old('contact') }}"
                                            required
-                                           class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
+                                           class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
                                            placeholder="07 00 00 00 00">
                                 </div>
                             </div>
@@ -176,7 +176,7 @@
                                 <!-- Code Pays -->
                                 <div class="w-32">
                                     <select name="country_code_urgence" required
-                                        class="w-full px-3 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
+                                        class="w-full px-3 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
                                         <option value="+225" selected>🇨🇮 +225</option>
                                         <option value="+33">🇫🇷 +33</option>
                                         <option value="+1">🇺🇸 +1</option>
@@ -189,7 +189,7 @@
                                            name="contact_urgence" 
                                            value="{{ old('contact_urgence') }}"
                                            required
-                                           class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
+                                           class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
                                            placeholder="Numéro en cas d'urgence">
                                 </div>
                             </div>
@@ -216,7 +216,7 @@
                                         <div id="image-preview" class="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center border-2 border-dashed border-gray-300 hidden overflow-hidden">
                                             <img id="preview" class="w-full h-full rounded-full object-cover" src="" alt="Aperçu">
                                         </div>
-                                        <div id="default-avatar" class="w-32 h-32 bg-[#fea219] rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                        <div id="default-avatar" class="w-32 h-32 bg-[#e94e1a] rounded-full flex items-center justify-center text-white font-bold text-lg">
                                             <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                                             </svg>
@@ -227,7 +227,7 @@
                                 <!-- Bouton d'upload centré -->
                                 <div class="space-y-2">
                                     <label for="profile_image" class="cursor-pointer inline-block">
-                                        <div class="px-6 py-4 border-2 border-dashed border-gray-300 rounded-xl hover:border-[#fea219] transition-all duration-200 text-center bg-gray-50 hover:bg-white">
+                                        <div class="px-6 py-4 border-2 border-dashed border-gray-300 rounded-xl hover:border-[#e94e1a] transition-all duration-200 text-center bg-gray-50 hover:bg-white">
                                             <svg class="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                                             </svg>
@@ -258,7 +258,7 @@
                     <div class="flex gap-4">
                         <!-- Bouton Créer -->
                         <button type="submit"
-                                class="flex items-center px-8 py-4 bg-[#fea219] text-white font-bold rounded-xl hover:bg-[#e89116] transform hover:-translate-y-1 transition-all duration-200 shadow-lg hover:shadow-xl">
+                                class="flex items-center px-8 py-4 bg-[#e94e1a] text-white font-bold rounded-xl hover:bg-[#d33d0f] transform hover:-translate-y-1 transition-all duration-200 shadow-lg hover:shadow-xl">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                             </svg>
@@ -285,19 +285,19 @@ document.addEventListener('DOMContentLoaded', function() {
             option.addEventListener('click', function() {
                 // Désélectionner toutes les options du groupe
                 options.forEach(opt => {
-                    opt.classList.remove('border-[#fea219]', 'bg-orange-50');
+                    opt.classList.remove('border-[#e94e1a]', 'bg-orange-50');
                     opt.querySelector('.w-3.h-3').classList.add('hidden');
                 });
 
                 // Sélectionner l'option cliquée
                 radio.checked = true;
-                option.classList.add('border-[#fea219]', 'bg-orange-50');
+                option.classList.add('border-[#e94e1a]', 'bg-orange-50');
                 checkmark.classList.remove('hidden');
             });
 
             // Initialiser l'état des options sélectionnées
             if (radio.checked) {
-                option.classList.add('border-[#fea219]', 'bg-orange-50');
+                option.classList.add('border-[#e94e1a]', 'bg-orange-50');
                 checkmark.classList.remove('hidden');
             }
         });
@@ -369,11 +369,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const inputs = document.querySelectorAll('input, select');
     inputs.forEach(input => {
         input.addEventListener('focus', function() {
-            this.parentElement.classList.add('ring-2', 'ring-[#fea219]');
+            this.parentElement.classList.add('ring-2', 'ring-[#e94e1a]');
         });
         
         input.addEventListener('blur', function() {
-            this.parentElement.classList.remove('ring-2', 'ring-[#fea219]');
+            this.parentElement.classList.remove('ring-2', 'ring-[#e94e1a]');
         });
     });
 });
@@ -382,7 +382,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <style>
 input:focus, select:focus {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(254, 162, 25, 0.15);
+    box-shadow: 0 8px 25px rgba(233, 78, 26, 0.15);
 }
 
 /* Styles pour les options de statut sélectionnées */
@@ -390,8 +390,8 @@ input:focus, select:focus {
     display: flex !important;
 }
 
-.statut-option.border-\[\#fea219\] {
-    border-color: #fea219;
+.statut-option.border-\[\#e94e1a\] {
+    border-color: #e94e1a;
     background-color: #fef6e6;
 }
 

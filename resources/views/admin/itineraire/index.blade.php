@@ -16,9 +16,9 @@
                 <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div class="flex items-center">
-                            <div class="w-2 h-8 bg-[#fea219] rounded-full mr-3"></div>
+                            <div class="w-2 h-8 bg-[#e94e1a] rounded-full mr-3"></div>
                             <h2 class="text-xl font-bold text-gray-800">Liste des Itinéraires</h2>
-                            <span class="ml-3 px-3 py-1 bg-[#fea219] text-white text-sm font-medium rounded-full"
+                            <span class="ml-3 px-3 py-1 bg-[#e94e1a] text-white text-sm font-medium rounded-full"
                                 id="itineraires-count">
                                 {{ $itineraires->count() }} itinéraire(s)
                             </span>
@@ -28,7 +28,7 @@
                         <form method="GET" action="{{ route('admin.itineraire.index') }}" class="relative w-full sm:w-64">
                             <input type="text" name="search" value="{{ request('search') }}"
                                 placeholder="Rechercher un itinéraire..."
-                                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-200"
+                                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-200"
                                 id="search-input">
                             <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor"
                                 viewBox="0 0 24 24">
@@ -70,7 +70,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center" style="display: flex; justify-content:center">
                                             <div
-                                                class="flex-shrink-0 h-12 w-12 bg-gradient-to-br from-[#fea219] to-orange-500 rounded-xl flex items-center justify-center text-white font-bold text-sm">
+                                                class="flex-shrink-0 h-12 w-12 bg-gradient-to-br from-[#e94e1a] to-orange-500 rounded-xl flex items-center justify-center text-white font-bold text-sm">
                                                 <svg class="w-6 h-6" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -82,7 +82,7 @@
                                             <div class="ml-4">
                                                 <div class="text-sm font-semibold text-gray-900 flex items-center">
                                                     {{ $itineraire->point_depart }}
-                                                    <svg class="w-4 h-4 mx-2 text-[#fea219]" fill="none"
+                                                    <svg class="w-4 h-4 mx-2 text-[#e94e1a]" fill="none"
                                                         stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round"
                                                             stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -254,7 +254,7 @@
                         title: `Itinéraire #${String(itineraire.id).padStart(4, '0')}`,
                         html: `
                     <div class="text-left space-y-4">
-                        <div class="bg-gradient-to-r from-[#fea219] to-orange-500 p-4 rounded-xl text-white text-center">
+                        <div class="bg-gradient-to-r from-[#e94e1a] to-orange-500 p-4 rounded-xl text-white text-center">
                             <div class="text-lg font-bold">${itineraire.point_depart}</div>
                             <div class="my-2">
                                 <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -415,8 +415,8 @@
         }
 
         .page-item.active .page-link {
-            background-color: #fea219;
-            border-color: #fea219;
+            background-color: #e94e1a;
+            border-color: #e94e1a;
             color: white;
         }
 

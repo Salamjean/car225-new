@@ -1,6 +1,7 @@
 @extends('home.layouts.template')
 @section('content')
 
+<<<<<<< HEAD
 <!-- Editorial Header - Deep Green & Orange -->
 <section class="about-header-modern overflow-hidden position-relative" style="background-color: #062a22; padding-top: 160px; padding-bottom: 100px;">
     <!-- Abstract blurred shapes for background depth -->
@@ -20,6 +21,62 @@
                 <div class="d-flex gap-3">
                     <a href="#notre-histoire" class="btn btn-warning rounded-pill px-4 py-3 fw-bold shadow-orange text-white" style="background-color: #fea219; border: none;">Découvrir l'histoire</a>
                     <a href="{{ route('home.contact') }}" class="btn btn-outline-light rounded-pill px-4 py-3 fw-bold">Nous rejoindre</a>
+=======
+<!-- Hero About -->
+<section class="about-hero-section" style="background: linear-gradient(135deg, #e94e1a 0%, #ff8c00 100%);">
+    <div class="container">
+        <div class="row align-items-center min-vh-80">
+            <div class="col-lg-8" data-aos="fade-right">
+                <h1 class="hero-title text-white mb-3">À propos de <span class="text-dark">Car225</span></h1>
+                <p class="hero-subtitle text-white mb-4">Votre partenaire de confiance pour les voyages en car en Côte d'Ivoire</p>
+                <div class="d-flex gap-3">
+                    <a href="#notre-mission" class="btn btn-light" style="color: #e94e1a;">
+                        <i class="bi bi-compass me-2"></i>Notre mission
+                    </a>
+                    <a href="#notre-equipe" class="btn btn-outline-light">
+                        <i class="bi bi-people me-2"></i>Notre équipe
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-4" data-aos="fade-left">
+                <div class="about-hero-img">
+                    <img src="{{ asset('assets/img/travel/destination-1.webp') }}" alt="À propos" class="img-fluid">
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Notre Histoire -->
+<section class="py-5 bg-white" id="notre-histoire">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6" data-aos="fade-right">
+                <div class="section-tag" style="background-color: #e94e1a; color: white;">Notre histoire</div>
+                <h2 class="section-title mb-4">De l'idée à la <span style="color: #e94e1a;">réalité</span></h2>
+                <p class="lead mb-4">
+                    Fondée en 2020, Car225 est née d'un constat simple : la réservation de billets de car en Côte d'Ivoire devait être simplifiée et digitalisée.
+                </p>
+                <p class="mb-4">
+                    Face aux longues files d'attente dans les gares routières et à la complexité des réservations, nous avons décidé de créer une plateforme qui révolutionne l'expérience du voyageur.
+                </p>
+                <div class="timeline-highlights">
+                    <div class="timeline-item">
+                        <div class="timeline-year" style="background-color: #e94e1a;">2020</div>
+                        <h5>Lancement</h5>
+                        <p>Première version avec 5 compagnies partenaires</p>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-year" style="background-color: #28a745;">2022</div>
+                        <h5>Expansion</h5>
+                        <p>25+ compagnies et 30+ villes desservies</p>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-year" style="background-color: #e94e1a;">2024</div>
+                        <h5>Innovation</h5>
+                        <p>Application mobile et paiement Mobile Money</p>
+                    </div>
+>>>>>>> origin/Car225m
                 </div>
             </div>
             <div class="col-lg-6" data-aos="zoom-in">
@@ -27,6 +84,7 @@
                     <div class="image-box box-main">
                         <img src="{{ asset('assets/img/travel/destination-10.webp') }}" alt="Car225 Voyage" class="img-fluid rounded-custom shadow-2xl border-white-thin">
                     </div>
+<<<<<<< HEAD
                     <div class="image-box box-floating shadow-xl animate-float">
                         <img src="{{ asset('assets/img/travel/destination-18.webp') }}" alt="Gare Moderne" class="img-fluid rounded-custom border-green-thick">
                         <div class="floating-badge shadow-lg">
@@ -34,6 +92,112 @@
                             <div>
                                 <span class="d-block fw-bold text-dark">Sécurisé</span>
                                 <small class="text-muted">Certifié 2026</small>
+=======
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Notre Mission -->
+<section class="py-5" style="background-color: #f8f9fa;" id="notre-mission">
+    <div class="container">
+        <div class="section-header text-center mb-5" data-aos="fade-up">
+            <div class="section-tag" style="background-color: #28a745; color: white; display: inline-block;">Notre mission</div>
+            <h2 class="section-title">Transformer l'expérience du <span style="color: #e94e1a;">voyageur</span></h2>
+            <p class="section-subtitle">Nous croyons que voyager devrait être simple, sûr et accessible à tous</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-lg-4" data-aos="fade-up">
+                <div class="mission-card">
+                    <div class="mission-icon" style="background-color: #e94e1a;">
+                        <i class="bi bi-lightning-charge text-white"></i>
+                    </div>
+                    <h4>Simplifier</h4>
+                    <p>Rendre la réservation intuitive et rapide grâce à une plateforme moderne</p>
+                </div>
+            </div>
+            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="mission-card">
+                    <div class="mission-icon" style="background-color: #28a745;">
+                        <i class="bi bi-shield-check text-white"></i>
+                    </div>
+                    <h4>Sécuriser</h4>
+                    <p>Garantir des transactions sûres et des partenaires de confiance</p>
+                </div>
+            </div>
+            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="mission-card">
+                    <div class="mission-icon" style="background-color: #e94e1a;">
+                        <i class="bi bi-people text-white"></i>
+                    </div>
+                    <h4>Connecter</h4>
+                    <p>Relier les voyageurs aux meilleures compagnies de transport</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-5 align-items-center">
+            <div class="col-lg-6" data-aos="fade-right">
+                <div class="values-list">
+                    <h3 class="mb-4">Nos valeurs</h3>
+                    <div class="value-item">
+                        <div class="value-icon" style="color: #e94e1a;">
+                            <i class="bi bi-heart"></i>
+                        </div>
+                        <div class="value-content">
+                            <h5>Passion</h5>
+                            <p>Nous aimons ce que nous faisons et ça se voit dans notre service</p>
+                        </div>
+                    </div>
+                    <div class="value-item">
+                        <div class="value-icon" style="color: #28a745;">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
+                        <div class="value-content">
+                            <h5>Intégrité</h5>
+                            <p>Transparence et honnêteté dans toutes nos relations</p>
+                        </div>
+                    </div>
+                    <div class="value-item">
+                        <div class="value-icon" style="color: #e94e1a;">
+                            <i class="bi bi-rocket"></i>
+                        </div>
+                        <div class="value-content">
+                            <h5>Innovation</h5>
+                            <p>Nous améliorons constamment notre plateforme</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6" data-aos="fade-left">
+                <div class="stats-card p-4 rounded" style="background: linear-gradient(135deg, #e94e1a 0%, #ff8c00 100%);">
+                    <h3 class="text-white mb-4">Car225 en chiffres</h3>
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="stat-item text-center text-white">
+                                <h2 class="stat-number">50+</h2>
+                                <p class="stat-label">Destinations</p>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-item text-center text-white">
+                                <h2 class="stat-number">150K+</h2>
+                                <p class="stat-label">Voyageurs</p>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-item text-center text-white">
+                                <h2 class="stat-number">30+</h2>
+                                <p class="stat-label">Compagnies</p>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-item text-center text-white">
+                                <h2 class="stat-number">98%</h2>
+                                <p class="stat-label">Satisfaction</p>
+>>>>>>> origin/Car225m
                             </div>
                         </div>
                     </div>
@@ -43,12 +207,22 @@
     </div>
 </section>
 
+<<<<<<< HEAD
 <!-- Timeline Station Section -->
 <section class="py-5 overflow-hidden" id="notre-histoire" style="background-color: #f8fafb;">
     <div class="container py-lg-5">
         <div class="text-center mb-5" data-aos="fade-up">
             <h6 class="text-success fw-bold text-uppercase ls-2">Notre Parcours</h6>
             <h2 class="display-5 fw-bold text-dark">L'épopée <span class="text-orange">Car225</span></h2>
+=======
+<!-- Notre Équipe -->
+<section class="py-5 bg-white" id="notre-equipe">
+    <div class="container">
+        <div class="section-header text-center mb-5" data-aos="fade-up">
+            <div class="section-tag" style="background-color: #e94e1a; color: white; display: inline-block;">Notre équipe</div>
+            <h2 class="section-title">Rencontrez notre <span style="color: #e94e1a;">équipe</span></h2>
+            <p class="section-subtitle">Des passionnés qui travaillent chaque jour pour améliorer votre expérience de voyage</p>
+>>>>>>> origin/Car225m
         </div>
         
         <div class="timeline-station-wrapper">
@@ -204,6 +378,13 @@
                             <a href="#"><i class="bi bi-linkedin text-white small"></i></a>
                         </div>
                     </div>
+<<<<<<< HEAD
+=======
+                    <div class="team-info">
+                        <h5>{{ $member['name'] }}</h5>
+                        <p class="team-role" style="color: #e94e1a;">{{ $member['role'] }}</p>
+                    </div>
+>>>>>>> origin/Car225m
                 </div>
             </div>
             @endforeach
@@ -213,6 +394,7 @@
 
 <!-- Call to Experience -->
 <section class="py-5 bg-white">
+<<<<<<< HEAD
     <div class="container" data-aos="zoom-in">
         <div class="cta-banner-modern p-5 rounded-custom overflow-hidden position-relative border-0 shadow-lg" style="background-color: #062a22;">
             <div class="cta-bg-layer" style="background: url('{{ asset('assets/img/travel/destination-20.webp') }}') center/cover no-repeat; opacity: 0.3;"></div>
@@ -225,6 +407,67 @@
                     <div class="col-lg-5 text-lg-end">
                         <a href="{{ route('login') }}" class="btn btn-warning btn-lg rounded-pill px-5 py-3 fw-bold text-white" style="background-color: #fea219; border: none; box-shadow: 0 10px 20px rgba(254,162,25,0.3);">Se Connecter</a>
                     </div>
+=======
+    <div class="container">
+        <div class="section-header text-center mb-5" data-aos="fade-up">
+            <h2 class="section-title">Ils nous <span style="color: #e94e1a;">font confiance</span></h2>
+            <p class="section-subtitle">Ce que disent nos partenaires</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-lg-4" data-aos="fade-up">
+                <div class="testimonial-card p-4 rounded">
+                    <div class="d-flex align-items-center mb-3">
+                        <img src="{{ asset('assets/img/gallery/gallery-1.webp') }}" alt="UTB" class="partner-logo me-3">
+                        <div>
+                            <h5>Union des Transports de Bouaké</h5>
+                            <div class="rating">
+                                <i class="bi bi-star-fill" style="color: #e94e1a;"></i>
+                                <i class="bi bi-star-fill" style="color: #e94e1a;"></i>
+                                <i class="bi bi-star-fill" style="color: #e94e1a;"></i>
+                                <i class="bi bi-star-fill" style="color: #e94e1a;"></i>
+                                <i class="bi bi-star-fill" style="color: #e94e1a;"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <p>"Car225 a transformé notre façon de vendre des billets. Les réservations en ligne ont augmenté nos ventes de 40%."</p>
+                </div>
+            </div>
+            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="testimonial-card p-4 rounded">
+                    <div class="d-flex align-items-center mb-3">
+                        <img src="{{ asset('assets/img/gallery/gallery-5.webp') }}" alt="STC" class="partner-logo me-3">
+                        <div>
+                            <h5>Société des Transports de Cocody</h5>
+                            <div class="rating">
+                                <i class="bi bi-star-fill" style="color: #e94e1a;"></i>
+                                <i class="bi bi-star-fill" style="color: #e94e1a;"></i>
+                                <i class="bi bi-star-fill" style="color: #e94e1a;"></i>
+                                <i class="bi bi-star-fill" style="color: #e94e1a;"></i>
+                                <i class="bi bi-star-half" style="color: #e94e1a;"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <p>"La plateforme est intuitive pour nos clients et l'équipe de Car225 est toujours réactive pour nous aider."</p>
+                </div>
+            </div>
+            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="testimonial-card p-4 rounded">
+                    <div class="d-flex align-items-center mb-3">
+                        <img src="{{ asset('assets/img/gallery/gallery-8.webp') }}" alt="Voyageurs" class="partner-logo me-3">
+                        <div>
+                            <h5>Association des Voyageurs</h5>
+                            <div class="rating">
+                                <i class="bi bi-star-fill" style="color: #e94e1a;"></i>
+                                <i class="bi bi-star-fill" style="color: #e94e1a;"></i>
+                                <i class="bi bi-star-fill" style="color: #e94e1a;"></i>
+                                <i class="bi bi-star-fill" style="color: #e94e1a;"></i>
+                                <i class="bi bi-star-fill" style="color: #e94e1a;"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <p>"Enfin une solution qui simplifie vraiment la vie des voyageurs. Félicitations pour cette belle initiative !"</p>
+>>>>>>> origin/Car225m
                 </div>
             </div>
         </div>

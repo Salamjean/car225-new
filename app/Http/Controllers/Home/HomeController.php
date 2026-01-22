@@ -276,6 +276,7 @@ class HomeController extends Controller
 
                 // Pour chaque programme, récupérer les places réservées
                 foreach ($programmes as $programme) {
+<<<<<<< HEAD
                     $programReservations = Reservation::where('programme_id', $programme->id)
                         ->where('statut', 'confirmee')
                         ->where(function ($query) use ($formattedDate) {
@@ -289,6 +290,12 @@ class HomeController extends Controller
                                 $query->where('date_depart', $formattedDate);
                             }
                         })
+=======
+                    // Nouvelle structure: 1 réservation = 1 siège (seat_number)
+                $programReservations = Reservation::where('programme_id', $programme->id)
+                        ->where('statut', '!=', 'annulee')
+                        ->where('date_voyage', $formattedDate)
+>>>>>>> origin/Car225m
                         ->pluck('seat_number')
                         ->toArray();
 
