@@ -7,57 +7,13 @@
                 <div class="mdc-card p-4">
                     
                     <!-- En-tête avec bouton Scanner -->
-                    <div class="mdc-layout-grid">
-        <div class="mdc-layout-grid__inner justify-content-center">
-            <div class="mdc-layout-grid__cell stretch-card mdc-layout-grid__cell--span-8-desktop mdc-layout-grid__cell--span-12-tablet">
-                <div class="mdc-card p-0" style="border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); overflow: hidden;">
-                    
-                    <div class="text-center py-5 text-white" style="background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('{{ asset('assets/images/scan-header-bg.png') }}'); background-size: cover; background-position: center; position: relative;">
-                        
-
-                        <h3 class="font-weight-bold mb-1">Espace Embarquement</h3>
-                        <p class="mb-0" style="opacity: 0.9;">Gérez les montées dans les cars en toute simplicité</p>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h6 class="card-title mb-0">Gestion des Réservations</h6>
+                        <button type="button" class="btn btn-primary btn-lg" id="openVehicleSelectBtn" style="font-size: 1.2rem; padding: 15px 30px;">
+                            <i class="material-icons mr-2" style="font-size: 28px; vertical-align: middle;">qr_code_scanner</i>
+                            Scanner un QR Code
+                        </button>
                     </div>
-
-                    <div class="p-5 text-center">
-                        <div class="row justify-content-center">
-                            <div class="col-md-10">
-                                <h5 class="text-muted mb-4 font-weight-normal">
-                                    Scannez le ticket du passager pour valider son accès et l'assigner à un véhicule.
-                                </h5>
-
-                                <button type="button" class="btn btn-primary btn-lg btn-rounded shadow-lg" id="openVehicleSelectBtn" 
-                                    style="padding: 18px 40px; font-size: 1.2rem; transition: transform 0.2s;">
-                                    <i class="material-icons mr-2" style="font-size: 28px; vertical-align: middle;">camera_alt</i>
-                                    COMMENCER LE SCAN
-                                </button>
-                                
-                                <div class="mt-4 text-muted small">
-                                    <i class="material-icons" style="font-size: 14px; vertical-align: middle;">info</i>
-                                    Assurez-vous d'avoir autorisé l'accès à la caméra
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Stats rapides (optionnel) -->
-                    <div class="bg-light p-3 border-top">
-                        <div class="d-flex justify-content-around text-center">
-                            <div>
-                                <h4 class="mb-0 font-weight-bold text-primary">{{ $terminees->count() }}</h4>
-                                <small class="text-muted text-uppercase font-weight-bold" style="font-size: 0.7rem;">Aujourd'hui</small>
-                            </div>
-                            <div>
-                                <h4 class="mb-0 font-weight-bold text-success">{{ $programmesDuJour->count() }}</h4>
-                                <small class="text-muted text-uppercase font-weight-bold" style="font-size: 0.7rem;">Départs</small>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-    </div>
 
                     <!-- Formulaire caché pour la soumission du scan -->
                     <form id="scan-form" action="{{ route('agent.reservations.scan') }}" method="POST" style="display: none;">
@@ -94,6 +50,112 @@
                             </button>
                         </div>
                     @endif
+
+                    <!-- Tabs Navigation -->
+                    <ul class="nav nav-tabs" id="reservationTabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" id="en-cours-tab" data-toggle="tab" href="#en-cours" role="tab">
+                                <i class="material-icons mr-1" style="font-size: 18px; vertical-align: middle;">schedule</i>
+                                En cours ({{ $enCours->count() }})
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="terminees-tab" data-toggle="tab" href="#terminees" role="tab">
+                                <i class="material-icons mr-1" style="font-size: 18px; vertical-align: middle;">check_circle</i>
+                                Terminées ({{ $terminees->count() }})
+                            </a>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content mt-3" id="reservationTabsContent">
+                        <!-- Onglet En cours -->
+                        <div class="tab-pane fade show active" id="en-cours" role="tabpanel">
+                            <div class="table-responsive">
+                                <table class="table table-hoverable">
+                                    <thead>
+                                        <tr>
+                                            <th>Réf</th>
+                                            <th>Passager</th>
+                                            <th>Place</th>
+                                            <th>Trajet</th>
+                                            <th>Date Voyage</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($enCours as $reservation)
+                                            <tr>
+                                                <td><span class="badge badge-info">{{ $reservation->reference }}</span></td>
+                                                <td>
+                                                    <strong>{{ $reservation->passager_prenom }} {{ $reservation->passager_nom }}</strong>
+                                                    <br>
+                                                    <small class="text-muted">{{ $reservation->passager_email }}</small>
+                                                </td>
+                                                <td><span class="badge badge-primary">{{ $reservation->seat_number }}</span></td>
+                                                <td>{{ $reservation->programme->point_depart ?? '?' }} → {{ $reservation->programme->point_arrive ?? '?' }}</td>
+                                                <td>{{ \Carbon\Carbon::parse($reservation->date_voyage)->format('d/m/Y') }}</td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="5" class="text-center py-4">
+                                                    <i class="material-icons" style="font-size: 48px; color: #ccc;">inbox</i>
+                                                    <p class="text-muted mt-2">Aucune réservation en attente de scan.</p>
+                                                </td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Onglet Terminées -->
+                        <div class="tab-pane fade" id="terminees" role="tabpanel">
+                            <div class="table-responsive">
+                                <table class="table table-hoverable">
+                                    <thead>
+                                        <tr>
+                                            <th>Réf</th>
+                                            <th>Passager</th>
+                                            <th>Place</th>
+                                            <th>Trajet</th>
+                                            <th>Véhicule</th>
+                                            <th>Scanné le</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($terminees as $reservation)
+                                            <tr>
+                                                <td><span class="badge badge-secondary">{{ $reservation->reference }}</span></td>
+                                                <td>{{ $reservation->passager_prenom }} {{ $reservation->passager_nom }}</td>
+                                                <td><span class="badge badge-success">{{ $reservation->seat_number }}</span></td>
+                                                <td>{{ $reservation->programme->point_depart ?? '?' }} → {{ $reservation->programme->point_arrive ?? '?' }}</td>
+                                                <td>
+                                                    @if($reservation->embarquementVehicule)
+                                                        <span class="badge badge-info">{{ $reservation->embarquementVehicule->immatriculation }}</span>
+                                                    @else
+                                                        -
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    @if($reservation->embarquement_scanned_at)
+                                                        {{ \Carbon\Carbon::parse($reservation->embarquement_scanned_at)->format('d/m/Y H:i') }}
+                                                    @else
+                                                        -
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="6" class="text-center py-4">
+                                                    <i class="material-icons" style="font-size: 48px; color: #ccc;">inventory_2</i>
+                                                    <p class="text-muted mt-2">Aucune réservation scannée.</p>
+                                                </td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
 
                 </div>
             </div>

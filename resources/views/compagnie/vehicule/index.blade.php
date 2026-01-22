@@ -4,7 +4,7 @@
     <div class="mx-auto" style="width: 90%">
         <!-- En-tête -->
         <div class="text-center mb-12">
-            <div class="inline-flex items-center justify-center w-16 h-16 bg-[#e94e1a] rounded-2xl shadow-lg mb-4">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-[#fea219] rounded-2xl shadow-lg mb-4">
                 <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
                 </svg>
@@ -18,11 +18,11 @@
         <!-- Carte principale -->
         <div class="bg-white rounded-3xl shadow-xl overflow-hidden">
             <!-- En-tête de la carte -->
-            <div class="px-8 py-6 bg-gradient-to-r from-[#e94e1a] to-[#e94e1a]">
+            <div class="px-8 py-6 bg-gradient-to-r from-[#fea219] to-[#fea219]">
                 <div class="flex flex-col sm:flex-row justify-between items-center">
                     <h2 class="text-2xl font-bold text-white mb-4 sm:mb-0">Liste des Véhicules</h2>
                     <a href="{{ route('vehicule.create') }}" 
-                       class="flex items-center px-6 py-3 bg-white text-[#e94e1a] font-bold rounded-xl hover:bg-gray-50 transform hover:-translate-y-1 transition-all duration-200 shadow-lg">
+                       class="flex items-center px-6 py-3 bg-white text-[#fea219] font-bold rounded-xl hover:bg-gray-50 transform hover:-translate-y-1 transition-all duration-200 shadow-lg">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                         </svg>
@@ -112,7 +112,7 @@
 
                                         <!-- Bouton Modifier -->
                                         <a href="{{ route('vehicule.edit', $vehicule->id) }}" 
-                                           class="inline-flex items-center px-3 py-2 bg-[#e94e1a] text-white rounded-lg hover:bg-[#d33d0f] transition-colors duration-200"
+                                           class="inline-flex items-center px-3 py-2 bg-[#fea219] text-white rounded-lg hover:bg-[#e89116] transition-colors duration-200"
                                            title="Modifier">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
@@ -264,7 +264,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 `,
                 icon: 'info',
                 confirmButtonText: 'Fermer',
-                confirmButtonColor: '#e94e1a',
+                confirmButtonColor: '#fea219',
                 width: '600px'
             });
         });
@@ -414,7 +414,7 @@ document.addEventListener('DOMContentLoaded', function() {
         text: '{{ session('success') }}',
         icon: 'success',
         confirmButtonText: 'OK',
-        confirmButtonColor: '#e94e1a'
+        confirmButtonColor: '#fea219'
     });
     @endif
 
@@ -462,21 +462,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     .pagination li a:hover {
-        background-color: #e94e1a;
-        border-color: #e94e1a;
+        background-color: #fea219;
+        border-color: #fea219;
         color: white;
         transform: translateY(-1px);
     }
     
     .pagination li span {
-        background-color: #e94e1a;
-        border: 1px solid #e94e1a;
+        background-color: #fea219;
+        border: 1px solid #fea219;
         color: white;
     }
     
     .pagination li.active span {
-        background-color: #d33d0f;
-        border-color: #d33d0f;
+        background-color: #e89116;
+        border-color: #e89116;
     }
 </style>
 @endsection

@@ -4,7 +4,7 @@
         <div class=" mx-auto" style="width: 90%">
             <!-- En-tête -->
             <div class="text-center mb-12">
-                <div class="inline-flex items-center justify-center w-16 h-16 bg-[#e94e1a] rounded-2xl shadow-lg mb-4">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-[#fea219] rounded-2xl shadow-lg mb-4">
                     <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
@@ -24,7 +24,7 @@
                     <!-- Section 1: Informations générales -->
                     <div class="mb-12">
                         <div class="flex items-center mb-6">
-                            <div class="w-2 h-8 bg-[#e94e1a] rounded-full mr-4"></div>
+                            <div class="w-2 h-8 bg-[#fea219] rounded-full mr-4"></div>
                             <h2 class="text-2xl font-bold text-gray-900">Informations générales</h2>
                         </div>
 
@@ -36,7 +36,7 @@
                                     <span class="text-red-500 ml-1">*</span>
                                 </label>
                                 <select name="marque" required
-                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
+                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
                                     <option value="">Sélectionnez une marque</option>
                                     <option value="Toyota" {{ old('marque') == 'Toyota' ? 'selected' : '' }}>Toyota</option>
                                     <option value="Mercedes-Benz" {{ old('marque') == 'Mercedes-Benz' ? 'selected' : '' }}>
@@ -68,7 +68,7 @@
                             <div class="space-y-2">
                                 <label class="text-sm font-semibold text-gray-700">Modèle</label>
                                 <input type="text" name="modele" value="{{ old('modele') }}"
-                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
+                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
                                     placeholder="Ex: Corolla, C-Class">
                                 @error('modele')
                                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -82,7 +82,7 @@
                                     <span class="text-red-500 ml-1">*</span>
                                 </label>
                                 <input type="text" name="immatriculation" value="{{ old('immatriculation') }}" required
-                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white font-mono"
+                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white font-mono"
                                     placeholder="Ex: AB 123 CD">
                                 @error('immatriculation')
                                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -93,7 +93,7 @@
                             <div class="space-y-2">
                                 <label class="text-sm font-semibold text-gray-700">Numéro de série</label>
                                 <input type="text" name="numero_serie" value="{{ old('numero_serie') }}"
-                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
+                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
                                     placeholder="Numéro de série du véhicule">
                                 @error('numero_serie')
                                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -117,7 +117,7 @@
                                     <span class="text-red-500 ml-1">*</span>
                                 </label>
                                 <select name="type_range" id="type_range" required
-                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
+                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
                                     <option value="">Sélectionnez le type</option>
                                     <option value="2x2" {{ old('type_range') == '2x2' ? 'selected' : '' }}>2x2 (2 places
                                         par rangée)</option>
@@ -139,7 +139,7 @@
                                 </label>
                                 <input type="number" name="nombre_place" id="nombre_place"
                                     value="{{ old('nombre_place') }}" min="4" max="30" required
-                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
+                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
                                     placeholder="Ex: 16">
                                 @error('nombre_place')
                                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -157,7 +157,7 @@
                                 <div class="grid grid-cols-3 gap-6 text-center text-base">
                                     <div>
                                         <div class="font-semibold text-gray-700">Type</div>
-                                        <div id="config_type" class="text-xl font-bold text-[#e94e1a]">-</div>
+                                        <div id="config_type" class="text-xl font-bold text-[#fea219]">-</div>
                                     </div>
                                     <div>
                                         <div class="font-semibold text-gray-700">Rangées</div>
@@ -206,7 +206,7 @@
 
                             <!-- Bouton Créer -->
                             <button type="submit"
-                                class="flex items-center px-8 py-4 bg-[#e94e1a] text-white font-bold rounded-xl hover:bg-[#d33d0f] transform hover:-translate-y-1 transition-all duration-200 shadow-lg hover:shadow-xl">
+                                class="flex items-center px-8 py-4 bg-[#fea219] text-white font-bold rounded-xl hover:bg-[#e89116] transform hover:-translate-y-1 transition-all duration-200 shadow-lg hover:shadow-xl">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M5 13l4 4L19 7" />
@@ -303,7 +303,7 @@
                             <!-- Côté gauche -->
                             <div class="flex gap-4 flex-1 justify-center">
                                 ${Array.from({length: placesGaucheCetteRanger}, (_, i) => `
-                                    <div class="w-14 h-14 bg-[#e94e1a] rounded-lg flex items-center justify-center text-white font-bold shadow-lg" 
+                                    <div class="w-14 h-14 bg-[#fea219] rounded-lg flex items-center justify-center text-white font-bold shadow-lg" 
                                          title="Place ${numeroPlace + i}">
                                         ${numeroPlace + i}
                                     </div>
@@ -389,7 +389,7 @@
         input:focus,
         select:focus {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(233, 78, 26, 0.15);
+            box-shadow: 0 8px 25px rgba(254, 162, 25, 0.15);
         }
 
         /* Style pour la visualisation des places */

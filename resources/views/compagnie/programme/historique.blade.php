@@ -13,7 +13,7 @@
 
                 <!-- Bouton d'ajout -->
                 <a href="{{ route('programme.create') }}"
-                    class="inline-flex items-center px-6 py-4 bg-[#e94e1a] text-white font-bold rounded-xl hover:bg-[#d33d0f] transform hover:-translate-y-1 transition-all duration-200 shadow-lg hover:shadow-xl">
+                    class="inline-flex items-center px-6 py-4 bg-[#fea219] text-white font-bold rounded-xl hover:bg-[#e89116] transform hover:-translate-y-1 transition-all duration-200 shadow-lg hover:shadow-xl">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                     </svg>
@@ -24,14 +24,14 @@
             <!-- Statistiques -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 <!-- Total Programmes -->
-                <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-[#e94e1a]">
+                <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-[#fea219]">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-600">Total Programmes</p>
                             <p class="text-2xl font-bold text-gray-900 mt-1">{{ $programmes->count() }}</p>
                         </div>
                         <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-                            <svg class="w-6 h-6 text-[#e94e1a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-6 h-6 text-[#fea219]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
@@ -86,7 +86,7 @@
                             <!-- Barre de recherche -->
                             <div class="relative">
                                 <input type="text" id="searchInput" placeholder="Rechercher un programme..."
-                                    class="pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300">
+                                    class="pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300">
                                 <div class="absolute inset-y-0 left-0 flex items-center pl-3">
                                     <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
                                         viewBox="0 0 24 24">
@@ -98,7 +98,7 @@
 
                             <!-- Filtre par statut -->
                             <select id="statutFilter"
-                                class="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300">
+                                class="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300">
                                 <option value="">Tous les statuts</option>
                                 <option value="vide">Places disponibles</option>
                                 <option value="presque_complet">Presque complet</option>
@@ -107,7 +107,7 @@
 
                             <!-- Filtre par date -->
                             <select id="dateFilter"
-                                class="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300">
+                                class="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300">
                                 <option value="">Toutes les dates</option>
                                 <option value="today">Aujourd'hui</option>
                                 <option value="upcoming">À venir</option>
@@ -543,20 +543,20 @@
                         <p class="text-sm text-gray-600">Chauffeur actuel: <strong>${chauffeurActuel}</strong></p>
                         <div class="space-y-2">
                             <label class="block text-sm font-medium text-gray-700">Nouveau chauffeur</label>
-                            <select id="nouveauChauffeur" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
+                            <select id="nouveauChauffeur" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent">
                                 ${optionsHTML}
                             </select>
                         </div>
                         <div class="space-y-2">
                             <label class="block text-sm font-medium text-gray-700">Raison du changement (optionnel)</label>
-                            <textarea id="raisonChauffeur" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent" placeholder="Ex: Chauffeur malade, changement de planning..."></textarea>
+                            <textarea id="raisonChauffeur" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent" placeholder="Ex: Chauffeur malade, changement de planning..."></textarea>
                         </div>
                     </div>
                 `,
                         showCancelButton: true,
                         confirmButtonText: 'Modifier',
                         cancelButtonText: 'Annuler',
-                        confirmButtonColor: '#e94e1a',
+                        confirmButtonColor: '#fea219',
                         preConfirm: () => {
                             const chauffeurId = document.getElementById('nouveauChauffeur').value;
                             const raison = document.getElementById('raisonChauffeur').value;
@@ -616,20 +616,20 @@
                         <p class="text-sm text-gray-600">Véhicule actuel: <strong>${vehiculeActuel}</strong></p>
                         <div class="space-y-2">
                             <label class="block text-sm font-medium text-gray-700">Nouveau véhicule</label>
-                            <select id="nouveauVehicule" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
+                            <select id="nouveauVehicule" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent">
                                 ${optionsHTML}
                             </select>
                         </div>
                         <div class="space-y-2">
                             <label class="block text-sm font-medium text-gray-700">Raison du changement (optionnel)</label>
-                            <textarea id="raisonVehicule" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent" placeholder="Ex: Véhicule en panne, maintenance..."></textarea>
+                            <textarea id="raisonVehicule" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#fea219] focus:border-transparent" placeholder="Ex: Véhicule en panne, maintenance..."></textarea>
                         </div>
                     </div>
                 `,
                         showCancelButton: true,
                         confirmButtonText: 'Modifier',
                         cancelButtonText: 'Annuler',
-                        confirmButtonColor: '#e94e1a',
+                        confirmButtonColor: '#fea219',
                         preConfirm: () => {
                             const vehiculeId = document.getElementById('nouveauVehicule').value;
                             const raison = document.getElementById('raisonVehicule').value;
@@ -719,7 +719,7 @@
                 title: 'Succès !',
                 text: '{{ session('success') }}',
                 icon: 'success',
-                confirmButtonColor: '#e94e1a',
+                confirmButtonColor: '#fea219',
                 confirmButtonText: 'OK',
                 timer: 3000,
                 timerProgressBar: true

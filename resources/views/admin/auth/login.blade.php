@@ -10,11 +10,11 @@
     <title>Admin login</title>
     <style>
         :root {
-            --primary-color: #e94e1a;
-            --secondary-color: #e94e1a;
-            --accent-color: #e94e1a;
+            --primary-color: #f89d15;
+            --secondary-color: #f89d15;
+            --accent-color: #f89d15;
             --error-color: #f72585;
-            --success-color: #e94e1a;
+            --success-color: #f89d15;
             --light-color: #f8f9fa;
             --dark-color: #212529;
             --transition-speed: 0.3s;
@@ -34,7 +34,7 @@
             min-height: 100vh;
             margin: 0;
             background: 
-                linear-gradient(rgba(238, 206, 0, 0.1), rgba(233, 78, 26, 0.975)),
+                linear-gradient(rgba(238, 206, 0, 0.1), rgba(248,157,21, 0.975)),
                 url('{{ asset('assets/assets/img/backgroud.jpg') }}');
             background-size: cover;
             background-position: center;

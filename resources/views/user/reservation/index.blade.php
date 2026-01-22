@@ -111,7 +111,7 @@
                 <div class="card shadow">
                     <div class="card-header bg-white py-3">
                         <div class="d-flex justify-content-between align-items-center">
-                            <h6 class="m-0 font-weight-bold" style="color: #e94e1a;">
+                            <h6 class="m-0 font-weight-bold" style="color: #fea219;">
                                 <i class="fas fa-filter me-2"></i>Filtres de recherche
                             </h6>
                             <button class="btn btn-sm btn-outline-secondary" type="button" id="toggleFilters">
@@ -191,7 +191,7 @@
                             <h3 class="text-gray-800 mb-2">Aucune réservation trouvée</h3>
                             <p class="text-muted mb-4">Vous n'avez pas encore effectué de réservation.</p>
                             <a href="{{ route('programme.index') }}" class="btn btn-primary"
-                                style="background-color: #e94e1a; border-color: #e94e1a;">
+                                style="background-color: #fea219; border-color: #fea219;">
                                 <i class="fas fa-bus me-2"></i> Réserver un voyage
                             </a>
                         </div>
@@ -224,11 +224,6 @@
                                                         </div>
                                                         <div>
                                                             <span class="fw-bold">{{ $reservation->reference }}</span>
-                                                            @if($reservation->is_aller_retour)
-                                                                <span class="badge bg-info bg-opacity-75 text-white ms-2" style="font-size: 0.65rem;">
-                                                                    <i class="fas fa-exchange-alt"></i> A/R
-                                                                </span>
-                                                            @endif
                                                             <div class="small text-muted">
                                                                 {{ $reservation->created_at->format('d/m/Y H:i') }}
                                                             </div>
@@ -259,18 +254,7 @@
                                                             <i class="fas fa-calendar text-warning"></i>
                                                         </div>
                                                         <div>
-                                                            @if($reservation->is_aller_retour)
-                                                                <span class="fw-bold">
-                                                                    <i class="fas fa-plane-departure text-success" style="font-size: 0.7rem;"></i>
-                                                                    {{ $reservation->date_voyage ? $reservation->date_voyage->format('d/m/Y') : 'N/A' }}
-                                                                </span>
-                                                                <div class="small text-muted">
-                                                                    <i class="fas fa-plane-arrival text-info" style="font-size: 0.7rem;"></i>
-                                                                    {{ $reservation->date_retour ? $reservation->date_retour->format('d/m/Y') : ($reservation->date_voyage ? $reservation->date_voyage->format('d/m/Y') : 'N/A') }}
-                                                                </div>
-                                                            @else
-                                                                <span class="fw-bold">{{ $reservation->date_voyage ? $reservation->date_voyage->format('d/m/Y') : 'N/A' }}</span>
-                                                            @endif
+                                                            <span class="fw-bold">{{ $reservation->date_voyage }}</span>
                                                             <div class="small text-muted">
                                                                 {{ date('H:i', strtotime($reservation->programme->heure_depart)) }}
                                                             </div>
@@ -284,22 +268,32 @@
                                                             <i class="fas fa-chair text-success"></i>
                                                         </div>
                                                         <div>
-                                                            <span class="fw-bold">Siège N° {{ $reservation->seat_number }}</span>
+                                                            <span class="fw-bold">{{ $reservation->nombre_places }} place(s)</span>
+                                                            @php
+                                                                $places = json_decode($reservation->places, true) ?? [];
+                                                            @endphp
+                                                            @if(!empty($places))
+                                                                <div class="small text-muted">
+                                                                    {{ implode(', ', $places) }}
+                                                                </div>
+                                                            @endif
                                                         </div>
                                                     </div>
                                                 </td>
                                                 <td class="align-middle text-center">
-                                                    <div class="d-flex align-items-center justify-content-center">
-                                                        <div class="icon-shape icon-sm bg-light-info rounded me-3">
-                                                            <i class="fas fa-user text-info"></i>
-                                                        </div>
-                                                        <div>
-                                                            <span class="fw-bold">{{ $reservation->passager_prenom }} {{ $reservation->passager_nom }}</span>
-                                                            <div class="small text-muted">
-                                                                {{ $reservation->passager_telephone }}
-                                                            </div>
-                                                        </div>
-                                                    </div>
+                                                    @php
+                                                        $passagers = is_array($reservation->passagers) ? $reservation->passagers : json_decode($reservation->passagers, true) ?? [];
+                                                    @endphp
+                                                    @if(!empty($passagers))
+                                                        <button type="button" 
+                                                                class="btn btn-sm btn-outline-info view-passengers-btn" 
+                                                                data-passengers='@json($passagers)'
+                                                                data-reference="{{ $reservation->reference }}">
+                                                            <i class="fas fa-users"></i> {{ count($passagers) }} passager(s)
+                                                        </button>
+                                                    @else
+                                                        <span class="text-muted small">Aucune info</span>
+                                                    @endif
                                                 </td>
                                                 <td class="align-middle">
                                                     <div class="d-flex align-items-center"
@@ -309,7 +303,7 @@
                                                         </div>
                                                         <div>
                                                             <span
-                                                                class="fw-bold">{{ number_format($reservation->montant, 0, ',', ' ') }}
+                                                                class="fw-bold">{{ number_format($reservation->montant_total, 0, ',', ' ') }}
                                                                 FCFA</span>
                                                             <div class="small text-muted">
                                                             </div>
@@ -351,45 +345,17 @@
                                                             <i class="fas fa-eye"></i>
                                                         </a>
 
-                                                        @if($reservation->is_aller_retour)
-                                                            {{-- Voyages Aller-Retour: deux boutons séparés --}}
-                                                            @if($reservation->canDownloadAller())
-                                                                <a href="{{ route('reservations.ticket', ['reservation' => $reservation->id, 'type' => 'aller']) }}" 
-                                                                   class="btn btn-sm btn-outline-success"
-                                                                   data-toggle="tooltip" 
-                                                                   title="Télécharger billet Aller">
-                                                                    <i class="fas fa-plane-departure"></i>
-                                                                </a>
-                                                            @else
-                                                                <span class="btn btn-sm btn-success disabled" title="Aller terminé">
-                                                                    <i class="fas fa-plane-departure"></i> <i class="fas fa-check"></i>
-                                                                </span>
-                                                            @endif
-                                                            
-                                                            @if($reservation->canDownloadRetour())
-                                                                <a href="{{ route('reservations.ticket', ['reservation' => $reservation->id, 'type' => 'retour']) }}" 
-                                                                   class="btn btn-sm btn-outline-info"
-                                                                   data-toggle="tooltip" 
-                                                                   title="Télécharger billet Retour">
-                                                                    <i class="fas fa-plane-arrival"></i>
-                                                                </a>
-                                                            @else
-                                                                @if($reservation->qr_code_retour_path)
-                                                                    <span class="btn btn-sm btn-info disabled" title="Retour terminé">
-                                                                        <i class="fas fa-plane-arrival"></i> <i class="fas fa-check"></i>
-                                                                    </span>
-                                                                @endif
-                                                            @endif
-                                                        @else
-                                                            {{-- Voyage Aller Simple: bouton unique --}}
-                                                            @if($reservation->statut == 'confirmee' && $reservation->qr_code_path)
-                                                                <a href="{{ route('reservations.ticket', $reservation->id) }}" 
-                                                                   class="btn btn-sm btn-outline-success"
-                                                                   data-toggle="tooltip" 
-                                                                   title="Télécharger le billet">
-                                                                    <i class="fas fa-file-pdf"></i>
-                                                                </a>
-                                                            @endif
+                                                        @if($reservation->statut == 'confirmee' && $reservation->qr_code_path)
+                                                            <button type="button" 
+                                                                    class="btn btn-sm btn-outline-success download-ticket-btn"
+                                                                    data-id="{{ $reservation->id }}"
+                                                                    data-reference="{{ $reservation->reference }}"
+                                                                    data-passengers='@json(is_array($reservation->passagers) ? $reservation->passagers : json_decode($reservation->passagers, true) ?? [])'
+                                                                    data-url="{{ route('reservations.ticket', $reservation->id) }}"
+                                                                    data-toggle="tooltip" 
+                                                                    title="Télécharger le billet">
+                                                                <i class="fas fa-file-pdf"></i>
+                                                            </button>
                                                         @endif
 
                                                         @if($reservation->statut == 'en_attente')
@@ -433,8 +399,8 @@
 
     <style>
         :root {
-            --primary-color: #e94e1a;
-            --primary-light: rgba(233, 78, 26, 0.1);
+            --primary-color: #fea219;
+            --primary-light: rgba(254, 162, 25, 0.1);
             --primary-dark: #e89116;
             --success-color: #10b981;
             --success-light: rgba(16, 185, 129, 0.1);
@@ -508,7 +474,7 @@
             background-color: var(--primary-dark);
             border-color: var(--primary-dark);
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(233, 78, 26, 0.3);
+            box-shadow: 0 4px 12px rgba(254, 162, 25, 0.3);
         }
 
         .btn-outline-primary {
@@ -664,7 +630,7 @@
 
         .swal2-confirm:hover {
             transform: translateY(-1px) !important;
-            box-shadow: 0 4px 12px rgba(233, 78, 26, 0.3) !important;
+            box-shadow: 0 4px 12px rgba(254, 162, 25, 0.3) !important;
         }
 
         .swal2-cancel {
@@ -849,7 +815,7 @@
 
                     let htmlContent = `
                         <div style="text-align: left; max-height: 500px; overflow-y: auto;">
-                            <div style="background: linear-gradient(135deg, #e94e1a 0%, #cc4416 100%); color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+                            <div style="background: linear-gradient(135deg, #fea219 0%, #e89116 100%); color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
                                 <h5 style="margin: 0; font-weight: bold;">
                                     <i class="fas fa-users"></i> Liste des Passagers
                                 </h5>
@@ -861,13 +827,13 @@
 
                     passengers.forEach((passenger, index) => {
                         htmlContent += `
-                            <div style="background: #f9fafb; border-left: 4px solid #e94e1a; padding: 15px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <div style="background: #f9fafb; border-left: 4px solid #fea219; padding: 15px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                                     <h6 style="margin: 0; color: #1f2937; font-weight: bold;">
-                                        <i class="fas fa-user-circle" style="color: #e94e1a;"></i> 
+                                        <i class="fas fa-user-circle" style="color: #fea219;"></i> 
                                         ${passenger.prenom || ''} ${passenger.nom || ''}
                                     </h6>
-                                    <span style="background: #e94e1a; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold;">
+                                    <span style="background: #fea219; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold;">
                                         <i class="fas fa-chair"></i> Place ${passenger.seat_number || 'N/A'}
                                     </span>
                                 </div>

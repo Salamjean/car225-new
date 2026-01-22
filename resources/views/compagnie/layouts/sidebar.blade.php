@@ -8,7 +8,7 @@
                     alt="{{ Auth::guard('compagnie')->user()->name }}">
             @else
                 <div class="default-company-logo d-flex align-items-center justify-content-center text-white font-weight-bold"
-                    style="width: 120px; height: 120px; background: #e94e1a; border-radius: 10px; font-size: 2rem; border: 3px solid white;">
+                    style="width: 120px; height: 120px; background: #fea219; border-radius: 10px; font-size: 2rem; border: 3px solid white;">
                     {{ substr(Auth::guard('compagnie')->user()->name, 0, 2) }}
                 </div>
             @endif

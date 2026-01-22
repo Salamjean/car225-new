@@ -4,7 +4,7 @@
     <div class=" mx-auto" style="width: 90%">
         <!-- En-tête -->
         <div class="text-center mb-12">
-            <div class="inline-flex items-center justify-center w-16 h-16 bg-[#e94e1a] rounded-2xl shadow-lg mb-4">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-[#fea219] rounded-2xl shadow-lg mb-4">
                 <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -22,7 +22,7 @@
                 <!-- Section 1: Informations de base -->
                 <div class="mb-12">
                     <div class="flex items-center mb-6">
-                        <div class="w-2 h-8 bg-[#e94e1a] rounded-full mr-4"></div>
+                        <div class="w-2 h-8 bg-[#fea219] rounded-full mr-4"></div>
                         <h2 class="text-2xl font-bold text-gray-900">Planification du trajet</h2>
                     </div>
 
@@ -38,7 +38,7 @@
                                        id="point_depart" 
                                        name="point_depart" 
                                        required
-                                       class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white pl-10"
+                                       class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white pl-10"
                                        placeholder="Rechercher une ville, un lieu...">
                                 <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                                     <div class="w-2 h-2 rounded-full bg-green-500 ring-4 ring-green-100"></div>
@@ -60,7 +60,7 @@
                                        id="point_arrive" 
                                        name="point_arrive" 
                                        required
-                                       class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white pl-10"
+                                       class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white pl-10"
                                        placeholder="Rechercher une destination...">
                                 <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                                     <div class="w-2 h-2 rounded-full bg-red-500 ring-4 ring-red-100"></div>
@@ -120,7 +120,7 @@
                         <!-- Overlay de chargement -->
                         <div id="map-loading" class="absolute inset-0 bg-white bg-opacity-80 z-10 flex items-center justify-center hidden">
                             <div class="flex flex-col items-center">
-                                <svg class="animate-spin h-10 w-10 text-[#e94e1a] mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <svg class="animate-spin h-10 w-10 text-[#fea219] mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
@@ -202,7 +202,7 @@
             directionsRenderer = new google.maps.DirectionsRenderer({
                 map: map,
                 suppressMarkers: false,
-                polylineOptions: { strokeColor: '#e94e1a', strokeWeight: 6, strokeOpacity: 0.8 }
+                polylineOptions: { strokeColor: '#fea219', strokeWeight: 6, strokeOpacity: 0.8 }
             });
 
             initAutocomplete();
@@ -298,7 +298,7 @@
         if(btn) {
             btn.disabled = false;
             btn.classList.remove("bg-gray-300", "cursor-not-allowed", "shadow-none");
-            btn.classList.add("bg-[#e94e1a]", "hover:bg-[#d33d0f]", "transform", "hover:-translate-y-1", "shadow-lg", "cursor-pointer"); 
+            btn.classList.add("bg-[#fea219]", "hover:bg-[#e89116]", "transform", "hover:-translate-y-1", "shadow-lg", "cursor-pointer"); 
         }
     }
 
@@ -307,7 +307,7 @@
         if(btn) {
             btn.disabled = true;
             btn.classList.add("bg-gray-300", "cursor-not-allowed", "shadow-none");
-            btn.classList.remove("bg-[#e94e1a]", "hover:bg-[#d33d0f]", "transform", "hover:-translate-y-1", "shadow-lg", "cursor-pointer");
+            btn.classList.remove("bg-[#fea219]", "hover:bg-[#e89116]", "transform", "hover:-translate-y-1", "shadow-lg", "cursor-pointer");
         }
     }
 </script>

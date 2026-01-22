@@ -7,7 +7,7 @@
                     alt="{{ Auth::guard('agent')->user()->name }}">
             @else
                 <div class="default-company-logo d-flex align-items-center justify-content-center text-white font-weight-bold"
-                    style="width: 120px; height: 120px; background: #e94e1a; border-radius: 10px; font-size: 2rem; border: 3px solid white;">
+                    style="width: 120px; height: 120px; background: #fea219; border-radius: 10px; font-size: 2rem; border: 3px solid white;">
                     {{ substr(Auth::guard('agent')->user()->name, 0, 2) }}
                 </div>
             @endif
@@ -37,12 +37,12 @@
                     <div class="mdc-expansion-panel" id="ui-sub-reservations">
                         <nav class="mdc-list mdc-drawer-submenu">
                             <div class="mdc-list-item mdc-drawer-item">
-                                <a class="mdc-drawer-link" href="{{ route('agent.reservations.index') }}">
-                                    Scanné
+                                <a class="mdc-drawer-link" href="{{ route('agent.reservations.index') }}#en-cours">
+                                    En cours
                                 </a>
                             </div>
                             <div class="mdc-list-item mdc-drawer-item">
-                                <a class="mdc-drawer-link" href="{{ route('agent.reservations.recherche') }}">
+                                <a class="mdc-drawer-link" href="{{ route('agent.reservations.index') }}#terminees">
                                     Terminées
                                 </a>
                             </div>

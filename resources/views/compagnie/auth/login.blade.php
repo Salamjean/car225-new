@@ -11,8 +11,8 @@
     <title>Compagny - login</title>
     <style>
         :root {
-            --primary-color: #e94e1a;
-            --secondary-color: #e94e1a;
+            --primary-color: #fea219;
+            --secondary-color: #fea219;
             --accent-color: #28a745;
             --error-color: #28a745;
             --success-color: #28a745;
@@ -35,7 +35,7 @@
             min-height: 100vh;
             margin: 0;
             background:
-                linear-gradient(rgba(0, 51, 196, 0.1), rgba(233, 78, 26, 0.9)),
+                linear-gradient(rgba(0, 51, 196, 0.1), rgba(255, 136, 0, 0.9)),
                 url('{{ asset('assets/assets/img/arrierep.jpg') }}');
             background-size: cover;
             background-position: center;
@@ -77,7 +77,7 @@
             font-weight: 700;
             color: var(--primary-color);
             margin-bottom: 5px;
-            background: linear-gradient(to right, #e94e1a, #e94e1a);
+            background: linear-gradient(to right, #ff8800, #ff8800);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             position: relative;
@@ -92,7 +92,7 @@
             transform: translateX(-50%);
             width: 50px;
             height: 3px;
-            background: linear-gradient(to right, #e94e1a, #e94e1a);
+            background: linear-gradient(to right, #ff8800, #ff8800);
             border-radius: 3px;
         }
 

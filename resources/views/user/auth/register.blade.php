@@ -11,8 +11,8 @@
      <link rel="shortcut icon" href="{{asset('assetsPoster/assets/images/logo_car225.png')}}" />
     <style>
         :root {
-            --primary: #e94e1a;
-            --primary-dark: #cc4416;
+            --primary: #fea219;
+            --primary-dark: #e89100;
             --secondary: #2ecc71;
             --light: #f8f9fa;
             --dark: #343a40;
@@ -112,7 +112,7 @@
         .form-control:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(233, 78, 26, 0.15);
+            box-shadow: 0 0 0 3px rgba(254, 162, 25, 0.15);
         }
 
         select.form-control {

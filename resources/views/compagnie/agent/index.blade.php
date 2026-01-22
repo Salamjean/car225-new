@@ -375,7 +375,7 @@
 /* Variables de design modernes */
 :root {
     /* Palette principale */
-    --primary-orange: #e94e1a;
+    --primary-orange: #fea219;
     --primary-orange-light: rgba(254, 162, 25, 0.1);
     --primary-orange-dark: #e6910a;
     --secondary-green: #10b981;
@@ -600,7 +600,7 @@
 .search-input-modern:focus {
     outline: none;
     border-color: var(--primary-orange);
-    box-shadow: 0 0 0 3px rgba(233, 78, 26, 0.15);
+    box-shadow: 0 0 0 3px rgba(254, 162, 25, 0.15);
     background: var(--white);
 }
 
@@ -1298,7 +1298,7 @@ document.addEventListener('DOMContentLoaded', function() {
             icon: 'error',
             title: 'Erreur',
             text: '{{ session('error') }}',
-            confirmButtonColor: '#e94e1a',
+            confirmButtonColor: '#fea219',
             background: 'var(--light-bg)',
             color: 'var(--text-primary)'
         });
@@ -1416,7 +1416,7 @@ document.addEventListener('DOMContentLoaded', function() {
             cancelButtonText: 'Excel',
             showDenyButton: true,
             denyButtonText: 'PDF',
-            confirmButtonColor: '#e94e1a',
+            confirmButtonColor: '#fea219',
             background: 'var(--light-bg)'
         }).then((result) => {
             if (result.isConfirmed) {
