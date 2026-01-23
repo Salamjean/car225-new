@@ -268,13 +268,10 @@
                                                             <i class="fas fa-chair text-success"></i>
                                                         </div>
                                                         <div>
-                                                            <span class="fw-bold">{{ $reservation->nombre_places }} place(s)</span>
-                                                            @php
-                                                                $places = json_decode($reservation->places, true) ?? [];
-                                                            @endphp
-                                                            @if(!empty($places))
-                                                                <div class="small text-muted">
-                                                                    {{ implode(', ', $places) }}
+                                                            <span class="fw-bold">Place N° {{ $reservation->seat_number }}</span>
+                                                            @if($reservation->is_aller_retour)
+                                                                <div class="small text-blue-600 fw-bold">
+                                                                    <i class="fas fa-exchange-alt"></i> Aller-Retour
                                                                 </div>
                                                             @endif
                                                         </div>
@@ -303,7 +300,7 @@
                                                         </div>
                                                         <div>
                                                             <span
-                                                                class="fw-bold">{{ number_format($reservation->montant_total, 0, ',', ' ') }}
+                                                                class="fw-bold">{{ number_format($reservation->montant, 0, ',', ' ') }}
                                                                 FCFA</span>
                                                             <div class="small text-muted">
                                                             </div>
@@ -345,18 +342,52 @@
                                                             <i class="fas fa-eye"></i>
                                                         </a>
 
-                                                        @if($reservation->statut == 'confirmee' && $reservation->qr_code_path)
+
+                                                        {{-- Bouton PDF ALLER --}}
+                                                        @if($reservation->qr_code_path)
+                                                            @php
+                                                                $allerTerminee = $reservation->statut_aller === 'terminee' || $reservation->statut === 'terminee';
+                                                            @endphp
                                                             <button type="button" 
-                                                                    class="btn btn-sm btn-outline-success download-ticket-btn"
+                                                                    class="btn btn-sm {{ $allerTerminee ? 'btn-secondary disabled' : 'btn-outline-success' }} download-ticket-btn"
                                                                     data-id="{{ $reservation->id }}"
+                                                                    data-type="aller"
                                                                     data-reference="{{ $reservation->reference }}"
                                                                     data-passengers='@json(is_array($reservation->passagers) ? $reservation->passagers : json_decode($reservation->passagers, true) ?? [])'
-                                                                    data-url="{{ route('reservations.ticket', $reservation->id) }}"
+                                                                    data-url="{{ route('reservations.ticket', ['reservation' => $reservation->id, 'type' => 'aller']) }}"
                                                                     data-toggle="tooltip" 
-                                                                    title="Télécharger le billet">
+                                                                    title="{{ $allerTerminee ? 'Voyage aller terminé' : 'Télécharger billet ALLER' }}"
+                                                                    {{ $allerTerminee ? 'disabled' : '' }}
+                                                                    style="{{ $allerTerminee ? 'opacity: 0.5; cursor: not-allowed;' : '' }}">
                                                                 <i class="fas fa-file-pdf"></i>
+                                                                @if($reservation->is_aller_retour)
+                                                                    PDF Aller
+                                                                @else
+                                                                    PDF
+                                                                @endif
                                                             </button>
                                                         @endif
+
+                                                        {{-- Bouton PDF RETOUR (seulement si aller-retour) --}}
+                                                        @if($reservation->is_aller_retour && $reservation->qr_code_retour_path)
+                                                            @php
+                                                                $retourTerminee = $reservation->statut_retour === 'terminee';
+                                                            @endphp
+                                                            <button type="button" 
+                                                                    class="btn btn-sm {{ $retourTerminee ? 'btn-secondary disabled' : 'btn-outline-warning' }} download-ticket-btn"
+                                                                    data-id="{{ $reservation->id }}"
+                                                                    data-type="retour"
+                                                                    data-reference="{{ $reservation->reference }}"
+                                                                    data-passengers='@json(is_array($reservation->passagers) ? $reservation->passagers : json_decode($reservation->passagers, true) ?? [])'
+                                                                    data-url="{{ route('reservations.ticket', ['reservation' => $reservation->id, 'type' => 'retour']) }}"
+                                                                    data-toggle="tooltip" 
+                                                                    title="{{ $retourTerminee ? 'Voyage retour terminé' : 'Télécharger billet RETOUR' }}"
+                                                                    {{ $retourTerminee ? 'disabled' : '' }}
+                                                                    style="{{ $retourTerminee ? 'opacity: 0.5; cursor: not-allowed;' : '' }}">
+                                                                <i class="fas fa-file-pdf"></i> PDF Retour
+                                                            </button>
+                                                        @endif
+
 
                                                         @if($reservation->statut == 'en_attente')
                                                             <button type="button"

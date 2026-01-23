@@ -122,7 +122,7 @@
         <div class="ticket-content">
             <!-- Header -->
             <div class="header-section">
-                <div class="ticket-title">BILLET DE VOYAGE ÉLECTRONIQUE</div>
+                <div class="ticket-title">BILLET DE VOYAGE ÉLECTRONIQUE <br><span style="font-size: 20px; color: #02245b;">({{ $ticketType ?? 'ALLER SIMPLE' }})</span></div>
                 <div class="reference-container">
                     <span>Référence:</span>
                     <strong>{{ $reservation->reference }}</strong>
@@ -136,7 +136,7 @@
             <div class="section-title">Itinéraire du voyage</div>
             <div>
                 <p>Départ: {{ $programme->point_depart }} - Arrivée: {{ $programme->point_arrive }}</p>
-                <p>Date: {{ date('d/m/Y', strtotime($reservation->date_voyage)) }}</p>
+                <p>Date: {{ date('d/m/Y', strtotime($dateVoyage)) }} - Heure: {{ $heureDepart }}</p>
                 @if($seatNumber)
                     <p
                         style="background: #fea219; color: white; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 25px; text-align: center; margin-top: 15px;">

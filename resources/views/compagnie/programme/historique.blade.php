@@ -212,7 +212,12 @@
                                             </span>
                                         </div>
                                     </td>
-
+<td>
+    {{ $historique->programme->point_depart }} → {{ $historique->programme->point_arrive }}
+    @if($historique->programme->is_aller_retour)
+        <span class="badge badge-info ml-1">A/R</span>
+    @endif
+</td>
                                     <!-- Statut -->
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         @if ($programme->statut_places == 'vide')

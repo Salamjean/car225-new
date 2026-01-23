@@ -111,7 +111,30 @@ class PaymentController extends Controller
                 'qr_code' => $qrCodeData['base64'],
                 'qr_code_path' => $qrCodeData['path'],
                 'qr_code_data' => $qrCodeData['qr_data'],
+                'statut_aller' => 'confirmee', // Initialiser le statut aller
             ]);
+
+            // Générer aussi le QR code RETOUR si c'est un aller-retour
+            if ($reservation->is_aller_retour && $reservation->date_retour && $reservation->programme_retour_id) {
+                $dateRetourStr = $reservation->date_retour instanceof \Carbon\Carbon
+                    ? $reservation->date_retour->format('Y-m-d')
+                    : date('Y-m-d', strtotime($reservation->date_retour));
+
+                $qrCodeRetourData = $resController->generateAndSaveQRCode(
+                    $reservation->reference . '-RETOUR',
+                    $reservation->id,
+                    $dateRetourStr,
+                    $reservation->user_id,
+                    true // Indique qu'il s'agit d'un QR retour
+                );
+
+                $reservation->update([
+                    'qr_code_retour' => $qrCodeRetourData['base64'],
+                    'qr_code_retour_path' => $qrCodeRetourData['path'],
+                    'qr_code_retour_data' => $qrCodeRetourData['qr_data'],
+                    'statut_retour' => 'confirmee', // Initialiser le statut retour
+                ]);  
+            }
 
             $resController->sendReservationEmail(
                 $reservation,

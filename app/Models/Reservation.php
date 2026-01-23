@@ -67,6 +67,14 @@ class Reservation extends Model
     }
 
     /**
+     * Relation avec le programme retour
+     */
+    public function programmeRetour()
+    {
+        return $this->belongsTo(Programme::class, 'programme_retour_id');
+    }
+
+    /**
      * Relation avec l'agent qui a scanné
      */
     public function agentEmbarquement()

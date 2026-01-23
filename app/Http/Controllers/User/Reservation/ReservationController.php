@@ -23,6 +23,17 @@ use Endroid\QrCode\RoundBlockSizeMode\RoundBlockSizeMode;
 
 class ReservationController extends Controller
 {
+    /**
+     * Normalise un terme de recherche en enlevant les accents et mettant en minuscule
+     */
+    private function normalizeSearchTerm(string $term): string
+    {
+        $term = strtolower($term);
+        $accents = ['é', 'è', 'ê', 'ë', 'à', 'â', 'ä', 'ô', 'ö', 'ù', 'û', 'ü', 'î', 'ï', 'ç'];
+        $noAccents = ['e', 'e', 'e', 'e', 'a', 'a', 'a', 'o', 'o', 'u', 'u', 'u', 'i', 'i', 'c'];
+        return str_replace($accents, $noAccents, $term);
+    }
+
     public function index(Request $request)
     {
         $user = Auth::user();
@@ -115,8 +126,31 @@ class ReservationController extends Controller
 
         $reservation->load(['programme', 'programme.compagnie', 'user']);
 
-        // Récupérer le numéro de place via la requête
-        $seatNumber = $request->query('seat_number');
+        // Récupérer le type de billet (aller par défaut)
+        $type = $request->query('type', 'aller');
+        $seatNumber = $request->query('seat_number') ?: $reservation->seat_number; // Utiliser siège résa par défaut
+
+        // Sélection des données selon le type
+        if ($type === 'retour' && $reservation->is_aller_retour) {
+            // Logique RETOUR
+            $programme = $reservation->programmeRetour ?? Programme::find($reservation->programme_retour_id);
+            $dateVoyage = $reservation->date_retour;
+            $qrCodeBase64 = $reservation->qr_code_retour;
+            $ticketType = 'RETOUR';
+            $heureDepart = $programme ? $programme->heure_depart : 'N/A';
+            
+            // Si pas de programme retour trouvé (cas bordure), utiliser programme aller mais marquer retour
+            if (!$programme) {
+                $programme = $reservation->programme; // Fallback
+            }
+        } else {
+            // Logique ALLER (par défaut)
+            $programme = $reservation->programme;
+            $dateVoyage = $reservation->date_voyage;
+            $qrCodeBase64 = $reservation->qr_code;
+            $ticketType = 'ALLER';
+            $heureDepart = $programme->heure_depart;
+        }
 
         // Calculer les montants
         $prixUnitaire = (float) $reservation->programme->montant_billet;
@@ -124,7 +158,7 @@ class ReservationController extends Controller
         $tripType = $isAllerRetour ? 'Aller-Retour' : 'Aller Simple';
         $prixTotalIndividuel = $isAllerRetour ? $prixUnitaire * 2 : $prixUnitaire;
 
-        $nomFichier = 'billet-' . $reservation->reference;
+        $nomFichier = 'billet-' . strtolower($ticketType) . '-' . $reservation->reference;
         if ($seatNumber) {
             $nomFichier .= '-Place-' . $seatNumber;
         }
@@ -132,11 +166,14 @@ class ReservationController extends Controller
         // Générer le PDF du billet
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.ticket', [
             'reservation' => $reservation,
-            'programme' => $reservation->programme,
+            'programme' => $programme, // Le programme correct (aller ou retour)
             'user' => $reservation->user,
-            'compagnie' => $reservation->programme->compagnie,
-            'qrCodeBase64' => $reservation->qr_code,
+            'compagnie' => $programme->compagnie ?? $reservation->programme->compagnie,
+            'qrCodeBase64' => $qrCodeBase64,
             'tripType' => $tripType,
+            'ticketType' => $ticketType, // "ALLER" ou "RETOUR"
+            'dateVoyage' => $dateVoyage, // Date correcte
+            'heureDepart' => $heureDepart,
             'prixUnitaire' => $prixUnitaire,
             'prixTotalIndividuel' => $prixTotalIndividuel,
             'isAllerRetour' => $isAllerRetour,
@@ -209,9 +246,23 @@ class ReservationController extends Controller
             $jourAnglais = strtolower(date('l', strtotime($date_depart_recherche)));
             $jour_semaine = $joursFrancais[$jourAnglais] ?? $jourAnglais;
 
+            // Normaliser les termes de recherche (enlever accents, mettre en minuscule)
+            $point_depart_normalized = $this->normalizeSearchTerm($point_depart);
+            $point_arrive_normalized = $this->normalizeSearchTerm($point_arrive);
+
             $query = Programme::with(['compagnie', 'vehicule', 'itineraire'])
-                ->where('point_depart', 'like', "%{$point_depart}%")
-                ->where('point_arrive', 'like', "%{$point_arrive}%");
+                // Recherche insensible à la casse et aux accents sur point de départ
+                ->where(function($q) use ($point_depart, $point_depart_normalized) {
+                    $q->where('point_depart', 'like', "%{$point_depart}%")
+                      ->orWhereRaw('LOWER(point_depart) LIKE ?', ['%' . strtolower($point_depart) . '%'])
+                      ->orWhereRaw('LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(point_depart, "é", "e"), "è", "e"), "ê", "e"), "ô", "o"), "à", "a")) LIKE ?', ['%' . $point_depart_normalized . '%']);
+                })
+                // Recherche insensible à la casse et aux accents sur point d'arrivée
+                ->where(function($q) use ($point_arrive, $point_arrive_normalized) {
+                    $q->where('point_arrive', 'like', "%{$point_arrive}%")
+                      ->orWhereRaw('LOWER(point_arrive) LIKE ?', ['%' . strtolower($point_arrive) . '%'])
+                      ->orWhereRaw('LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(point_arrive, "é", "e"), "è", "e"), "ê", "e"), "ô", "o"), "à", "a")) LIKE ?', ['%' . $point_arrive_normalized . '%']);
+                });
 
             // Recherche combinée ponctuel + récurrent
             $query->where(function ($q) use ($formattedDate, $jour_semaine) {
@@ -571,6 +622,7 @@ class ReservationController extends Controller
         }
 
         try {
+             $isAllerRetour = $request->boolean('is_aller_retour'); 
             // Calculer le prix par place
             $prixUnitaire = $programme->montant_billet;
             if ($programme->is_aller_retour) {
@@ -621,14 +673,14 @@ class ReservationController extends Controller
             $createdReservations = [];
             $passagers = $request->passagers;
 
-            foreach ($passagers as $index => $passager) {
+          foreach ($passagers as $index => $passager) {
                 $seatNumber = $passager['seat_number'];
 
                 // Générer une référence unique pour cette place basée sur l'ID de transaction
                 $reference = $transactionId . '-' . $seatNumber;
 
-                // Créer la réservation pour cette place (STATUT EN ATTENTE)
-                $reservation = Reservation::create([
+                // 1. D'abord on prépare les données dans un tableau (C'est ça la correction importante)
+                $reservationData = [
                     'paiement_id' => $paiement->id,
                     'payment_transaction_id' => $transactionId,
                     'user_id' => Auth::id(),
@@ -639,19 +691,38 @@ class ReservationController extends Controller
                     'passager_email' => $passager['email'],
                     'passager_telephone' => $passager['telephone'],
                     'passager_urgence' => $passager['urgence'],
-                    'is_aller_retour' => $programme->is_aller_retour,
+                    
+                    // CORRECTION ICI : On utilise la variable $isAllerRetour (choix user)
+                    'is_aller_retour' => $isAllerRetour, 
+                    
                     'montant' => $prixUnitaire,
-                    'statut' => 'en_attente', // En attente de paiement
+                    'statut' => 'en_attente',
                     'reference' => $reference,
                     'date_voyage' => $dateVoyage,
-                ]);
+                ];
 
-                // On ne génère pas encore le QR Code, on le fera après confirmation du paiement
+                // 2. On ajoute les infos de retour SI c'est un aller-retour
+                if ($isAllerRetour) {
+                    $reservationData['date_retour'] = $dateRetour;
+                    $reservationData['statut_aller'] = 'en_attente';
+                    $reservationData['statut_retour'] = 'en_attente';
+                    
+                    // Lier au programme retour si disponible
+                    if ($programme->programmeRetour) {
+                        $reservationData['programme_retour_id'] = $programme->programmeRetour->id;
+                    }
+                } else {
+                    $reservationData['statut_aller'] = 'en_attente';
+                }
+
+                // 3. Enfin, on crée la réservation avec les données complètes
+                $reservation = Reservation::create($reservationData);
 
                 Log::info('Réservation créée (en attente):', [
                     'id' => $reservation->id,
                     'reference' => $reference,
                     'seat_number' => $seatNumber,
+                    'is_aller_retour' => $isAllerRetour // Vérification dans les logs
                 ]);
 
                 $createdReservations[] = [
@@ -797,7 +868,7 @@ class ReservationController extends Controller
     /**
      * Générer et sauvegarder le QR Code avec Endroid (version simplifiée)
      */
-    public function generateAndSaveQRCode(string $reference, int $reservationId, string $dateVoyage, int $userId = null): array
+    public function generateAndSaveQRCode(string $reference, int $reservationId, string $dateVoyage, int $userId = null, bool $isRetour = false): array
     {
         try {
             // Données à encoder dans le QR Code
@@ -806,6 +877,7 @@ class ReservationController extends Controller
                 'reservation_id' => $reservationId,
                 'user_id' => $userId ?: Auth::id(),
                 'date_voyage' => $dateVoyage,
+                'is_retour' => $isRetour, // ✅ Différencier aller/retour
                 'timestamp' => time(),
                 'verification_hash' => hash('sha256', $reference . $reservationId . $dateVoyage . config('app.key'))
             ];
@@ -1428,19 +1500,33 @@ class ReservationController extends Controller
 
     public function apiProgrammes()
     {
+        $today = now()->format('Y-m-d');
+        
         // Récupérer tous les programmes actifs avec les détails nécessaires
         $programmes = Programme::with(['compagnie', 'vehicule', 'itineraire'])
-            ->where(function ($q) {
-                // Programmes ponctuels futurs
-                $q->where('type_programmation', 'ponctuel')
-                    ->where('date_depart', '>=', now()->format('Y-m-d'));
-            })
-            ->orWhere(function ($q) {
-                // Programmes récurrents encore valides
-                $q->where('type_programmation', 'recurrent')
-                    ->where(function ($sub) {
-                    $sub->whereNull('date_fin_programmation')
-                        ->orWhere('date_fin_programmation', '>=', now()->format('Y-m-d'));
+            ->where(function ($query) use ($today) {
+                // CAS 1: Programmes ponctuels dont la date de départ est aujourd'hui ou dans le futur
+                $query->where(function ($q) use ($today) {
+                    $q->where('type_programmation', 'ponctuel')
+                      ->whereDate('date_depart', '>=', $today);
+                });
+                
+                // CAS 2: Programmes récurrents encore en cours
+                $query->orWhere(function ($q) use ($today) {
+                    $q->where('type_programmation', 'recurrent')
+                      // La date de début doit être passée ou aujourd'hui (le programme a commencé)
+                      ->whereDate('date_depart', '<=', $today)
+                      // Et la date de fin doit être dans le futur OU nulle (pas de fin)
+                      ->where(function ($sub) use ($today) {
+                          $sub->whereNull('date_fin_programmation')
+                              ->orWhereDate('date_fin_programmation', '>=', $today);
+                      });
+                });
+                
+                // CAS 3: Programmes récurrents qui commencent dans le futur
+                $query->orWhere(function ($q) use ($today) {
+                    $q->where('type_programmation', 'recurrent')
+                      ->whereDate('date_depart', '>', $today);
                 });
             })
             ->orderBy('date_depart', 'asc')
@@ -1449,7 +1535,8 @@ class ReservationController extends Controller
 
         return response()->json([
             'success' => true,
-            'programmes' => $programmes
+            'programmes' => $programmes,
+            'count' => $programmes->count()
         ]);
     }
 }
