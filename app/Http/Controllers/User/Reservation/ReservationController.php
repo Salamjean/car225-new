@@ -128,25 +128,65 @@ class ReservationController extends Controller
 
         // Récupérer le type de billet (aller par défaut)
         $type = $request->query('type', 'aller');
-        $seatNumber = $request->query('seat_number') ?: $reservation->seat_number; // Utiliser siège résa par défaut
+        $seatNumber = $request->query('seat_number') ?: $reservation->seat_number;
 
         // Sélection des données selon le type
         if ($type === 'retour' && $reservation->is_aller_retour) {
             // Logique RETOUR
             $programme = $reservation->programmeRetour ?? Programme::find($reservation->programme_retour_id);
             $dateVoyage = $reservation->date_retour;
+            
+            // Si pas de programme retour trouvé, fallback
+            if (!$programme) {
+                 $programme = $reservation->programme;
+            }
+
+            // Vérifier et générer QR retour si manquant
+            if (empty($reservation->qr_code_retour)) {
+                $dateRetourStr = $dateVoyage instanceof \Carbon\Carbon ? $dateVoyage->format('Y-m-d') : $dateVoyage;
+                $qrCodeData = $this->generateAndSaveQRCode(
+                    $reservation->reference . '-RETOUR',
+                    $reservation->id,
+                    $dateRetourStr,
+                    $reservation->user_id,
+                    true // isRetour
+                );
+                
+                $reservation->update([
+                    'qr_code_retour' => $qrCodeData['base64'],
+                    'qr_code_retour_path' => $qrCodeData['path'],
+                    'qr_code_retour_data' => $qrCodeData['qr_data'],
+                    'statut_retour' => $reservation->statut_retour ?: 'confirmee'
+                ]);
+            }
+            
             $qrCodeBase64 = $reservation->qr_code_retour;
             $ticketType = 'RETOUR';
             $heureDepart = $programme ? $programme->heure_depart : 'N/A';
-            
-            // Si pas de programme retour trouvé (cas bordure), utiliser programme aller mais marquer retour
-            if (!$programme) {
-                $programme = $reservation->programme; // Fallback
-            }
+
         } else {
-            // Logique ALLER (par défaut)
+            // Logique ALLER
             $programme = $reservation->programme;
             $dateVoyage = $reservation->date_voyage;
+            
+            // Vérifier et générer QR aller si manquant
+            if (empty($reservation->qr_code)) {
+                $dateVoyageStr = $dateVoyage instanceof \Carbon\Carbon ? $dateVoyage->format('Y-m-d') : $dateVoyage;
+                $qrCodeData = $this->generateAndSaveQRCode(
+                    $reservation->reference,
+                    $reservation->id,
+                    $dateVoyageStr,
+                    $reservation->user_id,
+                    false // isRetour
+                );
+                
+                $reservation->update([
+                    'qr_code' => $qrCodeData['base64'],
+                    'qr_code_path' => $qrCodeData['path'],
+                    'qr_code_data' => $qrCodeData['qr_data']
+                ]);
+            }
+
             $qrCodeBase64 = $reservation->qr_code;
             $ticketType = 'ALLER';
             $heureDepart = $programme->heure_depart;
@@ -166,13 +206,13 @@ class ReservationController extends Controller
         // Générer le PDF du billet
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.ticket', [
             'reservation' => $reservation,
-            'programme' => $programme, // Le programme correct (aller ou retour)
+            'programme' => $programme,
             'user' => $reservation->user,
             'compagnie' => $programme->compagnie ?? $reservation->programme->compagnie,
             'qrCodeBase64' => $qrCodeBase64,
             'tripType' => $tripType,
-            'ticketType' => $ticketType, // "ALLER" ou "RETOUR"
-            'dateVoyage' => $dateVoyage, // Date correcte
+            'ticketType' => $ticketType,
+            'dateVoyage' => $dateVoyage,
             'heureDepart' => $heureDepart,
             'prixUnitaire' => $prixUnitaire,
             'prixTotalIndividuel' => $prixTotalIndividuel,

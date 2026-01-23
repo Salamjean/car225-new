@@ -369,7 +369,7 @@
                                                         @endif
 
                                                         {{-- Bouton PDF RETOUR (seulement si aller-retour) --}}
-                                                        @if($reservation->is_aller_retour && $reservation->qr_code_retour_path)
+                                                        @if($reservation->is_aller_retour && $reservation->statut == 'confirmee')
                                                             @php
                                                                 $retourTerminee = $reservation->statut_retour === 'terminee';
                                                             @endphp
