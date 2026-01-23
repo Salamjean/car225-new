@@ -9,7 +9,7 @@
                 <div class="col-lg-8 offset-lg-2 text-center" data-aos="fade-up">
                     <div class="hero-badge mb-3">Nos Solutions</div>
                     <h1 class="hero-title text-white mb-3">Des Services Pensés pour <span
-                            style="color: #fea219;">Vous</span></h1>
+                            style="color: #e94f1b;">Vous</span></h1>
                     <p class="hero-subtitle text-white-50 mb-4 mx-auto" style="max-width: 600px;">
                         Car225 vous accompagne au-delà du simple trajet. Découvrez nos services innovants pour une
                         expérience de voyage exceptionnelle.
@@ -184,7 +184,7 @@
             display: inline-block;
             padding: 5px 15px;
             background: rgba(254, 162, 25, 0.1);
-            color: #fea219;
+            color: #e94f1b;
             border-radius: 50px;
             font-size: 0.8rem;
             font-weight: 600;
@@ -221,7 +221,7 @@
             width: 80px;
             height: 80px;
             background: rgba(254, 162, 25, 0.1);
-            color: #fea219;
+            color: #e94f1b;
             border-radius: 20px;
             display: flex;
             align-items: center;
@@ -232,7 +232,7 @@
         }
 
         .service-card-modern:hover .service-icon-wrapper {
-            background: #fea219;
+            background: #e94f1b;
             color: white;
             transform: rotate(-5deg) scale(1.1);
         }
@@ -250,24 +250,24 @@
         }
 
         .btn-outline-primary {
-            border-color: #fea219;
-            color: #fea219;
+            border-color: #e94f1b;
+            color: #e94f1b;
         }
 
         .btn-outline-primary:hover {
-            background-color: #fea219;
-            border-color: #fea219;
+            background-color: #e94f1b;
+            border-color: #e94f1b;
             color: white;
         }
 
         .btn-primary {
-            background-color: #fea219;
-            border-color: #fea219;
+            background-color: #e94f1b;
+            border-color: #e94f1b;
         }
 
         .btn-primary:hover {
-            background-color: #e69116;
-            border-color: #e69116;
+            background-color: #c64216;
+            border-color: #d24819;
             transform: scale(1.05);
         }
 

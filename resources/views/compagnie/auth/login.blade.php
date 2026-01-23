@@ -11,8 +11,8 @@
     <title>Compagny - login</title>
     <style>
         :root {
-            --primary-color: #fea219;
-            --secondary-color: #fea219;
+            --primary-color: #e94f1b;
+            --secondary-color: #e94f1b;
             --accent-color: #28a745;
             --error-color: #28a745;
             --success-color: #28a745;

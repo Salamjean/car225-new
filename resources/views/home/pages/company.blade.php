@@ -8,7 +8,7 @@
             <div class="row align-items-center py-5">
                 <div class="col-lg-8 offset-lg-2 text-center" data-aos="fade-up">
                     <div class="hero-badge mb-3">Partenaires de Confiance</div>
-                    <h1 class="hero-title text-white mb-3">Nos <span style="color: #fea219;">Compagnies</span> Partenaires
+                    <h1 class="hero-title text-white mb-3">Nos <span style="color: #e94f1b;">Compagnies</span> Partenaires
                     </h1>
                     <p class="hero-subtitle text-white-50 mb-4 mx-auto" style="max-width: 600px;">
                         Découvrez les transporteurs qui assurent vos trajets en toute sécurité à travers le pays.
@@ -57,7 +57,7 @@
     <section class="py-5 bg-light-soft">
         <div class="container">
             <div class="section-header text-center mb-5" data-aos="fade-up">
-                <h2 class="section-title">Choisissez votre <span style="color: #fea219;">Transporteur</span></h2>
+                <h2 class="section-title">Choisissez votre <span style="color: #e94f1b;">Transporteur</span></h2>
                 <p class="text-muted">Des compagnies certifiées pour un voyage en toute sérénité</p>
             </div>
 
@@ -125,7 +125,7 @@
             display: inline-block;
             padding: 5px 15px;
             background: rgba(254, 162, 25, 0.1);
-            color: #fea219;
+            color: #e94f1b;
             border-radius: 50px;
             font-size: 0.8rem;
             font-weight: 600;
@@ -171,7 +171,7 @@
         .placeholder-logo-large {
             width: 120px;
             height: 120px;
-            background: #fea219;
+            background: #e94f1b;
             color: white;
             display: flex;
             align-items: center;
@@ -189,7 +189,7 @@
             transform: translateX(-50%);
             width: 50px;
             height: 50px;
-            background: #fea219;
+            background: #e94f1b;
             color: white;
             border-radius: 50%;
             display: flex;
@@ -224,7 +224,7 @@
         }
 
         .btn-company-action:hover {
-            background: #fea219;
+            background: #e94f1b;
             color: white;
             box-shadow: 0 5px 15px rgba(254, 162, 25, 0.3);
         }

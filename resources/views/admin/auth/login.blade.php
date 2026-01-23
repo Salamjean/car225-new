@@ -1,20 +1,21 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="shortcut icon" href="{{asset('assetsPoster/assets/images/logo_car225.png')}}" />
+    <link rel="shortcut icon" href="{{ asset('assetsPoster/assets/images/logo_car225.png') }}" />
     <title>Admin login</title>
     <style>
         :root {
-            --primary-color: #f89d15;
-            --secondary-color: #f89d15;
-            --accent-color: #f89d15;
+            --primary-color: #e94f1b;
+            --secondary-color: #e94f1b;
+            --accent-color: #e94f1b;
             --error-color: #f72585;
-            --success-color: #f89d15;
+            --success-color: #e94f1b;
             --light-color: #f8f9fa;
             --dark-color: #212529;
             --transition-speed: 0.3s;
@@ -33,8 +34,8 @@
             justify-content: center;
             min-height: 100vh;
             margin: 0;
-            background: 
-                linear-gradient(rgba(238, 206, 0, 0.1), rgba(248,157,21, 0.975)),
+            background:
+                linear-gradient(rgba(238, 206, 0, 0.1), rgba(233,79,27, 0.975)),
                 url('{{ asset('assets/assets/img/backgroud.jpg') }}');
             background-size: cover;
             background-position: center;
@@ -96,7 +97,7 @@
         }
 
         .subtitle {
-            color: #f89d15;
+            color: #e94f1b;
             font-size: 0.9rem;
         }
 
@@ -111,7 +112,7 @@
             left: 15px;
             top: 50%;
             transform: translateY(-50%);
-            color: #f89d15;
+            color: #e94f1b;
             transition: all var(--transition-speed) ease;
             z-index: 2;
         }
@@ -131,12 +132,12 @@
         }
 
         .input-field:focus {
-            border-color: #f89d15;
+            border-color: #e94f1b;
             box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
         }
 
-        .input-field:focus ~ .input-icon {
-            color:#f89d15;
+        .input-field:focus~.input-icon {
+            color: #e94f1b;
         }
 
         .input-label {
@@ -151,8 +152,8 @@
             z-index: 1;
         }
 
-        .input-field:focus ~ .input-label,
-        .input-field:not(:placeholder-shown) ~ .input-label {
+        .input-field:focus~.input-label,
+        .input-field:not(:placeholder-shown)~.input-label {
             top: -10px;
             left: 35px;
             font-size: 0.8rem;
@@ -166,14 +167,14 @@
             right: 15px;
             top: 50%;
             transform: translateY(-50%);
-            color: #f89d15;
+            color: #e94f1b;
             cursor: pointer;
             transition: all var(--transition-speed) ease;
             z-index: 2;
         }
 
         .password-toggle:hover {
-            color:#f89d15;
+            color: #e94f1b;
         }
 
         .submit-btn {
@@ -272,15 +273,22 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-5px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         @media (max-width: 576px) {
             .form-container {
                 padding: 30px 20px;
             }
-            
+
             .title {
                 font-size: 1.5rem;
             }
@@ -292,16 +300,27 @@
         }
 
         @keyframes floating {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-            100% { transform: translateY(0px); }
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
         }
     </style>
 </head>
+
 <body>
-    <form class="form-container animate__animated animate__fadeIn" method="POST" action="{{ route('admin.handleLogin') }}">
+    <form class="form-container animate__animated animate__fadeIn" method="POST"
+        action="{{ route('admin.handleLogin') }}">
         <div class="form-header">
-           <img src="{{ asset('assetsPoster/assets/images/logo_car225.png') }}" class="auth-logo floating" alt="Logo" style="height:80px"><br>
+            <img src="{{ asset('assetsPoster/assets/images/logo_car225.png') }}" class="auth-logo floating"
+                alt="Logo" style="height:80px"><br>
             <p class="subtitle">Entrez vos identifiants pour accéder à l'espace admin</p>
         </div>
 
@@ -323,7 +342,8 @@
         <!-- Email Field -->
         <div class="input-group">
             <i class="fas fa-envelope input-icon"></i>
-            <input class="input-field" type="email" name="email" placeholder=" " value="{{ old('email') }}" required />
+            <input class="input-field" type="email" name="email" placeholder=" " value="{{ old('email') }}"
+                required />
             <label class="input-label" for="email">Adresse Email</label>
             @error('email')
                 <div class="error-message">
@@ -384,7 +404,7 @@
                     text: '{{ Session::get('error') }}',
                     confirmButtonText: 'OK',
                     background: 'var(--light-color)',
-                    
+
                 });
             @endif
 
@@ -393,11 +413,12 @@
             form.addEventListener('mouseenter', () => {
                 form.classList.add('animate__animated', 'animate__pulse');
             });
-            
+
             form.addEventListener('animationend', () => {
                 form.classList.remove('animate__animated', 'animate__pulse');
             });
         });
     </script>
 </body>
+
 </html>

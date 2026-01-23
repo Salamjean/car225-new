@@ -45,7 +45,7 @@
         }
 
         .logo-accent {
-            color: #fea219;
+            color: #e94f1b;
         }
 
         .email-subtitle {
@@ -66,7 +66,7 @@
         }
 
         .highlight-name {
-            color: #fea219;
+            color: #e94f1b;
             font-weight: 600;
         }
 
@@ -181,7 +181,7 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #fea219 0%, #e89116 100%);
+            background: linear-gradient(135deg, #e94f1b 0%, #e89116 100%);
             color: white;
         }
 
@@ -202,7 +202,7 @@
             border-radius: 12px;
             padding: 25px;
             margin: 30px 0;
-            border-left: 5px solid #fea219;
+            border-left: 5px solid #e94f1b;
         }
 
         .notice-title {
@@ -227,7 +227,7 @@
 
         .notice-list li:before {
             content: "•";
-            color: #fea219;
+            color: #e94f1b;
             font-size: 20px;
             position: absolute;
             left: 0;
@@ -256,7 +256,7 @@
         }
 
         .footer-link:hover {
-            color: #fea219;
+            color: #e94f1b;
         }
 
         .copyright {

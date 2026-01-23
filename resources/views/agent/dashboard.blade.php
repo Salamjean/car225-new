@@ -11,7 +11,7 @@
                     Bienvenue, {{ $agent->prenom ?? $agent->name }} 👋
                 </h1>
                 <p class="text-gray-500 mt-1">
-                    Agent de <span class="font-semibold text-orange-600">{{ $agent->compagnie->name ?? 'Compagnie' }}</span>
+                    Agent de <span class="font-semibold text-red-600">{{ $agent->compagnie->name ?? 'Compagnie' }}</span>
                 </p>
             </div>
             <div class="flex items-center gap-3">

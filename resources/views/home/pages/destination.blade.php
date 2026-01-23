@@ -10,9 +10,9 @@
                     <div class="hero-badge mb-3">Réseau National</div>
                     <h1 class="hero-title text-white mb-3">
                         @if(request('compagnie_id') && $itineraires->isNotEmpty())
-                            Itinéraires de <span style="color: #fea219;">{{ $itineraires->first()->compagnie->name }}</span>
+                            Itinéraires de <span style="color: #e94f1b;">{{ $itineraires->first()->compagnie->name }}</span>
                         @else
-                            Toutes nos <span style="color: #fea219;">Destinations</span>
+                            Toutes nos <span style="color: #e94f1b;">Destinations</span>
                         @endif
                     </h1>
                     <p class="hero-subtitle text-white-50 mb-4 mx-auto" style="max-width: 600px;">
@@ -186,7 +186,7 @@
             display: inline-block;
             padding: 5px 15px;
             background: rgba(254, 162, 25, 0.1);
-            color: #fea219;
+            color: #e94f1b;
             border-radius: 50px;
             font-size: 0.8rem;
             font-weight: 600;
@@ -262,7 +262,7 @@
         }
 
         .detail-tag i {
-            color: #fea219;
+            color: #e94f1b;
         }
 
         /* Modern CTA Button */
@@ -278,7 +278,7 @@
         }
 
         .btn-modern-action:hover {
-            background-color: #fea219;
+            background-color: #e94f1b;
             color: white;
             transform: scale(1.02);
         }

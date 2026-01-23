@@ -31,7 +31,7 @@
         .header h1 {
             margin: 0;
             font-size: 24px;
-            color: #fea219;
+            color: #e94f1b;
         }
 
         .content {
@@ -47,7 +47,7 @@
 
         .label {
             font-weight: bold;
-            color: #fea219;
+            color: #e94f1b;
             text-transform: uppercase;
             font-size: 12px;
             letter-spacing: 1px;
@@ -64,7 +64,7 @@
             background-color: #f8fafb;
             padding: 20px;
             border-radius: 8px;
-            border-left: 4px solid #fea219;
+            border-left: 4px solid #e94f1b;
             margin-top: 10px;
         }
 

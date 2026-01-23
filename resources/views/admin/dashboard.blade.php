@@ -58,7 +58,7 @@
             </div>
 
             <!-- Companies Card -->
-            <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl p-6 shadow-xl text-white transform hover:-translate-y-1 transition-all">
+            <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-2xl p-6 shadow-xl text-white transform hover:-translate-y-1 transition-all">
                 <div class="flex items-center justify-between mb-4">
                     <div class="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
                         <i class="fas fa-building text-2xl"></i>
@@ -267,7 +267,7 @@
                                 <div class="text-xs text-gray-400">{{ $res->passager_email ?? $res->user->email ?? '' }}</div>
                             </td>
                             <td class="px-6 py-4">
-                                <span class="font-semibold text-orange-600">{{ $res->programme->compagnie->name ?? 'N/A' }}</span>
+                                <span class="font-semibold text-red-600">{{ $res->programme->compagnie->name ?? 'N/A' }}</span>
                             </td>
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-2 text-gray-700">
@@ -383,7 +383,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Pie Chart for Companies
     const ctxPie = document.getElementById('compagnieChart').getContext('2d');
-    const pieColors = ['#f97316', '#3b82f6', '#22c55e', '#a855f7', '#ef4444', '#06b6d4'];
+    const pieColors = ['#e94f1b', '#3b82f6', '#22c55e', '#a855f7', '#ef4444', '#06b6d4'];
     
     new Chart(ctxPie, {
         type: 'doughnut',
