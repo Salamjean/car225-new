@@ -111,7 +111,7 @@
                 <div class="card shadow">
                     <div class="card-header bg-white py-3">
                         <div class="d-flex justify-content-between align-items-center">
-                            <h6 class="m-0 font-weight-bold" style="color: #fea219;">
+                            <h6 class="m-0 font-weight-bold" style="color: #e94f1b;">
                                 <i class="fas fa-filter me-2"></i>Filtres de recherche
                             </h6>
                             <button class="btn btn-sm btn-outline-secondary" type="button" id="toggleFilters">
@@ -191,7 +191,7 @@
                             <h3 class="text-gray-800 mb-2">Aucune réservation trouvée</h3>
                             <p class="text-muted mb-4">Vous n'avez pas encore effectué de réservation.</p>
                             <a href="{{ route('programme.index') }}" class="btn btn-primary"
-                                style="background-color: #fea219; border-color: #fea219;">
+                                style="background-color: #e94f1b; border-color: #e94f1b;">
                                 <i class="fas fa-bus me-2"></i> Réserver un voyage
                             </a>
                         </div>
@@ -399,7 +399,7 @@
 
     <style>
         :root {
-            --primary-color: #fea219;
+            --primary-color: #e94f1b;
             --primary-light: rgba(254, 162, 25, 0.1);
             --primary-dark: #e89116;
             --success-color: #10b981;
@@ -815,7 +815,7 @@
 
                     let htmlContent = `
                         <div style="text-align: left; max-height: 500px; overflow-y: auto;">
-                            <div style="background: linear-gradient(135deg, #fea219 0%, #e89116 100%); color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+                            <div style="background: linear-gradient(135deg, #e94f1b 0%, #e89116 100%); color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
                                 <h5 style="margin: 0; font-weight: bold;">
                                     <i class="fas fa-users"></i> Liste des Passagers
                                 </h5>
@@ -827,13 +827,13 @@
 
                     passengers.forEach((passenger, index) => {
                         htmlContent += `
-                            <div style="background: #f9fafb; border-left: 4px solid #fea219; padding: 15px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <div style="background: #f9fafb; border-left: 4px solid #e94f1b; padding: 15px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                                     <h6 style="margin: 0; color: #1f2937; font-weight: bold;">
-                                        <i class="fas fa-user-circle" style="color: #fea219;"></i> 
+                                        <i class="fas fa-user-circle" style="color: #e94f1b;"></i> 
                                         ${passenger.prenom || ''} ${passenger.nom || ''}
                                     </h6>
-                                    <span style="background: #fea219; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold;">
+                                    <span style="background: #e94f1b; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold;">
                                         <i class="fas fa-chair"></i> Place ${passenger.seat_number || 'N/A'}
                                     </span>
                                 </div>

@@ -24,7 +24,7 @@
                 <div class="d-flex gap-2">
                     @if($reservation->statut == 'confirmee')
                         <a href="{{ route('reservations.ticket', $reservation->id) }}" 
-                           class="btn btn-primary" style="background-color: #fea219; border-color: #fea219;">
+                           class="btn btn-primary" style="background-color: #e94f1b; border-color: #e94f1b;">
                             <i class="fas fa-file-pdf me-2"></i> Télécharger le billet
                         </a>
                     @endif
@@ -41,8 +41,8 @@
         <div class="col-lg-8">
             <!-- Carte du voyage -->
             <div class="card shadow mb-4">
-                <div class="card-header py-3" style="border-bottom: 3px solid #fea219;">
-                    <h6 class="m-0 font-weight-bold" style="color: #fea219;">
+                <div class="card-header py-3" style="border-bottom: 3px solid #e94f1b;">
+                    <h6 class="m-0 font-weight-bold" style="color: #e94f1b;">
                         <i class="fas fa-route me-2"></i> Détails du Voyage
                     </h6>
                 </div>
@@ -161,7 +161,7 @@
             <!-- Carte statut -->
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold" style="color: #fea219;">
+                    <h6 class="m-0 font-weight-bold" style="color: #e94f1b;">
                         <i class="fas fa-info-circle me-2"></i> Statut de la Réservation
                     </h6>
                 </div>
@@ -207,7 +207,7 @@
             <!-- Carte compagnie -->
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold" style="color: #fea219;">
+                    <h6 class="m-0 font-weight-bold" style="color: #e94f1b;">
                         <i class="fas fa-bus me-2"></i> Compagnie de Transport
                     </h6>
                 </div>
@@ -219,7 +219,7 @@
                                  class="img-fluid mb-3" style="max-height: 80px;">
                         @else
                             <div class="company-logo-placeholder mb-3">
-                                <i class="fas fa-bus fa-3x" style="color: #fea219;"></i>
+                                <i class="fas fa-bus fa-3x" style="color: #e94f1b;"></i>
                             </div>
                         @endif
                         <h5 class="mb-1">{{ $reservation->programme->compagnie->name }}</h5>
@@ -247,7 +247,7 @@
             @if($reservation->qr_code_path)
             <div class="card shadow">
                 <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold" style="color: #fea219;">
+                    <h6 class="m-0 font-weight-bold" style="color: #e94f1b;">
                         <i class="fas fa-qrcode me-2"></i> QR Code d'Embarquement
                     </h6>
                 </div>
@@ -285,7 +285,7 @@
         padding: 1rem;
         background: #f8fafc;
         border-radius: 8px;
-        border-left: 4px solid #fea219;
+        border-left: 4px solid #e94f1b;
     }
 
     .info-label {

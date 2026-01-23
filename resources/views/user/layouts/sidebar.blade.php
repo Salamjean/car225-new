@@ -8,7 +8,7 @@
                 @else
                     <div style="width: 50%; margin-left: 50px; display: flex; align-items: center; justify-content: center;">
                         <div
-                            style="width: 100px; height: 100px; border-radius: 50%; background: linear-gradient(to right, #fea219, #ffb74d); display: flex; align-items: center; justify-content: center; color: white; font-size: 40px; font-weight: bold;">
+                            style="width: 100px; height: 100px; border-radius: 50%; background: linear-gradient(to right, #e94f1b, #d94818); display: flex; align-items: center; justify-content: center; color: white; font-size: 40px; font-weight: bold;">
                             {{ strtoupper(substr(Auth::user()->prenom, 0, 1)) }}{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
                         </div>
                     </div>
