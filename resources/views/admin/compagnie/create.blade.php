@@ -4,7 +4,7 @@
     <div class=" mx-auto" style="width: 90%">
         <!-- En-tête -->
         <div class="text-center mb-12">
-            <div class="inline-flex items-center justify-center w-16 h-16 bg-[#fea219] rounded-2xl shadow-lg mb-4">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-[#e94f1b] rounded-2xl shadow-lg mb-4">
                 <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
                 </svg>
@@ -23,7 +23,7 @@
                 <!-- Section 1: Informations de base -->
                 <div class="mb-12">
                     <div class="flex items-center mb-6">
-                        <div class="w-2 h-8 bg-[#fea219] rounded-full mr-4"></div>
+                        <div class="w-2 h-8 bg-[#e94f1b] rounded-full mr-4"></div>
                         <h2 class="text-2xl font-bold text-gray-900">Informations de base</h2>
                     </div>
 
@@ -34,7 +34,7 @@
                              <span class="text-red-500 ml-1">*</span>
                             <div class="relative">
                                 <input type="text" name="name" required
-                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
+                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
                                     placeholder="Entrez le nom complet">
                                 <div class="absolute inset-y-0 right-0 flex items-center pr-3">
                                     <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -48,7 +48,7 @@
                         <div class="space-y-2">
                             <label class="text-sm font-semibold text-gray-700">Nom d'utilisateur</label>
                             <input type="text" name="username"
-                                class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
+                                class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
                                 placeholder="Nom d'utilisateur (optionnel)">
                         </div>
 
@@ -56,7 +56,7 @@
                         <div class="space-y-2">
                             <label class="text-sm font-semibold text-gray-700">Sigle</label>
                             <input type="text" name="sigle"
-                                class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
+                                class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
                                 placeholder="Sigle (optionnel)">
                         </div>
 
@@ -64,7 +64,7 @@
                         <div class="space-y-2">
                             <label class="text-sm font-semibold text-gray-700">Slogan</label>
                             <input type="text" name="slogan"
-                                class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
+                                class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
                                 placeholder="Slogan de la compagnie">
                         </div>
                     </div>
@@ -86,7 +86,7 @@
                             </label>
                             <div class="relative">
                                 <input type="email" name="email" required
-                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
+                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
                                     placeholder="email@compagnie.com">
                                 <div class="absolute inset-y-0 right-0 flex items-center pr-3">
                                     <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -106,7 +106,7 @@
                                 <!-- Code Pays -->
                                 <div class="w-32">
                                     <select name="prefix" required
-                                        class="w-full px-3 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
+                                        class="w-full px-3 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
                                         <option value="+225">🇨🇮 +225</option>
                                         <option value="+33">🇫🇷 +33</option>
                                         <option value="+1">🇺🇸 +1</option>
@@ -122,7 +122,7 @@
                                 <!-- Numéro de téléphone -->
                                 <div class="flex-1">
                                     <input type="text" name="contact" required
-                                        class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
+                                        class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
                                         placeholder="07 00 00 00 00">
                                 </div>
                             </div>
@@ -135,7 +135,7 @@
                                 <span class="text-red-500 ml-1">*</span>
                             </label>
                             <select name="commune" required
-                                class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
+                                class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
                                 <option value="">Sélectionnez une commune</option>
                                 <option value="Abobo">Abobo</option>
                                 <option value="Adjamé">Adjamé</option>
@@ -165,7 +165,7 @@
                                 <span class="text-red-500 ml-1">*</span>
                             </label>
                             <input type="text" name="adresse" required
-                                class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
+                                class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
                                 placeholder="Adresse complète dans la commune">
                         </div>
                     </div>
@@ -180,16 +180,16 @@
 
                     <div class="flex flex-col items-center justify-center">
                         <div id="upload-area" 
-                            class="w-full max-w-2xl border-3 border-dashed border-gray-300 rounded-3xl p-12 text-center cursor-pointer transition-all duration-300 hover:border-[#fea219] hover:bg-green-50 group">
+                            class="w-full max-w-2xl border-3 border-dashed border-gray-300 rounded-3xl p-12 text-center cursor-pointer transition-all duration-300 hover:border-[#e94f1b] hover:bg-green-50 group">
                             <div id="upload-content">
-                                <div class="mx-auto w-16 h-16 bg-[#fea219] rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                                <div class="mx-auto w-16 h-16 bg-[#e94f1b] rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
                                     <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                                     </svg>
                                 </div>
                                 <h3 class="text-xl font-semibold text-gray-900 mb-2">Uploader le logo</h3>
                                 <p class="text-gray-500 mb-4">Glissez-déposez votre fichier ou cliquez pour parcourir</p>
-                                <button type="button" class="px-6 py-3 bg-[#fea219] text-white rounded-xl font-semibold hover:bg-[#e89116] transition-colors duration-200">
+                                <button type="button" class="px-6 py-3 bg-[#e94f1b] text-white rounded-xl font-semibold hover:bg-[#e89116] transition-colors duration-200">
                                     Choisir un fichier
                                 </button>
                                 <p class="text-sm text-gray-400 mt-3">PNG, JPG, JPEG jusqu'à 2MB</p>
@@ -218,7 +218,7 @@
                     </a>
                     
                     <button type="submit"
-                        class="flex items-center px-12 py-4 bg-[#fea219] text-white font-bold rounded-xl hover:bg-[#e89116] transform hover:-translate-y-1 transition-all duration-200 shadow-lg hover:shadow-xl">
+                        class="flex items-center px-12 py-4 bg-[#e94f1b] text-white font-bold rounded-xl hover:bg-[#e89116] transform hover:-translate-y-1 transition-all duration-200 shadow-lg hover:shadow-xl">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                         </svg>
@@ -246,16 +246,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // Drag and drop
     uploadArea.addEventListener('dragover', (e) => {
         e.preventDefault();
-        uploadArea.classList.add('border-[#fea219]', 'bg-green-50');
+        uploadArea.classList.add('border-[#e94f1b]', 'bg-green-50');
     });
 
     uploadArea.addEventListener('dragleave', () => {
-        uploadArea.classList.remove('border-[#fea219]', 'bg-green-50');
+        uploadArea.classList.remove('border-[#e94f1b]', 'bg-green-50');
     });
 
     uploadArea.addEventListener('drop', (e) => {
         e.preventDefault();
-        uploadArea.classList.remove('border-[#fea219]', 'bg-green-50');
+        uploadArea.classList.remove('border-[#e94f1b]', 'bg-green-50');
         if (e.dataTransfer.files.length) {
             fileInput.files = e.dataTransfer.files;
             handleFileSelect(e.dataTransfer.files[0]);

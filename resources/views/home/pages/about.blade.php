@@ -18,7 +18,7 @@
                     Bienvenue chez Car225. Nous transformons chaque kilomètre en une expérience fluide, sécurisée et connectée grâce à notre écosystème intelligent.
                 </p>
                 <div class="d-flex gap-3">
-                    <a href="#notre-histoire" class="btn btn-warning rounded-pill px-4 py-3 fw-bold shadow-orange text-white" style="background-color: #fea219; border: none;">Découvrir l'histoire</a>
+                    <a href="#notre-histoire" class="btn btn-warning rounded-pill px-4 py-3 fw-bold shadow-orange text-white" style="background-color: #e94f1b; border: none;">Découvrir l'histoire</a>
                     <a href="{{ route('home.contact') }}" class="btn btn-outline-light rounded-pill px-4 py-3 fw-bold">Nous rejoindre</a>
                 </div>
             </div>
@@ -164,7 +164,7 @@
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="feature-card-v2 p-5 rounded-custom shadow-lg h-100 text-white mt-md-4" style="background-color: #062a22; border-top: 5px solid #fea219;">
+                        <div class="feature-card-v2 p-5 rounded-custom shadow-lg h-100 text-white mt-md-4" style="background-color: #062a22; border-top: 5px solid #e94f1b;">
                             <div class="icon-v2 bg-white-transparent text-white mb-4">
                                 <i class="bi bi-cpu"></i>
                             </div>
@@ -189,9 +189,9 @@
         </div>
         <div class="row g-4">
             @foreach([
-                ['name' => 'Koffi Traoré', 'role' => 'Founder & Visionary', 'img' => 'person-f-7.webp', 'color' => '#fea219'],
+                ['name' => 'Koffi Traoré', 'role' => 'Founder & Visionary', 'img' => 'person-f-7.webp', 'color' => '#e94f1b'],
                 ['name' => 'Sara Kouamé', 'role' => 'Head of Experience', 'img' => 'person-f-5.webp', 'color' => '#198754'],
-                ['name' => 'Ariel Zadi', 'role' => 'CTO / Architect', 'img' => 'person-f-13.webp', 'color' => '#fea219'],
+                ['name' => 'Ariel Zadi', 'role' => 'CTO / Architect', 'img' => 'person-f-13.webp', 'color' => '#e94f1b'],
                 ['name' => 'Nina Gnaly', 'role' => 'Marketing Director', 'img' => 'person-f-9.webp', 'color' => '#198754']
             ] as $member)
             <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="{{ $loop->index * 100 }}">
@@ -223,7 +223,7 @@
                         <p class="text-white-50 fs-5 mb-lg-0">Découvrez une nouvelle façon de voyager avec Car225.</p>
                     </div>
                     <div class="col-lg-5 text-lg-end">
-                        <a href="{{ route('login') }}" class="btn btn-warning btn-lg rounded-pill px-5 py-3 fw-bold text-white" style="background-color: #fea219; border: none; box-shadow: 0 10px 20px rgba(254,162,25,0.3);">Se Connecter</a>
+                        <a href="{{ route('login') }}" class="btn btn-warning btn-lg rounded-pill px-5 py-3 fw-bold text-white" style="background-color: #e94f1b; border: none; box-shadow: 0 10px 20px rgba(254,162,25,0.3);">Se Connecter</a>
                     </div>
                 </div>
             </div>
@@ -234,15 +234,15 @@
 <style>
     :root {
         --primary-green: #062a22;
-        --accent-orange: #fea219;
+        --accent-orange: #e94f1b;
         --success-green: #198754;
     }
 
     .rounded-custom { border-radius: 2rem; }
     .ls-2 { letter-spacing: 2px; }
-    .text-orange { color: #fea219; }
+    .text-orange { color: #e94f1b; }
     .text-orange-gradient {
-        background: linear-gradient(to right, #fea219, #f9b13d);
+        background: linear-gradient(to right, #e94f1b, #f9b13d);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
     }
@@ -267,7 +267,7 @@
         opacity: 0.15;
         z-index: 1;
     }
-    .shape-1 { background: #fea219; top: -100px; left: -100px; }
+    .shape-1 { background: #e94f1b; top: -100px; left: -100px; }
     .shape-2 { background: #198754; bottom: -100px; right: -100px; }
 
     /* Hero Image Stack */
@@ -308,7 +308,7 @@
         border-color: #198754; background: #198754; color: white;
         box-shadow: 0 0 25px rgba(25,135,84,0.4); transform: scale(1.1);
     }
-    .station-item:hover .station-marker { transform: translateY(-5px) scale(1.1); color: #fea219; border-color: #fea219; }
+    .station-item:hover .station-marker { transform: translateY(-5px) scale(1.1); color: #e94f1b; border-color: #e94f1b; }
     .station-item:hover .station-marker.active { color: white; border-color: #198754; }
 
     .glow-effect {

@@ -8,7 +8,7 @@
             <div class="row align-items-center py-5">
                 <div class="col-lg-8 offset-lg-2 text-center" data-aos="fade-up">
                     <div class="hero-badge mb-3">Support & Assistance</div>
-                    <h1 class="hero-title text-white mb-3">Contactez <span style="color: #fea219;">Notre Équipe</span></h1>
+                    <h1 class="hero-title text-white mb-3">Contactez <span style="color: #e94f1b;">Notre Équipe</span></h1>
                     <p class="hero-subtitle text-white-50 mb-4 mx-auto" style="max-width: 600px;">
                         Une question ? Un problème technique ? Notre support est disponible 24h/24 et 7j/7 pour vous
                         accompagner.
@@ -25,7 +25,7 @@
                 <!-- Contact Info -->
                 <div class="col-lg-4" data-aos="fade-right">
                     <div class="contact-info-wrapper h-100">
-                        <h3 class="fw-bold text-dark mb-4">Informations de <span style="color: #fea219;">Contact</span></h3>
+                        <h3 class="fw-bold text-dark mb-4">Informations de <span style="color: #e94f1b;">Contact</span></h3>
                         <p class="text-muted mb-5">N'hésitez pas à nous contacter directement ou à remplir le formulaire
                             ci-contre. Nous vous répondrons dans les plus brefs délais.</p>
 
@@ -74,7 +74,7 @@
                 <!-- Contact Form -->
                 <div class="col-lg-8" data-aos="fade-left">
                     <div class="contact-form-card bg-white p-4 p-lg-5 rounded-4 shadow-lg">
-                        <h3 class="fw-bold text-dark mb-4">Envoyez-nous un <span style="color: #fea219;">Message</span></h3>
+                        <h3 class="fw-bold text-dark mb-4">Envoyez-nous un <span style="color: #e94f1b;">Message</span></h3>
 
                         @if(session('success'))
                             <div class="alert alert-success alert-dismissible fade show rounded-4 border-0 mb-4" role="alert">
@@ -136,7 +136,7 @@
             display: inline-block;
             padding: 5px 15px;
             background: rgba(254, 162, 25, 0.1);
-            color: #fea219;
+            color: #e94f1b;
             border-radius: 50px;
             font-size: 0.8rem;
             font-weight: 600;
@@ -182,15 +182,15 @@
         }
 
         .social-btn:hover {
-            background: #fea219;
+            background: #e94f1b;
             color: white;
             transform: translateY(-5px);
         }
 
         /* Form Styles */
         .btn-primary {
-            background-color: #fea219;
-            border-color: #fea219;
+            background-color: #e94f1b;
+            border-color: #e94f1b;
         }
 
         .btn-primary:hover {
@@ -202,7 +202,7 @@
 
         .form-control:focus {
             background-color: #fff !important;
-            border: 1px solid #fea219 !important;
+            border: 1px solid #e94f1b !important;
         }
 
         @media (max-width: 991px) {

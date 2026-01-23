@@ -4,7 +4,7 @@
 
     <a href="{{route('home')}}" class="logo d-flex align-items-center me-auto me-xl-0">
       <!-- Uncomment the line below if you also wish to use an image logo -->
-      <img src="{{asset('assetsPoster/assets/images/logo_car225.png')}}" alt="" style="background-color: white">
+      <img src="{{asset('assetsPoster/assets/images/logo_car225.png')}}" alt="" style="background-color: white; border-radius: 100px;">
       {{-- <h1 class="sitename">Tour</h1> --}}
     </a>
 

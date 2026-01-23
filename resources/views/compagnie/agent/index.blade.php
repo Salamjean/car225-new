@@ -375,9 +375,9 @@
 /* Variables de design modernes */
 :root {
     /* Palette principale */
-    --primary-orange: #fea219;
+    --primary-orange: #e94f1b;
     --primary-orange-light: rgba(254, 162, 25, 0.1);
-    --primary-orange-dark: #e6910a;
+    --primary-orange-dark: #e94f1b;
     --secondary-green: #10b981;
     --secondary-green-light: rgba(16, 185, 129, 0.1);
     --accent-green: #0a8c5f;
@@ -1298,7 +1298,7 @@ document.addEventListener('DOMContentLoaded', function() {
             icon: 'error',
             title: 'Erreur',
             text: '{{ session('error') }}',
-            confirmButtonColor: '#fea219',
+            confirmButtonColor: '#e94f1b',
             background: 'var(--light-bg)',
             color: 'var(--text-primary)'
         });
@@ -1416,7 +1416,7 @@ document.addEventListener('DOMContentLoaded', function() {
             cancelButtonText: 'Excel',
             showDenyButton: true,
             denyButtonText: 'PDF',
-            confirmButtonColor: '#fea219',
+            confirmButtonColor: '#e94f1b',
             background: 'var(--light-bg)'
         }).then((result) => {
             if (result.isConfirmed) {

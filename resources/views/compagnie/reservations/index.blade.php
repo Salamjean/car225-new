@@ -22,14 +22,14 @@
 
         <!-- Statistiques rapides -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-orange-500">
+            <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-red-500">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-600">Total Réservations En Cours</p>
                         <p class="text-2xl font-bold text-gray-900 mt-1">{{ $reservationsEnCours->total() }}</p>
                     </div>
-                    <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-                        <i class="mdi mdi-ticket-account text-orange-500 text-2xl"></i>
+                    <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                        <i class="mdi mdi-ticket-account text-red-500 text-2xl"></i>
                     </div>
                 </div>
             </div>
@@ -66,7 +66,7 @@
             <!-- Navigation Onglets -->
             <div class="flex border-b border-gray-200">
                 <a href="?tab=en-cours" 
-                   class="flex-1 text-center py-4 px-6 text-sm font-bold uppercase tracking-wider transition-colors duration-200 {{ request('tab') == 'en-cours' || !request('tab') ? 'text-orange-600 border-b-4 border-orange-500 bg-orange-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50' }}">
+                   class="flex-1 text-center py-4 px-6 text-sm font-bold uppercase tracking-wider transition-colors duration-200 {{ request('tab') == 'en-cours' || !request('tab') ? 'text-red-600 border-b-4 border-red-500 bg-red-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50' }}">
                    <i class="mdi mdi-clock-outline mr-2 text-lg"></i> En cours / A venir
                 </a>
                 <a href="?tab=terminees" 
@@ -181,10 +181,10 @@
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     @foreach($reservationsEnCours as $reservation)
-                                    <tr class="hover:bg-orange-50 transition-colors duration-200 group">
+                                    <tr class="hover:bg-red-50 transition-colors duration-200 group">
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="flex items-center">
-                                                <div class="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-500 font-bold mr-3">
+                                                <div class="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center text-red-500 font-bold mr-3">
                                                     {{ substr($reservation->passager_prenom, 0, 1) }}
                                                 </div>
                                                 <div>
@@ -216,7 +216,7 @@
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            <span class="inline-flex items-center justify-center w-10 h-10 bg-orange-100 text-orange-800 font-bold rounded-lg text-lg">
+                                            <span class="inline-flex items-center justify-center w-10 h-10 bg-red-100 text-red-800 font-bold rounded-lg text-lg">
                                                 {{ $reservation->seat_number }}
                                             </span>
                                         </td>

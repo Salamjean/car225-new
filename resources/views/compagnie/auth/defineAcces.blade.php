@@ -15,11 +15,11 @@
 
 <style>
     :root {
-        --primary-color: #fea219;
-        --primary-light: #fea219;
+        --primary-color: #e94f1b;
+        --primary-light: #e94f1b;
         --primary-dark: #28a745;
         --light-color: #ffffff;
-        --dark-color: #fea219;
+        --dark-color: #e94f1b;
         --gray-color: #28a745;
         --error-color: #dc3545;
         --success-color: #28a745;
@@ -109,7 +109,7 @@
     }
 
     .input-field:focus {
-        border-color: #fea219;
+        border-color: #e94f1b;
         box-shadow: 0 0 0 3px rgba(0, 51, 196, 0.1);
     }
 
@@ -134,7 +134,7 @@
     .auth-btn {
         width: 100%;
         height: 50px;
-        background-color: #fea219;
+        background-color: #e94f1b;
         color: white;
         border: none;
         border-radius: 10px;

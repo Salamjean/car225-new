@@ -11,8 +11,8 @@
     <title>Agent - Login</title>
     <style>
         :root {
-            --primary-color: #fea219;
-            --secondary-color: #fea219;
+            --primary-color: #e94f1b;
+            --secondary-color: #e94f1b;
             --accent-color: #4895ef;
             --error-color: #f72585;
             --success-color: #4cc9f0;
@@ -35,7 +35,7 @@
             min-height: 100vh;
             margin: 0;
             background:
-                linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 136, 0, 0.9));
+                linear-gradient(rgba(255, 255, 255, 0.1), rgba(233,79,27, 0.9));
             /* url('{{ asset('assets/assets/img/arrierep.jpg') }}'); */
             background-size: cover;
             background-position: center;

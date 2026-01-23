@@ -9,7 +9,7 @@
                     <p class="text-gray-600">Liste de toutes les compagnies enregistrées dans le système</p>
                 </div>
                 <a href="{{ route('compagnie.create') }}"
-                    class="flex items-center px-6 py-3 bg-[#fea219] text-white font-semibold rounded-xl hover:bg-[#e89116] transform hover:-translate-y-1 transition-all duration-200 shadow-lg hover:shadow-xl mt-4 sm:mt-0">
+                    class="flex items-center px-6 py-3 bg-[#e94f1b] text-white font-semibold rounded-xl hover:bg-[#e89116] transform hover:-translate-y-1 transition-all duration-200 shadow-lg hover:shadow-xl mt-4 sm:mt-0">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -24,9 +24,9 @@
                 <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div class="flex items-center">
-                            <div class="w-2 h-8 bg-[#fea219] rounded-full mr-3"></div>
+                            <div class="w-2 h-8 bg-[#e94f1b] rounded-full mr-3"></div>
                             <h2 class="text-xl font-bold text-gray-800">Liste des Compagnies</h2>
-                            <span class="ml-3 px-3 py-1 bg-[#fea219] text-white text-sm font-medium rounded-full"
+                            <span class="ml-3 px-3 py-1 bg-[#e94f1b] text-white text-sm font-medium rounded-full"
                                 id="compagnies-count">
                                 {{ $compagnies->count() }} compagnie(s)
                             </span>
@@ -35,7 +35,7 @@
                         <!-- Barre de recherche -->
                         <form method="GET" action="{{ route('compagnie.index') }}" class="relative w-full sm:w-64">
                             <input type="text" name="search" value="{{ request('search') }}" placeholder="Rechercher..."
-                                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-200"
+                                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-200"
                                 id="search-input">
                             <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor"
                                 viewBox="0 0 24 24">
@@ -87,7 +87,7 @@
                                                         alt="{{ $compagnie->name }}">
                                                 @else
                                                     <div
-                                                        class="h-12 w-12 rounded-xl bg-[#fea219] flex items-center justify-center text-white font-bold text-sm">
+                                                        class="h-12 w-12 rounded-xl bg-[#e94f1b] flex items-center justify-center text-white font-bold text-sm">
                                                         {{ substr($compagnie->name, 0, 2) }}
                                                     </div>
                                                 @endif
@@ -237,7 +237,7 @@
                     // Formater les informations de la compagnie
                     const logoHtml = compagnie.path_logo ?
                         `<img src="{{ asset('storage') }}/${compagnie.path_logo}" alt="${compagnie.name}" class="w-32 h-32 rounded-2xl object-cover mx-auto mb-4 border-2 border-gray-200">` :
-                        `<div class="w-32 h-32 rounded-2xl bg-[#fea219] flex items-center justify-center text-white font-bold text-2xl mx-auto mb-4">${compagnie.name.substring(0, 2)}</div>`;
+                        `<div class="w-32 h-32 rounded-2xl bg-[#e94f1b] flex items-center justify-center text-white font-bold text-2xl mx-auto mb-4">${compagnie.name.substring(0, 2)}</div>`;
 
                     const statusBadge = compagnie.statut === 'actif' ?
                         '<span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">🟢 Actif</span>' :
@@ -249,7 +249,7 @@
                     <div class="text-left">
                         ${logoHtml}
                         <div class="grid grid-cols-1 gap-3 text-xl text-center">
-                            ${compagnie.sigle ? `<div><strong class="text-gray-700">Sigle:</strong> <span class="text-[#fea219] font-semibold">${compagnie.sigle}</span></div>` : ''}
+                            ${compagnie.sigle ? `<div><strong class="text-gray-700">Sigle:</strong> <span class="text-[#e94f1b] font-semibold">${compagnie.sigle}</span></div>` : ''}
                             ${compagnie.slogan ? `<div><strong class="text-gray-700">Slogan:</strong> "${compagnie.slogan}"</div>` : ''}
                             <div><strong class="text-gray-700">Email:</strong> ${compagnie.email}</div>
                             <div><strong class="text-gray-700">Contact:</strong> ${compagnie.contact}</div>
@@ -376,8 +376,8 @@
         }
 
         .page-item.active .page-link {
-            background-color: #fea219;
-            border-color: #fea219;
+            background-color: #e94f1b;
+            border-color: #e94f1b;
             color: white;
         }
 

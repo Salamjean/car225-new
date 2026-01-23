@@ -4,7 +4,7 @@
         <div class="mx-auto" style="width: 90%">
             <!-- En-tête -->
             <div class="text-center mb-12">
-                <div class="inline-flex items-center justify-center w-16 h-16 bg-[#fea219] rounded-2xl shadow-lg mb-4">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-[#e94f1b] rounded-2xl shadow-lg mb-4">
                     <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -24,7 +24,7 @@
                     <!-- Section 1: Informations de base -->
                     <div class="mb-12">
                         <div class="flex items-center mb-6">
-                            <div class="w-2 h-8 bg-[#fea219] rounded-full mr-4"></div>
+                            <div class="w-2 h-8 bg-[#e94f1b] rounded-full mr-4"></div>
                             <h2 class="text-2xl font-bold text-gray-900">Informations du trajet</h2>
                         </div>
 
@@ -37,7 +37,7 @@
                                 </label>
                                 <div class="relative">
                                     <select name="itineraire_id" id="itineraire_id" required
-                                        class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
+                                        class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
                                         <option value="">Sélectionnez un itinéraire</option>
                                         @foreach ($itineraires as $itineraire)
                                             <option value="{{ $itineraire->id }}"
@@ -137,7 +137,7 @@
                                 </label>
                                 <div class="relative">
                                     <select name="vehicule_id" id="vehicule_id" required
-                                        class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
+                                        class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
                                         <option value="">Sélectionnez un véhicule</option>
                                         @foreach ($vehicules as $vehicule)
                                             <option value="{{ $vehicule->id }}">
@@ -167,7 +167,7 @@
                                 </label>
                                 <div class="relative">
                                     <select name="personnel_id" id="personnel_id" required
-                                        class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
+                                        class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
                                         <option value="">Sélectionnez un chauffeur</option>
                                         @foreach ($chauffeurs as $chauffeur)
                                             <option value="{{ $chauffeur->id }}">
@@ -194,7 +194,7 @@
                                 <label class="text-sm font-semibold text-gray-700">Convoyeur (optionnel)</label>
                                 <div class="relative">
                                     <select name="convoyeur_id" id="convoyeur_id"
-                                        class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
+                                        class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
                                         <option value="">Sélectionnez un convoyeur (optionnel)</option>
                                         @foreach ($convoyeurs as $convoyeur)
                                             <option value="{{ $convoyeur->id }}">
@@ -226,7 +226,7 @@
                                     <input type="number" name="montant_billet" id="montant_billet"
                                         value="{{ old('montant_billet') }}" required min="0" step="100"
                                         placeholder="Ex: 5000"
-                                        class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white">
+                                        class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white">
                                     <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                                         <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
                                             viewBox="0 0 24 24">
@@ -260,7 +260,7 @@
                                 <div class="relative">
                                     <input type="date" name="date_depart" id="date_depart"
                                         value="{{ old('date_depart') }}" required min="{{ date('Y-m-d') }}"
-                                        class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white">
+                                        class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white">
                                 </div>
                                 @error('date_depart')
                                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -276,7 +276,7 @@
                                 <div class="relative">
                                     <input type="time" name="heure_depart" id="heure_depart"
                                         value="{{ old('heure_depart') }}" required
-                                        class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white">
+                                        class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white">
 
                                 </div>
                                 @error('heure_depart')
@@ -325,10 +325,10 @@
                                         <input type="radio" name="type_programmation" id="type_ponctuel"
                                             value="ponctuel" checked class="sr-only peer">
                                         <label for="type_ponctuel"
-                                            class="flex items-center justify-between p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-[#fea219] peer-checked:border-[#fea219] peer-checked:bg-orange-50 transition-all duration-200">
+                                            class="flex items-center justify-between p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-[#e94f1b] peer-checked:border-[#e94f1b] peer-checked:bg-orange-50 transition-all duration-200">
                                             <div class="flex items-center">
                                                 <div
-                                                    class="w-6 h-6 border-2 border-gray-300 rounded-full mr-3 peer-checked:border-[#fea219] peer-checked:bg-[#fea219] flex items-center justify-center">
+                                                    class="w-6 h-6 border-2 border-gray-300 rounded-full mr-3 peer-checked:border-[#e94f1b] peer-checked:bg-[#e94f1b] flex items-center justify-center">
                                                     <div class="w-3 h-3 bg-white rounded-full peer-checked:block hidden">
                                                     </div>
                                                 </div>
@@ -337,7 +337,7 @@
                                                     <p class="text-sm text-gray-600">Un seul trajet à la date spécifiée</p>
                                                 </div>
                                             </div>
-                                            <svg class="w-6 h-6 text-[#fea219] hidden peer-checked:block" fill="none"
+                                            <svg class="w-6 h-6 text-[#e94f1b] hidden peer-checked:block" fill="none"
                                                 stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M5 13l4 4L19 7" />
@@ -350,10 +350,10 @@
                                         <input type="radio" name="type_programmation" id="type_recurrent"
                                             value="recurrent" class="sr-only peer">
                                         <label for="type_recurrent"
-                                            class="flex items-center justify-between p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-[#fea219] peer-checked:border-[#fea219] peer-checked:bg-orange-50 transition-all duration-200">
+                                            class="flex items-center justify-between p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-[#e94f1b] peer-checked:border-[#e94f1b] peer-checked:bg-orange-50 transition-all duration-200">
                                             <div class="flex items-center">
                                                 <div
-                                                    class="w-6 h-6 border-2 border-gray-300 rounded-full mr-3 peer-checked:border-[#fea219] peer-checked:bg-[#fea219] flex items-center justify-center">
+                                                    class="w-6 h-6 border-2 border-gray-300 rounded-full mr-3 peer-checked:border-[#e94f1b] peer-checked:bg-[#e94f1b] flex items-center justify-center">
                                                     <div class="w-3 h-3 bg-white rounded-full peer-checked:block hidden">
                                                     </div>
                                                 </div>
@@ -362,7 +362,7 @@
                                                     <p class="text-sm text-gray-600">Trajet répété sur une période</p>
                                                 </div>
                                             </div>
-                                            <svg class="w-6 h-6 text-[#fea219] hidden peer-checked:block" fill="none"
+                                            <svg class="w-6 h-6 text-[#e94f1b] hidden peer-checked:block" fill="none"
                                                 stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M5 13l4 4L19 7" />
@@ -381,7 +381,7 @@
                                     <div class="flex items-center justify-between">
                                         <div class="flex items-center">
                                             <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
-                                                <i class="fas fa-exchange-alt text-[#fea219]"></i>
+                                                <i class="fas fa-exchange-alt text-[#e94f1b]"></i>
                                             </div>
                                             <div>
                                                 <span class="font-semibold text-gray-900">Aller-Retour</span>
@@ -390,7 +390,7 @@
                                         </div>
                                         <label class="relative inline-flex items-center cursor-pointer">
                                             <input type="checkbox" name="is_aller_retour" value="1" class="sr-only peer">
-                                            <div class="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-[#fea219]"></div>
+                                            <div class="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-[#e94f1b]"></div>
                                         </label>
                                     </div>
                                 </div>
@@ -408,7 +408,7 @@
                                         <div class="relative">
                                             <input type="date" name="date_fin_programmation"
                                                 id="date_fin_programmation" min="{{ date('Y-m-d') }}"
-                                                class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fea219] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white">
+                                                class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white">
                                         </div>
                                     </div>
 
@@ -423,7 +423,7 @@
                                                 <input type="checkbox" name="jours_recurrence[]" id="jour_lundi"
                                                     value="lundi" class="sr-only peer">
                                                 <label for="jour_lundi"
-                                                    class="inline-flex items-center px-4 py-2 border border-gray-200 rounded-lg cursor-pointer hover:border-[#fea219] peer-checked:border-[#fea219] peer-checked:bg-[#fea219] peer-checked:text-white transition-all duration-200">
+                                                    class="inline-flex items-center px-4 py-2 border border-gray-200 rounded-lg cursor-pointer hover:border-[#e94f1b] peer-checked:border-[#e94f1b] peer-checked:bg-[#e94f1b] peer-checked:text-white transition-all duration-200">
                                                     <span class="text-sm font-medium">Lun</span>
                                                 </label>
                                             </div>
@@ -431,7 +431,7 @@
                                                 <input type="checkbox" name="jours_recurrence[]" id="jour_mardi"
                                                     value="mardi" class="sr-only peer">
                                                 <label for="jour_mardi"
-                                                    class="inline-flex items-center px-4 py-2 border border-gray-200 rounded-lg cursor-pointer hover:border-[#fea219] peer-checked:border-[#fea219] peer-checked:bg-[#fea219] peer-checked:text-white transition-all duration-200">
+                                                    class="inline-flex items-center px-4 py-2 border border-gray-200 rounded-lg cursor-pointer hover:border-[#e94f1b] peer-checked:border-[#e94f1b] peer-checked:bg-[#e94f1b] peer-checked:text-white transition-all duration-200">
                                                     <span class="text-sm font-medium">Mar</span>
                                                 </label>
                                             </div>
@@ -439,7 +439,7 @@
                                                 <input type="checkbox" name="jours_recurrence[]" id="jour_mercredi"
                                                     value="mercredi" class="sr-only peer">
                                                 <label for="jour_mercredi"
-                                                    class="inline-flex items-center px-4 py-2 border border-gray-200 rounded-lg cursor-pointer hover:border-[#fea219] peer-checked:border-[#fea219] peer-checked:bg-[#fea219] peer-checked:text-white transition-all duration-200">
+                                                    class="inline-flex items-center px-4 py-2 border border-gray-200 rounded-lg cursor-pointer hover:border-[#e94f1b] peer-checked:border-[#e94f1b] peer-checked:bg-[#e94f1b] peer-checked:text-white transition-all duration-200">
                                                     <span class="text-sm font-medium">Mer</span>
                                                 </label>
                                             </div>
@@ -447,7 +447,7 @@
                                                 <input type="checkbox" name="jours_recurrence[]" id="jour_jeudi"
                                                     value="jeudi" class="sr-only peer">
                                                 <label for="jour_jeudi"
-                                                    class="inline-flex items-center px-4 py-2 border border-gray-200 rounded-lg cursor-pointer hover:border-[#fea219] peer-checked:border-[#fea219] peer-checked:bg-[#fea219] peer-checked:text-white transition-all duration-200">
+                                                    class="inline-flex items-center px-4 py-2 border border-gray-200 rounded-lg cursor-pointer hover:border-[#e94f1b] peer-checked:border-[#e94f1b] peer-checked:bg-[#e94f1b] peer-checked:text-white transition-all duration-200">
                                                     <span class="text-sm font-medium">Jeu</span>
                                                 </label>
                                             </div>
@@ -455,7 +455,7 @@
                                                 <input type="checkbox" name="jours_recurrence[]" id="jour_vendredi"
                                                     value="vendredi" class="sr-only peer">
                                                 <label for="jour_vendredi"
-                                                    class="inline-flex items-center px-4 py-2 border border-gray-200 rounded-lg cursor-pointer hover:border-[#fea219] peer-checked:border-[#fea219] peer-checked:bg-[#fea219] peer-checked:text-white transition-all duration-200">
+                                                    class="inline-flex items-center px-4 py-2 border border-gray-200 rounded-lg cursor-pointer hover:border-[#e94f1b] peer-checked:border-[#e94f1b] peer-checked:bg-[#e94f1b] peer-checked:text-white transition-all duration-200">
                                                     <span class="text-sm font-medium">Ven</span>
                                                 </label>
                                             </div>
@@ -463,7 +463,7 @@
                                                 <input type="checkbox" name="jours_recurrence[]" id="jour_samedi"
                                                     value="samedi" class="sr-only peer">
                                                 <label for="jour_samedi"
-                                                    class="inline-flex items-center px-4 py-2 border border-gray-200 rounded-lg cursor-pointer hover:border-[#fea219] peer-checked:border-[#fea219] peer-checked:bg-[#fea219] peer-checked:text-white transition-all duration-200">
+                                                    class="inline-flex items-center px-4 py-2 border border-gray-200 rounded-lg cursor-pointer hover:border-[#e94f1b] peer-checked:border-[#e94f1b] peer-checked:bg-[#e94f1b] peer-checked:text-white transition-all duration-200">
                                                     <span class="text-sm font-medium">Sam</span>
                                                 </label>
                                             </div>
@@ -471,7 +471,7 @@
                                                 <input type="checkbox" name="jours_recurrence[]" id="jour_dimanche"
                                                     value="dimanche" class="sr-only peer">
                                                 <label for="jour_dimanche"
-                                                    class="inline-flex items-center px-4 py-2 border border-gray-200 rounded-lg cursor-pointer hover:border-[#fea219] peer-checked:border-[#fea219] peer-checked:bg-[#fea219] peer-checked:text-white transition-all duration-200">
+                                                    class="inline-flex items-center px-4 py-2 border border-gray-200 rounded-lg cursor-pointer hover:border-[#e94f1b] peer-checked:border-[#e94f1b] peer-checked:bg-[#e94f1b] peer-checked:text-white transition-all duration-200">
                                                     <span class="text-sm font-medium">Dim</span>
                                                 </label>
                                             </div>
@@ -529,7 +529,7 @@
 
                             <!-- Bouton Créer -->
                             <button type="submit"
-                                class="flex items-center px-8 py-4 bg-[#fea219] text-white font-bold rounded-xl hover:bg-[#e89116] transform hover:-translate-y-1 transition-all duration-200 shadow-lg hover:shadow-xl">
+                                class="flex items-center px-8 py-4 bg-[#e94f1b] text-white font-bold rounded-xl hover:bg-[#e89116] transform hover:-translate-y-1 transition-all duration-200 shadow-lg hover:shadow-xl">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M5 13l4 4L19 7" />

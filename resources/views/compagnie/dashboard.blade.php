@@ -55,13 +55,13 @@
                 <div
                     class="bg-white rounded-2xl p-6 shadow-xl border border-gray-100 transform hover:-translate-y-1 transition-all">
                     <div class="flex items-center justify-between mb-4">
-                        <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-                            <i class="fas fa-bus text-orange-600 text-xl"></i>
+                        <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-bus text-red-600 text-xl"></i>
                         </div>
                     </div>
                     <p class="text-sm font-bold text-gray-400 uppercase tracking-wider">Flotte Véhicules</p>
                     <h3 class="text-2xl font-black text-gray-900 mt-2">{{ $totalVehicles }}</h3>
-                    <p class="mt-4 text-xs text-orange-600 font-bold">Véhicules actifs</p>
+                    <p class="mt-4 text-xs text-red-600 font-bold">Véhicules actifs</p>
                 </div>
 
                 <!-- Signalements Card -->

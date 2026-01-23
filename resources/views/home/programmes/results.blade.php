@@ -12,7 +12,7 @@
                                 Programmes Disponibles
                             </h1>
                             <div
-                                class="bg-[#fea219] text-white px-4 py-2 rounded-xl font-bold text-lg shadow-md inline-block">
+                                class="bg-[#e94f1b] text-white px-4 py-2 rounded-xl font-bold text-lg shadow-md inline-block">
                                 {{ $totalResults }} programme(s)
                             </div>
                         </div>
@@ -20,10 +20,10 @@
                         <!-- Filtres de recherche -->
                         <div class="flex flex-wrap justify-center gap-2 mb-4">
                             <div class="flex items-center gap-2 bg-orange-50 px-3 py-1 rounded-full">
-                                <i class="fas fa-map-marker-alt text-[#fea219] text-sm"></i>
+                                <i class="fas fa-map-marker-alt text-[#e94f1b] text-sm"></i>
                                 <span class="font-semibold text-sm">{{ $searchParams['point_depart'] }}</span>
                             </div>
-                            <i class="fas fa-arrow-right text-[#fea219]"></i>
+                            <i class="fas fa-arrow-right text-[#e94f1b]"></i>
                             <div class="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-full">
                                 <i class="fas fa-flag text-green-500 text-sm"></i>
                                 <span class="font-semibold text-sm">{{ $searchParams['point_arrive'] }}</span>
@@ -37,7 +37,7 @@
                         <!-- Bouton mobile -->
                         <div class="text-center">
                             <a href="{{ url('/') }}#search-form"
-                                class="bg-white text-[#fea219] border border-[#fea219] px-4 py-2 rounded-xl hover:bg-[#fea219] hover:text-white transition-all duration-300 font-semibold text-base flex items-center justify-center gap-2 mx-auto w-full max-w-xs">
+                                class="bg-white text-[#e94f1b] border border-[#e94f1b] px-4 py-2 rounded-xl hover:bg-[#e94f1b] hover:text-white transition-all duration-300 font-semibold text-base flex items-center justify-center gap-2 mx-auto w-full max-w-xs">
                                 <i class="fas fa-search"></i>
                                 Nouvelle recherche
                             </a>
@@ -53,10 +53,10 @@
                                 </h1>
                                 <div class="flex items-center gap-4 text-sm text-gray-600">
                                     <div class="flex items-center gap-2 bg-orange-50 px-3 py-1 rounded-full">
-                                        <i class="fas fa-map-marker-alt text-[#fea219]"></i>
+                                        <i class="fas fa-map-marker-alt text-[#e94f1b]"></i>
                                         <span class="font-semibold">{{ $searchParams['point_depart'] }}</span>
                                     </div>
-                                    <i class="fas fa-arrow-right text-[#fea219]"></i>
+                                    <i class="fas fa-arrow-right text-[#e94f1b]"></i>
                                     <div class="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-full">
                                         <i class="fas fa-flag text-green-500"></i>
                                         <span class="font-semibold">{{ $searchParams['point_arrive'] }}</span>
@@ -68,11 +68,11 @@
                                 </div>
                             </div>
                             <div class="flex items-center gap-4">
-                                <span class="bg-[#fea219] text-white px-4 py-2 rounded-xl font-bold text-lg shadow-md">
+                                <span class="bg-[#e94f1b] text-white px-4 py-2 rounded-xl font-bold text-lg shadow-md">
                                     {{ $totalResults }} programme(s)
                                 </span>
                                 <a href="{{ url('/') }}#search-form"
-                                    class="bg-white text-[#fea219] border border-[#fea219] px-4 py-2 rounded-xl hover:bg-[#fea219] hover:text-white transition-all duration-300 font-semibold text-base flex items-center gap-2">
+                                    class="bg-white text-[#e94f1b] border border-[#e94f1b] px-4 py-2 rounded-xl hover:bg-[#e94f1b] hover:text-white transition-all duration-300 font-semibold text-base flex items-center gap-2">
                                     <i class="fas fa-search"></i>
                                     Nouvelle recherche
                                 </a>
@@ -87,7 +87,7 @@
                 <div class="w-full mb-6 sm:mb-8">
                     <!-- En-tête de la liste (version desktop) -->
                     <div class="hidden md:block mb-4">
-                        <div class="bg-gradient-to-r from-[#fea219]/10 to-orange-500/10 rounded-xl p-4">
+                        <div class="bg-gradient-to-r from-[#e94f1b]/10 to-orange-500/10 rounded-xl p-4">
                             <div class="grid grid-cols-12 gap-4 text-sm font-semibold text-gray-700">
                                 <div class="col-span-3 text-center">Compagnie & Trajet</div>
                                 <div class="col-span-2 text-center">Date & Heure</div>
@@ -110,7 +110,7 @@
                                         <div class="flex justify-between items-start mb-3">
                                             <div class="flex items-center gap-2">
                                                 <div
-                                                    class="w-10 h-10 bg-gradient-to-r from-[#fea219] to-orange-500 rounded-full flex items-center justify-center">
+                                                    class="w-10 h-10 bg-gradient-to-r from-[#e94f1b] to-orange-500 rounded-full flex items-center justify-center">
                                                     <i class="fas fa-bus text-white"></i>
                                                 </div>
                                                 <div>
@@ -129,7 +129,7 @@
                                                 </div>
                                             </div>
                                             <div class="text-right">
-                                                <div class="text-lg font-bold text-[#fea219]">
+                                                <div class="text-lg font-bold text-[#e94f1b]">
                                                     {{ number_format($programme->montant_billet, 0, ',', ' ') }} FCFA
                                                 </div>
                                                 <div class="text-xs text-gray-500">Prix</div>
@@ -145,7 +145,7 @@
                                                     <div class="text-xs text-gray-500">Départ</div>
                                                 </div>
                                                 <div class="mx-2">
-                                                    <i class="fas fa-arrow-right text-[#fea219]"></i>
+                                                    <i class="fas fa-arrow-right text-[#e94f1b]"></i>
                                                 </div>
                                                 <div class="text-center">
                                                     <div class="font-bold text-gray-900">{{ $programme->point_arrive }}
@@ -201,7 +201,7 @@
                                         <div class="flex gap-2">
                                             @if ($programme->staut_place != 'rempli')
                                                 <a href="{{ route('programmes.show', $programme->id) }}"
-                                                    class="flex-1 bg-[#fea219] text-white text-center py-2 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 flex items-center justify-center gap-2">
+                                                    class="flex-1 bg-[#e94f1b] text-white text-center py-2 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 flex items-center justify-center gap-2">
                                                     <i class="fas fa-ticket-alt"></i>
                                                     <span>Réserver</span>
                                                 </a>
@@ -216,7 +216,7 @@
                                             <!-- Actions mobile - Modifiez le bouton info -->
                                             <a href="#"
                                                 onclick="showVehicleDetails({{ $programme->vehicule->id ?? 'null' }}, '{{ $searchParams['date_depart'] ?? date('Y-m-d') }}'); return false;"
-                                                class="w-12 bg-white text-[#fea219] border border-[#fea219] text-center py-2 rounded-lg font-bold hover:bg-gray-50 transition-all duration-300 flex items-center justify-center vehicle-details-btn"
+                                                class="w-12 bg-white text-[#e94f1b] border border-[#e94f1b] text-center py-2 rounded-lg font-bold hover:bg-gray-50 transition-all duration-300 flex items-center justify-center vehicle-details-btn"
                                                 data-vehicle-id="{{ $programme->vehicule->id ?? '' }}"
                                                 data-search-date="{{ $searchParams['date_depart'] ?? date('Y-m-d') }}">
                                                 <i class="fas fa-info-circle"></i>
@@ -232,7 +232,7 @@
                                         <div class="col-span-3">
                                             <div class="flex items-center gap-3">
                                                 <div
-                                                    class="w-12 h-12 bg-gradient-to-r from-[#fea219] to-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                                    class="w-12 h-12 bg-gradient-to-r from-[#e94f1b] to-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
                                                     <i class="fas fa-bus text-white text-lg"></i>
                                                 </div>
                                                 <div class="flex-1 min-w-0">
@@ -256,7 +256,7 @@
                                                         style="display:flex; justify-content:center">
                                                         <div class="font-semibold text-gray-900">
                                                             {{ $programme->point_depart }}</div>
-                                                        <i class="fas fa-arrow-right text-[#fea219] text-xs"></i>
+                                                        <i class="fas fa-arrow-right text-[#e94f1b] text-xs"></i>
                                                         <div class="font-semibold text-gray-900">
                                                             {{ $programme->point_arrive }}</div>
                                                     </div>
@@ -285,7 +285,7 @@
                                                 </div>
                                                 <div class="flex items-center gap-2">
                                                     <i class="fas fa-money-bill-wave text-red-500"></i>
-                                                    <span class="font-bold text-lg text-[#fea219]">
+                                                    <span class="font-bold text-lg text-[#e94f1b]">
                                                         {{ number_format($programme->montant_billet, 0, ',', ' ') }} FCFA
                                                     </span>
                                                 </div>
@@ -336,7 +336,7 @@
                                             <div class="flex gap-2 justify-end">
                                                 <button
                                                     onclick="showVehicleDetails({{ $programme->vehicule->id ?? 'null' }}, '{{ $searchParams['date_depart'] ?? date('Y-m-d') }}')"
-                                                    class="bg-white text-[#fea219] border border-[#fea219] px-4 py-2 rounded-lg font-bold hover:bg-gray-50 transition-all duration-300 flex items-center gap-2 vehicle-details-btn"
+                                                    class="bg-white text-[#e94f1b] border border-[#e94f1b] px-4 py-2 rounded-lg font-bold hover:bg-gray-50 transition-all duration-300 flex items-center gap-2 vehicle-details-btn"
                                                     data-vehicle-id="{{ $programme->vehicule->id ?? '' }}"
                                                     data-search-date="{{ $searchParams['date_depart'] ?? date('Y-m-d') }}">
                                                     <i class="fas fa-info-circle"></i>
@@ -344,7 +344,7 @@
                                                 </button>
                                                 @if ($programme->staut_place != 'rempli')
                                                     <a href="{{ route('login') }}"
-                                                        class="bg-[#fea219] text-white px-4 py-2 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 flex items-center gap-2">
+                                                        class="bg-[#e94f1b] text-white px-4 py-2 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 flex items-center gap-2">
                                                         <i class="fas fa-ticket-alt"></i>
                                                         <span class="hidden lg:inline">Réserver</span>
                                                     </a>
@@ -382,7 +382,7 @@
                     <div class="w-full max-w-4xl mx-auto">
                         <div
                             class="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-gradient-to-br from-orange-100 to-green-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
-                            <i class="fas fa-route text-2xl sm:text-3xl lg:text-4xl text-[#fea219]"></i>
+                            <i class="fas fa-route text-2xl sm:text-3xl lg:text-4xl text-[#e94f1b]"></i>
                         </div>
                         <h3 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">Aucun programme
                             trouvé</h3>
@@ -393,12 +393,12 @@
                         </p>
                         <div class="w-full flex flex-col sm:flex-row gap-3 justify-center">
                             <a href="{{ url('/') }}#search-form"
-                                class="bg-[#fea219] text-white px-4 sm:px-6 py-3 rounded-lg sm:rounded-xl font-bold hover:bg-orange-600 transition-all duration-300 transform hover:-translate-y-0.5 shadow-md flex items-center justify-center gap-2 text-sm sm:text-base">
+                                class="bg-[#e94f1b] text-white px-4 sm:px-6 py-3 rounded-lg sm:rounded-xl font-bold hover:bg-orange-600 transition-all duration-300 transform hover:-translate-y-0.5 shadow-md flex items-center justify-center gap-2 text-sm sm:text-base">
                                 <i class="fas fa-search"></i>
                                 Nouvelle recherche
                             </a>
                             <a href="{{ route('programmes.all') }}"
-                                class="bg-white border border-[#fea219] text-[#fea219] px-4 sm:px-6 py-3 rounded-lg sm:rounded-xl font-bold hover:bg-[#fea219] hover:text-white transition-all duration-300 flex items-center justify-center gap-2 text-sm sm:text-base">
+                                class="bg-white border border-[#e94f1b] text-[#e94f1b] px-4 sm:px-6 py-3 rounded-lg sm:rounded-xl font-bold hover:bg-[#e94f1b] hover:text-white transition-all duration-300 flex items-center justify-center gap-2 text-sm sm:text-base">
                                 <i class="fas fa-calendar"></i>
                                 Tous les programmes
                             </a>
@@ -448,16 +448,16 @@
         }
 
         .pagination li a:hover {
-            background-color: #fea219;
-            border-color: #fea219;
+            background-color: #e94f1b;
+            border-color: #e94f1b;
             color: white;
             transform: translateY(-1px);
             box-shadow: 0 2px 8px rgba(254, 162, 25, 0.3);
         }
 
         .pagination li span {
-            background-color: #fea219;
-            border-color: #fea219;
+            background-color: #e94f1b;
+            border-color: #e94f1b;
             color: white;
             box-shadow: 0 2px 8px rgba(254, 162, 25, 0.3);
         }
@@ -578,7 +578,7 @@
                     icon: 'info',
                     title: 'Information',
                     text: 'Aucun véhicule associé à ce programme.',
-                    confirmButtonColor: '#fea219',
+                    confirmButtonColor: '#e94f1b',
                 });
                 return;
             }
@@ -688,7 +688,7 @@
                             <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
                                 <div style="text-align: center;">
                                     <div style="color: #6b7280; font-size: 0.9rem;">Type de rangée</div>
-                                    <div style="color: #fea219; font-weight: bold; font-size: 1.2rem;">${vehicle.type_range}</div>
+                                    <div style="color: #e94f1b; font-weight: bold; font-size: 1.2rem;">${vehicle.type_range}</div>
                                 </div>
                                 <div style="text-align: center;">
                                     <div style="color: #6b7280; font-size: 0.9rem;">Rangées</div>
@@ -732,7 +732,7 @@
                     <p style="color: #6b7280; font-size: 0.9rem;">Détail: ${error.message}</p>
                 </div>
             `,
-                    confirmButtonColor: '#fea219',
+                    confirmButtonColor: '#e94f1b',
                 });
             }
         }
@@ -788,7 +788,7 @@
 
                     const bgColor = isReserved ?
                         'background: linear-gradient(135deg, #ef4444, #dc2626); opacity: 0.7;' :
-                        'background: linear-gradient(135deg, #fea219, #e89116);';
+                        'background: linear-gradient(135deg, #e94f1b, #e89116);';
 
                     const cursorStyle = isReserved ? 'cursor: not-allowed;' : 'cursor: help;';
                     const title = isReserved ? `Place ${seatNumber} (Occupée)` : `Place ${seatNumber}`;
@@ -846,7 +846,7 @@
         <!-- Légende -->
         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 20px; padding: 15px; background: #f9fafb; border-radius: 8px;">
             <div style="display: flex; align-items: center; gap: 8px;">
-                <div style="width: 20px; height: 20px; background: linear-gradient(135deg, #fea219, #e89116); border-radius: 4px;"></div>
+                <div style="width: 20px; height: 20px; background: linear-gradient(135deg, #e94f1b, #e89116); border-radius: 4px;"></div>
                 <span style="color: #4b5563; font-size: 0.9rem;">Côté gauche (disponible)</span>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
@@ -874,7 +874,7 @@
             font-size: 1.5rem;
         }
         .vehicle-details-popup .swal2-close:hover {
-            color: #fea219;
+            color: #e94f1b;
         }
     `;
         document.head.appendChild(style);
