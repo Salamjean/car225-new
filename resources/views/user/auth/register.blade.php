@@ -11,8 +11,8 @@
      <link rel="shortcut icon" href="{{asset('assetsPoster/assets/images/logo_car225.png')}}" />
     <style>
         :root {
-            --primary: #fea219;
-            --primary-dark: #e89100;
+            --primary: #e94f1b;
+            --primary-dark: #e94f1b;
             --secondary: #2ecc71;
             --light: #f8f9fa;
             --dark: #343a40;
