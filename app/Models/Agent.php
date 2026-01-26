@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class Agent extends Authenticatable
 {
-     use HasFactory, Notifiable;
+     use HasFactory, Notifiable, HasApiTokens;
     protected $fillable = [
         'name',
         'prenom',
@@ -19,7 +20,8 @@ class Agent extends Authenticatable
         'commune', 
         'cas_urgence', 
         'compagnie_id',
-        'archived_at'
+        'archived_at',
+        'fcm_token',
     ];
 
     public function compagnie()

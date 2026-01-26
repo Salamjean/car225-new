@@ -302,3 +302,34 @@ Route::get('/validate-compagny-account/{email}', [CompagnieAuthenticate::class, 
 Route::post('/validate-compagny-account/{email}', [CompagnieAuthenticate::class, 'submitDefineAccess'])->name('compagnie.validate');
 Route::get('/validate-agent-account/{email}', [AuthenticateAgent::class, 'defineAccess']);
 Route::post('/validate-agent-account/{email}', [AuthenticateAgent::class, 'submitDefineAccess'])->name('agent.validate');
+
+// Route de callback après paiement CinetPay (pour app mobile)
+Route::get('/payment/callback', function (Illuminate\Http\Request $request) {
+    $transactionId = $request->get('transactionId');
+    $cancel = $request->get('cancel');
+    
+    if ($cancel) {
+        return view('payment.result', [
+            'success' => false,
+            'message' => 'Paiement annulé',
+            'transaction_id' => $transactionId
+        ]);
+    }
+    
+    // Vérifier le paiement
+    $paiement = \App\Models\Paiement::where('transaction_id', $transactionId)->first();
+    
+    if ($paiement && $paiement->status === 'success') {
+        return view('payment.result', [
+            'success' => true,
+            'message' => 'Paiement réussi ! Vos réservations ont été confirmées.',
+            'transaction_id' => $transactionId
+        ]);
+    }
+    
+    return view('payment.result', [
+        'success' => false,
+        'message' => 'En attente de confirmation du paiement...',
+        'transaction_id' => $transactionId
+    ]);
+})->name('payment.callback');

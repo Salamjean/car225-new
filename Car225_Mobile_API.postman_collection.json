@@ -1,0 +1,1164 @@
+{
+    "info": {
+        "_postman_id": "car225-mobile-api",
+        "name": "Car225 Mobile API",
+        "description": "Collection API pour les applications mobiles User et Agent de Car225",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://127.0.0.1:8000/api",
+            "type": "string"
+        },
+        {
+            "key": "user_token",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "agent_token",
+            "value": "",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "🔧 Health Check",
+            "item": [
+                {
+                    "name": "Ping API",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/ping",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "ping"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "👤 USER API",
+            "item": [
+                {
+                    "name": "Auth",
+                    "item": [
+                        {
+                            "name": "Register",
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "if (pm.response.code === 201) {",
+                                            "    var jsonData = pm.response.json();",
+                                            "    pm.collectionVariables.set('user_token', jsonData.token);",
+                                            "}"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ],
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"name\": \"Doe\",\n    \"prenom\": \"John\",\n    \"email\": \"john.doe@example.com\",\n    \"password\": \"password123\",\n    \"password_confirmation\": \"password123\",\n    \"adresse\": \"Abidjan, Cocody\",\n    \"contact\": \"0708091011\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/user/register",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "user",
+                                        "register"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Login",
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "if (pm.response.code === 200) {",
+                                            "    var jsonData = pm.response.json();",
+                                            "    pm.collectionVariables.set('user_token', jsonData.token);",
+                                            "}"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ],
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"email\": \"john.doe@example.com\",\n    \"password\": \"password123\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/user/login",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "user",
+                                        "login"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Logout",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{user_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/user/logout",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "user",
+                                        "logout"
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Profile",
+                    "item": [
+                        {
+                            "name": "Get Profile",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{user_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/user/profile",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "user",
+                                        "profile"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Update Profile",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{user_token}}"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"name\": \"Doe Updated\",\n    \"contact\": \"0700000000\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/user/profile",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "user",
+                                        "profile"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Change Password",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{user_token}}"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"current_password\": \"password123\",\n    \"password\": \"newpassword123\",\n    \"password_confirmation\": \"newpassword123\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/user/change-password",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "user",
+                                        "change-password"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Update FCM Token",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{user_token}}"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"fcm_token\": \"FIREBASE_TOKEN_HERE\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/user/fcm-token",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "user",
+                                        "fcm-token"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Test Notification",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{user_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/user/test-notification",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "user",
+                                        "test-notification"
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Dashboard",
+                    "item": [
+                        {
+                            "name": "Get Dashboard",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{user_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/user/dashboard",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "user",
+                                        "dashboard"
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Reservations",
+                    "item": [
+                        {
+                            "name": "List My Reservations",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{user_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/user/reservations",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "user",
+                                        "reservations"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Get Reservation Details",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{user_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/user/reservations/1",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "user",
+                                        "reservations",
+                                        "1"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Create Reservation",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{user_token}}"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"programme_id\": 1,\n    \"seats\": [1, 2],\n    \"nombre_places\": 2,\n    \"date_voyage\": \"2026-01-30\",\n    \"is_aller_retour\": false,\n    \"passagers\": [\n        {\n            \"nom\": \"Doe\",\n            \"prenom\": \"John\",\n            \"email\": \"john.doe@example.com\",\n            \"telephone\": \"0708091011\",\n            \"urgence\": \"0700000000\",\n            \"seat_number\": 1\n        },\n        {\n            \"nom\": \"Doe\",\n            \"prenom\": \"Jane\",\n            \"email\": \"jane.doe@example.com\",\n            \"telephone\": \"0708091012\",\n            \"urgence\": \"0700000000\",\n            \"seat_number\": 2\n        }\n    ]\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/user/reservations",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "user",
+                                        "reservations"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Cancel Reservation",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{user_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/user/reservations/1",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "user",
+                                        "reservations",
+                                        "1"
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Programmes",
+                    "item": [
+                        {
+                            "name": "Search Programmes",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{user_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/user/programmes/search?point_depart=Abidjan&point_arrive=Yamoussoukro&date_depart=2026-01-27",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "user",
+                                        "programmes",
+                                        "search"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "point_depart",
+                                            "value": "Abidjan"
+                                        },
+                                        {
+                                            "key": "point_arrive",
+                                            "value": "Yamoussoukro"
+                                        },
+                                        {
+                                            "key": "date_depart",
+                                            "value": "2026-01-27"
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Get Programme Details",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{user_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/user/programmes/1",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "user",
+                                        "programmes",
+                                        "1"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "List All Programmes",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{user_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/user/programmes",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "user",
+                                        "programmes"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "List Simple Programmes",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{user_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/user/programmes/simple",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "user",
+                                        "programmes",
+                                        "simple"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "List Aller-Retour Programmes",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{user_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/user/programmes/aller-retour",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "user",
+                                        "programmes",
+                                        "aller-retour"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Get Reserved Seats",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{user_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/user/programmes/1/reserved-seats?date=2026-01-27",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "user",
+                                        "programmes",
+                                        "1",
+                                        "reserved-seats"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "date",
+                                            "value": "2026-01-27"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "🎫 AGENT API",
+            "item": [
+                {
+                    "name": "Auth",
+                    "item": [
+                        {
+                            "name": "Login",
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "if (pm.response.code === 200) {",
+                                            "    var jsonData = pm.response.json();",
+                                            "    pm.collectionVariables.set('agent_token', jsonData.token);",
+                                            "}"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ],
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"email\": \"agent@example.com\",\n    \"password\": \"password123\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/agent/login",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "agent",
+                                        "login"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Logout",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{agent_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/agent/logout",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "agent",
+                                        "logout"
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Profile",
+                    "item": [
+                        {
+                            "name": "Get Profile",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{agent_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/agent/profile",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "agent",
+                                        "profile"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Update Profile",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{agent_token}}"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"contact\": \"0700000001\",\n    \"commune\": \"Cocody\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/agent/profile",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "agent",
+                                        "profile"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Change Password",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{agent_token}}"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"current_password\": \"password123\",\n    \"password\": \"newpassword123\",\n    \"password_confirmation\": \"newpassword123\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/agent/change-password",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "agent",
+                                        "change-password"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Update FCM Token",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{agent_token}}"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"fcm_token\": \"FIREBASE_TOKEN_HERE\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/agent/fcm-token",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "agent",
+                                        "fcm-token"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Test Notification",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{agent_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/agent/test-notification",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "agent",
+                                        "test-notification"
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Dashboard",
+                    "item": [
+                        {
+                            "name": "Get Dashboard",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{agent_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/agent/dashboard",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "agent",
+                                        "dashboard"
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Reservations & Scan",
+                    "item": [
+                        {
+                            "name": "List Company Reservations",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{agent_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/agent/reservations?statut=confirmee",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "agent",
+                                        "reservations"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "statut",
+                                            "value": "confirmee"
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Get Reservation Details",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{agent_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/agent/reservations/1",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "agent",
+                                        "reservations",
+                                        "1"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Search by QR Reference",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{agent_token}}"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"reference\": \"REF-ABC123\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/agent/reservations/search",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "agent",
+                                        "reservations",
+                                        "search"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Confirm Boarding",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{agent_token}}"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"reference\": \"REF-ABC123\",\n    \"vehicule_id\": 1\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/agent/reservations/confirm",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "agent",
+                                        "reservations",
+                                        "confirm"
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Vehicles & Programmes",
+                    "item": [
+                        {
+                            "name": "Get Vehicles",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{agent_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/agent/vehicles",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "agent",
+                                        "vehicles"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Get Today's Programmes",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{agent_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/agent/programmes/today",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "agent",
+                                        "programmes",
+                                        "today"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Get Programme Passengers",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{agent_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/agent/programmes/1/passengers?date=2026-01-27",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "agent",
+                                        "programmes",
+                                        "1",
+                                        "passengers"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "date",
+                                            "value": "2026-01-27"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

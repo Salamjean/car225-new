@@ -45,4 +45,8 @@ return [
         'secret_key' => env('CINETPAY_SECRET_KEY'),
     ],
 
+    'fcm' => [
+        'server_key' => env('FCM_SERVER_KEY'),
+    ],
+
 ];
