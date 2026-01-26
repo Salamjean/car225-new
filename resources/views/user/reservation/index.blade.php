@@ -334,73 +334,74 @@
                                                         </div>
                                                     @endif
                                                 </td>
-                                                <td class="align-middle text-center">
-                                                    <div class="btn-group" role="group">
-                                                        <a href="{{ route('reservations.show', $reservation->id) }}"
-                                                            class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip"
-                                                            title="Voir les détails">
-                                                            <i class="fas fa-eye"></i>
-                                                        </a>
+                                              <td class="align-middle text-center">
+    <div class="btn-group" role="group">
+        <a href="{{ route('reservations.show', $reservation->id) }}"
+            class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip"
+            title="Voir les détails">
+            <i class="fas fa-eye"></i>
+        </a>
 
+        {{-- Bouton PDF ALLER --}}
+        @if($reservation->qr_code_path)
+            @php
+                // Le bouton est désactivé UNIQUEMENT si le statut spécifique de l'aller est 'terminee'
+                // Ou si le statut global est 'terminee' (sécurité supplémentaire)
+                $allerConsomme = $reservation->statut_aller === 'terminee' || $reservation->statut === 'terminee';
+            @endphp
+            
+            <button type="button" 
+                    class="btn btn-sm {{ $allerConsomme ? 'btn-secondary disabled' : 'btn-outline-success' }} download-ticket-btn"
+                    data-id="{{ $reservation->id }}"
+                    data-type="aller"
+                    data-reference="{{ $reservation->reference }}"
+                    data-url="{{ route('reservations.ticket', ['reservation' => $reservation->id, 'type' => 'aller']) }}"
+                    data-toggle="tooltip" 
+                    title="{{ $allerConsomme ? 'Voyage ALLER terminé' : 'Télécharger billet ALLER' }}"
+                    {{ $allerConsomme ? 'disabled' : '' }}
+                    style="{{ $allerConsomme ? 'opacity: 0.6; cursor: not-allowed;' : '' }}">
+                <i class="fas fa-file-pdf"></i>
+                @if($reservation->is_aller_retour)
+                    Aller
+                @else
+                    Billet
+                @endif
+            </button>
+        @endif
 
-                                                        {{-- Bouton PDF ALLER --}}
-                                                        @if($reservation->qr_code_path)
-                                                            @php
-                                                                $allerTerminee = $reservation->statut_aller === 'terminee' || $reservation->statut === 'terminee';
-                                                            @endphp
-                                                            <button type="button" 
-                                                                    class="btn btn-sm {{ $allerTerminee ? 'btn-secondary disabled' : 'btn-outline-success' }} download-ticket-btn"
-                                                                    data-id="{{ $reservation->id }}"
-                                                                    data-type="aller"
-                                                                    data-reference="{{ $reservation->reference }}"
-                                                                    data-passengers='@json(is_array($reservation->passagers) ? $reservation->passagers : json_decode($reservation->passagers, true) ?? [])'
-                                                                    data-url="{{ route('reservations.ticket', ['reservation' => $reservation->id, 'type' => 'aller']) }}"
-                                                                    data-toggle="tooltip" 
-                                                                    title="{{ $allerTerminee ? 'Voyage aller terminé' : 'Télécharger billet ALLER' }}"
-                                                                    {{ $allerTerminee ? 'disabled' : '' }}
-                                                                    style="{{ $allerTerminee ? 'opacity: 0.5; cursor: not-allowed;' : '' }}">
-                                                                <i class="fas fa-file-pdf"></i>
-                                                                @if($reservation->is_aller_retour)
-                                                                    PDF Aller
-                                                                @else
-                                                                    PDF
-                                                                @endif
-                                                            </button>
-                                                        @endif
+        {{-- Bouton PDF RETOUR (seulement si aller-retour) --}}
+        @if($reservation->is_aller_retour)
+            @php
+                // Le bouton est désactivé si le statut spécifique du retour est 'terminee'
+                $retourConsomme = $reservation->statut_retour === 'terminee';
+            @endphp
+            
+            <button type="button" 
+                    class="btn btn-sm {{ $retourConsomme ? 'btn-secondary disabled' : 'btn-outline-warning' }} download-ticket-btn"
+                    data-id="{{ $reservation->id }}"
+                    data-type="retour"
+                    data-reference="{{ $reservation->reference }}"
+                    data-url="{{ route('reservations.ticket', ['reservation' => $reservation->id, 'type' => 'retour']) }}"
+                    data-toggle="tooltip" 
+                    title="{{ $retourConsomme ? 'Voyage RETOUR terminé' : 'Télécharger billet RETOUR' }}"
+                    {{ $retourConsomme ? 'disabled' : '' }}
+                    style="{{ $retourConsomme ? 'opacity: 0.6; cursor: not-allowed;' : '' }}">
+                <i class="fas fa-file-pdf"></i> Retour
+            </button>
+        @endif
 
-                                                        {{-- Bouton PDF RETOUR (seulement si aller-retour) --}}
-                                                        @if($reservation->is_aller_retour && $reservation->statut == 'confirmee')
-                                                            @php
-                                                                $retourTerminee = $reservation->statut_retour === 'terminee';
-                                                            @endphp
-                                                            <button type="button" 
-                                                                    class="btn btn-sm {{ $retourTerminee ? 'btn-secondary disabled' : 'btn-outline-warning' }} download-ticket-btn"
-                                                                    data-id="{{ $reservation->id }}"
-                                                                    data-type="retour"
-                                                                    data-reference="{{ $reservation->reference }}"
-                                                                    data-passengers='@json(is_array($reservation->passagers) ? $reservation->passagers : json_decode($reservation->passagers, true) ?? [])'
-                                                                    data-url="{{ route('reservations.ticket', ['reservation' => $reservation->id, 'type' => 'retour']) }}"
-                                                                    data-toggle="tooltip" 
-                                                                    title="{{ $retourTerminee ? 'Voyage retour terminé' : 'Télécharger billet RETOUR' }}"
-                                                                    {{ $retourTerminee ? 'disabled' : '' }}
-                                                                    style="{{ $retourTerminee ? 'opacity: 0.5; cursor: not-allowed;' : '' }}">
-                                                                <i class="fas fa-file-pdf"></i> PDF Retour
-                                                            </button>
-                                                        @endif
-
-
-                                                        @if($reservation->statut == 'en_attente')
-                                                            <button type="button"
-                                                                class="btn btn-sm btn-outline-danger cancel-reservation-btn"
-                                                                data-id="{{ $reservation->id }}"
-                                                                data-reference="{{ $reservation->reference }}"
-                                                                data-cancel-url="#"
-                                                                data-bs-toggle="tooltip" title="Annuler la réservation">
-                                                                <i class="fas fa-times"></i>
-                                                            </button>
-                                                        @endif
-                                                    </div>
-                                                </td>
+        @if($reservation->statut == 'en_attente')
+            <button type="button"
+                class="btn btn-sm btn-outline-danger cancel-reservation-btn"
+                data-id="{{ $reservation->id }}"
+                data-reference="{{ $reservation->reference }}"
+                data-cancel-url="#" {{-- Assure-toi de mettre ta route ici --}}
+                data-bs-toggle="tooltip" title="Annuler la réservation">
+                <i class="fas fa-times"></i>
+            </button>
+        @endif
+    </div>
+</td>
                                             </tr>
                                         @endforeach
                                     </tbody>
@@ -902,82 +903,18 @@
                 }
             });
 
-            // Gérer le téléchargement des tickets
+            // Gérer le téléchargement des tickets (téléchargement direct)
             document.addEventListener('click', function(e) {
                 const button = e.target.closest('.download-ticket-btn');
                 
                 if (button) {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log('Bouton téléchargement ticket cliqué');
-                    
-                    const passengersData = button.getAttribute('data-passengers');
-                    const reference = button.getAttribute('data-reference');
                     const baseUrl = button.getAttribute('data-url');
                     
-                    let passengers;
-                    try {
-                        passengers = JSON.parse(passengersData);
-                    } catch (error) {
-                        console.error('Erreur de parsing:', error);
-                        return;
+                    if (baseUrl) {
+                        window.open(baseUrl, '_blank');
                     }
-                    
-                    let htmlContent = `
-                        <div style="text-align: left;">
-                            <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
-                                <h5 style="margin: 0; font-weight: bold;">
-                                    <i class="fas fa-file-pdf"></i> Télécharger un Ticket
-                                </h5>
-                                <p style="margin: 5px 0 0 0; font-size: 0.9rem; opacity: 0.9;">
-                                    Réservation: ${reference}
-                                </p>
-                            </div>
-                            <p class="text-center mb-4 text-muted">Veuillez sélectionner le passager pour lequel vous souhaitez télécharger le ticket.</p>
-                            <div class="list-group">
-                    `;
-                    
-                    // Ajouter le bouton pour "Tous les tickets" (optionnel, ou juste le premier passager)
-                    // Pour l'instant on liste chaque passager
-                    passengers.forEach((passenger) => {
-                        const seatParam = passenger.seat_number ? `?seat_number=${passenger.seat_number}` : '';
-                        const downloadUrl = `${baseUrl}${seatParam}`;
-                        
-                        htmlContent += `
-                            <a href="${downloadUrl}" target="_blank" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3 mb-2 border rounded shadow-sm hover-bg-light" style="transition: all 0.2s;">
-                                <div>
-                                    <h6 class="mb-1 fw-bold text-dark">
-                                        <i class="fas fa-user text-success me-2"></i>${passenger.prenom} ${passenger.nom}
-                                    </h6>
-                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill">
-                                        Place N° ${passenger.seat_number || 'N/A'}
-                                    </span>
-                                </div>
-                                <span class="btn btn-sm btn-outline-success rounded-circle" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
-                                    <i class="fas fa-download"></i>
-                                </span>
-                            </a>
-                        `;
-                    });
-                    
-                    htmlContent += `
-                            </div>
-                            <div class="mt-3 text-center">
-                                <a href="${baseUrl}" target="_blank" class="btn btn-sm btn-secondary text-white">
-                                    <i class="fas fa-file-archive me-1"></i> Ticket Global
-                                </a>
-                            </div>
-                        </div>
-                    `;
-                    
-                    Swal.fire({
-                        html: htmlContent,
-                        width: 600,
-                        padding: '2rem',
-                        showConfirmButton: false,
-                        showCloseButton: true,
-                        focusConfirm: false
-                    });
                 }
             });
 

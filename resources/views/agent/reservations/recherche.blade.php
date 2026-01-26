@@ -66,6 +66,44 @@
                         <p class="text-muted">Format: RES-AAAAMMJJ-XXXXXX</p>
                     </div>
 
+                    <!-- Historique des scans récents -->
+                    <div class="mt-5">
+                        <h6 class="section-title">
+                            <i class="material-icons mr-2" style="vertical-align: middle;">history</i>
+                            Derniers passagers scannés
+                        </h6>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Réf</th>
+                                        <th>Passager</th>
+                                        <th>Trajet</th>
+                                        <th>Heure du scan</th>
+                                        <th>Statut</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($derniersScans as $s)
+                                        <tr>
+                                            <td><span class="badge badge-info">{{ $s->reference }}</span></td>
+                                            <td>{{ $s->passager_prenom }} {{ $s->passager_nom }}</td>
+                                            <td>{{ $s->programme->point_depart }} → {{ $s->programme->point_arrive }}</td>
+                                            <td>{{ \Carbon\Carbon::parse($s->embarquement_scanned_at)->format('H:i') }}</td>
+                                            <td>
+                                                <span class="badge badge-success">Scanné</span>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted">Aucun scan récent (aujourd'hui)</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>

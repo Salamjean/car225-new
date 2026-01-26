@@ -28,6 +28,7 @@ class Programme extends Model
         'type_programmation',
         'jours_recurrence',
         'is_aller_retour',
+        'programme_retour_id',
     ];
 
     protected $casts = [
@@ -83,6 +84,11 @@ class Programme extends Model
     public function convoyeur()
     {
         return $this->belongsTo(Personnel::class, 'convoyeur_id');
+    }
+
+    public function programmeRetour()
+    {
+        return $this->belongsTo(Programme::class, 'programme_retour_id');
     }
 
     /**

@@ -78,7 +78,7 @@
                                 <span>Rechercher un programme</span>
                             </button>
                             <button type="button" onclick="openProgramsListModal()"
-                                class="bg-white text-[#e94f1b] border-2 border-[#e94f1b] px-6 sm:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl font-bold transition-all duration-300 transform hover:-translate-y-1 shadow-md hover:shadow-xl flex items-center justify-center gap-3 text-sm sm:text-base hover:bg-[#e94f1b] hover:text-white group">
+                                class="bg-white text-[#e94f1b] border-2 border-[#e94f1b] px-6 sm:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl font-bold transition-all duration-300 transform hover:-translate-y-1 shadow-md hover:shadow-xl flex items-center justify-center gap-3 text-sm sm:text-base hover:bg-[#e94f1b]">
                                 <i class="fas fa-list group-hover:text-white transition-colors"></i>
                                 <span>Voir tous les programmes</span>
                             </button>
@@ -771,12 +771,18 @@
                 </div>
             `;
             
-            // Reset choix
-            userWantsAllerRetour = false;
-            document.getElementById('allerRetourChoice').value = 'aller_simple';
-            updateAllerRetourPriceDisplay(program);
-            document.getElementById('returnDateSection').classList.add('hidden');
+            // Détection automatique du choix basé sur la recherche
+            const searchType = new URLSearchParams(window.location.search).get('is_aller_retour');
+            if (searchType === '1') {
+                userWantsAllerRetour = true;
+                document.getElementById('allerRetourChoice').value = 'aller_retour';
+            } else {
+                userWantsAllerRetour = false;
+                document.getElementById('allerRetourChoice').value = 'aller_simple';
+            }
             
+            updateAllerRetourPriceDisplay(program);
+            onAllerRetourChoiceChange(); // Mettre à jour l'affichage dynamique (dates, etc)
             modal.classList.remove('hidden');
         }
 function onAllerRetourChoiceChange() {
@@ -1594,6 +1600,8 @@ function onAllerRetourChoiceChange() {
                                 seats: sortedSeats,
                                 nombre_places: selectedNumberOfPlaces,
                                 date_voyage: dateVoyage,
+                                is_aller_retour: window.userChoseAllerRetour,
+                                date_retour: window.selectedReturnDate,
                                 passagers: passengers
                             })
                         });
@@ -1787,8 +1795,9 @@ return `
         }
 
        function selectProgramFromList(program) {
-            // C'est comme initiateReservationProcess mais depuis la liste
-            initiateReservationProcess(program.id, null);
+            // Utiliser la date de recherche si disponible
+            const searchDate = new URLSearchParams(window.location.search).get('date_depart');
+            initiateReservationProcess(program.id, searchDate);
         }
 
 

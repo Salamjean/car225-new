@@ -114,35 +114,34 @@ class PaymentController extends Controller
                 'statut_aller' => 'confirmee', // Initialiser le statut aller
             ]);
 
-            // Générer aussi le QR code RETOUR si c'est un aller-retour
-            if ($reservation->is_aller_retour && $reservation->date_retour && $reservation->programme_retour_id) {
-                $dateRetourStr = $reservation->date_retour instanceof \Carbon\Carbon
-                    ? $reservation->date_retour->format('Y-m-d')
-                    : date('Y-m-d', strtotime($reservation->date_retour));
+            $programmeRetour = null;
 
-                $qrCodeRetourData = $resController->generateAndSaveQRCode(
-                    $reservation->reference . '-RETOUR',
-                    $reservation->id,
-                    $dateRetourStr,
-                    $reservation->user_id,
-                    true // Indique qu'il s'agit d'un QR retour
-                );
-
+            // Mettre à jour le statut retour si c'est un aller-retour
+            if ($reservation->is_aller_retour) {
                 $reservation->update([
-                    'qr_code_retour' => $qrCodeRetourData['base64'],
-                    'qr_code_retour_path' => $qrCodeRetourData['path'],
-                    'qr_code_retour_data' => $qrCodeRetourData['qr_data'],
-                    'statut_retour' => 'confirmee', // Initialiser le statut retour
+                    'statut_retour' => 'confirmee', 
                 ]);  
+
+                // Essayer de trouver le programme retour
+                $programmeRetour = $reservation->programmeRetour ?? 
+                                  ($reservation->programme_retour_id ? Programme::find($reservation->programme_retour_id) : null);
+                
+                // Si toujours pas de programme retour (cas rare), on peut imaginer un fallback ou laisser null
+                // La notification gérera le cas null pour le PDF
             }
 
+            // ENVOYER UN SEUL EMAIL AVEC LES DEUX PIECES JOINTES SI BESOIN
+            // On passe le MEME QR code ($qrCodeData['base64']) pour l'aller et le retour
             $resController->sendReservationEmail(
                 $reservation,
                 $reservation->programme,
-                $qrCodeData['base64'],
+                $qrCodeData['base64'], // QR Code Aller
                 $reservation->passager_email,
                 $reservation->getPassagerNomCompletAttribute(),
-                $reservation->seat_number
+                $reservation->seat_number,
+                $reservation->is_aller_retour ? 'ALLER' : 'ALLER SIMPLE',
+                $reservation->is_aller_retour ? $qrCodeData['base64'] : null, // Même QR Code pour le retour
+                $programmeRetour
             );
 
             // Mettre à jour le statut du programme

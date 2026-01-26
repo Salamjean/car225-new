@@ -34,7 +34,7 @@ class ReservationController extends Controller
         return str_replace($accents, $noAccents, $term);
     }
 
-    public function index(Request $request)
+   public function index(Request $request)
     {
         $user = Auth::user();
 
@@ -43,12 +43,23 @@ class ReservationController extends Controller
             ->where('user_id', $user->id)
             ->orderBy('created_at', 'desc');
 
-        // Par défaut, n'afficher que les confirmées si pas de filtre
+        // --- CORRECTION ICI ---
+        // J'ai commenté ce bloc. Avant, il cachait tout ce qui n'était pas "confirmee".
+        // En le retirant, les réservations "terminee", "annulee" et "en_attente" apparaitront aussi.
+        /* 
         if (!$request->filled('statut')) {
             $query->where('statut', 'confirmee');
         }
+        */
+        
+        // Si vous voulez masquer les "annulées" par défaut mais garder "terminee" et "confirmee", décommentez ceci :
+        /*
+        if (!$request->filled('statut')) {
+             $query->where('statut', '!=', 'annulee');
+        }
+        */
 
-        // Appliquer les filtres
+        // Appliquer les filtres (le reste ne change pas)
         if ($request->filled('reference')) {
             $query->where('reference', 'like', '%' . $request->reference . '%');
         }
@@ -141,26 +152,8 @@ class ReservationController extends Controller
                  $programme = $reservation->programme;
             }
 
-            // Vérifier et générer QR retour si manquant
-            if (empty($reservation->qr_code_retour)) {
-                $dateRetourStr = $dateVoyage instanceof \Carbon\Carbon ? $dateVoyage->format('Y-m-d') : $dateVoyage;
-                $qrCodeData = $this->generateAndSaveQRCode(
-                    $reservation->reference . '-RETOUR',
-                    $reservation->id,
-                    $dateRetourStr,
-                    $reservation->user_id,
-                    true // isRetour
-                );
-                
-                $reservation->update([
-                    'qr_code_retour' => $qrCodeData['base64'],
-                    'qr_code_retour_path' => $qrCodeData['path'],
-                    'qr_code_retour_data' => $qrCodeData['qr_data'],
-                    'statut_retour' => $reservation->statut_retour ?: 'confirmee'
-                ]);
-            }
-            
-            $qrCodeBase64 = $reservation->qr_code_retour;
+            // ON UTILISE LE MEME QR CODE QUE POUR L'ALLER
+            $qrCodeBase64 = $reservation->qr_code;
             $ticketType = 'RETOUR';
             $heureDepart = $programme ? $programme->heure_depart : 'N/A';
 
@@ -176,8 +169,7 @@ class ReservationController extends Controller
                     $reservation->reference,
                     $reservation->id,
                     $dateVoyageStr,
-                    $reservation->user_id,
-                    false // isRetour
+                    $reservation->user_id
                 );
                 
                 $reservation->update([
@@ -188,7 +180,7 @@ class ReservationController extends Controller
             }
 
             $qrCodeBase64 = $reservation->qr_code;
-            $ticketType = 'ALLER';
+            $ticketType = $reservation->is_aller_retour ? 'ALLER' : 'ALLER SIMPLE';
             $heureDepart = $programme->heure_depart;
         }
 
@@ -662,7 +654,15 @@ class ReservationController extends Controller
         }
 
         try {
-             $isAllerRetour = $request->boolean('is_aller_retour'); 
+              $isAllerRetour = $request->boolean('is_aller_retour'); 
+              $dateRetour = $request->input('date_retour');
+
+              if ($isAllerRetour && !$dateRetour) {
+                  return response()->json([
+                      'success' => false,
+                      'message' => 'La date de retour est requise pour un aller-retour.'
+                  ], 422);
+              }
             // Calculer le prix par place
             $prixUnitaire = $programme->montant_billet;
             if ($programme->is_aller_retour) {
@@ -748,7 +748,9 @@ class ReservationController extends Controller
                     $reservationData['statut_retour'] = 'en_attente';
                     
                     // Lier au programme retour si disponible
-                    if ($programme->programmeRetour) {
+                    if ($programme->programme_retour_id) {
+                        $reservationData['programme_retour_id'] = $programme->programme_retour_id;
+                    } elseif ($programme->programmeRetour) {
                         $reservationData['programme_retour_id'] = $programme->programmeRetour->id;
                     }
                 } else {
@@ -908,20 +910,24 @@ class ReservationController extends Controller
     /**
      * Générer et sauvegarder le QR Code avec Endroid (version simplifiée)
      */
-    public function generateAndSaveQRCode(string $reference, int $reservationId, string $dateVoyage, int $userId = null, bool $isRetour = false): array
+    public function generateAndSaveQRCode(string $reference, int $reservationId, string $dateVoyage, int $userId = null)
     {
         try {
-            // Données à encoder dans le QR Code
+            // Créer les données du QR Code (format JSON sécurisé)
             $qrData = [
+                'user_id' => $userId,
                 'reference' => $reference,
-                'reservation_id' => $reservationId,
-                'user_id' => $userId ?: Auth::id(),
-                'date_voyage' => $dateVoyage,
-                'is_retour' => $isRetour, // ✅ Différencier aller/retour
                 'timestamp' => time(),
-                'verification_hash' => hash('sha256', $reference . $reservationId . $dateVoyage . config('app.key'))
+                'date_voyage' => $dateVoyage,
+                'reservation_id' => $reservationId,
             ];
 
+            // Ajouter un hash de vérification pour éviter la falsification
+            $qrData['verification_hash'] = hash(
+                'sha256',
+                $reference . $reservationId . $dateVoyage . config('app.key')
+            );
+            
             $qrContent = json_encode($qrData);
 
             // Créer le QR Code (méthode simplifiée)
@@ -977,7 +983,7 @@ class ReservationController extends Controller
     /**
      * Envoyer l'email de confirmation avec PDF et QR Code
      */
-    public function sendReservationEmail(Reservation $reservation, Programme $programme, string $qrCodeBase64, string $recipientEmail = null, string $recipientName = null, int $seatNumber = null): void
+    public function sendReservationEmail(Reservation $reservation, Programme $programme, string $qrCodeBase64, string $recipientEmail = null, string $recipientName = null, int $seatNumber = null, string $ticketType = null, string $qrCodeRetourBase64 = null, Programme $programmeRetour = null): void
     {
         try {
             $email = $recipientEmail ?: (Auth::user()->email ?? null);
@@ -997,7 +1003,7 @@ class ReservationController extends Controller
 
             // Envoyer la notification à l'email spécifié
             // Note: On peut utiliser Notification::route('mail', $email) pour envoyer à une adresse arbitraire
-            Notification::route('mail', $email)->notify(new ReservationConfirmeeNotification($reservation, $programme, $qrCodeBase64, $name, $seatNumber));
+            Notification::route('mail', $email)->notify(new ReservationConfirmeeNotification($reservation, $programme, $qrCodeBase64, $name, $seatNumber, $ticketType, $qrCodeRetourBase64, $programmeRetour));
 
             Log::info('Notification envoyée avec succès');
         } catch (\Exception $e) {
@@ -1190,75 +1196,115 @@ class ReservationController extends Controller
                 ], 400);
             }
 
-            // Vérifier la date du voyage
+            // --- NOUVELLE LOGIQUE DE VALIDATION STRICTE (Aller vs Retour) ---
             $today = date('Y-m-d');
             $voyageDate = date('Y-m-d', strtotime($reservation->date_voyage));
+            $retourDate = $reservation->date_retour ? date('Y-m-d', strtotime($reservation->date_retour)) : null;
 
-            if ($voyageDate < $today) {
-                Log::info('Voyage passé vérifié', [
-                    'voyage_date' => $voyageDate,
-                    'today' => $today
-                ]);
+            // Déterminer quel trajet on vérifie
+            $trajetVerifie = 'ALLER';
+            $messageValidation = 'Voyage Aller Valide';
+            $statutConcerne = $reservation->statut_aller;
+            
+            // Si c'est un aller-retour et qu'on est à la date du retour
+            if ($reservation->is_aller_retour && $retourDate && $today == $retourDate) {
+                $trajetVerifie = 'RETOUR';
+                $messageValidation = 'Voyage Retour Valide';
+                $statutConcerne = $reservation->statut_retour;
+            }
+
+            // VALIDATION STRICTE DE LA DATE
+            if ($trajetVerifie === 'ALLER' && $today != $voyageDate) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Voyage déjà effectué',
-                    'code' => 'EXPIRED',
-                    'reservation' => [
-                        'reference' => $reservation->reference,
-                        'date_voyage' => $reservation->date_voyage,
-                        'statut' => 'expired'
-                    ]
+                    'message' => 'Le scan n\'est possible que le jour du voyage aller (' . date('d/m/Y', strtotime($voyageDate)) . ')',
+                    'code' => 'INVALID_DATE',
+                    'reservation' => ['date_voyage' => $voyageDate]
+                ], 400);
+            }
+
+            if ($trajetVerifie === 'RETOUR' && $today != $retourDate) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Le scan n\'est possible que le jour du voyage retour (' . date('d/m/Y', strtotime($retourDate)) . ')',
+                    'code' => 'INVALID_DATE',
+                    'reservation' => ['date_retour' => $retourDate]
+                ], 400);
+            }
+
+            // VÉRIFICATION DU STATUT (doit être confirmée)
+            if ($statutConcerne != 'confirmee') {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Le billet $trajetVerifie n'est plus à l'état 'confirmée' (Statut: $statutConcerne)",
+                    'code' => 'INVALID_STATUS',
+                    'trajet' => $trajetVerifie
+                ], 400);
+            }
+
+            // Vérifier si déjà utilisé (scanné) pour ce trajet
+            // Note: Il faudrait idéalement une colonne `scanned_at_aller` et `scanned_at_retour`.
+            // Pour l'instant on utilise statut_aller / statut_retour = 'terminee'
+            if ($statutConcerne === 'terminee') {
+                 return response()->json([
+                    'success' => false,
+                    'message' => "Billet $trajetVerifie déjà utilisé",
+                    'code' => 'ALREADY_USED',
+                    'trajet' => $trajetVerifie
                 ], 400);
             }
 
             // Si tout est bon, retourner les informations complètes
             $places = json_decode($reservation->places, true) ?? [];
 
-            Log::info('QR Code vérifié avec succès', [
+            Log::info("QR Code ($trajetVerifie) vérifié avec succès", [
                 'reference' => $reservation->reference,
                 'user' => $reservation->user->name,
-                'valid' => true
+                'trajet' => $trajetVerifie
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'QR Code valide',
+                'message' => $messageValidation,
                 'code' => 'VALID',
+                'trajet_verifie' => $trajetVerifie, // Indiquer au scanner quel trajet est validé
                 'reservation' => [
                     'reference' => $reservation->reference,
-                    'statut' => $reservation->statut,
+                    // Retourner le statut global mais aussi les détails
+                    'statut_global' => $reservation->statut,
+                    'statut_aller' => $reservation->statut_aller,
+                    'statut_retour' => $reservation->statut_retour,
+                    
                     'date_voyage' => $reservation->date_voyage,
+                    'date_retour' => $reservation->date_retour,
                     'date_reservation' => $reservation->date_reservation,
                     'user' => [
                         'id' => $reservation->user->id,
                         'name' => $reservation->user->name,
                         'email' => $reservation->user->email,
                     ],
+                    // On retourne le programme pertinent selon le trajet ?
+                    // Pour simplifier, on retourne le programme ALLER ici, le front peut afficher
                     'programme' => [
                         'id' => $reservation->programme->id,
                         'point_depart' => $reservation->programme->point_depart,
                         'point_arrive' => $reservation->programme->point_arrive,
                         'heure_depart' => $reservation->programme->heure_depart,
                         'heure_arrive' => $reservation->programme->heure_arrive,
-                        'durer_parcours' => $reservation->programme->durer_parcours,
                         'compagnie' => $reservation->programme->compagnie->name ?? 'Inconnue',
                         'vehicule' => [
-                            'marque' => $reservation->programme->vehicule->marque ?? 'Inconnue',
-                            'modele' => $reservation->programme->vehicule->modele ?? 'Inconnue',
                             'immatriculation' => $reservation->programme->vehicule->immatriculation ?? 'Inconnue',
                         ]
                     ],
                     'details' => [
-                        'nombre_places' => $reservation->nombre_places,
-                        'places' => $places,
-                        'montant_total' => $reservation->montant,
+                        'places' => $reservation->seat_number, // Ou tableau si groupe
                         'montant_formatte' => number_format((float) $reservation->montant, 0, ',', ' ') . ' FCFA'
                     ],
                     'verification' => [
                         'timestamp' => now()->toDateTimeString(),
                         'scanned_at' => $request->get('scan_time', now()->toDateTimeString()),
                         'is_valid' => true,
-                        'is_used' => false
+                        'trajet_detecte' => $trajetVerifie
                     ]
                 ]
             ]);
@@ -1287,30 +1333,58 @@ class ReservationController extends Controller
             'agent_id' => 'required|integer',
             'scan_location' => 'nullable|string',
             'scan_time' => 'nullable|date',
+            'trajet' => 'nullable|string' // ALLER ou RETOUR
         ]);
 
         try {
             $reservation = Reservation::where('reference', $request->reference)
                 ->firstOrFail();
 
-            // Marquer comme scanné/embarqué
-            $reservation->update([
+            $trajet = $request->get('trajet', 'ALLER');
+            
+            // Préparer les données de mise à jour
+            $updateData = [
                 'embarquement_scanned_at' => $request->get('scan_time', now()),
                 'embarquement_agent_id' => $request->agent_id,
                 'embarquement_location' => $request->scan_location,
                 'embarquement_status' => 'boarded',
-            ]);
+            ];
 
-            Log::info('QR Code marqué comme utilisé:', [
+            // Mettre à jour le statut spécifique au trajet
+            if ($trajet === 'RETOUR' && $reservation->is_aller_retour) {
+                $updateData['statut_retour'] = 'terminee';
+                
+                // Si l'aller est DÉJÀ terminé, alors tout est terminé
+                if ($reservation->statut_aller === 'terminee') {
+                    $updateData['statut'] = 'terminee';
+                }
+            } else {
+                // C'est un aller (ou aller simple)
+                $updateData['statut_aller'] = 'terminee';
+                
+                // Si c'est un aller simple, c'est fini
+                if (!$reservation->is_aller_retour) {
+                    $updateData['statut'] = 'terminee';
+                } 
+                // Si c'est un aller-retour, on vérifie si le retour est déjà fait (cas rare mais possible si scan désordre ou correction)
+                elseif ($reservation->statut_retour === 'terminee') {
+                    $updateData['statut'] = 'terminee';
+                }
+            }
+
+            // Marquer comme scanné/embarqué
+            $reservation->update($updateData);
+
+            Log::info("QR Code ($trajet) marqué comme utilisé:", [
                 'reference' => $reservation->reference,
-                'agent_id' => $request->agent_id,
-                'scan_time' => $request->get('scan_time', now())
+                'agent_id' => $request->agent_id
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Passager marqué comme embarqué',
+                'message' => "Passager marqué comme embarqué ($trajet)",
                 'reference' => $reservation->reference,
+                'trajet_valide' => $trajet,
                 'embarquement_time' => $reservation->embarquement_scanned_at
             ]);
         } catch (\Exception $e) {
@@ -1338,30 +1412,34 @@ class ReservationController extends Controller
             'mark_as_used' => 'boolean',
         ]);
 
-        // D'abord vérifier le QR Code
+        // 1. D'abord vérifier le QR Code
         $verificationResponse = $this->verifyQRCode($request);
 
         if (!$verificationResponse->getData()->success) {
             return $verificationResponse;
         }
 
-        // Si la vérification est réussie et qu'on veut marquer comme utilisé
+        $verificationData = $verificationResponse->getData();
+        $trajetDetecte = $verificationData->trajet_verifie ?? 'ALLER';
+
+        // 2. Si la vérification est réussie et qu'on veut marquer comme utilisé
         if ($request->get('mark_as_used', false)) {
-            $reference = $verificationResponse->getData()->reservation->reference;
+            $reference = $verificationData->reservation->reference;
 
             $markResponse = $this->markQRCodeUsed(new Request([
                 'reference' => $reference,
                 'agent_id' => $request->agent_id,
                 'scan_location' => $request->scan_location,
                 'scan_time' => now(),
+                'trajet' => $trajetDetecte
             ]));
 
             if ($markResponse->getData()->success) {
-                $verificationData = $verificationResponse->getData();
                 $verificationData->embarquement = [
                     'marked' => true,
                     'time' => now()->toDateTimeString(),
-                    'agent_id' => $request->agent_id
+                    'agent_id' => $request->agent_id,
+                    'trajet' => $trajetDetecte
                 ];
 
                 return response()->json($verificationData);

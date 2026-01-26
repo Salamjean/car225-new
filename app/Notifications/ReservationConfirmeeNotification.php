@@ -20,17 +20,23 @@ class ReservationConfirmeeNotification extends Notification
     public $pdfContent;
     public $recipientName;
     public $seatNumber;
+    public $ticketType;
+    public $qrCodeRetourBase64;
+    public $programmeRetour;
 
     /**
      * Create a new notification instance.
      */
-    public function __construct(Reservation $reservation, Programme $programme, string $qrCodeBase64, string $recipientName = null, int $seatNumber = null)
+    public function __construct(Reservation $reservation, Programme $programme, string $qrCodeBase64, string $recipientName = null, int $seatNumber = null, string $ticketType = null, string $qrCodeRetourBase64 = null, Programme $programmeRetour = null)
     {
         $this->reservation = $reservation;
         $this->programme = $programme;
         $this->qrCodeBase64 = $qrCodeBase64;
         $this->recipientName = $recipientName;
         $this->seatNumber = $seatNumber;
+        $this->ticketType = $ticketType;
+        $this->qrCodeRetourBase64 = $qrCodeRetourBase64;
+        $this->programmeRetour = $programmeRetour;
     }
 
     /**
@@ -65,8 +71,8 @@ class ReservationConfirmeeNotification extends Notification
             'seatNumber' => $this->seatNumber,
         ];
 
-        // Générer le PDF
-        $pdf = $this->generateTicketPDF();
+        // Générer le PDF Aller (ou Aller Simple)
+        $pdfAller = $this->generateTicketPDF($this->programme, $this->qrCodeBase64, $this->ticketType ?: ($this->reservation->is_aller_retour ? 'ALLER' : 'ALLER SIMPLE'));
 
         // Envoyer l'email
         $mail = (new MailMessage)
@@ -74,10 +80,18 @@ class ReservationConfirmeeNotification extends Notification
             ->from('contact@maelysimo.com', 'CAR 225')
             ->view('emails.reservation_confirmee', $emailData);
 
-        // Attacher le PDF
-        $mail->attachData($pdf, 'Billet_' . $this->reservation->reference . '.pdf', [
+        // Attacher le PDF Aller
+        $mail->attachData($pdfAller, 'Billet_ALLER_' . $this->reservation->reference . '.pdf', [
             'mime' => 'application/pdf',
         ]);
+
+        // Si c'est un aller-retour avec ticket retour, attacher le PDF Retour
+        if ($this->qrCodeRetourBase64) {
+            $pdfRetour = $this->generateTicketPDF($this->programmeRetour ?: $this->programme, $this->qrCodeRetourBase64, 'RETOUR');
+            $mail->attachData($pdfRetour, 'Billet_RETOUR_' . $this->reservation->reference . '.pdf', [
+                'mime' => 'application/pdf',
+            ]);
+        }
 
         return $mail;
     }
@@ -85,33 +99,36 @@ class ReservationConfirmeeNotification extends Notification
     /**
      * Générer le PDF du ticket
      */
-    private function generateTicketPDF()
+    private function generateTicketPDF($programme, $qrCodeBase64, $ticketType)
     {
         $prixUnitaire = (float) ($this->programme->montant_billet);
-        $tripType = $this->programme->is_aller_retour ? 'Aller-Retour' : 'Aller Simple';
+        $tripType = $this->reservation->is_aller_retour ? 'Aller-Retour' : 'Aller Simple';
 
         $data = [
             'reservation' => $this->reservation,
-            'programme' => $this->programme,
-            'qrCodeBase64' => $this->qrCodeBase64,
+            'programme' => $programme,
+            'qrCodeBase64' => $qrCodeBase64,
             'user' => $this->reservation->user,
-            'compagnie' => $this->programme->compagnie ?? null,
+            'compagnie' => $programme->compagnie ?? $this->programme->compagnie,
             'dateGeneration' => now(),
             'tripType' => $tripType,
+            'ticketType' => $ticketType,
+            'dateVoyage' => $ticketType === 'RETOUR' ? $this->reservation->date_retour : $this->reservation->date_voyage,
+            'heureDepart' => $programme->heure_depart,
             'prixUnitaire' => $prixUnitaire,
-            'prixTotalIndividuel' => $this->programme->is_aller_retour ? $prixUnitaire * 2 : $prixUnitaire,
-            'isAllerRetour' => (bool) $this->programme->is_aller_retour,
+            'prixTotalIndividuel' => (float)$this->reservation->montant,
+            'isAllerRetour' => (bool) $this->reservation->is_aller_retour,
             'seatNumber' => $this->seatNumber,
         ];
 
         return Pdf::loadView('pdf.ticket', $data)
             ->setPaper('a4', 'portrait')
             ->setOptions([
-                    'defaultFont' => 'sans-serif',
-                    'isHtml5ParserEnabled' => true,
-                    'isRemoteEnabled' => true,
-                    'dpi' => 150,
-                ])
+                'defaultFont' => 'sans-serif',
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+                'dpi' => 150,
+            ])
             ->output();
     }
 
