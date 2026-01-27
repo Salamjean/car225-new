@@ -238,8 +238,8 @@
                                                         </div>
                                                         <div>
                                                             <span class="fw-bold">
-                                                                {{ $reservation->programme->point_depart }} →
-                                                                {{ $reservation->programme->point_arrive }}
+                                                                {{ $reservation->programme->point_depart ?? 'N/A' }} →
+                                                                {{ $reservation->programme->point_arrive ?? 'N/A'}}
                                                             </span>
                                                             <div class="small text-muted">
                                                                 {{ $reservation->programme->compagnie->name ?? 'N/A' }}
@@ -256,7 +256,7 @@
                                                         <div>
                                                             <span class="fw-bold">{{ $reservation->date_voyage }}</span>
                                                             <div class="small text-muted">
-                                                                {{ date('H:i', strtotime($reservation->programme->heure_depart)) }}
+                                                                {{ date('H:i', strtotime($reservation->programme->heure_depart ?? 'N/A')) }}
                                                             </div>
                                                         </div>
                                                     </div>
