@@ -29,6 +29,7 @@ class Programme extends Model
         'jours_recurrence',
         'is_aller_retour',
         'programme_retour_id',
+        
     ];
 
     protected $casts = [

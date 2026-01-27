@@ -396,106 +396,6 @@
                                 </div>
                             </div>
 
-                            <!-- Section Configuration Retour (cachée par défaut) -->
-                            <div id="retour_config_fields" class="hidden space-y-4 mt-4">
-                                <div class="bg-green-50 p-6 rounded-xl border-2 border-green-200">
-                                    <div class="flex items-center mb-4">
-                                        <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center mr-3">
-                                            <i class="fas fa-undo text-white"></i>
-                                        </div>
-                                        <div>
-                                            <h3 class="font-bold text-gray-900">Configuration du Programme Retour</h3>
-                                            <p class="text-sm text-gray-600">Itinéraire inversé: <span id="retour_itineraire_display" class="font-semibold text-green-700"></span></p>
-                                        </div>
-                                    </div>
-
-                                    <!-- Section Retour PONCTUEL -->
-                                    <div id="retour_ponctuel_section" class="space-y-4">
-                                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                            <!-- Date de retour (Cachée car identique à l'aller) -->
-                                            <div class="hidden">
-                                                <input type="date" name="retour_date" id="retour_date" class="w-full">
-                                            </div>
-                                            
-                                            <!-- Message informatif -->
-                                            <div class="col-span-2 bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-center gap-3">
-                                                <i class="fas fa-info-circle text-blue-500"></i>
-                                                <p class="text-sm text-blue-700">
-                                                    Pour un aller-retour ponctuel, le retour se fait le même jour que le départ (<span id="ponctuel_retour_date_display" class="font-bold">--</span>).
-                                                </p>
-                                            </div>
-
-                                            <!-- Heure de départ retour -->
-                                            <div class="space-y-2">
-                                                <label class="flex items-center text-sm font-semibold text-gray-700">
-                                                    <span>Heure départ retour</span>
-                                                    <span class="text-red-500 ml-1">*</span>
-                                                </label>
-                                                <input type="time" name="retour_heure_depart" id="retour_heure_depart"
-                                                    class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300 bg-white">
-                                            </div>
-
-                                            <!-- Heure d'arrivée retour (calculée) -->
-                                            <div class="space-y-2">
-                                                <label class="text-sm font-semibold text-gray-700">Heure arrivée retour (calculée)</label>
-                                                <input type="time" name="retour_heure_arrive" id="retour_heure_arrive" readonly
-                                                    class="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-100 text-gray-600">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Section Retour RÉCURRENT -->
-                                    <div id="retour_recurrent_section" class="hidden space-y-4">
-                                        
-                                        <!-- CHAMP CACHÉ pour la date de début calculée automatiquement -->
-                                        <input type="hidden" name="retour_date_debut_recurrent" id="retour_date_debut_recurrent">
-
-                                        <div class="space-y-2">
-                                            <label class="flex items-center text-sm font-semibold text-gray-700">
-                                                <span>Jours de retour</span>
-                                                <span class="text-red-500 ml-1">*</span>
-                                            </label>
-                                            <p class="text-xs text-gray-500 mb-2">
-                                                Les dates sont calculées automatiquement en fonction de votre date de départ (<span id="ref_date_display" class="font-bold text-gray-800">--</span>).
-                                                Décochez les jours non souhaités :
-                                            </p>
-                                            
-                                            <!-- Conteneur pour les checkboxes dynamiques -->
-                                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3" id="jours_retour_container">
-                                                <span class="text-sm text-gray-400 italic" id="aucun_jour_retour_msg">
-                                                    Sélectionnez d'abord les jours dans "Jours de la semaine" ci-dessous
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        <!-- Heure unique pour tous les retours -->
-                                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
-                                            <div class="space-y-2">
-                                                <label class="flex items-center text-sm font-semibold text-gray-700">
-                                                    <span>Heure de départ retour</span>
-                                                    <span class="text-red-500 ml-1">*</span>
-                                                </label>
-                                                <input type="time" name="retour_heure_depart_recurrent" id="retour_heure_depart_recurrent"
-                                                    class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300 bg-white">
-                                            </div>
-                                            <div class="space-y-2">
-                                                <label class="text-sm font-semibold text-gray-700">Heure d'arrivée retour (calculée)</label>
-                                                <input type="time" name="retour_heure_arrive_recurrent" id="retour_heure_arrive_recurrent" readonly
-                                                    class="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-100 text-gray-600">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Info récapitulative -->
-                                    <div class="bg-green-100 border border-green-300 rounded-lg p-3 mt-4">
-                                        <p class="text-sm text-green-800">
-                                            <i class="fas fa-info-circle mr-2"></i>
-                                            <strong>Un programme retour sera automatiquement créé</strong> avec l'itinéraire inversé et les horaires spécifiés ci-dessus.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
                             <!-- Section pour les programmations récurrentes (cachée par défaut) -->
                             <div id="recurrent_fields" class="hidden space-y-6">
                                 <!-- Date de fin -->
@@ -597,6 +497,106 @@
                                                 intervalle.
                                             </p>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section Configuration Retour (cachée par défaut) -->
+                            <div id="retour_config_fields" class="hidden space-y-4 mt-4">
+                                <div class="bg-green-50 p-6 rounded-xl border-2 border-green-200">
+                                    <div class="flex items-center mb-4">
+                                        <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center mr-3">
+                                            <i class="fas fa-undo text-white"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="font-bold text-gray-900">Configuration du Programme Retour</h3>
+                                            <p class="text-sm text-gray-600">Itinéraire inversé: <span id="retour_itineraire_display" class="font-semibold text-green-700"></span></p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Section Retour PONCTUEL -->
+                                    <div id="retour_ponctuel_section" class="space-y-4">
+                                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                            <!-- Date de retour (Cachée car identique à l'aller) -->
+                                            <div class="hidden">
+                                                <input type="date" name="retour_date" id="retour_date" class="w-full">
+                                            </div>
+                                            
+                                            <!-- Message informatif -->
+                                            <div class="col-span-2 bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-center gap-3">
+                                                <i class="fas fa-info-circle text-blue-500"></i>
+                                                <p class="text-sm text-blue-700">
+                                                    Pour un aller-retour ponctuel, le retour se fait le même jour que le départ (<span id="ponctuel_retour_date_display" class="font-bold">--</span>).
+                                                </p>
+                                            </div>
+
+                                            <!-- Heure de départ retour -->
+                                            <div class="space-y-2">
+                                                <label class="flex items-center text-sm font-semibold text-gray-700">
+                                                    <span>Heure départ retour</span>
+                                                    <span class="text-red-500 ml-1">*</span>
+                                                </label>
+                                                <input type="time" name="retour_heure_depart" id="retour_heure_depart"
+                                                    class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300 bg-white">
+                                            </div>
+
+                                            <!-- Heure d'arrivée retour (calculée) -->
+                                            <div class="space-y-2">
+                                                <label class="text-sm font-semibold text-gray-700">Heure arrivée retour (calculée)</label>
+                                                <input type="time" name="retour_heure_arrive" id="retour_heure_arrive" readonly
+                                                    class="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-100 text-gray-600">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Section Retour RÉCURRENT -->
+                                    <div id="retour_recurrent_section" class="hidden space-y-4">
+                                        
+                                        <!-- CHAMP CACHÉ pour la date de début calculée automatiquement -->
+                                        <input type="hidden" name="retour_date_debut_recurrent" id="retour_date_debut_recurrent">
+
+                                        <div class="space-y-2">
+                                            <label class="flex items-center text-sm font-semibold text-gray-700">
+                                                <span>Jours de retour</span>
+                                                <span class="text-red-500 ml-1">*</span>
+                                            </label>
+                                            <p class="text-xs text-gray-500 mb-2">
+                                                Les dates sont calculées automatiquement en fonction de votre date de départ (<span id="ref_date_display" class="font-bold text-gray-800">--</span>).
+                                                Décochez les jours non souhaités :
+                                            </p>
+                                            
+                                            <!-- Conteneur pour les checkboxes dynamiques -->
+                                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3" id="jours_retour_container">
+                                                <span class="text-sm text-gray-400 italic" id="aucun_jour_retour_msg">
+                                                    Sélectionnez d'abord les jours dans "Jours de la semaine" ci-dessous
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Heure unique pour tous les retours -->
+                                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+                                            <div class="space-y-2">
+                                                <label class="flex items-center text-sm font-semibold text-gray-700">
+                                                    <span>Heure de départ retour</span>
+                                                    <span class="text-red-500 ml-1">*</span>
+                                                </label>
+                                                <input type="time" name="retour_heure_depart_recurrent" id="retour_heure_depart_recurrent"
+                                                    class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300 bg-white">
+                                            </div>
+                                            <div class="space-y-2">
+                                                <label class="text-sm font-semibold text-gray-700">Heure d'arrivée retour (calculée)</label>
+                                                <input type="time" name="retour_heure_arrive_recurrent" id="retour_heure_arrive_recurrent" readonly
+                                                    class="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-100 text-gray-600">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Info récapitulative -->
+                                    <div class="bg-green-100 border border-green-300 rounded-lg p-3 mt-4">
+                                        <p class="text-sm text-green-800">
+                                            <i class="fas fa-info-circle mr-2"></i>
+                                            <strong>Un programme retour sera automatiquement créé</strong> avec l'itinéraire inversé et les horaires spécifiés ci-dessus.
+                                        </p>
                                     </div>
                                 </div>
                             </div>
