@@ -549,47 +549,58 @@
                                         </div>
                                     </div>
 
-                                    <!-- Section Retour RÉCURRENT -->
-                                    <div id="retour_recurrent_section" class="hidden space-y-4">
-                                        
-                                        <!-- CHAMP CACHÉ pour la date de début calculée automatiquement -->
-                                        <input type="hidden" name="retour_date_debut_recurrent" id="retour_date_debut_recurrent">
+                                  <!-- Section Retour RÉCURRENT -->
+<div id="retour_recurrent_section" class="hidden space-y-6 animate-fade-in">
+    
+    <!-- CHAMP CACHÉ pour la date de début calculée automatiquement -->
+    <input type="hidden" name="retour_date_debut_recurrent" id="retour_date_debut_recurrent">
 
-                                        <div class="space-y-2">
-                                            <label class="flex items-center text-sm font-semibold text-gray-700">
-                                                <span>Jours de retour</span>
-                                                <span class="text-red-500 ml-1">*</span>
-                                            </label>
-                                            <p class="text-xs text-gray-500 mb-2">
-                                                Les dates sont calculées automatiquement en fonction de votre date de départ (<span id="ref_date_display" class="font-bold text-gray-800">--</span>).
-                                                Décochez les jours non souhaités :
-                                            </p>
-                                            
-                                            <!-- Conteneur pour les checkboxes dynamiques -->
-                                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3" id="jours_retour_container">
-                                                <span class="text-sm text-gray-400 italic" id="aucun_jour_retour_msg">
-                                                    Sélectionnez d'abord les jours dans "Jours de la semaine" ci-dessous
-                                                </span>
-                                            </div>
-                                        </div>
+    <div class="bg-white rounded-xl border border-green-100 p-5 shadow-sm">
+        <div class="flex justify-between items-start mb-4">
+            <div>
+                <label class="flex items-center text-sm font-bold text-gray-800 uppercase tracking-wide">
+                    <i class="fas fa-calendar-check text-green-500 mr-2"></i>
+                    Jours de retour programmés
+                </label>
+                <p class="text-xs text-gray-500 mt-1">
+                    Ces jours sont automatiquement synchronisés avec vos jours de départ.
+                    <br>Date de référence départ : <span id="ref_date_display" class="font-bold text-green-600">--</span>
+                </p>
+            </div>
+            <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-semibold">
+                Auto-sélectionné
+            </span>
+        </div>
+        
+        <!-- Conteneur pour les checkboxes dynamiques -->
+        <!-- On utilise grid-cols-2 à 4 pour un affichage responsive propre -->
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="jours_retour_container">
+            <!-- Le contenu sera injecté par JS -->
+            <div class="col-span-full flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-200 rounded-xl text-gray-400 bg-gray-50">
+                <svg class="w-10 h-10 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                <span class="text-sm font-medium">Sélectionnez les "Jours de la semaine" ci-dessus</span>
+            </div>
+        </div>
+    </div>
 
-                                        <!-- Heure unique pour tous les retours -->
-                                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
-                                            <div class="space-y-2">
-                                                <label class="flex items-center text-sm font-semibold text-gray-700">
-                                                    <span>Heure de départ retour</span>
-                                                    <span class="text-red-500 ml-1">*</span>
-                                                </label>
-                                                <input type="time" name="retour_heure_depart_recurrent" id="retour_heure_depart_recurrent"
-                                                    class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300 bg-white">
-                                            </div>
-                                            <div class="space-y-2">
-                                                <label class="text-sm font-semibold text-gray-700">Heure d'arrivée retour (calculée)</label>
-                                                <input type="time" name="retour_heure_arrive_recurrent" id="retour_heure_arrive_recurrent" readonly
-                                                    class="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-100 text-gray-600">
-                                            </div>
-                                        </div>
-                                    </div>
+    <!-- Heure unique pour tous les retours -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
+        <div class="space-y-2">
+            <label class="flex items-center text-sm font-semibold text-gray-700">
+                <i class="far fa-clock mr-2 text-green-500"></i>
+                Heure de départ retour
+                <span class="text-red-500 ml-1">*</span>
+            </label>
+            <input type="time" name="retour_heure_depart_recurrent" id="retour_heure_depart_recurrent"
+                class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300 bg-white shadow-sm">
+        </div>
+        <div class="space-y-2">
+            <label class="text-sm font-semibold text-gray-700 text-opacity-80">Heure d'arrivée retour (calculée)</label>
+            <input type="time" name="retour_heure_arrive_recurrent" id="retour_heure_arrive_recurrent" readonly
+                class="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-500 cursor-not-allowed">
+        </div>
+    </div>
+</div>
 
                                     <!-- Info récapitulative -->
                                     <div class="bg-green-100 border border-green-300 rounded-lg p-3 mt-4">
@@ -757,6 +768,18 @@
                         if(document.getElementById('retour_heure_depart_recurrent'))
                             document.getElementById('retour_heure_depart_recurrent').required = false;
                         
+                        // ✅ NOUVEAU: Réactiver les champs ponctuel
+                        document.getElementById('retour_heure_depart').disabled = false;
+                        document.getElementById('retour_heure_arrive').disabled = false;
+                        document.getElementById('retour_date').disabled = false;
+                        
+                        // ✅ NOUVEAU: Désactiver les champs récurrent pour qu'ils ne soient PAS envoyés
+                        if(document.getElementById('retour_heure_depart_recurrent')) {
+                            document.getElementById('retour_heure_depart_recurrent').disabled = true;
+                            document.getElementById('retour_heure_arrive_recurrent').disabled = true;
+                            document.getElementById('retour_date_debut_recurrent').disabled = true;
+                        }
+                        
                         // Update display date retour (même jour)
                         const dateDep = document.getElementById('date_depart').value;
                         if(dateDep) {
@@ -777,6 +800,18 @@
                         document.getElementById('retour_heure_depart').required = false;
                         if(document.getElementById('retour_heure_depart_recurrent'))
                             document.getElementById('retour_heure_depart_recurrent').required = true;
+
+                        // ✅ NOUVEAU: Désactiver les champs ponctuel pour qu'ils ne soient PAS envoyés
+                        document.getElementById('retour_heure_depart').disabled = true;
+                        document.getElementById('retour_heure_arrive').disabled = true;
+                        document.getElementById('retour_date').disabled = true;
+                        
+                        // ✅ NOUVEAU: Réactiver les champs récurrent
+                        if(document.getElementById('retour_heure_depart_recurrent')) {
+                            document.getElementById('retour_heure_depart_recurrent').disabled = false;
+                            document.getElementById('retour_heure_arrive_recurrent').disabled = false;
+                            document.getElementById('retour_date_debut_recurrent').disabled = false;
+                        }
 
                         // Générer les checkboxes de retour
                         generateRetourCheckboxes();
@@ -799,69 +834,90 @@
             // --- 4. Logique Jours Retour (Auto-calcul date) ---
             const mapJours = { 'lundi':1, 'mardi':2, 'mercredi':3, 'jeudi':4, 'vendredi':5, 'samedi':6, 'dimanche':0 };
 
-            function generateRetourCheckboxes() {
-                const container = document.getElementById('jours_retour_container');
-                const checkboxesAller = document.querySelectorAll('input[name="jours_recurrence[]"]:checked');
-                const dateDepartStr = document.getElementById('date_depart').value;
+          function generateRetourCheckboxes() {
+    const container = document.getElementById('jours_retour_container');
+    const checkboxesAller = document.querySelectorAll('input[name="jours_recurrence[]"]:checked');
+    const dateDepartStr = document.getElementById('date_depart').value;
 
-                container.innerHTML = '';
+    container.innerHTML = '';
+    
+    // Si pas de date ou pas de jours cochés à l'aller
+    if(!dateDepartStr || checkboxesAller.length === 0) {
+        container.innerHTML = `
+            <div class="col-span-full flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-200 rounded-xl text-gray-400 bg-gray-50 animate-pulse">
+                <svg class="w-8 h-8 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                <span class="text-sm font-medium">Veuillez sélectionner des jours de départ</span>
+            </div>`;
+        return;
+    }
+
+    // Date de référence (Date de début du programme aller)
+    const dateRef = new Date(dateDepartStr);
+    const dayRef = dateRef.getDay(); // 0-6
+
+    // Mise à jour de l'affichage de la date ref
+    const refDateDisplay = document.getElementById('ref_date_display');
+    if(refDateDisplay) refDateDisplay.textContent = dateRef.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    let minDateRetour = null;
+
+    checkboxesAller.forEach(cb => {
+        const jourNom = cb.value; // 'lundi', etc.
+        const jourIndex = mapJours[jourNom];
+        
+        // Calcul du décalage pour trouver la prochaine occurrence de ce jour
+        let diff = jourIndex - dayRef;
+        if(diff < 0) diff += 7; // Prochaine occurrence
+        
+        // On ajoute ce nombre de jours à la date de départ
+        const dateRetour = new Date(dateRef);
+        dateRetour.setDate(dateRef.getDate() + diff);
+        
+        const dateRetourStr = dateRetour.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+        const dateRetourISO = dateRetour.toISOString().split('T')[0];
+
+        // Mise à jour date min pour le champ caché
+        if(!minDateRetour || dateRetourISO < minDateRetour) {
+            minDateRetour = dateRetourISO;
+        }
+
+        // Création de la carte UI
+        const div = document.createElement('div');
+        div.className = 'relative group animate-fade-in-up'; // Animation classe
+        
+        // Notez l'attribut 'checked' ajouté par défaut
+        div.innerHTML = `
+            <input type="checkbox" name="jours_retour[]" id="ret_${jourNom}" value="${jourNom}" checked 
+                class="peer sr-only" onchange="window.recalcMinDate()">
+            
+            <label for="ret_${jourNom}" 
+                class="flex flex-col p-4 bg-white border border-gray-200 rounded-xl cursor-pointer 
+                transition-all duration-200 ease-in-out shadow-sm
+                hover:border-green-400 hover:shadow-md
+                peer-checked:border-green-500 peer-checked:bg-green-50 peer-checked:ring-1 peer-checked:ring-green-500">
                 
-                if(!dateDepartStr || checkboxesAller.length === 0) {
-                    container.innerHTML = '<span class="text-sm text-gray-500 italic col-span-full">Veuillez sélectionner une date de départ et des jours de récurrence ci-dessus.</span>';
-                    return;
-                }
-
-                // Date de référence (Date de début du programme aller)
-                const dateRef = new Date(dateDepartStr);
-                const dayRef = dateRef.getDay(); // 0-6
-
-                // Calcul date min pour le champ hidden
-                let minDateRetour = null;
-
-                checkboxesAller.forEach(cb => {
-                    const jourNom = cb.value; // 'lundi', etc.
-                    const jourIndex = mapJours[jourNom];
-                    
-                    // Calcul du décalage pour trouver la prochaine occurrence de ce jour
-                    let diff = jourIndex - dayRef;
-                    if(diff < 0) diff += 7; // Prochaine occurrence
-                    // Si diff == 0 (même jour), on ajoute 7 jours pour que le retour soit la semaine suivante ?
-                    // NON, généralement un retour peut être le même jour. Laissons diff = 0.
-                    
-                    // On ajoute ce nombre de jours à la date de départ
-                    const dateRetour = new Date(dateRef);
-                    dateRetour.setDate(dateRef.getDate() + diff);
-                    
-                    const dateRetourStr = dateRetour.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
-                    const dateRetourISO = dateRetour.toISOString().split('T')[0];
-
-                    // Mise à jour date min
-                    if(!minDateRetour || dateRetourISO < minDateRetour) {
-                        minDateRetour = dateRetourISO;
-                    }
-
-                    // Création HTML
-                    const div = document.createElement('div');
-                    div.className = 'relative';
-                    div.innerHTML = `
-                        <input type="checkbox" name="jours_retour[]" id="ret_${jourNom}" value="${jourNom}" checked class="peer sr-only" onchange="window.recalcMinDate()">
-                        <label for="ret_${jourNom}" class="flex flex-col items-center justify-center p-3 bg-white border-2 border-gray-200 rounded-lg cursor-pointer hover:border-green-500 peer-checked:border-green-500 peer-checked:bg-green-600 peer-checked:text-white transition-all">
-                            <span class="font-bold text-gray-900 capitalize" style="color: inherit;">${jourNom}</span>
-                            <span class="text-xs text-green-600 mt-1" style="color: inherit;">${dateRetourStr}</span>
-                            <input type="hidden" class="date-val" value="${dateRetourISO}">
-                        </label>
-                    `;
-                    container.appendChild(div);
-                });
-
-                // Set initial min date
-                const dateDebutRetourInput = document.getElementById('retour_date_debut_recurrent');
-                if(dateDebutRetourInput) dateDebutRetourInput.value = minDateRetour;
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-bold text-gray-800 capitalize peer-checked:text-green-800">${jourNom}</span>
+                    <div class="w-5 h-5 rounded-full border border-gray-300 flex items-center justify-center bg-white peer-checked:bg-green-500 peer-checked:border-green-500 transition-colors">
+                        <svg class="w-3 h-3 text-white hidden peer-checked:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
+                </div>
                 
-                // Mettre à jour la date de référence affichée
-                const refDateDisplay = document.getElementById('ref_date_display');
-                if(refDateDisplay) refDateDisplay.textContent = new Date(dateDepartStr).toLocaleDateString('fr-FR');
-            }
+                <div class="flex items-center text-sm text-gray-500 peer-checked:text-green-700">
+                    <svg class="w-4 h-4 mr-1.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    <span>${dateRetourStr}</span>
+                </div>
+                
+                <input type="hidden" class="date-val" value="${dateRetourISO}">
+            </label>
+        `;
+        container.appendChild(div);
+    });
+
+    // Set initial min date
+    const dateDebutRetourInput = document.getElementById('retour_date_debut_recurrent');
+    if(dateDebutRetourInput) dateDebutRetourInput.value = minDateRetour;
+}
 
             // Exposer la fonction pour l'onclick
             window.recalcMinDate = function() {
@@ -1002,5 +1058,18 @@
                 grid-template-columns: 1fr;
             }
         }
+        @keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.animate-fade-in-up {
+    animation: fadeInUp 0.3s ease-out forwards;
+}
     </style>
 @endsection

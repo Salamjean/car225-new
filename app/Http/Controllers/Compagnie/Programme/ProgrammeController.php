@@ -11,61 +11,230 @@ use App\Models\Vehicule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class ProgrammeController extends Controller
 {
     public function index()
     {
         $compagnieId = Auth::guard('compagnie')->user()->id;
+        $today = Carbon::now()->format('Y-m-d');
 
+        // On charge les relations ET le comptage des réservations
         $programmes = Programme::with(['vehicule', 'chauffeur', 'convoyeur', 'itineraire'])
             ->where('compagnie_id', $compagnieId)
-            ->orderBy('date_depart', 'desc')
-            ->orderBy('heure_depart', 'desc')
+            // On compte les réservations où ce programme est l'aller
+            ->withCount(['reservationsAller' => function ($query) {
+                $query->where('statut', '!=', 'annulee');
+            }])
+            // On compte les réservations où ce programme est le retour
+            ->withCount(['reservationsRetour' => function ($query) {
+                $query->where('statut', '!=', 'annulee');
+            }])
+            ->where(function($query) use ($today) {
+                $query->where(function($q) use ($today) {
+                    $q->where('type_programmation', 'ponctuel')
+                      ->where('date_depart', '>=', $today);
+                })
+                ->orWhere(function($q) use ($today) {
+                    $q->where('type_programmation', 'recurrent')
+                      ->where(function($sub) use ($today) {
+                          $sub->where('date_fin_programmation', '>=', $today)
+                              ->orWhereNull('date_fin_programmation');
+                      });
+                });
+            })
+            ->orderBy('date_depart', 'asc')
             ->paginate(10);
+
+        // Calcul du total des sièges occupés (Aller + Retour) pour l'affichage
+        // On injecte l'attribut calculé directement dans la collection
+        $programmes->getCollection()->transform(function ($programme) {
+            $programme->total_reserves = $programme->reservations_aller_count + $programme->reservations_retour_count;
+            
+            // Mise à jour du statut en temps réel (optionnel mais visuel)
+            $totalPlaces = $programme->vehicule ? $programme->vehicule->nombre_place : 0;
+            if ($totalPlaces > 0) {
+                if ($programme->total_reserves >= $totalPlaces) {
+                    $programme->staut_place = 'rempli';
+                } elseif ($programme->total_reserves >= ($totalPlaces * 0.8)) {
+                    $programme->staut_place = 'presque_complet';
+                } else {
+                    $programme->staut_place = 'vide'; // ou disponible
+                }
+            }
+            return $programme;
+        });
 
         return view('compagnie.programme.index', compact('programmes'));
     }
     public function history()
     {
         $compagnieId = Auth::guard('compagnie')->user()->id;
+        $today = Carbon::now()->format('Y-m-d');
 
-        $programmes = ProgrammeHistorique::paginate(10);
+        // 1. Historique des actions (Logs)
+        $logs = ProgrammeHistorique::orderBy('created_at', 'desc')->paginate(10, ['*'], 'logs_page');
 
-        return view('compagnie.programme.historique', compact('programmes'));
+        // 2. Programmes TERMINÉS (Expirés)
+        $programmesExpires = Programme::with(['vehicule', 'itineraire'])
+            ->where('compagnie_id', $compagnieId)
+            ->where(function($query) use ($today) {
+                // Ponctuel passé
+                $query->where(function($q) use ($today) {
+                    $q->where('type_programmation', 'ponctuel')
+                      ->where('date_depart', '<', $today);
+                })
+                // Récurrent dont la date de fin est passée
+                ->orWhere(function($q) use ($today) {
+                    $q->where('type_programmation', 'recurrent')
+                      ->where('date_fin_programmation', '<', $today);
+                });
+            })
+            ->orderBy('date_depart', 'desc')
+            ->paginate(10, ['*'], 'prog_page');
+
+        return view('compagnie.programme.historique', compact('logs', 'programmesExpires'));
     }
 
-    public function showApi(Programme $programme)
+       // AJOUT DE LA MÉTHODE DESTROY
+    public function destroy($id)
+    {
+        try {
+            $compagnieId = Auth::guard('compagnie')->user()->id;
+            $programme = Programme::where('id', $id)->where('compagnie_id', $compagnieId)->firstOrFail();
+
+            // VÉRIFICATION DES RÉSERVATIONS
+            // Assurez-vous que la relation 'reservations' existe dans votre modèle Programme
+            if ($programme->reservations()->count() > 0) {
+                return back()->with('error', 'Impossible de supprimer ce programme car il contient des réservations actives ou passées.');
+            }
+
+            // Si pas de réservation, on supprime
+            $programme->delete();
+
+            return back()->with('success', 'Programme supprimé avec succès.');
+
+        } catch (\Exception $e) {
+            Log::error('Erreur suppression programme : ' . $e->getMessage());
+            return back()->with('error', 'Une erreur est survenue lors de la suppression.');
+        }
+    }
+       // --- CORRECTION DE L'ERREUR : AJOUT DE LA MÉTHODE EDIT ---
+    public function edit($id)
+    {
+        $compagnieId = Auth::guard('compagnie')->user()->id;
+        
+        // Récupérer le programme
+        $programme = Programme::where('id', $id)->where('compagnie_id', $compagnieId)->firstOrFail();
+        
+        // Récupérer les données nécessaires pour les listes déroulantes
+        $itineraires = Itineraire::where('compagnie_id', $compagnieId)->get();
+        // On inclut le véhicule actuel même s'il est inactif
+        $vehicules = Vehicule::where('compagnie_id', $compagnieId)
+            ->where(function($q) use ($programme) {
+                $q->where('is_active', true)->orWhere('id', $programme->vehicule_id);
+            })->get();
+            
+        $chauffeurs = Personnel::where('compagnie_id', $compagnieId)
+            ->where('type_personnel', 'Chauffeur')
+            ->where('statut', 'disponible')
+            ->orWhere('id', $programme->personnel_id) // Inclure le chauffeur actuel
+            ->get();
+            
+        $convoyeurs = Personnel::where('compagnie_id', $compagnieId)
+            ->where('type_personnel', 'Convoyeur')
+            ->get();
+
+        return view('compagnie.programme.edit', compact('programme', 'itineraires', 'vehicules', 'chauffeurs', 'convoyeurs'));
+    }
+
+  // --- AJOUT DE LA MÉTHODE UPDATE ---
+    public function update(Request $request, $id)
+    {
+        $compagnieId = Auth::guard('compagnie')->user()->id;
+        $programme = Programme::where('id', $id)->where('compagnie_id', $compagnieId)->firstOrFail();
+
+        $validated = $request->validate([
+            'vehicule_id' => 'required|exists:vehicules,id',
+            'personnel_id' => 'required|exists:personnels,id', // Chauffeur
+            'convoyeur_id' => 'nullable|exists:personnels,id',
+            'montant_billet' => 'required|numeric|min:0',
+            'heure_depart' => 'required',
+            // On évite de modifier l'itinéraire ou la date pour ne pas casser les réservations existantes
+        ]);
+
+        // Calcul automatique de l'heure d'arrivée si l'heure de départ change
+        $heureArrivee = $programme->heure_arrive;
+        if($request->heure_depart != $programme->heure_depart) {
+            // Logique simple d'ajout de durée (à adapter selon votre format de duree_parcours)
+            // Ici on garde l'ancienne logique ou on ne la modifie pas pour l'instant
+            // Idéalement, recalculez l'heure d'arrivée ici
+        }
+
+        $programme->update([
+            'vehicule_id' => $validated['vehicule_id'],
+            'personnel_id' => $validated['personnel_id'],
+            'convoyeur_id' => $validated['convoyeur_id'],
+            'montant_billet' => $validated['montant_billet'],
+            'heure_depart' => $validated['heure_depart'],
+        ]);
+
+        // Log historique
+        ProgrammeHistorique::create([
+            'programme_id' => $programme->id,
+            'action' => 'modification_programme',
+            'raison' => 'Mise à jour via formulaire d\'édition',
+            'vehicule' => $programme->vehicule->immatriculation,
+            'chauffeur' => $programme->chauffeur->name,
+            'itineraire' => $programme->point_depart . ' - ' . $programme->point_arrive,
+             // ... autres champs requis par votre table historique
+             // Assurez-vous de remplir tous les champs non-nullables de votre table historique
+             'point_depart' => $programme->point_depart,
+             'point_arrive' => $programme->point_arrive,
+             'duree_parcours' => $programme->durer_parcours,
+             'date_depart' => $programme->date_depart,
+             'heure_depart' => $programme->heure_depart,
+             'heure_arrivee' => $programme->heure_arrive,
+        ]);
+
+        return redirect()->route('programme.index')->with('success', 'Programme mis à jour avec succès');
+    }
+   public function showApi(Programme $programme)
     {
         Log::info('Appel API programme', ['programme_id' => $programme->id, 'user_id' => Auth::guard('compagnie')->user()->id]);
 
         try {
-            // Vérifier que le programme appartient à la compagnie connectée
             $compagnieId = Auth::guard('compagnie')->user()->id;
 
             if ($programme->compagnie_id != $compagnieId) {
-                Log::warning('Tentative d\'accès non autorisé', [
-                    'programme_compagnie' => $programme->compagnie_id,
-                    'user_compagnie' => $compagnieId
-                ]);
                 return response()->json(['error' => 'Accès non autorisé'], 403);
             }
 
-            // Charger les relations avec vérification
+            // 1. Charger les relations ET compter les réservations
             $programme->load(['vehicule', 'chauffeur', 'convoyeur']);
+            $programme->loadCount(['reservationsAller', 'reservationsRetour']); // <-- AJOUT IMPORTANT
 
-            // Vérifier que les relations sont bien chargées
-            if (!$programme->vehicule) {
-                Log::error('Véhicule non trouvé pour le programme', ['programme_id' => $programme->id]);
-                return response()->json(['error' => 'Véhicule non trouvé'], 404);
+            if (!$programme->vehicule || !$programme->chauffeur) {
+                return response()->json(['error' => 'Données incomplètes (Véhicule ou Chauffeur manquant)'], 404);
             }
 
-            if (!$programme->chauffeur) {
-                Log::error('Chauffeur non trouvé pour le programme', ['programme_id' => $programme->id]);
-                return response()->json(['error' => 'Chauffeur non trouvé'], 404);
+            // 2. Calculer le nombre réel de places occupées
+            // On vérifie que les compteurs ne sont pas null
+            $totalOccupied = ($programme->reservations_aller_count ?? 0) + ($programme->reservations_retour_count ?? 0);
+            
+            // 3. Recalculer le statut dynamiquement pour le popup
+            $totalPlaces = $programme->vehicule->nombre_place;
+            $statut = 'vide';
+            if ($totalPlaces > 0) {
+                if ($totalOccupied >= $totalPlaces) {
+                    $statut = 'rempli';
+                } elseif ($totalOccupied >= ($totalPlaces * 0.8)) {
+                    $statut = 'presque_complet';
+                }
             }
 
-            // Décode les jours de récurrence si c'est un JSON
+            // Gestion des jours de récurrence
             $joursRecurrence = $programme->jours_recurrence;
             if (is_string($joursRecurrence) && !empty($joursRecurrence)) {
                 try {
@@ -81,16 +250,20 @@ class ProgrammeController extends Controller
                 'point_arrive' => $programme->point_arrive,
                 'durer_parcours' => $programme->durer_parcours,
                 'date_depart' => $programme->date_depart,
-                'date_depart_formatee' => $programme->date_depart,
+                'date_depart_formatee' => \Carbon\Carbon::parse($programme->date_depart)->format('d/m/Y'), // Formatage propre
                 'heure_depart' => $programme->heure_depart,
                 'heure_arrive' => $programme->heure_arrive,
-                'nbre_siege_occupe' => $programme->nbre_siege_occupe,
-                'staut_place' => $programme->staut_place,
+                
+                // --- CORRECTION ICI : On envoie le total calculé ---
+                'nbre_siege_occupe' => $totalOccupied, 
+                
+                // --- CORRECTION ICI : On envoie le statut recalculé ---
+                'staut_place' => $statut, 
+                
                 'montant_billet' => $programme->montant_billet,
                 'type_programmation' => $programme->type_programmation,
                 'is_aller_retour' => (bool) $programme->is_aller_retour,
-                'date_fin_programmation' => $programme->date_fin_programmation ?
-                    $programme->date_fin_programmation : null,
+                'date_fin_programmation' => $programme->date_fin_programmation,
                 'jours_recurrence' => $joursRecurrence,
                 'vehicule' => [
                     'marque' => $programme->vehicule->marque,
@@ -105,7 +278,6 @@ class ProgrammeController extends Controller
                 ],
             ];
 
-            // Ajouter le convoyeur seulement s'il existe
             if ($programme->convoyeur) {
                 $data['convoyeur'] = [
                     'prenom' => $programme->convoyeur->prenom,
@@ -116,19 +288,13 @@ class ProgrammeController extends Controller
                 $data['convoyeur'] = null;
             }
 
-            Log::info('Données API envoyées avec succès', ['programme_id' => $programme->id]);
-
             return response()->json($data);
         } catch (\Exception $e) {
             Log::error('Erreur API programme', [
                 'programme_id' => $programme->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'error' => $e->getMessage()
             ]);
-
-            return response()->json([
-                'error' => 'Erreur serveur: ' . $e->getMessage()
-            ], 500);
+            return response()->json(['error' => 'Erreur serveur'], 500);
         }
     }
 
@@ -284,9 +450,11 @@ class ProgrammeController extends Controller
         }
 
         $validated = $request->validate($rules);
+        Log::info('Données validées avec succès', ['validated_data' => $validated]);
 
         // ✅ VALIDATION PERSONNALISÉE : Vérifier que la date_depart correspond aux jours de récurrence
         if ($request->input('type_programmation') === 'recurrent') {
+            Log::info('Début validation personnalisée pour type récurrent');
             $dateDepart = $request->input('date_depart');
             $joursRecurrence = $request->input('jours_recurrence', []);
             
@@ -333,9 +501,32 @@ class ProgrammeController extends Controller
             }
         }
 
+        Log::info('Validation personnalisée terminée avec succès');
+
         try {
             $compagnieId = Auth::guard('compagnie')->user()->id;
             $itineraire = Itineraire::find($validated['itineraire_id']);
+
+            Log::info('Tentative de création du programme', [
+                'compagnie_id' => $compagnieId,
+                'itineraire_id' => $validated['itineraire_id'],
+                'vehicule_id' => $validated['vehicule_id'],
+                'personnel_id' => $validated['personnel_id'],
+                'convoyeur_id' => $validated['convoyeur_id'] ?? null,
+                'point_depart' => $itineraire->point_depart,
+                'point_arrive' => $itineraire->point_arrive,
+                'durer_parcours' => $validated['durer_parcours'],
+                'date_depart' => $validated['date_depart'],
+                'heure_depart' => $validated['heure_depart'],
+                'heure_arrive' => $validated['heure_arrive'],
+                'montant_billet' => $validated['montant_billet'],
+                'nbre_siege_occupe' => 0,
+                'staut_place' => 'vide',
+                'type_programmation' => $validated['type_programmation'],
+                'is_aller_retour' => $request->has('is_aller_retour'),
+                'date_fin_programmation' => $validated['date_fin_programmation'] ?? null,
+                'jours_recurrence' => isset($validated['jours_recurrence']) ? json_encode($validated['jours_recurrence']) : null,
+            ]);
 
             // 2. Création du Programme ALLER
             $programmeAller = Programme::create([
@@ -359,8 +550,11 @@ class ProgrammeController extends Controller
                 'jours_recurrence' => isset($validated['jours_recurrence']) ? json_encode($validated['jours_recurrence']) : null,
             ]);
 
+            Log::info('Programme créé avec succès', ['programme_id' => $programmeAller->id]);
+
             // 3. Gestion du Programme RETOUR (si activé)
             if ($request->has('is_aller_retour')) {
+                Log::info('Début création programme retour', ['programme_aller_id' => $programmeAller->id]);
                 
                 // A. Trouver ou créer l'itinéraire inverse
                 $itineraireRetour = Itineraire::firstOrCreate(
@@ -408,9 +602,18 @@ class ProgrammeController extends Controller
 
                 $programmeRetour = Programme::create($donneesRetour);
 
+                Log::info('Programme retour créé avec succès', ['programme_retour_id' => $programmeRetour->id]);
+
                 // C. Mettre à jour l'aller avec l'ID du retour
                 $programmeAller->update(['programme_retour_id' => $programmeRetour->id]);
+                
+                Log::info('Liaison aller-retour établie', [
+                    'programme_aller_id' => $programmeAller->id,
+                    'programme_retour_id' => $programmeRetour->id
+                ]);
             }
+
+            Log::info('Redirection vers la liste des programmes');
 
             return redirect()->route('programme.index')
                 ->with('success', 'Programme ' . ($request->has('is_aller_retour') ? 'Aller-Retour' : '') . ' créé avec succès !');

@@ -38,30 +38,22 @@ class ReservationController extends Controller
     {
         $user = Auth::user();
 
-        // Récupérer les réservations avec eager loading
-        $query = Reservation::with(['programme', 'programme.compagnie'])
+        // Récupérer les réservations avec les relations nécessaires
+        $query = Reservation::with(['programme', 'programme.compagnie', 'programme.vehicule'])
             ->where('user_id', $user->id)
-            ->orderBy('created_at', 'desc');
+            // On trie par transaction pour regrouper les billets achetés ensemble, puis par siège
+            ->orderBy('created_at', 'desc')
+            ->orderBy('payment_transaction_id', 'desc')
+            ->orderBy('seat_number', 'asc');
 
-        // --- CORRECTION ICI ---
-        // J'ai commenté ce bloc. Avant, il cachait tout ce qui n'était pas "confirmee".
-        // En le retirant, les réservations "terminee", "annulee" et "en_attente" apparaitront aussi.
-        /* 
-        if (!$request->filled('statut')) {
-            $query->where('statut', 'confirmee');
-        }
-        */
-        
-        // Si vous voulez masquer les "annulées" par défaut mais garder "terminee" et "confirmee", décommentez ceci :
-        /*
-        if (!$request->filled('statut')) {
-             $query->where('statut', '!=', 'annulee');
-        }
-        */
-
-        // Appliquer les filtres (le reste ne change pas)
+        // Filtres
         if ($request->filled('reference')) {
-            $query->where('reference', 'like', '%' . $request->reference . '%');
+            $query->where(function($q) use ($request) {
+                $q->where('reference', 'like', '%' . $request->reference . '%')
+                  ->orWhere('payment_transaction_id', 'like', '%' . $request->reference . '%')
+                  ->orWhere('passager_nom', 'like', '%' . $request->reference . '%') // Recherche par nom aussi
+                  ->orWhere('passager_prenom', 'like', '%' . $request->reference . '%');
+            });
         }
 
         if ($request->filled('statut')) {
@@ -70,10 +62,6 @@ class ReservationController extends Controller
 
         if ($request->filled('date_voyage')) {
             $query->whereDate('date_voyage', $request->date_voyage);
-        }
-
-        if ($request->filled('created_at')) {
-            $query->whereDate('created_at', $request->created_at);
         }
 
         if ($request->filled('compagnie')) {

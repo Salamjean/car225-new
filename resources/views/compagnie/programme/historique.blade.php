@@ -1,275 +1,200 @@
 @extends('compagnie.layouts.template')
+
 @section('content')
-    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-green-50 py-8 px-4">
-        <div class="mx-auto" style="width: 90%">
-            <!-- En-tête -->
-            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
-                <div class="mb-6 lg:mb-0">
-                    <h1 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-3">Gestion des Programmes</h1>
-                    <p class="text-lg text-gray-600">
-                        Gérez vos programmes de transport
-                    </p>
-                </div>
+<div class="min-h-screen bg-gray-50 py-8 px-4">
+    <div class="mx-auto" style="width: 90%">
+        <!-- En-tête -->
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">Archives et Historique</h1>
+                <p class="text-gray-600">
+                    Consultez les programmes terminés et le journal des modifications.
+                </p>
+            </div>
+            <a href="{{ route('programme.index') }}" class="mt-4 md:mt-0 inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                Retour aux programmes actifs
+            </a>
+        </div>
 
-                <!-- Bouton d'ajout -->
-                <a href="{{ route('programme.create') }}"
-                    class="inline-flex items-center px-6 py-4 bg-[#e94f1b] text-white font-bold rounded-xl hover:bg-[#e89116] transform hover:-translate-y-1 transition-all duration-200 shadow-lg hover:shadow-xl">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    Nouveau Programme
-                </a>
+        <!-- SECTION 1 : Programmes Terminés / Expirés -->
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden mb-10 border border-gray-100">
+            <div class="px-6 py-5 border-b border-gray-200 bg-gray-50 flex flex-col sm:flex-row justify-between items-center">
+                <h2 class="text-xl font-bold text-gray-800 flex items-center mb-2 sm:mb-0">
+                    <div class="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center mr-3">
+                        <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+                    </div>
+                    Archives des Programmes
+                </h2>
+                <span class="bg-gray-200 text-gray-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                    {{ $programmesExpires->total() }} Terminés
+                </span>
             </div>
 
-            <!-- Statistiques -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                <!-- Total Programmes -->
-                <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-[#e94f1b]">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-600">Total Programmes</p>
-                            <p class="text-2xl font-bold text-gray-900 mt-1">{{ $programmes->count() }}</p>
-                        </div>
-                        <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-                            <svg class="w-6 h-6 text-[#e94f1b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Programmes à venir -->
-                <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-blue-500">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-600">À venir</p>
-                            <p class="text-2xl font-bold text-gray-900 mt-1">
-                                {{ $programmes->where('date_depart', '>=', now()->format('Y-m-d'))->count() }}</p>
-                        </div>
-                        <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                            <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Programmes complets -->
-                <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-green-500">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-600">Complets</p>
-                            <p class="text-2xl font-bold text-gray-900 mt-1">
-                                {{ $programmes->where('staut_place', 'rempli')->count() }}</p>
-                        </div>
-                        <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                            <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Carte principale -->
-            <div class="bg-white rounded-3xl shadow-xl overflow-hidden">
-                <!-- En-tête de la table -->
-                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-                        <h2 class="text-xl font-bold text-gray-900 mb-4 lg:mb-0">Liste des Programmes</h2>
-
-                        <!-- Filtres et recherche -->
-                        <div class="flex flex-col sm:flex-row gap-4">
-                            <!-- Barre de recherche -->
-                            <div class="relative">
-                                <input type="text" id="searchInput" placeholder="Rechercher un programme..."
-                                    class="pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300">
-                                <div class="absolute inset-y-0 left-0 flex items-center pl-3">
-                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                    </svg>
-                                </div>
-                            </div>
-
-                            <!-- Filtre par statut -->
-                            <select id="statutFilter"
-                                class="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300">
-                                <option value="">Tous les statuts</option>
-                                <option value="vide">Places disponibles</option>
-                                <option value="presque_complet">Presque complet</option>
-                                <option value="rempli">Complet</option>
-                            </select>
-
-                            <!-- Filtre par date -->
-                            <select id="dateFilter"
-                                class="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300">
-                                <option value="">Toutes les dates</option>
-                                <option value="today">Aujourd'hui</option>
-                                <option value="upcoming">À venir</option>
-                                <option value="past">Passés</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Tableau -->
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th
-                                    class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Trajet</th>
-                                <th
-                                    class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Date & Heure</th>
-                                <th
-                                    class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Véhicule</th>
-                                <th
-                                    class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Équipage</th>
-                                <th
-                                    class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Places</th>
-                                <th
-                                    class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Statut</th>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="text-xs text-gray-500 uppercase bg-gray-50 border-b">
+                        <tr>
+                            <th class="px-6 py-4 font-medium">Trajet</th>
+                            <th class="px-6 py-4 font-medium">Type</th>
+                            <th class="px-6 py-4 font-medium">Dates & Horaires</th>
+                            <th class="px-6 py-4 font-medium">Véhicule utilisé</th>
+                            <th class="px-6 py-4 font-medium text-center">État</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @forelse($programmesExpires as $prog)
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="px-6 py-4">
+                                    <div class="font-bold text-gray-900">{{ $prog->point_depart }}</div>
+                                    <div class="text-gray-400 text-xs">vers</div>
+                                    <div class="font-bold text-gray-900">{{ $prog->point_arrive }}</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    @if($prog->type_programmation == 'ponctuel')
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                            Ponctuel
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                            Récurrent
+                                        </span>
+                                    @endif
+                                    @if($prog->is_aller_retour)
+                                        <div class="mt-1">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                                Aller-Retour
+                                            </span>
+                                        </div>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 text-gray-600">
+                                    @if($prog->type_programmation == 'ponctuel')
+                                        <div class="flex items-center">
+                                            <svg class="w-4 h-4 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                            {{ \Carbon\Carbon::parse($prog->date_depart)->format('d/m/Y') }}
+                                        </div>
+                                        <div class="text-xs text-gray-500 mt-1 pl-5">
+                                            {{ $prog->heure_depart }} - {{ $prog->heure_arrive }}
+                                        </div>
+                                    @else
+                                        <div class="text-xs">Du {{ \Carbon\Carbon::parse($prog->date_depart)->format('d/m/Y') }}</div>
+                                        <div class="text-xs font-semibold">Au {{ \Carbon\Carbon::parse($prog->date_fin_programmation)->format('d/m/Y') }}</div>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4">
+                                    @if($prog->vehicule)
+                                        <div class="text-gray-900 font-medium">{{ $prog->vehicule->marque }} {{ $prog->vehicule->modele }}</div>
+                                        <div class="text-xs text-gray-500">{{ $prog->vehicule->immatriculation }}</div>
+                                    @else
+                                        <span class="text-gray-400 italic">Véhicule supprimé</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                                        <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-2"></span>
+                                        Terminé
+                                    </span>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200" id="programmeTable">
-                            @forelse($programmes as $programme)
-                                <tr class="hover:bg-gray-50 transition-colors duration-200 programme-row"
-                                    data-search="{{ strtolower($programme->point_depart . ' ' . $programme->point_arrive . ' ' . $programme->vehicule) }}"
-                                    data-statut="{{ $programme->staut_place }}" data-date="{{ $programme->date_depart }}">
-                                    <!-- Trajet -->
-                                    <td class="px-6 py-4 whitespace-nowrap" style="display: flex; justify-content:center">
-                                        <div class="flex items-center">
-                                            <div
-                                                class="flex-shrink-0 h-12 w-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-                                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                </svg>
-                                            </div>
-                                            <div class="ml-4" >
-                                                <div class="text-sm font-semibold text-gray-900 text-center" style="display: flex; justify-content:center">
-                                                    {{ $programme->point_depart }} → {{ $programme->point_arrive }}
-                                                </div>
-                                                <div class="text-sm text-gray-500">{{ $programme->durer_parcours }}</div>
-                                            </div>
-                                        </div>
-                                    </td>
-
-                                    <!-- Date & Heure -->
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm font-medium text-gray-900">
-                                            {{ $programme->date_depart }}
-                                        </div>
-                                        <div class="text-sm text-gray-500">
-                                            {{ $programme->heure_depart }} - {{ $programme->heure_arrivee }}
-                                        </div>
-                                    </td>
-
-                                    <!-- Véhicule -->
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm font-medium text-gray-900">
-                                            <div class="flex items-center gap-2">
-                                                <span>{{ $programme->vehicule }}</span>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </td>
-
-                                    <!-- Équipage -->
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">
-                                            <div class="flex items-center gap-2">
-                                                <span class="font-medium">{{ $programme->chauffeur }}</span>
-                                            </div>
-                                            @if ($programme->convoyeur)
-                                                <div class="flex items-center gap-2 mt-1">
-                                                    <span class="text-gray-500 text-xs">+
-                                                        {{ $programme->convoyeur }}</span>
-                                                </div>
-                                            @endif
-                                        </div>
-                                    </td>
-
-                                    <!-- Places -->
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center">
-                                            <span class="text-sm font-medium text-gray-900">
-                                                {{ $programme->sieges_occupes }}
-                                            </span>
-                                        </div>
-                                    </td>
-<td>
-    {{ $historique->programme->point_depart }} → {{ $historique->programme->point_arrive }}
-    @if($historique->programme->is_aller_retour)
-        <span class="badge badge-info ml-1">A/R</span>
-    @endif
-</td>
-                                    <!-- Statut -->
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        @if ($programme->statut_places == 'vide')
-                                            <span
-                                                class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                                                Disponible
-                                            </span>
-                                        @elseif($programme->statut_places == 'presque_complet')
-                                            <span
-                                                class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                                <span class="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
-                                                Presque complet
-                                            </span>
-                                        @else
-                                            <span
-                                                class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                                <span class="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
-                                                Complet
-                                            </span>
-                                        @endif
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="7" class="px-6 py-8 text-center">
-                                        <div class="flex flex-col items-center justify-center text-gray-500">
-                                            <svg class="w-16 h-16 mb-4 text-gray-300" fill="none"
-                                                stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            <p class="text-lg font-medium mb-2">Aucun programme trouvé</p>
-                                            <p class="text-sm mb-4">Commencez par créer un nouveau programme de transport.
-                                            </p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Pagination -->
-                @if ($programmes->hasPages())
-                    <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
-                        {{ $programmes->links() }}
-                    </div>
-                @endif
+                        @empty
+                            <tr>
+                                <td colspan="5" class="px-6 py-12 text-center text-gray-500">
+                                    <div class="flex flex-col items-center">
+                                        <svg class="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+                                        <p>Aucun programme archivé pour le moment.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
+            <!-- Pagination spécifique pour les programmes -->
+            @if($programmesExpires->hasPages())
+                <div class="px-6 py-4 border-t border-gray-100 bg-gray-50">
+                    {{ $programmesExpires->appends(['logs_page' => request('logs_page')])->links() }}
+                </div>
+            @endif
+        </div>
+
+        <!-- SECTION 2 : Journal d'activité (Logs) -->
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden border border-blue-100">
+            <div class="px-6 py-5 border-b border-gray-200 bg-blue-50 flex justify-between items-center">
+                <h2 class="text-xl font-bold text-blue-900 flex items-center">
+                    <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    Journal d'activité
+                </h2>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="text-xs text-blue-800 uppercase bg-blue-50/50 border-b border-blue-100">
+                        <tr>
+                            <th class="px-6 py-4 font-medium">Date de l'action</th>
+                            <th class="px-6 py-4 font-medium">Programme concerné</th>
+                            <th class="px-6 py-4 font-medium">Action</th>
+                            <th class="px-6 py-4 font-medium">Détails</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @forelse($logs as $log)
+                            <tr class="hover:bg-blue-50/30 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap text-gray-600">
+                                    {{ $log->created_at->format('d/m/Y') }}
+                                    <span class="text-xs text-gray-400 ml-1">{{ $log->created_at->format('H:i') }}</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="font-medium text-gray-900">{{ $log->itineraire }}</div>
+                                    <div class="text-xs text-gray-500">
+                                        {{ $log->date_depart }} ({{ $log->heure_depart }})
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    @if($log->action == 'change_chauffeur')
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
+                                            Changement Chauffeur
+                                        </span>
+                                    @elseif($log->action == 'change_vehicule')
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+                                            Changement Véhicule
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                                            {{ ucfirst(str_replace('_', ' ', $log->action)) }}
+                                        </span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-gray-700 text-sm mb-1">{{ $log->raison }}</div>
+                                    <div class="text-xs text-gray-500 bg-gray-50 p-2 rounded border border-gray-100">
+                                        <span class="font-semibold">État après modif :</span><br>
+                                        Véhicule: {{ Str::limit($log->vehicule, 30) }}<br>
+                                        Chauffeur: {{ Str::limit($log->chauffeur, 30) }}
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="px-6 py-12 text-center text-gray-500">
+                                    Aucune activité enregistrée récemment.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+            <!-- Pagination spécifique pour les logs -->
+            @if($logs->hasPages())
+                <div class="px-6 py-4 border-t border-blue-100 bg-blue-50/30">
+                    {{ $logs->appends(['prog_page' => request('prog_page')])->links() }}
+                </div>
+            @endif
         </div>
     </div>
+</div>
 
     <!-- Inclure SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -741,7 +666,29 @@
             });
         @endif
     </script>
+<script>
+    @if (session('success'))
+        Swal.fire({
+            title: 'Succès !',
+            text: "{{ session('success') }}",
+            icon: 'success',
+            confirmButtonColor: '#e94f1b',
+            confirmButtonText: 'OK',
+            timer: 3000,
+            timerProgressBar: true
+        });
+    @endif
 
+    @if (session('error'))
+        Swal.fire({
+            title: 'Action impossible',
+            text: "{{ session('error') }}", // Le message du contrôleur s'affichera ici
+            icon: 'warning', // Icône Warning est plus appropriée pour une restriction métier
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'Compris'
+        });
+    @endif
+</script>
     <style>
         .programme-row {
             transition: all 0.3s ease;

@@ -268,18 +268,33 @@
         <div class="text-sm text-gray-500">{{ $programme->durer_parcours }}</div>
     </td>
                                         <!-- Places -->
-                                        <td class="px-6 py-4 whitespace-nowrap" style="display: flex; justify-content:center">
-                                            <div class="flex items-center">
-                                                <div class="w-24 bg-gray-200 rounded-full h-2 mr-3">
-                                                    <div class="bg-green-500 h-2 rounded-full"
-                                                        style="width: {{ ($programme->nbre_siege_occupe / $programme->vehicule->nombre_place) * 100 }}%">
-                                                    </div>
-                                                </div>
-                                                <span class="text-sm font-medium text-gray-900">
-                                                    {{ $programme->nbre_siege_occupe }}/{{ $programme->vehicule->nombre_place }}
-                                                </span>
-                                            </div>
-                                        </td>
+                                       <td class="px-6 py-4 whitespace-nowrap" style="display: flex; justify-content:center">
+    <div class="flex items-center">
+        <!-- Barre de progression -->
+        <div class="w-24 bg-gray-200 rounded-full h-2 mr-3">
+            @php
+                $placesTotales = $programme->vehicule->nombre_place;
+                // On utilise la variable calculée dans le contrôleur ou 0 par défaut
+                $placesOccupees = $programme->total_reserves ?? 0;
+                $pourcentage = $placesTotales > 0 ? ($placesOccupees / $placesTotales) * 100 : 0;
+                
+                // Couleur dynamique
+                $colorClass = 'bg-green-500';
+                if($pourcentage >= 100) $colorClass = 'bg-red-500';
+                elseif($pourcentage >= 80) $colorClass = 'bg-yellow-500';
+            @endphp
+            
+            <div class="{{ $colorClass }} h-2 rounded-full"
+                style="width: {{ min($pourcentage, 100) }}%">
+            </div>
+        </div>
+        
+        <!-- Texte (0/20) -->
+        <span class="text-sm font-medium text-gray-900">
+            {{ $placesOccupees }}/{{ $placesTotales }}
+        </span>
+    </div>
+</td>
 
                                         <!-- Montant -->
                                         <td class="px-6 py-4 whitespace-nowrap text-center">
@@ -957,7 +972,29 @@
                 });
             @endif
         </script>
+<script>
+    @if (session('success'))
+        Swal.fire({
+            title: 'Succès !',
+            text: "{{ session('success') }}",
+            icon: 'success',
+            confirmButtonColor: '#e94f1b',
+            confirmButtonText: 'OK',
+            timer: 3000,
+            timerProgressBar: true
+        });
+    @endif
 
+    @if (session('error'))
+        Swal.fire({
+            title: 'Action impossible',
+            text: "{{ session('error') }}", // Le message du contrôleur s'affichera ici
+            icon: 'warning', // Icône Warning est plus appropriée pour une restriction métier
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'Compris'
+        });
+    @endif
+</script>
         <style>
             .programme-row {
                 transition: all 0.3s ease;
