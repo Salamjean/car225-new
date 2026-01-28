@@ -30,7 +30,7 @@ class UserController extends Controller
                 'contact' => $user->contact,
                 'adresse' => $user->adresse,
                 'pays' => $user->pays,
-                'photo_profile_path' => $user->photo_profile_path,
+                'photo_profile_path' => $user->photo_profile_path ? 'storage/' . $user->photo_profile_path : null,
                 'photo_profile_url' => $user->photo_profile_path 
                     ? asset('storage/' . $user->photo_profile_path) 
                     : null,
@@ -79,7 +79,7 @@ class UserController extends Controller
                 'email' => $user->email,
                 'contact' => $user->contact,
                 'adresse' => $user->adresse,
-                'photo_profile_path' => $user->photo_profile_path,
+                'photo_profile_path' => $user->photo_profile_path ? 'storage/' . $user->photo_profile_path : null,
             ],
         ]);
     }

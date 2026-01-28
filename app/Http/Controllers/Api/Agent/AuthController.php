@@ -66,7 +66,7 @@ class AuthController extends Controller
                 'email' => $agent->email,
                 'contact' => $agent->contact,
                 'commune' => $agent->commune,
-                'profile_picture' => $agent->profile_picture,
+                'profile_picture' => $agent->profile_picture ? 'storage/' . $agent->profile_picture : null,
                 'profile_picture_url' => $agent->profile_picture 
                     ? asset('storage/' . $agent->profile_picture) 
                     : null,

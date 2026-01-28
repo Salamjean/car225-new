@@ -61,7 +61,7 @@ class AuthController extends Controller
                 'email' => $user->email,
                 'contact' => $user->contact,
                 'adresse' => $user->adresse,
-                'photo_profile_path' => $user->photo_profile_path,
+                'photo_profile_path' => $user->photo_profile_path ? 'storage/' . $user->photo_profile_path : null,
                 'nom_device' => $user->nom_device,
             ],
             'token' => $token,
@@ -81,7 +81,7 @@ class AuthController extends Controller
             'password' => 'required|min:8|confirmed',
             'adresse' => 'required|string|max:255',
             'contact' => 'required|string|max:255',
-            'photo_profile' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'photo_profile' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ], [
             'name.required' => 'Le nom est obligatoire.',
             'prenom.required' => 'Le prénom est obligatoire.',
@@ -93,6 +93,10 @@ class AuthController extends Controller
             'password.confirmed' => 'Les mots de passe ne correspondent pas.',
             'adresse.required' => 'L\'adresse est obligatoire.',
             'contact.required' => 'Le numéro de contact est obligatoire.',
+            'photo_profile.required' => 'La photo de profil est obligatoire.',
+            'photo_profile.image' => 'Le fichier doit être une image.',
+            'photo_profile.mimes' => 'L\'image doit être au format jpeg, png, jpg ou gif.',
+            'photo_profile.max' => 'L\'image ne doit pas dépasser 2 Mo.',
         ]);
 
         try {
@@ -129,7 +133,7 @@ class AuthController extends Controller
                     'email' => $user->email,
                     'contact' => $user->contact,
                     'adresse' => $user->adresse,
-                    'photo_profile_path' => $user->photo_profile_path,
+                    'photo_profile_path' => $user->photo_profile_path ? 'storage/' . $user->photo_profile_path : null,
                 ],
                 'token' => $token,
                 'token_type' => 'Bearer',
