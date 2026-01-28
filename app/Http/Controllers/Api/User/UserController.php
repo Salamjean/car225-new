@@ -34,6 +34,7 @@ class UserController extends Controller
                 'photo_profile_url' => $user->photo_profile_path 
                     ? asset('storage/' . $user->photo_profile_path) 
                     : null,
+                'nom_device' => $user->nom_device,
             ],
         ]);
     }

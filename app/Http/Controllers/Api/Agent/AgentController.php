@@ -34,6 +34,7 @@ class AgentController extends Controller
                 'profile_picture_url' => $agent->profile_picture 
                     ? asset('storage/' . $agent->profile_picture) 
                     : null,
+                'nom_device' => $agent->nom_device,
                 'compagnie' => $agent->compagnie ? [
                     'id' => $agent->compagnie->id,
                     'name' => $agent->compagnie->name,

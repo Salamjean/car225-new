@@ -22,6 +22,7 @@ class AuthController extends Controller
             'email' => 'required|email',
             'password' => 'required|min:8',
             'fcm_token' => 'nullable|string',
+            'nom_device' => 'nullable|string|max:255',
         ], [
             'email.required' => 'L\'adresse email est obligatoire.',
             'email.email' => 'Veuillez saisir une adresse email valide.',
@@ -42,6 +43,11 @@ class AuthController extends Controller
             $user->update(['fcm_token' => $request->fcm_token]);
         }
 
+        // Mettre à jour le nom de l'appareil si fourni
+        if ($request->filled('nom_device')) {
+            $user->update(['nom_device' => $request->nom_device]);
+        }
+
         // Créer un nouveau token (on ne révoque plus les anciens pour permettre plusieurs sessions persistantes)
         $token = $user->createToken('mobile-app')->plainTextToken;
 
@@ -56,6 +62,7 @@ class AuthController extends Controller
                 'contact' => $user->contact,
                 'adresse' => $user->adresse,
                 'photo_profile_path' => $user->photo_profile_path,
+                'nom_device' => $user->nom_device,
             ],
             'token' => $token,
             'token_type' => 'Bearer',

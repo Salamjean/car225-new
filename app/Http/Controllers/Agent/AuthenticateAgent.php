@@ -89,6 +89,7 @@ class AuthenticateAgent extends Controller
         $request->validate([
             'email' => 'required|exists:agents,email',
             'password' => 'required|min:8',
+            'nom_device' => 'nullable|string|max:255',
         ], [
             'email.required' => 'Le mail est obligatoire.',
             'email.exists' => 'Cette adresse mail n\'existe pas.',
@@ -106,6 +107,11 @@ class AuthenticateAgent extends Controller
             }
 
             if (auth('agent')->attempt($request->only('email', 'password'))) {
+                // Mettre à jour le nom de l'appareil si fourni
+                if ($request->filled('nom_device')) {
+                    $agent->update(['nom_device' => $request->nom_device]);
+                }
+                
                 return redirect()->route('agent.dashboard')->with('success', 'Bienvenue sur la page des demandes en attente');
             } else {
                 return redirect()->back()->with('error', 'Votre mot de passe est incorrect.');
