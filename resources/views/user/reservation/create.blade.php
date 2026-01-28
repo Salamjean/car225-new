@@ -1561,29 +1561,85 @@ function onAllerRetourChoiceChange() {
             Swal.fire({
                 title: 'Confirmer la réservation',
                 html: `
-                                                                                        <div class="text-left">
-                                                                                            <p class="mb-3">Voulez-vous confirmer la réservation de <strong>${selectedNumberOfPlaces} place(s)</strong> ?</p>
-                                                                                            <div class="bg-gray-50 p-4 rounded-lg mb-4">
-                                                                                                <p class="font-semibold mb-2">Date du voyage :</p>
-                                                                                                <p class="text-lg text-blue-600 font-bold">${dateVoyage}</p>
-                                                                                                <p class="font-semibold mb-2 mt-4">Places :</p>
-                                                                                                <p class="text-lg text-[#e94f1b] font-bold">${sortedSeats.join(', ')}</p>
-                                                                                            </div>
-                                                                                            <p class="text-sm text-gray-600">Un ticket sera envoyé à l'email de chaque passager.</p>
-                                                                                        </div>
-                                                                                    `,
+                    <div class="text-left">
+                        <p class="mb-3">Voulez-vous confirmer la réservation de <strong>${selectedNumberOfPlaces} place(s)</strong> ?</p>
+                        <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                            <p class="font-semibold mb-2">Date du voyage :</p>
+                            <p class="text-lg text-blue-600 font-bold">${dateVoyage}</p>
+                            <p class="font-semibold mb-2 mt-4">Places :</p>
+                            <p class="text-lg text-[#e94f1b] font-bold">${sortedSeats.join(', ')}</p>
+                        </div>
+                        <p class="text-sm text-gray-600">Un ticket sera envoyé à l'email de chaque passager.</p>
+                    </div>
+                `,
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#e94f1b',
                 cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Oui, confirmer',
+                confirmButtonText: 'Oui, continuer',
                 cancelButtonText: 'Non, annuler',
                 reverseButtons: true
             }).then(async (result) => {
                 if (result.isConfirmed) {
+                    // --- Logique de choix du paiement ---
+                    const prixUnitaire = parseInt(currentSelectedProgram.montant_billet);
+                    const multiplier = window.userChoseAllerRetour ? 2 : 1;
+                    const montantTotal = prixUnitaire * selectedNumberOfPlaces * multiplier;
+                    const userSolde = {{ auth()->check() ? (auth()->user()->solde ?? 0) : 0 }}; // Injection sécurisée
+
+                    let paymentMethod = 'cinetpay'; // Valeur par défaut
+
+                    // Demander le mode de paiement
+                    const choiceResult = await Swal.fire({
+                         title: 'Choisissez le mode de paiement',
+                         html: `
+                             <div class="flex flex-col gap-4 text-center">
+                                 <div class="bg-gray-50 p-3 rounded-lg">
+                                     <p class="text-gray-600 text-sm">Montant à payer</p>
+                                     <p class="text-2xl font-bold text-[#e94f1b]">${new Intl.NumberFormat('fr-FR').format(montantTotal)} FCFA</p>
+                                 </div>
+                                 
+                                 <div class="border-t pt-2">
+                                     <p class="text-gray-600 text-sm mb-1">Votre solde actuel</p>
+                                     <p class="text-lg font-bold">${new Intl.NumberFormat('fr-FR').format(userSolde)} FCFA</p>
+                                     ${userSolde < montantTotal ? 
+                                        '<p class="text-red-500 text-xs mt-1 font-bold"><i class="fas fa-exclamation-circle"></i> Solde insuffisant</p>' : 
+                                        '<p class="text-green-500 text-xs mt-1"><i class="fas fa-check-circle"></i> Solde suffisant</p>'}
+                                 </div>
+                             </div>
+                         `,
+                         icon: 'question', // <--- CORRECTION ICI (au lieu de 'wallet')
+                         showCancelButton: true,
+                         showDenyButton: true,
+                         confirmButtonText: `<i class="fas fa-wallet"></i> Payer via Mon Compte`,
+                         denyButtonText: `<i class="fas fa-credit-card"></i> CinetPay (Mobile Money)`,
+                         confirmButtonColor: '#e94f1b',
+                         denyButtonColor: '#2dce89',
+                         cancelButtonText: 'Annuler',
+                         reverseButtons: true,
+                         didOpen: () => {
+                             // Désactiver le bouton Mon Compte si solde insuffisant
+                             if (userSolde < montantTotal) {
+                                  const confirmBtn = Swal.getConfirmButton();
+                                  confirmBtn.disabled = true;
+                                  confirmBtn.style.opacity = 0.5;
+                                  confirmBtn.title = "Votre solde est insuffisant pour effectuer ce paiement.";
+                             }
+                         }
+                    });
+
+                    if (choiceResult.isConfirmed) {
+                        paymentMethod = 'wallet';
+                    } else if (choiceResult.isDenied) {
+                        paymentMethod = 'cinetpay';
+                    } else {
+                        return; // Annulation par l'utilisateur
+                    }
+
+                    // Afficher loader
                     Swal.fire({
-                        title: 'Enregistrement...',
-                        text: 'Création de votre réservation',
+                        title: 'Traitement...',
+                        text: paymentMethod === 'wallet' ? 'Paiement et confirmation en cours...' : 'Initialisation du paiement...',
                         allowOutsideClick: false,
                         didOpen: () => { Swal.showLoading(); }
                     });
@@ -1602,15 +1658,27 @@ function onAllerRetourChoiceChange() {
                                 date_voyage: dateVoyage,
                                 is_aller_retour: window.userChoseAllerRetour,
                                 date_retour: window.selectedReturnDate,
-                                passagers: passengers
+                                passagers: passengers,
+                                payment_method: paymentMethod // Transmission du choix
                             })
                         });
 
                         const data = await response.json();
 
                         if (data.success) {
-                            if (data.payment_url) {
-                                // Définir la configuration CinetPay
+                            if (data.wallet_payment) {
+                                // --- SUCCÈS PAIEMENT PORTEFEUILLE ---
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Paiement effectué',
+                                    text: data.message,
+                                    confirmButtonColor: '#e94f1b',
+                                    allowOutsideClick: false
+                                }).then(() => {
+                                    window.location.href = data.redirect_url;
+                                });
+                            } else if (data.payment_url) {
+                                // --- FLUX CINETPAY EXISTANT ---
                                 CinetPay.setConfig({
                                     apikey: '{{ $cinetpay_api_key }}',
                                     site_id: '{{ $cinetpay_site_id }}',
@@ -1618,7 +1686,6 @@ function onAllerRetourChoiceChange() {
                                     mode: '{{ $cinetpay_mode }}'
                                 });
 
-                                // Ouvrir le guichet de paiement
                                 CinetPay.getCheckout({
                                     transaction_id: data.transaction_id,
                                     amount: data.amount,
@@ -1636,11 +1703,8 @@ function onAllerRetourChoiceChange() {
                                     customer_zip_code: '00225',
                                 });
 
-                                // Attendre le retour de CinetPay
                                 CinetPay.waitResponse(function (response) {
                                     if (response.status === "ACCEPTED") {
-                                        // En local, le webhook notify ne fonctionne pas (localhost), 
-                                        // donc on redirige vers le return qui fait la vérification
                                         window.location.href = "{{ route('payment.return') }}?transaction_id=" + data.transaction_id;
                                     } else {
                                         Swal.fire({
@@ -1654,6 +1718,7 @@ function onAllerRetourChoiceChange() {
                                     }
                                 });
                             } else {
+                                // Cas de succès générique (fallback)
                                 Swal.fire({
                                     icon: 'success',
                                     title: 'Réservation confirmée !',

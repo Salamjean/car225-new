@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
+use Illuminate\Support\Facades\DB;
 use Endroid\QrCode\Color\Color;
 use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\ErrorCorrectionLevel\ErrorCorrectionLevel;
@@ -638,6 +639,7 @@ class ReservationController extends Controller
         try {
               $isAllerRetour = $request->boolean('is_aller_retour'); 
               $dateRetour = $request->input('date_retour');
+              $paymentMethod = $request->input('payment_method', 'cinetpay');
 
               if ($isAllerRetour && !$dateRetour) {
                   return response()->json([
@@ -645,145 +647,189 @@ class ReservationController extends Controller
                       'message' => 'La date de retour est requise pour un aller-retour.'
                   ], 422);
               }
-            // Calculer le prix par place
-            $prixUnitaire = $programme->montant_billet;
-            if ($programme->is_aller_retour) {
-                $prixUnitaire *= 2;
+            // Calculer le prix
+        $prixUnitaire = $programme->montant_billet;
+        if ($programme->is_aller_retour) {
+            $prixUnitaire *= 2;
+        }
+        $montantTotal = $prixUnitaire * $request->nombre_places;
+        
+        // 1. DÉMARRER LA TRANSACTION (Sécurité absolue)
+        DB::beginTransaction();
+
+        $user = Auth::user(); // On recharge l'user pour avoir le solde à jour
+        
+        // Variables d'état
+        $paiementStatus = 'pending';
+        $reservationStatus = 'en_attente';
+        $isWallet = false;
+        $transactionId = '';
+        
+        // --- LOGIQUE DE PAIEMENT ---
+        if ($paymentMethod === 'wallet') {
+            // Verrouiller la ligne user pour éviter double dépense simultanée
+            $user = \App\Models\User::lockForUpdate()->find(Auth::id());
+
+            if (($user->solde ?? 0) < $montantTotal) {
+                 DB::rollBack(); // Annuler tout
+                 return response()->json([
+                    'success' => false,
+                    'message' => 'Solde insuffisant pour effectuer cette réservation.',
+                ], 400);
             }
-
-            $montantTotal = $prixUnitaire * $request->nombre_places;
-
-            // Générer un identifiant de transaction unique pour CinetPay
-            $transactionId = 'TRANS-' . date('YmdHis') . '-' . strtoupper(Str::random(5));
-
-            // Créer l'enregistrement de paiement
-            $paiement = \App\Models\Paiement::create([
-                'user_id' => Auth::id(),
+            
+            // Débit du wallet
+            $user->solde -= $montantTotal;
+            $user->save();
+            
+            $transactionId = 'TX-WAL-' . strtoupper(Str::random(10));
+            
+            // Historique transaction
+            \App\Models\WalletTransaction::create([
+                'user_id' => $user->id,
                 'amount' => $montantTotal,
-                'transaction_id' => $transactionId,
-                'status' => 'pending',
-                'currency' => 'XOF',
+                'type' => 'debit',
+                'description' => 'Réservation ' . $request->nombre_places . ' place(s)',
+                'reference' => $transactionId,
+                'status' => 'completed',
+                'payment_method' => 'wallet',
+                'metadata' => json_encode(['programme_id' => $programme->id])
             ]);
 
-            // Initialiser le paiement CinetPay
-            $cinetPayService = app(\App\Services\CinetPayService::class);
-            $paymentData = [
-                'transaction_id' => $transactionId,
-                'amount' => (int) $montantTotal,
-                'currency' => 'XOF',
-                'description' => 'Réservation de ' . $request->nombre_places . ' place(s) - ' . $programme->compagnie->name,
-                'customer_id' => Auth::id(),
-                'customer_name' => Auth::user()->name,
-                'customer_surname' => Auth::user()->name,
-                'customer_email' => Auth::user()->email,
-                'customer_phone_number' => Auth::user()->phone ?? '0000000000',
-                'customer_address' => 'Abidjan',
-                'customer_city' => 'Abidjan',
-                'customer_country' => 'CI',
-                'customer_state' => 'Abidjan',
-                'customer_zip_code' => '00225',
-            ];
+            $paiementStatus = 'success';
+            $reservationStatus = 'confirmee';
+            $isWallet = true;
 
-            // Note: On n'appelle plus initiatePayment ici car on utilise le SDK Seamless (Pop-up)
-            // L'initiation se fera côté client avec CinetPay.getCheckout()
-            // cela évite l'erreur "Transaction ID already exists"
-
-
-            // Générer un identifiant de groupe pour lier les réservations
-            $groupId = strtoupper(Str::random(6));
-
-            $createdReservations = [];
-            $passagers = $request->passagers;
-
-          foreach ($passagers as $index => $passager) {
-                $seatNumber = $passager['seat_number'];
-
-                // Générer une référence unique pour cette place basée sur l'ID de transaction
-                $reference = $transactionId . '-' . $seatNumber;
-
-                // 1. D'abord on prépare les données dans un tableau (C'est ça la correction importante)
-                $reservationData = [
-                    'paiement_id' => $paiement->id,
-                    'payment_transaction_id' => $transactionId,
-                    'user_id' => Auth::id(),
-                    'programme_id' => $request->programme_id,
-                    'seat_number' => $seatNumber,
-                    'passager_nom' => $passager['nom'],
-                    'passager_prenom' => $passager['prenom'],
-                    'passager_email' => $passager['email'],
-                    'passager_telephone' => $passager['telephone'],
-                    'passager_urgence' => $passager['urgence'],
-                    
-                    // CORRECTION ICI : On utilise la variable $isAllerRetour (choix user)
-                    'is_aller_retour' => $isAllerRetour, 
-                    
-                    'montant' => $prixUnitaire,
-                    'statut' => 'en_attente',
-                    'reference' => $reference,
-                    'date_voyage' => $dateVoyage,
-                ];
-
-                // 2. On ajoute les infos de retour SI c'est un aller-retour
-                if ($isAllerRetour) {
-                    $reservationData['date_retour'] = $dateRetour;
-                    $reservationData['statut_aller'] = 'en_attente';
-                    $reservationData['statut_retour'] = 'en_attente';
-                    
-                    // Lier au programme retour si disponible
-                    if ($programme->programme_retour_id) {
-                        $reservationData['programme_retour_id'] = $programme->programme_retour_id;
-                    } elseif ($programme->programmeRetour) {
-                        $reservationData['programme_retour_id'] = $programme->programmeRetour->id;
-                    }
-                } else {
-                    $reservationData['statut_aller'] = 'en_attente';
-                }
-
-                // 3. Enfin, on crée la réservation avec les données complètes
-                $reservation = Reservation::create($reservationData);
-
-                Log::info('Réservation créée (en attente):', [
-                    'id' => $reservation->id,
-                    'reference' => $reference,
-                    'seat_number' => $seatNumber,
-                    'is_aller_retour' => $isAllerRetour // Vérification dans les logs
-                ]);
-
-                $createdReservations[] = [
-                    'id' => $reservation->id,
-                    'reference' => $reference,
-                    'seat_number' => $seatNumber,
-                ];
-            }
-
-            Log::info('=== FIN INITIALISATION RESERVATION: ' . count($createdReservations) . ' réservations créées ===');
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Réservations initialisées. Ouverture du paiement...',
-                'payment_url' => true,
-                'transaction_id' => $transactionId,
-                'amount' => (int) $montantTotal,
-                'currency' => 'XOF',
-                'description' => 'Réservation de ' . $request->nombre_places . ' place(s) - ' . $programme->compagnie->name,
-                'customer_name' => Auth::user()->name,
-                'customer_surname' => Auth::user()->name,
-                'customer_email' => Auth::user()->email,
-                'customer_phone_number' => Auth::user()->phone ?? '0000000000',
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Erreur création réservation:', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la création de la réservation: ' . $e->getMessage()
-            ], 500);
+        } else {
+            // CinetPay
+            $transactionId = 'TRANS-' . date('YmdHis') . '-' . strtoupper(Str::random(5));
         }
 
+        // 2. CRÉATION DU PAIEMENT (Correction : ajout de payment_method)
+        $paiement = \App\Models\Paiement::create([
+            'user_id' => Auth::id(),
+            'amount' => $montantTotal,
+            'transaction_id' => $transactionId,
+            'status' => $paiementStatus,
+            'currency' => 'XOF',
+            'payment_method' => $paymentMethod, // <--- AJOUTÉ POUR CORRESPONDRE AU MODÈLE
+            'payment_date' => now(),
+        ]);
+
+        $createdReservations = [];
+        $passagers = $request->passagers;
+
+        foreach ($passagers as $passager) {
+            $seatNumber = $passager['seat_number'];
+            $reference = $transactionId . '-' . $seatNumber;
+
+            $reservationData = [
+                'paiement_id' => $paiement->id, // Maintenant l'ID existe à 100%
+                'payment_transaction_id' => $transactionId,
+                'user_id' => Auth::id(),
+                'programme_id' => $request->programme_id,
+                'seat_number' => $seatNumber,
+                'passager_nom' => $passager['nom'],
+                'passager_prenom' => $passager['prenom'],
+                'passager_email' => $passager['email'],
+                'passager_telephone' => $passager['telephone'],
+                'passager_urgence' => $passager['urgence'],
+                'is_aller_retour' => $isAllerRetour, 
+                'montant' => $prixUnitaire,
+                'statut' => $reservationStatus,
+                'reference' => $reference,
+                'date_voyage' => $dateVoyage,
+            ];
+
+            // Options Aller-Retour
+            if ($isAllerRetour) {
+                $reservationData['date_retour'] = $dateRetour;
+                $reservationData['statut_aller'] = $reservationStatus;
+                $reservationData['statut_retour'] = $reservationStatus;
+                
+                if ($programme->programme_retour_id) {
+                    $reservationData['programme_retour_id'] = $programme->programme_retour_id;
+                } elseif ($programme->programmeRetour) {
+                    $reservationData['programme_retour_id'] = $programme->programmeRetour->id;
+                }
+            } else {
+                $reservationData['statut_aller'] = $reservationStatus;
+            }
+
+            $reservation = Reservation::create($reservationData);
+
+            // Génération QR Code si Wallet
+            if ($isWallet) {
+                try {
+                    $qrData = $this->generateAndSaveQRCode(
+                        $reservation->reference,
+                        $reservation->id,
+                        $dateVoyage instanceof \Carbon\Carbon ? $dateVoyage->format('Y-m-d') : $dateVoyage,
+                        $reservation->user_id
+                    );
+                    
+                    $reservation->update([
+                        'qr_code' => $qrData['base64'],
+                        'qr_code_path' => $qrData['path'],
+                        'qr_code_data' => $qrData['qr_data']
+                    ]);
+                    
+                    // Envoi Email ici si nécessaire...
+                } catch (\Exception $e) {
+                     Log::error('Erreur QR/Email: ' . $e->getMessage());
+                     // On ne bloque pas la transaction pour un échec d'email
+                }
+            }
+            $createdReservations[] = $reservation;
+        }
+
+        // Si tout est bon, on valide la transaction DB
+        DB::commit();
+
+        // Mise à jour places (hors transaction pour éviter deadlocks complexes, ou dedans selon préférence)
+        if ($isWallet) {
+             $this->updateProgramStatus($programme, $dateVoyage);
+        }
+
+        if ($isWallet) {
+             return response()->json([
+                'success' => true,
+                'message' => 'Paiement effectué avec succès via Mon Compte.',
+                'wallet_payment' => true,
+                'redirect_url' => route('reservation.index') 
+            ]);
+        }
+
+        // Retour CinetPay
+        return response()->json([
+            'success' => true,
+            'message' => 'Réservations initialisées.',
+            'payment_url' => true,
+            'transaction_id' => $transactionId,
+            'amount' => (int) $montantTotal,
+            'currency' => 'XOF',
+            'description' => 'Réservation ' . $request->nombre_places . ' place(s)',
+            'customer_name' => Auth::user()->name,
+            'customer_surname' => Auth::user()->prenom ?? '',
+            'customer_email' => Auth::user()->email,
+            'customer_phone_number' => Auth::user()->phone ?? '00000000',
+            'customer_address' => 'Abidjan',
+            'customer_city' => 'Abidjan',
+            'customer_country' => 'CI',
+            'customer_state' => 'CI',
+            'customer_zip_code' => '00225',
+        ]);
+
+    } catch (\Exception $e) {
+        DB::rollBack(); // ANNULATION TOTALE EN CAS D'ERREUR
+        Log::error('Erreur Réservation: ' . $e->getMessage());
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Erreur technique: ' . $e->getMessage()
+        ], 500);
     }
+}
 
     /**
      * Recalculer le statut des places pour un programme (pour admin)

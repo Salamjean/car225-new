@@ -52,17 +52,19 @@
                     </div>
                 </div>
 
-                <!-- Total Spent -->
-                <div class="bg-white rounded-3xl p-6 shadow-xl border border-gray-100 relative overflow-hidden group">
+                <!-- Solde Mon Compte -->
+                <div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-6 shadow-xl border border-gray-100 relative overflow-hidden group">
                     <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
-                        <i class="fas fa-wallet text-6xl text-green-600"></i>
+                        <i class="fas fa-wallet text-6xl text-white"></i>
                     </div>
-                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Dépensé</p>
-                    <h3 class="text-3xl font-black text-gray-900">{{ number_format($totalSpent, 0, ',', ' ') }} <span
-                            class="text-sm">CFA</span></h3>
+                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Solde Mon Compte</p>
+                    <h3 class="text-3xl font-black text-white">{{ number_format($user->solde, 0, ',', ' ') }} <span
+                            class="text-sm text-gray-400">CFA</span></h3>
                     <div
-                        class="mt-4 flex items-center text-xs font-bold text-green-600 bg-green-50 w-fit px-2 py-1 rounded-lg">
-                        Economies & Voyages
+                        class="mt-4 flex items-center gap-2">
+                        <a href="{{ route('user.wallet.index') }}" class="text-xs font-bold text-gray-900 bg-white px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+                            <i class="fas fa-plus-circle mr-1"></i> Recharger
+                        </a>
                     </div>
                 </div>
 

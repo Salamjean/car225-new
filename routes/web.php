@@ -190,6 +190,12 @@ Route::middleware('auth')->prefix('user')->group(function () {
     Route::get('/dashboard', [UserController::class, 'dashboard'])->name('user.dashboard');
     Route::get('/logout', [UserController::class, 'logout'])->name('user.logout');
 
+    // Wallet Routes
+    Route::get('/compte', [App\Http\Controllers\User\WalletController::class, 'index'])->name('user.wallet.index');
+    Route::post('/compte/recharge', [App\Http\Controllers\User\WalletController::class, 'recharge'])->name('user.wallet.recharge');
+    Route::post('/compte/verify', [App\Http\Controllers\User\WalletController::class, 'verifyRecharge'])->name('user.wallet.verify');
+
+
     //Les routes pour faire une reservation 
     Route::prefix('booking')->group(function () {
         Route::get('/allReserve', [ReservationController::class, 'index'])->name('reservation.index');
@@ -217,6 +223,7 @@ Route::middleware('auth')->prefix('user')->group(function () {
 // Paiement CinetPay (Hors Auth pour le webhook)
 Route::prefix('user')->group(function () {
     Route::post('/payment/notify', [App\Http\Controllers\PaymentController::class, 'notify'])->name('payment.notify');
+    Route::post('/compte/notify', [App\Http\Controllers\User\WalletController::class, 'notify'])->name('cinetpay.notify');
     Route::get('/payment/return', [App\Http\Controllers\PaymentController::class, 'return'])->name('payment.return');
 });
 
