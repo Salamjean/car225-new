@@ -22,8 +22,8 @@ return new class extends Migration
             $table->json('qr_code_retour_data')->nullable()->after('qr_code_retour_path');
             
             // Statuts séparés pour aller et retour
-            $table->enum('statut_aller', ['confirmee', 'terminee', 'annulee'])->default('confirmee')->after('statut');
-            $table->enum('statut_retour', ['confirmee', 'terminee', 'annulee'])->nullable()->after('statut_aller');
+            $table->enum('statut_aller', ['en_attente','confirmee', 'terminee', 'annulee'])->default('confirmee')->after('statut');
+            $table->enum('statut_retour', ['en_attente','confirmee', 'terminee', 'annulee'])->nullable()->after('statut_aller');
         });
     }
 

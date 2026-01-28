@@ -494,14 +494,14 @@ class ReservationController extends Controller
 
                 if ($isAllerRetour) {
                     $reservationData['date_retour'] = $dateRetour;
-                    $reservationData['statut_aller'] = 'en_attente';
-                    $reservationData['statut_retour'] = 'en_attente';
+                    $reservationData['statut_aller'] = 'confirmee';
+                    $reservationData['statut_retour'] = 'confirmee';
                     
                     if ($programme->programme_retour_id) {
                         $reservationData['programme_retour_id'] = $programme->programme_retour_id;
                     }
                 } else {
-                    $reservationData['statut_aller'] = 'en_attente';
+                    $reservationData['statut_aller'] = 'confirmee';
                 }
 
                 $reservation = Reservation::create($reservationData);

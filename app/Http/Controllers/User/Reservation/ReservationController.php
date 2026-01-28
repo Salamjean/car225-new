@@ -41,7 +41,7 @@ class ReservationController extends Controller
         // Récupérer les réservations avec les relations nécessaires
         $query = Reservation::with(['programme', 'programme.compagnie', 'programme.vehicule'])
             ->where('user_id', $user->id)
-            // On trie par transaction pour regrouper les billets achetés ensemble, puis par siège
+            ->where('statut', '!=', 'en_attente')
             ->orderBy('created_at', 'desc')
             ->orderBy('payment_transaction_id', 'desc')
             ->orderBy('seat_number', 'asc');
