@@ -376,29 +376,39 @@
             function startCamera() {
                 if (isScanning) return;
                 
-                // Utiliser l'ID 'reader'
+                // --- VERSION STABLE (Restaurée) ---
+                // On recrée l'instance pour éviter les conflits
+                if (html5Qrcode) {
+                    try { html5Qrcode.clear(); } catch(e) {}
+                }
                 html5Qrcode = new Html5Qrcode("reader");
                 
                 var config = { 
-                    fps: 10, 
+                    fps: 20, // Une valeur moyenne stable
                     qrbox: { width: 250, height: 250 },
-                    aspectRatio: 1.0 
+                    aspectRatio: 1.0
                 };
 
+                // Configuration standard de la caméra (arrière)
+                var cameraConfig = { facingMode: "environment" };
+
                 html5Qrcode.start(
-                    { facingMode: "environment" }, 
+                    cameraConfig, 
                     config, 
                     onScanSuccess,
-                    (errorMessage) => { /* ignore per-frame errors */ }
+                    (errorMessage) => { 
+                        // On ignore les erreurs de scan par frame pour ne pas spammer la console
+                    }
                 ).then(function() {
                     isScanning = true;
-                    console.log("Camera started");
+                    console.log("Camera started in stable mode");
                 }).catch(function(err) {
-                    console.log("Back camera failed, trying front:", err);
+                    console.log("Back camera failed, trying user camera:", err);
+                    // Tentative caméra frontale si l'arrière échoue
                     html5Qrcode.start(
                         { facingMode: "user" }, config, onScanSuccess
                     ).catch(function(err2) {
-                        $('#reader').html('<div class="text-white text-center p-5">Impossible d\'accéder à la caméra.<br>Vérifiez vos permissions.</div>');
+                        $('#reader').html('<div class="text-white text-center p-5"><i class="material-icons" style="font-size:48px">videocam_off</i><br><br>Impossible d\'accéder à la caméra.<br>Veuillez vérifier les permissions du navigateur.</div>');
                     });
                 });
             }

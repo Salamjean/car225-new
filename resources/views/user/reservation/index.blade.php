@@ -278,19 +278,16 @@
                                                     </div>
                                                 </td>
                                                 <td class="align-middle text-center">
-                                                    @php
-                                                        $passagers = is_array($reservation->passagers) ? $reservation->passagers : json_decode($reservation->passagers, true) ?? [];
-                                                    @endphp
-                                                    @if(!empty($passagers))
-                                                        <button type="button" 
-                                                                class="btn btn-sm btn-outline-info view-passengers-btn" 
-                                                                data-passengers='@json($passagers)'
-                                                                data-reference="{{ $reservation->reference }}">
-                                                            <i class="fas fa-users"></i> {{ count($passagers) }} passager(s)
-                                                        </button>
-                                                    @else
-                                                        <span class="text-muted small">Aucune info</span>
-                                                    @endif
+                                                    <button type="button" 
+                                                            class="btn btn-sm btn-outline-info view-passenger-details-btn" 
+                                                            data-nom="{{ $reservation->passager_nom }}"
+                                                            data-prenom="{{ $reservation->passager_prenom }}"
+                                                            data-email="{{ $reservation->passager_email ?? 'Non renseigné' }}"
+                                                            data-telephone="{{ $reservation->passager_telephone ?? 'Non renseigné' }}"
+                                                            data-urgence="{{ $reservation->passager_urgence ?? 'Non renseigné' }}"
+                                                            data-reference="{{ $reservation->reference }}">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
                                                 </td>
                                                 <td class="align-middle">
                                                     <div class="d-flex align-items-center"
@@ -1151,6 +1148,52 @@
                 // Supprimer le paramètre d'erreur de l'URL
                 history.replaceState({}, document.title, window.location.pathname);
             }
+
+            // --- GESTION DU POPUP PASSAGER ---
+            document.querySelectorAll('.view-passenger-details-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const data = this.dataset;
+                    
+                    Swal.fire({
+                        title: 'Détails du Passager',
+                        html: `
+                            <div class="text-center mb-4">
+                                <div class="avatar-circle mx-auto mb-3" style="width: 60px; height: 60px; background: #e0e7ff; color: #4338ca; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <h5 style="color: #1f2937; font-weight: 600; margin-bottom: 5px;">${data.prenom} ${data.nom}</h5>
+                                <span class="badge bg-light text-dark border">${data.reference}</span>
+                            </div>
+                            
+                            <div style="text-align: left; background: #f9fafb; padding: 15px; border-radius: 8px;">
+                                <div class="mb-3 border-bottom pb-2">
+                                    <label style="font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 700; display: block; margin-bottom: 4px;">Contact</label>
+                                    <div style="font-weight: 500; color: #111827;">
+                                        <i class="fas fa-phone-alt me-2 text-primary" style="font-size: 0.9em;"></i> ${data.telephone}
+                                    </div>
+                                </div>
+                                <div class="mb-3 border-bottom pb-2">
+                                    <label style="font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 700; display: block; margin-bottom: 4px;">Email</label>
+                                    <div style="font-weight: 500; color: #111827;">
+                                        <i class="fas fa-envelope me-2 text-primary" style="font-size: 0.9em;"></i> ${data.email}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label style="font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 700; display: block; margin-bottom: 4px;">Urgence</label>
+                                    <div style="font-weight: 500; color: #111827;">
+                                        <i class="fas fa-briefcase-medical me-2 text-danger" style="font-size: 0.9em;"></i> ${data.urgence}
+                                    </div>
+                                </div>
+                            </div>
+                        `,
+                        showCloseButton: true,
+                        showConfirmButton: false,
+                        customClass: {
+                            popup: 'swal2-popup-custom'
+                        }
+                    });
+                });
+            });
         });
     </script>
 

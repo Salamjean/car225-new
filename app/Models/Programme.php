@@ -293,13 +293,7 @@ class Programme extends Model
         $totalPlaces = $this->vehicule->nombre_place ?? 0;
 
         // Compter les places réservées
-        $placesReservees = 0;
-        foreach ($this->reservations as $reservation) {
-            $places = $reservation->places_reservees;
-            if (is_array($places)) {
-                $placesReservees += count($places);
-            }
-        }
+        $placesReservees = $this->reservations()->where('statut', 'confirmee')->count();
 
         // Calculer le pourcentage
         $pourcentage = $totalPlaces > 0 ? ($placesReservees / $totalPlaces) * 100 : 0;

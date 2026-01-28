@@ -44,6 +44,14 @@ class ProgrammeController extends Controller
                       });
                 });
             })
+            // FILTRE RETOUR: On ne veut voir QUE l'aller (is_aller_retour = true) 
+            // OU les programmes simples (is_aller_retour = false ET programme_retour_id est NULL)
+            ->where(function($q) {
+                // Cas 1: C'est un Aller d'un Aller-Retour
+                $q->where('is_aller_retour', true)
+                // Cas 2: C'est un voyage simple (pas de lien retour)
+                  ->orWhereNull('programme_retour_id');
+            })
             ->orderBy('date_depart', 'asc')
             ->paginate(10);
 
@@ -286,6 +294,32 @@ class ProgrammeController extends Controller
                 ];
             } else {
                 $data['convoyeur'] = null;
+            }
+
+            // AJOUT: Informations sur le retour si c'est un Aller-Retour
+            if ($programme->is_aller_retour && $programme->programme_retour_id) {
+                $programmeRetour = Programme::find($programme->programme_retour_id);
+                if ($programmeRetour) {
+                    
+                    // Gestion jours récurrence retour
+                    $joursRecurrenceRetour = $programmeRetour->jours_recurrence;
+                    if (is_string($joursRecurrenceRetour) && !empty($joursRecurrenceRetour)) {
+                        try {
+                            $joursRecurrenceRetour = json_decode($joursRecurrenceRetour, true);
+                        } catch (\Exception $e) {
+                            $joursRecurrenceRetour = [];
+                        }
+                    }
+
+                    $data['retour_details'] = [
+                        'date_depart' => \Carbon\Carbon::parse($programmeRetour->date_depart)->format('d/m/Y'),
+                        'heure_depart' => $programmeRetour->heure_depart,
+                        'heure_arrive' => $programmeRetour->heure_arrive,
+                        'date_fin_programmation' => $programmeRetour->date_fin_programmation,
+                        'jours_recurrence' => $joursRecurrenceRetour,
+                        'type_programmation' => $programmeRetour->type_programmation,
+                    ];
+                }
             }
 
             return response()->json($data);

@@ -34,6 +34,7 @@ class ReservationController extends Controller
         return str_replace($accents, $noAccents, $term);
     }
 
+  
    public function index(Request $request)
     {
         $user = Auth::user();
@@ -41,7 +42,7 @@ class ReservationController extends Controller
         // Récupérer les réservations avec les relations nécessaires
         $query = Reservation::with(['programme', 'programme.compagnie', 'programme.vehicule'])
             ->where('user_id', $user->id)
-            // On trie par transaction pour regrouper les billets achetés ensemble, puis par siège
+            ->where('statut', '!=', 'en_attente')
             ->orderBy('created_at', 'desc')
             ->orderBy('payment_transaction_id', 'desc')
             ->orderBy('seat_number', 'asc');
@@ -423,14 +424,7 @@ class ReservationController extends Controller
                             $query->where('date_depart', $formattedDate);
                         }
                     })
-                    ->pluck('places')
-                    ->flatMap(function ($places) {
-                        try {
-                            return json_decode($places, true) ?? [];
-                        } catch (\Exception $e) {
-                            return [];
-                        }
-                    })
+                    ->pluck('seat_number')
                     ->toArray();
 
                 $reservedSeats = array_merge($reservedSeats, $programReservations);
@@ -1243,7 +1237,7 @@ class ReservationController extends Controller
             }
 
             // Si tout est bon, retourner les informations complètes
-            $places = json_decode($reservation->places, true) ?? [];
+
 
             Log::info("QR Code ($trajetVerifie) vérifié avec succès", [
                 'reference' => $reservation->reference,
@@ -1609,7 +1603,14 @@ class ReservationController extends Controller
         $today = now()->format('Y-m-d');
         
         // Récupérer tous les programmes actifs avec les détails nécessaires
+        // FILTRE : Exclure les programmes RETOUR (ceux qui ont is_aller_retour = false ET programme_retour_id non null)
         $programmes = Programme::with(['compagnie', 'vehicule', 'itineraire'])
+            ->where(function ($q) {
+                // Garder les programmes "aller-retour" (le programme principal)
+                $q->where('is_aller_retour', true)
+                  // OU les programmes sans lien retour (programmes aller simples)
+                  ->orWhereNull('programme_retour_id');
+            })
             ->where(function ($query) use ($today) {
                 // CAS 1: Programmes ponctuels dont la date de départ est aujourd'hui ou dans le futur
                 $query->where(function ($q) use ($today) {
