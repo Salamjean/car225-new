@@ -22,6 +22,7 @@ class AuthController extends Controller
             'email' => 'required|email',
             'password' => 'required|min:8',
             'fcm_token' => 'nullable|string',
+            'nom_device' => 'nullable|string|max:255',
         ], [
             'email.required' => 'L\'adresse email est obligatoire.',
             'email.email' => 'Veuillez saisir une adresse email valide.',
@@ -42,6 +43,11 @@ class AuthController extends Controller
             $user->update(['fcm_token' => $request->fcm_token]);
         }
 
+        // Mettre à jour le nom de l'appareil si fourni
+        if ($request->filled('nom_device')) {
+            $user->update(['nom_device' => $request->nom_device]);
+        }
+
         // Créer un nouveau token (on ne révoque plus les anciens pour permettre plusieurs sessions persistantes)
         $token = $user->createToken('mobile-app')->plainTextToken;
 
@@ -55,7 +61,8 @@ class AuthController extends Controller
                 'email' => $user->email,
                 'contact' => $user->contact,
                 'adresse' => $user->adresse,
-                'photo_profile_path' => $user->photo_profile_path,
+                'photo_profile_path' => $user->photo_profile_path ? 'storage/' . $user->photo_profile_path : null,
+                'nom_device' => $user->nom_device,
             ],
             'token' => $token,
             'token_type' => 'Bearer',
@@ -74,7 +81,7 @@ class AuthController extends Controller
             'password' => 'required|min:8|confirmed',
             'adresse' => 'required|string|max:255',
             'contact' => 'required|string|max:255',
-            'photo_profile' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'photo_profile' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ], [
             'name.required' => 'Le nom est obligatoire.',
             'prenom.required' => 'Le prénom est obligatoire.',
@@ -86,6 +93,10 @@ class AuthController extends Controller
             'password.confirmed' => 'Les mots de passe ne correspondent pas.',
             'adresse.required' => 'L\'adresse est obligatoire.',
             'contact.required' => 'Le numéro de contact est obligatoire.',
+            'photo_profile.required' => 'La photo de profil est obligatoire.',
+            'photo_profile.image' => 'Le fichier doit être une image.',
+            'photo_profile.mimes' => 'L\'image doit être au format jpeg, png, jpg ou gif.',
+            'photo_profile.max' => 'L\'image ne doit pas dépasser 2 Mo.',
         ]);
 
         try {
@@ -93,7 +104,7 @@ class AuthController extends Controller
                 'name' => $validated['name'],
                 'prenom' => $validated['prenom'],
                 'email' => $validated['email'],
-                'pays' => 'Cote_Ivoire',
+                'pays' => 'Cote d\'ivoire',
                 'contact' => $validated['contact'],
                 'adresse' => $validated['adresse'],
                 'password' => Hash::make($validated['password']),
@@ -122,7 +133,7 @@ class AuthController extends Controller
                     'email' => $user->email,
                     'contact' => $user->contact,
                     'adresse' => $user->adresse,
-                    'photo_profile_path' => $user->photo_profile_path,
+                    'photo_profile_path' => $user->photo_profile_path ? 'storage/' . $user->photo_profile_path : null,
                 ],
                 'token' => $token,
                 'token_type' => 'Bearer',

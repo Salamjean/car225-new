@@ -78,7 +78,21 @@ class Programme extends Model
     {
         return $this->hasMany(Reservation::class);
     }
+  /**
+     * Réservations où ce programme est l'ALLER (lié via programme_id)
+     */
+    public function reservationsAller()
+    {
+        return $this->hasMany(Reservation::class, 'programme_id');
+    }
 
+    /**
+     * Réservations où ce programme est le RETOUR (lié via programme_retour_id)
+     */
+    public function reservationsRetour()
+    {
+        return $this->hasMany(Reservation::class, 'programme_retour_id');
+    }
     /**
      * Relation avec le convoyeur (personnel)
      */

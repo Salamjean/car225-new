@@ -30,10 +30,11 @@ class AgentController extends Controller
                 'contact' => $agent->contact,
                 'commune' => $agent->commune,
                 'cas_urgence' => $agent->cas_urgence,
-                'profile_picture' => $agent->profile_picture,
+                'profile_picture' => $agent->profile_picture ? 'storage/' . $agent->profile_picture : null,
                 'profile_picture_url' => $agent->profile_picture 
                     ? asset('storage/' . $agent->profile_picture) 
                     : null,
+                'nom_device' => $agent->nom_device,
                 'compagnie' => $agent->compagnie ? [
                     'id' => $agent->compagnie->id,
                     'name' => $agent->compagnie->name,
@@ -80,7 +81,7 @@ class AgentController extends Controller
                 'email' => $agent->email,
                 'contact' => $agent->contact,
                 'commune' => $agent->commune,
-                'profile_picture' => $agent->profile_picture,
+                'profile_picture' => $agent->profile_picture ? 'storage/' . $agent->profile_picture : null,
             ],
         ]);
     }

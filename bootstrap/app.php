@@ -13,8 +13,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->validateCsrfTokens(except: [
+            '/api/*', // Exclu toutes les routes API du CSRF (pour mobile app)
             '/user/payment/notify',
-            '/api/user/payment/notify', // Exclu du CSRF pour CinetPay API
         ]);
 
         $middleware->alias([

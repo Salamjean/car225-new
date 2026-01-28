@@ -30,6 +30,7 @@ class User extends Authenticatable
         'photo_profile_path',
         'password',
         'fcm_token',
+        'nom_device',
     ];
 
     /**

@@ -22,6 +22,7 @@ class Agent extends Authenticatable
         'compagnie_id',
         'archived_at',
         'fcm_token',
+        'nom_device',
     ];
 
     public function compagnie()

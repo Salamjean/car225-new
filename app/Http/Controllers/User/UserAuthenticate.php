@@ -96,7 +96,7 @@ class UserAuthenticate extends Controller
                 'name' => $validated['name'],
                 'prenom' => $validated['prenom'],
                 'email' => $validated['email'],
-                'pays' => 'Cote_Ivoire',
+                'pays' => 'Cote d\'ivoire',
                 'contact' => $validated['contact'],
                 'adresse' => $validated['adresse'],
                 'password' => Hash::make($validated['password']),
