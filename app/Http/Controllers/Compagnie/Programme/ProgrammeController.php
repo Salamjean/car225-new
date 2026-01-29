@@ -422,6 +422,9 @@ class ProgrammeController extends Controller
                 $rules['retour_date_debut_recurrent'] = 'required|date';
                 $rules['retour_heure_depart_recurrent'] = 'required|string';
             }
+            // Véhicule/Chauffeur différent pour le retour (optionnel, pour trajets longs)
+            $rules['retour_vehicule_id'] = 'nullable|exists:vehicules,id';
+            $rules['retour_personnel_id'] = 'nullable|exists:personnels,id';
         }
 
         $validated = $request->validate($rules);
@@ -535,11 +538,21 @@ class ProgrammeController extends Controller
                     ]
                 );
 
+                // Déterminer le véhicule et chauffeur pour le retour
+                // Si véhicule/chauffeur différent spécifié (trajets longs), utiliser ces valeurs
+                $vehiculeRetourId = !empty($request->input('retour_vehicule_id')) 
+                    ? $request->input('retour_vehicule_id') 
+                    : $validated['vehicule_id'];
+                
+                $personnelRetourId = !empty($request->input('retour_personnel_id')) 
+                    ? $request->input('retour_personnel_id') 
+                    : $validated['personnel_id'];
+
                 $donneesRetour = [
                     'compagnie_id' => $compagnieId,
                     'itineraire_id' => $itineraireRetour->id,
-                    'vehicule_id' => $validated['vehicule_id'],
-                    'personnel_id' => $validated['personnel_id'],
+                    'vehicule_id' => $vehiculeRetourId,
+                    'personnel_id' => $personnelRetourId,
                     'convoyeur_id' => $validated['convoyeur_id'] ?? null,
                     'point_depart' => $itineraireRetour->point_depart,
                     'point_arrive' => $itineraireRetour->point_arrive,

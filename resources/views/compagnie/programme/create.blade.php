@@ -600,6 +600,96 @@
                 class="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-500 cursor-not-allowed">
         </div>
     </div>
+
+    <!-- Section Véhicule/Chauffeur différent pour trajets longs (≥5h) -->
+    <div id="long_trip_vehicle_section" class="hidden mt-6 bg-orange-50 border-2 border-orange-200 rounded-xl p-5 animate-fade-in">
+        <div class="flex items-start gap-3 mb-4">
+            <div class="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-exclamation-triangle text-white"></i>
+            </div>
+            <div>
+                <h4 class="font-bold text-orange-800">Trajet long détecté (≥5 heures)</h4>
+                <p class="text-sm text-orange-700">
+                    Pour ce type de trajet, nous recommandons d'utiliser un véhicule et/ou chauffeur différent pour le retour.
+                    Cela permet une meilleure gestion du repos du personnel et de l'entretien des véhicules.
+                </p>
+            </div>
+        </div>
+
+        <!-- Toggle utiliser véhicule différent -->
+        <div class="bg-white p-4 rounded-lg border border-orange-100 mb-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-bus text-orange-600"></i>
+                    </div>
+                    <div>
+                        <span class="font-semibold text-gray-900">Utiliser un véhicule différent pour le retour</span>
+                        <p class="text-xs text-gray-500">Recommandé pour les trajets de plus de 5 heures</p>
+                    </div>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="use_different_vehicle" class="sr-only peer">
+                    <div class="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-orange-500"></div>
+                </label>
+            </div>
+        </div>
+
+        <!-- Sélection véhicule/chauffeur retour -->
+        <div id="different_vehicle_fields" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- Véhicule retour -->
+            <div class="space-y-2">
+                <label class="flex items-center text-sm font-semibold text-gray-700">
+                    <i class="fas fa-bus mr-2 text-orange-500"></i>
+                    Véhicule pour le retour
+                    <span class="text-red-500 ml-1">*</span>
+                </label>
+                <div class="relative">
+                    <select name="retour_vehicule_id" id="retour_vehicule_id"
+                        class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white appearance-none">
+                        <option value="">Même véhicule que l'aller</option>
+                        @foreach ($vehicules as $vehicule)
+                            <option value="{{ $vehicule->id }}">
+                                {{ $vehicule->marque }} {{ $vehicule->modele }} -
+                                {{ $vehicule->immatriculation }} ({{ $vehicule->nombre_place }} places)
+                            </option>
+                        @endforeach
+                    </select>
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chauffeur retour -->
+            <div class="space-y-2">
+                <label class="flex items-center text-sm font-semibold text-gray-700">
+                    <i class="fas fa-user mr-2 text-orange-500"></i>
+                    Chauffeur pour le retour
+                    <span class="text-red-500 ml-1">*</span>
+                </label>
+                <div class="relative">
+                    <select name="retour_personnel_id" id="retour_personnel_id"
+                        class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white appearance-none">
+                        <option value="">Même chauffeur que l'aller</option>
+                        @foreach ($chauffeurs as $chauffeur)
+                            <option value="{{ $chauffeur->id }}">
+                                {{ $chauffeur->prenom }} {{ $chauffeur->name }} -
+                                {{ $chauffeur->contact }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
                                     <!-- Info récapitulative -->
@@ -997,15 +1087,16 @@
                 });
             });
 
-            // --- 8. VALIDATION FORMULAIRE ---
+            // --- 8. INFO DATE/RECURRENCE (non bloquant) ---
             function validateDateWithRecurrenceDays() {
                 if (!radioRecurrent.checked) return;
                 const dateDepartInput = document.getElementById('date_depart');
                 const dateDepart = dateDepartInput.value;
                 const joursChecked = document.querySelectorAll('input[name="jours_recurrence[]"]:checked');
 
-                const existingError = dateDepartInput.parentElement.parentElement.querySelector('.validation-error-date');
-                if (existingError) existingError.remove();
+                const existingInfo = dateDepartInput.parentElement.parentElement.querySelector('.validation-info-date');
+                if (existingInfo) existingInfo.remove();
+                dateDepartInput.classList.remove('border-red-500', 'border-blue-500');
 
                 if (!dateDepart || joursChecked.length === 0) return;
 
@@ -1016,25 +1107,107 @@
                 const joursSelectionnes = Array.from(joursChecked).map(cb => cb.value);
 
                 if (!joursSelectionnes.includes(jourFrancais)) {
-                    const errorDiv = document.createElement('div');
-                    errorDiv.className = 'validation-error-date bg-red-50 border border-red-200 rounded-lg p-3 mt-2';
-                    errorDiv.innerHTML = `<p class="text-sm text-red-700"><strong>Attention:</strong> La date choisie est un ${jourFrancais}, mais ce jour n'est pas coché.</p>`;
-                    dateDepartInput.parentElement.parentElement.appendChild(errorDiv);
-                    dateDepartInput.classList.add('border-red-500');
-                } else {
-                    dateDepartInput.classList.remove('border-red-500');
+                    // Trouver le prochain jour valide
+                    const joursOrdre = ['lundi', 'mardi', 'mercredi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
+                    const jourActuelIndex = joursOrdre.indexOf(jourFrancais);
+                    
+                    let prochainJour = null;
+                    for (let i = 1; i <= 7; i++) {
+                        const checkJour = joursOrdre[(jourActuelIndex + i) % 7];
+                        if (joursSelectionnes.includes(checkJour)) {
+                            prochainJour = checkJour;
+                            break;
+                        }
+                    }
+
+                    const infoDiv = document.createElement('div');
+                    infoDiv.className = 'validation-info-date bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2';
+                    infoDiv.innerHTML = `<p class="text-sm text-blue-700"><i class="fas fa-info-circle mr-2"></i><strong>Info:</strong> La date choisie (${jourFrancais}) n'est pas un jour de circulation. Le premier voyage sera le prochain <strong>${prochainJour}</strong>.</p>`;
+                    dateDepartInput.parentElement.parentElement.appendChild(infoDiv);
+                    dateDepartInput.classList.add('border-blue-500');
                 }
             }
 
-            document.querySelector('form').addEventListener('submit', function(e) {
-                if (radioRecurrent.checked) {
-                    const error = document.querySelector('.validation-error-date');
-                    if(error) {
-                        e.preventDefault();
-                        alert("Veuillez corriger la date de départ pour qu'elle corresponde à un jour de récurrence.");
-                    }
+            // Pas de blocage au submit - juste informatif
+
+            // --- 9. GESTION TRAJETS LONGS (≥5h) - Véhicule différent pour retour ---
+            const longTripVehicleSection = document.getElementById('long_trip_vehicle_section');
+            const useDifferentVehicleCheckbox = document.getElementById('use_different_vehicle');
+            const differentVehicleFields = document.getElementById('different_vehicle_fields');
+            const retourVehiculeSelect = document.getElementById('retour_vehicule_id');
+            const retourPersonnelSelect = document.getElementById('retour_personnel_id');
+
+            function parseDurationToMinutes(durationStr) {
+                if (!durationStr) return 0;
+                
+                let hours = 0, minutes = 0;
+                const hMatch = durationStr.match(/(\d+)\s*h/i) || durationStr.match(/(\d+)\s*heure/i);
+                const mMatch = durationStr.match(/(\d+)\s*m/i) || durationStr.match(/(\d+)\s*minute/i);
+
+                if (hMatch) hours = parseInt(hMatch[1]);
+                if (mMatch) minutes = parseInt(mMatch[1]);
+
+                // Fallback format HH:MM
+                if (hours === 0 && minutes === 0 && durationStr.includes(':')) {
+                    const parts = durationStr.split(':');
+                    hours = parseInt(parts[0]);
+                    minutes = parseInt(parts[1]);
                 }
+
+                return hours * 60 + minutes;
+            }
+
+            function isLongTrip() {
+                const duree = durerParcoursInput.value;
+                const totalMinutes = parseDurationToMinutes(duree);
+                return totalMinutes >= 300; // 5 heures = 300 minutes
+            }
+
+            function updateLongTripUI() {
+                const isAR = checkboxAR.checked;
+                const longTrip = isLongTrip();
+
+                if (isAR && longTrip) {
+                    longTripVehicleSection.classList.remove('hidden');
+                } else {
+                    longTripVehicleSection.classList.add('hidden');
+                    // Reset selections when hidden
+                    if (useDifferentVehicleCheckbox) {
+                        useDifferentVehicleCheckbox.checked = false;
+                        differentVehicleFields.classList.add('hidden');
+                        differentVehicleFields.classList.remove('grid');
+                    }
+                    if (retourVehiculeSelect) retourVehiculeSelect.value = '';
+                    if (retourPersonnelSelect) retourPersonnelSelect.value = '';
+                }
+            }
+
+            // Toggle pour les champs de véhicule différent
+            if (useDifferentVehicleCheckbox) {
+                useDifferentVehicleCheckbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        differentVehicleFields.classList.remove('hidden');
+                        differentVehicleFields.classList.add('grid');
+                    } else {
+                        differentVehicleFields.classList.add('hidden');
+                        differentVehicleFields.classList.remove('grid');
+                        // Reset values
+                        if (retourVehiculeSelect) retourVehiculeSelect.value = '';
+                        if (retourPersonnelSelect) retourPersonnelSelect.value = '';
+                    }
+                });
+            }
+
+            // Recalculer quand l'itinéraire change (car la durée change)
+            itineraireSelect.addEventListener('change', function() {
+                setTimeout(updateLongTripUI, 100); // Petit délai pour que la durée soit mise à jour
             });
+
+            // Recalculer quand aller-retour change
+            checkboxAR.addEventListener('change', updateLongTripUI);
+
+            // Initialiser au chargement
+            setTimeout(updateLongTripUI, 200);
 
             // Initialisation
             updateUI();
