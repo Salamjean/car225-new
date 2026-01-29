@@ -31,6 +31,7 @@ class User extends Authenticatable
         'password',
         'fcm_token',
         'nom_device',
+        'solde',
     ];
 
     /**
@@ -53,6 +54,12 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'solde' => 'decimal:2',
         ];
+    }
+
+    public function walletTransactions()
+    {
+        return $this->hasMany(WalletTransaction::class);
     }
 }

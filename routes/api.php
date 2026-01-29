@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\User\AuthController as UserAuthController;
 use App\Http\Controllers\Api\User\UserController;
 use App\Http\Controllers\Api\User\ReservationController as UserReservationController;
+use App\Http\Controllers\Api\User\WalletController;
 use App\Http\Controllers\Api\Agent\AuthController as AgentAuthController;
 use App\Http\Controllers\Api\Agent\AgentController;
 use App\Http\Controllers\Api\Agent\ReservationController as AgentReservationController;
@@ -29,6 +30,11 @@ Route::prefix('user')->group(function () {
     Route::post('/login', [UserAuthController::class, 'login']);
     Route::post('/register', [UserAuthController::class, 'register']);
     
+    // Mot de passe oublié
+    Route::post('/password/send-otp', [UserAuthController::class, 'sendOtp']);
+    Route::post('/password/verify-otp', [UserAuthController::class, 'verifyOtp']);
+    Route::post('/password/reset', [UserAuthController::class, 'resetPassword']);
+    
     // Routes protégées (authentification requise)
     Route::middleware('auth:sanctum')->group(function () {
         // Authentification
@@ -50,14 +56,22 @@ Route::prefix('user')->group(function () {
         Route::get('/reservations/{reservation}', [UserReservationController::class, 'show']);
         Route::delete('/reservations/{reservation}', [UserReservationController::class, 'cancel']);
         
-        // Programmes
-        Route::get('/programmes', [UserReservationController::class, 'getAllProgrammes']);
-        Route::get('/programmes/simple', [UserReservationController::class, 'getSimpleProgrammes']);
-        Route::get('/programmes/aller-retour', [UserReservationController::class, 'getAllerRetourProgrammes']);
-        Route::get('/programmes/search', [UserReservationController::class, 'searchProgrammes']);
-        Route::get('/programmes/{id}', [UserReservationController::class, 'getProgram']);
-        Route::get('/programmes/{programId}/reserved-seats', [UserReservationController::class, 'getReservedSeats']);
+        // Portefeuille (Wallet)
+        Route::get('/wallet', [WalletController::class, 'index']);
+        Route::post('/wallet/recharge', [WalletController::class, 'recharge']);
+        Route::post('/wallet/verify', [WalletController::class, 'verify']);
     });
+
+    // Routes Publiques (Recherche & Programmes)
+    Route::get('/programmes', [UserReservationController::class, 'getAllProgrammes']);
+    Route::get('/programmes/simple', [UserReservationController::class, 'getSimpleProgrammes']);
+    Route::get('/programmes/aller-retour', [UserReservationController::class, 'getAllerRetourProgrammes']);
+    Route::get('/programmes/search', [UserReservationController::class, 'searchProgrammes']);
+    Route::get('/programmes/{id}', [UserReservationController::class, 'getProgram']);
+    Route::get('/programmes/{programId}/reserved-seats', [UserReservationController::class, 'getReservedSeats']);
+    
+    Route::get('/itineraires', [UserReservationController::class, 'getItineraires']);
+    Route::post('/itineraires/search', [UserReservationController::class, 'searchProgrammesByItineraire']);
 });
 
 // ============================================================================
@@ -111,3 +125,4 @@ Route::get('/ping', function () {
     ]);
 });// Webhooks (routes publiques)
 Route::post('/user/payment/notify', [UserReservationController::class, 'handlePaymentNotification']);
+Route::post('/user/wallet/notify', [WalletController::class, 'notify']);

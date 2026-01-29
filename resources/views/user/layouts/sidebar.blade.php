@@ -32,6 +32,13 @@
                         Tableau de bord
                     </a>
                 </div>
+                <div class="mdc-list-item mdc-drawer-item">
+                    <a class="mdc-drawer-link" href="{{ route('user.wallet.index') }}">
+                        <i class="fas fa-wallet mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
+                        Compte
+                    </a>
+                </div>
+               
                 {{-- <div class="mdc-list-item mdc-drawer-item">
               <a class="mdc-drawer-link" href="#">
                 <i class="material-icons mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true">save</i>
@@ -72,6 +79,12 @@
                             </div>
                         </nav>
                     </div>
+                </div>
+                 <div class="mdc-list-item mdc-drawer-item">
+                    <a class="mdc-drawer-link" href="{{ route('user.profile') }}">
+                        <i class="fas fa-user-circle mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
+                        Mon Profil
+                    </a>
                 </div>
                 <div class="mdc-list-item mdc-drawer-item">
                     <a class="mdc-drawer-link" href="{{ route('signalement.create') }}">

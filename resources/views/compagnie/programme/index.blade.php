@@ -588,6 +588,44 @@
                             </div>
                         </div>
 
+
+                        <!-- Informations Retour (Si Aller-Retour) -->
+                        ${programme.retour_details ? `
+                            <div class="space-y-2 border-t pt-4 mt-4 border-gray-200">
+                                <label class="block text-sm font-bold text-indigo-700 flex items-center">
+                                    <i class="fas fa-exchange-alt mr-2"></i> Détails du Retour
+                                </label>
+                                <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <p class="text-xs text-gray-500 uppercase font-semibold">Départ Retour</p>
+                                            <p class="text-sm font-medium text-gray-900">${programme.retour_details.heure_depart}</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500 uppercase font-semibold">Arrivée Retour</p>
+                                            <p class="text-sm font-medium text-gray-900">${programme.retour_details.heure_arrive}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    ${programme.retour_details.type_programmation === 'recurrent' ? `
+                                        <div class="mt-3 pt-2 border-t border-indigo-100">
+                                            <p class="text-xs text-gray-500 uppercase font-semibold">Récurrence Retour</p>
+                                            <p class="text-sm text-indigo-800">
+                                                ${programme.retour_details.jours_recurrence && programme.retour_details.jours_recurrence.length > 0 
+                                                    ? 'Jours : ' + programme.retour_details.jours_recurrence.join(', ') 
+                                                    : 'Récurrent'}
+                                            </p>
+                                        </div>
+                                    ` : `
+                                        <div class="mt-3 pt-2 border-t border-indigo-100">
+                                            <p class="text-xs text-gray-500 uppercase font-semibold">Date Retour</p>
+                                            <p class="text-sm text-indigo-800">${programme.retour_details.date_depart}</p>
+                                        </div>
+                                    `}
+                                </div>
+                            </div>
+                        ` : ''}
+
                         <!-- Véhicule -->
                         <div class="space-y-2">
                             <label class="block text-sm font-medium text-gray-700">Véhicule</label>

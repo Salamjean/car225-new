@@ -323,7 +323,7 @@
                 </form>
 
                 <div class="forgot-password">
-                    <a href="#">
+                    <a href="{{ route('password.request') }}">
                         <i class="fas fa-key"></i> Mot de passe oublié ?
                     </a>
                 </div>

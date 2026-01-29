@@ -42,6 +42,7 @@ class ReservationController extends Controller
         $request->validate([
             'reference' => 'required|string',
             'vehicule_id' => 'nullable|integer',
+            'programme_id' => 'nullable|integer',
         ]);
 
         $reservation = Reservation::with(['programme.vehicule', 'user', 'embarquementVehicule'])
@@ -58,39 +59,48 @@ class ReservationController extends Controller
         }
 
         // --- LOGIQUE INTELLIGENTE ALLER / RETOUR ---
-        $today = Carbon::today();
-        $dateAller = Carbon::parse($reservation->date_voyage)->startOfDay();
-        $dateRetour = $reservation->date_retour ? Carbon::parse($reservation->date_retour)->startOfDay() : null;
-
-        $isDayAller = $dateAller->equalTo($today);
-        $isDayRetour = $reservation->is_aller_retour && $dateRetour && $dateRetour->equalTo($today);
-
         $targetScan = null; // 'aller' ou 'retour'
+        $programScanId = $request->input('programme_id');
 
-        // 1. Cas Spécial : Aller-Retour le MÊME JOUR
-        if ($isDayAller && $isDayRetour) {
-            // Si l'aller est déjà terminé, on vise le retour
-            if ($reservation->statut_aller === 'terminee') {
+        // 1. DÉTECTION PAR PROGRAMME SÉLECTIONNÉ (Prioritaire)
+        if ($programScanId) {
+            if ($programScanId == $reservation->programme_id) {
+                // Le programme scanné est celui de l'aller
+                $targetScan = 'aller';
+            } elseif ($reservation->programme->programme_retour_id == $programScanId) {
+                // Le programme scanné correspond au programme retour de cette réservation
                 $targetScan = 'retour';
             } else {
-                $targetScan = 'aller';
+                // Le billet existe mais ne correspond ni à l'aller ni au retour du programme sélectionné
+                // Exemple: Billet pour Abidjan-Bouaké scanné sur un Départ Korhogo-Abidjan
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ce billet ne correspond pas au voyage sélectionné (' . $reservation->programme->point_depart . '-' . $reservation->programme->point_arrive . ').'
+                ], 400);
             }
-        }
-        // 2. Cas Standard : C'est le jour de l'aller
-        elseif ($isDayAller) {
-            $targetScan = 'aller';
-        }
-        // 3. Cas Standard : C'est le jour du retour
-        elseif ($isDayRetour) {
-            $targetScan = 'retour';
-        }
-        // 4. Erreur de date
+        } 
+        // 2. DÉTECTION PAR DATE (Fallback si aucun programme n'est sélectionné)
         else {
-            return response()->json([
-                'success' => false,
-                'message' => 'Date invalide pour ce billet. Aller prévu le ' . $dateAller->format('d/m/Y') . 
-                             ($dateRetour ? ' et Retour le ' . $dateRetour->format('d/m/Y') : '')
-            ], 400);
+            $today = Carbon::today();
+            $dateAller = Carbon::parse($reservation->date_voyage)->startOfDay();
+            $dateRetour = $reservation->date_retour ? Carbon::parse($reservation->date_retour)->startOfDay() : null;
+
+            $isDayAller = $dateAller->equalTo($today);
+            $isDayRetour = $reservation->is_aller_retour && $dateRetour && $dateRetour->equalTo($today);
+
+            if ($isDayAller && $isDayRetour) {
+                $targetScan = ($reservation->statut_aller === 'terminee') ? 'retour' : 'aller';
+            } elseif ($isDayAller) {
+                $targetScan = 'aller';
+            } elseif ($isDayRetour) {
+                $targetScan = 'retour';
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Date invalide pour ce billet. Aller prévu le ' . $dateAller->format('d/m/Y') . 
+                                 ($dateRetour ? ' et Retour le ' . $dateRetour->format('d/m/Y') : '')
+                ], 400);
+            }
         }
 
         // --- Vérification du statut selon la cible (Aller ou Retour) ---
@@ -99,15 +109,25 @@ class ReservationController extends Controller
             $trajetLabel = "ALLER : " . $reservation->programme->point_depart . ' → ' . $reservation->programme->point_arrive;
         } else {
             $statutActuel = $reservation->statut_retour;
-            // On inverse le libellé pour le retour
             $trajetLabel = "RETOUR : " . $reservation->programme->point_arrive . ' → ' . $reservation->programme->point_depart;
         }
 
         // Si ce trajet spécifique est déjà terminé
         if ($statutActuel === 'terminee') {
+            $msg = "Le trajet " . strtoupper($targetScan) . " a déjà été validé et consommé.";
+            
+            // Message amélioré pour le Aller-Retour
+            if ($targetScan === 'aller' && $reservation->is_aller_retour) {
+                $dateRetourStr = $reservation->date_retour 
+                    ? Carbon::parse($reservation->date_retour)->format('d/m/Y') 
+                    : 'date inconnue';
+                    
+                $msg .= "\n\n(Info: Impossible de scanner le RETOUR tant que la date (" . $dateRetourStr . ") n'est pas arrivée ou que vous n'avez pas sélectionné le programme de retour).";
+            }
+
             return response()->json([
                 'success' => false,
-                'message' => "Le trajet " . strtoupper($targetScan) . " a déjà été validé et consommé.",
+                'message' => $msg,
                 'already_scanned' => true
             ], 400);
         }
@@ -128,10 +148,10 @@ class ReservationController extends Controller
                 'passager_nom_complet' => $reservation->passager_prenom . ' ' . $reservation->passager_nom,
                 'passager_telephone' => $reservation->passager_telephone,
                 'seat_number' => $reservation->seat_number,
-                'date_voyage' => $today->format('d/m/Y'),
+                'date_voyage' => Carbon::now()->format('d/m/Y'),
                 'trajet' => $trajetLabel,
                 'heure_depart' => $reservation->programme->heure_depart,
-                'type_scan' => strtoupper($targetScan) // Important pour le debug visuel
+                'type_scan' => strtoupper($targetScan)
             ]
         ]);
     }
