@@ -693,7 +693,10 @@ class ReservationController extends Controller
                 'reference' => $transactionId,
                 'status' => 'completed',
                 'payment_method' => 'wallet',
-                'metadata' => json_encode(['programme_id' => $programme->id])
+                'metadata' => json_encode([
+                    'programme_id' => $programme->id,
+                    'passagers' => $request->passagers // Sauvegarde de tous les passagers en JSON
+                ])
             ]);
 
             $paiementStatus = 'success';
@@ -719,76 +722,197 @@ class ReservationController extends Controller
         $createdReservations = [];
         $passagers = $request->passagers;
 
-        foreach ($passagers as $passager) {
-            $seatNumber = $passager['seat_number'];
-            $reference = $transactionId . '-' . $seatNumber;
+        // === LOGIQUE DIFFÉRENTE POUR WALLET: UNE SEULE RÉSERVATION ===
+        if ($isWallet) {
+            $firstPassenger = $passagers[0];
+            $reference = $transactionId . '-GROUP';
 
-            $reservationData = [
-                'paiement_id' => $paiement->id, // Maintenant l'ID existe à 100%
-                'payment_transaction_id' => $transactionId,
-                'user_id' => Auth::id(),
-                'programme_id' => $request->programme_id,
-                'seat_number' => $seatNumber,
-                'passager_nom' => $passager['nom'],
-                'passager_prenom' => $passager['prenom'],
-                'passager_email' => $passager['email'],
-                'passager_telephone' => $passager['telephone'],
-                'passager_urgence' => $passager['urgence'],
-                'is_aller_retour' => $isAllerRetour, 
-                'montant' => $prixUnitaire,
-                'statut' => $reservationStatus,
-                'reference' => $reference,
-                'date_voyage' => $dateVoyage,
-            ];
-
-            // Options Aller-Retour
-            if ($isAllerRetour) {
-                $reservationData['date_retour'] = $dateRetour;
-                $reservationData['statut_aller'] = $reservationStatus;
-                $reservationData['statut_retour'] = $reservationStatus;
+            // Préparer les données des passagers avec leurs QR codes individuels
+            $passagersData = [];
+            foreach ($passagers as $passager) {
+                $seatNumber = $passager['seat_number'];
+                $passengerRef = $transactionId . '-' . $seatNumber;
                 
-                if ($programme->programme_retour_id) {
-                    $reservationData['programme_retour_id'] = $programme->programme_retour_id;
-                } elseif ($programme->programmeRetour) {
-                    $reservationData['programme_retour_id'] = $programme->programmeRetour->id;
-                }
-            } else {
-                $reservationData['statut_aller'] = $reservationStatus;
-            }
-
-            $reservation = Reservation::create($reservationData);
-
-            // Génération QR Code si Wallet
-            if ($isWallet) {
+                // Données QR pour ce passager
+                $qrData = [
+                    'ref' => $passengerRef,
+                    'nom' => $passager['nom'],
+                    'prenom' => $passager['prenom'],
+                    'date' => $dateVoyage,
+                    'depart' => $programme->point_depart,
+                    'arrive' => $programme->point_arrive,
+                    'seat' => $seatNumber
+                ];
+                
+                // Générer le QR code pour ce passager
                 try {
-                    $qrData = $this->generateAndSaveQRCode(
-                        $reservation->reference,
-                        $reservation->id,
+                    $qrDataResult = $this->generateAndSaveQRCode(
+                        $passengerRef,
+                        0, // Temporary, will be updated after reservation creation
                         $dateVoyage instanceof \Carbon\Carbon ? $dateVoyage->format('Y-m-d') : $dateVoyage,
-                        $reservation->user_id
+                        Auth::id()
                     );
                     
-                    $reservation->update([
-                        'qr_code' => $qrData['base64'],
-                        'qr_code_path' => $qrData['path'],
-                        'qr_code_data' => $qrData['qr_data']
-                    ]);
-                    
-                    // Envoi Email ici si nécessaire...
+                    $passagersData[] = [
+                        'nom' => $passager['nom'],
+                        'prenom' => $passager['prenom'],
+                        'email' => $passager['email'],
+                        'telephone' => $passager['telephone'],
+                        'urgence' => $passager['urgence'],
+                        'seat' => $seatNumber,
+                        'reference' => $passengerRef,
+                        'qr_code_path' => $qrDataResult['path'] ?? null,
+                        'qr_code_base64' => $qrDataResult['base64'] ?? null,
+                        'qr_data' => $qrData
+                    ];
                 } catch (\Exception $e) {
-                     Log::error('Erreur QR/Email: ' . $e->getMessage());
-                     // On ne bloque pas la transaction pour un échec d'email
+                    Log::error('Erreur génération QR pour passager: ' . $e->getMessage());
+                    // Continuer quand même
+                    $passagersData[] = [
+                        'nom' => $passager['nom'],
+                        'prenom' => $passager['prenom'],
+                        'email' => $passager['email'],
+                        'telephone' => $passager['telephone'],
+                        'urgence' => $passager['urgence'],
+                        'seat' => $seatNumber,
+                        'reference' => $passengerRef,
+                        'qr_data' => $qrData
+                    ];
                 }
             }
-            $createdReservations[] = $reservation;
+
+            // 3. Créer réservations (UNE PAR PLACE)
+            $createdReservations = [];
+            foreach ($request->passagers as $passager) {
+                $seatNumber = $passager['seat_number'];
+                $reference = $transactionId . '-' . $seatNumber;
+
+                $reservationData = [
+                    'paiement_id' => $paiement->id,
+                    'payment_transaction_id' => $transactionId,
+                    'user_id' => Auth::id(),
+                    'programme_id' => $request->programme_id,
+                    'seat_number' => $seatNumber,
+                    'passager_nom' => $passager['nom'],
+                    'passager_prenom' => $passager['prenom'],
+                    'passager_email' => $passager['email'],
+                    'passager_telephone' => $passager['telephone'],
+                    'passager_urgence' => $passager['urgence'],
+                    'is_aller_retour' => $isAllerRetour,
+                    'montant' => $prixUnitaire, // Montant unitaire
+                    'statut' => $reservationStatus,
+                    'reference' => $reference,
+                    'date_voyage' => $dateVoyage,
+                    'qr_code' => Str::random(32) // Placeholder par défaut
+                ];
+
+                if ($isAllerRetour) {
+                    $reservationData['date_retour'] = $dateRetour;
+                    $reservationData['statut_aller'] = $reservationStatus;
+                    $reservationData['statut_retour'] = $reservationStatus;
+                    if ($programme->programme_retour_id) {
+                        $reservationData['programme_retour_id'] = $programme->programme_retour_id;
+                    } elseif ($programme->programmeRetour) {
+                         $reservationData['programme_retour_id'] = $programme->programmeRetour->id;
+                    }
+                } else {
+                    $reservationData['statut_aller'] = $reservationStatus;
+                }
+                
+                // Assigner le QR code correspondant
+                foreach ($passagersData as $pData) {
+                    if ($pData['seat'] == $seatNumber) {
+                         if (isset($pData['qr_code_base64'])) {
+                             $reservationData['qr_code'] = $pData['qr_code_base64'];
+                             $reservationData['qr_code_path'] = $pData['qr_code_path'];
+                             $reservationData['qr_code_data'] = $pData['qr_data']; // Déjà un array
+                         }
+                         break;
+                    }
+                }
+
+                $res = Reservation::create($reservationData);
+                $createdReservations[] = $res;
+            }
+
+        } else {
+            // === LOGIQUE CINETPAY: PLUSIEURS RÉSERVATIONS (UNE PAR PASSAGER) ===
+            foreach ($passagers as $passager) {
+                $seatNumber = $passager['seat_number'];
+                $reference = $transactionId . '-' . $seatNumber;
+
+                $reservationData = [
+                    'paiement_id' => $paiement->id,
+                    'payment_transaction_id' => $transactionId,
+                    'user_id' => Auth::id(),
+                    'programme_id' => $request->programme_id,
+                    'seat_number' => $seatNumber,
+                    'passager_nom' => $passager['nom'],
+                    'passager_prenom' => $passager['prenom'],
+                    'passager_email' => $passager['email'],
+                    'passager_telephone' => $passager['telephone'],
+                    'passager_urgence' => $passager['urgence'],
+                    'is_aller_retour' => $isAllerRetour, 
+                    'montant' => $prixUnitaire,
+                    'statut' => $reservationStatus,
+                    'reference' => $reference,
+                    'date_voyage' => $dateVoyage,
+                ];
+
+                // Options Aller-Retour
+                if ($isAllerRetour) {
+                    $reservationData['date_retour'] = $dateRetour;
+                    $reservationData['statut_aller'] = $reservationStatus;
+                    $reservationData['statut_retour'] = $reservationStatus;
+                    
+                    if ($programme->programme_retour_id) {
+                        $reservationData['programme_retour_id'] = $programme->programme_retour_id;
+                    } elseif ($programme->programmeRetour) {
+                        $reservationData['programme_retour_id'] = $programme->programmeRetour->id;
+                    }
+                } else {
+                    $reservationData['statut_aller'] = $reservationStatus;
+                }
+
+                $reservation = Reservation::create($reservationData);
+                $createdReservations[] = $reservation;
+            }
         }
 
         // Si tout est bon, on valide la transaction DB
         DB::commit();
 
         // Mise à jour places (hors transaction pour éviter deadlocks complexes, ou dedans selon préférence)
+        // Mise à jour places et Envoi Emails (hors transaction)
         if ($isWallet) {
              $this->updateProgramStatus($programme, $dateVoyage);
+
+             // Envoyer un email à chaque passager
+             if (!empty($createdReservations)) {
+                 $reservation = $createdReservations[0]; // La réservation unique
+                 // Correction: vérifier si c'est déjà un array (casting Laravel) ou une string JSON
+                 $qrCodeData = is_array($reservation->qr_code_data) 
+                    ? $reservation->qr_code_data 
+                    : json_decode($reservation->qr_code_data, true);
+                 
+                 if (isset($qrCodeData['passagers'])) {
+                     foreach ($qrCodeData['passagers'] as $passagerData) {
+                         try {
+                             $this->sendReservationEmail(
+                                $reservation,
+                                $programme,
+                                $passagerData['qr_code_base64'] ?? $reservation->qr_code,
+                                $passagerData['email'],
+                                $passagerData['prenom'] . ' ' . $passagerData['nom'],
+                                $passagerData['seat'],
+                                ($reservation->is_aller_retour) ? 'ALLER-RETOUR' : 'ALLER SIMPLE'
+                            );
+                         } catch (\Exception $e) {
+                             Log::error('Erreur envoi email wallet pour passager: ' . $e->getMessage());
+                         }
+                     }
+                 }
+             }
         }
 
         if ($isWallet) {
@@ -1014,8 +1138,10 @@ class ReservationController extends Controller
     public function sendReservationEmail(Reservation $reservation, Programme $programme, string $qrCodeBase64, string $recipientEmail = null, string $recipientName = null, int $seatNumber = null, string $ticketType = null, string $qrCodeRetourBase64 = null, Programme $programmeRetour = null): void
     {
         try {
-            $email = $recipientEmail ?: (Auth::user()->email ?? null);
-            $name = $recipientName ?: (Auth::user()->name ?? 'Client');
+            // Correction pour le contexte Webhook (Auth::user() peut être null)
+            $user = Auth::user();
+            $email = $recipientEmail ?: ($user ? $user->email : null);
+            $name = $recipientName ?: ($user ? $user->name : 'Client');
 
             if (!$email) {
                 Log::warning('Tentative d\'envoi d\'email sans destinataire:', ['reservation_id' => $reservation->id]);

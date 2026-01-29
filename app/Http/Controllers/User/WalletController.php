@@ -23,7 +23,7 @@ class WalletController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $transactions = $user->walletTransactions()->orderBy('created_at', 'desc')->paginate(10);
+        $transactions = $user->walletTransactions()->orderBy('created_at', 'desc')->paginate(5);
         
         // Configuration CinetPay pour le frontend (si nécessaire à l'initialisation)
         $cinetpay_site_id = config('services.cinetpay.site_id');
@@ -177,10 +177,22 @@ class WalletController extends Controller
         }
 
         $transactionId = $request->cpm_trans_id;
+        
+        // 1. Essayer de trouver une transaction Wallet
         $transaction = WalletTransaction::where('reference', $transactionId)->first();
 
+        // 2. Si pas de transaction Wallet, essayer de trouver un Paiement (Réservation CinetPay)
         if (!$transaction) {
-            Log::error('Wallet Transaction not found for notify:', ['id' => $transactionId]);
+            // Check Paiement with prefix fallback logic if needed, but usually exact match
+            // Sometimes CinetPay appends timestamp, check if splitting needed
+            $reference = explode('_', $transactionId)[0];
+            $paiement = \App\Models\Paiement::where('transaction_id', $reference)->first();
+
+            if ($paiement) {
+                return $this->handleReservationPaymentNotification($paiement, $transactionId);
+            }
+
+            Log::error('Transaction nor Paiement not found for notify:', ['id' => $transactionId]);
             return response()->json(['message' => 'Transaction not found'], 404);
         }
 
@@ -238,6 +250,91 @@ class WalletController extends Controller
             }
             $transaction->update(['status' => $status]);
             return response()->json(['message' => 'Payment failed or pending'], 200);
+        }
+    }
+
+    /**
+     * Gérer la notification pour un Paiement de Réservation (non-Wallet)
+     */
+    protected function handleReservationPaymentNotification($paiement, $cinetpayTransactionId)
+    {
+        if ($paiement->status === 'success') {
+             return response()->json(['message' => 'Already processed'], 200);
+        }
+
+        $paymentStatus = $this->cinetPayService->checkPaymentStatus($cinetpayTransactionId);
+
+        if ($paymentStatus && isset($paymentStatus['data']['status']) && $paymentStatus['data']['status'] === 'ACCEPTED') {
+            DB::beginTransaction();
+            try {
+                $paiement->update([
+                    'status' => 'success',
+                    'payment_date' => now(),
+                    'payment_details' => $paymentStatus['data']
+                ]);
+
+                $reservations = \App\Models\Reservation::where('paiement_id', $paiement->id)->get();
+                
+                // Instancier ReservationController pour utiliser ses méthodes helpers (QR, Email)
+                // C'est un hack pour éviter de dupliquer la logique complexe du QR Code
+                $resController = app(\App\Http\Controllers\User\Reservation\ReservationController::class);
+
+                foreach ($reservations as $res) {
+                    $res->update([
+                        'statut' => 'confirmee',
+                        'statut_aller' => 'confirmee',
+                        'statut_retour' => ($res->is_aller_retour) ? 'confirmee' : $res->statut_retour
+                    ]);
+
+                    // Générer QR Code et sauvegarder
+                    try {
+                        $qrResult = $resController->generateAndSaveQRCode(
+                            $res->reference, 
+                            $res->id, 
+                            $res->date_voyage, 
+                            $res->user_id
+                        );
+                        
+                        $res->update([
+                            'qr_code' => $qrResult['base64'], // Pour compatibilité
+                            'qr_code_base64' => $qrResult['base64'],
+                            'qr_code_path' => $qrResult['path'],
+                            'qr_code_data' => $qrResult['qr_content']
+                        ]);
+
+                        $programme = $res->programme;
+                        
+                        // Envoi Email
+                        // Check if sendReservationEmail exists/public
+                        $resController->sendReservationEmail(
+                            $res,
+                            $programme,
+                            $qrResult['base64'],
+                            $res->passager_email,
+                            $res->passager_prenom . ' ' . $res->passager_nom,
+                            $res->seat_number,
+                            ($res->is_aller_retour) ? 'ALLER-RETOUR' : 'ALLER SIMPLE',
+                            null, 
+                            $res->programmeRetour
+                        );
+
+                    } catch (\Exception $e) {
+                        Log::error("Erreur post-traitement réservation {$res->id}: " . $e->getMessage());
+                    }
+                }
+
+                DB::commit();
+                Log::info("Paiement Reservation {$paiement->id} confirmé via WalletController::notify");
+                return response()->json(['message' => 'Success'], 200);
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                Log::error('Error processing notify reservation', ['error' => $e->getMessage()]);
+                return response()->json(['message' => 'Error processing'], 500);
+            }
+        } else {
+             $paiement->update(['status' => 'failed']);
+             return response()->json(['message' => 'Payment failed'], 200);
         }
     }
 }

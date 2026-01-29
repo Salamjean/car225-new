@@ -184,6 +184,12 @@ Route::prefix('user')->group(function () {
     Route::post('/login', [UserAuthenticate::class, 'handleLogin'])->name('user.handleLogin');
     Route::get('/register', [UserAuthenticate::class, 'register'])->name('user.register');
     Route::post('/register', [UserAuthenticate::class, 'handleRegister'])->name('user.handleRegister');
+    
+    // Password Reset Routes
+    Route::get('/password/reset', [App\Http\Controllers\User\PasswordResetController::class, 'showResetForm'])->name('password.request');
+    Route::post('/password/send-otp', [App\Http\Controllers\User\PasswordResetController::class, 'sendOtp'])->name('password.sendOtp');
+    Route::post('/password/verify-otp', [App\Http\Controllers\User\PasswordResetController::class, 'verifyOtp'])->name('password.verifyOtp');
+    Route::post('/password/reset', [App\Http\Controllers\User\PasswordResetController::class, 'resetPassword'])->name('password.reset');
 });
 
 Route::middleware('auth')->prefix('user')->group(function () {
@@ -194,6 +200,12 @@ Route::middleware('auth')->prefix('user')->group(function () {
     Route::get('/compte', [App\Http\Controllers\User\WalletController::class, 'index'])->name('user.wallet.index');
     Route::post('/compte/recharge', [App\Http\Controllers\User\WalletController::class, 'recharge'])->name('user.wallet.recharge');
     Route::post('/compte/verify', [App\Http\Controllers\User\WalletController::class, 'verifyRecharge'])->name('user.wallet.verify');
+
+    // Profile Routes
+    Route::get('/profile', [App\Http\Controllers\User\ProfileController::class, 'index'])->name('user.profile');
+    Route::post('/profile/update', [App\Http\Controllers\User\ProfileController::class, 'update'])->name('user.profile.update');
+    Route::post('/profile/password', [App\Http\Controllers\User\ProfileController::class, 'updatePassword'])->name('user.profile.password');
+    Route::post('/profile/photo', [App\Http\Controllers\User\ProfileController::class, 'updatePhoto'])->name('user.profile.photo');
 
 
     //Les routes pour faire une reservation 

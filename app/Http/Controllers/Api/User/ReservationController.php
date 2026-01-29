@@ -13,8 +13,20 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 
+use App\Models\WalletTransaction;
+use App\Services\CinetPayService;
+use App\Models\Itineraire;
+use Illuminate\Support\Facades\DB;
+
 class ReservationController extends Controller
 {
+    protected $cinetPayService;
+
+    public function __construct(CinetPayService $cinetPayService)
+    {
+        $this->cinetPayService = $cinetPayService;
+    }
+
     /**
      * Normalise un terme de recherche
      */
@@ -31,199 +43,293 @@ class ReservationController extends Controller
      */
     public function index(Request $request)
     {
-        $user = $request->user();
-
-        $query = Reservation::with(['programme.compagnie'])
-            ->where('user_id', $user->id)
-            ->orderBy('created_at', 'desc');
-
-        // Filtres optionnels
-        if ($request->filled('statut')) {
-            $query->where('statut', $request->statut);
-        }
-
-        if ($request->filled('date_voyage')) {
-            $query->whereDate('date_voyage', $request->date_voyage);
-        }
-
-        $reservations = $query->paginate($request->get('per_page', 10));
+        $reservations = Reservation::with(['programme', 'programme.compagnie'])
+            ->where('user_id', $request->user()->id)
+            ->where('statut', '!=', 'en_attente') // On ne montre pas les tentatives non abouties
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
 
         return response()->json([
             'success' => true,
-            'reservations' => $reservations->items(),
-            'pagination' => [
-                'current_page' => $reservations->currentPage(),
-                'last_page' => $reservations->lastPage(),
-                'per_page' => $reservations->perPage(),
-                'total' => $reservations->total(),
-            ],
-            'stats' => [
-                'confirmed' => Reservation::where('user_id', $user->id)->where('statut', 'confirmee')->count(),
-                'pending' => Reservation::where('user_id', $user->id)->where('statut', 'en_attente')->count(),
-                'cancelled' => Reservation::where('user_id', $user->id)->where('statut', 'annulee')->count(),
-                'completed' => Reservation::where('user_id', $user->id)->where('statut', 'terminee')->count(),
-            ],
+            'data' => $reservations
+        ]);
+    }
+
+    /**
+     * Lister les itinéraires disponibles
+     */
+    public function getItineraires()
+    {
+        // Récupérer les itinéraires (points de départ et d'arrivée uniques)
+        // Utilisation de MIN(id) pour satisfaire le mode SQL strict (only_full_group_by)
+        $itineraires = Itineraire::selectRaw('MIN(id) as id, point_depart, point_arrive')
+            ->groupBy('point_depart', 'point_arrive')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $itineraires
+        ]);
+    }
+
+    /**
+     * Rechercher les programmes par itinéraire
+     */
+    public function searchProgrammesByItineraire(Request $request)
+    {
+        $request->validate([
+            'itineraire_id' => 'nullable|exists:itineraires,id',
+            'point_depart' => 'required_without:itineraire_id|string',
+            'point_arrive' => 'required_without:itineraire_id|string',
+            'date_depart' => 'nullable|date',
+            'is_aller_retour' => 'nullable|boolean'
+        ]);
+
+        $query = Programme::with(['compagnie', 'vehicule']);
+
+        // Filtrage par itinéraire
+        if ($request->filled('itineraire_id')) {
+            $itineraire = Itineraire::find($request->itineraire_id);
+            if ($itineraire) {
+                // Utilisation des villes de l'itinéraire
+                $point_depart = $itineraire->point_depart;
+                $point_arrive = $itineraire->point_arrive;
+            }
+        } else {
+            $point_depart = $request->point_depart;
+            $point_arrive = $request->point_arrive;
+        }
+
+        if (isset($point_depart)) {
+            $point_depart_normalized = $this->normalizeSearchTerm($point_depart);
+            // Extraire la ville si format "Ville, Pays"
+            $point_depart_city = explode(',', $point_depart)[0];
+            $point_depart_city = trim($point_depart_city);
+            $point_depart_city_normalized = $this->normalizeSearchTerm($point_depart_city);
+
+            $query->where(function($q) use ($point_depart, $point_depart_normalized, $point_depart_city, $point_depart_city_normalized) {
+                $q->where('point_depart', 'like', "%{$point_depart}%")
+                  ->orWhere('point_depart', 'like', "%{$point_depart_city}%") // Recherche ville seule
+                  ->orWhereRaw('LOWER(point_depart) LIKE ?', ['%' . strtolower($point_depart) . '%'])
+                  ->orWhereRaw('LOWER(point_depart) LIKE ?', ['%' . strtolower($point_depart_city) . '%']) // Recherche ville seule (lower)
+                  ->orWhereRaw('LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(point_depart, "é", "e"), "è", "e"), "ê", "e"), "ô", "o"), "à", "a")) LIKE ?', ['%' . $point_depart_normalized . '%'])
+                  ->orWhereRaw('LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(point_depart, "é", "e"), "è", "e"), "ê", "e"), "ô", "o"), "à", "a")) LIKE ?', ['%' . $point_depart_city_normalized . '%']);
+            });
+        }
+
+        if (isset($point_arrive)) {
+            $point_arrive_normalized = $this->normalizeSearchTerm($point_arrive);
+             // Extraire la ville si format "Ville, Pays"
+            $point_arrive_city = explode(',', $point_arrive)[0];
+            $point_arrive_city = trim($point_arrive_city);
+            $point_arrive_city_normalized = $this->normalizeSearchTerm($point_arrive_city);
+
+            $query->where(function($q) use ($point_arrive, $point_arrive_normalized, $point_arrive_city, $point_arrive_city_normalized) {
+                $q->where('point_arrive', 'like', "%{$point_arrive}%")
+                  ->orWhere('point_arrive', 'like', "%{$point_arrive_city}%")
+                  ->orWhereRaw('LOWER(point_arrive) LIKE ?', ['%' . strtolower($point_arrive) . '%'])
+                  ->orWhereRaw('LOWER(point_arrive) LIKE ?', ['%' . strtolower($point_arrive_city) . '%'])
+                  ->orWhereRaw('LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(point_arrive, "é", "e"), "è", "e"), "ê", "e"), "ô", "o"), "à", "a")) LIKE ?', ['%' . $point_arrive_normalized . '%'])
+                   ->orWhereRaw('LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(point_arrive, "é", "e"), "è", "e"), "ê", "e"), "ô", "o"), "à", "a")) LIKE ?', ['%' . $point_arrive_city_normalized . '%']);
+            });
+        }
+
+        // --- Logique de Date & Récurrence ---
+        if ($request->filled('date_depart')) {
+            $formattedDate = date('Y-m-d', strtotime($request->date_depart));
+            
+            $joursFrancais = [
+                'monday' => 'lundi', 'tuesday' => 'mardi', 'wednesday' => 'mercredi',
+                'thursday' => 'jeudi', 'friday' => 'vendredi', 'saturday' => 'samedi', 'sunday' => 'dimanche'
+            ];
+            $jourAnglais = strtolower(date('l', strtotime($formattedDate)));
+            $jour_semaine = $joursFrancais[$jourAnglais] ?? $jourAnglais;
+
+            Log::info("API Search: Filtre date strict pour $formattedDate ($jour_semaine)");
+
+            $query->where(function ($q) use ($formattedDate, $jour_semaine) {
+                // Programmes ponctuels pour cette date exacte
+                $q->where(function ($sub) use ($formattedDate) {
+                    $sub->where('type_programmation', 'ponctuel')
+                        ->whereRaw('DATE(date_depart) = ?', [$formattedDate]);
+                });
+                
+                // Programmes récurrents actifs pour ce jour de la semaine
+                $q->orWhere(function ($sub) use ($formattedDate, $jour_semaine) {
+                    $sub->where('type_programmation', 'recurrent')
+                        ->whereRaw('DATE(date_depart) <= ?', [$formattedDate]) // A commencé avant ou ajd
+                        ->where(function ($dateCheck) use ($formattedDate) {
+                            $dateCheck->where(function ($subDate) use ($formattedDate) {
+                                $subDate->whereNotNull('date_fin_programmation')
+                                    ->whereRaw('DATE(date_fin_programmation) >= ?', [$formattedDate]);
+                            })
+                            ->orWhereNull('date_fin_programmation');
+                        })
+                        ->where(function ($dayCheck) use ($jour_semaine) {
+                            $dayCheck->whereJsonContains('jours_recurrence', $jour_semaine)
+                                     ->orWhere('jours_recurrence', 'like', "%{$jour_semaine}%");
+                        });
+                });
+            });
+        } else {
+            // Pas de date : Afficher tous les programmes futurs ou récurrents actifs
+            $today = date('Y-m-d');
+            Log::info("API Search: Pas de date, recherche globale futurs à partir de $today");
+            
+            $query->where(function ($q) use ($today) {
+                // Ponctuels futurs (ou aujourd'hui)
+                $q->where(function ($sub) use ($today) {
+                    $sub->where('type_programmation', 'ponctuel')
+                        ->whereRaw('DATE(date_depart) >= ?', [$today]);
+                });
+                
+                // Récurrents en cours ou futurs
+                $q->orWhere(function ($sub) use ($today) {
+                    $sub->where('type_programmation', 'recurrent')
+                         ->where(function ($dateCheck) use ($today) {
+                            $dateCheck->where(function ($subDate) use ($today) {
+                                $subDate->whereNotNull('date_fin_programmation')
+                                    ->whereRaw('DATE(date_fin_programmation) >= ?', [$today]);
+                            })
+                            ->orWhereNull('date_fin_programmation');
+                        });
+                });
+            });
+        }
+
+        if ($request->has('is_aller_retour') && $request->is_aller_retour !== null) {
+            $query->where('is_aller_retour', $request->boolean('is_aller_retour'));
+        }
+
+        $programmes = $query->orderBy('heure_depart', 'asc')->paginate(20);
+
+        return response()->json([
+            'success' => true,
+            'data' => $programmes
         ]);
     }
 
     /**
      * Détails d'une réservation
      */
-    public function show(Request $request, Reservation $reservation)
+    public function show($id)
     {
-        // Vérifier que la réservation appartient à l'utilisateur
-        if ($reservation->user_id !== $request->user()->id) {
+        $reservation = Reservation::with(['programme', 'programme.compagnie', 'programme.vehicule'])
+            ->where('user_id', Auth::id())
+            ->find($id);
+
+        if (!$reservation) {
             return response()->json([
                 'success' => false,
-                'message' => 'Accès non autorisé.',
-            ], 403);
+                'message' => 'Réservation non trouvée'
+            ], 404);
         }
-
-        $reservation->load(['programme.compagnie', 'programme.vehicule']);
 
         return response()->json([
             'success' => true,
-            'reservation' => [
-                'id' => $reservation->id,
-                'reference' => $reservation->reference,
-                'date_voyage' => $reservation->date_voyage,
-                'date_retour' => $reservation->date_retour,
-                'is_aller_retour' => $reservation->is_aller_retour,
-                'seat_number' => $reservation->seat_number,
-                'montant' => $reservation->montant,
-                'statut' => $reservation->statut,
-                'statut_aller' => $reservation->statut_aller,
-                'statut_retour' => $reservation->statut_retour,
-                'passager_nom' => $reservation->passager_nom,
-                'passager_prenom' => $reservation->passager_prenom,
-                'passager_email' => $reservation->passager_email,
-                'passager_telephone' => $reservation->passager_telephone,
-                'qr_code' => $reservation->qr_code,
-                'created_at' => $reservation->created_at,
-                'programme' => $reservation->programme ? [
-                    'id' => $reservation->programme->id,
-                    'point_depart' => $reservation->programme->point_depart,
-                    'point_arrive' => $reservation->programme->point_arrive,
-                    'heure_depart' => $reservation->programme->heure_depart,
-                    'montant_billet' => $reservation->programme->montant_billet,
-                    'compagnie' => $reservation->programme->compagnie ? [
-                        'id' => $reservation->programme->compagnie->id,
-                        'name' => $reservation->programme->compagnie->name,
-                        'logo' => $reservation->programme->compagnie->logo,
-                    ] : null,
-                    'vehicule' => $reservation->programme->vehicule ? [
-                        'marque' => $reservation->programme->vehicule->marque,
-                        'modele' => $reservation->programme->vehicule->modele,
-                        'immatriculation' => $reservation->programme->vehicule->immatriculation,
-                    ] : null,
-                ] : null,
-            ],
+            'data' => $reservation
         ]);
     }
 
     /**
      * Annuler une réservation
      */
-    public function cancel(Request $request, Reservation $reservation)
+    public function cancel(Request $request, $id)
     {
-        // Vérifier que la réservation appartient à l'utilisateur
-        if ($reservation->user_id !== $request->user()->id) {
+        $reservation = Reservation::where('user_id', Auth::id())->find($id);
+
+        if (!$reservation) {
             return response()->json([
                 'success' => false,
-                'message' => 'Accès non autorisé.',
-            ], 403);
+                'message' => 'Réservation non trouvée'
+            ], 404);
         }
 
-        // Vérifier que la réservation peut être annulée
-        if ($reservation->statut !== 'en_attente' && $reservation->statut !== 'confirmee') {
+        if ($reservation->statut !== 'en_attente') {
             return response()->json([
                 'success' => false,
-                'message' => 'Cette réservation ne peut pas être annulée.',
-            ], 422);
+                'message' => 'Seules les réservations en attente peuvent être annulées.'
+            ], 400);
         }
 
         $reservation->update([
             'statut' => 'annulee',
-            'annulation_reason' => $request->reason ?? 'Annulé par l\'utilisateur via l\'application mobile',
-            'annulation_date' => now(),
+            'annulation_reason' => $request->reason ?? 'Annulé par l\'utilisateur',
+            'annulation_date' => now()
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Réservation annulée avec succès.',
+            'message' => 'Réservation annulée avec succès'
         ]);
     }
 
     /**
-     * Voir tous les programmes disponibles
+     * Récupérer tous les programmes disponibles
      */
-    public function getAllProgrammes(Request $request)
+    public function getAllProgrammes()
     {
-        $query = Programme::with(['compagnie', 'vehicule', 'itineraire'])
-            ->where(function($q) {
-                // Programmes ponctuels futurs
-                $q->where(function($sub) {
-                    $sub->where('type_programmation', 'ponctuel')
-                        ->where('date_depart', '>=', now()->format('Y-m-d'));
-                })
-                // Ou programmes récurrents
-                ->orWhere('type_programmation', 'recurrent');
-            });
-
-        // Filtrer par type si demandé
-        if ($request->has('type')) {
-            if ($request->type === 'simple') {
-                $query->where('is_aller_retour', false);
-            } elseif ($request->type === 'aller_retour') {
-                $query->where('is_aller_retour', true);
-            }
-        }
-
-        $programmes = $query->orderBy('date_depart', 'asc')
-            ->orderBy('heure_depart', 'asc')
-            ->paginate($request->get('per_page', 15));
+        $programmes = Programme::with(['compagnie', 'vehicule'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
 
         return response()->json([
             'success' => true,
-            'programmes' => $programmes
+            'data' => $programmes
         ]);
     }
 
     /**
-     * Voir uniquement les programmes simples
+     * Récupérer les programmes aller-simple seulement
      */
-    public function getSimpleProgrammes(Request $request)
+    public function getSimpleProgrammes()
     {
-        $request->merge(['type' => 'simple']);
-        return $this->getAllProgrammes($request);
+        $programmes = Programme::with(['compagnie', 'vehicule'])
+            ->where('is_aller_retour', false)
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
+        return response()->json([
+            'success' => true,
+            'data' => $programmes
+        ]);
     }
 
     /**
-     * Voir uniquement les programmes aller-retour
+     * Récupérer les programmes aller-retour seulement
      */
-    public function getAllerRetourProgrammes(Request $request)
+    public function getAllerRetourProgrammes()
     {
-        $request->merge(['type' => 'aller_retour']);
-        return $this->getAllProgrammes($request);
+        $programmes = Programme::with(['compagnie', 'vehicule'])
+            ->where('is_aller_retour', true)
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
+        return response()->json([
+            'success' => true,
+            'data' => $programmes
+        ]);
     }
 
     /**
-     * Rechercher des programmes disponibles
+     * Rechercher des programmes
      */
     public function searchProgrammes(Request $request)
     {
         $request->validate([
-            'point_depart' => 'required|string|max:255',
-            'point_arrive' => 'required|string|max:255',
-            'date_depart' => 'required|date',
+            'point_depart' => 'nullable|string',
+            'point_arrive' => 'nullable|string',
+            'date_depart' => 'nullable|date',
+            'is_aller_retour' => 'nullable|boolean' // 0, 1 ou null pour tout
         ]);
 
         $point_depart = $request->point_depart;
         $point_arrive = $request->point_arrive;
-        $date_depart_recherche = $request->date_depart;
-
+        $date_depart_recherche = $request->date_depart ?? date('Y-m-d');
+        
         $formattedDate = date('Y-m-d', strtotime($date_depart_recherche));
-
+        
+        // Jours en français pour la récurrence
         $joursFrancais = [
             'monday' => 'lundi',
             'tuesday' => 'mardi',
@@ -233,24 +339,33 @@ class ReservationController extends Controller
             'saturday' => 'samedi',
             'sunday' => 'dimanche'
         ];
-
-        $jourAnglais = strtolower(date('l', strtotime($date_depart_recherche)));
+        
+        $jourAnglais = strtolower(date('l', strtotime($formattedDate)));
         $jour_semaine = $joursFrancais[$jourAnglais] ?? $jourAnglais;
 
-        $point_depart_normalized = $this->normalizeSearchTerm($point_depart);
-        $point_arrive_normalized = $this->normalizeSearchTerm($point_arrive);
+        $query = Programme::with(['compagnie', 'vehicule']);
 
-        $query = Programme::with(['compagnie', 'vehicule', 'itineraire'])
-            ->where(function($q) use ($point_depart, $point_depart_normalized) {
+        // Filtre Point de départ
+        if ($point_depart) {
+            $point_depart_normalized = $this->normalizeSearchTerm($point_depart);
+            $query->where(function($q) use ($point_depart, $point_depart_normalized) {
                 $q->where('point_depart', 'like', "%{$point_depart}%")
-                  ->orWhereRaw('LOWER(point_depart) LIKE ?', ['%' . strtolower($point_depart) . '%']);
-            })
-            ->where(function($q) use ($point_arrive, $point_arrive_normalized) {
-                $q->where('point_arrive', 'like', "%{$point_arrive}%")
-                  ->orWhereRaw('LOWER(point_arrive) LIKE ?', ['%' . strtolower($point_arrive) . '%']);
+                  ->orWhereRaw('LOWER(point_depart) LIKE ?', ['%' . strtolower($point_depart) . '%'])
+                  ->orWhereRaw('LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(point_depart, "é", "e"), "è", "e"), "ê", "e"), "ô", "o"), "à", "a")) LIKE ?', ['%' . $point_depart_normalized . '%']);
             });
+        }
 
-        // Recherche combinée ponctuel + récurrent
+        // Filtre Point d'arrivée
+        if ($point_arrive) {
+            $point_arrive_normalized = $this->normalizeSearchTerm($point_arrive);
+            $query->where(function($q) use ($point_arrive, $point_arrive_normalized) {
+                $q->where('point_arrive', 'like', "%{$point_arrive}%")
+                  ->orWhereRaw('LOWER(point_arrive) LIKE ?', ['%' . strtolower($point_arrive) . '%'])
+                  ->orWhereRaw('LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(point_arrive, "é", "e"), "è", "e"), "ê", "e"), "ô", "o"), "à", "a")) LIKE ?', ['%' . $point_arrive_normalized . '%']);
+            });
+        }
+
+        // Filtre Date & Récurrence
         $query->where(function ($q) use ($formattedDate, $jour_semaine) {
             // Programmes ponctuels
             $q->where(function ($sub) use ($formattedDate) {
@@ -271,65 +386,60 @@ class ReservationController extends Controller
                     })
                     ->where(function ($dayCheck) use ($jour_semaine) {
                         $dayCheck->whereJsonContains('jours_recurrence', $jour_semaine)
-                            ->orWhere('jours_recurrence', 'like', "%{$jour_semaine}%");
+                                 ->orWhere('jours_recurrence', 'like', "%{$jour_semaine}%");
                     });
             });
         });
 
-        if ($request->filled('is_aller_retour')) {
-            $query->where('is_aller_retour', $request->is_aller_retour);
+        // Filtre Aller-Retour (Si spécifié)
+        // Note: Si is_aller_retour n'est pas fourni (null), on retourne TOUT (Aller simple ET Aller-Retour)
+        if ($request->has('is_aller_retour') && $request->is_aller_retour !== null) {
+            $query->where('is_aller_retour', $request->boolean('is_aller_retour'));
         }
 
-        $programmes = $query->orderBy('heure_depart', 'asc')->paginate(10);
+        $programmes = $query->orderBy('heure_depart', 'asc')->paginate(20);
 
         return response()->json([
             'success' => true,
-            'programmes' => $programmes->map(function ($programme) {
-                return [
-                    'id' => $programme->id,
-                    'point_depart' => $programme->point_depart,
-                    'point_arrive' => $programme->point_arrive,
-                    'heure_depart' => $programme->heure_depart,
-                    'montant_billet' => $programme->montant_billet,
-                    'is_aller_retour' => $programme->is_aller_retour,
-                    'type_programmation' => $programme->type_programmation,
-                    'compagnie' => $programme->compagnie ? [
-                        'id' => $programme->compagnie->id,
-                        'name' => $programme->compagnie->name,
-                        'logo' => $programme->compagnie->logo,
-                    ] : null,
-                    'vehicule' => $programme->vehicule ? [
-                        'id' => $programme->vehicule->id,
-                        'marque' => $programme->vehicule->marque,
-                        'modele' => $programme->vehicule->modele,
-                        'nombre_place' => $programme->vehicule->nombre_place,
-                    ] : null,
-                ];
-            }),
-            'pagination' => [
-                'current_page' => $programmes->currentPage(),
-                'last_page' => $programmes->lastPage(),
-                'per_page' => $programmes->perPage(),
-                'total' => $programmes->total(),
-            ],
-            'search_params' => [
-                'point_depart' => $point_depart,
-                'point_arrive' => $point_arrive,
-                'date_depart' => $formattedDate,
-            ],
+            'data' => $programmes
         ]);
     }
 
     /**
-     * Récupérer les places réservées pour un programme
+     * Détails d'un programme
+     */
+    public function getProgram($id)
+    {
+        $programme = Programme::with(['compagnie', 'vehicule'])->find($id);
+
+        if (!$programme) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Programme non trouvé'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $programme
+        ]);
+    }
+
+    /**
+     * Récupérer les places réservées pour un programme à une date donnée
      */
     public function getReservedSeats(Request $request, $programId)
     {
-        $request->validate([
-            'date' => 'required|date',
-        ]);
+        $date = $request->query('date');
+        
+        if (!$date) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Date requise'
+            ], 400);
+        }
 
-        $formattedDate = date('Y-m-d', strtotime($request->date));
+        $formattedDate = date('Y-m-d', strtotime($date));
 
         $reservedSeats = Reservation::where('programme_id', $programId)
             ->where('statut', 'confirmee')
@@ -339,60 +449,17 @@ class ReservationController extends Controller
 
         return response()->json([
             'success' => true,
-            'reserved_seats' => $reservedSeats,
-            'date' => $formattedDate,
+            'data' => $reservedSeats
         ]);
     }
 
     /**
-     * Récupérer les détails d'un programme
-     */
-    public function getProgram($id)
-    {
-        $programme = Programme::with(['compagnie', 'vehicule'])->find($id);
-
-        if (!$programme) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Programme non trouvé',
-            ], 404);
-        }
-
-        return response()->json([
-            'success' => true,
-            'programme' => [
-                'id' => $programme->id,
-                'point_depart' => $programme->point_depart,
-                'point_arrive' => $programme->point_arrive,
-                'heure_depart' => $programme->heure_depart,
-                'montant_billet' => $programme->montant_billet,
-                'is_aller_retour' => $programme->is_aller_retour,
-                'type_programmation' => $programme->type_programmation,
-                'jours_recurrence' => $programme->jours_recurrence,
-                'compagnie' => $programme->compagnie ? [
-                    'id' => $programme->compagnie->id,
-                    'name' => $programme->compagnie->name,
-                    'logo' => $programme->compagnie->logo,
-                ] : null,
-                'vehicule' => $programme->vehicule ? [
-                    'id' => $programme->vehicule->id,
-                    'marque' => $programme->vehicule->marque,
-                    'modele' => $programme->vehicule->modele,
-                    'nombre_place' => $programme->vehicule->nombre_place,
-                    'type_range' => $programme->vehicule->type_range,
-                ] : null,
-            ],
-        ]);
-    }
-
-    /**
-     * Créer une réservation et initier le paiement
+     * Créer une réservation (avec support Wallet et Multi-Réservations)
      */
     public function store(Request $request)
     {
-        Log::info('=== API: DEBUT RESERVATION ===');
+        Log::info('=== API: DEBUT RESERVATION (Multi-Seat) ===');
         Log::info('User ID:', ['id' => $request->user()->id]);
-        Log::info('Données reçues:', $request->all());
 
         $validated = $request->validate([
             'programme_id' => 'required|exists:programmes,id',
@@ -401,6 +468,7 @@ class ReservationController extends Controller
             'date_voyage' => 'required|date',
             'is_aller_retour' => 'boolean',
             'date_retour' => 'nullable|date',
+            'payment_method' => 'nullable|string|in:cinetpay,wallet',
             'passagers' => 'required|array',
             'passagers.*.nom' => 'required|string',
             'passagers.*.prenom' => 'required|string',
@@ -411,26 +479,20 @@ class ReservationController extends Controller
         ]);
 
         $programme = Programme::with('compagnie')->find($validated['programme_id']);
-
         if (!$programme) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Programme non trouvé',
-            ], 404);
+            return response()->json(['success' => false, 'message' => 'Programme non trouvé'], 404);
         }
 
         $isAllerRetour = $request->boolean('is_aller_retour');
         $dateVoyage = date('Y-m-d', strtotime($validated['date_voyage']));
         $dateRetour = $validated['date_retour'] ?? null;
+        $paymentMethod = $request->input('payment_method', 'cinetpay');
 
         if ($isAllerRetour && !$dateRetour) {
-            return response()->json([
-                'success' => false,
-                'message' => 'La date de retour est requise pour un aller-retour.',
-            ], 422);
+            return response()->json(['success' => false, 'message' => 'Date de retour requise pour aller-retour'], 422);
         }
 
-        // Vérifier disponibilité des places
+        // Vérifier disponibilité
         $reservedSeats = Reservation::where('programme_id', $programme->id)
             ->where('statut', 'confirmee')
             ->where('date_voyage', $dateVoyage)
@@ -440,131 +502,185 @@ class ReservationController extends Controller
         foreach ($validated['seats'] as $seat) {
             if (in_array($seat, $reservedSeats)) {
                 return response()->json([
-                    'success' => false,
-                    'message' => "La place $seat n'est plus disponible pour le " . date('d/m/Y', strtotime($dateVoyage)),
+                    'success' => false, 
+                    'message' => "La place $seat n'est plus disponible."
                 ], 422);
             }
         }
 
         try {
             $user = $request->user();
-            
-            // Calculer le montant
             $prixUnitaire = $programme->montant_billet;
-            if ($programme->is_aller_retour) {
-                $prixUnitaire *= 2;
-            }
+            if ($programme->is_aller_retour) $prixUnitaire *= 2;
             $montantTotal = $prixUnitaire * $validated['nombre_places'];
 
-            // Générer ID transaction
-            $transactionId = 'TRANS-' . date('YmdHis') . '-' . strtoupper(Str::random(5));
-
-            // Créer le paiement
-            $paiement = \App\Models\Paiement::create([
-                'user_id' => $user->id,
-                'amount' => $montantTotal,
-                'transaction_id' => $transactionId,
-                'status' => 'pending',
-                'currency' => 'XOF',
-            ]);
-
-            // Créer les réservations
-            $createdReservations = [];
-            foreach ($validated['passagers'] as $passager) {
-                $seatNumber = $passager['seat_number'];
-                $reference = $transactionId . '-' . $seatNumber;
-
-                $reservationData = [
-                    'paiement_id' => $paiement->id,
-                    'payment_transaction_id' => $transactionId,
-                    'user_id' => $user->id,
-                    'programme_id' => $programme->id,
-                    'seat_number' => $seatNumber,
-                    'passager_nom' => $passager['nom'],
-                    'passager_prenom' => $passager['prenom'],
-                    'passager_email' => $passager['email'],
-                    'passager_telephone' => $passager['telephone'],
-                    'passager_urgence' => $passager['urgence'],
-                    'is_aller_retour' => $isAllerRetour,
-                    'montant' => $prixUnitaire,
-                    'statut' => 'en_attente',
-                    'reference' => $reference,
-                    'date_voyage' => $dateVoyage,
-                ];
-
-                if ($isAllerRetour) {
-                    $reservationData['date_retour'] = $dateRetour;
-                    $reservationData['statut_aller'] = 'en_attente';
-                    $reservationData['statut_retour'] = 'en_attente';
-                    
-                    if ($programme->programme_retour_id) {
-                        $reservationData['programme_retour_id'] = $programme->programme_retour_id;
-                    }
-                } else {
-                    $reservationData['statut_aller'] = 'en_attente';
+            // === PAIEMENT WALLET ===
+            if ($paymentMethod === 'wallet') {
+                if ($user->solde < $montantTotal) {
+                    return response()->json([
+                        'success' => false, 
+                        'message' => 'Solde insuffisant. Votre solde: ' . $user->solde . ' FCFA'
+                    ], 400);
                 }
 
-                $reservation = Reservation::create($reservationData);
+                DB::beginTransaction();
+                try {
+                    // 1. Débit
+                    $user->solde -= $montantTotal;
+                    $user->save();
 
-                Log::info('Réservation créée (en attente):', [
-                    'id' => $reservation->id,
-                    'reference' => $reference,
-                    'seat_number' => $seatNumber,
+                    // 2. Transaction
+                    $transactionId = 'TX-WAL-' . strtoupper(Str::random(10));
+                    WalletTransaction::create([
+                        'user_id' => $user->id,
+                        'amount' => $montantTotal,
+                        'type' => 'debit',
+                        'description' => 'Réservation ' . $validated['nombre_places'] . ' place(s)',
+                        'reference' => $transactionId,
+                        'status' => 'completed',
+                        'payment_method' => 'wallet',
+                        'metadata' => json_encode(['programme_id' => $programme->id])
+                    ]);
+
+                    // 3. Créer réservations (UNE PAR PLACE)
+                    $createdReservations = [];
+                    foreach ($validated['passagers'] as $passager) {
+                        $seatNumber = $passager['seat_number'];
+                        $reference = $transactionId . '-' . $seatNumber;
+
+                        $reservationData = [
+                            'user_id' => $user->id,
+                            'programme_id' => $programme->id,
+                            'seat_number' => $seatNumber,
+                            'passager_nom' => $passager['nom'],
+                            'passager_prenom' => $passager['prenom'],
+                            'passager_email' => $passager['email'],
+                            'passager_telephone' => $passager['telephone'],
+                            'passager_urgence' => $passager['urgence'],
+                            'is_aller_retour' => $isAllerRetour,
+                            'montant' => $prixUnitaire, // Montant unitaire par place
+                            'statut' => 'confirmee',
+                            'reference' => $reference,
+                            'date_voyage' => $dateVoyage,
+                            'payment_transaction_id' => $transactionId,
+                            'qr_code' => Str::random(32) // Simulation QR
+                        ];
+
+                        if ($isAllerRetour) {
+                            $reservationData['date_retour'] = $dateRetour;
+                            $reservationData['statut_aller'] = 'confirmee';
+                            $reservationData['statut_retour'] = 'confirmee';
+                            if ($programme->programme_retour_id) {
+                                $reservationData['programme_retour_id'] = $programme->programme_retour_id;
+                            }
+                        } else {
+                            $reservationData['statut_aller'] = 'confirmee';
+                        }
+
+                        $res = Reservation::create($reservationData);
+                        $createdReservations[] = $res;
+                    }
+
+                    DB::commit();
+
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Réservations confirmées (Wallet)',
+                        'requires_payment' => false,
+                        'data' => [
+                            'transaction_id' => $transactionId,
+                            'reservations' => $createdReservations
+                        ]
+                    ], 201);
+
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    throw $e;
+                }
+            }
+            
+            // === PAIEMENT CINETPAY ===
+            else {
+                $transactionId = 'TRANS-' . date('YmdHis') . '-' . strtoupper(Str::random(5));
+
+                // 1. Créer le paiement en attente
+                $paiement = Paiement::create([
+                    'user_id' => $user->id,
+                    'amount' => $montantTotal,
+                    'transaction_id' => $transactionId,
+                    'status' => 'pending',
+                    'currency' => 'XOF',
+                    'payment_method' => 'cinetpay'
                 ]);
 
-                $createdReservations[] = [
-                    'id' => $reservation->id,
-                    'reference' => $reference,
-                    'seat_number' => $seatNumber,
-                ];
-            }
+                // 2. Créer les réservations en attente (UNE PAR PLACE)
+                $createdReservations = [];
+                foreach ($validated['passagers'] as $passager) {
+                    $seatNumber = $passager['seat_number'];
+                    $reference = $transactionId . '-' . $seatNumber;
 
-            Log::info('=== FIN INITIALISATION: ' . count($createdReservations) . ' réservations ===');
+                    $reservationData = [
+                        'paiement_id' => $paiement->id,
+                        'payment_transaction_id' => $transactionId,
+                        'user_id' => $user->id,
+                        'programme_id' => $programme->id,
+                        'seat_number' => $seatNumber,
+                        'passager_nom' => $passager['nom'],
+                        'passager_prenom' => $passager['prenom'],
+                        'passager_email' => $passager['email'],
+                        'passager_telephone' => $passager['telephone'],
+                        'passager_urgence' => $passager['urgence'],
+                        'is_aller_retour' => $isAllerRetour,
+                        'montant' => $prixUnitaire,
+                        'statut' => 'en_attente',
+                        'reference' => $reference,
+                        'date_voyage' => $dateVoyage,
+                    ];
 
-            // --- DEBUT GENERATION LIEN CINETPAY (Style Plateau-app) ---
-            $description = 'Réservation de ' . $validated['nombre_places'] . ' place(s) - ' . $programme->compagnie->name;
-            $paymentLinkResult = $this->generateCinetPayLink($paiement, $description);
+                    if ($isAllerRetour) {
+                        $reservationData['date_retour'] = $dateRetour;
+                        $reservationData['statut_aller'] = 'en_attente';
+                        $reservationData['statut_retour'] = 'en_attente';
+                        if ($programme->programme_retour_id) {
+                            $reservationData['programme_retour_id'] = $programme->programme_retour_id;
+                        }
+                    } else {
+                        $reservationData['statut_aller'] = 'en_attente';
+                    }
 
-            if (!$paymentLinkResult['success']) {
+                    $res = Reservation::create($reservationData);
+                    $createdReservations[] = $res;
+                }
+
+                // 3. Générer le lien CinetPay
+                $description = 'Réservation ' . count($createdReservations) . ' place(s) - ' . $programme->compagnie->name;
+                $paymentLinkResult = $this->generateCinetPayLink($paiement, $description);
+
+                if (!$paymentLinkResult['success']) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Erreur lien paiement',
+                        'error_details' => $paymentLinkResult['error_details']
+                    ], 500);
+                }
+
                 return response()->json([
-                    'success' => false,
-                    'message' => 'Échec de la génération du lien de paiement. Veuillez réessayer.',
-                    'error_details' => $paymentLinkResult['error_details']
-                ], 500);
+                    'success' => true,
+                    'message' => 'Réservations initialisées. Paiement requis.',
+                    'requires_payment' => true,
+                    'payment_details' => $paymentLinkResult['cinetpay_data'],
+                    'data' => [
+                        'transaction_id' => $transactionId,
+                        'amount' => $montantTotal
+                    ]
+                ], 201);
             }
 
-            $cinetpayData = $paymentLinkResult['cinetpay_data'];
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Réservations initialisées. Utilisez le payment_url pour payer.',
-                'requires_payment' => true,
-                'payment_details' => [
-                    'payment_url' => $cinetpayData['payment_url'],
-                    'payment_token' => $cinetpayData['payment_token'],
-                    'transaction_id' => $paymentLinkResult['generated_transaction_id'],
-                    'mode' => 'PRODUCTION',
-                    'return_url_deep_link' => $paymentLinkResult['return_url_deep_link'],
-                    'cancel_url_deep_link' => $paymentLinkResult['cancel_url_deep_link'],
-                ],
-                'data' => [
-                    'reservations' => $createdReservations,
-                    'paiement' => $paiement
-                ]
-            ], 201);
-            // --- FIN GENERATION LIEN CINETPAY ---
-
         } catch (\Exception $e) {
-
-        } catch (\Exception $e) {
-            Log::error('Erreur création réservation API:', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
+            Log::error('Erreur Réservation API:', ['error' => $e->getMessage()]);
             return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la création de la réservation: ' . $e->getMessage(),
+                'success' => false, 
+                'message' => 'Erreur serveur: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -717,7 +833,51 @@ class ReservationController extends Controller
 
                     Log::info("Paiement {$reference} confirmé et réservations validées.");
                     
-                    // TODO: Envoyer SMS/Email/Notification Push ici
+                    Log::info("Paiement {$reference} confirmé et réservations validées.");
+                    
+                    // Envoyer les emails de confirmation
+                    foreach ($reservations as $res) {
+                        try {
+                            $programme = $res->programme;
+                            $user = $res->user; // Ou le passager si différent
+                            
+                            // Générer QR Code si absent (optionnel, mais mieux vaut le faire)
+                            if (empty($res->qr_code_path) && class_exists(\App\Http\Controllers\User\Reservation\ReservationController::class)) {
+                                // On instancie le contrôleur web pour utiliser ses helpers (pas idéal mais rapide)
+                                // Ou mieux, on refait la logique QR ici.
+                                // Pour l'instant, on suppose que le QR est généré ou on le génère à la volée
+                            }
+
+                            // Envoi Email
+                            // Note: Idéalement, déplacer sendReservationEmail dans un Service partagé
+                            $email = $res->passager_email ?? $user->email;
+                            $nom = ($res->passager_prenom . ' ' . $res->passager_nom) ?? $user->name;
+                            
+                            // On utilise la notification directement
+                            // Check imports first!
+                            // Assumons que ReservationConfirmeeNotification est importé ou FQCN
+                            
+                            // Génération QR Code à la volée pour l'email si nécessaire
+                            // (Simplifié pour l'API, on enverra le lien ou le code string)
+                            
+                            \Illuminate\Support\Facades\Notification::route('mail', $email)
+                                ->notify(new \App\Notifications\ReservationConfirmeeNotification(
+                                    $res,
+                                    $programme,
+                                    $res->qr_code ?? 'QR_CODE_MANQUANT',
+                                    $nom,
+                                    $res->seat_number,
+                                    ($res->is_aller_retour) ? 'ALLER-RETOUR' : 'ALLER SIMPLE',
+                                    null, // QR Retour
+                                    $res->programmeRetour // Programme Retour
+                                ));
+                                
+                            Log::info("Email de confirmation envoyé à $email pour la réservation {$res->id}");
+
+                        } catch (\Exception $e) {
+                            Log::error("Erreur envoi email réservation {$res->id}: " . $e->getMessage());
+                        }
+                    }
                 } else {
                     Log::warning("Paiement {$reference} rejeté par CinetPay: {$status}");
                     $paiement->update(['status' => 'failed']);
