@@ -656,23 +656,38 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // --- 1. Gestion Itinéraire & Durée ---
+            // --- 1. VARIABLES GLOBALES ---
             const itineraireSelect = document.getElementById('itineraire_id');
             const pointDepartInput = document.getElementById('point_depart');
             const pointArriveInput = document.getElementById('point_arrive');
             const durerParcoursInput = document.getElementById('durer_parcours');
             const retourItineraireDisplay = document.getElementById('retour_itineraire_display');
 
+            const heureDepartInput = document.getElementById('heure_depart');
+            const heureArriveeInput = document.getElementById('heure_arrive');
+            const retourHeureDepartInput = document.getElementById('retour_heure_depart');
+            const retourHeureDepartRecurrentInput = document.getElementById('retour_heure_depart_recurrent');
+            
+            const radioPonctuel = document.getElementById('type_ponctuel');
+            const radioRecurrent = document.getElementById('type_recurrent');
+            const checkboxAR = document.querySelector('input[name="is_aller_retour"]');
+            const dateFinProgrammation = document.getElementById('date_fin_programmation');
+
+            // --- 2. GESTION ITINÉRAIRE ---
             itineraireSelect.addEventListener('change', function() {
                 const option = this.options[this.selectedIndex];
                 if (option.value) {
                     pointDepartInput.value = option.dataset.pointDepart;
                     pointArriveInput.value = option.dataset.pointArrive;
                     durerParcoursInput.value = option.dataset.durer;
-                    if(retourItineraireDisplay) {
-                         retourItineraireDisplay.textContent = option.dataset.pointArrive + ' → ' + option.dataset.pointDepart;
+
+                    // Mise à jour visuelle texte retour
+                    if (retourItineraireDisplay) {
+                        retourItineraireDisplay.textContent = option.dataset.pointArrive + ' → ' + option.dataset.pointDepart;
                     }
-                    calculateArrivalTimes();
+
+                    // Recalculer les heures car la durée a changé
+                    calculateAllTimes();
                 } else {
                     pointDepartInput.value = '';
                     pointArriveInput.value = '';
@@ -680,148 +695,217 @@
                 }
             });
 
-            // --- 2. Calcul des Heures d'arrivée ---
-            const heureDepartInput = document.getElementById('heure_depart');
-            
-            function calculateArrivalTimes() {
-                const duree = durerParcoursInput.value;
-                if(!duree) return;
-
-                // Calcul Aller
-                if(heureDepartInput.value) {
-                    document.getElementById('heure_arrive').value = addDurationToTime(heureDepartInput.value, duree);
-                }
-
-                // Calcul Retour Ponctuel
-                const retourHeurePonctuel = document.getElementById('retour_heure_depart');
-                if(retourHeurePonctuel && retourHeurePonctuel.value) {
-                    document.getElementById('retour_heure_arrive').value = addDurationToTime(retourHeurePonctuel.value, duree);
-                }
-
-                // Calcul Retour Récurrent
-                const retourHeureRecurrent = document.getElementById('retour_heure_depart_recurrent');
-                if(retourHeureRecurrent && retourHeureRecurrent.value) {
-                    document.getElementById('retour_heure_arrive_recurrent').value = addDurationToTime(retourHeureRecurrent.value, duree);
-                }
-            }
-
+            // --- 3. FONCTIONS DE CALCUL HORAIRE ---
             function addDurationToTime(startTime, durationStr) {
-                // Parsing duration "X heures Y minutes" or "Xh Ymin"
+                if (!startTime || !durationStr) return null;
+
+                // Parsing duration
                 let hours = 0, minutes = 0;
                 const hMatch = durationStr.match(/(\d+)\s*h/i) || durationStr.match(/(\d+)\s*heure/i);
                 const mMatch = durationStr.match(/(\d+)\s*m/i) || durationStr.match(/(\d+)\s*minute/i);
-                
-                if(hMatch) hours = parseInt(hMatch[1]);
-                if(mMatch) minutes = parseInt(mMatch[1]);
+
+                if (hMatch) hours = parseInt(hMatch[1]);
+                if (mMatch) minutes = parseInt(mMatch[1]);
+
+                // Fallback format HH:MM
+                if (hours === 0 && minutes === 0 && durationStr.includes(':')) {
+                    const parts = durationStr.split(':');
+                    hours = parseInt(parts[0]);
+                    minutes = parseInt(parts[1]);
+                }
 
                 const [startH, startM] = startTime.split(':').map(Number);
                 const date = new Date();
-                date.setHours(startH, startM);
+                date.setHours(startH, startM, 0, 0);
+
+                // Ajout durée
                 date.setHours(date.getHours() + hours);
                 date.setMinutes(date.getMinutes() + minutes);
 
-                return date.toTimeString().slice(0, 5);
+                // Formatage HH:mm
+                return date.toLocaleTimeString('fr-FR', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
             }
 
-            // Listeners pour calcul heure
-            heureDepartInput.addEventListener('change', calculateArrivalTimes);
-            const retourHeureDepart = document.getElementById('retour_heure_depart');
-            if(retourHeureDepart) retourHeureDepart.addEventListener('change', calculateArrivalTimes);
-            const retourHeureDepartRecurrent = document.getElementById('retour_heure_depart_recurrent');
-            if(retourHeureDepartRecurrent) retourHeureDepartRecurrent.addEventListener('change', calculateArrivalTimes);
+            function calculateAllTimes() {
+                const duree = durerParcoursInput.value;
+                if (!duree) return;
 
+                // 1. Aller : Depart -> Arrivee
+                if (heureDepartInput.value) {
+                    heureArriveeInput.value = addDurationToTime(heureDepartInput.value, duree);
+                    checkRetourDateLogic(); // Vérifier cohérence immédiate
+                }
 
-            // --- 3. Gestion Types Programmation & Aller-Retour ---
-            const radioPonctuel = document.getElementById('type_ponctuel');
-            const radioRecurrent = document.getElementById('type_recurrent');
-            const checkboxAR = document.querySelector('input[name="is_aller_retour"]');
-            
-            const sectionRecurrent = document.getElementById('recurrent_fields');
-            const infoRecurrent = document.getElementById('info_recurrent');
-            const sectionRetourConfig = document.getElementById('retour_config_fields');
-            const sectionRetourPonctuel = document.getElementById('retour_ponctuel_section');
-            const sectionRetourRecurrent = document.getElementById('retour_recurrent_section');
-            const dateFinProgrammation = document.getElementById('date_fin_programmation');
+                // 2. Retour Ponctuel
+                if (retourHeureDepartInput && retourHeureDepartInput.value) {
+                    document.getElementById('retour_heure_arrive').value = addDurationToTime(retourHeureDepartInput.value, duree);
+                    checkRetourDateLogic(); // Vérifier cohérence immédiate
+                }
 
+                // 3. Retour Récurrent
+                if (retourHeureDepartRecurrentInput && retourHeureDepartRecurrentInput.value) {
+                    document.getElementById('retour_heure_arrive_recurrent').value = addDurationToTime(retourHeureDepartRecurrentInput.value, duree);
+                }
+            }
+
+            // --- 4. LOGIQUE "RETOUR LE LENDEMAIN" ---
+            function checkRetourDateLogic() {
+                // Uniquement pour le mode ponctuel et si aller-retour coché
+                const isPonctuel = radioPonctuel.checked;
+                const isAR = checkboxAR.checked;
+
+                if (!isPonctuel || !isAR) return;
+
+                const hArriveeAller = heureArriveeInput.value; // ex: "14:30"
+                const hDepartRetour = retourHeureDepartInput.value; // ex: "10:00"
+                const dateDepartVal = document.getElementById('date_depart').value;
+
+                const displayEl = document.getElementById('ponctuel_retour_date_display');
+                const infoDiv = displayEl ? displayEl.closest('.bg-blue-50, .bg-orange-50') : null;
+
+                if (hArriveeAller && hDepartRetour && dateDepartVal) {
+                    // Conversion en minutes pour comparer simplement
+                    const [h1, m1] = hArriveeAller.split(':').map(Number);
+                    const minArrivee = h1 * 60 + m1;
+
+                    const [h2, m2] = hDepartRetour.split(':').map(Number);
+                    const minRetour = h2 * 60 + m2;
+
+                    const dateObj = new Date(dateDepartVal);
+
+                    if (minRetour <= minArrivee) {
+                        // Retour AVANT ou PENDANT l'arrivée => Lendemain
+                        dateObj.setDate(dateObj.getDate() + 1);
+                        const lendemainStr = dateObj.toLocaleDateString('fr-FR');
+
+                        if (displayEl) displayEl.innerHTML = `<span class="text-orange-600">${lendemainStr} (Lendemain)</span>`;
+                        // Feedback visuel orange
+                        if (infoDiv) {
+                            infoDiv.classList.remove('bg-blue-50', 'border-blue-200');
+                            infoDiv.classList.add('bg-orange-50', 'border-orange-200');
+                            const p = infoDiv.querySelector('p');
+                            if(p) {
+                                p.classList.remove('text-blue-700');
+                                p.classList.add('text-orange-800');
+                            }
+                            const icon = infoDiv.querySelector('i');
+                            if(icon) icon.className = 'fas fa-calendar-plus text-orange-500';
+                        }
+                    } else {
+                        // Retour APRES l'arrivée => Même jour
+                        const memeJourStr = dateObj.toLocaleDateString('fr-FR');
+
+                        if (displayEl) displayEl.textContent = memeJourStr;
+                        // Reset style bleu
+                        if (infoDiv) {
+                            infoDiv.classList.add('bg-blue-50', 'border-blue-200');
+                            infoDiv.classList.remove('bg-orange-50', 'border-orange-200');
+                            const p = infoDiv.querySelector('p');
+                            if(p) {
+                                p.classList.add('text-blue-700');
+                                p.classList.remove('text-orange-800');
+                            }
+                            const icon = infoDiv.querySelector('i');
+                            if(icon) icon.className = 'fas fa-info-circle text-blue-500';
+                        }
+                    }
+                }
+            }
+
+            // --- 5. LISTENERS HORAIRES ---
+            heureDepartInput.addEventListener('change', calculateAllTimes);
+            heureDepartInput.addEventListener('keyup', calculateAllTimes);
+
+            if (retourHeureDepartInput) {
+                retourHeureDepartInput.addEventListener('change', calculateAllTimes);
+                retourHeureDepartInput.addEventListener('keyup', calculateAllTimes);
+            }
+
+            if (retourHeureDepartRecurrentInput) {
+                retourHeureDepartRecurrentInput.addEventListener('change', calculateAllTimes);
+            }
+
+            // --- 6. GESTION UI (Afficher/Cacher Sections) ---
             function updateUI() {
-                // Affichage champs récurrents
-                if(radioRecurrent.checked) {
+                const sectionRecurrent = document.getElementById('recurrent_fields');
+                const infoRecurrent = document.getElementById('info_recurrent');
+                const sectionRetourConfig = document.getElementById('retour_config_fields');
+                const sectionRetourPonctuel = document.getElementById('retour_ponctuel_section');
+                const sectionRetourRecurrent = document.getElementById('retour_recurrent_section');
+
+                // 1. Ponctuel vs Récurrent
+                if (radioRecurrent.checked) {
                     sectionRecurrent.classList.remove('hidden');
-                    if(infoRecurrent) infoRecurrent.classList.remove('hidden');
+                    if (infoRecurrent) infoRecurrent.classList.remove('hidden');
                     dateFinProgrammation.required = true;
                 } else {
                     sectionRecurrent.classList.add('hidden');
-                    if(infoRecurrent) infoRecurrent.classList.add('hidden');
+                    if (infoRecurrent) infoRecurrent.classList.add('hidden');
                     dateFinProgrammation.required = false;
                 }
 
-                // Affichage config Retour
-                if(checkboxAR.checked) {
+                // 2. Aller-Retour
+                if (checkboxAR.checked) {
                     sectionRetourConfig.classList.remove('hidden');
-                    
-                    if(radioPonctuel.checked) {
+
+                    if (radioPonctuel.checked) {
+                        // Mode A/R Ponctuel
                         sectionRetourPonctuel.classList.remove('hidden');
                         sectionRetourRecurrent.classList.add('hidden');
-                        
-                        // Set required
-                        document.getElementById('retour_heure_depart').required = true;
-                        if(document.getElementById('retour_heure_depart_recurrent'))
-                            document.getElementById('retour_heure_depart_recurrent').required = false;
-                        
-                        // ✅ NOUVEAU: Réactiver les champs ponctuel
-                        document.getElementById('retour_heure_depart').disabled = false;
+
+                        // Activer Ponctuel / Désactiver Récurrent
+                        if(retourHeureDepartInput) {
+                            retourHeureDepartInput.required = true;
+                            retourHeureDepartInput.disabled = false;
+                        }
                         document.getElementById('retour_heure_arrive').disabled = false;
                         document.getElementById('retour_date').disabled = false;
-                        
-                        // ✅ NOUVEAU: Désactiver les champs récurrent pour qu'ils ne soient PAS envoyés
-                        if(document.getElementById('retour_heure_depart_recurrent')) {
-                            document.getElementById('retour_heure_depart_recurrent').disabled = true;
+
+                        if (retourHeureDepartRecurrentInput) {
+                            retourHeureDepartRecurrentInput.required = false;
+                            retourHeureDepartRecurrentInput.disabled = true;
                             document.getElementById('retour_heure_arrive_recurrent').disabled = true;
                             document.getElementById('retour_date_debut_recurrent').disabled = true;
                         }
-                        
-                        // Update display date retour (même jour)
+
+                        // Mise à jour date display
                         const dateDep = document.getElementById('date_depart').value;
-                        if(dateDep) {
-                            const d = new Date(dateDep);
-                            const displayEl = document.getElementById('ponctuel_retour_date_display');
-                            if(displayEl) displayEl.textContent = d.toLocaleDateString('fr-FR');
-                            
-                            // Set hidden input value
+                        if (dateDep) {
                             const hiddenDate = document.getElementById('retour_date');
-                            if(hiddenDate) hiddenDate.value = dateDep;
+                            if (hiddenDate) hiddenDate.value = dateDep;
+                            checkRetourDateLogic();
                         }
 
                     } else {
+                        // Mode A/R Récurrent
                         sectionRetourPonctuel.classList.add('hidden');
                         sectionRetourRecurrent.classList.remove('hidden');
 
-                        // Set required
-                        document.getElementById('retour_heure_depart').required = false;
-                        if(document.getElementById('retour_heure_depart_recurrent'))
-                            document.getElementById('retour_heure_depart_recurrent').required = true;
-
-                        // ✅ NOUVEAU: Désactiver les champs ponctuel pour qu'ils ne soient PAS envoyés
-                        document.getElementById('retour_heure_depart').disabled = true;
+                        // Désactiver Ponctuel / Activer Récurrent
+                        if(retourHeureDepartInput) {
+                            retourHeureDepartInput.required = false;
+                            retourHeureDepartInput.disabled = true;
+                        }
                         document.getElementById('retour_heure_arrive').disabled = true;
                         document.getElementById('retour_date').disabled = true;
-                        
-                        // ✅ NOUVEAU: Réactiver les champs récurrent
-                        if(document.getElementById('retour_heure_depart_recurrent')) {
-                            document.getElementById('retour_heure_depart_recurrent').disabled = false;
+
+                        if (retourHeureDepartRecurrentInput) {
+                            retourHeureDepartRecurrentInput.required = true;
+                            retourHeureDepartRecurrentInput.disabled = false;
                             document.getElementById('retour_heure_arrive_recurrent').disabled = false;
                             document.getElementById('retour_date_debut_recurrent').disabled = false;
                         }
-
-                        // Générer les checkboxes de retour
+                        
                         generateRetourCheckboxes();
                     }
                 } else {
+                    // Pas Aller-Retour
                     sectionRetourConfig.classList.add('hidden');
-                    // Remove required
-                    document.getElementById('retour_heure_depart').required = false;
-                    if(document.getElementById('retour_heure_depart_recurrent'))
-                        document.getElementById('retour_heure_depart_recurrent').required = false;
+                    if(retourHeureDepartInput) retourHeureDepartInput.required = false;
+                    if(retourHeureDepartRecurrentInput) retourHeureDepartRecurrentInput.required = false;
                 }
             }
 
@@ -829,168 +913,112 @@
             radioPonctuel.addEventListener('change', updateUI);
             radioRecurrent.addEventListener('change', updateUI);
             checkboxAR.addEventListener('change', updateUI);
-            document.getElementById('date_depart').addEventListener('change', updateUI);
+            document.getElementById('date_depart').addEventListener('change', function() {
+                updateUI();
+                validateDateWithRecurrenceDays();
+            });
 
-            // --- 4. Logique Jours Retour (Auto-calcul date) ---
-            const mapJours = { 'lundi':1, 'mardi':2, 'mercredi':3, 'jeudi':4, 'vendredi':5, 'samedi':6, 'dimanche':0 };
 
-          function generateRetourCheckboxes() {
-    const container = document.getElementById('jours_retour_container');
-    const checkboxesAller = document.querySelectorAll('input[name="jours_recurrence[]"]:checked');
-    const dateDepartStr = document.getElementById('date_depart').value;
+            // --- 7. LOGIQUE JOURS RETOUR RECURRENT ---
+            const mapJours = {'lundi': 1, 'mardi': 2, 'mercredi': 3, 'jeudi': 4, 'vendredi': 5, 'samedi': 6, 'dimanche': 0};
 
-    container.innerHTML = '';
-    
-    // Si pas de date ou pas de jours cochés à l'aller
-    if(!dateDepartStr || checkboxesAller.length === 0) {
-        container.innerHTML = `
-            <div class="col-span-full flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-200 rounded-xl text-gray-400 bg-gray-50 animate-pulse">
-                <svg class="w-8 h-8 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                <span class="text-sm font-medium">Veuillez sélectionner des jours de départ</span>
-            </div>`;
-        return;
-    }
+            function generateRetourCheckboxes() {
+                const container = document.getElementById('jours_retour_container');
+                const checkboxesAller = document.querySelectorAll('input[name="jours_recurrence[]"]:checked');
+                const dateDepartStr = document.getElementById('date_depart').value;
 
-    // Date de référence (Date de début du programme aller)
-    const dateRef = new Date(dateDepartStr);
-    const dayRef = dateRef.getDay(); // 0-6
+                container.innerHTML = '';
 
-    // Mise à jour de l'affichage de la date ref
-    const refDateDisplay = document.getElementById('ref_date_display');
-    if(refDateDisplay) refDateDisplay.textContent = dateRef.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+                if (!dateDepartStr || checkboxesAller.length === 0) {
+                    container.innerHTML = `<div class="col-span-full flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-200 rounded-xl text-gray-400 bg-gray-50"><span class="text-sm font-medium">Veuillez sélectionner des jours de départ</span></div>`;
+                    return;
+                }
 
-    let minDateRetour = null;
+                const dateRef = new Date(dateDepartStr);
+                const dayRef = dateRef.getDay();
+                const refDateDisplay = document.getElementById('ref_date_display');
+                if (refDateDisplay) refDateDisplay.textContent = dateRef.toLocaleDateString('fr-FR');
 
-    checkboxesAller.forEach(cb => {
-        const jourNom = cb.value; // 'lundi', etc.
-        const jourIndex = mapJours[jourNom];
-        
-        // Calcul du décalage pour trouver la prochaine occurrence de ce jour
-        let diff = jourIndex - dayRef;
-        if(diff < 0) diff += 7; // Prochaine occurrence
-        
-        // On ajoute ce nombre de jours à la date de départ
-        const dateRetour = new Date(dateRef);
-        dateRetour.setDate(dateRef.getDate() + diff);
-        
-        const dateRetourStr = dateRetour.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
-        const dateRetourISO = dateRetour.toISOString().split('T')[0];
+                let minDateRetour = null;
 
-        // Mise à jour date min pour le champ caché
-        if(!minDateRetour || dateRetourISO < minDateRetour) {
-            minDateRetour = dateRetourISO;
-        }
+                checkboxesAller.forEach(cb => {
+                    const jourNom = cb.value;
+                    const jourIndex = mapJours[jourNom];
+                    let diff = jourIndex - dayRef;
+                    if (diff < 0) diff += 7;
 
-        // Création de la carte UI
-        const div = document.createElement('div');
-        div.className = 'relative group animate-fade-in-up'; // Animation classe
-        
-        // Notez l'attribut 'checked' ajouté par défaut
-        div.innerHTML = `
-            <input type="checkbox" name="jours_retour[]" id="ret_${jourNom}" value="${jourNom}" checked 
-                class="peer sr-only" onchange="window.recalcMinDate()">
-            
-            <label for="ret_${jourNom}" 
-                class="flex flex-col p-4 bg-white border border-gray-200 rounded-xl cursor-pointer 
-                transition-all duration-200 ease-in-out shadow-sm
-                hover:border-green-400 hover:shadow-md
-                peer-checked:border-green-500 peer-checked:bg-green-50 peer-checked:ring-1 peer-checked:ring-green-500">
-                
-                <div class="flex justify-between items-center mb-2">
-                    <span class="font-bold text-gray-800 capitalize peer-checked:text-green-800">${jourNom}</span>
-                    <div class="w-5 h-5 rounded-full border border-gray-300 flex items-center justify-center bg-white peer-checked:bg-green-500 peer-checked:border-green-500 transition-colors">
-                        <svg class="w-3 h-3 text-white hidden peer-checked:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                    </div>
-                </div>
-                
-                <div class="flex items-center text-sm text-gray-500 peer-checked:text-green-700">
-                    <svg class="w-4 h-4 mr-1.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                    <span>${dateRetourStr}</span>
-                </div>
-                
-                <input type="hidden" class="date-val" value="${dateRetourISO}">
-            </label>
-        `;
-        container.appendChild(div);
-    });
+                    const dateRetour = new Date(dateRef);
+                    dateRetour.setDate(dateRef.getDate() + diff);
 
-    // Set initial min date
-    const dateDebutRetourInput = document.getElementById('retour_date_debut_recurrent');
-    if(dateDebutRetourInput) dateDebutRetourInput.value = minDateRetour;
-}
+                    const dateRetourStr = dateRetour.toLocaleDateString('fr-FR', {day: 'numeric', month: 'long'});
+                    const dateRetourISO = dateRetour.toISOString().split('T')[0];
 
-            // Exposer la fonction pour l'onclick
+                    if (!minDateRetour || dateRetourISO < minDateRetour) {
+                        minDateRetour = dateRetourISO;
+                    }
+
+                    const div = document.createElement('div');
+                    div.className = 'relative group animate-fade-in-up';
+                    div.innerHTML = `
+                        <input type="checkbox" name="jours_retour[]" id="ret_${jourNom}" value="${jourNom}" checked class="peer sr-only" onchange="window.recalcMinDate()">
+                        <label for="ret_${jourNom}" class="flex flex-col p-4 bg-white border border-gray-200 rounded-xl cursor-pointer hover:border-green-400 peer-checked:border-green-500 peer-checked:bg-green-50">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-bold text-gray-800 capitalize">${jourNom}</span>
+                                <div class="w-5 h-5 rounded-full border border-gray-300 flex items-center justify-center bg-white peer-checked:bg-green-500 peer-checked:border-green-500">
+                                    <svg class="w-3 h-3 text-white hidden peer-checked:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                </div>
+                            </div>
+                            <span class="text-xs text-gray-500">${dateRetourStr}</span>
+                            <input type="hidden" class="date-val" value="${dateRetourISO}">
+                        </label>
+                    `;
+                    container.appendChild(div);
+                });
+
+                const dateDebutRetourInput = document.getElementById('retour_date_debut_recurrent');
+                if (dateDebutRetourInput) dateDebutRetourInput.value = minDateRetour;
+            }
+
             window.recalcMinDate = function() {
                 const checked = document.querySelectorAll('input[name="jours_retour[]"]:checked');
                 let min = null;
                 checked.forEach(cb => {
                     const val = cb.parentElement.querySelector('.date-val').value;
-                    if(!min || val < min) min = val;
+                    if (!min || val < min) min = val;
                 });
                 const dateDebutRetourInput = document.getElementById('retour_date_debut_recurrent');
-                if(dateDebutRetourInput) dateDebutRetourInput.value = min;
+                if (dateDebutRetourInput) dateDebutRetourInput.value = min;
             };
 
-            // Listeners pour regénérer les cases retour quand l'aller change
             document.querySelectorAll('input[name="jours_recurrence[]"]').forEach(cb => {
                 cb.addEventListener('change', function() {
-                    if(checkboxAR.checked && radioRecurrent.checked) generateRetourCheckboxes();
-                    // ✅ Validation nouvelle : vérifier la cohérence date/jours
+                    if (checkboxAR.checked && radioRecurrent.checked) generateRetourCheckboxes();
                     validateDateWithRecurrenceDays();
                 });
             });
 
-            // ✅ NOUVELLE FONCTION DE VALIDATION CLIENT
+            // --- 8. VALIDATION FORMULAIRE ---
             function validateDateWithRecurrenceDays() {
-                // Seulement pour programmes récurrents
                 if (!radioRecurrent.checked) return;
-
                 const dateDepartInput = document.getElementById('date_depart');
                 const dateDepart = dateDepartInput.value;
                 const joursChecked = document.querySelectorAll('input[name="jours_recurrence[]"]:checked');
-                
-                // Supprimer l'ancien message d'erreur s'il existe
+
                 const existingError = dateDepartInput.parentElement.parentElement.querySelector('.validation-error-date');
                 if (existingError) existingError.remove();
-                
+
                 if (!dateDepart || joursChecked.length === 0) return;
-                
-                // Mapper les jours en français aux jours de la semaine
-                const joursFrancais = {
-                    'monday': 'lundi',
-                    'tuesday': 'mardi',
-                    'wednesday': 'mercredi',
-                    'thursday': 'jeudi',
-                    'friday': 'vendredi',
-                    'saturday': 'samedi',
-                    'sunday': 'dimanche'
-                };
-                
-                // Obtenir le jour de la semaine de la date sélectionnée
+
+                const joursFrancais = {'monday': 'lundi', 'tuesday': 'mardi', 'wednesday': 'mercredi', 'thursday': 'jeudi', 'friday': 'vendredi', 'saturday': 'samedi', 'sunday': 'dimanche'};
                 const date = new Date(dateDepart + 'T00:00:00');
-                const jourAnglais = date.toLocaleString('en-US', { weekday: 'long' }).toLowerCase();
+                const jourAnglais = date.toLocaleString('en-US', {weekday: 'long'}).toLowerCase();
                 const jourFrancais = joursFrancais[jourAnglais];
-                
-                // Vérifier si ce jour est dans les jours sélectionnés
                 const joursSelectionnes = Array.from(joursChecked).map(cb => cb.value);
-                const isValid = joursSelectionnes.includes(jourFrancais);
-                
-                if (!isValid) {
-                    // Afficher un message d'erreur
+
+                if (!joursSelectionnes.includes(jourFrancais)) {
                     const errorDiv = document.createElement('div');
                     errorDiv.className = 'validation-error-date bg-red-50 border border-red-200 rounded-lg p-3 mt-2';
-                    errorDiv.innerHTML = `
-                        <div class="flex items-start gap-2">
-                            <svg class="w-5 h-5 text-red-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                            <p class="text-sm text-red-700">
-                                <strong>Incohérence détectée !</strong> La date sélectionnée (${date.toLocaleDateString('fr-FR')}) tombe un <strong>${jourFrancais}</strong>, 
-                                mais ce jour n'est pas dans vos jours de récurrence sélectionnés : <strong>${joursSelectionnes.join(', ')}</strong>.
-                                <br><span class="text-xs">Veuillez choisir une date qui correspond à un de vos jours de récurrence.</span>
-                            </p>
-                        </div>
-                    `;
+                    errorDiv.innerHTML = `<p class="text-sm text-red-700"><strong>Attention:</strong> La date choisie est un ${jourFrancais}, mais ce jour n'est pas coché.</p>`;
                     dateDepartInput.parentElement.parentElement.appendChild(errorDiv);
                     dateDepartInput.classList.add('border-red-500');
                 } else {
@@ -998,46 +1026,65 @@
                 }
             }
 
-            // ✅ VALIDATION AU SUBMIT DU FORMULAIRE
             document.querySelector('form').addEventListener('submit', function(e) {
                 if (radioRecurrent.checked) {
-                    const dateDepartInput = document.getElementById('date_depart');
-                    const joursChecked = document.querySelectorAll('input[name="jours_recurrence[]"]:checked');
-                    
-                    if (dateDepartInput.value && joursChecked.length > 0) {
-                        const joursFrancais = {
-                            'monday': 'lundi', 'tuesday': 'mardi', 'wednesday': 'mercredi',
-                            'thursday': 'jeudi', 'friday': 'vendredi', 'saturday': 'samedi', 'sunday': 'dimanche'
-                        };
-                        
-                        const date = new Date(dateDepartInput.value + 'T00:00:00');
-               const jourAnglais = date.toLocaleString('en-US', { weekday: 'long' }).toLowerCase();
-                        const jourFrancais = joursFrancais[jourAnglais];
-                        const joursSelectionnes = Array.from(joursChecked).map(cb => cb.value);
-                        
-                        if (!joursSelectionnes.includes(jourFrancais)) {
-                            e.preventDefault();
-                            alert(`❌ La date de départ tombe un ${jourFrancais}, mais ce jour n'est pas dans vos jours de récurrence sélectionnés (${joursSelectionnes.join(', ')}). Veuillez corriger avant de soumettre.`);
-                            dateDepartInput.focus();
-                            return false;
-                        }
+                    const error = document.querySelector('.validation-error-date');
+                    if(error) {
+                        e.preventDefault();
+                        alert("Veuillez corriger la date de départ pour qu'elle corresponde à un jour de récurrence.");
                     }
                 }
             });
 
-            // ✅ Ajouter listeners pour validation en temps réel
-            const elementDateDepart = document.getElementById('date_depart');
-            if (elementDateDepart) {
-                elementDateDepart.addEventListener('change', validateDateWithRecurrenceDays);
-            }
-            if (radioRecurrent) {
-                radioRecurrent.addEventListener('change', validateDateWithRecurrenceDays);
-            }
-
-            // Init
+            // Initialisation
             updateUI();
         });
     </script>
+    <!-- CDN SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        // 1. Pop-up en cas de Succès (Vert)
+        @if(session('success'))
+            Swal.fire({
+                icon: 'success',
+                title: 'Succès !',
+                text: "{{ session('success') }}",
+                confirmButtonColor: '#e94f1b',
+                timer: 3000
+            });
+        @endif
+
+        // 2. Pop-up en cas d'Erreur Critique (Conflit bus, etc.) (Rouge)
+        @if(session('error'))
+            Swal.fire({
+                icon: 'error',
+                title: 'Oups, impossible de créer !',
+                text: "{{ session('error') }}",
+                confirmButtonColor: '#d33',
+                footer: '<span style="color:red">Veuillez corriger le formulaire</span>'
+            });
+        @endif
+
+        // 3. Pop-up générique si des champs sont invalides (ex: oubli de champ requis)
+        // S'affiche seulement s'il n'y a pas déjà une erreur critique 'error'
+        @if($errors->any() && !session('error'))
+            Swal.fire({
+                icon: 'warning',
+                title: 'Formulaire incomplet',
+                html: 'Veuillez vérifier les champs en rouge.<br><br>' +
+                      '<ul style="text-align:left; color:red; font-size:0.9em">' +
+                      @foreach($errors->all() as $error)
+                        '<li>{{ $error }}</li>' +
+                      @endforeach
+                      '</ul>',
+                confirmButtonColor: '#f39c12'
+            });
+        @endif
+    });
+</script>
     <style>
         input:focus,
         select:focus {

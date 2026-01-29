@@ -887,29 +887,34 @@ class ReservationController extends Controller
         if ($isWallet) {
              $this->updateProgramStatus($programme, $dateVoyage);
 
-             // Envoyer un email à chaque passager
+             // Envoyer un email à chaque passager (chaque réservation = 1 passager)
              if (!empty($createdReservations)) {
-                 $reservation = $createdReservations[0]; // La réservation unique
-                 // Correction: vérifier si c'est déjà un array (casting Laravel) ou une string JSON
-                 $qrCodeData = is_array($reservation->qr_code_data) 
-                    ? $reservation->qr_code_data 
-                    : json_decode($reservation->qr_code_data, true);
-                 
-                 if (isset($qrCodeData['passagers'])) {
-                     foreach ($qrCodeData['passagers'] as $passagerData) {
-                         try {
-                             $this->sendReservationEmail(
-                                $reservation,
-                                $programme,
-                                $passagerData['qr_code_base64'] ?? $reservation->qr_code,
-                                $passagerData['email'],
-                                $passagerData['prenom'] . ' ' . $passagerData['nom'],
-                                $passagerData['seat'],
-                                ($reservation->is_aller_retour) ? 'ALLER-RETOUR' : 'ALLER SIMPLE'
-                            );
-                         } catch (\Exception $e) {
-                             Log::error('Erreur envoi email wallet pour passager: ' . $e->getMessage());
-                         }
+                 foreach ($createdReservations as $reservation) {
+                     try {
+                         // Récupérer le QR code de cette réservation
+                         $qrCodeBase64 = $reservation->qr_code;
+                         
+                         // Envoyer l'email au passager de cette réservation
+                         $this->sendReservationEmail(
+                             $reservation,
+                             $programme,
+                             $qrCodeBase64,
+                             $reservation->passager_email,
+                             $reservation->passager_prenom . ' ' . $reservation->passager_nom,
+                             $reservation->seat_number,
+                             ($reservation->is_aller_retour) ? 'ALLER-RETOUR' : 'ALLER SIMPLE'
+                         );
+                         
+                         Log::info('Email envoyé avec succès pour réservation wallet:', [
+                             'reservation_id' => $reservation->id,
+                             'email' => $reservation->passager_email,
+                             'seat' => $reservation->seat_number
+                         ]);
+                     } catch (\Exception $e) {
+                         Log::error('Erreur envoi email wallet pour passager: ' . $e->getMessage(), [
+                             'reservation_id' => $reservation->id,
+                             'email' => $reservation->passager_email
+                         ]);
                      }
                  }
              }
