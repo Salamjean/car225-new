@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Reservation;
 use App\Services\CinetPayService;
 use Illuminate\Http\Request;
+use App\Models\Programme; // <--- AJOUTER CECI
 use Illuminate\Support\Facades\Log;
 
 class PaymentController extends Controller
@@ -83,23 +84,16 @@ class PaymentController extends Controller
      */
     protected function finalizeReservation(Reservation $reservation)
     {
-        // On va réutiliser la logique de ReservationController
-        // Idéalement cela devrait être dans un Service
-        $resController = new \App\Http\Controllers\User\Reservation\ReservationController();
-
-        // Puisque ces méthodes sont privées/protégées, je vais devoir les rendre publiques 
-        // ou déplacer la logique ici. Pour aller plus vite, je vais appeler les méthodes 
-        // si je les rends publiques dans ReservationController.
-
-        // Alternative : Dupliquer temporairement ou mieux, utiliser une méthode statique si possible.
-        // Je vais rendre les méthodes publiques dans ReservationController.
+        // On utilise l'injection de dépendance via app() pour instancier proprement
+        $resController = app(\App\Http\Controllers\User\Reservation\ReservationController::class);
 
         try {
             $dateVoyageStr = $reservation->date_voyage instanceof \Carbon\Carbon
                 ? $reservation->date_voyage->format('Y-m-d')
                 : date('Y-m-d', strtotime($reservation->date_voyage));
 
-            // Utiliser reflection ou simplement appeler si public
+            // 1. Génération du QR Code
+            // Assurez-vous que cette méthode est PUBLIQUE dans ReservationController
             $qrCodeData = $resController->generateAndSaveQRCode(
                 $reservation->reference,
                 $reservation->id,
@@ -107,53 +101,66 @@ class PaymentController extends Controller
                 $reservation->user_id
             );
 
+            // 2. Mise à jour de la réservation
             $reservation->update([
                 'qr_code' => $qrCodeData['base64'],
                 'qr_code_path' => $qrCodeData['path'],
                 'qr_code_data' => $qrCodeData['qr_data'],
-                'statut_aller' => 'confirmee', // Initialiser le statut aller
+                'statut_aller' => 'confirmee',
             ]);
 
             $programmeRetour = null;
+            $qrCodeRetour = null; // Par défaut, on n'envoie pas de QR retour séparé si c'est le même
 
-            // Mettre à jour le statut retour si c'est un aller-retour
+            // 3. Gestion Retour
             if ($reservation->is_aller_retour) {
-                $reservation->update([
-                    'statut_retour' => 'confirmee', 
-                ]);  
-
-                // Essayer de trouver le programme retour
-                $programmeRetour = $reservation->programmeRetour ?? 
-                                  ($reservation->programme_retour_id ? Programme::find($reservation->programme_retour_id) : null);
+                $reservation->update(['statut_retour' => 'confirmee']);
                 
-                // Si toujours pas de programme retour (cas rare), on peut imaginer un fallback ou laisser null
-                // La notification gérera le cas null pour le PDF
+                // Récupération programme retour
+                if ($reservation->programme_retour_id) {
+                    $programmeRetour = Programme::find($reservation->programme_retour_id);
+                } 
+                // Fallback: Si pas d'ID mais relation chargée (rare ici car on vient du modèle Paiement)
+                elseif ($reservation->programme && $reservation->programme->programmeRetour) {
+                    $programmeRetour = $reservation->programme->programmeRetour;
+                }
+
+                // IMPORTANT: Pour un A/R, on utilise généralement le MÊME QR Code
+                // Mais votre méthode sendReservationEmail attend un 8ème argument pour le QR Retour
+                $qrCodeRetour = $qrCodeData['base64']; 
             }
 
-            // ENVOYER UN SEUL EMAIL AVEC LES DEUX PIECES JOINTES SI BESOIN
-            // On passe le MEME QR code ($qrCodeData['base64']) pour l'aller et le retour
+            // 4. Envoi Email
+            // Assurez-vous que cette méthode est PUBLIQUE dans ReservationController
             $resController->sendReservationEmail(
                 $reservation,
-                $reservation->programme,
-                $qrCodeData['base64'], // QR Code Aller
+                $reservation->programme, // Programme Aller
+                $qrCodeData['base64'],   // QR Code Aller
                 $reservation->passager_email,
-                $reservation->getPassagerNomCompletAttribute(),
+                $reservation->passager_prenom . ' ' . $reservation->passager_nom, // Concaténation sûre
                 $reservation->seat_number,
-                $reservation->is_aller_retour ? 'ALLER' : 'ALLER SIMPLE',
-                $reservation->is_aller_retour ? $qrCodeData['base64'] : null, // Même QR Code pour le retour
-                $programmeRetour
+                $reservation->is_aller_retour ? 'ALLER-RETOUR' : 'ALLER SIMPLE',
+                $qrCodeRetour,          // QR Code Retour (si applicable)
+                $programmeRetour        // Programme Retour (si applicable)
             );
 
-            // Mettre à jour le statut du programme
+            // 5. Mise à jour places occupées
+            // Assurez-vous que cette méthode est PUBLIQUE dans ReservationController
             $resController->updateProgramStatus(
                 $reservation->programme,
                 $dateVoyageStr
             );
+
+            Log::info('Finalisation réservation terminée avec succès (Email envoyé)', ['id' => $reservation->id]);
+
         } catch (\Exception $e) {
-            Log::error('Erreur lors de la finalisation de la réservation:', ['error' => $e->getMessage()]);
+            Log::error('Erreur critique lors de la finalisation de la réservation:', [
+                'id' => $reservation->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
         }
     }
-
     /**
      * Page de retour après le paiement
      */

@@ -21,7 +21,7 @@
   <!-- Layout styles -->
   <link rel="stylesheet" href="{{asset('assetsPoster/assets/css/demo/style.css')}}">
   <!-- End layout styles -->
-  <link rel="shortcut icon" href="{{asset('assetsPoster/assets/images/logo_car225.png')}}" />
+  <link rel="shortcut icon" href="{{asset('assetsPoster/assets/images/Car225_favicon.png')}}" />
 </head>
 
 <body>

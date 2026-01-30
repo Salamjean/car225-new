@@ -532,7 +532,8 @@
                     data: {
                         _token: '{{ csrf_token() }}',
                         reference: currentReference,
-                        vehicule_id: selectedVehiculeId
+                        vehicule_id: selectedVehiculeId,
+                        programme_id: selectedProgrammeId  // AJOUT pour détection aller/retour
                     },
                     success: function(response) {
                         $('#confirmModal').modal('hide');
