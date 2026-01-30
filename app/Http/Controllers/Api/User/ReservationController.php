@@ -16,16 +16,19 @@ use Carbon\Carbon;
 
 use App\Models\WalletTransaction;
 use App\Services\CinetPayService;
+use App\Services\FcmService;
 use App\Models\Itineraire;
 use Illuminate\Support\Facades\DB;
 
 class ReservationController extends Controller
 {
     protected $cinetPayService;
+    protected $fcmService;
 
-    public function __construct(CinetPayService $cinetPayService)
+    public function __construct(CinetPayService $cinetPayService, FcmService $fcmService)
     {
         $this->cinetPayService = $cinetPayService;
+        $this->fcmService = $fcmService;
     }
 
     /**
@@ -542,7 +545,16 @@ class ReservationController extends Controller
                         'payment_method' => 'wallet',
                         'metadata' => json_encode(['programme_id' => $programme->id])
                     ]);
-
+   // 3. --- AJOUT : Création de l'entrée PAIEMENT (Pour comptabilité/Reservation) ---
+                    $paiement = Paiement::create([
+                        'user_id' => $user->id,
+                        'amount' => $montantTotal,
+                        'transaction_id' => $transactionId,
+                        'status' => 'success', // Directement succès car débit immédiat
+                        'currency' => 'XOF',
+                        'payment_method' => 'wallet',
+                        'payment_date' => now(), // Payé tout de suite
+                    ]);
                     // 3. Créer réservations (UNE PAR PLACE)
                     $createdReservations = [];
                     foreach ($validated['passagers'] as $passager) {
@@ -552,6 +564,7 @@ class ReservationController extends Controller
                         $reservationData = [
                             'user_id' => $user->id,
                             'programme_id' => $programme->id,
+                            'paiement_id' => $paiement->id, // ← AJOUT ICI
                             'seat_number' => $seatNumber,
                             'passager_nom' => $passager['nom'],
                             'passager_prenom' => $passager['prenom'],
@@ -930,11 +943,57 @@ class ReservationController extends Controller
 
             Log::info('API: Finalisation réservation terminée (QR + Email)', ['id' => $reservation->id]);
 
+            // 6. ENVOI NOTIFICATION MOBILE (FCM)
+            $this->sendReservationNotification($reservation);
+
         } catch (\Exception $e) {
             Log::error('API: Erreur critique finalisation réservation:', [
                 'id' => $reservation->id,
                 'error' => $e->getMessage()
             ]);
+        }
+    }
+
+    /**
+     * Envoie une notification push au mobile de l'utilisateur
+     */
+    private function sendReservationNotification(Reservation $reservation)
+    {
+        try {
+            $user = $reservation->user;
+            if (!$user || !$user->fcm_token) {
+                Log::info('FCM: Aucun token trouvé pour l\'utilisateur ' . ($user->id ?? 'inconnu'));
+                return;
+            }
+
+            $title = "Ticket confirmé ! 🎟️";
+            $programme = $reservation->programme;
+            $trajet = "{$programme->point_depart} → {$programme->point_arrive}";
+            
+            $body = "Votre réservation {$reservation->reference} pour le trajet {$trajet} est confirmée. Place: {$reservation->seat_number}.";
+            
+            if ($reservation->is_aller_retour) {
+                $body = "Votre ticket Aller-Retour {$reservation->reference} ({$trajet}) est confirmé. Place: {$reservation->seat_number}.";
+            }
+
+            $data = [
+                'type' => 'reservation_confirmed',
+                'reservation_id' => (string)$reservation->id,
+                'reference' => $reservation->reference,
+                'click_action' => 'FLUTTER_NOTIFICATION_CLICK'
+            ];
+
+            Log::info("FCM: Tentative d'envoi à l'utilisateur {$user->id}");
+            $result = $this->fcmService->sendNotification($user->fcm_token, $title, $body, $data);
+            
+            if (!$result['success']) {
+                Log::warning("FCM: Échec de l'envoi: " . $result['message']);
+            } else {
+                Log::info("FCM: Notification envoyée avec succès");
+            }
+
+        } catch (\Exception $e) {
+            Log::error("FCM: Erreur lors de l'envoi: " . $e->getMessage());
         }
     }
 }

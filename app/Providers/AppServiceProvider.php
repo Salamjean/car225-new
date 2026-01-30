@@ -20,8 +20,8 @@ class AppServiceProvider extends ServiceProvider
      */
    public function boot()
 {
-    // Force HTTPS si on est en production OU si l'URL contient ngrok
-    if($this->app->environment('production') || str_contains(config('app.url'), 'ngrok')) {
+    // Force HTTPS si on est en production OU si la requête vient de ngrok (via le header X-Forwarded-Proto)
+    if($this->app->environment('production') || request()->header('X-Forwarded-Proto') === 'https') {
         URL::forceScheme('https');
     }
 }
