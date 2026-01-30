@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->validateCsrfTokens(except: [
+             '/payment/callback', // <--- AJOUTER CETTE LIGNE
             '/api/*', // Exclu toutes les routes API du CSRF (pour mobile app)
             '/user/payment/notify',
         ]);

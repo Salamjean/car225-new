@@ -6,9 +6,11 @@ use App\Http\Controllers\Admin\Itineraire\AdminItineraireController;
 use App\Http\Controllers\Agent\AgentController;
 use App\Http\Controllers\Agent\AgentDashboard;
 use App\Http\Controllers\Agent\AuthenticateAgent;
+use App\Http\Controllers\Agent\ReservationController as AgentReservationController;
 use App\Http\Controllers\Api\User\WalletController;
 use App\Http\Controllers\Compagnie\Agent\AgentCompagnieController;
 use App\Http\Controllers\Compagnie\CompagnieAuthenticate;
+use Illuminate\Http\Request;
 use App\Http\Controllers\Compagnie\CompagnieController;
 use App\Http\Controllers\Compagnie\CompagnieDashboard;
 use App\Http\Controllers\Compagnie\Itineraire\ItineraireController;
@@ -171,13 +173,14 @@ Route::middleware('agent')->prefix('agent')->group(function () {
 
     // Gestion des réservations
     Route::prefix('reservations')->group(function () {
-        Route::get('/', [ReservationController::class, 'index'])->name('agent.reservations.index');
-        Route::get('/recherche', [ReservationController::class, 'recherchePage'])->name('agent.reservations.recherche');
-        Route::get('/programmes-for-scan', [ReservationController::class, 'getProgrammesForScan'])->name('agent.programmes.for-scan');
-        Route::post('/scan', [ReservationController::class, 'scan'])->name('agent.reservations.scan');
-        Route::post('/search', [ReservationController::class, 'search'])->name('agent.reservations.search');
-        Route::post('/search-by-reference', [ReservationController::class, 'searchByReference'])->name('agent.reservations.search-by-reference');
-        Route::post('/confirm', [ReservationController::class, 'confirm'])->name('agent.reservations.confirm');
+        Route::get('/', [AgentReservationController::class, 'index'])->name('agent.reservations.index');
+        Route::get('/recherche', [AgentReservationController::class, 'recherchePage'])->name('agent.reservations.recherche');
+        Route::get('/historique', [AgentReservationController::class, 'historique'])->name('agent.reservations.historique');
+        Route::get('/programmes-for-scan', [AgentReservationController::class, 'getProgrammesForScan'])->name('agent.programmes.for-scan');
+        Route::post('/scan', [AgentReservationController::class, 'scan'])->name('agent.reservations.scan');
+        Route::post('/search', [AgentReservationController::class, 'search'])->name('agent.reservations.search');
+        Route::post('/search-by-reference', [AgentReservationController::class, 'searchByReference'])->name('agent.reservations.search-by-reference');
+        Route::post('/confirm', [AgentReservationController::class, 'confirm'])->name('agent.reservations.confirm');
     });
 });
 
@@ -325,13 +328,14 @@ Route::post('/validate-compagny-account/{email}', [CompagnieAuthenticate::class,
 Route::get('/validate-agent-account/{email}', [AuthenticateAgent::class, 'defineAccess']);
 Route::post('/validate-agent-account/{email}', [AuthenticateAgent::class, 'submitDefineAccess'])->name('agent.validate');
 
-// Route de callback après paiement CinetPay (pour app mobile)
-Route::get('/payment/callback', function (Illuminate\Http\Request $request) {
-    $transactionId = $request->get('transactionId');
+// On change Route::get en Route::match(['get', 'post'])
+Route::match(['get', 'post'], '/payment/callback', function (Request $request) {
+    $transactionId = $request->get('transactionId') ?? $request->get('transaction_id');
     $cancel = $request->get('cancel');
     
     if ($cancel) {
-        return view('payment.result', [
+        // Optionnel : Créer une vue 'payment.result' ou retourner un JSON simple pour tester
+        return response()->json([
             'success' => false,
             'message' => 'Paiement annulé',
             'transaction_id' => $transactionId
@@ -339,19 +343,21 @@ Route::get('/payment/callback', function (Illuminate\Http\Request $request) {
     }
     
     // Vérifier le paiement
-    $paiement = \App\Models\Paiement::where('transaction_id', $transactionId)->first();
+    $paiement = Paiement::where('transaction_id', $transactionId)->first();
     
+    // Si le paiement est déjà success, super.
     if ($paiement && $paiement->status === 'success') {
-        return view('payment.result', [
+        return response()->json([
             'success' => true,
             'message' => 'Paiement réussi ! Vos réservations ont été confirmées.',
             'transaction_id' => $transactionId
         ]);
     }
     
-    return view('payment.result', [
-        'success' => false,
-        'message' => 'En attente de confirmation du paiement...',
+    // Sinon, on dit à l'utilisateur d'attendre (le webhook arrivera quelques secondes après)
+    return response()->json([
+        'success' => true, // On met true pour que l'app ne panique pas
+        'message' => 'Paiement en cours de validation...',
         'transaction_id' => $transactionId
     ]);
 })->name('payment.callback');

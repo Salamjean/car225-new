@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\User;
 use App\Http\Controllers\Controller;
 use App\Models\Programme;
 use App\Models\Reservation;
+use App\Http\Controllers\User\Reservation\ReservationController as WebReservationController;
 use App\Models\Paiement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -578,6 +579,11 @@ class ReservationController extends Controller
                         }
 
                         $res = Reservation::create($reservationData);
+                       // --- AJOUT IMPORTANT : GENERATION VRAI QR + EMAIL ---
+                        $this->finalizeReservation($res);
+                        // On rafraichit pour avoir les chemins de QR dans la réponse
+                        $res->refresh(); 
+                        
                         $createdReservations[] = $res;
                     }
 
@@ -688,22 +694,25 @@ class ReservationController extends Controller
     /**
      * Génère un lien de paiement CinetPay (Style Plateau-app)
      */
-    private function generateCinetPayLink(Paiement $paiement, $description)
+   private function generateCinetPayLink(Paiement $paiement, $description)
     {
         try {
             $user = $paiement->user;
-            $baseUrl = config('app.url');
+            
+            // 1. Récupération dynamique de l'URL (Ngrok ou Prod)
+           $baseUrl = config('app.url'); 
+            $baseUrl = rtrim($baseUrl, '/'); 
             $reference = $paiement->transaction_id;
             
-            // Deep links pour l'app mobile
+            // 2. Deep links pour l'application mobile
             $returnUrl = "car225://payment?success=true&transactionId={$reference}";
             $cancelUrl = "car225://payment?success=false&transactionId={$reference}";
             
-            // URLs de fallback (web)
+            // 3. URLs de fallback (Web) -> C'est ces lignes qu'il vous manquait !
             $fallbackReturnUrl = $baseUrl . "/payment/callback?transactionId=" . urlencode($reference);
             $fallbackCancelUrl = $baseUrl . "/payment/callback?cancel=1&transactionId=" . urlencode($reference);
             
-            // Webhook URL
+            // 4. Webhook URL
             $notifyUrl = $baseUrl . "/api/user/payment/notify";
 
             $cinetpayApiKey = config('services.cinetpay.api_key');
@@ -720,8 +729,8 @@ class ReservationController extends Controller
                 'currency' => $paiement->currency,
                 'description' => $description,
                 'notify_url' => $notifyUrl,
-                'return_url' => $fallbackReturnUrl,
-                'cancel_url' => $fallbackCancelUrl,
+                'return_url' => $fallbackReturnUrl, // Maintenant cette variable existe
+                'cancel_url' => $fallbackCancelUrl, // Celle-ci aussi
                 'mode' => 'PRODUCTION',
                 'channels' => 'ALL',
 
@@ -734,7 +743,7 @@ class ReservationController extends Controller
                 'customer_country' => 'CI',
             ];
 
-            Log::info('Appel CinetPay API:', ['transaction_id' => $cinetpayTransactionId]);
+            Log::info('Appel CinetPay API:', ['transaction_id' => $cinetpayTransactionId, 'notify_url' => $notifyUrl]);
 
             $response = Http::withoutVerifying()->post('https://api-checkout.cinetpay.com/v2/payment', $paymentData);
 
@@ -773,7 +782,7 @@ class ReservationController extends Controller
     /**
      * Webhook CinetPay pour confirmer le paiement
      */
-    public function handlePaymentNotification(Request $request)
+     public function handlePaymentNotification(Request $request)
     {
         Log::info('Webhook CinetPay Reçu (Reservation):', $request->all());
 
@@ -796,10 +805,6 @@ class ReservationController extends Controller
                 return response()->json(['success' => false, 'message' => 'Paiement non trouvé'], 200);
             }
 
-            if ($paiement->status === 'success') {
-                return response()->json(['success' => true, 'message' => 'Déjà traité'], 200);
-            }
-
             // Vérifier auprès de CinetPay
             $response = Http::withoutVerifying()->post('https://api-checkout.cinetpay.com/v2/payment/check', [
                 'apikey' => config('services.cinetpay.api_key'),
@@ -812,70 +817,24 @@ class ReservationController extends Controller
                 $status = $data['status'] ?? null;
 
                 if ($status === 'ACCEPTED') {
-                    // Paiement réussi !
+                    // 1. Paiement réussi !
                     $paiement->update([
                         'status' => 'success',
                         'payment_date' => now(),
                         'payment_details' => $data
                     ]);
 
-                    // Confirmer les réservations
+                    Log::info("Paiement {$reference} validé. Lancement finalisation...");
+
+                    // 2. Confirmer les réservations ET générer QR/Email via la fonction partagée
                     $reservations = Reservation::where('paiement_id', $paiement->id)->get();
-                    foreach ($reservations as $res) {
-                        $res->update([
-                            'statut' => 'confirmee',
-                            'statut_aller' => 'confirmee'
-                        ]);
-                        if ($res->is_aller_retour) {
-                            $res->update(['statut_retour' => 'confirmee']);
-                        }
-                    }
-
-                    Log::info("Paiement {$reference} confirmé et réservations validées.");
                     
-                    Log::info("Paiement {$reference} confirmé et réservations validées.");
-                    
-                    // Envoyer les emails de confirmation
                     foreach ($reservations as $res) {
-                        try {
-                            $programme = $res->programme;
-                            $user = $res->user; // Ou le passager si différent
+                        if ($res->statut !== 'confirmee') {
+                            $res->update(['statut' => 'confirmee']);
                             
-                            // Générer QR Code si absent (optionnel, mais mieux vaut le faire)
-                            if (empty($res->qr_code_path) && class_exists(\App\Http\Controllers\User\Reservation\ReservationController::class)) {
-                                // On instancie le contrôleur web pour utiliser ses helpers (pas idéal mais rapide)
-                                // Ou mieux, on refait la logique QR ici.
-                                // Pour l'instant, on suppose que le QR est généré ou on le génère à la volée
-                            }
-
-                            // Envoi Email
-                            // Note: Idéalement, déplacer sendReservationEmail dans un Service partagé
-                            $email = $res->passager_email ?? $user->email;
-                            $nom = ($res->passager_prenom . ' ' . $res->passager_nom) ?? $user->name;
-                            
-                            // On utilise la notification directement
-                            // Check imports first!
-                            // Assumons que ReservationConfirmeeNotification est importé ou FQCN
-                            
-                            // Génération QR Code à la volée pour l'email si nécessaire
-                            // (Simplifié pour l'API, on enverra le lien ou le code string)
-                            
-                            \Illuminate\Support\Facades\Notification::route('mail', $email)
-                                ->notify(new \App\Notifications\ReservationConfirmeeNotification(
-                                    $res,
-                                    $programme,
-                                    $res->qr_code ?? 'QR_CODE_MANQUANT',
-                                    $nom,
-                                    $res->seat_number,
-                                    ($res->is_aller_retour) ? 'ALLER-RETOUR' : 'ALLER SIMPLE',
-                                    null, // QR Retour
-                                    $res->programmeRetour // Programme Retour
-                                ));
-                                
-                            Log::info("Email de confirmation envoyé à $email pour la réservation {$res->id}");
-
-                        } catch (\Exception $e) {
-                            Log::error("Erreur envoi email réservation {$res->id}: " . $e->getMessage());
+                            // C'EST ICI QUE LA MAGIE OPÈRE :
+                            $this->finalizeReservation($res);
                         }
                     }
                 } else {
@@ -889,6 +848,93 @@ class ReservationController extends Controller
         } catch (\Exception $e) {
             Log::error('Erreur Webhook CinetPay: ' . $e->getMessage());
             return response()->json(['success' => false], 200);
+        }
+    }
+
+     /**
+     * AJOUT : Fonction pour finaliser la réservation (QR Code + Email)
+     * Copiée et adaptée du PaymentController Web
+     */
+    protected function finalizeReservation(Reservation $reservation)
+    {
+        try {
+            // On instancie le contrôleur Web pour utiliser ses méthodes existantes
+            // (Assure-toi que les méthodes generateAndSaveQRCode et sendReservationEmail sont publiques dans le WebController)
+            $webController = app(WebReservationController::class);
+
+            $dateVoyageStr = $reservation->date_voyage instanceof \Carbon\Carbon
+                ? $reservation->date_voyage->format('Y-m-d')
+                : date('Y-m-d', strtotime($reservation->date_voyage));
+
+            // 1. Génération du QR Code via le Web Controller
+            if (method_exists($webController, 'generateAndSaveQRCode')) {
+                $qrCodeData = $webController->generateAndSaveQRCode(
+                    $reservation->reference,
+                    $reservation->id,
+                    $dateVoyageStr,
+                    $reservation->user_id
+                );
+
+                // 2. Mise à jour des infos QR dans la base
+                $reservation->update([
+                    'qr_code' => $qrCodeData['base64'],
+                    'qr_code_path' => $qrCodeData['path'],
+                    'qr_code_data' => $qrCodeData['qr_data'],
+                    'statut_aller' => 'confirmee',
+                ]);
+                
+                $qrCodeBase64 = $qrCodeData['base64'];
+            } else {
+                // Fallback si la méthode n'existe pas (juste pour éviter le crash)
+                Log::warning("Méthode generateAndSaveQRCode non trouvée sur le WebController");
+                $qrCodeBase64 = 'QR_NON_GENERE';
+            }
+
+            // 3. Gestion Retour
+            $programmeRetour = null;
+            $qrCodeRetour = null;
+
+            if ($reservation->is_aller_retour) {
+                $reservation->update(['statut_retour' => 'confirmee']);
+                $qrCodeRetour = $qrCodeBase64; // Même QR pour l'instant
+
+                if ($reservation->programme_retour_id) {
+                    $programmeRetour = Programme::find($reservation->programme_retour_id);
+                } elseif ($reservation->programme && $reservation->programme->programmeRetour) {
+                    $programmeRetour = $reservation->programme->programmeRetour;
+                }
+            }
+
+            // 4. Envoi Email via le Web Controller
+            if (method_exists($webController, 'sendReservationEmail')) {
+                $webController->sendReservationEmail(
+                    $reservation,
+                    $reservation->programme,
+                    $qrCodeBase64,
+                    $reservation->passager_email ?? $reservation->user->email,
+                    ($reservation->passager_prenom . ' ' . $reservation->passager_nom),
+                    $reservation->seat_number,
+                    $reservation->is_aller_retour ? 'ALLER-RETOUR' : 'ALLER SIMPLE',
+                    $qrCodeRetour,
+                    $programmeRetour
+                );
+            }
+
+            // 5. Mise à jour places occupées
+            if (method_exists($webController, 'updateProgramStatus')) {
+                 $webController->updateProgramStatus(
+                    $reservation->programme,
+                    $dateVoyageStr
+                );
+            }
+
+            Log::info('API: Finalisation réservation terminée (QR + Email)', ['id' => $reservation->id]);
+
+        } catch (\Exception $e) {
+            Log::error('API: Erreur critique finalisation réservation:', [
+                'id' => $reservation->id,
+                'error' => $e->getMessage()
+            ]);
         }
     }
 }

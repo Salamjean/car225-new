@@ -38,12 +38,17 @@
                         <nav class="mdc-list mdc-drawer-submenu">
                             <div class="mdc-list-item mdc-drawer-item">
                                 <a class="mdc-drawer-link" href="{{ route('agent.reservations.index') }}">
-                                    <i class="fas fa-qrcode mr-2"></i> Scannée
+                                    <i class="fas fa-qrcode mr-2"></i> Scanner
                                 </a>
                             </div>
                             <div class="mdc-list-item mdc-drawer-item">
                                 <a class="mdc-drawer-link" href="{{ route('agent.reservations.recherche') }}">
                                     <i class="fas fa-search mr-2"></i> Rechercher
+                                </a>
+                            </div>
+                            <div class="mdc-list-item mdc-drawer-item">
+                                <a class="mdc-drawer-link" href="{{ route('agent.reservations.historique') }}">
+                                    <i class="fas fa-history mr-2"></i> Historique
                                 </a>
                             </div>
                         </nav>

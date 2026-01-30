@@ -87,6 +87,123 @@ class ReservationController extends Controller
 
         return view('agent.reservations.reservation', compact('enCours', 'terminees', 'programmesDuJour'));
     }
+
+    /**
+     * Afficher la page de recherche de réservations
+     */
+    public function recherchePage()
+    {
+        $agent = Auth::guard('agent')->user();
+
+        // Récupérer les programmes du jour pour la recherche
+        $now = Carbon::now();
+        $heureMinimum = $now->copy()->subMinutes(30)->format('H:i');
+        $today = Carbon::today()->toDateString();
+
+        $programmesDuJour = Programme::where('compagnie_id', $agent->compagnie_id)
+            ->where(function ($query) use ($today) {
+                $query->where('type_programmation', 'ponctuel')
+                    ->whereDate('date_depart', $today);
+
+                $query->orWhere(function ($q) use ($today) {
+                    $q->where('type_programmation', 'recurrent')
+                        ->whereDate('date_depart', '<=', $today)
+                        ->where(function ($subQ) use ($today) {
+                            $subQ->whereNull('date_fin_programmation')
+                                ->orWhereDate('date_fin_programmation', '>=', $today);
+                        });
+                });
+            })
+            ->where('heure_depart', '>=', $heureMinimum)
+            ->with('vehicule')
+            ->orderBy('heure_depart')
+            ->get();
+
+        // Récupérer les derniers scans d'aujourd'hui pour cet agent
+        $derniersScans = Reservation::with('programme')
+            ->whereHas('programme', function ($q) use ($agent) {
+                $q->where('compagnie_id', $agent->compagnie_id);
+            })
+            ->whereDate('embarquement_scanned_at', Carbon::today())
+            ->orderBy('embarquement_scanned_at', 'desc')
+            ->limit(10)
+            ->get();
+
+        return view('agent.reservations.recherche', compact('programmesDuJour', 'derniersScans'));
+    }
+
+    /**
+     * Afficher l'historique des scans
+     */
+    public function historique(Request $request)
+    {
+        $agent = Auth::guard('agent')->user();
+        $date = $request->get('date', Carbon::today()->format('Y-m-d'));
+        $type = $request->get('type');
+        $trajetFilter = $request->get('trajet');
+
+        // Requête de base pour les scans
+        $query = Reservation::with(['programme', 'embarquementVehicule'])
+            ->whereHas('programme', function ($q) use ($agent) {
+                $q->where('compagnie_id', $agent->compagnie_id);
+            })
+            ->whereNotNull('embarquement_scanned_at');
+
+        // Filtre par date
+        if ($date) {
+            $query->whereDate('embarquement_scanned_at', $date);
+        }
+
+        // Filtre par type
+        if ($type) {
+            if ($type === 'aller_simple') {
+                $query->where('is_aller_retour', false);
+            } elseif ($type === 'aller') {
+                $query->where('is_aller_retour', true)
+                      ->where('statut_aller', 'terminee');
+            } elseif ($type === 'retour') {
+                $query->where('is_aller_retour', true)
+                      ->where('statut_retour', 'terminee');
+            }
+        }
+
+        // Filtre par trajet
+        if ($trajetFilter) {
+            $query->whereHas('programme', function ($q) use ($trajetFilter) {
+                $q->whereRaw("CONCAT(point_depart, ' → ', point_arrive) = ?", [$trajetFilter]);
+            });
+        }
+
+        // Récupérer les scans paginés
+        $scans = $query->orderBy('embarquement_scanned_at', 'desc')->paginate(20);
+
+        // Statistiques pour la date sélectionnée
+        $statsQuery = Reservation::whereHas('programme', function ($q) use ($agent) {
+            $q->where('compagnie_id', $agent->compagnie_id);
+        })->whereNotNull('embarquement_scanned_at');
+
+        if ($date) {
+            $statsQuery->whereDate('embarquement_scanned_at', $date);
+        }
+
+        $allScans = $statsQuery->get();
+        
+        $stats = [
+            'total' => $allScans->count(),
+            'aller_simple' => $allScans->where('is_aller_retour', false)->count(),
+            'aller' => $allScans->where('is_aller_retour', true)->where('statut_aller', 'terminee')->count(),
+            'retour' => $allScans->where('is_aller_retour', true)->where('statut_retour', 'terminee')->count(),
+        ];
+
+        // Liste des trajets pour le filtre
+        $trajets = Programme::where('compagnie_id', $agent->compagnie_id)
+            ->selectRaw("CONCAT(point_depart, ' → ', point_arrive) as trajet")
+            ->distinct()
+            ->pluck('trajet');
+
+        return view('agent.reservations.historique', compact('scans', 'stats', 'trajets'));
+    }
+
     /**
      * Rechercher une réservation pour scan (AJAX)
      */
