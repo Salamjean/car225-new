@@ -12,8 +12,8 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <!-- Favicons -->
-  <link href="{{asset('assetsPoster/assets/images/logo_car225.png')}}" rel="icon">
-  <link href="{{asset('assetsPoster/assets/images/logo_car225.png')}}" rel="apple-touch-icon">
+  <link href="{{asset('assetsPoster/assets/images/Car225_favicon.png')}}" rel="icon">
+  <link href="{{asset('assetsPoster/assets/images/Car225_favicon.png')}}" rel="apple-touch-icon">
 
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com" rel="preconnect">

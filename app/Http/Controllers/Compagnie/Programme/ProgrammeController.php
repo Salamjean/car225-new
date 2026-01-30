@@ -457,41 +457,56 @@ class ProgrammeController extends Controller
 
         if ($conflitVehicule) {
             $vehicule = Vehicule::find($validated['vehicule_id']);
-            $msg = "IMPOSSIBLE : Le véhicule {$vehicule->immatriculation} est déjà en circulation sur ce créneau. Il effectue le trajet {$conflitVehicule->point_depart}-{$conflitVehicule->point_arrive} de {$conflitVehicule->heure_depart} à {$conflitVehicule->heure_arrive}.";
+            $msg = "Le vehicule " . $vehicule->immatriculation . " est deja en circulation de " . $conflitVehicule->heure_depart . " a " . $conflitVehicule->heure_arrive . " sur le trajet " . $conflitVehicule->point_depart . " - " . $conflitVehicule->point_arrive . ".";
             
             return back()->withInput()->withErrors(['vehicule_id' => $msg])->with('error', $msg);
         }
 
 
-        // 2. CONFLIT CHAUFFEUR
+        // 2. CONFLIT CHAUFFEUR (avec chevauchement horaire)
         $conflitChauffeur = Programme::where('compagnie_id', $compagnieId)
             ->where('personnel_id', $validated['personnel_id'])
             ->where('date_depart', 'like', $dateDepartFormatted . '%')
-            ->where('heure_depart', $validated['heure_depart'])
             ->where('type_programmation', $validated['type_programmation'])
-            ->exists();
+            ->where(function ($query) use ($heureDebutNouveau, $heureFinNouveau) {
+                // Même logique de chevauchement que pour véhicule
+                $query->where('heure_depart', '<', $heureFinNouveau)
+                      ->where('heure_arrive', '>', $heureDebutNouveau);
+            })
+            ->first();
 
         if ($conflitChauffeur) {
             $chauffeur = Personnel::find($validated['personnel_id']);
-            $msg = "CONFLIT : Le chauffeur {$chauffeur->name} conduit déjà un autre bus à cette heure.";
+            $msg = "Le chauffeur " . $chauffeur->prenom . " " . $chauffeur->name . " est deja occupe de " . $conflitChauffeur->heure_depart . " a " . $conflitChauffeur->heure_arrive . ".";
             
-            // CORRECTION ICI : Ajout de ->with('error', $msg) pour le Pop-up
             return back()->withInput()->withErrors(['personnel_id' => $msg])->with('error', $msg);
         }
 
-        // 3. BUS MAGIQUE (Retour avant arrivée)
+        // 3. BUS MAGIQUE (Retour avant arrivée) - Pour ponctuel ET récurrent
         $heureArriveeAller = $this->calculerHeureArrivee($validated['heure_depart'], $validated['durer_parcours']);
         
-        if ($request->has('is_aller_retour') && $validated['type_programmation'] === 'recurrent') {
-            $heureDepartRetour = $validated['retour_heure_depart_recurrent'];
+        if ($request->has('is_aller_retour')) {
+            // Déterminer l'heure de départ retour selon le type
+            $heureDepartRetour = $validated['type_programmation'] === 'ponctuel' 
+                ? ($validated['retour_heure_depart'] ?? null)
+                : ($validated['retour_heure_depart_recurrent'] ?? null);
             
-            if ($validated['vehicule_id']) {
-                if ($heureDepartRetour <= $heureArriveeAller) {
-                     $msg = "INCOHÉRENCE : Le retour ({$heureDepartRetour}) ne peut pas partir avant l'arrivée de l'aller ({$heureArriveeAller}) avec le même véhicule.";
-                     
-                     // CORRECTION ICI : Ajout de ->with('error', $msg) pour le Pop-up
-                     return back()->withInput()->withErrors(['retour_heure_depart_recurrent' => $msg])->with('error', $msg);
-                }
+            // Vérifier si le véhicule retour est le même que l'aller
+            $vehiculeRetourId = !empty($request->input('retour_vehicule_id')) 
+                ? $request->input('retour_vehicule_id') 
+                : $validated['vehicule_id'];
+            
+            $memeVehicule = ($vehiculeRetourId == $validated['vehicule_id']);
+            
+            // Validation seulement si même véhicule ET heure retour <= heure arrivée aller
+            if ($heureDepartRetour && $memeVehicule && $heureDepartRetour <= $heureArriveeAller) {
+                $msg = "Le retour (" . $heureDepartRetour . ") ne peut pas partir avant que le bus arrive a destination (" . $heureArriveeAller . "). Choisissez une heure de retour apres " . $heureArriveeAller . " ou selectionnez un vehicule different pour le retour.";
+                
+                $fieldName = $validated['type_programmation'] === 'ponctuel' 
+                    ? 'retour_heure_depart' 
+                    : 'retour_heure_depart_recurrent';
+                    
+                return back()->withInput()->withErrors([$fieldName => $msg])->with('error', $msg);
             }
         }
 

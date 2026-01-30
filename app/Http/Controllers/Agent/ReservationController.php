@@ -16,13 +16,15 @@ class ReservationController extends Controller
     {
         $agent = Auth::guard('agent')->user();
         
-        // --- CORRECTION 1 : Filtrage des programmes ---
-        // On récupère les programmes du jour.
-        // Si tu as un champ 'ville' sur l'agent, ajoute : ->where('point_depart', $agent->ville)
+        // --- CORRECTION 1 : Filtrage des programmes par date ET heure ---
+        // On récupère les programmes du jour dont l'heure n'est pas encore passée
+        // ou passée depuis moins de 30 minutes (pour laisser le temps de scanner)
+        $now = Carbon::now();
+        $heureMinimum = $now->copy()->subMinutes(30)->format('H:i');
+        
         $programmesDuJour = Programme::where('compagnie_id', $agent->compagnie_id)
             ->whereDate('date_depart', Carbon::today())
-            // Optionnel : Ne pas afficher les bus partis il y a plus de 4 heures pour alléger la liste
-            // ->where('heure_depart', '>=', Carbon::now()->subHours(4)->format('H:i')) 
+            ->where('heure_depart', '>=', $heureMinimum) // Filtre par heure
             ->with('vehicule')
             ->orderBy('heure_depart')
             ->get();
@@ -141,40 +143,53 @@ class ReservationController extends Controller
     /**
      * Confirmer l'embarquement
      */
-   public function confirm(Request $request)
+    public function confirm(Request $request)
     {
         $request->validate([
             'reference' => 'required|string',
             'vehicule_id' => 'required|integer',
+            'programme_id' => 'nullable|integer', // Ajout du programme_id pour détection correcte
         ]);
 
-        $reservation = Reservation::where('reference', $request->reference)->first();
+        $reservation = Reservation::with('programme')->where('reference', $request->reference)->first();
         $agent = Auth::guard('agent')->user();
         $vehicule = Vehicule::find($request->vehicule_id);
 
         if (!$reservation || !$vehicule) {
-            return response()->json(['success' => false, 'message' => 'Données invalides.'], 400);
+            return response()->json(['success' => false, 'message' => 'Donnees invalides.'], 400);
         }
 
-        // --- MÊME LOGIQUE DE DÉTECTION QUE SEARCH ---
-        $today = Carbon::today();
-        $dateAller = Carbon::parse($reservation->date_voyage)->startOfDay();
-        $dateRetour = $reservation->date_retour ? Carbon::parse($reservation->date_retour)->startOfDay() : null;
-
-        $isDayAller = $dateAller->equalTo($today);
-        $isDayRetour = $reservation->is_aller_retour && $dateRetour && $dateRetour->equalTo($today);
-
+        // --- DÉTECTION ALLER/RETOUR PAR PROGRAMME_ID (prioritaire) ---
+        $programScanId = $request->input('programme_id');
         $targetScan = null;
 
-        if ($isDayAller && $isDayRetour) {
-            // Priorité au retour si aller déjà fait
-            $targetScan = ($reservation->statut_aller === 'terminee') ? 'retour' : 'aller';
-        } elseif ($isDayAller) {
-            $targetScan = 'aller';
-        } elseif ($isDayRetour) {
-            $targetScan = 'retour';
+        if ($programScanId) {
+            // Méthode robuste : détection par le programme sélectionné
+            if ($programScanId == $reservation->programme_id) {
+                $targetScan = 'aller';
+            } elseif ($reservation->programme->programme_retour_id == $programScanId) {
+                $targetScan = 'retour';
+            } else {
+                return response()->json(['success' => false, 'message' => 'Ce billet ne correspond pas au trajet selectionne.'], 400);
+            }
         } else {
-            return response()->json(['success' => false, 'message' => 'Date invalide.'], 400);
+            // Fallback par date (ancienne logique)
+            $today = Carbon::today();
+            $dateAller = Carbon::parse($reservation->date_voyage)->startOfDay();
+            $dateRetour = $reservation->date_retour ? Carbon::parse($reservation->date_retour)->startOfDay() : null;
+
+            $isDayAller = $dateAller->equalTo($today);
+            $isDayRetour = $reservation->is_aller_retour && $dateRetour && $dateRetour->equalTo($today);
+
+            if ($isDayAller && $isDayRetour) {
+                $targetScan = ($reservation->statut_aller === 'terminee') ? 'retour' : 'aller';
+            } elseif ($isDayAller) {
+                $targetScan = 'aller';
+            } elseif ($isDayRetour) {
+                $targetScan = 'retour';
+            } else {
+                return response()->json(['success' => false, 'message' => 'Date invalide pour ce scan.'], 400);
+            }
         }
 
         $updateData = [
