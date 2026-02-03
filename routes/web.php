@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\Itineraire\AdminItineraireController;
 use App\Http\Controllers\Agent\AgentController;
 use App\Http\Controllers\Agent\AgentDashboard;
 use App\Http\Controllers\Agent\AuthenticateAgent;
+use App\Http\Controllers\Api\User\WalletController;
 use App\Http\Controllers\Compagnie\Agent\AgentCompagnieController;
 use App\Http\Controllers\Compagnie\CompagnieAuthenticate;
 use App\Http\Controllers\Compagnie\CompagnieController;
@@ -18,6 +19,8 @@ use App\Http\Controllers\Compagnie\Vehicule\VehiculeController;
 use App\Http\Controllers\Compagnie\SignalementController as CompagnieSignalementController;
 use App\Http\Controllers\Home\AccueilController;
 use App\Http\Controllers\Home\HomeController;
+use App\Http\Controllers\User\PasswordResetController;
+use App\Http\Controllers\User\ProfileController;
 use App\Http\Controllers\User\Reservation\ReservationController;
 use App\Http\Controllers\User\UserAuthenticate;
 use App\Http\Controllers\User\UserController;
@@ -168,13 +171,13 @@ Route::middleware('agent')->prefix('agent')->group(function () {
 
     // Gestion des réservations
     Route::prefix('reservations')->group(function () {
-        Route::get('/', [App\Http\Controllers\Agent\ReservationController::class, 'index'])->name('agent.reservations.index');
-        Route::get('/recherche', [App\Http\Controllers\Agent\ReservationController::class, 'recherchePage'])->name('agent.reservations.recherche');
-        Route::get('/programmes-for-scan', [App\Http\Controllers\Agent\ReservationController::class, 'getProgrammesForScan'])->name('agent.programmes.for-scan');
-        Route::post('/scan', [App\Http\Controllers\Agent\ReservationController::class, 'scan'])->name('agent.reservations.scan');
-        Route::post('/search', [App\Http\Controllers\Agent\ReservationController::class, 'search'])->name('agent.reservations.search');
-        Route::post('/search-by-reference', [App\Http\Controllers\Agent\ReservationController::class, 'searchByReference'])->name('agent.reservations.search-by-reference');
-        Route::post('/confirm', [App\Http\Controllers\Agent\ReservationController::class, 'confirm'])->name('agent.reservations.confirm');
+        Route::get('/', [ReservationController::class, 'index'])->name('agent.reservations.index');
+        Route::get('/recherche', [ReservationController::class, 'recherchePage'])->name('agent.reservations.recherche');
+        Route::get('/programmes-for-scan', [ReservationController::class, 'getProgrammesForScan'])->name('agent.programmes.for-scan');
+        Route::post('/scan', [ReservationController::class, 'scan'])->name('agent.reservations.scan');
+        Route::post('/search', [ReservationController::class, 'search'])->name('agent.reservations.search');
+        Route::post('/search-by-reference', [ReservationController::class, 'searchByReference'])->name('agent.reservations.search-by-reference');
+        Route::post('/confirm', [ReservationController::class, 'confirm'])->name('agent.reservations.confirm');
     });
 });
 
@@ -186,10 +189,10 @@ Route::prefix('user')->group(function () {
     Route::post('/register', [UserAuthenticate::class, 'handleRegister'])->name('user.handleRegister');
     
     // Password Reset Routes
-    Route::get('/password/reset', [App\Http\Controllers\User\PasswordResetController::class, 'showResetForm'])->name('password.request');
-    Route::post('/password/send-otp', [App\Http\Controllers\User\PasswordResetController::class, 'sendOtp'])->name('password.sendOtp');
-    Route::post('/password/verify-otp', [App\Http\Controllers\User\PasswordResetController::class, 'verifyOtp'])->name('password.verifyOtp');
-    Route::post('/password/reset', [App\Http\Controllers\User\PasswordResetController::class, 'resetPassword'])->name('password.reset');
+    Route::get('/password/reset', [PasswordResetController::class, 'showResetForm'])->name('password.request');
+    Route::post('/password/send-otp', [PasswordResetController::class, 'sendOtp'])->name('password.sendOtp');
+    Route::post('/password/verify-otp', [PasswordResetController::class, 'verifyOtp'])->name('password.verifyOtp');
+    Route::post('/password/reset', [PasswordResetController::class, 'resetPassword'])->name('password.reset');
 });
 
 Route::middleware('auth')->prefix('user')->group(function () {
@@ -197,15 +200,15 @@ Route::middleware('auth')->prefix('user')->group(function () {
     Route::get('/logout', [UserController::class, 'logout'])->name('user.logout');
 
     // Wallet Routes
-    Route::get('/compte', [App\Http\Controllers\User\WalletController::class, 'index'])->name('user.wallet.index');
-    Route::post('/compte/recharge', [App\Http\Controllers\User\WalletController::class, 'recharge'])->name('user.wallet.recharge');
-    Route::post('/compte/verify', [App\Http\Controllers\User\WalletController::class, 'verifyRecharge'])->name('user.wallet.verify');
+    Route::get('/compte', [WalletController::class, 'index'])->name('user.wallet.index');
+    Route::post('/compte/recharge', [WalletController::class, 'recharge'])->name('user.wallet.recharge');
+    Route::post('/compte/verify', [WalletController::class, 'verifyRecharge'])->name('user.wallet.verify');
 
     // Profile Routes
-    Route::get('/profile', [App\Http\Controllers\User\ProfileController::class, 'index'])->name('user.profile');
-    Route::post('/profile/update', [App\Http\Controllers\User\ProfileController::class, 'update'])->name('user.profile.update');
-    Route::post('/profile/password', [App\Http\Controllers\User\ProfileController::class, 'updatePassword'])->name('user.profile.password');
-    Route::post('/profile/photo', [App\Http\Controllers\User\ProfileController::class, 'updatePhoto'])->name('user.profile.photo');
+    Route::get('/profile', [ProfileController::class, 'index'])->name('user.profile');
+    Route::post('/profile/update', [ProfileController::class, 'update'])->name('user.profile.update');
+    Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('user.profile.password');
+    Route::post('/profile/photo', [ProfileController::class, 'updatePhoto'])->name('user.profile.photo');
 
 
     //Les routes pour faire une reservation 
