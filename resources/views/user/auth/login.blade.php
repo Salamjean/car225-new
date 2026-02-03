@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-     <link rel="shortcut icon" href="{{asset('assetsPoster/assets/images/logo_car225.png')}}" />
+     <link rel="shortcut icon" href="{{asset('assetsPoster/assets/images/Car225_favicon.png')}}" />
     <style>
         :root {
             --primary: #e94f1b;
@@ -32,7 +32,7 @@
 
         body {
             font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            background: linear-gradient(135deg, #ffb74d 0%, #e94f1b 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -141,19 +141,20 @@
             transform: translateY(-2px);
         }
 
-        .auth-footer {
+        /* .auth-footer {
             text-align: center;
             margin-top: 30px;
             padding-top: 20px;
             border-top: 1px solid var(--light-gray);
             color: var(--gray);
             font-size: 14px;
-        }
+        } */
 
         .auth-footer a {
-            color: var(--primary);
+            color: #e94f1b;
             text-decoration: none;
             font-weight: 500;
+            background-color: white;
         }
 
         .auth-footer a:hover {
@@ -330,7 +331,7 @@
             </div>
         </div>
 
-        <div class="auth-footer">
+        <div class="auth-footer" style="background-color: white; color: black;margin-top: 20px;text-align: center;">
             <p>Vous n'avez pas de compte ? <a href="{{ route('user.register') }}">Créer un compte</a></p>
         </div>
     </div>

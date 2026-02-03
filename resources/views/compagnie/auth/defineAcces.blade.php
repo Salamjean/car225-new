@@ -32,7 +32,7 @@
         justify-content: center;
         min-height: 100vh;
         background:
-            linear-gradient(rgba(0, 51, 196, 0.1), rgba(255, 136, 0, 0.9)),
+            linear-gradient(rgba(255, 255, 255, 0.1), rgba(233,79,27, 0.9)),
             url('{{ asset('assets/assets/img/arrierep.jpg') }}');
         background-size: cover;
         background-position: center;
