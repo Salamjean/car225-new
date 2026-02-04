@@ -220,6 +220,7 @@ Route::middleware('auth')->prefix('user')->group(function () {
         Route::get('/reservation', [ReservationController::class, 'create'])->name('reservation.create');
         Route::get('/vehicle/{id}', [ReservationController::class, 'showVehicle'])->name('user.reservation.vehicle');
         Route::get('/program/{id}', [ReservationController::class, 'getProgram'])->name('user.reservation.program');
+        Route::get('/program/{id}/default-vehicle', [ReservationController::class, 'getDefaultVehicle'])->name('user.reservation.default-vehicle');
         Route::get('/reservation/reserved-seats/{programId}', [ReservationController::class, 'getReservedSeats'])->name('user.reservation.reserved-seats');
         Route::post('/reservation', [ReservationController::class, 'store'])->name('reservation.store');
         Route::get('/reservations/{reservation}', [ReservationController::class, 'show'])->name('reservations.show');
@@ -227,6 +228,10 @@ Route::middleware('auth')->prefix('user')->group(function () {
         Route::get('/reservations/{reservation}/ticket', [ReservationController::class, 'ticket'])->name('reservations.ticket');
         Route::delete('/reservations/{reservation}', [ReservationController::class, 'cancel'])->name('reservations.cancel');
         Route::get('/api/programmes', [ReservationController::class, 'apiProgrammes'])->name('api.programmes');
+        Route::get('/api/grouped-routes', [ReservationController::class, 'apiGroupedRoutes'])->name('api.grouped-routes');
+        Route::get('/api/route-dates', [ReservationController::class, 'apiRouteDates'])->name('api.route-dates');
+        Route::get('/api/route-schedules', [ReservationController::class, 'apiRouteSchedules'])->name('api.route-schedules');
+        Route::get('/api/return-trips', [ReservationController::class, 'apiReturnTrips'])->name('api.return-trips');
     });
     Route::get('/programmes/{programme}/recalculate-status', [ReservationController::class, 'recalculateProgramStatus'])->name('programmes.recalculate-status');
     Route::get('/programmes/{programme}/status-for-date/{date}', [ReservationController::class, 'getProgramStatusForDate'])->name('programmes.status-for-date');

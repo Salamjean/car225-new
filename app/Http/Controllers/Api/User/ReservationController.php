@@ -19,6 +19,7 @@ use App\Services\CinetPayService;
 use App\Services\FcmService;
 use App\Models\Itineraire;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReservationController extends Controller
 {
@@ -52,6 +53,13 @@ class ReservationController extends Controller
             ->where('statut', '!=', 'en_attente') // On ne montre pas les tentatives non abouties
             ->orderBy('created_at', 'desc')
             ->paginate(20);
+
+        // Transformer les données pour ajouter point_depart et point_arrive
+        $reservations->getCollection()->transform(function ($reservation) {
+            $reservation->point_depart = $reservation->programme->point_depart ?? null;
+            $reservation->point_arrive = $reservation->programme->point_arrive ?? null;
+            return $reservation;
+        });
 
         return response()->json([
             'success' => true,
@@ -995,5 +1003,248 @@ class ReservationController extends Controller
         } catch (\Exception $e) {
             Log::error("FCM: Erreur lors de l'envoi: " . $e->getMessage());
         }
+    }
+
+    /**
+     * Récupérer tous les billets PDF d'une réservation (API Mobile)
+     * 
+     * Pour les réservations aller-retour, retourne les 2 billets (ALLER + RETOUR)
+     * Pour les réservations aller simple, retourne 1 seul billet
+     * 
+     * @param Request $request
+     * @param int $id ID de la réservation
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function ticket(Request $request, $id)
+    {
+        $reservation = Reservation::with(['programme', 'programme.compagnie', 'user', 'programmeRetour'])
+            ->where('user_id', Auth::id())
+            ->find($id);
+
+        if (!$reservation) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Réservation non trouvée'
+            ], 404);
+        }
+
+        $seatNumber = $request->query('seat_number') ?: $reservation->seat_number;
+        $tickets = [];
+
+        // Calculer les montants
+        $prixUnitaire = (float) $reservation->programme->montant_billet;
+        $isAllerRetour = (bool) $reservation->is_aller_retour;
+        $tripType = $isAllerRetour ? 'Aller-Retour' : 'Aller Simple';
+        $prixTotalIndividuel = $isAllerRetour ? $prixUnitaire * 2 : $prixUnitaire;
+
+        try {
+            // ============ BILLET ALLER ============
+            $allerConsomme = $reservation->statut_aller === 'terminee' || $reservation->statut === 'terminee';
+            
+            $ticketAller = $this->generateTicketData(
+                $reservation,
+                $reservation->programme,
+                $reservation->date_voyage,
+                $isAllerRetour ? 'ALLER' : 'ALLER SIMPLE',
+                $seatNumber,
+                $prixUnitaire,
+                $prixTotalIndividuel,
+                $isAllerRetour,
+                $tripType,
+                $allerConsomme
+            );
+            $tickets[] = $ticketAller;
+
+            // ============ BILLET RETOUR (si aller-retour) ============
+            if ($isAllerRetour) {
+                $retourConsomme = $reservation->statut_retour === 'terminee';
+                
+                // Récupérer le programme retour
+                $programmeRetour = $reservation->programmeRetour ?? Programme::find($reservation->programme_retour_id);
+                if (!$programmeRetour) {
+                    // Fallback: utiliser le programme principal avec trajet inversé
+                    $programmeRetour = $reservation->programme;
+                }
+                
+                $ticketRetour = $this->generateTicketData(
+                    $reservation,
+                    $programmeRetour,
+                    $reservation->date_retour,
+                    'RETOUR',
+                    $seatNumber,
+                    $prixUnitaire,
+                    $prixTotalIndividuel,
+                    $isAllerRetour,
+                    $tripType,
+                    $retourConsomme,
+                    true // isRetour flag
+                );
+                $tickets[] = $ticketRetour;
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Billets récupérés avec succès',
+                'data' => [
+                    'reservation_id' => $reservation->id,
+                    'reservation_reference' => $reservation->reference,
+                    'is_aller_retour' => $isAllerRetour,
+                    'seat_number' => $seatNumber,
+                    'total_tickets' => count($tickets),
+                    'tickets' => $tickets
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('API: Erreur génération PDF billet:', [
+                'reservation_id' => $id,
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la génération du billet: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Génère les données d'un billet (helper pour ticket())
+     */
+    private function generateTicketData(
+        Reservation $reservation,
+        Programme $programme,
+        $dateVoyage,
+        string $ticketType,
+        $seatNumber,
+        float $prixUnitaire,
+        float $prixTotalIndividuel,
+        bool $isAllerRetour,
+        string $tripType,
+        bool $isConsumed,
+        bool $isRetour = false
+    ): array {
+        // Déterminer l'heure de départ
+        $heureDepart = $programme->heure_depart;
+        if ($isRetour && $programme->retour_heure_depart) {
+            $heureDepart = $programme->retour_heure_depart;
+        }
+
+        // Déterminer le trajet (inversé pour retour si même programme)
+        if ($isRetour && $reservation->programme_retour_id === null) {
+            // Même programme, inverser départ/arrivée
+            $trajet = $programme->point_arrive . ' → ' . $programme->point_depart;
+        } else {
+            $trajet = $programme->point_depart . ' → ' . $programme->point_arrive;
+        }
+
+        // Générer le PDF
+        $pdf = Pdf::loadView('pdf.ticket', [
+            'reservation' => $reservation,
+            'programme' => $programme,
+            'user' => $reservation->user,
+            'compagnie' => $programme->compagnie ?? $reservation->programme->compagnie,
+            'qrCodeBase64' => $reservation->qr_code,
+            'tripType' => $tripType,
+            'ticketType' => $ticketType,
+            'dateVoyage' => $dateVoyage,
+            'heureDepart' => $heureDepart,
+            'prixUnitaire' => $prixUnitaire,
+            'prixTotalIndividuel' => $prixTotalIndividuel,
+            'isAllerRetour' => $isAllerRetour,
+            'seatNumber' => $seatNumber,
+        ])->setPaper('a4', 'portrait')
+            ->setOptions([
+                'defaultFont' => 'sans-serif',
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+                'dpi' => 150,
+            ]);
+
+        $pdfContent = $pdf->output();
+        $pdfBase64 = base64_encode($pdfContent);
+
+        $nomFichier = 'billet-' . strtolower(str_replace(' ', '-', $ticketType)) . '-' . $reservation->reference;
+        if ($seatNumber) {
+            $nomFichier .= '-Place-' . $seatNumber;
+        }
+
+        return [
+            'type' => strtolower(str_replace(' ', '_', $ticketType)), // 'aller', 'retour', 'aller_simple'
+            'ticket_type' => $ticketType, // 'ALLER', 'RETOUR', 'ALLER SIMPLE'
+            'filename' => $nomFichier . '.pdf',
+            'pdf_base64' => $pdfBase64,
+            'content_type' => 'application/pdf',
+            'date_voyage' => $dateVoyage,
+            'heure_depart' => $heureDepart,
+            'trajet' => $trajet,
+            'compagnie' => $programme->compagnie->name ?? 'N/A',
+            'is_consumed' => $isConsumed,
+            'status' => $isConsumed ? 'terminee' : 'valide',
+            'status_label' => $isConsumed ? 'Voyage terminé' : 'Valide'
+        ];
+    }
+
+    /**
+     * Télécharger le QR Code PNG d'une réservation (API Mobile)
+     * 
+     * @param int $id ID de la réservation
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function download($id)
+    {
+        $reservation = Reservation::where('user_id', Auth::id())->find($id);
+
+        if (!$reservation) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Réservation non trouvée'
+            ], 404);
+        }
+
+        if (!$reservation->qr_code_path) {
+            return response()->json([
+                'success' => false,
+                'message' => 'QR Code non disponible pour cette réservation'
+            ], 404);
+        }
+
+        $path = storage_path('app/public/' . $reservation->qr_code_path);
+
+        if (!file_exists($path)) {
+            // Si le fichier n'existe pas mais qu'on a le QR en base64, on retourne le base64
+            if ($reservation->qr_code) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'QR Code récupéré',
+                    'data' => [
+                        'filename' => 'qrcode-' . $reservation->reference . '.png',
+                        'qr_code_base64' => $reservation->qr_code,
+                        'content_type' => 'image/png',
+                        'reservation_reference' => $reservation->reference,
+                    ]
+                ]);
+            }
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Fichier QR Code non trouvé'
+            ], 404);
+        }
+
+        // Lire le fichier et l'encoder en base64
+        $qrCodeContent = file_get_contents($path);
+        $qrCodeBase64 = base64_encode($qrCodeContent);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'QR Code téléchargé',
+            'data' => [
+                'filename' => 'qrcode-' . $reservation->reference . '.png',
+                'qr_code_base64' => $qrCodeBase64,
+                'content_type' => 'image/png',
+                'reservation_reference' => $reservation->reference,
+            ]
+        ]);
     }
 }

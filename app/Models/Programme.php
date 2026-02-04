@@ -5,6 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Programme Model - FlixBus Style
+ * 
+ * Chaque programme représente UN voyage à une date précise.
+ * Plus de récurrence, plus de logique aller-retour complexe.
+ */
 class Programme extends Model
 {
     use HasFactory;
@@ -19,23 +25,22 @@ class Programme extends Model
         'point_arrive',
         'durer_parcours',
         'date_depart',
+        'date_fin', // Fin de validité pour lignes continues
         'heure_depart',
         'heure_arrive',
         'montant_billet',
-        'nbre_siege_occupe',
-        'staut_place',
-        'date_fin_programmation',
-        'type_programmation',
-        'jours_recurrence',
-        'is_aller_retour',
-        'programme_retour_id',
-        
+        'statut',
     ];
 
     protected $casts = [
         'date_depart' => 'date',
-        'nbre_siege_occupe' => 'integer',
+        'date_fin' => 'date',
+        'montant_billet' => 'decimal:2',
     ];
+
+    // ========================================
+    // RELATIONS
+    // ========================================
 
     /**
      * Relation avec la compagnie
@@ -51,11 +56,6 @@ class Programme extends Model
     public function vehicule()
     {
         return $this->belongsTo(Vehicule::class);
-    }
-
-    public function historiques()
-    {
-        return $this->hasMany(ProgrammeHistorique::class);
     }
 
     /**
@@ -74,25 +74,6 @@ class Programme extends Model
         return $this->belongsTo(Personnel::class, 'personnel_id');
     }
 
-    public function reservations()
-    {
-        return $this->hasMany(Reservation::class);
-    }
-  /**
-     * Réservations où ce programme est l'ALLER (lié via programme_id)
-     */
-    public function reservationsAller()
-    {
-        return $this->hasMany(Reservation::class, 'programme_id');
-    }
-
-    /**
-     * Réservations où ce programme est le RETOUR (lié via programme_retour_id)
-     */
-    public function reservationsRetour()
-    {
-        return $this->hasMany(Reservation::class, 'programme_retour_id');
-    }
     /**
      * Relation avec le convoyeur (personnel)
      */
@@ -101,29 +82,96 @@ class Programme extends Model
         return $this->belongsTo(Personnel::class, 'convoyeur_id');
     }
 
-    public function programmeRetour()
-    {
-        return $this->belongsTo(Programme::class, 'programme_retour_id');
-    }
-
     /**
-     * Accessor pour le statut des places
+     * Relation avec les réservations
      */
-    public function getStatutPlaceAttribute()
+    public function reservations()
     {
-        return $this->staut_place;
+        return $this->hasMany(Reservation::class);
     }
 
     /**
-     * Accessor pour la date formatée
+     * Relation avec l'historique
+     */
+    public function historiques()
+    {
+        return $this->hasMany(ProgrammeHistorique::class);
+    }
+
+    // ========================================
+    // ACCESSORS - Places disponibles (calculés dynamiquement)
+    // ========================================
+
+    /**
+     * Nombre de places réservées (confirmées)
+     */
+    public function getPlacesReserveesAttribute()
+    {
+        return $this->reservations()
+            ->where('statut', 'confirmee')
+            ->count();
+    }
+
+    /**
+     * Nombre de places disponibles
+     */
+    public function getPlacesDisponiblesAttribute()
+    {
+        if (!$this->vehicule) {
+            return 0;
+        }
+        return max(0, $this->vehicule->nombre_place - $this->places_reservees);
+    }
+
+    /**
+     * Pourcentage d'occupation
+     */
+    public function getPourcentageOccupationAttribute()
+    {
+        if (!$this->vehicule || $this->vehicule->nombre_place == 0) {
+            return 0;
+        }
+        return round(($this->places_reservees / $this->vehicule->nombre_place) * 100);
+    }
+
+    /**
+     * Statut des places (calculé dynamiquement)
+     */
+    public function getStatutPlacesAttribute()
+    {
+        $pourcentage = $this->pourcentage_occupation;
+        
+        if ($pourcentage >= 100) {
+            return 'complet';
+        } elseif ($pourcentage >= 80) {
+            return 'presque_complet';
+        } else {
+            return 'disponible';
+        }
+    }
+
+    /**
+     * Le programme a des places disponibles
+     */
+    public function getAPlacesDisponiblesAttribute()
+    {
+        return $this->places_disponibles > 0 && $this->statut === 'actif';
+    }
+
+    // ========================================
+    // ACCESSORS - Formatage
+    // ========================================
+
+    /**
+     * Date formatée
      */
     public function getDateDepartFormateeAttribute()
     {
-        return $this->date_depart->format('d/m/Y');
+        return $this->date_depart ? $this->date_depart->format('d/m/Y') : null;
     }
 
     /**
-     * Accessor pour l'heure de départ formatée
+     * Heure de départ formatée
      */
     public function getHeureDepartFormateeAttribute()
     {
@@ -131,7 +179,7 @@ class Programme extends Model
     }
 
     /**
-     * Accessor pour l'heure d'arrivée formatée
+     * Heure d'arrivée formatée
      */
     public function getHeureArriveeFormateeAttribute()
     {
@@ -139,7 +187,7 @@ class Programme extends Model
     }
 
     /**
-     * Accessor pour le trajet complet
+     * Trajet complet
      */
     public function getTrajetCompletAttribute()
     {
@@ -147,11 +195,11 @@ class Programme extends Model
     }
 
     /**
-     * Accessor pour l'équipage complet
+     * Équipage complet
      */
     public function getEquipageCompletAttribute()
     {
-        $equipage = $this->chauffeur->prenom . ' ' . $this->chauffeur->name;
+        $equipage = $this->chauffeur ? $this->chauffeur->prenom . ' ' . $this->chauffeur->name : 'Non assigné';
 
         if ($this->convoyeur) {
             $equipage .= ' + ' . $this->convoyeur->prenom . ' ' . $this->convoyeur->name;
@@ -160,8 +208,20 @@ class Programme extends Model
         return $equipage;
     }
 
+    // ========================================
+    // SCOPES
+    // ========================================
+
     /**
-     * Scope pour les programmes à venir
+     * Programmes actifs (non annulés)
+     */
+    public function scopeActif($query)
+    {
+        return $query->where('statut', 'actif');
+    }
+
+    /**
+     * Programmes à venir
      */
     public function scopeAVenir($query)
     {
@@ -169,7 +229,7 @@ class Programme extends Model
     }
 
     /**
-     * Scope pour les programmes passés
+     * Programmes passés
      */
     public function scopePasses($query)
     {
@@ -177,7 +237,7 @@ class Programme extends Model
     }
 
     /**
-     * Scope pour les programmes d'aujourd'hui
+     * Programmes d'aujourd'hui
      */
     public function scopeAujourdhui($query)
     {
@@ -185,7 +245,7 @@ class Programme extends Model
     }
 
     /**
-     * Scope pour les programmes par compagnie
+     * Programmes par compagnie
      */
     public function scopeParCompagnie($query, $compagnieId)
     {
@@ -193,50 +253,40 @@ class Programme extends Model
     }
 
     /**
-     * Vérifier si le programme est complet
+     * Programmes par date
      */
-    public function getEstCompletAttribute()
+    public function scopeParDate($query, $date)
     {
-        return $this->staut_place === 'rempli';
+        return $query->whereDate('date_depart', $date);
     }
 
     /**
-     * Vérifier si le programme est presque complet
+     * Programmes par itinéraire (recherche)
      */
-    public function getEstPresqueCompletAttribute()
+    public function scopeParTrajet($query, $pointDepart, $pointArrive)
     {
-        return $this->staut_place === 'presque_complet';
+        return $query->where('point_depart', 'like', "%{$pointDepart}%")
+                     ->where('point_arrive', 'like', "%{$pointArrive}%");
     }
 
     /**
-     * Vérifier si le programme a des places disponibles
+     * Programmes disponibles (actifs avec places)
      */
-    public function getAPlacesDisponiblesAttribute()
+    public function scopeDisponible($query)
     {
-        return $this->staut_place === 'vide' || $this->staut_place === 'presque_complet';
+        return $query->where('statut', 'actif')
+                     ->whereHas('vehicule', function($q) {
+                         $q->whereRaw('vehicules.nombre_place > (
+                             SELECT COUNT(*) FROM reservations 
+                             WHERE reservations.programme_id = programmes.id 
+                             AND reservations.statut = "confirmee"
+                         )');
+                     });
     }
 
-    /**
-     * Calculer le nombre de places disponibles
-     */
-    public function getPlacesDisponiblesAttribute()
-    {
-        if ($this->vehicule) {
-            return $this->vehicule->nombre_place - $this->nbre_siege_occupe;
-        }
-        return 0;
-    }
-
-    /**
-     * Calculer le pourcentage d'occupation
-     */
-    public function getPourcentageOccupationAttribute()
-    {
-        if ($this->vehicule && $this->vehicule->nombre_place > 0) {
-            return round(($this->nbre_siege_occupe / $this->vehicule->nombre_place) * 100);
-        }
-        return 0;
-    }
+    // ========================================
+    // HELPERS
+    // ========================================
 
     /**
      * Vérifier si le programme est en cours
@@ -260,82 +310,12 @@ class Programme extends Model
     }
 
     /**
-     * Boot du modèle
+     * Mettre à jour le statut si complet
      */
-    protected static function boot()
+    public function updateStatutSiComplet()
     {
-        parent::boot();
-
-        // Mettre à jour automatiquement le statut des places quand le nombre de sièges occupés change
-        static::saving(function ($programme) {
-            if ($programme->vehicule) {
-                $nombrePlaces = $programme->vehicule->nombre_place;
-                $siegesOccupes = $programme->nbre_siege_occupe;
-
-                if ($siegesOccupes >= $nombrePlaces) {
-                    $programme->staut_place = 'rempli';
-                } elseif ($siegesOccupes >= ($nombrePlaces * 0.7)) {
-                    $programme->staut_place = 'presque_complet';
-                } else {
-                    $programme->staut_place = 'vide';
-                }
-            }
-        });
-    }
-
-    // Dans App/Models/Programme.php
-    public function updateStatutPlaces()
-    {
-        if (!$this->vehicule) {
-            return;
+        if ($this->places_disponibles <= 0) {
+            $this->update(['statut' => 'complet']);
         }
-
-        $totalPlaces = $this->vehicule->nombre_place ?? 0;
-
-        // Compter les places réservées
-        $placesReservees = $this->reservations()->where('statut', 'confirmee')->count();
-
-        // Calculer le pourcentage
-        $pourcentage = $totalPlaces > 0 ? ($placesReservees / $totalPlaces) * 100 : 0;
-
-        // Déterminer le statut
-        if ($pourcentage >= 100) {
-            $statut = 'rempli';
-        } elseif ($pourcentage >= 80) {
-            $statut = 'presque_complet';
-        } else {
-            $statut = 'vide';
-        }
-
-        $this->staut_place = $statut;
-        $this->save();
-    }
-
-    /**
-     * Relation avec les statuts par date (pour programmes récurrents)
-     */
-    public function statutsDate()
-    {
-        return $this->hasMany(ProgrammeStatutDate::class);
-    }
-
-    /**
-     * Obtenir le statut pour une date spécifique
-     */
-    public function getStatutForDate($date)
-    {
-        if ($this->type_programmation === 'ponctuel') {
-            // Pour ponctuel, retourner le statut global
-            return [
-                'nbre_siege_occupe' => $this->nbre_siege_occupe,
-                'staut_place' => $this->staut_place
-            ];
-        }
-
-        // Pour récurrent, chercher dans la table des statuts par date
-        $formattedDate = date('Y-m-d', strtotime($date));
-        return $this->statutsDate()
-            ->where('date_voyage', $formattedDate)
-            ->first();
     }
 }

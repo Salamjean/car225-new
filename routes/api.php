@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\User\AuthController as UserAuthController;
 use App\Http\Controllers\Api\User\UserController;
 use App\Http\Controllers\Api\User\ReservationController as UserReservationController;
 use App\Http\Controllers\Api\User\WalletController;
+use App\Http\Controllers\Api\User\CompagnieController;
 use App\Http\Controllers\Api\Agent\AuthController as AgentAuthController;
 use App\Http\Controllers\Api\Agent\AgentController;
 use App\Http\Controllers\Api\Agent\ReservationController as AgentReservationController;
@@ -55,6 +56,8 @@ Route::prefix('user')->group(function () {
         Route::post('/reservations', [UserReservationController::class, 'store']);
         Route::get('/reservations/{reservation}', [UserReservationController::class, 'show']);
         Route::delete('/reservations/{reservation}', [UserReservationController::class, 'cancel']);
+        Route::get('/reservations/{reservation}/ticket', [UserReservationController::class, 'ticket']);
+        Route::get('/reservations/{reservation}/download', [UserReservationController::class, 'download']);
         
         // Portefeuille (Wallet)
         Route::get('/wallet', [WalletController::class, 'index']);
@@ -66,6 +69,11 @@ Route::prefix('user')->group(function () {
     Route::get('/programmes', [UserReservationController::class, 'getAllProgrammes']);
     Route::get('/programmes/simple', [UserReservationController::class, 'getSimpleProgrammes']);
     Route::get('/programmes/aller-retour', [UserReservationController::class, 'getAllerRetourProgrammes']);
+
+    // Compagnies (publiques)
+    Route::get('/compagnies', [CompagnieController::class, 'index']);
+    Route::get('/compagnies/{id}', [CompagnieController::class, 'show']);
+    Route::get('/compagnies/{id}/programmes', [CompagnieController::class, 'programmes']);
     Route::get('/programmes/search', [UserReservationController::class, 'searchProgrammes']);
     Route::get('/programmes/{id}', [UserReservationController::class, 'getProgram']);
     Route::get('/programmes/{programId}/reserved-seats', [UserReservationController::class, 'getReservedSeats']);

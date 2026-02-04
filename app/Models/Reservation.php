@@ -5,6 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
+/**
+ * Reservation Model - FlixBus Style
+ * 
+ * Chaque réservation = 1 siège sur 1 voyage (programme).
+ * Pour un aller-retour, l'utilisateur fait 2 réservations séparées.
+ */
 class Reservation extends Model
 {
     protected $fillable = [
@@ -18,14 +24,9 @@ class Reservation extends Model
         'passager_email',
         'passager_telephone',
         'passager_urgence',
-        'programme_retour_id',
-        'is_aller_retour',
         'date_voyage',
-        'date_retour',
         'montant',
         'statut',
-        'statut_aller',
-        'statut_retour',
         'reference',
         'qr_code',
         'qr_code_path',
@@ -37,6 +38,17 @@ class Reservation extends Model
         'embarquement_status',
     ];
 
+    protected $casts = [
+        'montant' => 'decimal:2',
+        'date_voyage' => 'date',
+        'embarquement_scanned_at' => 'datetime',
+        'qr_code_data' => 'array',
+    ];
+
+    // ========================================
+    // RELATIONS
+    // ========================================
+
     /**
      * Relation avec le paiement
      */
@@ -44,16 +56,6 @@ class Reservation extends Model
     {
         return $this->belongsTo(Paiement::class);
     }
-
-
-    protected $casts = [
-        'montant' => 'decimal:2',
-        'is_aller_retour' => 'boolean',
-        'date_voyage' => 'date',
-        'date_retour' => 'date',
-        'embarquement_scanned_at' => 'datetime',
-        'qr_code_data' => 'array',
-    ];
 
     /**
      * Relation avec l'utilisateur
@@ -64,19 +66,11 @@ class Reservation extends Model
     }
 
     /**
-     * Relation avec le programme
+     * Relation avec le programme (voyage)
      */
     public function programme()
     {
         return $this->belongsTo(Programme::class);
-    }
-
-    /**
-     * Relation avec le programme retour
-     */
-    public function programmeRetour()
-    {
-        return $this->belongsTo(Programme::class, 'programme_retour_id');
     }
 
     /**
@@ -95,6 +89,10 @@ class Reservation extends Model
         return $this->belongsTo(Vehicule::class, 'embarquement_vehicule_id');
     }
 
+    // ========================================
+    // HELPERS
+    // ========================================
+
     /**
      * Générer une référence unique pour une réservation
      * Format: RES-YYYYMMDD-RANDOM-SEAT
@@ -103,6 +101,10 @@ class Reservation extends Model
     {
         return 'RES-' . date('Ymd') . '-' . strtoupper(Str::random(6)) . '-' . $seatNumber;
     }
+
+    // ========================================
+    // ACCESSORS
+    // ========================================
 
     /**
      * Nom complet du passager
@@ -119,6 +121,18 @@ class Reservation extends Model
     {
         return number_format((float) $this->montant, 0, ',', ' ') . ' FCFA';
     }
+
+    /**
+     * Informations du trajet (depuis le programme lié)
+     */
+    public function getTrajetAttribute()
+    {
+        return $this->programme ? $this->programme->trajet_complet : null;
+    }
+
+    // ========================================
+    // STATUS CHECKS
+    // ========================================
 
     /**
      * Vérifier si la réservation est confirmée
@@ -152,6 +166,10 @@ class Reservation extends Model
         return $this->statut === 'en_attente';
     }
 
+    // ========================================
+    // SCOPES
+    // ========================================
+
     /**
      * Scope pour les réservations confirmées (prêtes à scanner)
      */
@@ -166,5 +184,21 @@ class Reservation extends Model
     public function scopeTerminees($query)
     {
         return $query->where('statut', 'terminee');
+    }
+
+    /**
+     * Scope pour un programme donné
+     */
+    public function scopeParProgramme($query, $programmeId)
+    {
+        return $query->where('programme_id', $programmeId);
+    }
+
+    /**
+     * Scope pour une date de voyage donnée
+     */
+    public function scopeParDateVoyage($query, $date)
+    {
+        return $query->whereDate('date_voyage', $date);
     }
 }

@@ -237,7 +237,10 @@ class ReservationController extends Controller
         return redirect()->route('user.reservations.index')
             ->with('success', 'Réservation annulée avec succès.');
     }
-    // Dans votre controller ReservationController
+    /**
+     * Recherche et affichage des lignes disponibles - Service continu 24h/24
+     * L'utilisateur choisit la route, la date, et l'heure de départ
+     */
     public function create(Request $request)
     {
         // Si des paramètres de recherche sont passés
@@ -245,85 +248,51 @@ class ReservationController extends Controller
             $request->validate([
                 'point_depart' => 'required|string|max:255',
                 'point_arrive' => 'required|string|max:255',
-                'date_depart' => 'required|date',
+                'date_depart' => 'required|date|after_or_equal:today',
+                'heure_depart' => 'nullable|string', // Heure choisie par l'utilisateur
             ]);
 
-            // Utiliser la même logique de recherche que dans la méthode search
             $point_depart = $request->point_depart;
             $point_arrive = $request->point_arrive;
             $date_depart_recherche = $request->date_depart;
-
+            $heure_depart = $request->heure_depart ?? null;
             $formattedDate = date('Y-m-d', strtotime($date_depart_recherche));
 
-            $joursFrancais = [
-                'monday' => 'lundi',
-                'tuesday' => 'mardi',
-                'wednesday' => 'mercredi',
-                'thursday' => 'jeudi',
-                'friday' => 'vendredi',
-                'saturday' => 'samedi',
-                'sunday' => 'dimanche'
-            ];
-
-            $jourAnglais = strtolower(date('l', strtotime($date_depart_recherche)));
-            $jour_semaine = $joursFrancais[$jourAnglais] ?? $jourAnglais;
-
-            // Normaliser les termes de recherche (enlever accents, mettre en minuscule)
+            // Normaliser les termes de recherche
             $point_depart_normalized = $this->normalizeSearchTerm($point_depart);
             $point_arrive_normalized = $this->normalizeSearchTerm($point_arrive);
 
+            // Recherche par plage de dates (service continu)
+            // La date demandée doit être entre date_depart et date_fin de la ligne
             $query = Programme::with(['compagnie', 'vehicule', 'itineraire'])
-                // Recherche insensible à la casse et aux accents sur point de départ
+                ->where('statut', 'actif')
+                // Recherche sur point de départ
                 ->where(function($q) use ($point_depart, $point_depart_normalized) {
                     $q->where('point_depart', 'like', "%{$point_depart}%")
                       ->orWhereRaw('LOWER(point_depart) LIKE ?', ['%' . strtolower($point_depart) . '%'])
                       ->orWhereRaw('LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(point_depart, "é", "e"), "è", "e"), "ê", "e"), "ô", "o"), "à", "a")) LIKE ?', ['%' . $point_depart_normalized . '%']);
                 })
-                // Recherche insensible à la casse et aux accents sur point d'arrivée
+                // Recherche sur point d'arrivée
                 ->where(function($q) use ($point_arrive, $point_arrive_normalized) {
                     $q->where('point_arrive', 'like', "%{$point_arrive}%")
                       ->orWhereRaw('LOWER(point_arrive) LIKE ?', ['%' . strtolower($point_arrive) . '%'])
                       ->orWhereRaw('LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(point_arrive, "é", "e"), "è", "e"), "ê", "e"), "ô", "o"), "à", "a")) LIKE ?', ['%' . $point_arrive_normalized . '%']);
+                })
+                // La date recherchée doit être dans la période active de la ligne
+                ->whereDate('date_depart', '<=', $formattedDate)
+                ->where(function($q) use ($formattedDate) {
+                    $q->whereDate('date_fin', '>=', $formattedDate)
+                      ->orWhereNull('date_fin'); // Lignes sans date de fin = permanentes
                 });
 
-            // Recherche combinée ponctuel + récurrent
-            $query->where(function ($q) use ($formattedDate, $jour_semaine) {
-                // Programmes ponctuels
-                $q->where(function ($sub) use ($formattedDate) {
-                    $sub->where('type_programmation', 'ponctuel')
-                        ->whereRaw('DATE(date_depart) = ?', [$formattedDate]);
-                });
-
-                // Programmes récurrents
-                $q->orWhere(function ($sub) use ($formattedDate, $jour_semaine) {
-                    $sub->where('type_programmation', 'recurrent')
-                        ->whereRaw('DATE(date_depart) <= ?', [$formattedDate])
-                        ->where(function ($dateCheck) use ($formattedDate) {
-                            $dateCheck->where(function ($subDate) use ($formattedDate) {
-                                $subDate->whereNotNull('date_fin_programmation')
-                                    ->whereRaw('DATE(date_fin_programmation) >= ?', [$formattedDate]);
-                            })
-                                ->orWhereNull('date_fin_programmation');
-                        })
-                        ->where(function ($dayCheck) use ($jour_semaine) {
-                            $dayCheck->whereJsonContains('jours_recurrence', $jour_semaine)
-                                ->orWhere('jours_recurrence', 'like', "%{$jour_semaine}%");
-                        });
-                });
-            });
-
-            if ($request->filled('is_aller_retour')) {
-                $query->where('is_aller_retour', $request->is_aller_retour);
-            }
-
-            $programmes = $query->orderBy('heure_depart', 'asc')->paginate(10);
+            $programmes = $query->orderBy('montant_billet', 'asc')->paginate(10);
 
             $searchParams = [
                 'point_depart' => $point_depart,
                 'point_arrive' => $point_arrive,
                 'date_depart' => $date_depart_recherche,
                 'date_depart_formatted' => $formattedDate,
-                'is_aller_retour' => $request->is_aller_retour,
+                'heure_depart' => $heure_depart,
             ];
 
             $cinetpay_site_id = config('services.cinetpay.site_id');
@@ -470,6 +439,44 @@ class ReservationController extends Controller
         }
     }
 
+    // Récupérer le véhicule par défaut de la compagnie associée au programme
+    public function getDefaultVehicle($id)
+    {
+        try {
+            $programme = Programme::with(['compagnie'])->find($id);
+
+            if (!$programme) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Programme non trouvé'
+                ], 404);
+            }
+
+            // Récupérer le premier véhicule actif de la compagnie
+            $vehicule = Vehicule::where('compagnie_id', $programme->compagnie_id)
+                ->where('statut', 'actif')
+                ->first();
+
+            if (!$vehicule) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Aucun véhicule disponible'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'vehicule_id' => $vehicule->id,
+                'vehicule' => $vehicule
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Erreur serveur: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function getReservedSeats($programId)
     {
         try {
@@ -561,60 +568,25 @@ class ReservationController extends Controller
             ], 404);
         }
 
-        // Vérifier si la date est valide pour le programme
-        $dateVoyage = date('Y-m-d', strtotime($request->date_voyage));
-        $dateDepartProgramme = date('Y-m-d', strtotime($programme->date_depart));
+        // Vérifier si la date correspond au programme (Support date range)
+        $dateVoyageTimestamp = strtotime($request->date_voyage);
+        $dateDepartTimestamp = strtotime($programme->date_depart);
+        $dateFinTimestamp = strtotime($programme->date_fin);
 
-        // Pour les programmes ponctuels : vérifier la date exacte
-        if ($programme->type_programmation == 'ponctuel') {
-            if ($dateVoyage != $dateDepartProgramme) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'La date sélectionnée ne correspond pas à la date du programme ponctuel.'
-                ], 422);
-            }
+        if ($dateVoyageTimestamp < $dateDepartTimestamp || $dateVoyageTimestamp > $dateFinTimestamp) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La date sélectionnée est hors de la période de validité de ce voyage (' . 
+                             date('d/m/Y', $dateDepartTimestamp) . ' au ' . date('d/m/Y', $dateFinTimestamp) . ')'
+            ], 422);
         }
 
-        // Pour les programmes récurrents : vérifier le jour de la semaine
-        if ($programme->type_programmation == 'recurrent') {
-            $joursFrancais = [
-                'monday' => 'lundi',
-                'tuesday' => 'mardi',
-                'wednesday' => 'mercredi',
-                'thursday' => 'jeudi',
-                'friday' => 'vendredi',
-                'saturday' => 'samedi',
-                'sunday' => 'dimanche'
-            ];
-
-            $jourAnglais = strtolower(date('l', strtotime($dateVoyage)));
-            $jourSemaine = $joursFrancais[$jourAnglais] ?? $jourAnglais;
-
-            $joursRecurrence = json_decode($programme->jours_recurrence, true) ?? [];
-
-            if (!in_array($jourSemaine, $joursRecurrence)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Le programme n\'a pas lieu le ' . $jourSemaine . '.'
-                ], 422);
-            }
-
-            if ($programme->date_fin_programmation) {
-                $dateFin = date('Y-m-d', strtotime($programme->date_fin_programmation));
-                if ($dateVoyage > $dateFin) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'La date sélectionnée est après la fin de la programmation récurrente.'
-                    ], 422);
-                }
-            }
-
-            if ($dateVoyage < $dateDepartProgramme) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'La date sélectionnée est avant le début de la programmation récurrente.'
-                ], 422);
-            }
+        // Vérifier que le programme est actif
+        if ($programme->statut !== 'actif') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ce voyage n\'est plus disponible.'
+            ], 422);
         }
 
         // Vérifier si les places sont encore disponibles
@@ -637,22 +609,11 @@ class ReservationController extends Controller
         }
 
         try {
-              $isAllerRetour = $request->boolean('is_aller_retour'); 
-              $dateRetour = $request->input('date_retour');
-              $paymentMethod = $request->input('payment_method', 'cinetpay');
+            $paymentMethod = $request->input('payment_method', 'cinetpay');
 
-              if ($isAllerRetour && !$dateRetour) {
-                  return response()->json([
-                      'success' => false,
-                      'message' => 'La date de retour est requise pour un aller-retour.'
-                  ], 422);
-              }
-            // Calculer le prix
-        $prixUnitaire = $programme->montant_billet;
-        if ($programme->is_aller_retour) {
-            $prixUnitaire *= 2;
-        }
-        $montantTotal = $prixUnitaire * $request->nombre_places;
+            // Calculer le prix (FlixBus model: prix simple par place)
+            $prixUnitaire = $programme->montant_billet;
+            $montantTotal = $prixUnitaire * $request->nombre_places;
         
         // 1. DÉMARRER LA TRANSACTION (Sécurité absolue)
         DB::beginTransaction();
@@ -1771,56 +1732,133 @@ class ReservationController extends Controller
         </div>
     </div>
     ';
-
         return $html;
     }
 
     public function apiProgrammes()
-    {
-        $today = now()->format('Y-m-d');
-        
-        // Récupérer tous les programmes actifs avec les détails nécessaires
-        // FILTRE : Exclure les programmes RETOUR (ceux qui ont is_aller_retour = false ET programme_retour_id non null)
-        $programmes = Programme::with(['compagnie', 'vehicule', 'itineraire'])
-            ->where(function ($q) {
-                // Garder les programmes "aller-retour" (le programme principal)
-                $q->where('is_aller_retour', true)
-                  // OU les programmes sans lien retour (programmes aller simples)
-                  ->orWhereNull('programme_retour_id');
-            })
-            ->where(function ($query) use ($today) {
-                // CAS 1: Programmes ponctuels dont la date de départ est aujourd'hui ou dans le futur
-                $query->where(function ($q) use ($today) {
-                    $q->where('type_programmation', 'ponctuel')
-                      ->whereDate('date_depart', '>=', $today);
-                });
-                
-                // CAS 2: Programmes récurrents encore en cours
-                $query->orWhere(function ($q) use ($today) {
-                    $q->where('type_programmation', 'recurrent')
-                      // La date de début doit être passée ou aujourd'hui (le programme a commencé)
-                      ->whereDate('date_depart', '<=', $today)
-                      // Et la date de fin doit être dans le futur OU nulle (pas de fin)
-                      ->where(function ($sub) use ($today) {
-                          $sub->whereNull('date_fin_programmation')
-                              ->orWhereDate('date_fin_programmation', '>=', $today);
-                      });
-                });
-                
-                // CAS 3: Programmes récurrents qui commencent dans le futur
-                $query->orWhere(function ($q) use ($today) {
-                    $q->where('type_programmation', 'recurrent')
-                      ->whereDate('date_depart', '>', $today);
-                });
-            })
-            ->orderBy('date_depart', 'asc')
-            ->orderBy('heure_depart', 'asc')
-            ->get();
+{
+    $today = now()->format('Y-m-d');
+    
+    // FlixBus Model: Simple query - just get future active programs
+    $programmes = Programme::with(['compagnie', 'vehicule', 'itineraire'])
+        ->where('date_depart', '>=', $today)
+        ->where('statut', 'actif')
+        ->orderBy('date_depart', 'asc')
+        ->orderBy('heure_depart', 'asc')
+        ->limit(50) // Limite pour éviter surcharge
+        ->get();
 
-        return response()->json([
-            'success' => true,
-            'programmes' => $programmes,
-            'count' => $programmes->count()
-        ]);
-    }
+    return response()->json([
+        'success' => true,
+        'programmes' => $programmes,
+        'count' => $programmes->count()
+    ]);
+}
+
+/**
+ * API pour obtenir les lignes groupées (route uniquement)
+ * Retourne: Abidjan -> Alépé (5 horaires disponibles)
+ */
+public function apiGroupedRoutes()
+{
+    $today = now()->format('Y-m-d');
+    
+    // Grouper par trajet (point_depart + point_arrive)
+    $routes = Programme::select(
+            'point_depart', 
+            'point_arrive', 
+            'compagnie_id',
+            DB::raw('MIN(montant_billet) as prix_min'),
+            DB::raw('MAX(montant_billet) as prix_max'),
+            DB::raw('COUNT(*) as total_voyages'),
+            DB::raw('MIN(date_depart) as prochaine_date'),
+            DB::raw('GROUP_CONCAT(DISTINCT heure_depart ORDER BY heure_depart SEPARATOR ", ") as horaires')
+        )
+        ->with('compagnie:id,name')
+        ->where('date_depart', '>=', $today)
+        ->where('statut', 'actif')
+        ->groupBy('point_depart', 'point_arrive', 'compagnie_id')
+        ->orderBy('point_depart')
+        ->get();
+
+    return response()->json([
+        'success' => true,
+        'routes' => $routes,
+        'count' => $routes->count()
+    ]);
+}
+
+/**
+ * API pour obtenir les dates disponibles pour une ligne spécifique
+ */
+public function apiRouteDates(Request $request)
+{
+    $today = now()->format('Y-m-d');
+    
+    $dates = Programme::select('date_depart', DB::raw('COUNT(*) as horaires_count'))
+        ->where('point_depart', $request->point_depart)
+        ->where('point_arrive', $request->point_arrive)
+        ->where('date_depart', '>=', $today)
+        ->where('statut', 'actif')
+        ->groupBy('date_depart')
+        ->orderBy('date_depart')
+        ->limit(30) // Prochains 30 jours
+        ->get();
+
+    return response()->json([
+        'success' => true,
+        'dates' => $dates
+    ]);
+}
+
+/**
+ * API pour obtenir les horaires pour une ligne et une date spécifique
+ */
+public function apiRouteSchedules(Request $request)
+{
+    $programmes = Programme::with(['compagnie', 'vehicule'])
+        ->where('point_depart', $request->point_depart)
+        ->where('point_arrive', $request->point_arrive)
+        ->where('date_depart', $request->date)
+        ->where('statut', 'actif')
+        ->orderBy('heure_depart')
+        ->get();
+
+    return response()->json([
+        'success' => true,
+        'schedules' => $programmes
+    ]);
+}
+
+/**
+ * API pour obtenir les voyages retour disponibles (sens inversé)
+ * Recherche les programmes avec point_depart et point_arrive inversés
+ */
+public function apiReturnTrips(Request $request)
+{
+    $today = now()->format('Y-m-d');
+    
+    // Le retour = sens inverse avec date >= date aller
+    $returnTrips = Programme::with(['compagnie', 'vehicule'])
+        ->where('point_depart', $request->original_arrive) // Le retour part de l'arrivée de l'aller
+        ->where('point_arrive', $request->original_depart) // Et arrive au départ de l'aller
+        ->where('date_depart', '>=', $request->min_date ?? $today)
+        ->where('statut', 'actif')
+        ->orderBy('date_depart')
+        ->orderBy('heure_depart')
+        ->limit(20)
+        ->get();
+
+    // Grouper par date pour un meilleur affichage
+    $groupedByDate = $returnTrips->groupBy(function($trip) {
+        return $trip->date_depart;
+    });
+
+    return response()->json([
+        'success' => true,
+        'return_trips' => $returnTrips,
+        'grouped' => $groupedByDate,
+        'count' => $returnTrips->count()
+    ]);
+}
 }
