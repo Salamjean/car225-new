@@ -158,21 +158,36 @@ class CompagnieController extends Controller
                 $logoFile = $request->file('path_logo');
                 $logoName = 'logo_' . time() . '_' . Str::random(10) . '.' . $logoFile->getClientOriginalExtension();
                 $logoPath = $logoFile->storeAs('compagnies/logos', $logoName, 'public');
-                $validated['path_logo'] = $logoPath;
+                $compagnie->path_logo = $logoPath;
             }
+
+            // Gestion du rechargement de tickets
+            if ($request->filled('add_tickets') && $request->add_tickets > 0) {
+                $ticketsToAdd = $request->input('add_tickets');
+                $montant = $request->input('montant_paye');
+                
+                $compagnie->tickets = ($compagnie->tickets ?? 0) + $ticketsToAdd;
+                
+                // Enregistrer dans l'historique
+                $compagnie->historiqueTickets()->create([
+                    'quantite' => $ticketsToAdd,
+                    'montant' => $montant,
+                    'motif' => 'Recharge administrateur (Edit)'
+                ]);
+            }
+
+            // Mise à jour de la compagnie avec les champs validés, excluant ceux gérés séparément
+            $compagnie->update($request->except(['path_logo', 'password', 'add_tickets', 'montant_paye']));
 
             // Mise à jour du mot de passe si fourni
+            // Mise à jour du mot de passe si fourni
             if ($request->filled('password')) {
-                $validated['password'] = $request->password; // Le modèle s'occupe du hash
-            } else {
-                unset($validated['password']);
+                $compagnie->password = $request->password; // Model hashes it
+                $compagnie->save();
             }
 
-            // Mise à jour de la compagnie
-            $compagnie->update($validated);
-
             return redirect()->route('compagnie.index')
-                ->with('success', 'Compagnie mise à jour avec succès!');
+                ->with('success', 'Compagnie mise à jour avec succès (et tickets rechargés si applicable)!');
 
         } catch (\Exception $e) {
             return redirect()->back()

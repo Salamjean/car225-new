@@ -28,6 +28,7 @@ class Compagnie extends Authenticatable
         'slogan',
         'statut',
         'path_logo',
+        'tickets',
     ];
 
     /**
@@ -53,5 +54,23 @@ class Compagnie extends Authenticatable
     public function agents()
     {
         return $this->hasMany(Agent::class);
+    }
+
+    public function historiqueTickets()
+    {
+        return $this->hasMany(HistoriqueTicket::class);
+    }
+
+    /**
+     * Deduct tickets from company balance
+     */
+    public function deductTickets($quantity, $motif)
+    {
+        $this->decrement('tickets', $quantity);
+        
+        $this->historiqueTickets()->create([
+            'quantite' => -$quantity, // Negative for deduction
+            'motif' => $motif
+        ]);
     }
 }

@@ -189,6 +189,36 @@
                             @enderror
                         </div>
                     </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Gestion des Tickets -->
+                <div class="mb-12">
+                     <div class="flex items-center mb-6">
+                        <div class="w-2 h-8 bg-blue-500 rounded-full mr-4"></div>
+                        <h2 class="text-2xl font-bold text-gray-900">Gestion des Tickets</h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 bg-blue-50 p-6 rounded-2xl border border-blue-100">
+                        <div class="flex flex-col justify-center">
+                            <h3 class="text-lg font-bold text-gray-800 mb-2">Solde Actuel</h3>
+                            <div class="flex items-center gap-3">
+                                <span class="text-4xl font-black text-blue-600">{{ $compagnie->tickets }}</span>
+                                <span class="text-sm font-semibold text-blue-400 uppercase tracking-wider">Tickets disponibles</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <label class="block text-sm font-semibold text-gray-700">Ajouter des tickets (Rechargement)</label>
+                            <div class="flex gap-4">
+                                <input type="number" name="add_tickets" min="0" placeholder="Quantité à ajouter"
+                                    class="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 bg-white">
+                                <input type="number" name="montant_paye" min="0" placeholder="Montant payé (FCFA)"
+                                    class="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300 bg-white">
+                            </div>
+                            <p class="text-xs text-gray-500 italic">Laissez vide si vous ne souhaitez pas ajouter de tickets.</p>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Actions -->

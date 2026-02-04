@@ -8,10 +8,12 @@
                 <div class="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
                     <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Rechercher un voyage</h2>
 
-                    <form action="{{ route('reservation.create') }}" method="GET" id="search-form">
-                        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 sm:gap-6">
-                            <!-- Point de départ -->
-                            <div class="relative">
+                  <form action="{{ route('reservation.create') }}" method="GET" id="search-form">
+                        <!-- Modification ici : passage à lg:grid-cols-12 pour une ligne parfaite -->
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-end">
+                            
+                            <!-- Point de départ (Prend 3 colonnes sur 12) -->
+                            <div class="relative lg:col-span-3">
                                 <label for="point_depart" class="block text-sm font-medium text-gray-700 mb-2">
                                     <i class="fas fa-map-marker-alt text-[#e94f1b] mr-2"></i>Point de départ
                                 </label>
@@ -23,8 +25,17 @@
                                 </div>
                             </div>
 
-                            <!-- Point d'arrivée -->
-                            <div class="relative">
+                            <!-- Bouton d'inversion (Prend 1 colonne sur 12, centré) -->
+                            <div class="lg:col-span-1 flex items-end justify-center pb-2">
+                                <button type="button" onclick="swapLocations()" 
+                                    class="w-10 h-10 bg-[#e94f1b] text-white rounded-full hover:bg-orange-600 transition-all duration-300 transform hover:scale-110 shadow-lg flex items-center justify-center"
+                                    title="Inverser départ/arrivée">
+                                    <i class="fas fa-exchange-alt"></i>
+                                </button>
+                            </div>
+
+                            <!-- Point d'arrivée (Prend 3 colonnes sur 12) -->
+                            <div class="relative lg:col-span-3">
                                 <label for="point_arrive" class="block text-sm font-medium text-gray-700 mb-2">
                                     <i class="fas fa-flag text-green-500 mr-2"></i>Point d'arrivée
                                 </label>
@@ -36,32 +47,20 @@
                                 </div>
                             </div>
 
-                            <!-- Date de départ -->
-                            <div class="relative">
+                            <!-- Date de départ (Prend 3 colonnes sur 12) -->
+                            <div class="relative lg:col-span-3">
                                 <label for="date_depart" class="block text-sm font-medium text-gray-700 mb-2">
                                     <i class="fas fa-calendar text-blue-500 mr-2"></i>Date de départ
                                 </label>
                                 <div class="relative">
                                     <input type="date" id="date_depart" name="date_depart"
-                                        value="{{ $searchParams['date_depart'] ?? date('Y-m-d') }}"
+                                        value="{{ $searchParams['date_depart'] ?? date('Y-m-d', strtotime('+1 day')) }}"
                                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 pl-12"
-                                        min="{{ date('Y-m-d') }}" required>
+                                        min="{{ date('Y-m-d', strtotime('+1 day')) }}" required>
                                 </div>
                             </div>
 
-                            <!-- Heure de départ souhaitée -->
-                            <div class="relative">
-                                <label for="heure_depart" class="block text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-clock text-purple-500 mr-2"></i>Heure souhaitée
-                                </label>
-                                <div class="relative">
-                                    <input type="time" id="heure_depart" name="heure_depart"
-                                        value="{{ $searchParams['heure_depart'] ?? '' }}"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 pl-12"
-                                        placeholder="Ex: 08:00">
-                                    <p class="text-xs text-gray-400 mt-1">Service continu 24h/24</p>
-                                </div>
-                            </div>
+
                         </div>
 
                         <!-- Boutons d'action -->
@@ -80,14 +79,29 @@
                     </form>
                 </div>
             </div>
-             <!-- Résultats de recherche -->
-            @if (isset($programmes) && $programmes->count() > 0)
+             <!-- Alerte si l'heure recherchée n'existe pas -->
+            @if (isset($timeMismatch) && $timeMismatch && isset($availableTimesMessage))
+                <div class="mb-6 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-xl">
+                    <div class="flex items-start gap-3">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-triangle text-yellow-500 text-xl mt-1"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-yellow-800 mb-1">Heure non disponible</h4>
+                            <p class="text-yellow-700">{{ $availableTimesMessage }}</p>
+                            <p class="text-sm text-yellow-600 mt-2">Nous affichons quand même les programmes disponibles pour cette route.</p>
+                        </div>
+                    </div>
+                </div>
+            @endif
+             <!-- Résultats de recherche - Routes groupées -->
+            @if (isset($groupedRoutes) && $groupedRoutes->count() > 0)
                 <div class="mb-6 sm:mb-8">
                     <div class="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100 mb-6">
                         <div class="flex justify-between items-center">
-                            <h2 class="text-xl sm:text-2xl font-bold text-gray-900">Résultats de recherche</h2>
+                            <h2 class="text-xl sm:text-2xl font-bold text-gray-900">Voyages disponibles</h2>
                             <span class="bg-[#e94f1b] text-white px-4 py-2 rounded-xl font-bold text-lg">
-                                {{ $programmes->total() }} programme(s) trouvé(s)
+                                {{ $groupedRoutes->count() }} route(s) trouvée(s)
                             </span>
                         </div>
 
@@ -106,247 +120,101 @@
                                 <i class="fas fa-calendar text-blue-500"></i>
                                 <span>{{ date('d/m/Y', strtotime($searchParams['date_depart'])) }}</span>
                             </div>
-                            @if(!empty($searchParams['heure_depart']))
-                            <div class="flex items-center gap-2 bg-purple-50 px-3 py-1 rounded-full">
-                                <i class="fas fa-clock text-purple-500"></i>
-                                <span>{{ $searchParams['heure_depart'] }}</span>
-                            </div>
-                            @else
-                            <div class="flex items-center gap-2 bg-gray-50 px-3 py-1 rounded-full">
-                                <i class="fas fa-infinity text-gray-500"></i>
-                                <span>24h/24</span>
-                            </div>
-                            @endif
                         </div>
                     </div>
 
-                    <!-- Liste des programmes -->
-                    <!-- En-tête de la liste (version desktop) -->
-                    <div class="hidden md:block mb-4">
-                        <div class="bg-gradient-to-r from-[#e94f1b]/10 to-orange-500/10 rounded-xl p-4">
-                            <div class="grid grid-cols-12 gap-4 text-sm font-semibold text-gray-700">
-                                <div class="col-span-3 text-center">Compagnie & Trajet</div>
-                                <div class="col-span-2 text-center">Date & Heure</div>
-                                <div class="col-span-2 text-center">Durée & Prix</div>
-                                <div class="col-span-2 text-center">Statut</div>
-                                <div class="col-span-3 text-center">Actions</div>
-                            </div>
-                        </div>
-                    </div>
-
+                    <!-- Liste des routes -->
                     <div class="space-y-4">
-                        @foreach ($programmes as $programme)
-                            <div
-                                class="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
-                                <!-- Version Mobile -->
-                                <div class="block md:hidden">
-                                    <div class="p-4 space-y-4">
-                                        <!-- En-tête mobile -->
-                                        <div class="flex items-start gap-3 pb-3 border-b border-gray-100">
-                                            <div
-                                                class="w-12 h-12 bg-gradient-to-r from-[#e94f1b] to-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                                <i class="fas fa-bus text-white text-lg"></i>
-                                            </div>
-                                            <div class="flex-1 min-w-0">
-                                                <div class="flex items-center gap-2 mb-1">
-                                                    <h3 class="font-bold text-gray-900 truncate">
-                                                        {{ $programme->compagnie->name ?? 'Compagnie' }}
-                                                    </h3>
-                                                </div>
-                                                <div class="flex items-center gap-2 text-sm">
-                                                    <span class="font-semibold text-gray-900">{{ $programme->point_depart }}</span>
-                                                    <i class="fas fa-arrow-right text-[#e94f1b] text-xs"></i>
-                                                    <span class="font-semibold text-gray-900">{{ $programme->point_arrive }}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Infos mobile -->
-                                        <div class="grid grid-cols-2 gap-3 text-sm">
-                                            <div class="flex items-center gap-2">
-                                                <i class="fas fa-clock text-green-500"></i>
-                                                <span>{{ $programme->heure_depart }}</span>
-                                            </div>
-                                            <div class="flex items-center gap-2">
-                                                <i class="fas fa-hourglass-half text-purple-500"></i>
-                                                <span class="font-semibold">{{ $programme->durer_parcours }}</span>
-                                            </div>
-                                            <div class="flex items-center gap-2 col-span-2">
-                                                <i class="fas fa-money-bill-wave text-red-500"></i>
-                                                <span class="font-bold text-lg text-[#e94f1b]">
-                                                    {{ number_format($programme->montant_billet, 0, ',', ' ') }} FCFA
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        <!-- Statut mobile -->
-                                        @php
-                                            $statusTexts = [
-                                                'actif' => 'Places disponibles',
-                                                'complet' => 'Complet',
-                                                'annule' => 'Annulé',
-                                            ];
-                                            $statusColors = [
-                                                'actif' => 'bg-green-100 text-green-800 border-green-200',
-                                                'complet' => 'bg-red-100 text-red-800 border-red-200',
-                                                'annule' => 'bg-gray-100 text-gray-600 border-gray-200',
-                                            ];
-                                            $statut = $programme->statut ?? 'actif';
-                                        @endphp
-                                        <div class="flex items-center justify-center">
-                                            <span
-                                                class="px-3 py-1 rounded-full text-sm font-semibold border {{ $statusColors[$statut] ?? 'bg-gray-100 text-gray-600 border-gray-200' }}">
-                                                {{ $statusTexts[$statut] ?? 'Statut inconnu' }}
-                                            </span>
-                                        </div>
-
-                                        <!-- Actions mobile -->
-                                        <div class="flex gap-2">
-                                            @if ($statut != 'complet' && $statut != 'annule')
-                                        <button 
-    onclick="initiateReservationProcess(
-        {{ $programme->id }}, 
-        '{{ request('date_depart') ? date('Y-m-d', strtotime(request('date_depart'))) : (isset($programme->date_depart) ? date('Y-m-d', strtotime($programme->date_depart)) : '') }}',
-        '{{ request('heure_depart') ?? '' }}' 
-    )"
-    class="bg-[#e94f1b] text-white px-4 py-2 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 flex items-center gap-2">
-    <i class="fas fa-ticket-alt"></i>
-    <span>Réserver</span>
-</button>
-                                            @else
-                                                <button
-                                                    class="flex-1 bg-gray-400 text-white text-center py-2 rounded-lg font-bold cursor-not-allowed flex items-center justify-center gap-2"
-                                                    disabled>
-                                                    <i class="fas fa-times-circle"></i>
-                                                    <span>Complet</span>
-                                                </button>
-                                            @endif
-                                            <button
-                                                onclick="showVehicleDetails({{ $programme->vehicule_id ?? 'null' }}, {{ $programme->id }})"
-                                                class="w-12 bg-white text-[#e94f1b] border border-[#e94f1b] text-center py-2 rounded-lg font-bold hover:bg-gray-50 transition-all duration-300 flex items-center justify-center">
-                                                <i class="fas fa-info-circle"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Version Desktop -->
-                                <div class="hidden md:block">
-                                    <div class="grid grid-cols-12 gap-4 p-6 items-center">
+                        @foreach ($groupedRoutes as $route)
+                            <div class="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
+                                <div class="p-5">
+                                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                                         <!-- Compagnie & Trajet -->
-                                        <div class="col-span-3">
-                                            <div class="flex items-center gap-3">
-                                                <div
-                                                    class="w-12 h-12 bg-gradient-to-r from-[#e94f1b] to-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                                    <i class="fas fa-bus text-white text-lg"></i>
-                                                </div>
-                                                <div class="flex-1 min-w-0">
-                                                    <div class="flex items-center gap-2 mb-1"
-                                                        style="display:flex; justify-content:center">
-                                                        <h3 class="font-bold text-gray-900 truncate">
-                                                            {{ $programme->compagnie->name ?? 'Compagnie' }}
-                                                        </h3>
-                                                        @if($programme->compagnie)
-                                                            <span
-                                                                class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-semibold">
-                                                                <i class="fas fa-check-circle text-xs"></i> Vérifié
-                                                            </span>
-                                                        @endif
-                                                    </div>
-                                                    <div class="flex items-center gap-2 text-sm text-gray-600"
-                                                        style="display:flex; justify-content:center">
-                                                        <div class="font-semibold text-gray-900">{{ $programme->point_depart }}
-                                                        </div>
-                                                        <i class="fas fa-arrow-right text-[#e94f1b] text-xs"></i>
-                                                        <div class="font-semibold text-gray-900">{{ $programme->point_arrive }}
-                                                        </div>
-                                                    </div>
+                                        <div class="flex items-center gap-4 flex-1">
+                                            <div class="w-14 h-14 bg-gradient-to-r from-[#e94f1b] to-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                                <i class="fas fa-bus text-white text-xl"></i>
+                                            </div>
+                                            <div>
+                                                <h3 class="font-bold text-gray-900 text-lg">
+                                                    {{ $route->compagnie->name ?? 'Compagnie' }}
+                                                </h3>
+                                                <div class="flex items-center gap-2 text-sm text-gray-600 mt-1">
+                                                    <span class="font-semibold">{{ $route->point_depart }}</span>
+                                                    <i class="fas fa-arrow-right text-[#e94f1b]"></i>
+                                                    <span class="font-semibold">{{ $route->point_arrive }}</span>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <!-- Date & Heure -->
-                                        <div class="col-span-2" style="display:flex; justify-content:center">
-                                            <div class="space-y-1">
-                                                <div class="flex items-center gap-2 text-sm">
-                                                    <i class="fas fa-clock text-green-500"></i>
-                                                    <span>{{ $programme->heure_depart }} → {{ $programme->heure_arrive }}</span>
-                                                </div>
+                                        <!-- Horaires disponibles -->
+                                        <div class="flex items-center gap-3">
+                                            <div class="text-center px-3 py-2 bg-green-50 rounded-lg">
+                                                <p class="text-xs text-green-600 uppercase font-semibold">Aller</p>
+                                                <p class="text-lg font-bold text-green-700">{{ $route->aller_horaires->count() }}</p>
+                                                <p class="text-xs text-green-600">horaire(s)</p>
                                             </div>
+                                            @if($route->has_retour)
+                                            <div class="text-center px-3 py-2 bg-blue-50 rounded-lg">
+                                                <p class="text-xs text-blue-600 uppercase font-semibold">Retour</p>
+                                                <p class="text-lg font-bold text-blue-700">{{ $route->retour_horaires->count() }}</p>
+                                                <p class="text-xs text-blue-600">horaire(s)</p>
+                                            </div>
+                                            @endif
                                         </div>
 
                                         <!-- Durée & Prix -->
-                                        <div class="col-span-2" style="display:flex; justify-content:center">
-                                            <div class="space-y-1">
-                                                <div class="flex items-center gap-2" style="display:flex; justify-content:center">
-                                                    <i class="fas fa-hourglass-half text-purple-500"></i>
-                                                    <span class="font-semibold">{{ $programme->durer_parcours }}</span>
-                                                </div>
-                                                <div class="flex items-center gap-2">
-                                                    <i class="fas fa-money-bill-wave text-red-500"></i>
-                                                    <span class="font-bold text-lg text-[#e94f1b]">
-                                                        {{ number_format($programme->montant_billet, 0, ',', ' ') }} FCFA
-                                                    </span>
-                                                </div>
+                                        <div class="text-center">
+                                            <div class="flex items-center gap-2 text-gray-600 mb-1">
+                                                <i class="fas fa-hourglass-half text-purple-500"></i>
+                                                <span class="font-semibold">{{ $route->durer_parcours }}</span>
                                             </div>
-                                        </div>
-
-                                        <!-- Statut -->
-                                        <div class="col-span-2" style="display:flex; justify-content:center">
-                                            <span
-                                                class="px-3 py-1 rounded-full text-sm font-semibold border {{ $statusColors[$statut] ?? 'bg-gray-100 text-gray-600 border-gray-200' }}">
-                                                {{ $statusTexts[$statut] ?? 'Statut inconnu' }}
-                                            </span>
+                                            <div class="text-xl font-bold text-[#e94f1b]">
+                                                {{ number_format($route->montant_billet, 0, ',', ' ') }} FCFA
+                                            </div>
                                         </div>
 
                                         <!-- Actions -->
-                                        <div class="col-span-3">
-                                            <div class="flex gap-2 justify-end">
-                                                <button
-                                                    onclick="showVehicleDetails({{ $programme->vehicule_id ?? 'null' }}, {{ $programme->id }})"
-                                                    class="bg-white text-[#e94f1b] border border-[#e94f1b] px-4 py-2 rounded-lg font-bold hover:bg-gray-50 transition-all duration-300 flex items-center gap-2">
-                                                    <i class="fas fa-info-circle"></i>
-                                                    <span>Détails véhicule</span>
-                                                </button>
-
-                                                @if ($statut != 'complet' && $statut != 'annule')
-                                                  <button 
-    onclick="initiateReservationProcess(
-        {{ $programme->id }}, 
-        '{{ request('date_depart') ? date('Y-m-d', strtotime(request('date_depart'))) : (isset($programme->date_depart) ? date('Y-m-d', strtotime($programme->date_depart)) : '') }}'
-    )"
-    class="bg-[#e94f1b] text-white px-4 py-2 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 flex items-center gap-2">
-    <i class="fas fa-ticket-alt"></i>
-    <span>Réserver</span>
-</button>
-                                                @else
-                                                    <button
-                                                        class="bg-gray-400 text-white px-4 py-2 rounded-lg font-bold cursor-not-allowed flex items-center gap-2"
-                                                        disabled>
-                                                        <i class="fas fa-times-circle"></i>
-                                                        <span>Complet</span>
-                                                    </button>
-                                                @endif
-                                            </div>
+                                        <div class="flex gap-2">
+                                            @php
+                                                $routeData = [
+                                                    'id' => $route->id,
+                                                    'compagnie' => $route->compagnie->name ?? 'Compagnie',
+                                                    'point_depart' => $route->point_depart,
+                                                    'point_arrive' => $route->point_arrive,
+                                                    'montant_billet' => $route->montant_billet,
+                                                    'durer_parcours' => $route->durer_parcours,
+                                                    'aller_horaires' => $route->aller_horaires->toArray(),
+                                                    'retour_horaires' => $route->retour_horaires->toArray(),
+                                                    'has_retour' => $route->has_retour,
+                                                ];
+                                            @endphp
+                                            <button type="button" 
+                                                data-route="{{ json_encode($routeData, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) }}"
+                                                data-date="{{ $searchParams['date_depart'] }}"
+                                                onclick="openDetailsModal(this)"
+                                                class="bg-blue-600 text-white px-5 py-3 rounded-lg font-bold hover:bg-blue-700 transition-all duration-300 flex items-center gap-2">
+                                                <i class="fas fa-info-circle"></i>
+                                                <span class="hidden sm:inline">Détails</span>
+                                            </button>
+                                            <button type="button" 
+                                                data-route="{{ json_encode($routeData, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) }}"
+                                                data-date="{{ $searchParams['date_depart'] }}"
+                                                onclick="handleReservationClick(this)"
+                                                class="bg-[#e94f1b] text-white px-5 py-3 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 flex items-center gap-2">
+                                                <i class="fas fa-ticket-alt"></i>
+                                                <span>Réserver</span>
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         @endforeach
                     </div>
-
-                    <!-- Pagination -->
-                    @if ($programmes->hasPages())
-                        <div class="mt-6">
-                            {{ $programmes->links() }}
-                        </div>
-                    @endif
                 </div>
-            @elseif(isset($programmes))
+            @elseif(isset($groupedRoutes))
                 <!-- Aucun résultat -->
                 <div class="bg-white rounded-xl shadow-lg p-8 text-center">
-                    <div
-                        class="w-20 h-20 bg-gradient-to-br from-orange-100 to-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div class="w-20 h-20 bg-gradient-to-br from-orange-100 to-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-route text-3xl text-[#e94f1b]"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-2">Aucun programme trouvé</h3>
@@ -513,20 +381,97 @@
             opacity: 0.5;
         }
     </style>
-
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.cinetpay.com/seamless/main.js"></script>
+     <script>
+        function initAutocompleteUser() {
+            const options = {
+                componentRestrictions: { country: "ci" }, // Restreindre à la Côte d'Ivoire
+                fields: ["formatted_address", "geometry", "name"],
+            };
+
+            const inputDepart = document.getElementById("point_depart");
+            const inputArrive = document.getElementById("point_arrive");
+
+            if (inputDepart) {
+                new google.maps.places.Autocomplete(inputDepart, options);
+            }
+
+            if (inputArrive) {
+                new google.maps.places.Autocomplete(inputArrive, options);
+            }
+        }
+    </script>
+       <script
+        src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google_maps.key') }}&libraries=places&loading=async&callback=initAutocompleteUser"
+        async defer></script>
     <script>
         // Variables globales
-         let currentProgramId = null;
-        let currentSelectedProgram = null; 
-        let selectedNumberOfPlaces = 0;
-        let selectedSeats = [];
-        let reservedSeats = [];
-        let vehicleDetails = null;
-        let currentRequestId = 0;
-        let userWantsAllerRetour = false;
+         var currentProgramId = null;
+        var currentSelectedProgram = null; 
+        var selectedNumberOfPlaces = 0;
+        var selectedSeats = [];
+        var reservedSeats = [];
+        var vehicleDetails = null;
+        var currentRequestId = 0;
+        var userWantsAllerRetour = false;
+        var selectedReturnDate = null; // Date de retour sélectionnée pour Aller-Retour
+        window.currentUser = @json(Auth::user()); // Injecter l'utilisateur connecté
+     // Définition explicite sur window pour s'assurer que le HTML peut voir la fonction
+        window.handleReservationClick = function(button) {
+            console.log("Bouton réserver cliqué"); // Debug
+            try {
+                const routeDataJson = button.getAttribute('data-route');
+                const dateDepart = button.getAttribute('data-date');
+                
+                if (!routeDataJson) {
+                    console.error("Pas de données data-route trouvées");
+                    return;
+                }
 
+                const routeData = JSON.parse(routeDataJson);
+                
+                console.log('Données route:', routeData);
+                
+                if (typeof window.showRouteSchedulesModal === 'function') {
+                    window.showRouteSchedulesModal(routeData, dateDepart);
+                } else {
+                    console.error('Erreur: showRouteSchedulesModal n\'est pas définie');
+                    // Fallback si la modale groupée ne marche pas
+                    initiateReservationProcess(routeData.id, dateDepart);
+                }
+            } catch (e) {
+                console.error('Erreur JS lors du clic:', e);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erreur',
+                    text: 'Une erreur technique est survenue. Consultez la console.'
+                });
+            }
+        };
+
+        // Fonction pour inverser le point de départ et d'arrivée
+        window.swapLocations = function() {
+            const departInput = document.getElementById('point_depart');
+            const arriveeInput = document.getElementById('point_arrive');
+            
+            if (departInput && arriveeInput) {
+                const temp = departInput.value;
+                departInput.value = arriveeInput.value;
+                arriveeInput.value = temp;
+                
+                // Animation visuelle
+                departInput.classList.add('ring-2', 'ring-green-400');
+                arriveeInput.classList.add('ring-2', 'ring-green-400');
+                setTimeout(() => {
+                    departInput.classList.remove('ring-2', 'ring-green-400');
+                    arriveeInput.classList.remove('ring-2', 'ring-green-400');
+                }, 300);
+            }
+        };
+
+        // Fonction handler pour le clic sur Réserver (gère le parsing JSON depuis data attributes)
+       
 
         // Configuration des types de rangées
         const typeRangeConfig = {
@@ -543,6 +488,417 @@
                 placesDroite: 4
             }
         };
+ // --- NOUVELLE FONCTION: Modal de sélection des horaires pour les routes groupées ---
+        window.showRouteSchedulesModal = function(routeData, dateDepart) {
+            console.log('Ouverture modal sélection horaires:', routeData);
+            
+            // Stocker les données courantes
+            window.currentRouteData = routeData;
+            window.currentDateDepart = dateDepart;
+
+            // 1. Si retour disponible, demander le type de voyage
+            if (routeData.has_retour) {
+                showRouteTripTypeModal(routeData, dateDepart);
+            } else {
+                // Sinon, afficher directement les horaires aller (en mode simple)
+                showRouteDepartureTimes(routeData, dateDepart, false);
+            }
+        };
+
+        // ÉTAPE 1: Choix Type de Voyage (Aller Simple / Aller-Retour)
+        function showRouteTripTypeModal(routeData, dateDepart) {
+            const dateFormatted = new Date(dateDepart).toLocaleDateString('fr-FR', { 
+                weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
+            });
+            
+            const priceSimple = Number(routeData.montant_billet);
+            const priceReturn = priceSimple * 2; // Estimation
+
+            Swal.fire({
+                title: '<i class="fas fa-bus text-[#e94f1b]"></i> Type de voyage',
+                html: `
+                    <div class="text-left space-y-4">
+                        <div class="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                            <p class="font-bold text-gray-800">${routeData.point_depart} → ${routeData.point_arrive}</p>
+                            <p class="text-sm text-gray-600"><i class="fas fa-calendar mr-2"></i>${dateFormatted}</p>
+                            <p class="text-sm font-bold text-gray-800 mt-1">${routeData.compagnie}</p>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="border-2 border-gray-200 rounded-lg p-4 text-center hover:border-[#e94f1b] hover:bg-orange-50 transition-all cursor-pointer" id="btnRouteSimple">
+                                <i class="fas fa-arrow-right text-3xl text-gray-500 mb-2"></i>
+                                <p class="font-bold">Aller Simple</p>
+                                <p class="text-lg font-bold text-[#e94f1b]">${priceSimple.toLocaleString('fr-FR')} FCFA</p>
+                            </div>
+                            <div class="border-2 border-[#e94f1b] bg-orange-50 rounded-lg p-4 text-center hover:bg-orange-100 transition-all cursor-pointer" id="btnRouteReturn">
+                                <i class="fas fa-exchange-alt text-3xl text-[#e94f1b] mb-2"></i>
+                                <p class="font-bold">Aller-Retour</p>
+                                <p class="text-lg font-bold text-[#e94f1b]">${priceReturn.toLocaleString('fr-FR')} FCFA</p>
+                                <p class="text-xs text-gray-500">Prix estimé</p>
+                            </div>
+                        </div>
+                    </div>
+                `,
+                showConfirmButton: false,
+                showCancelButton: true,
+                cancelButtonText: 'Annuler',
+                customClass: { popup: 'rounded-2xl' },
+                didOpen: () => {
+                    document.getElementById('btnRouteSimple').addEventListener('click', () => {
+                        window.userWantsAllerRetour = false;
+                        window.userChoseAllerRetour = false;
+                        Swal.close();
+                        showRouteDepartureTimes(routeData, dateDepart, false);
+                    });
+                    document.getElementById('btnRouteReturn').addEventListener('click', () => {
+                        window.userWantsAllerRetour = true;
+                        window.userChoseAllerRetour = true;
+                        Swal.close();
+                        showRouteDepartureTimes(routeData, dateDepart, true);
+                    });
+                }
+            });
+        }
+
+        // ÉTAPE 2: Choix de l'heure de départ
+        function showRouteDepartureTimes(routeData, dateDepart, isAllerRetour) {
+            const dateFormatted = new Date(dateDepart).toLocaleDateString('fr-FR', { 
+                weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
+            });
+
+            // Filtrer les horaires pour ne garder que ceux qui sont au moins 4h dans le futur
+            const now = new Date();
+            const validSchedules = (routeData.aller_horaires || []).filter(h => {
+                const departDateTime = new Date(dateDepart + ' ' + h.heure_depart);
+                const hoursDiff = (departDateTime - now) / (1000 * 60 * 60);
+                return hoursDiff >= 4;
+            });
+
+            // Construire la grille
+            let timeSlotsHtml = '';
+            if (validSchedules.length > 0) {
+                timeSlotsHtml = '<div class="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto p-2">';
+                validSchedules.forEach(h => {
+                    timeSlotsHtml += `
+                        <div class="route-time-btn border-2 border-green-200 bg-green-50 rounded-lg p-4 cursor-pointer hover:border-green-500 hover:bg-green-100 transition-all text-center"
+                             data-id="${h.id}" data-time="${h.heure_depart}">
+                            <p class="font-bold text-xl text-green-700">${h.heure_depart}</p>
+                            <p class="text-sm text-gray-500">→ ${h.heure_arrive}</p>
+                        </div>
+                    `;
+                });
+                timeSlotsHtml += '</div>';
+            } else {
+                timeSlotsHtml = '<p class="text-center text-red-500">Aucun horaire de départ disponible (minimum 4h d\'avance requis).</p>';
+            }
+
+            Swal.fire({
+                title: '<i class="fas fa-clock text-green-600"></i> Heure de départ',
+                html: `
+                    <div class="text-left space-y-4">
+                        <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                             <p class="font-bold text-gray-800">${routeData.point_depart} → ${routeData.point_arrive}</p>
+                             <p class="text-sm text-gray-600">${dateFormatted}</p>
+                             <p class="text-xs text-${isAllerRetour ? 'orange' : 'green'}-600 font-semibold mt-1">
+                                <i class="fas fa-${isAllerRetour ? 'exchange-alt' : 'arrow-right'} mr-1"></i>
+                                ${isAllerRetour ? 'Aller-Retour' : 'Aller Simple'}
+                             </p>
+                        </div>
+                        <p class="font-medium text-gray-700">→ Choisissez l'heure de départ :</p>
+                        ${timeSlotsHtml}
+                    </div>
+                `,
+                showCancelButton: true,
+                showConfirmButton: false,
+                cancelButtonText: 'Retour',
+                customClass: { popup: 'rounded-2xl' },
+                didOpen: () => {
+                    document.querySelectorAll('.route-time-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const progId = this.dataset.id;
+                            const time = this.dataset.time;
+                            
+                            window.selectedDepartureTime = time;
+                            window.selectedAllerProgramId = progId;
+                            
+                            Swal.close();
+                            
+                            if (isAllerRetour) {
+                                // Pour Aller-Retour, demander d'abord la date de retour
+                                showReturnDateSelection(routeData, dateDepart);
+                            } else {
+                                startReservationFromRoute(progId, dateDepart, false);
+                            }
+                        });
+                    });
+                }
+            }).then((result) => {
+                if (result.dismiss === Swal.DismissReason.cancel && routeData.has_retour) {
+                    showRouteTripTypeModal(routeData, dateDepart); // Retour au choix du type
+                }
+            });
+        }
+
+        // ÉTAPE 2.5: Sélection de la date de retour (pour Aller-Retour) avec calendrier mensuel
+        function showReturnDateSelection(routeData, dateDep) {
+            const minDate = new Date(dateDep); // Date de retour minimum = date de départ
+            minDate.setHours(0, 0, 0, 0);
+            
+            // Date max = date_fin du programme
+            const maxDate = routeData.date_fin ? new Date(routeData.date_fin) : new Date(minDate.getFullYear(), 11, 31);
+            
+            let currentMonth = minDate.getMonth();
+            let currentYear = minDate.getFullYear();
+            
+            function updateCalendar() {
+                const monthNames = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+                                   'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+                
+                const calendarHtml = generateMonthlyCalendar(currentMonth, currentYear, minDate, maxDate, 'purple');
+                
+                Swal.update({
+                    html: `
+                        <div class="text-left space-y-4">
+                            <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                <p class="font-bold text-gray-800">Retour : ${routeData.point_arrive} → ${routeData.point_depart}</p>
+                                <p class="text-sm text-gray-600">Sélectionnez la date de votre retour</p>
+                            </div>
+                            <div class="bg-green-50 p-2 rounded border border-green-200 text-sm mb-2">
+                                <span class="font-bold text-green-700">Départ :</span> ${new Date(dateDep).toLocaleDateString('fr-FR')} à ${window.selectedDepartureTime}
+                            </div>
+                            
+                            <!-- Navigation mois -->
+                            <div class="flex items-center justify-between bg-gray-50 p-2 rounded">
+                                <button id="prevMonthReturn" class="px-3 py-1 bg-white border rounded hover:bg-gray-100">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <span class="font-bold text-gray-800">${monthNames[currentMonth]} ${currentYear}</span>
+                                <button id="nextMonthReturn" class="px-3 py-1 bg-white border rounded hover:bg-gray-100">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Calendrier -->
+                            <div class="calendar-container">
+                                ${calendarHtml}
+                            </div>
+                        </div>
+                    `
+                });
+                
+                // Réattacher les événements
+                attachCalendarEvents();
+            }
+            
+            function attachCalendarEvents() {
+                // Navigation mois précédent
+                const prevBtn = document.getElementById('prevMonthReturn');
+                if (prevBtn) {
+                    prevBtn.addEventListener('click', () => {
+                        if (currentMonth === 0) {
+                            currentMonth = 11;
+                            currentYear--;
+                        } else {
+                            currentMonth--;
+                        }
+                        // Ne pas aller avant le mois de minDate
+                        const checkDate = new Date(currentYear, currentMonth, 1);
+                        if (checkDate >= new Date(minDate.getFullYear(), minDate.getMonth(), 1)) {
+                            updateCalendar();
+                        } else {
+                            currentMonth = minDate.getMonth();
+                            currentYear = minDate.getFullYear();
+                        }
+                    });
+                }
+                
+                // Navigation mois suivant
+                const nextBtn = document.getElementById('nextMonthReturn');
+                if (nextBtn) {
+                    nextBtn.addEventListener('click', () => {
+                        if (currentMonth === 11) {
+                            currentMonth = 0;
+                            currentYear++;
+                        } else {
+                            currentMonth++;
+                        }
+                        // Ne pas aller après le mois de maxDate
+                        const checkDate = new Date(currentYear, currentMonth, 1);
+                        if (checkDate <= new Date(maxDate.getFullYear(), maxDate.getMonth(), 1)) {
+                            updateCalendar();
+                        } else {
+                            currentMonth = maxDate.getMonth();
+                            currentYear = maxDate.getFullYear();
+                        }
+                    });
+                }
+                
+                // Sélection de date
+                const dayBtns = document.querySelectorAll('.calendar-day-btn');
+                dayBtns.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const selectedDate = this.dataset.date;
+                        selectedReturnDate = selectedDate;
+                        Swal.close();
+                        loadReturnSchedulesForDate(routeData, selectedDate);
+                    });
+                });
+            }
+            
+            // Ouvrir le modal initial
+            Swal.fire({
+                title: '<i class="fas fa-calendar-alt text-purple-600"></i> Date de retour',
+                html: '', // Sera rempli par updateCalendar()
+                showCancelButton: true,
+                showConfirmButton: false,
+                cancelButtonText: 'Retour',
+                customClass: { popup: 'rounded-2xl' },
+                width: '600px',
+                didOpen: () => {
+                    updateCalendar();
+                }
+            }).then((result) => {
+                if (result.dismiss === Swal.DismissReason.cancel) {
+                    showRouteDepartureTimes(routeData, dateDep, true); // Retour au choix de l'heure de départ
+                }
+            });
+        }
+
+        // Charger les horaires de retour pour une date spécifique
+        async function loadReturnSchedulesForDate(routeData, returnDate) {
+            Swal.fire({
+                title: 'Chargement des horaires...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            try {
+                const paramsRetour = new URLSearchParams({
+                    original_arrive: routeData.point_arrive,
+                    original_depart: routeData.point_depart,
+                    min_date: returnDate
+                });
+                const response = await fetch('{{ route("api.return-trips") }}?' + paramsRetour);
+                const data = await response.json();
+
+                Swal.close();
+
+                if (data.success && data.return_trips && data.return_trips.length > 0) {
+                    // Mettre à jour routeData avec les nouveaux horaires de retour
+                    const updatedRouteData = {
+                        ...routeData,
+                        retour_horaires: data.return_trips
+                    };
+                    showRouteReturnTimes(updatedRouteData, returnDate);
+                } else {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Aucun horaire disponible',
+                        text: 'Aucun horaire de retour n\'est disponible pour cette date. Veuillez choisir une autre date.',
+                        confirmButtonText: 'Choisir une autre date'
+                    }).then(() => {
+                        showReturnDateSelection(routeData, window.currentDateDepart);
+                    });
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                Swal.close();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erreur',
+                    text: 'Impossible de charger les horaires de retour.'
+                });
+            }
+        }
+
+        // ÉTAPE 3: Choix de l'heure de retour (si Aller-Retour)
+        function showRouteReturnTimes(routeData, dateDepart) {
+            // Filtrer les horaires de retour pour ne garder que ceux qui sont au moins 4h dans le futur
+            const now = new Date();
+            const validReturnSchedules = (routeData.retour_horaires || []).filter(h => {
+                const returnDateTime = new Date(dateDepart + ' ' + h.heure_depart);
+                const hoursDiff = (returnDateTime - now) / (1000 * 60 * 60);
+                return hoursDiff >= 4;
+            });
+
+            // Construire la grille retour
+            let timeSlotsHtml = '';
+            if (validReturnSchedules.length > 0) {
+                timeSlotsHtml = '<div class="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto p-2">';
+                validReturnSchedules.forEach(h => {
+                    timeSlotsHtml += `
+                        <div class="route-return-btn border-2 border-blue-200 bg-blue-50 rounded-lg p-4 cursor-pointer hover:border-blue-500 hover:bg-blue-100 transition-all text-center"
+                             data-id="${h.id}" data-time="${h.heure_depart}">
+                            <p class="font-bold text-xl text-blue-700">${h.heure_depart}</p>
+                            <p class="text-sm text-gray-500">→ ${h.heure_arrive}</p>
+                        </div>
+                    `;
+                });
+                timeSlotsHtml += '</div>';
+            } else {
+                timeSlotsHtml = '<div class="text-center text-orange-500 mb-4"><p>Aucun horaire retour disponible (minimum 4h d\'avance requis).</p></div>';
+            }
+
+            Swal.fire({
+                title: '<i class="fas fa-undo text-blue-600"></i> Heure de retour',
+                html: `
+                    <div class="text-left space-y-4">
+                        <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                             <p class="font-bold text-gray-800">Retour : ${routeData.point_arrive} → ${routeData.point_depart}</p>
+                             <p class="text-sm text-gray-600">Date : ${new Date(dateDepart).toLocaleDateString('fr-FR')}</p>
+                        </div>
+                         <div class="bg-green-50 p-2 rounded border border-green-200 text-sm mb-2">
+                            <span class="font-bold text-green-700">Départ choisi :</span> ${window.selectedDepartureTime}
+                        </div>
+                        <p class="font-medium text-gray-700">→ Choisissez l'heure de retour :</p>
+                        ${timeSlotsHtml}
+                    </div>
+                `,
+                showCancelButton: true,
+                showConfirmButton: false,
+                cancelButtonText: 'Retour',
+                customClass: { popup: 'rounded-2xl' },
+                didOpen: () => {
+                    document.querySelectorAll('.route-return-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const progId = this.dataset.id;
+                            const time = this.dataset.time;
+                            
+                            window.selectedReturnTime = time;
+                            window.selectedRetourProgramId = progId;
+                            
+                            // Trouver les détails du programme retour dans routeData si nécessaire
+                            const returnProg = routeData.retour_horaires.find(p => p.id == progId);
+                            window.selectedReturnProgram = returnProg; 
+
+                            Swal.close();
+                            startReservationFromRoute(window.selectedAllerProgramId, dateDepart, true);
+                        });
+                    });
+                }
+            }).then((result) => {
+                if (result.dismiss === Swal.DismissReason.cancel) {
+                    showRouteDepartureTimes(routeData, dateDepart, true); // Retour au choix départ
+                }
+            });
+        }
+
+        // Helper pour lancer la réservation finale
+        function startReservationFromRoute(programId, dateVoyage, isAllerRetour) {
+            window.userWantsAllerRetour = isAllerRetour;
+            window.userChoseAllerRetour = isAllerRetour;
+            
+            // CORRECTION: Si on vient du flux "Grouped Routes", on s'assure d'utiliser la date de départ initiale
+            if (window.currentDateDepart && isAllerRetour) {
+                 console.log('DEBUG: Using Date Depart from global scope:', window.currentDateDepart);
+                 dateVoyage = window.currentDateDepart;
+            }
+
+            // Ouvrir directement le modal de sélection des places (Step 1)
+            openReservationModal(programId, dateVoyage);
+        }
+        
+
+        
  // --- NOUVELLE FONCTION PRINCIPALE D'INITIATION ---
         // C'est elle qui est appelée par le bouton "Réserver"
      async function initiateReservationProcess(programId, searchDateFormatted, searchedTime = null) {
@@ -550,12 +906,15 @@
     
     // 1. Réinitialisation des variables globales
     userWantsAllerRetour = false;
+    window.userChoseAllerRetour = false;
     window.selectedReturnProgram = null;
     window.outboundProgram = null;
     window.outboundDate = searchDateFormatted;
+    window.selectedReturnDate = null; 
     window.selectedDepartureTime = null;
     window.selectedReturnTime = null;
-    currentSelectedProgram = null; // Important pour éviter les erreurs de paiement
+    currentSelectedProgram = null;
+    selectedReturnDate = null; // Réinitialiser la date de retour
     
     // Fermer les autres modals
     closeProgramsListModal();
@@ -574,33 +933,166 @@
         
         const program = data.programme;
         window.outboundProgram = program;
-        currentSelectedProgram = program; // CRUCIAL : Définit le programme pour le calcul du paiement plus tard
+        currentSelectedProgram = program;
         
         Swal.close();
 
-        // LOGIQUE DE DÉTERMINATION DE L'HEURE
-        if (searchedTime && searchedTime.trim() !== '') {
-            // Cas 1 : L'utilisateur a filtré par heure dans la recherche
-            window.selectedDepartureTime = searchedTime.substring(0, 5);
-            console.log('Heure issue de la recherche:', window.selectedDepartureTime);
-            showReturnTripOptionModal(program, searchDateFormatted);
-        } 
-        else if (program.heure_depart && program.heure_depart !== '00:00') {
-            // Cas 2 : C'est un horaire fixe (ex: 08:00) du programme
-            window.selectedDepartureTime = program.heure_depart.substring(0, 5);
-            console.log('Horaire fixe du programme détecté:', window.selectedDepartureTime);
-            showReturnTripOptionModal(program, searchDateFormatted);
-        } 
-        else {
-            // Cas 3 : C'est un service continu (24/7) ou pas d'heure définie => On demande
-            console.log('Service continu, demande heure...');
-            showTimeSelectionModal(program, searchDateFormatted);
-        }
+        // NOUVEAU FLUX: D'abord demander le type de voyage (image 2)
+        showTripTypeModal(program, searchDateFormatted);
 
     } catch (error) {
         console.error(error);
         Swal.close();
         Swal.fire({ icon: 'error', title: 'Erreur', text: 'Une erreur est survenue.' });
+    }
+}
+
+// === NOUVEAU: Popup Type de voyage (style image 2) ===
+async function showTripTypeModal(program, departureDate) {
+    const dateFormatted = new Date(departureDate).toLocaleDateString('fr-FR', { 
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
+    });
+    
+    const priceSimple = Number(program.montant_billet);
+    const priceReturn = priceSimple * 2;
+    
+    Swal.fire({
+        title: '<i class="fas fa-bus text-[#e94f1b]"></i> Type de voyage',
+        html: `
+            <div class="text-left space-y-4">
+                <div class="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                    <p class="font-bold text-gray-800">${program.point_depart} → ${program.point_arrive}</p>
+                    <p class="text-sm text-gray-600"><i class="fas fa-calendar mr-2"></i>${dateFormatted}</p>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="border-2 border-gray-200 rounded-lg p-4 text-center hover:border-[#e94f1b] hover:bg-orange-50 transition-all cursor-pointer" id="choiceSimple">
+                        <i class="fas fa-arrow-right text-3xl text-gray-500 mb-2"></i>
+                        <p class="font-bold">Aller Simple</p>
+                        <p class="text-lg font-bold text-[#e94f1b]">${priceSimple.toLocaleString('fr-FR')} FCFA</p>
+                    </div>
+                    <div class="border-2 border-[#e94f1b] bg-orange-50 rounded-lg p-4 text-center hover:bg-orange-100 transition-all cursor-pointer" id="choiceReturn">
+                        <i class="fas fa-exchange-alt text-3xl text-[#e94f1b] mb-2"></i>
+                        <p class="font-bold">Aller-Retour</p>
+                        <p class="text-lg font-bold text-[#e94f1b]">${priceReturn.toLocaleString('fr-FR')} FCFA</p>
+                        <p class="text-xs text-gray-500">Prix estimé</p>
+                    </div>
+                </div>
+            </div>
+        `,
+        showConfirmButton: false,
+        showCancelButton: true,
+        cancelButtonText: 'Annuler',
+        customClass: { popup: 'rounded-2xl' },
+        didOpen: () => {
+            document.getElementById('choiceSimple').addEventListener('click', () => {
+                userWantsAllerRetour = false;
+                window.userChoseAllerRetour = false;
+                Swal.close();
+                // Aller Simple: On demande l'heure de départ
+                showDepartureSchedulesModal(program, departureDate, false);
+            });
+            document.getElementById('choiceReturn').addEventListener('click', () => {
+                userWantsAllerRetour = true;
+                window.userChoseAllerRetour = true;
+                Swal.close();
+                // Aller-Retour: On demande l'heure de départ, puis le retour
+                showDepartureSchedulesModal(program, departureDate, true);
+            });
+        }
+    });
+}
+
+// === NOUVEAU: Popup sélection heure de départ (depuis BDD) ===
+async function showDepartureSchedulesModal(program, departureDate, isAllerRetour) {
+    const dateFormatted = new Date(departureDate).toLocaleDateString('fr-FR', { 
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
+    });
+    
+    Swal.fire({
+        title: 'Chargement des horaires...',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+    });
+    
+    try {
+        // Charger les horaires de départ depuis la BDD
+        const params = new URLSearchParams({
+            point_depart: program.point_depart,
+            point_arrive: program.point_arrive,
+            date: departureDate
+        });
+        const response = await fetch('{{ route("api.route-schedules") }}?' + params);
+        const data = await response.json();
+        
+        Swal.close();
+        
+        if (!data.success || data.schedules.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Aucun horaire disponible',
+                text: 'Aucun horaire n\'est disponible pour cette date.',
+                confirmButtonColor: '#e94f1b'
+            });
+            return;
+        }
+        
+        // Construire la grille des horaires
+        let timeSlotsHtml = '<div class="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto p-2">';
+        data.schedules.forEach(sched => {
+            timeSlotsHtml += `
+                <div class="departure-schedule-btn border-2 border-gray-200 rounded-lg p-4 cursor-pointer hover:border-[#e94f1b] hover:bg-orange-50 transition-all text-center" 
+                     data-schedule-id="${sched.id}" data-time="${sched.heure_depart}" data-arrival="${sched.heure_arrive}">
+                    <p class="font-bold text-xl text-[#e94f1b]">${sched.heure_depart}</p>
+                    <p class="text-sm text-gray-500">→ ${sched.heure_arrive}</p>
+                </div>
+            `;
+        });
+        timeSlotsHtml += '</div>';
+        
+        Swal.fire({
+            title: '<i class="fas fa-clock text-[#e94f1b]"></i> Heure de départ',
+            html: `
+                <div class="text-left space-y-4">
+                    <div class="bg-blue-50 p-3 rounded-lg">
+                        <p class="font-bold text-gray-800">${program.point_depart} → ${program.point_arrive}</p>
+                        <p class="text-sm text-gray-600"><i class="fas fa-calendar mr-2"></i>${dateFormatted}</p>
+                        <p class="text-xs text-${isAllerRetour ? 'orange' : 'green'}-600 font-semibold mt-1">
+                            <i class="fas fa-${isAllerRetour ? 'exchange-alt' : 'arrow-right'} mr-1"></i>
+                            ${isAllerRetour ? 'Aller-Retour' : 'Aller Simple'}
+                        </p>
+                    </div>
+                    <p class="font-medium text-gray-700">→ Choisissez l'heure de départ :</p>
+                    ${timeSlotsHtml}
+                </div>
+            `,
+            showCancelButton: true,
+            showConfirmButton: false,
+            cancelButtonText: 'Annuler',
+            customClass: { popup: 'rounded-2xl' },
+            didOpen: () => {
+                document.querySelectorAll('.departure-schedule-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        window.selectedDepartureTime = this.dataset.time;
+                        window.selectedDepartureProgramId = this.dataset.scheduleId;
+                        currentProgramId = parseInt(this.dataset.scheduleId);
+                        Swal.close();
+                        
+                        if (isAllerRetour) {
+                            // Aller-Retour: maintenant on demande l'heure de retour
+                            showReturnTripSelector(program, departureDate);
+                        } else {
+                            // Aller Simple: on passe directement à la sélection des places
+                            openReservationModal(currentProgramId, departureDate);
+                        }
+                    });
+                });
+            }
+        });
+        
+    } catch (error) {
+        console.error('Erreur chargement horaires:', error);
+        Swal.close();
+        Swal.fire({ icon: 'error', title: 'Erreur', text: 'Impossible de charger les horaires.' });
     }
 }
         // Génère les créneaux horaires disponibles (toutes les 30 min)
@@ -775,10 +1267,37 @@
                         Swal.close();
                         openReservationModal(program.id, departureDate);
                     });
-                    document.getElementById('choiceReturn').addEventListener('click', () => {
+                    document.getElementById('choiceReturn').addEventListener('click', async () => {
                         userWantsAllerRetour = true;
+                        window.userChoseAllerRetour = true;
                         Swal.close();
-                        showReturnTimeSelectionModal(program, departureDate);
+                        console.log('DEBUG: choiceReturn clicked. Original Departure:', departureDate);
+                        
+                        // Demander la date de retour
+                        const { value: returnDate } = await Swal.fire({
+                            title: '<i class="fas fa-calendar-alt text-[#e94f1b]"></i> Date de retour',
+                            html: '<p class="text-sm text-gray-600 mb-4">Veuillez choisir la date de votre voyage retour</p>',
+                            input: 'date',
+                            inputLabel: '',
+                            inputValue: departureDate, // Par défaut la date aller
+                            inputAttributes: {
+                                min: departureDate // Impossible de revenir avant l'aller
+                            },
+                            confirmButtonColor: '#e94f1b',
+                            confirmButtonText: 'Rechercher',
+                            showCancelButton: true,
+                            cancelButtonText: 'Annuler',
+                            customClass: {
+                                input: 'text-center text-lg border-2 border-gray-300 rounded-lg focus:border-[#e94f1b] focus:ring-0'
+                            }
+                        });
+
+                        console.log('DEBUG: User selected return date:', returnDate);
+
+                        if (returnDate) {
+                            // Utiliser showReturnTripSelector avec la date choisie
+                            showReturnTripSelector(program, departureDate, returnDate);
+                        }
                     });
                 }
             });
@@ -934,9 +1453,11 @@
         }
 
         // Afficher le sélecteur de voyage retour
-        async function showReturnTripSelector(outboundProgram, outboundDate) {
+        async function showReturnTripSelector(outboundProgram, outboundDate, returnDate) {
+            console.log('DEBUG: showReturnTripSelector called', { outboundDate, returnDate });
             Swal.fire({
                 title: 'Recherche des retours...',
+                text: `Pour le ${new Date(returnDate).toLocaleDateString('fr-FR')}`,
                 allowOutsideClick: false,
                 didOpen: () => { Swal.showLoading(); }
             });
@@ -945,7 +1466,7 @@
                 const params = new URLSearchParams({
                     original_depart: outboundProgram.point_depart,
                     original_arrive: outboundProgram.point_arrive,
-                    min_date: outboundDate
+                    min_date: returnDate // Utilise la date choisie par l'utilisateur
                 });
                 
                 const response = await fetch('{{ route("api.return-trips") }}?' + params);
@@ -956,19 +1477,26 @@
                     Swal.fire({
                         icon: 'info',
                         title: 'Aucun retour disponible',
-                        html: `<p>Aucun voyage retour <strong>${outboundProgram.point_arrive} → ${outboundProgram.point_depart}</strong> n'est disponible après le ${new Date(outboundDate).toLocaleDateString('fr-FR')}.</p>
-                               <p class="text-sm text-gray-500 mt-2">Vous pouvez continuer avec un aller simple.</p>`,
+                        html: `<p>Aucun voyage retour <strong>${outboundProgram.point_arrive} → ${outboundProgram.point_depart}</strong> n'est disponible le/après le ${new Date(returnDate).toLocaleDateString('fr-FR')}.</p>
+                               <p class="text-sm text-gray-500 mt-2">Essayez une autre date ou continuez en aller simple.</p>`,
                         confirmButtonText: 'Continuer en aller simple',
-                        confirmButtonColor: '#e94f1b'
-                    }).then(() => {
-                        userWantsAllerRetour = false;
-                        openReservationModal(outboundProgram.id, outboundDate);
+                        confirmButtonColor: '#e94f1b',
+                        showCancelButton: true,
+                        cancelButtonText: 'Changer date retour'
+                    }).then((result) => {
+                         if (result.isConfirmed) {
+                             userWantsAllerRetour = false;
+                             openReservationModal(outboundProgram.id, outboundDate);
+                         } else if (result.dismiss === Swal.DismissReason.cancel) {
+                             // Ré-ouvrir le choix de date
+                             document.getElementById('choiceReturn').click(); 
+                         }
                     });
                     return;
                 }
 
                 // Afficher les options de retour
-                displayReturnTripOptions(outboundProgram, outboundDate, data.return_trips);
+                displayReturnTripOptions(outboundProgram, outboundDate, data.return_trips, returnDate);
 
             } catch (error) {
                 console.error('Erreur:', error);
@@ -978,45 +1506,53 @@
         }
 
         // Afficher les options de voyage retour dans un modal
-        function displayReturnTripOptions(outboundProgram, outboundDate, returnTrips) {
-            // Grouper par date
-            const grouped = {};
-            returnTrips.forEach(trip => {
-                const date = trip.date_depart;
-                if (!grouped[date]) grouped[date] = [];
-                grouped[date].push(trip);
+        function displayReturnTripOptions(outboundProgram, outboundDate, returnTrips, requestedReturnDate) {
+            console.log('DEBUG: displayReturnTripOptions called', { outboundDate, requestedReturnDate });
+            
+            // Capture explicite de la date aller
+            const savedOutboundDate = outboundDate;
+
+            // Pour le même jour, on affiche simplement les horaires disponibles
+            const dateFormatted = new Date(outboundDate).toLocaleDateString('fr-FR', { 
+                weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
             });
+            const returnDateFormatted = new Date(requestedReturnDate).toLocaleDateString('fr-FR', { 
+                weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
+            });
+
+            let timeSlotsHtml = '<div class="grid grid-cols-3 gap-3 max-h-60 overflow-y-auto p-2">';
+            returnTrips.forEach(trip => {
+                // Utiliser la date du trip si disponible (via backend display_date), sinon la date aller
+                const tripDate = trip.display_date || outboundDate;
+                
+                timeSlotsHtml += `
+                    <div class="return-trip-option border-2 border-gray-200 rounded-lg p-4 cursor-pointer hover:border-[#e94f1b] hover:bg-orange-50 transition-all text-center" 
+                         data-trip-id="${trip.id}" data-trip-date="${tripDate}">
+                        <p class="font-bold text-xl text-gray-800">${trip.heure_depart}</p>
+                        <p class="text-sm text-gray-500">→ ${trip.heure_arrive}</p>
+                        <p class="text-sm font-bold text-[#e94f1b] mt-1">${Number(trip.montant_billet).toLocaleString('fr-FR')} FCFA</p>
+                         ${trip.display_date && trip.display_date !== outboundDate ? `<p class="text-xs text-blue-600 mt-1 font-bold">${new Date(tripDate).toLocaleDateString('fr-FR', {day: 'numeric', month: 'short'})}</p>` : ''}
+                    </div>
+                `;
+            });
+            timeSlotsHtml += '</div>';
 
             let html = `
                 <div class="text-left max-h-[60vh] overflow-y-auto">
                     <div class="bg-green-50 p-3 rounded-lg mb-4 text-sm">
                         <p class="font-bold text-green-800"><i class="fas fa-check-circle mr-2"></i>Aller confirmé</p>
-                        <p class="text-green-700">${outboundProgram.point_depart} → ${outboundProgram.point_arrive} le ${new Date(outboundDate).toLocaleDateString('fr-FR')} à ${outboundProgram.heure_depart}</p>
+                        <p class="text-green-700">${outboundProgram.point_depart} → ${outboundProgram.point_arrive}</p>
+                        <p class="text-green-600 text-xs">${dateFormatted} • Départ: ${window.selectedDepartureTime || outboundProgram.heure_depart}</p>
                     </div>
-                    <p class="font-bold text-gray-800 mb-3"><i class="fas fa-undo mr-2 text-blue-500"></i>Choisissez votre retour :</p>
+                    <div class="bg-blue-50 p-3 rounded-lg mb-4">
+                        <p class="font-bold text-blue-800"><i class="fas fa-undo mr-2"></i>Retour: ${outboundProgram.point_arrive} → ${outboundProgram.point_depart}</p>
+                        <p class="text-blue-600 text-sm font-semibold">${returnDateFormatted}</p>
+                         <p class="text-blue-600 text-xs">Options disponibles</p>
+                    </div>
+                    <p class="font-medium text-gray-700 mb-3">Sélectionnez votre heure de retour :</p>
+                    ${timeSlotsHtml}
+                </div>
             `;
-
-            Object.keys(grouped).sort().forEach(date => {
-                const dateFormatted = new Date(date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
-                html += `<div class="mb-4"><p class="font-medium text-gray-600 text-sm mb-2">${dateFormatted}</p>`;
-                
-                grouped[date].forEach(trip => {
-                    html += `
-                        <div class="return-trip-option border rounded-lg p-3 mb-2 cursor-pointer hover:border-[#e94f1b] hover:bg-orange-50 transition-all" 
-                             data-trip-id="${trip.id}" data-trip-date="${date}">
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <span class="font-bold text-lg">${trip.heure_depart}</span>
-                                    <span class="text-gray-400 mx-2">→</span>
-                                    <span class="text-gray-600">${trip.heure_arrive}</span>
-                                </div>
-                                <span class="font-bold text-[#e94f1b]">${Number(trip.montant_billet).toLocaleString('fr-FR')} FCFA</span>
-                            </div>
-                        </div>
-                    `;
-                });
-                html += `</div>`;
-            });
             html += `</div>`;
 
             Swal.fire({
@@ -1058,7 +1594,14 @@
                                 confirmButtonColor: '#e94f1b'
                             }).then(() => {
                                 // Ouvrir le modal de réservation pour l'aller
-                                openReservationModal(outboundProgram.id, outboundDate);
+                                console.log('DEBUG: Opening final reservation modal with OutboundDate:', savedOutboundDate);
+                                
+                                // FORCE RESTORE: On s'assure que globalement la date aller est correcte
+                                window.outboundDate = savedOutboundDate;
+                                window.currentReservationDate = savedOutboundDate; // Double sécurité
+                                console.log('DEBUG: Forced window.outboundDate restored to:', window.outboundDate);
+
+                                openReservationModal(outboundProgram.id, savedOutboundDate);
                             });
                         });
                     });
@@ -1136,7 +1679,7 @@
                                 <span class="bg-green-100 text-green-800 px-2 py-1 rounded"><i class="fas fa-clock"></i> Départ: ${window.selectedDepartureTime || program.heure_depart}</span>
                                 <span><i class="fas fa-money-bill-wave"></i> ${prixAffiche.toLocaleString('fr-FR')} FCFA</span>
                                 ${allerRetourBadge}
-                                ${window.selectedReturnTime ? `<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm"><i class="fas fa-undo"></i> Retour: ${window.selectedReturnTime}</span>` : ''}
+                                ${window.selectedReturnTime ? `<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm"><i class="fas fa-undo"></i> Retour: ${selectedReturnDate ? new Date(selectedReturnDate).toLocaleDateString('fr-FR') + ' à ' : ''}${window.selectedReturnTime}</span>` : ''}
                             </div>
                         `;
 
@@ -1358,8 +1901,8 @@ function onAllerRetourChoiceChange() {
         // ============================================
         // FONCTION 1: Afficher les détails du véhicule
         // ============================================
-        async function showVehicleDetails(vehicleId, programId) {
-            console.log(`[DETAILS] Demande détails véhicule ${vehicleId} pour programme ${programId}`);
+        async function showVehicleDetails(vehicleId, programId, dateVoyageInput = null) {
+            console.log(`[DETAILS] Demande détails véhicule ${vehicleId} pour programme ${programId} (Date: ${dateVoyageInput})`);
             if (!vehicleId) {
                 Swal.fire({
                     icon: 'info',
@@ -1369,9 +1912,10 @@ function onAllerRetourChoiceChange() {
                 });
                 return;
             }
-            // Récupérer la date depuis le formulaire de recherche ou l'URL
-            let dateVoyage = null;
-            const urlParams = new URLSearchParams(window.location.search);
+            // Récupérer la date : soit passée en paramètre, soit depuis l'URL/Input
+            let dateVoyage = dateVoyageInput;
+            if (!dateVoyage) {
+                const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.has('date_depart')) {
                 dateVoyage = urlParams.get('date_depart');
             } else {
@@ -1382,6 +1926,7 @@ function onAllerRetourChoiceChange() {
                     dateVoyage = new Date().toISOString().split('T')[0];
                 }
             }
+        }
             console.log(`[DETAILS] Date utilisée: ${dateVoyage}`);
             Swal.fire({
                 title: 'Chargement...',
@@ -2029,6 +2574,19 @@ function onAllerRetourChoiceChange() {
             const sortedSeats = [...selectedSeats].sort((a, b) => a - b);
 
             sortedSeats.forEach((seat, index) => {
+                // AUTOFILL: Pré-remplir les infos du premier passager avec l'utilisateur connecté
+                let defaultNom = '';
+                let defaultPrenom = '';
+                let defaultTel = '';
+                let defaultEmail = '';
+
+                if (index === 0 && window.currentUser) {
+                    defaultNom = window.currentUser.name || '';
+                    defaultPrenom = window.currentUser.prenom || '';
+                    defaultTel = window.currentUser.contact || '';
+                    defaultEmail = window.currentUser.email || '';
+                }
+
                 const passengerHtml = `
                                                                                         <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
                                                                                             <h4 class="font-bold text-[#e94f1b] mb-4 flex items-center gap-2">
@@ -2038,24 +2596,28 @@ function onAllerRetourChoiceChange() {
                                                                                                 <div>
                                                                                                     <label class="block text-sm font-medium text-gray-700 mb-1">Nom</label>
                                                                                                     <input type="text" name="passenger_${seat}_nom" required
+                                                                                                        value="${defaultNom}"
                                                                                                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all"
                                                                                                         placeholder="Nom du passager">
                                                                                                 </div>
                                                                                                 <div>
                                                                                                     <label class="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
                                                                                                     <input type="text" name="passenger_${seat}_prenom" required
+                                                                                                        value="${defaultPrenom}"
                                                                                                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all"
                                                                                                         placeholder="Prénom du passager">
                                                                                                 </div>
                                                                                                 <div>
                                                                                                     <label class="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
                                                                                                     <input type="tel" name="passenger_${seat}_telephone" required
+                                                                                                        value="${defaultTel}"
                                                                                                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all"
                                                                                                         placeholder="Ex: 0700000000">
                                                                                                 </div>
                                                                                                 <div>
                                                                                                     <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
                                                                                                     <input type="email" name="passenger_${seat}_email" required
+                                                                                                        value="${defaultEmail}"
                                                                                                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all"
                                                                                                         placeholder="email@exemple.com">
                                                                                                 </div>
@@ -2079,11 +2641,12 @@ function onAllerRetourChoiceChange() {
         // ============================================
         // FONCTION 11: Confirmer la réservation
         // ============================================
-        async function confirmReservation() {
+    async function confirmReservation() {
             const passengers = [];
             const sortedSeats = [...selectedSeats].sort((a, b) => a - b);
             let isValid = true;
 
+            // Validation des champs passagers
             sortedSeats.forEach(seat => {
                 const nomEl = document.querySelector(`[name="passenger_${seat}_nom"]`);
                 const prenomEl = document.querySelector(`[name="passenger_${seat}_prenom"]`);
@@ -2103,165 +2666,133 @@ function onAllerRetourChoiceChange() {
 
                 passengers.push({
                     seat_number: seat,
-                    nom,
-                    prenom,
-                    telephone,
-                    email,
-                    urgence
+                    nom, prenom, telephone, email, urgence
                 });
             });
 
             if (!isValid) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Informations manquantes',
-                    text: 'Veuillez remplir toutes les informations pour chaque passager.',
-                    confirmButtonColor: '#e94f1b',
-                });
+                Swal.fire({ icon: 'warning', title: 'Informations manquantes', text: 'Veuillez remplir toutes les informations pour chaque passager.', confirmButtonColor: '#e94f1b' });
                 return;
             }
 
-            // Récupérer la date du voyage
-            let dateVoyage = window.currentReservationDate;
+            // --- CORRECTION DATE ICI ---
+            // 1. Définition de la variable
+            let dateVoyageFinal = window.outboundDate || window.currentReservationDate;
 
-            if (!dateVoyage) {
-                const programInfo = document.getElementById('reservationProgramInfo');
-                if (programInfo) {
-                    const text = programInfo.textContent || programInfo.innerText;
-                    const dateMatch = text.match(/\d{2}\/\d{2}\/\d{4}/);
-                    if (dateMatch) {
-                        const [day, month, year] = dateMatch[0].split('/');
-                        dateVoyage = `${year}-${month}-${day}`;
-                    }
+            // 2. Tentative de récupération depuis le HTML si vide
+            if (!dateVoyageFinal && document.getElementById('reservationProgramInfo')) {
+                const text = document.getElementById('reservationProgramInfo').innerText;
+                const dateMatch = text.match(/\d{2}\/\d{2}\/\d{4}/);
+                if (dateMatch) {
+                    const [day, month, year] = dateMatch[0].split('/');
+                    dateVoyageFinal = `${year}-${month}-${day}`;
                 }
             }
 
-            if (!dateVoyage) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Erreur',
-                    text: 'Impossible de déterminer la date du voyage.',
-                    confirmButtonColor: '#e94f1b',
-                });
+            console.log("Date finale pour réservation:", dateVoyageFinal);
+            console.log("DEBUG VARIABLES:", {
+                'window.outboundDate': window.outboundDate,
+                'window.currentReservationDate': window.currentReservationDate,
+                'determinedDate': dateVoyageFinal
+            });
+
+            if (!dateVoyageFinal) {
+                Swal.fire({ icon: 'error', title: 'Erreur', text: 'Impossible de déterminer la date du voyage.', confirmButtonColor: '#e94f1b' });
                 return;
             }
+
             Swal.fire({
                 title: 'Confirmer la réservation',
                 html: `
                     <div class="text-left">
                         <p class="mb-3">Voulez-vous confirmer la réservation de <strong>${selectedNumberOfPlaces} place(s)</strong> ?</p>
                         <div class="bg-gray-50 p-4 rounded-lg mb-4">
-                            <p class="font-semibold mb-2">Date du voyage :</p>
-                            <p class="text-lg text-blue-600 font-bold">${dateVoyage}</p>
-                            <p class="font-semibold mb-2 mt-4">Places :</p>
-                            <p class="text-lg text-[#e94f1b] font-bold">${sortedSeats.join(', ')}</p>
+                            <!-- CORRECTION ICI : utilisation de dateVoyageFinal au lieu de dateVoyage -->
+                            <p class="font-semibold mb-2">Date : <span class="text-blue-600">${new Date(dateVoyageFinal).toLocaleDateString('fr-FR')}</span></p>
+                            <p class="font-semibold mb-2">Places : <span class="text-[#e94f1b]">${sortedSeats.join(', ')}</span></p>
                         </div>
-                        <p class="text-sm text-gray-600">Un ticket sera envoyé à l'email de chaque passager.</p>
                     </div>
                 `,
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#e94f1b',
-                cancelButtonColor: '#6b7280',
                 confirmButtonText: 'Oui, continuer',
-                cancelButtonText: 'Non, annuler',
-                reverseButtons: true
+                cancelButtonText: 'Non'
             }).then(async (result) => {
                 if (result.isConfirmed) {
-                     // SÉCURITÉ : Si currentSelectedProgram est perdu, on utilise window.currentProgramPrice stocké précédemment
-    let prixUnitaire = 0;
-    if (currentSelectedProgram && currentSelectedProgram.montant_billet) {
-        prixUnitaire = parseInt(currentSelectedProgram.montant_billet);
-    } else if (window.currentProgramPrice) {
-        // Fallback si le programme a été perdu en mémoire mais que le prix a été affiché
-        prixUnitaire = window.currentProgramPrice; 
-        // Si c'était déjà affiché en aller-retour (doublé), on divise par 2 pour le calcul propre ci-dessous
-        if(window.userChoseAllerRetour) {
-             prixUnitaire = prixUnitaire / 2;
-        }
-    } else {
-        Swal.fire({icon: 'error', title: 'Erreur', text: 'Impossible de récupérer le prix du billet. Veuillez rafraîchir.'});
-        return;
-    }
-                    // --- Logique de choix du paiement ---
-                    const prixUnitaire = parseInt(currentSelectedProgram.montant_billet);
+                    
+                    let prixUnitaireCalc = 0;
+
+                    if (currentSelectedProgram && currentSelectedProgram.montant_billet) {
+                        prixUnitaireCalc = parseInt(currentSelectedProgram.montant_billet);
+                    } 
+                    else if (window.currentProgramPrice) {
+                        prixUnitaireCalc = window.currentProgramPrice;
+                        if(window.userChoseAllerRetour) {
+                             prixUnitaireCalc = prixUnitaireCalc / 2;
+                        }
+                    } else {
+                        Swal.fire({icon: 'error', title: 'Erreur', text: 'Erreur technique: Prix introuvable. Veuillez rafraîchir la page.'});
+                        return;
+                    }
+
                     const multiplier = window.userChoseAllerRetour ? 2 : 1;
-                    const montantTotal = prixUnitaire * selectedNumberOfPlaces * multiplier;
-                    const userSolde = {{ auth()->check() ? (auth()->user()->solde ?? 0) : 0 }}; // Injection sécurisée
+                    const montantTotal = prixUnitaireCalc * selectedNumberOfPlaces * multiplier;
+                    const userSolde = {{ auth()->check() ? (auth()->user()->solde ?? 0) : 0 }};
+                    let paymentMethod = 'cinetpay';
 
-                    let paymentMethod = 'cinetpay'; // Valeur par défaut
-
-                    // Demander le mode de paiement
                     const choiceResult = await Swal.fire({
-                         title: 'Choisissez le mode de paiement',
+                         title: 'Mode de paiement',
                          html: `
                              <div class="flex flex-col gap-4 text-center">
                                  <div class="bg-gray-50 p-3 rounded-lg">
-                                     <p class="text-gray-600 text-sm">Montant à payer</p>
+                                     <p class="text-gray-600 text-sm">Total à payer</p>
                                      <p class="text-2xl font-bold text-[#e94f1b]">${new Intl.NumberFormat('fr-FR').format(montantTotal)} FCFA</p>
                                  </div>
-                                 
-                                 <div class="border-t pt-2">
-                                     <p class="text-gray-600 text-sm mb-1">Votre solde actuel</p>
-                                     <p class="text-lg font-bold">${new Intl.NumberFormat('fr-FR').format(userSolde)} FCFA</p>
-                                     ${userSolde < montantTotal ? 
-                                        '<p class="text-red-500 text-xs mt-1 font-bold"><i class="fas fa-exclamation-circle"></i> Solde insuffisant</p>' : 
-                                        '<p class="text-green-500 text-xs mt-1"><i class="fas fa-check-circle"></i> Solde suffisant</p>'}
-                                 </div>
+                                 <div class="text-sm text-gray-500">Votre solde: ${new Intl.NumberFormat('fr-FR').format(userSolde)} FCFA</div>
                              </div>
                          `,
-                         icon: 'question', // <--- CORRECTION ICI (au lieu de 'wallet')
+                         icon: 'info',
                          showCancelButton: true,
                          showDenyButton: true,
-                         confirmButtonText: `<i class="fas fa-wallet"></i> Payer via Mon Compte`,
-                         denyButtonText: `<i class="fas fa-credit-card"></i> CinetPay (Mobile Money)`,
+                         confirmButtonText: `Mon Compte Solde`,
+                         denyButtonText: `Mobile Money (CinetPay)`,
                          confirmButtonColor: '#e94f1b',
                          denyButtonColor: '#2dce89',
                          cancelButtonText: 'Annuler',
-                         reverseButtons: true,
                          didOpen: () => {
-                             // Désactiver le bouton Mon Compte si solde insuffisant
                              if (userSolde < montantTotal) {
                                   const confirmBtn = Swal.getConfirmButton();
                                   confirmBtn.disabled = true;
                                   confirmBtn.style.opacity = 0.5;
-                                  confirmBtn.title = "Votre solde est insuffisant pour effectuer ce paiement.";
+                                  confirmBtn.innerHTML += ' (Solde insuffisant)';
                              }
                          }
                     });
 
-                    if (choiceResult.isConfirmed) {
-                        paymentMethod = 'wallet';
-                    } else if (choiceResult.isDenied) {
-                        paymentMethod = 'cinetpay';
-                    } else {
-                        return; // Annulation par l'utilisateur
-                    }
+                    if (choiceResult.isConfirmed) paymentMethod = 'wallet';
+                    else if (choiceResult.isDenied) paymentMethod = 'cinetpay';
+                    else return;
 
-                    // Afficher loader
-                    Swal.fire({
-                        title: 'Traitement...',
-                        text: paymentMethod === 'wallet' ? 'Paiement et confirmation en cours...' : 'Initialisation du paiement...',
-                        allowOutsideClick: false,
-                        didOpen: () => { Swal.showLoading(); }
-                    });
+                    Swal.fire({ title: 'Traitement...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
                     try {
                         const response = await fetch("/user/booking/reservation", {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
+                                'Accept': 'application/json',
                                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
                             },
                             body: JSON.stringify({
                                 programme_id: currentProgramId,
                                 seats: sortedSeats,
                                 nombre_places: selectedNumberOfPlaces,
-                                date_voyage: dateVoyage,
+                                date_voyage: dateVoyageFinal, // Utilisation de la variable corrigée
                                 is_aller_retour: window.userChoseAllerRetour,
                                 date_retour: window.selectedReturnDate,
                                 passagers: passengers,
-                                payment_method: paymentMethod // Transmission du choix
+                                payment_method: paymentMethod
                             })
                         });
 
@@ -2269,25 +2800,14 @@ function onAllerRetourChoiceChange() {
 
                         if (data.success) {
                             if (data.wallet_payment) {
-                                // --- SUCCÈS PAIEMENT PORTEFEUILLE ---
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Paiement effectué',
-                                    text: data.message,
-                                    confirmButtonColor: '#e94f1b',
-                                    allowOutsideClick: false
-                                }).then(() => {
-                                    window.location.href = data.redirect_url;
-                                });
+                                window.location.href = data.redirect_url;
                             } else if (data.payment_url) {
-                                // --- FLUX CINETPAY EXISTANT ---
                                 CinetPay.setConfig({
                                     apikey: '{{ $cinetpay_api_key }}',
                                     site_id: '{{ $cinetpay_site_id }}',
                                     notify_url: '{{ route("payment.notify") }}',
                                     mode: '{{ $cinetpay_mode }}'
                                 });
-
                                 CinetPay.getCheckout({
                                     transaction_id: data.transaction_id,
                                     amount: data.amount,
@@ -2304,42 +2824,19 @@ function onAllerRetourChoiceChange() {
                                     customer_state: 'Abidjan',
                                     customer_zip_code: '00225',
                                 });
-
                                 CinetPay.waitResponse(function (response) {
                                     if (response.status === "ACCEPTED") {
                                         window.location.href = "{{ route('payment.return') }}?transaction_id=" + data.transaction_id;
                                     } else {
-                                        Swal.fire({
-                                            icon: 'error',
-                                            title: 'Échec du paiement',
-                                            text: 'Le paiement n\'a pas pu être finalisé.',
-                                            confirmButtonColor: '#e94f1b',
-                                        }).then(() => {
-                                            window.location.reload();
-                                        });
+                                        window.location.reload();
                                     }
-                                });
-                            } else {
-                                // Cas de succès générique (fallback)
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Réservation confirmée !',
-                                    text: data.message,
-                                    confirmButtonColor: '#e94f1b',
-                                }).then(() => {
-                                    window.location.reload();
                                 });
                             }
                         } else {
-                            throw new Error(data.message || 'Erreur lors de la réservation');
+                            throw new Error(data.message || 'Erreur');
                         }
                     } catch (error) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Erreur',
-                            text: error.message,
-                            confirmButtonColor: '#e94f1b',
-                        });
+                        Swal.fire({ icon: 'error', title: 'Erreur', text: error.message });
                     }
                 }
             });
@@ -2385,75 +2882,25 @@ function onAllerRetourChoiceChange() {
         let selectedRoute = null;
         let selectedDate = null;
 
-        function openProgramsListModal() {
-            modalCurrentStep = 1;
-            selectedRoute = null;
-            selectedDate = null;
+        window.openProgramsListModal = function() {
             document.getElementById('programsListModal').classList.remove('hidden');
-            updateModalStepIndicators(1);
-            loadRoutes();
-        }
+            loadRoutesForSelection();
+        };
 
-        function closeProgramsListModal() { 
+        window.closeProgramsListModal = function() { 
             document.getElementById('programsListModal').classList.add('hidden'); 
-        }
+        };
 
-        function goBackInModal() {
-            if (modalCurrentStep === 2) {
-                modalCurrentStep = 1;
-                selectedRoute = null;
-                updateModalStepIndicators(1);
-                loadRoutes();
-            } else if (modalCurrentStep === 3) {
-                modalCurrentStep = 2;
-                selectedDate = null;
-                updateModalStepIndicators(2);
-                loadDates(selectedRoute);
-            }
-        }
 
-        function updateModalStepIndicators(step) {
-            const backBtn = document.getElementById('modalBackBtn');
+        async function loadRoutesForSelection() {
+            const container = document.getElementById('programsListContent');
             const title = document.getElementById('modalTitle');
             const subtitle = document.getElementById('modalSubtitle');
-            const step1 = document.getElementById('step1Indicator');
-            const step2 = document.getElementById('step2Indicator');
-            const step3 = document.getElementById('step3Indicator');
-
-            // Reset all steps
-            [step1, step2, step3].forEach(s => {
-                s.classList.remove('bg-[#e94f1b]', 'text-white');
-                s.classList.add('bg-gray-200', 'text-gray-500');
-                s.querySelector('span:first-child').classList.remove('bg-white', 'text-[#e94f1b]');
-                s.querySelector('span:first-child').classList.add('bg-gray-300', 'text-gray-600');
-            });
-
-            // Activate current step
-            const activeStep = step === 1 ? step1 : step === 2 ? step2 : step3;
-            activeStep.classList.remove('bg-gray-200', 'text-gray-500');
-            activeStep.classList.add('bg-[#e94f1b]', 'text-white');
-            activeStep.querySelector('span:first-child').classList.remove('bg-gray-300', 'text-gray-600');
-            activeStep.querySelector('span:first-child').classList.add('bg-white', 'text-[#e94f1b]');
-
-            // Update title/subtitle and back button
-            if (step === 1) {
-                title.textContent = 'Choisir une ligne';
-                subtitle.textContent = 'Sélectionnez votre trajet parmi les lignes disponibles';
-                backBtn.classList.add('hidden');
-            } else if (step === 2) {
-                title.textContent = selectedRoute.point_depart + ' → ' + selectedRoute.point_arrive;
-                subtitle.textContent = 'Choisissez votre date de voyage';
-                backBtn.classList.remove('hidden');
-            } else {
-                title.textContent = selectedRoute.point_depart + ' → ' + selectedRoute.point_arrive;
-                const dateObj = new Date(selectedDate);
-                subtitle.textContent = 'Horaires du ' + dateObj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-                backBtn.classList.remove('hidden');
-            }
-        }
-
-        async function loadRoutes() {
-            const container = document.getElementById('programsListContent');
+            
+            // Mettre à jour le titre
+            title.textContent = 'Choisir votre ligne';
+            subtitle.textContent = 'Sélectionnez votre trajet pour voir les disponibilités';
+            
             container.innerHTML = `<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-4xl text-[#e94f1b]"></i><p class="mt-2 text-gray-500">Chargement des lignes...</p></div>`;
 
             try {
@@ -2461,7 +2908,7 @@ function onAllerRetourChoiceChange() {
                 const data = await response.json();
                 
                 if (data.success && data.routes.length > 0) {
-                    renderRoutesList(data.routes);
+                    renderRoutesForSelection(data.routes);
                 } else {
                     container.innerHTML = `<div class="text-center py-8"><i class="fas fa-bus text-gray-300 text-4xl"></i><p class="mt-2 text-gray-500">Aucune ligne disponible pour le moment.</p></div>`;
                 }
@@ -2471,7 +2918,7 @@ function onAllerRetourChoiceChange() {
             }
         }
 
-        function renderRoutesList(routes) {
+        function renderRoutesForSelection(routes) {
             const container = document.getElementById('programsListContent');
             container.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">` + routes.map(route => {
                 const prixDisplay = route.prix_min === route.prix_max 
@@ -2479,7 +2926,7 @@ function onAllerRetourChoiceChange() {
                     : `À partir de ${Number(route.prix_min).toLocaleString('fr-FR')} FCFA`;
                 
                 return `
-                    <div onclick="selectRoute(${JSON.stringify(route).replace(/"/g, '&quot;')})" 
+                    <div onclick="selectRouteAndLaunchFlow(${JSON.stringify(route).replace(/"/g, '&quot;')})" 
                          class="bg-gradient-to-br from-blue-50 to-white p-5 rounded-xl border-2 border-blue-100 hover:border-[#e94f1b] cursor-pointer transition-all duration-200 hover:shadow-lg group">
                         <div class="flex justify-between items-start mb-3">
                             <div class="flex items-center gap-2">
@@ -2506,7 +2953,7 @@ function onAllerRetourChoiceChange() {
                         <div class="flex justify-between items-center pt-3 border-t border-gray-100">
                             <span class="text-[#e94f1b] font-bold">${prixDisplay}</span>
                             <span class="text-gray-400 group-hover:text-[#e94f1b] transition-colors">
-                                <i class="fas fa-chevron-right"></i>
+                                <i class="fas fa-arrow-circle-right text-xl"></i>
                             </span>
                         </div>
                     </div>
@@ -2514,63 +2961,283 @@ function onAllerRetourChoiceChange() {
             }).join('') + `</div>`;
         }
 
-        function selectRoute(route) {
-            selectedRoute = route;
-            modalCurrentStep = 2;
-            updateModalStepIndicators(2);
-            loadDates(route);
+        // Nouvelle fonction: dès qu'on sélectionne une ligne, demander la date de départ
+        function selectRouteAndLaunchFlow(route) {
+            // Fermer le modal "Voir tous les voyages"
+            document.getElementById('programsListModal').classList.add('hidden');
+            
+            // Afficher sélecteur de date de départ
+            showDepartureDateSelection(route);
         }
 
-        async function loadDates(route) {
-            const container = document.getElementById('programsListContent');
-            container.innerHTML = `<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-4xl text-[#e94f1b]"></i><p class="mt-2 text-gray-500">Chargement des dates...</p></div>`;
-
-            try {
-                const params = new URLSearchParams({
-                    point_depart: route.point_depart,
-                    point_arrive: route.point_arrive
-                });
-                const response = await fetch('{{ route("api.route-dates") }}?' + params);
-                const data = await response.json();
-                
-                if (data.success && data.dates.length > 0) {
-                    renderDatesList(data.dates);
-                } else {
-                    container.innerHTML = `<div class="text-center py-8"><i class="fas fa-calendar-times text-gray-300 text-4xl"></i><p class="mt-2 text-gray-500">Aucune date disponible.</p></div>`;
+        // Générateur de calendrier mensuel
+        function generateMonthlyCalendar(currentMonth, currentYear, minDate, maxDate, colorScheme = 'orange') {
+            const firstDay = new Date(currentYear, currentMonth, 1);
+            const lastDay = new Date(currentYear, currentMonth + 1, 0);
+            const startDay = firstDay.getDay(); // 0 = dimanche
+            const daysInMonth = lastDay.getDate();
+            
+            // Ajuster pour que lundi soit le premier jour (0 = lundi, 6 = dimanche)
+            const startDayAdjusted = startDay === 0 ? 6 : startDay - 1;
+            
+            const colors = {
+                orange: {
+                    border: 'border-orange-200',
+                    bg: 'bg-orange-50',
+                    hoverBorder: 'hover:border-orange-500',
+                    hoverBg: 'hover:bg-orange-100',
+                    text: 'text-orange-700',
+                    disabled: 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                },
+                purple: {
+                    border: 'border-purple-200',
+                    bg: 'bg-purple-50',
+                    hoverBorder: 'hover:border-purple-500',
+                    hoverBg: 'hover:bg-purple-100',
+                    text: 'text-purple-700',
+                    disabled: 'bg-gray-100 text-gray-400 cursor-not-allowed'
                 }
-            } catch (error) {
-                console.error('Erreur:', error);
-                container.innerHTML = `<div class="text-center py-8 text-red-500"><i class="fas fa-exclamation-triangle text-4xl mb-2"></i><p>Impossible de charger les dates.</p></div>`;
+            };
+            
+            const scheme = colors[colorScheme];
+            
+            let html = '<div class="calendar-grid">';
+            
+            // En-tête avec jours de la semaine
+            html += '<div class="grid grid-cols-7 gap-1 mb-2">';
+            const dayNames = ['Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa', 'Di'];
+            dayNames.forEach(day => {
+                html += `<div class="text-center text-xs font-semibold text-gray-600 py-1">${day}</div>`;
+            });
+            html += '</div>';
+            
+            // Grille de dates
+            html += '<div class="grid grid-cols-7 gap-1">';
+            
+            // Cases vides avant le premier jour
+            for (let i = 0; i < startDayAdjusted; i++) {
+                html += '<div></div>';
             }
-        }
-
-        function renderDatesList(dates) {
-            const container = document.getElementById('programsListContent');
-            container.innerHTML = `<div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">` + dates.map(dateObj => {
-                const date = new Date(dateObj.date_depart);
-                const isToday = date.toDateString() === new Date().toDateString();
-                const dayName = date.toLocaleDateString('fr-FR', { weekday: 'short' });
-                const dayNum = date.getDate();
-                const monthName = date.toLocaleDateString('fr-FR', { month: 'short' });
+            
+            // Jours du mois
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(currentYear, currentMonth, day);
+                const dateStr = date.toISOString().split('T')[0];
+                const isDisabled = date < minDate || date > maxDate;
                 
-                return `
-                    <div onclick="selectDate('${dateObj.date_depart}')" 
-                         class="bg-white p-4 rounded-xl border-2 ${isToday ? 'border-[#e94f1b] bg-orange-50' : 'border-gray-200'} hover:border-[#e94f1b] cursor-pointer transition-all duration-200 hover:shadow-md text-center group">
-                        <p class="text-xs font-medium text-gray-500 uppercase">${dayName}</p>
-                        <p class="text-2xl font-bold text-gray-900 my-1">${dayNum}</p>
-                        <p class="text-sm text-gray-600">${monthName}</p>
-                        ${isToday ? '<span class="inline-block mt-2 text-xs bg-[#e94f1b] text-white px-2 py-0.5 rounded-full">Aujourd\'hui</span>' : ''}
-                        <p class="mt-2 text-xs text-gray-400 group-hover:text-[#e94f1b]">${dateObj.horaires_count} horaire(s)</p>
-                    </div>
-                `;
-            }).join('') + `</div>`;
+                if (isDisabled) {
+                    html += `
+                        <div class="border ${scheme.disabled} rounded p-2 text-center">
+                            <span class="text-sm">${day}</span>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="calendar-day-btn border-2 ${scheme.border} ${scheme.bg} rounded p-2 cursor-pointer ${scheme.hoverBorder} ${scheme.hoverBg} transition-all text-center"
+                             data-date="${dateStr}">
+                            <span class="font-bold ${scheme.text} text-sm">${day}</span>
+                        </div>
+                    `;
+                }
+            }
+            
+            html += '</div></div>';
+            return html;
         }
 
-        function selectDate(date) {
-            selectedDate = date;
-            modalCurrentStep = 3;
-            updateModalStepIndicators(3);
-            loadSchedules(selectedRoute, date);
+        // Sélection de la date de départ pour "Voir tous les voyages" avec calendrier mensuel
+        function showDepartureDateSelection(route) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            // Calculer demain pour le début des réservations possibles
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            
+            // Date max = date_fin du programme (31/12/2026 par défaut ou depuis route)
+            const maxDate = route.date_fin ? new Date(route.date_fin) : new Date(today.getFullYear(), 11, 31);
+            
+            let currentMonth = tomorrow.getMonth();
+            let currentYear = tomorrow.getFullYear();
+            
+            function updateCalendar() {
+                const monthNames = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+                                   'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+                
+                // Utiliser tomorrow comme minDate
+                const calendarHtml = generateMonthlyCalendar(currentMonth, currentYear, tomorrow, maxDate, 'orange');
+                
+                Swal.update({
+                    html: `
+                        <div class="text-left space-y-4">
+                            <div class="bg-orange-50 p-3 rounded-lg border border-orange-200">
+                                <p class="font-bold text-gray-800">${route.point_depart} → ${route.point_arrive}</p>
+                                <p class="text-sm text-gray-600">Sélectionnez votre date de départ</p>
+                            </div>
+                            
+                            <!-- Navigation mois -->
+                            <div class="flex items-center justify-between bg-gray-50 p-2 rounded">
+                                <button id="prevMonth" class="px-3 py-1 bg-white border rounded hover:bg-gray-100">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <span class="font-bold text-gray-800">${monthNames[currentMonth]} ${currentYear}</span>
+                                <button id="nextMonth" class="px-3 py-1 bg-white border rounded hover:bg-gray-100">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Calendrier -->
+                            <div class="calendar-container">
+                                ${calendarHtml}
+                            </div>
+                        </div>
+                    `
+                });
+                
+                // Réattacher les événements
+                attachCalendarEvents();
+            }
+            
+            function attachCalendarEvents() {
+                // Navigation mois précédent
+                const prevBtn = document.getElementById('prevMonth');
+                if (prevBtn) {
+                    prevBtn.addEventListener('click', () => {
+                        if (currentMonth === 0) {
+                            currentMonth = 11;
+                            currentYear--;
+                        } else {
+                            currentMonth--;
+                        }
+                        // Ne pas aller avant le mois actuel (de 'tomorrow')
+                        const checkDate = new Date(currentYear, currentMonth, 1);
+                        // comparer avec tomorrow
+                        if (checkDate >= new Date(tomorrow.getFullYear(), tomorrow.getMonth(), 1)) {
+                            updateCalendar();
+                        } else {
+                            currentMonth = tomorrow.getMonth();
+                            currentYear = tomorrow.getFullYear();
+                        }
+                    });
+                }
+                
+                // Navigation mois suivant
+                const nextBtn = document.getElementById('nextMonth');
+                if (nextBtn) {
+                    nextBtn.addEventListener('click', () => {
+                        if (currentMonth === 11) {
+                            currentMonth = 0;
+                            currentYear++;
+                        } else {
+                            currentMonth++;
+                        }
+                        // Ne pas aller après le mois de maxDate
+                        const checkDate = new Date(currentYear, currentMonth, 1);
+                        if (checkDate <= new Date(maxDate.getFullYear(), maxDate.getMonth(), 1)) {
+                            updateCalendar();
+                        } else {
+                            currentMonth = maxDate.getMonth();
+                            currentYear = maxDate.getFullYear();
+                        }
+                    });
+                }
+                
+                // Sélection de date
+                const dayBtns = document.querySelectorAll('.calendar-day-btn');
+                dayBtns.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const selectedDate = this.dataset.date;
+                        Swal.close();
+                        loadSchedulesAndLaunchFlow(route, selectedDate);
+                    });
+                });
+            }
+            
+            // Ouvrir le modal initial
+            Swal.fire({
+                title: '<i class="fas fa-calendar-day text-orange-600"></i> Date de départ',
+                html: '', // Sera rempli par updateCalendar()
+                showCancelButton: true,
+                showConfirmButton: false,
+                cancelButtonText: 'Retour',
+                customClass: { popup: 'rounded-2xl' },
+                width: '600px',
+                didOpen: () => {
+                    updateCalendar();
+                }
+            }).then((result) => {
+                if (result.dismiss === Swal.DismissReason.cancel) {
+                    document.getElementById('programsListModal').classList.remove('hidden');
+                }
+            });
+        }
+
+        // Charger les horaires et lancer le flux unifié
+        async function loadSchedulesAndLaunchFlow(route, selectedDate) {
+            // Afficher un loader
+            Swal.fire({
+                title: 'Chargement des disponibilités...',
+                text: `${route.point_depart} → ${route.point_arrive}`,
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+            
+            try {
+                // 1. Charger les horaires ALLER pour la date sélectionnée
+                const paramsAller = new URLSearchParams({
+                    point_depart: route.point_depart,
+                    point_arrive: route.point_arrive,
+                    date: selectedDate
+                });
+                const responseAller = await fetch('{{ route("api.route-schedules") }}?' + paramsAller);
+                const dataAller = await responseAller.json();
+                
+                // 2. Charger les horaires RETOUR pour vérifier la disponibilité
+                const paramsRetour = new URLSearchParams({
+                    original_arrive: route.point_arrive,
+                    original_depart: route.point_depart,
+                    min_date: selectedDate
+                });
+                const responseRetour = await fetch('{{ route("api.return-trips") }}?' + paramsRetour);
+                const dataRetour = await responseRetour.json();
+                
+                Swal.close();
+                
+                // 3. Construire l'objet routeData pour le modal unifié
+                const routeData = {
+                    ...route, // Inclut date_fin si présent dans route
+                    aller_horaires: dataAller.success ? dataAller.schedules : [],
+                    has_retour: (dataRetour.success && dataRetour.return_trips && dataRetour.return_trips.length > 0),
+                    retour_horaires: (dataRetour.success ? dataRetour.return_trips : []),
+                    compagnie: route.compagnie?.name || 'Compagnie',
+                    montant_billet: dataAller.schedules && dataAller.schedules.length > 0 ? dataAller.schedules[0].montant_billet : route.prix_min,
+                    date_fin: route.date_fin || dataAller.schedules?.[0]?.date_fin || null // S'assurer que date_fin est présent
+                };
+                
+                // 4. Lancer le flux unifié (Type → Départ → Date Retour → Heure Retour)
+                if (typeof window.showRouteSchedulesModal === 'function') {
+                    window.showRouteSchedulesModal(routeData, selectedDate);
+                } else {
+                    console.error('showRouteSchedulesModal non disponible');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erreur technique',
+                        text: 'Impossible de charger le système de réservation.'
+                    });
+                }
+                
+            } catch (error) {
+                console.error('Erreur lors du chargement:', error);
+                Swal.close();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erreur',
+                    text: 'Impossible de charger les horaires. Veuillez réessayer.'
+                }).then(() => {
+                    // Retour à la sélection de date
+                    showDepartureDateSelection(route);
+                });
+            }
         }
 
         async function loadSchedules(route, date) {
@@ -2660,6 +3327,7 @@ function onAllerRetourChoiceChange() {
             const daysMap = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
             const dates = [];
             let current = new Date();
+             current.setDate(current.getDate() + 1); // Commencer à demain
             let count = 0;
             
             while(count < 10 && dates.length < 10) {
@@ -2699,44 +3367,136 @@ function onAllerRetourChoiceChange() {
                  openReservationModal(currentSelectedProgram.id, date);
             }
         }
+
+        // Fonction pour afficher les détails (places disponibles)
+        async function openDetailsModal(btn) {
+            const route = JSON.parse(btn.dataset.route);
+            const dateDepart = btn.dataset.date;
+            
+            Swal.fire({
+                title: 'Chargement des détails...',
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            try {
+                // Fetch Aller availability
+                const paramsAller = new URLSearchParams({
+                    point_depart: route.point_depart,
+                    point_arrive: route.point_arrive,
+                    date: dateDepart
+                });
+                const responseAller = await fetch('{{ route("api.route-schedules") }}?' + paramsAller);
+                const dataAller = await responseAller.json();
+
+                // Build HTML
+                let html = `<div class="text-left">`;
+                
+                // Section Aller
+                html += `<h3 class="font-bold text-lg text-[#e94f1b] mb-3 uppercase border-b pb-2">Aller : ${dateDepart}</h3>`;
+                if (dataAller.success && dataAller.schedules.length > 0) {
+                    html += buildSchedulesTable(dataAller.schedules, dateDepart);
+                } else {
+                    html += `<p class="text-gray-500 italic">Aucun horaire disponible pour cette date.</p>`;
+                }
+
+                // Section Retour (si applicable)
+                if (route.has_retour) {
+                    html += `<h3 class="font-bold text-lg text-blue-600 mt-6 mb-3 uppercase border-b pb-2">Retour (Aperçu)</h3>`;
+                    
+                    const paramsRetour = new URLSearchParams({
+                        point_depart: route.point_arrive,
+                        point_arrive: route.point_depart,
+                        date: dateDepart
+                    });
+                    const responseRetour = await fetch('{{ route("api.route-schedules") }}?' + paramsRetour);
+                    const dataRetour = await responseRetour.json();
+                    
+                    if (dataRetour.success && dataRetour.schedules.length > 0) {
+                        html += buildSchedulesTable(dataRetour.schedules, dateDepart);
+                    } else {
+                         html += `<p class="text-gray-500 italic">Aucun horaire retour trouvé pour cette date.</p>`;
+                    }
+                }
+
+                html += `</div>`;
+
+                Swal.fire({
+                    title: `Détails du voyage`,
+                    html: html,
+                    width: '800px',
+                    showConfirmButton: false,
+                    showCloseButton: true,
+                    customClass: {
+                        popup: 'rounded-xl'
+                    }
+                });
+
+            } catch (error) {
+                console.error(error);
+                Swal.fire('Erreur', 'Impossible de charger les détails.', 'error');
+            }
+        }
+
+        function buildSchedulesTable(schedules, dateVoyage) {
+            let table = `
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-500">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2">Départ</th>
+                                <th class="px-4 py-2">Arrivée</th>
+                                <th class="px-4 py-2">Véhicule</th>
+                                <th class="px-4 py-2 text-center">Places</th>
+                                <th class="px-4 py-2 text-center">Statut</th>
+                                <th class="px-4 py-2 text-center">Voir</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            schedules.forEach(sch => {
+                const isFull = sch.places_disponibles <= 0;
+                const statusClass = isFull ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
+                const statusText = isFull ? 'Complet' : 'Disponible';
+                
+                table += `
+                    <tr class="bg-white border-b hover:bg-gray-50">
+                        <td class="px-4 py-2 font-bold text-gray-900">${sch.heure_depart}</td>
+                        <td class="px-4 py-2">${sch.heure_arrive}</td>
+                        <td class="px-4 py-2">${sch.vehicule}</td>
+                        <td class="px-4 py-2 text-center">
+                            <span class="font-bold text-gray-900">${sch.places_disponibles}</span> / ${sch.places_totales}
+                        </td>
+                        <td class="px-4 py-2 text-center">
+                            <span class="${statusClass} px-2 py-1 rounded-full text-xs font-bold">${statusText}</span>
+                        </td>
+                        <td class="px-4 py-2 text-center">
+                             <button type="button" onclick="showVehicleDetails('${sch.vehicule_id}', '${sch.id}', '${dateVoyage}')" class="text-blue-600 hover:text-blue-800 bg-blue-100 p-2 rounded-full transition-colors">
+                                <i class="fas fa-eye"></i>
+                             </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            table += `</tbody></table></div>`;
+            return table;
+        }
     </script>
 
-     <!-- Modal Liste des programmes (Step-by-step) -->
+     <!-- Modal Liste des programmes (Simplifié) -->
     <div id="programsListModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-[60]">
         <div class="relative top-10 mx-auto p-5 border w-11/12 lg:w-3/4 max-w-4xl shadow-lg rounded-2xl bg-white">
             <div class="flex flex-col gap-4">
-                <!-- En-tête avec navigation -->
+                <!-- En-tête -->
                 <div class="flex justify-between items-center border-b pb-4">
-                    <div class="flex items-center gap-3">
-                        <button id="modalBackBtn" onclick="goBackInModal()" class="hidden text-gray-500 hover:text-gray-700 p-2 rounded-lg hover:bg-gray-100">
-                            <i class="fas fa-arrow-left text-lg"></i>
-                        </button>
-                        <div>
-                            <h3 id="modalTitle" class="text-xl font-bold text-gray-900">Choisir une ligne</h3>
-                            <p id="modalSubtitle" class="text-sm text-gray-500">Sélectionnez votre trajet parmi les lignes disponibles</p>
-                        </div>
+                    <div>
+                        <h3 id="modalTitle" class="text-xl font-bold text-gray-900">Choisir votre ligne</h3>
+                        <p id="modalSubtitle" class="text-sm text-gray-500">Sélectionnez votre trajet pour voir les disponibilités</p>
                     </div>
                     <button onclick="closeProgramsListModal()" class="text-gray-400 hover:text-gray-500 p-2">
                         <i class="fas fa-times text-xl"></i>
                     </button>
-                </div>
-                
-                <!-- Indicateur d'étapes -->
-                <div class="flex items-center justify-center gap-2 py-2">
-                    <div id="step1Indicator" class="flex items-center gap-2 px-4 py-2 rounded-full bg-[#e94f1b] text-white font-medium">
-                        <span class="w-6 h-6 rounded-full bg-white text-[#e94f1b] flex items-center justify-center text-sm font-bold">1</span>
-                        <span>Ligne</span>
-                    </div>
-                    <i class="fas fa-chevron-right text-gray-300"></i>
-                    <div id="step2Indicator" class="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-200 text-gray-500 font-medium">
-                        <span class="w-6 h-6 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-sm font-bold">2</span>
-                        <span>Date</span>
-                    </div>
-                    <i class="fas fa-chevron-right text-gray-300"></i>
-                    <div id="step3Indicator" class="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-200 text-gray-500 font-medium">
-                        <span class="w-6 h-6 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-sm font-bold">3</span>
-                        <span>Horaire</span>
-                    </div>
                 </div>
                 
                 <!-- Contenu dynamique -->
@@ -2833,28 +3593,5 @@ function onAllerRetourChoiceChange() {
             </div>
         </div>
     </div>
-      <!-- Intégration Google Maps Autocomplete -->
-    <script
-        src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google_maps.key') }}&libraries=places&loading=async&callback=initAutocompleteUser"
-        async defer></script>
-
-    <script>
-        function initAutocompleteUser() {
-            const options = {
-                componentRestrictions: { country: "ci" }, // Restreindre à la Côte d'Ivoire
-                fields: ["formatted_address", "geometry", "name"],
-            };
-
-            const inputDepart = document.getElementById("point_depart");
-            const inputArrive = document.getElementById("point_arrive");
-
-            if (inputDepart) {
-                new google.maps.places.Autocomplete(inputDepart, options);
-            }
-
-            if (inputArrive) {
-                new google.maps.places.Autocomplete(inputArrive, options);
-            }
-        }
-    </script>
 @endsection
+```

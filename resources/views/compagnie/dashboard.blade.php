@@ -21,7 +21,7 @@
             </div>
 
             <!-- Stat Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-10">
                 <!-- Revenue Card -->
                 <div
                     class="bg-white rounded-2xl p-6 shadow-xl border border-gray-100 transform hover:-translate-y-1 transition-all">
@@ -69,15 +69,38 @@
                     class="bg-white rounded-2xl p-6 shadow-xl border border-gray-100 transform hover:-translate-y-1 transition-all">
                     <div class="flex items-center justify-between mb-4">
                         <div
-                            class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center text-red-600 font-bold">
+                            class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600 font-bold">
                             <i class="fas fa-exclamation-triangle text-xl"></i>
                         </div>
                     </div>
                     <p class="text-sm font-bold text-gray-400 uppercase tracking-wider">Incidents Signalés</p>
                     <h3 class="text-2xl font-black text-gray-900 mt-2">{{ $totalSignalements }}</h3>
-                    <p class="mt-4 text-xs text-red-600 font-bold">Nécessitant attention</p>
+                    <p class="mt-4 text-xs text-amber-600 font-bold">Nécessitant attention</p>
+                </div>
+
+                <!-- Tickets Card (NEW) -->
+                <div class="bg-white rounded-2xl p-6 shadow-xl border border-purple-100 transform hover:-translate-y-1 transition-all cursor-pointer" onclick="addTicketsModal()">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600 font-bold">
+                            <i class="fas fa-tags text-xl"></i>
+                        </div>
+                        <span class="bg-purple-50 text-purple-600 text-[10px] font-bold px-2 py-1 rounded-lg uppercase">
+                            <i class="fas fa-plus"></i> Ajouter
+                        </span>
+                    </div>
+                    <p class="text-sm font-bold text-gray-400 uppercase tracking-wider">Solde Tickets</p>
+                    <h3 class="text-2xl font-black text-purple-900 mt-2">
+                        {{ Auth::guard('compagnie')->user()->tickets }}
+                    </h3>
+                    <p class="mt-4 text-xs text-purple-600 font-bold">Disponibles pour réservations</p>
                 </div>
             </div>
+
+            <!-- Formulaire caché pour ajout tickets -->
+            <form id="add-tickets-form" action="{{ route('compagnie.tickets.add') }}" method="POST" class="hidden">
+                @csrf
+                <input type="hidden" name="quantite" id="ticket-quantite">
+            </form>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
                 <!-- Chart Section -->
@@ -257,6 +280,34 @@
                 }
             });
         });
+
+        function addTicketsModal() {
+            Swal.fire({
+                title: 'Recharger le solde de tickets',
+                text: "Entrez le nombre de tickets à ajouter",
+                input: 'number',
+                inputAttributes: {
+                    min: 1,
+                    step: 1
+                },
+                showCancelButton: true,
+                confirmButtonText: 'Ajouter',
+                cancelButtonText: 'Annuler',
+                confirmButtonColor: '#9333ea', // Purple
+                showLoaderOnConfirm: true,
+                preConfirm: (amount) => {
+                    if (!amount || amount <= 0) {
+                        Swal.showValidationMessage('Veuillez entrer un nombre valide');
+                    }
+                    return amount;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('ticket-quantite').value = result.value;
+                    document.getElementById('add-tickets-form').submit();
+                }
+            });
+        }
     </script>
 
     <style>

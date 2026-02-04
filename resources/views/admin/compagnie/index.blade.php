@@ -69,6 +69,10 @@
                                 </th>
                                 <th
                                     class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    Tickets
+                                </th>
+                                <th
+                                    class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                     Actions
                                 </th>
                             </tr>
@@ -128,6 +132,14 @@
                                                 Désactivé
                                             </span>
                                         @endif
+                                    </td>
+
+                                    <!-- Colonne Tickets -->
+                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-blue-100 text-blue-800">
+                                            <i class="fas fa-ticket-alt mr-2"></i>
+                                            {{ number_format($compagnie->tickets ?? 0, 0, ',', ' ') }}
+                                        </span>
                                     </td>
 
                                     <!-- Colonne Actions -->

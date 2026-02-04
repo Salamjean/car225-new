@@ -75,8 +75,30 @@ class CompagnieDashboard extends Controller
             'recentReservations',
             'recentSignalements',
             'days',
-            'revenuePerDay'
+            'revenuePerDay',
+            'compagnieId'
         ));
+    }
+
+    public function addTickets(Request $request)
+    {
+        $request->validate([
+            'quantite' => 'required|integer|min:1',
+        ]);
+
+        $compagnie = Auth::guard('compagnie')->user();
+        
+        DB::transaction(function () use ($compagnie, $request) {
+            $compagnie->tickets += $request->quantite;
+            $compagnie->save();
+
+            $compagnie->historiqueTickets()->create([
+                'quantite' => $request->quantite,
+                'motif' => 'Ajout manuel depuis le tableau de bord',
+            ]);
+        });
+
+        return back()->with('success', 'Tickets ajoutés avec succès !');
     }
 
     public function logout()

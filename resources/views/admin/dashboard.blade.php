@@ -137,6 +137,28 @@
         <!-- Row 3: Charts -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
             <!-- Revenue Chart -->
+            <!-- Revenue Tickets Card (New) -->
+            <div class="lg:col-span-2 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl shadow-xl overflow-hidden relative mb-8">
+                <div class="absolute right-0 top-0 h-full w-1/3 bg-white/10 transform skew-x-12"></div>
+                <div class="absolute right-10 top-10 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
+                
+                <div class="px-8 py-8 relative z-10 flex items-center justify-between">
+                    <div>
+                         <p class="text-blue-100 font-medium text-sm uppercase tracking-widest mb-1">Revenus Tickets (Rechargements)</p>
+                         <h2 class="text-4xl font-black text-white tracking-tight mb-2">
+                            {{ number_format($totalTicketRevenue, 0, ',', ' ') }} <span class="text-2xl text-blue-200">FCFA</span>
+                         </h2>
+                         <div class="flex items-center gap-2 text-blue-100 text-sm bg-white/10 px-3 py-1 rounded-full w-fit">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>Ce mois: {{ number_format($ticketRevenueMonth, 0, ',', ' ') }} FCFA</span>
+                         </div>
+                    </div>
+                    <div class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center text-white text-3xl shadow-lg backdrop-blur-sm">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                </div>
+            </div>
+
             <div class="lg:col-span-2 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
                 <div class="px-8 py-6 border-b border-gray-50 flex items-center justify-between bg-gradient-to-r from-green-50 to-white">
                     <h3 class="text-lg font-black text-gray-900 uppercase tracking-tight">Évolution des revenus (7 jours)</h3>

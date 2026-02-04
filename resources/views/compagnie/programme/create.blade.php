@@ -8,6 +8,10 @@
         --primary: #e94e1a;
         --primary-dark: #d33d0f;
         --secondary: #f97316;
+        --aller-color: #10b981;
+        --aller-dark: #059669;
+        --retour-color: #3b82f6;
+        --retour-dark: #2563eb;
     }
 
     .hero-gradient {
@@ -23,9 +27,9 @@
 
     .input-modern {
         width: 100%;
-        padding: 1rem 1.25rem;
+        padding: 0.875rem 1rem;
         border: 2px solid #e5e7eb;
-        border-radius: 1rem;
+        border-radius: 0.75rem;
         font-size: 1rem;
         transition: all 0.3s ease;
         background: #f9fafb;
@@ -71,27 +75,6 @@
         box-shadow: 0 20px 50px -10px rgba(233, 78, 26, 0.6);
     }
 
-    .route-display {
-        background: linear-gradient(135deg, #f0fdf4, #dcfce7);
-        border: 2px solid #86efac;
-        border-radius: 1rem;
-        padding: 1.5rem;
-    }
-
-    .feature-card {
-        background: white;
-        border: 1px solid #e5e7eb;
-        border-radius: 1rem;
-        padding: 1rem;
-        text-align: center;
-        transition: all 0.3s ease;
-    }
-
-    .feature-card:hover {
-        border-color: var(--primary);
-        transform: translateY(-2px);
-    }
-
     select.input-modern {
         appearance: none;
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
@@ -100,12 +83,385 @@
         background-size: 1.25rem;
         padding-right: 3rem;
     }
+
+    /* Dual Card Layout */
+    .dual-card-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-top: 2rem;
+    }
+
+    @media (max-width: 768px) {
+        .dual-card-container {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .programme-card {
+        background: white;
+        border-radius: 1.25rem;
+        overflow: hidden;
+        box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        border: 2px solid transparent;
+    }
+
+    .programme-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.15);
+    }
+
+    .programme-card.aller {
+        border-color: rgba(16, 185, 129, 0.3);
+    }
+
+    .programme-card.aller:hover {
+        border-color: var(--aller-color);
+    }
+
+    .programme-card.retour {
+        border-color: rgba(59, 130, 246, 0.3);
+    }
+
+    .programme-card.retour:hover {
+        border-color: var(--retour-color);
+    }
+
+    .card-header {
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .card-header.aller {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+
+    .card-header.retour {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    }
+
+    .card-icon {
+        width: 48px;
+        height: 48px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        color: white;
+    }
+
+    .card-title {
+        color: white;
+    }
+
+    .card-title h3 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .card-title .route {
+        font-size: 0.875rem;
+        opacity: 0.9;
+        margin-top: 0.25rem;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    /* Schedule Items */
+    .schedule-container {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .schedule-item {
+        background: white;
+        border: 1px solid #eef2f6;
+        border-radius: 1rem;
+        padding: 1rem;
+        position: relative;
+        animation: slideIn 0.3s ease-out;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+    }
+
+    .schedule-item:hover {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+        border-color: #e2e8f0;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .schedule-item .badge {
+        position: absolute;
+        top: -10px;
+        left: 0.75rem;
+        background: #6366f1;
+        color: white;
+        font-size: 0.65rem;
+        font-weight: 800;
+        padding: 0.2rem 0.6rem;
+        border-radius: 6px;
+        text-transform: uppercase;
+        z-index: 10;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .schedule-item.aller .badge {
+        background: var(--aller-color);
+    }
+
+    .schedule-item.retour .badge {
+        background: var(--retour-color);
+    }
+
+    .schedule-times {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-top: 0.25rem;
+    }
+
+    .time-input-group {
+        flex: 1;
+    }
+
+    .time-input-group label {
+        display: block;
+        font-size: 0.65rem;
+        font-weight: 700;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+        margin-bottom: 0.25rem;
+    }
+
+    .time-input {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: 1.5px solid #f1f5f9;
+        border-radius: 0.6rem;
+        font-size: 1.1rem;
+        font-weight: 700;
+        text-align: center;
+        transition: all 0.2s ease;
+        background: #f8fafc;
+        color: #334155;
+    }
+
+    .time-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        background: white;
+        box-shadow: 0 0 0 3px rgba(233, 78, 26, 0.1);
+    }
+
+    .time-input.arrival {
+        background: #f1f5f9;
+        color: #94a3b8;
+        cursor: not-allowed;
+        border-style: dashed;
+    }
+
+    .time-arrow {
+        color: #cbd5e1;
+        margin-top: 1rem;
+    }
+
+    .remove-schedule {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: white;
+        border: 1px solid #fee2e2;
+        color: #ef4444;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        z-index: 20;
+    }
+
+    .remove-schedule:hover {
+        background: #ef4444;
+        color: white;
+        transform: scale(1.1) rotate(90deg);
+        border-color: #ef4444;
+    }
+
+    /* Add Schedule Button */
+    .add-schedule-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px dashed #e2e8f0;
+        border-radius: 1rem;
+        background: #f8fafc;
+        color: #64748b;
+        font-weight: 700;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 1rem;
+    }
+
+    .add-schedule-btn:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+        background: #fff;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .add-schedule-btn:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+        background: rgba(233, 78, 26, 0.05);
+    }
+
+    .add-schedule-btn.aller:hover {
+        border-color: var(--aller-color);
+        color: var(--aller-color);
+        background: rgba(16, 185, 129, 0.05);
+    }
+
+    .add-schedule-btn.retour:hover {
+        border-color: var(--retour-color);
+        color: var(--retour-color);
+        background: rgba(59, 130, 246, 0.05);
+    }
+
+    /* Summary Section */
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .summary-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    .feature-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+    .feature-card:hover {
+        border-color: var(--primary);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
+    }
+
+    .feature-card .icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .feature-card .value {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--primary);
+    }
+
+    .feature-card .label {
+        font-size: 0.75rem;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    /* Hidden State */
+    .hidden {
+        display: none !important;
+    }
+
+    /* Tarif Section */
+    .tarif-section {
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        border: 2px solid #fbbf24;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-top: 1.5rem;
+    }
+
+    .tarif-input-wrapper {
+        position: relative;
+        max-width: 280px;
+        margin: 0 auto;
+    }
+
+    .tarif-input-wrapper .icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 1.5rem;
+    }
+
+    .tarif-input-wrapper .currency {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        font-weight: 600;
+        color: #92400e;
+    }
+
+    .tarif-input {
+        width: 100%;
+        padding: 1rem 5rem 1rem 3.5rem;
+        border: 2px solid #f59e0b;
+        border-radius: 0.75rem;
+        font-size: 1.5rem;
+        font-weight: 800;
+        text-align: center;
+        background: white;
+        transition: all 0.3s ease;
+    }
+
+    .tarif-input:focus {
+        outline: none;
+        border-color: #d97706;
+        box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.2);
+    }
 </style>
 
 <div class="min-h-screen bg-gray-50">
     <!-- Hero Header -->
     <div class="hero-gradient text-white py-10 px-6">
-        <div class="max-w-3xl mx-auto">
+        <div class="max-w-5xl mx-auto">
             <a href="{{ route('programme.index') }}" class="inline-flex items-center gap-2 text-white/70 hover:text-white transition mb-4">
                 <i class="fas fa-arrow-left"></i>
                 <span>Retour aux lignes</span>
@@ -116,24 +472,13 @@
                 </div>
                 <div>
                     <h1 class="text-2xl font-bold">Créer une ligne de transport</h1>
-                    <p class="text-white/70 mt-1">Service continu 24h/24 - Les clients choisissent leur heure</p>
+                    <p class="text-white/70 mt-1">Configurez les horaires Aller et Retour en un seul formulaire</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="max-w-3xl mx-auto px-6 -mt-6">
-        <!-- Info Banner -->
-        <div class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl p-4 mb-6 flex items-center gap-4">
-            <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                <i class="fas fa-infinity text-xl"></i>
-            </div>
-            <div>
-                <p class="font-bold">Service continu 24h/24</p>
-                <p class="text-sm text-white/80">Les départs se font en continu. L'utilisateur choisit sa date et son heure lors de la réservation.</p>
-            </div>
-        </div>
-
+    <div class="max-w-5xl mx-auto px-6 -mt-6">
         <!-- Alerts -->
         @if(session('error'))
             <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-xl">
@@ -156,7 +501,7 @@
 
             <div class="glass-card p-8 mb-6">
                 <!-- Section 1: Itinéraire -->
-                <div class="mb-8">
+                <div class="mb-6">
                     <div class="flex items-center gap-3 mb-5">
                         <span class="section-badge bg-blue-100 text-blue-700">
                             <i class="fas fa-map-marked-alt"></i>
@@ -177,172 +522,207 @@
                             </option>
                         @endforeach
                     </select>
-
-                    <!-- Route Preview -->
-                    <div id="route_preview" class="route-display hidden mt-4">
-                        <div class="flex items-center justify-between">
-                            <div class="text-center">
-                                <div class="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center mx-auto mb-2">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                </div>
-                                <p class="font-bold text-gray-800" id="preview_depart">--</p>
-                                <p class="text-xs text-gray-500">Départ</p>
-                            </div>
-                            <div class="flex-1 px-4">
-                                <div class="h-1 bg-gradient-to-r from-green-500 to-red-500 rounded-full relative">
-                                    <i class="fas fa-bus text-gray-600 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-lg"></i>
-                                </div>
-                                <p class="text-center text-sm text-gray-500 mt-2" id="preview_duree">--</p>
-                            </div>
-                            <div class="text-center">
-                                <div class="w-10 h-10 bg-red-500 text-white rounded-full flex items-center justify-center mx-auto mb-2">
-                                    <i class="fas fa-flag-checkered"></i>
-                                </div>
-                                <p class="font-bold text-gray-800" id="preview_arrive">--</p>
-                                <p class="text-xs text-gray-500">Arrivée</p>
-                            </div>
-                        </div>
-                        
-                        <!-- Aller-Retour indication -->
-                        <div class="mt-4 pt-4 border-t border-green-200">
-                            <p class="text-sm text-green-700 font-medium text-center">
-                                <i class="fas fa-exchange-alt mr-2"></i>
-                                2 lignes créées automatiquement : Aller + Retour
-                            </p>
-                        </div>
-                    </div>
                 </div>
 
-                <!-- Section 2: Période -->
-                <div class="mb-8">
+                <!-- Dual Card Container - Hidden until itinerary selected -->
+                <div id="cards-container" class="hidden">
                     <div class="flex items-center gap-3 mb-5">
                         <span class="section-badge bg-purple-100 text-purple-700">
-                            <i class="fas fa-calendar-alt"></i>
+                            <i class="fas fa-clock"></i>
                             Étape 2
                         </span>
-                        <h2 class="text-lg font-bold text-gray-800">Période d'activité</h2>
+                        <h2 class="text-lg font-bold text-gray-800">Configurer les horaires</h2>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Date de début</label>
-                            <input type="date" name="date_debut" id="date_debut" class="input-modern" 
-                                   min="{{ date('Y-m-d') }}" value="{{ old('date_debut', date('Y-m-d')) }}" required>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Date de fin</label>
-                            <input type="date" name="date_fin" id="date_fin" class="input-modern"
-                                   value="{{ old('date_fin', date('Y-12-31')) }}" required>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Section 3: Horaires -->
-                <div class="mb-8">
-                    <div class="flex items-center gap-3 mb-5">
-                        <span class="section-badge bg-amber-100 text-amber-700">
-                            <i class="fas fa-clock"></i>
-                            Étape 3
-                        </span>
-                        <h2 class="text-lg font-bold text-gray-800">Horaires de départ</h2>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                <i class="fas fa-play text-green-500 mr-1"></i>Heure de départ
-                            </label>
-                            <input type="time" name="heure_depart" id="heure_depart" class="input-modern text-xl font-bold" 
-                                   value="{{ old('heure_depart', '06:00') }}" required>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                <i class="fas fa-flag-checkered text-red-500 mr-1"></i>Heure d'arrivée (calculée)
-                            </label>
-                            <input type="time" name="heure_arrive" id="heure_arrive" class="input-modern text-xl font-bold bg-gray-100" 
-                                   value="{{ old('heure_arrive', '07:30') }}" readonly>
-                            <p class="text-xs text-gray-500 mt-1">
-                                <i class="fas fa-info-circle mr-1"></i>Calculée automatiquement + durée parcours
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Preview horaires -->
-                    <div id="time_preview" class="hidden mt-4 bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl p-4">
-                        <div class="flex items-center justify-center gap-6">
-                            <div class="text-center">
-                                <p class="text-3xl font-bold text-green-600" id="preview_heure_depart">06:00</p>
-                                <p class="text-xs text-gray-500">Départ</p>
+                    <div class="dual-card-container">
+                        <!-- Card ALLER -->
+                        <div class="programme-card aller">
+                            <div class="card-header aller">
+                                <div class="card-icon">
+                                    <i class="fas fa-plane-departure"></i>
+                                </div>
+                                <div class="card-title">
+                                    <h3>Aller</h3>
+                                    <div class="route" id="aller-route">-- → --</div>
+                                </div>
                             </div>
-                            <div class="flex items-center gap-2 text-gray-400">
-                                <i class="fas fa-arrow-right"></i>
-                                <span class="text-sm font-medium" id="preview_time_duree">+1h30</span>
-                                <i class="fas fa-arrow-right"></i>
+                            <div class="card-body">
+                                <div class="schedule-container" id="aller-schedules">
+                                    <!-- Initial schedule -->
+                                    <div class="schedule-item aller" data-index="0">
+                                        <span class="badge">Horaire 1</span>
+                                        <div class="schedule-times">
+                                            <div class="time-input-group">
+                                                <label>Départ</label>
+                                                <input type="time" name="aller_horaires[0][heure_depart]" 
+                                                       class="time-input aller departure-time" 
+                                                       value="06:00" required
+                                                       data-type="aller" data-index="0">
+                                            </div>
+                                            <div class="time-arrow">
+                                                <i class="fas fa-long-arrow-alt-right"></i>
+                                            </div>
+                                            <div class="time-input-group">
+                                                <label>Arrivée</label>
+                                                 <input type="time" name="aller_horaires[0][heure_arrive]" 
+                                                       class="time-input arrival aller" 
+                                                       value="07:30" readonly>
+                                            </div>
+                                        </div>
+
+                                        <!-- Selects Driver/Vehicle -->
+                                        <div class="mt-3 grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Chauffeur</label>
+                                                <select name="aller_horaires[0][personnel_id]" class="input-modern text-sm py-2 px-3 personnel-select" required>
+                                                    <option value="">-- Choisir --</option>
+                                                    @foreach($chauffeurs as $chauffeur)
+                                                        <option value="{{ $chauffeur->id }}">{{ $chauffeur->name }} {{ $chauffeur->prenom }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                             <div>
+                                                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Véhicule</label>
+                                                <select name="aller_horaires[0][vehicule_id]" class="input-modern text-sm py-2 px-3 vehicule-select" required>
+                                                    <option value="">-- Choisir --</option>
+                                                    @foreach($vehicules as $vehicule)
+                                                        <option value="{{ $vehicule->id }}">{{ $vehicule->immatriculation }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" class="add-schedule-btn aller" onclick="addSchedule('aller')">
+                                    <i class="fas fa-plus-circle"></i>
+                                    Ajouter un horaire
+                                </button>
                             </div>
-                            <div class="text-center">
-                                <p class="text-3xl font-bold text-red-500" id="preview_heure_arrive">07:30</p>
-                                <p class="text-xs text-gray-500">Arrivée</p>
+                        </div>
+
+                        <!-- Card RETOUR -->
+                        <div class="programme-card retour">
+                            <div class="card-header retour">
+                                <div class="card-icon">
+                                    <i class="fas fa-plane-arrival"></i>
+                                </div>
+                                <div class="card-title">
+                                    <h3>Retour</h3>
+                                    <div class="route" id="retour-route">-- → --</div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="schedule-container" id="retour-schedules">
+                                    <!-- Initial schedule -->
+                                    <div class="schedule-item retour" data-index="0">
+                                        <span class="badge">Horaire 1</span>
+                                        <div class="schedule-times">
+                                            <div class="time-input-group">
+                                                <label>Départ</label>
+                                                <input type="time" name="retour_horaires[0][heure_depart]" 
+                                                       class="time-input retour departure-time" 
+                                                       value="14:00" required
+                                                       data-type="retour" data-index="0">
+                                            </div>
+                                            <div class="time-arrow">
+                                                <i class="fas fa-long-arrow-alt-right"></i>
+                                            </div>
+                                            <div class="time-input-group">
+                                                <label>Arrivée</label>
+                                                <input type="time" name="retour_horaires[0][heure_arrive]" 
+                                                       class="time-input arrival retour" 
+                                                       value="15:30" readonly>
+                                            </div>
+                                        </div>
+
+                                        <!-- Selects Driver/Vehicle -->
+                                        <div class="mt-3 grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Chauffeur</label>
+                                                <select name="retour_horaires[0][personnel_id]" class="input-modern text-sm py-2 px-3 personnel-select" required>
+                                                    <option value="">-- Choisir --</option>
+                                                    @foreach($chauffeurs as $chauffeur)
+                                                        <option value="{{ $chauffeur->id }}">{{ $chauffeur->name }} {{ $chauffeur->prenom }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                             <div>
+                                                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Véhicule</label>
+                                                <select name="retour_horaires[0][vehicule_id]" class="input-modern text-sm py-2 px-3 vehicule-select" required>
+                                                    <option value="">-- Choisir --</option>
+                                                    @foreach($vehicules as $vehicule)
+                                                        <option value="{{ $vehicule->id }}">{{ $vehicule->immatriculation }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" class="add-schedule-btn retour" onclick="addSchedule('retour')">
+                                    <i class="fas fa-plus-circle"></i>
+                                    Ajouter un horaire
+                                </button>
                             </div>
                         </div>
                     </div>
 
-                    <p class="mt-3 text-sm text-gray-500">
-                        <i class="fas fa-info-circle mr-1 text-blue-500"></i>
-                        La ligne sera active pendant toute la période définie.
-                    </p>
-                </div>
-
-                <!-- Section 4: Tarification -->
-                <div>
-                    <div class="flex items-center gap-3 mb-5">
-                        <span class="section-badge bg-green-100 text-green-700">
-                            <i class="fas fa-coins"></i>
-                            Étape 4
-                        </span>
-                        <h2 class="text-lg font-bold text-gray-800">Tarif du billet</h2>
-                    </div>
-
-                    <div class="relative max-w-sm">
-                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-2xl">💰</span>
-                        <input type="number" name="montant_billet" id="montant_billet" 
-                               class="input-modern !pl-14 !pr-20 text-xl font-bold"
-                               min="0" step="100" value="{{ old('montant_billet', 5000) }}" required>
-                        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">FCFA</span>
+                    <!-- Section 3: Tarification -->
+                    <div class="tarif-section">
+                        <div class="text-center mb-4">
+                            <span class="section-badge bg-amber-200 text-amber-800">
+                                <i class="fas fa-coins"></i>
+                                Étape 3
+                            </span>
+                            <h2 class="text-lg font-bold text-gray-800 mt-2">Tarif du billet</h2>
+                            <p class="text-sm text-amber-700">Prix identique pour l'aller et le retour</p>
+                        </div>
+                        <div class="tarif-input-wrapper">
+                            <span class="icon">💰</span>
+                            <input type="number" name="montant_billet" id="montant_billet" 
+                                   class="tarif-input"
+                                   min="0" step="100" value="{{ old('montant_billet', $existingMontantBillet ?? 5000) }}" required>
+                            <span class="currency">FCFA</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Résumé -->
-            <div class="glass-card p-6 mb-6">
-                <h3 class="font-bold text-gray-800 mb-4">
-                    <i class="fas fa-check-circle text-green-500 mr-2"></i>
-                    Ce qui sera créé
+            <div class="glass-card p-6 mb-6" id="summary-section" style="display: none;">
+                <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-check-circle text-green-500"></i>
+                    Récapitulatif des programmes à créer
                 </h3>
                 
-                <div class="grid grid-cols-3 gap-4">
+                <div class="summary-grid">
                     <div class="feature-card">
-                        <div class="text-3xl mb-2">🚌</div>
-                        <p class="text-2xl font-bold text-primary">2</p>
-                        <p class="text-sm text-gray-500">Lignes (A↔R)</p>
+                        <div class="icon">🚌</div>
+                        <p class="value" id="summary-aller">1</p>
+                        <p class="label">Programme(s) Aller</p>
                     </div>
                     <div class="feature-card">
-                        <div class="text-3xl mb-2">🕐</div>
-                        <p class="text-lg font-bold text-gray-800">24h/24</p>
-                        <p class="text-sm text-gray-500">Disponible</p>
+                        <div class="icon">🔄</div>
+                        <p class="value" id="summary-retour">1</p>
+                        <p class="label">Programme(s) Retour</p>
                     </div>
                     <div class="feature-card">
-                        <div class="text-3xl mb-2">📅</div>
-                        <p class="text-lg font-bold text-gray-800" id="summary_days">--</p>
-                        <p class="text-sm text-gray-500">Jours actifs</p>
+                        <div class="icon">📋</div>
+                        <p class="value" id="summary-total">2</p>
+                        <p class="label">Total Programmes</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">💵</div>
+                        <p class="value" id="summary-price">5000</p>
+                        <p class="label">FCFA / Billet</p>
                     </div>
                 </div>
             </div>
 
             <!-- Submit -->
-            <div class="flex justify-center pb-10">
+            <div class="flex justify-center pb-10" id="submit-section" style="display: none;">
                 <button type="submit" class="btn-primary">
-                    <i class="fas fa-plus-circle text-xl"></i>
-                    <span>Créer la ligne de transport</span>
+                    <i class="fas fa-rocket text-xl"></i>
+                    <span>Créer les programmes</span>
                 </button>
             </div>
         </form>
@@ -352,90 +732,320 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const itineraireSelect = document.getElementById('itineraire_id');
-    const dateDebut = document.getElementById('date_debut');
-    const dateFin = document.getElementById('date_fin');
-    const heureDepart = document.getElementById('heure_depart');
-    const heureArrive = document.getElementById('heure_arrive');
+    const cardsContainer = document.getElementById('cards-container');
+    const summarySection = document.getElementById('summary-section');
+    const submitSection = document.getElementById('submit-section');
+    const montantBillet = document.getElementById('montant_billet');
     
-    // Store duration in minutes for the selected itinerary
-    let currentDurationMinutes = 90; // Default 1h30
-    
-    // Parse duration string like "1 heure 29 min" to minutes
+    let currentDurationMinutes = 90;
+    let allerCount = 1;
+    let retourCount = 1;
+
+    // Parse duration string to minutes
     function parseDurationToMinutes(durationStr) {
         if (!durationStr) return 90;
         
         let hours = 0, minutes = 0;
-        
-        // Match "1 heure" or "2 heures"
         const hourMatch = durationStr.match(/(\d+)\s*heure/i);
         if (hourMatch) hours = parseInt(hourMatch[1]);
-        
-        // Match "29 min" or "45 minutes"
         const minMatch = durationStr.match(/(\d+)\s*min/i);
         if (minMatch) minutes = parseInt(minMatch[1]);
         
         return (hours * 60) + minutes;
     }
-    
-    // Calculate arrival time from departure + duration
-    function calculateArrivalTime() {
-        if (!heureDepart.value) return;
-        
-        const [hours, mins] = heureDepart.value.split(':').map(Number);
+
+    // Calculate arrival time
+    function calculateArrivalTime(departureInput) {
+        const [hours, mins] = departureInput.value.split(':').map(Number);
         const departDate = new Date(2026, 0, 1, hours, mins);
         departDate.setMinutes(departDate.getMinutes() + currentDurationMinutes);
         
         const arriveHours = departDate.getHours().toString().padStart(2, '0');
         const arriveMins = departDate.getMinutes().toString().padStart(2, '0');
-        heureArrive.value = `${arriveHours}:${arriveMins}`;
         
-        // Update preview
-        const timePreview = document.getElementById('time_preview');
-        if (timePreview) {
-            timePreview.classList.remove('hidden');
-            document.getElementById('preview_heure_depart').textContent = heureDepart.value;
-            document.getElementById('preview_heure_arrive').textContent = heureArrive.value;
-            
-            const h = Math.floor(currentDurationMinutes / 60);
-            const m = currentDurationMinutes % 60;
-            const durationDisplay = m > 0 ? `+${h}h${m.toString().padStart(2, '0')}` : `+${h}h`;
-            document.getElementById('preview_time_duree').textContent = durationDisplay;
+        // Find the corresponding arrival input
+        const scheduleItem = departureInput.closest('.schedule-item');
+        const arrivalInput = scheduleItem.querySelector('.time-input.arrival');
+        if (arrivalInput) {
+            arrivalInput.value = `${arriveHours}:${arriveMins}`;
         }
     }
-    
-    function updatePreview() {
-        const selected = itineraireSelect.selectedOptions[0];
-        const routePreview = document.getElementById('route_preview');
+
+    // Update all arrival times
+    function updateAllArrivalTimes() {
+        document.querySelectorAll('.departure-time').forEach(input => {
+            calculateArrivalTime(input);
+        });
+    }
+
+    // Update summary
+    function updateSummary() {
+        const allerSchedules = document.querySelectorAll('#aller-schedules .schedule-item').length;
+        const retourSchedules = document.querySelectorAll('#retour-schedules .schedule-item').length;
+        
+        document.getElementById('summary-aller').textContent = allerSchedules;
+        document.getElementById('summary-retour').textContent = retourSchedules;
+        document.getElementById('summary-total').textContent = allerSchedules + retourSchedules;
+        document.getElementById('summary-price').textContent = montantBillet.value;
+    }
+
+    // Itinerary change
+    itineraireSelect.addEventListener('change', function() {
+        const selected = this.selectedOptions[0];
         
         if (selected && selected.value) {
-            routePreview.classList.remove('hidden');
-            document.getElementById('preview_depart').textContent = selected.dataset.depart;
-            document.getElementById('preview_arrive').textContent = selected.dataset.arrive;
-            document.getElementById('preview_duree').textContent = selected.dataset.duree;
+            cardsContainer.classList.remove('hidden');
+            summarySection.style.display = 'block';
+            submitSection.style.display = 'flex';
             
-            // Update duration and recalculate arrival
+            const depart = selected.dataset.depart;
+            const arrive = selected.dataset.arrive;
+            
+            document.getElementById('aller-route').textContent = `${depart} → ${arrive}`;
+            document.getElementById('retour-route').textContent = `${arrive} → ${depart}`;
+            
             currentDurationMinutes = parseDurationToMinutes(selected.dataset.duree);
-            calculateArrivalTime();
+            updateAllArrivalTimes();
+            updateSummary();
         } else {
-            routePreview.classList.add('hidden');
+            cardsContainer.classList.add('hidden');
+            summarySection.style.display = 'none';
+            submitSection.style.display = 'none';
+        }
+    });
+
+    // Injecter les données existantes depuis le contrôleur
+    const existingAller = @json($existingAller ?? []);
+    const existingRetour = @json($existingRetour ?? []);
+    const preselectedItineraireId = "{{ $preselectedItineraireId ?? '' }}";
+    
+    // Données pour les selects
+    const vehicules = @json($vehicules ?? []);
+    const chauffeurs = @json($chauffeurs ?? []);
+
+    // Helper to generate options
+    function generateOptions(items, valueField, labelField, includeSame = false) {
+        let html = '<option value="">-- Choisir --</option>';
+        if (includeSame) {
+            html += '<option value="same">Identique au précédent</option>';
+        }
+        items.forEach(item => {
+            html += `<option value="${item[valueField]}">${item[labelField]} ${item.prenom ? item.prenom : ''}</option>`; // Handle name+prenom for chauffeurs
+        });
+        return html;
+    }
+
+    // Add schedule function
+    window.addSchedule = function(type, initialTime = null, initialArrivalTime = null, initialVehicule = null, initialPersonnel = null) {
+        const container = document.getElementById(`${type}-schedules`);
+        const items = container.querySelectorAll('.schedule-item');
+        const newIndex = items.length;
+        
+        let nextTime = type === 'aller' ? '06:00' : '14:00';
+        
+        if (initialTime) {
+            nextTime = initialTime;
+        } else {
+            const lastItem = items[items.length - 1];
+            if (lastItem) {
+                const lastTimeInput = lastItem.querySelector('.departure-time');
+                if (lastTimeInput && lastTimeInput.value) {
+                    const [hours, mins] = lastTimeInput.value.split(':').map(Number);
+                    let nextHour = (hours + 1) % 24;
+                    nextTime = `${nextHour.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+                }
+            }
         }
         
-        // Calculate days
-        if (dateDebut.value && dateFin.value) {
-            const start = new Date(dateDebut.value);
-            const end = new Date(dateFin.value);
-            const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-            document.getElementById('summary_days').textContent = days > 0 ? days : 0;
+        const vehiculeOptions = generateOptions(vehicules, 'id', 'immatriculation', newIndex > 0);
+        const chauffeurOptions = generateOptions(chauffeurs, 'id', 'name', newIndex > 0);
+
+        const scheduleHtml = `
+            <div class="schedule-item ${type}" data-index="${newIndex}">
+                <span class="badge">Horaire ${newIndex + 1}</span>
+                ${newIndex > 0 ? `<button type="button" class="remove-schedule" onclick="this.closest('.schedule-item').remove(); updateSummary(); updateIndices('${type}')"><i class="fas fa-times"></i></button>` : ''}
+                
+                <div class="schedule-times">
+                    <div class="time-input-group">
+                        <label>Départ</label>
+                        <input type="time" name="${type}_horaires[${newIndex}][heure_depart]" 
+                               class="time-input ${type} departure-time" 
+                               value="${nextTime}" required
+                               onchange="calculateArrivalTime(this)"
+                               data-type="${type}" data-index="${newIndex}">
+                    </div>
+                    <div class="time-arrow">
+                        <i class="fas fa-long-arrow-alt-right"></i>
+                    </div>
+                    <div class="time-input-group">
+                        <label>Arrivée</label>
+                        <input type="time" name="${type}_horaires[${newIndex}][heure_arrive]" 
+                               class="time-input arrival ${type}" 
+                               value="${initialArrivalTime || ''}" readonly>
+                    </div>
+                </div>
+
+                <!-- Selects Driver/Vehicle -->
+                <div class="mt-3 grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Chauffeur</label>
+                        <select name="${type}_horaires[${newIndex}][personnel_id]" class="input-modern text-sm py-2 px-3 personnel-select">
+                            ${chauffeurOptions}
+                        </select>
+                    </div>
+                     <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Véhicule</label>
+                        <select name="${type}_horaires[${newIndex}][vehicule_id]" class="input-modern text-sm py-2 px-3 vehicule-select">
+                            ${vehiculeOptions}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Insert and update...
+        if (newIndex === 0) {
+             container.innerHTML = scheduleHtml; // Replace initial placeholder
+        } else {
+             container.insertAdjacentHTML('beforeend', scheduleHtml);
         }
+        
+        const newRow = container.querySelector(`[data-index="${newIndex}"]`);
+        
+        // Update arrival time
+        const departInput = newRow.querySelector('.departure-time');
+        calculateArrivalTime(departInput);
+        
+        updateSummary();
     }
     
-    itineraireSelect.addEventListener('change', updatePreview);
-    dateDebut.addEventListener('change', updatePreview);
-    dateFin.addEventListener('change', updatePreview);
-    heureDepart.addEventListener('change', calculateArrivalTime);
-    heureDepart.addEventListener('input', calculateArrivalTime);
-    
-    updatePreview();
+    // Fonction pour résoudre les "Même que précédent" avant soumission
+    document.getElementById('programmeForm').addEventListener('submit', function(e) {
+        // Resolve drivers
+        ['aller', 'retour'].forEach(type => {
+            const tempDrivers = [];
+            const tempVehicles = [];
+            
+            const driverSelects = document.querySelectorAll(`select[name^="${type}_horaires"][name$="[personnel_id]"]`);
+            driverSelects.forEach((select, idx) => {
+                if (select.value === 'same') {
+                    select.value = tempDrivers[idx - 1] || '';
+                    // If still empty (e.g. previous was empty), select is empty.
+                    // Important: select.value will only update if the value exists in options. 
+                    // Since "same" option is present, we must ensure we select the correct ID.
+                    // If previous was "" (empty), select.value = "" is valid.
+                }
+                tempDrivers.push(select.value);
+            });
+            
+             const vehicleSelects = document.querySelectorAll(`select[name^="${type}_horaires"][name$="[vehicule_id]"]`);
+            vehicleSelects.forEach((select, idx) => {
+                if (select.value === 'same') {
+                    select.value = tempVehicles[idx - 1] || '';
+                }
+                tempVehicles.push(select.value);
+            });
+        });
+    });
+
+
+
+    // Initialisation avec les données existantes
+    if (preselectedItineraireId) {
+        // Sélectionner l'itinéraire
+        if (itineraireSelect) {
+            itineraireSelect.value = preselectedItineraireId;
+            // Déclencher l'événement change pour afficher le formulaire
+            setTimeout(() => {
+                itineraireSelect.dispatchEvent(new Event('change'));
+                
+                // Attendre que le changement soit traité
+                setTimeout(() => {
+                    // Vider les conteneurs (au cas où il y aurait des valeurs par défaut)
+                    const allerContainer = document.getElementById('aller-schedules');
+                    const retourContainer = document.getElementById('retour-schedules');
+                    allerContainer.innerHTML = '';
+                    retourContainer.innerHTML = '';
+                    
+                    // Remplir avec les données existantes
+                    if (existingAller.length > 0) {
+                        existingAller.forEach(h => window.addSchedule('aller', h.heure_depart, h.heure_arrive));
+                    } else {
+                        window.addSchedule('aller');
+                    }
+                    
+                    if (existingRetour.length > 0) {
+                        existingRetour.forEach(h => window.addSchedule('retour', h.heure_depart, h.heure_arrive));
+                    } else {
+                        window.addSchedule('retour');
+                    }
+                }, 100);
+            }, 100);
+        }
+    } else {
+        // Comportement par défaut si pas de pré-sélection
+        window.addSchedule('aller');
+        window.addSchedule('retour');
+    }
+
+    // Remove schedule function
+    window.removeSchedule = function(type, index) {
+        const container = document.getElementById(`${type}-schedules`);
+        const items = container.querySelectorAll('.schedule-item');
+        
+        if (items.length <= 1) {
+            alert('Vous devez conserver au moins un horaire');
+            return;
+        }
+        
+        const item = container.querySelector(`.schedule-item[data-index="${index}"]`);
+        if (item) {
+            item.style.animation = 'slideIn 0.3s ease-out reverse';
+            setTimeout(() => {
+                item.remove();
+                reindexSchedules(type);
+                updateSummary();
+            }, 250);
+        }
+    };
+
+    // Reindex schedules after removal
+    function reindexSchedules(type) {
+        const container = document.getElementById(`${type}-schedules`);
+        const items = container.querySelectorAll('.schedule-item');
+        
+        items.forEach((item, idx) => {
+            item.dataset.index = idx;
+            item.querySelector('.badge').textContent = `Horaire ${idx + 1}`;
+            
+            const departInput = item.querySelector('input[name*="heure_depart"]');
+            const arriveInput = item.querySelector('input[name*="heure_arrive"]');
+            
+            departInput.name = `${type}_horaires[${idx}][heure_depart]`;
+            departInput.dataset.index = idx;
+            arriveInput.name = `${type}_horaires[${idx}][heure_arrive]`;
+            
+            const removeBtn = item.querySelector('.remove-schedule');
+            if (removeBtn) {
+                removeBtn.setAttribute('onclick', `removeSchedule('${type}', ${idx})`);
+            }
+        });
+    }
+
+    // Attach event listeners to departure inputs
+    document.querySelectorAll('.departure-time').forEach(input => {
+        input.addEventListener('input', function() {
+            calculateArrivalTime(this);
+        });
+    });
+
+    // Price update
+    montantBillet.addEventListener('input', updateSummary);
+
+    // Initial trigger if already selected
+    if (itineraireSelect.value) {
+        itineraireSelect.dispatchEvent(new Event('change'));
+    }
 });
 </script>
 @endsection

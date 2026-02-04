@@ -48,8 +48,14 @@ class AdminDashboard extends Controller
         
         // Variation
         $revenueVariation = $revenueLastMonth > 0 
-            ? round((($revenueThisMonth - $revenueLastMonth) / $revenueLastMonth) * 100, 1) 
-            : ($revenueThisMonth > 0 ? 100 : 0);
+            ? (($revenueThisMonth - $revenueLastMonth) / $revenueLastMonth) * 100 
+            : 100;
+
+        // 2b. Revenus Tickets (Rechargement Compagnie)
+        $totalTicketRevenue = \App\Models\HistoriqueTicket::where('montant', '>', 0)->sum('montant');
+        $ticketRevenueMonth = \App\Models\HistoriqueTicket::where('montant', '>', 0)
+            ->whereMonth('created_at', Carbon::now()->month)
+            ->sum('montant');
         
         // 3. Statistiques réservations
         $reservationsConfirmees = Reservation::where('statut', 'confirmee')->count();
@@ -154,7 +160,9 @@ class AdminDashboard extends Controller
             'compagnieCounts',
             'vehiculesActifs',
             'vehiculesInactifs',
-            'programmesAujourdhui'
+            'programmesAujourdhui',
+            'totalTicketRevenue',
+            'ticketRevenueMonth'
         ));
     }
 

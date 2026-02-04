@@ -25,6 +25,8 @@ class Reservation extends Model
         'passager_telephone',
         'passager_urgence',
         'date_voyage',
+        'heure_depart',
+        'heure_arrive',
         'montant',
         'statut',
         'reference',

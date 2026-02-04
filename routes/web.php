@@ -88,6 +88,7 @@ Route::prefix('company')->group(function () {
 
 Route::middleware('compagnie')->prefix('company')->group(function () {
     Route::get('/dashboard', [CompagnieDashboard::class, 'dashboard'])->name('compagnie.dashboard');
+    Route::post('/tickets/add', [CompagnieDashboard::class, 'addTickets'])->name('compagnie.tickets.add');
     Route::get('/logout', [CompagnieDashboard::class, 'logout'])->name('compagnie.logout');
 
     //les routes pour la gestion des agents 

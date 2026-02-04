@@ -151,6 +151,19 @@ class PaymentController extends Controller
                 $dateVoyageStr
             );
 
+            // --- DEDUCTION TICKETS ---
+            // Charger la compagnie si nécessaire
+            if (!$reservation->relationLoaded('programme')) {
+                $reservation->load('programme.compagnie');
+            } elseif (!$reservation->programme->relationLoaded('compagnie')) {
+                $reservation->programme->load('compagnie');
+            }
+
+            if ($reservation->programme && $reservation->programme->compagnie) {
+                 $deductionQty = $reservation->is_aller_retour ? 2 : 1;
+                 $reservation->programme->compagnie->deductTickets($deductionQty, "Réservation #{$reservation->reference} (CinetPay - {$reservation->payment_transaction_id})");
+            }
+
             Log::info('Finalisation réservation terminée avec succès (Email envoyé)', ['id' => $reservation->id]);
 
         } catch (\Exception $e) {

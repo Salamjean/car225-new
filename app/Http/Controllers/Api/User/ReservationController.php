@@ -600,6 +600,11 @@ class ReservationController extends Controller
                         }
 
                         $res = Reservation::create($reservationData);
+                        
+                        // --- DEDUCTION TICKETS ---
+                        $deductionQty = $isAllerRetour ? 2 : 1;
+                        $programme->compagnie->deductTickets($deductionQty, "Réservation #{$res->reference} (Wallet)");
+
                        // --- AJOUT IMPORTANT : GENERATION VRAI QR + EMAIL ---
                         $this->finalizeReservation($res);
                         // On rafraichit pour avoir les chemins de QR dans la réponse

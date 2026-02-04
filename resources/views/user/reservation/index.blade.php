@@ -248,17 +248,30 @@
                                                     </div>
                                                 </td>
                                                 <td class="align-middle">
-                                                    <div class="d-flex align-items-center"
-                                                        style="display: flex; justify-content:center">
-                                                        <div class="icon-shape icon-sm bg-light-warning rounded me-3">
-                                                            <i class="fas fa-calendar text-warning"></i>
-                                                        </div>
-                                                        <div>
-                                                            <span class="fw-bold">{{ $reservation->date_voyage }}</span>
-                                                            <div class="small text-muted">
-                                                                {{ date('H:i', strtotime($reservation->programme->heure_depart ?? 'N/A')) }}
+                                                    <div class="d-flex flex-column align-items-center justify-content-center">
+                                                        <div class="d-flex align-items-center mb-1">
+                                                            <div class="icon-shape icon-sm bg-light-warning rounded me-2">
+                                                                <i class="fas fa-calendar text-warning"></i>
                                                             </div>
+                                                            <span class="fw-bold">{{ \Carbon\Carbon::parse($reservation->date_voyage)->format('d/m/Y') }}</span>
                                                         </div>
+                                                        <div class="small text-muted mb-1">
+                                                            {{ \Carbon\Carbon::parse($reservation->heure_depart ?? $reservation->programme->heure_depart)->format('H:i') }} - 
+                                                            {{ \Carbon\Carbon::parse($reservation->heure_arrive ?? $reservation->programme->heure_arrive)->format('H:i') }}
+                                                        </div>
+                                                        @if(str_contains($reservation->reference, '-RET-'))
+                                                            <span class="badge bg-info text-white" style="font-size: 0.7rem;">
+                                                                <i class="fas fa-undo me-1"></i> Billet Retour
+                                                            </span>
+                                                        @elseif($reservation->is_aller_retour)
+                                                            <span class="badge bg-primary text-white" style="font-size: 0.7rem;">
+                                                                <i class="fas fa-plane-departure me-1"></i> Billet Aller
+                                                            </span>
+                                                        @else
+                                                            <span class="badge bg-light text-dark border" style="font-size: 0.7rem;">
+                                                                Aller Simple
+                                                            </span>
+                                                        @endif
                                                     </div>
                                                 </td>
                                                 <td class="align-middle">
@@ -349,30 +362,38 @@
             <i class="fas fa-eye"></i>
         </a>
 
-        {{-- Bouton PDF ALLER --}}
+        {{-- Bouton PDF --}}
         @if($reservation->qr_code_path)
             @php
+                // Vérifier si c'est un billet retour basé sur la référence
+                $isRetourTicket = str_contains($reservation->reference, 'RET');
+                
                 // Le bouton est désactivé UNIQUEMENT si le statut spécifique de l'aller est 'terminee'
                 // Ou si le statut global est 'terminee' (sécurité supplémentaire)
                 $allerConsomme = $reservation->statut_aller === 'terminee' || $reservation->statut === 'terminee';
+                
+                // Déterminer le style et le texte
+                $btnClass = $isRetourTicket ? 'btn-outline-warning' : 'btn-outline-success';
+                $btnText = $isRetourTicket ? 'Retour' : ($reservation->is_aller_retour ? 'Aller' : 'Billet');
+                $btnTooltip = $isRetourTicket ? 'Télécharger billet RETOUR' : 'Télécharger billet ALLER';
+                
+                if ($allerConsomme) {
+                    $btnClass = 'btn-secondary disabled';
+                }
             @endphp
             
             <button type="button" 
-                    class="btn btn-sm {{ $allerConsomme ? 'btn-secondary disabled' : 'btn-outline-success' }} download-ticket-btn"
+                    class="btn btn-sm {{ $btnClass }} download-ticket-btn"
                     data-id="{{ $reservation->id }}"
-                    data-type="aller"
+                    data-type="{{ $isRetourTicket ? 'retour' : 'aller' }}"
                     data-reference="{{ $reservation->reference }}"
-                    data-url="{{ route('reservations.ticket', ['reservation' => $reservation->id, 'type' => 'aller']) }}"
+                    data-url="{{ route('reservations.ticket', ['reservation' => $reservation->id, 'type' => $isRetourTicket ? 'retour' : 'aller']) }}"
                     data-toggle="tooltip" 
-                    title="{{ $allerConsomme ? 'Voyage ALLER terminé' : 'Télécharger billet ALLER' }}"
+                    title="{{ $allerConsomme ? 'Voyage terminé' : $btnTooltip }}"
                     {{ $allerConsomme ? 'disabled' : '' }}
                     style="{{ $allerConsomme ? 'opacity: 0.6; cursor: not-allowed;' : '' }}">
                 <i class="fas fa-file-pdf"></i>
-                @if($reservation->is_aller_retour)
-                    Aller
-                @else
-                    Billet
-                @endif
+                {{ $btnText }}
             </button>
         @endif
 
