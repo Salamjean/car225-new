@@ -28,53 +28,7 @@
                             <h2 class="text-2xl font-bold text-gray-900">Informations générales</h2>
                         </div>
 
-                        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                            <!-- Marque -->
-                            <div class="space-y-2">
-                                <label class="flex items-center text-sm font-semibold text-gray-700">
-                                    <span>Marque</span>
-                                    <span class="text-red-500 ml-1">*</span>
-                                </label>
-                                <select name="marque" required
-                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
-                                    <option value="">Sélectionnez une marque</option>
-                                    <option value="Toyota" {{ old('marque') == 'Toyota' ? 'selected' : '' }}>Toyota</option>
-                                    <option value="Mercedes-Benz" {{ old('marque') == 'Mercedes-Benz' ? 'selected' : '' }}>
-                                        Mercedes-Benz</option>
-                                    <option value="Volkswagen" {{ old('marque') == 'Volkswagen' ? 'selected' : '' }}>
-                                        Volkswagen</option>
-                                    <option value="Ford" {{ old('marque') == 'Ford' ? 'selected' : '' }}>Ford</option>
-                                    <option value="Nissan" {{ old('marque') == 'Nissan' ? 'selected' : '' }}>Nissan</option>
-                                    <option value="Renault" {{ old('marque') == 'Renault' ? 'selected' : '' }}>Renault
-                                    </option>
-                                    <option value="Peugeot" {{ old('marque') == 'Peugeot' ? 'selected' : '' }}>Peugeot
-                                    </option>
-                                    <option value="Hyundai" {{ old('marque') == 'Hyundai' ? 'selected' : '' }}>Hyundai
-                                    </option>
-                                    <option value="Kia" {{ old('marque') == 'Kia' ? 'selected' : '' }}>Kia</option>
-                                    <option value="BMW" {{ old('marque') == 'BMW' ? 'selected' : '' }}>BMW</option>
-                                    <option value="Audi" {{ old('marque') == 'Audi' ? 'selected' : '' }}>Audi</option>
-                                    <option value="Mitsubishi" {{ old('marque') == 'Mitsubishi' ? 'selected' : '' }}>
-                                        Mitsubishi</option>
-                                    <option value="Isuzu" {{ old('marque') == 'Isuzu' ? 'selected' : '' }}>Isuzu</option>
-                                    <option value="Autre" {{ old('marque') == 'Autre' ? 'selected' : '' }}>Autre</option>
-                                </select>
-                                @error('marque')
-                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <!-- Modèle -->
-                            <div class="space-y-2">
-                                <label class="text-sm font-semibold text-gray-700">Modèle</label>
-                                <input type="text" name="modele" value="{{ old('modele') }}"
-                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
-                                    placeholder="Ex: Corolla, C-Class">
-                                @error('modele')
-                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                                @enderror
-                            </div>
-
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <!-- Immatriculation -->
                             <div class="space-y-2">
                                 <label class="flex items-center text-sm font-semibold text-gray-700">

@@ -381,6 +381,19 @@
 
                     </div>
 
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="contact_urgence"><i class="fas fa-phone-volume"></i> Contact d'urgence</label>
+                            <input type="text" id="contact_urgence" name="contact_urgence" class="form-control"
+                                value="{{ old('contact_urgence') }}" placeholder="Numéro d'urgence">
+                            <div class="input-icon">
+                                <i class="fas fa-life-ring"></i>
+                            </div>
+                            @error('contact_urgence')
+                                <div class="error-message">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
 
                     <div class="form-row">
                         <div class="form-group">

@@ -59,6 +59,10 @@ return [
             'driver' => 'session',
             'provider' => 'agents',
         ],
+        'caisse' => [
+            'driver' => 'session',
+            'provider' => 'caisses',
+        ],
     ],
 
     /*
@@ -101,6 +105,10 @@ return [
         'agents' => [
             'driver' => 'eloquent',
             'model' => App\Models\Agent::class,
+        ],
+        'caisses' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Caisse::class,
         ],
 
         // 'users' => [

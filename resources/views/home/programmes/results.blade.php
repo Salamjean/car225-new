@@ -180,18 +180,19 @@
                                                 <div class="text-xs">
                                                     @php
                                                         $statusTexts = [
-                                                            'vide' => 'Places disponibles',
+                                                            'disponible' => 'Places disponibles',
                                                             'presque_complet' => 'Presque complet',
-                                                            'rempli' => 'Complet',
+                                                            'complet' => 'Complet',
                                                         ];
+                                                        $statusKey = $programme->statut_places;
                                                     @endphp
                                                     <span
-                                                        class="{{ $programme->staut_place == 'rempli'
+                                                        class="{{ $statusKey == 'complet'
                                                             ? 'text-red-600'
-                                                            : ($programme->staut_place == 'presque_complet'
+                                                            : ($statusKey == 'presque_complet'
                                                                 ? 'text-yellow-600'
                                                                 : 'text-green-600') }} font-semibold">
-                                                        {{ $statusTexts[$programme->staut_place] ?? 'Statut inconnu' }}
+                                                        {{ $statusTexts[$statusKey] ?? 'Statut inconnu' }}
                                                     </span>
                                                 </div>
                                             </div>
@@ -199,7 +200,7 @@
 
                                         <!-- Actions mobile -->
                                         <div class="flex gap-2">
-                                            @if ($programme->staut_place != 'rempli')
+                                            @if ($programme->statut_places != 'complet')
                                                 <a href="{{ route('programmes.show', $programme->id) }}"
                                                     class="flex-1 bg-[#e94f1b] text-white text-center py-2 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 flex items-center justify-center gap-2">
                                                     <i class="fas fa-ticket-alt"></i>
@@ -296,27 +297,35 @@
                                         <div class="col-span-2" style="display:flex; justify-content:center">
                                             @php
                                                 $statusColors = [
-                                                    'vide' => 'bg-green-100 text-green-800 border-green-200',
-                                                    'presque_complet' =>
-                                                        'bg-yellow-100 text-yellow-800 border-yellow-200',
-                                                    'rempli' => 'bg-red-100 text-red-800 border-red-200',
+                                                    'disponible' => 'bg-green-100 text-green-800 border-green-200',
+                                                    'presque_complet' => 'bg-orange-100 text-orange-800 border-orange-200',
+                                                    'complet' => 'bg-red-100 text-red-800 border-red-200',
                                                 ];
                                                 $statusTexts = [
-                                                    'vide' => 'Places disponibles',
+                                                    'disponible' => 'Places disponibles',
                                                     'presque_complet' => 'Presque complet',
-                                                    'rempli' => 'Complet',
+                                                    'complet' => 'Complet',
                                                 ];
+                                                $statusKey = $programme->statut_places;
                                             @endphp
                                             <div class="flex items-center gap-2">
                                                 <div
-                                                    class="w-3 h-3 rounded-full {{ $programme->staut_place == 'vide'
+                                                    class="w-3 h-3 rounded-full {{ $statusKey == 'disponible'
                                                         ? 'bg-green-500'
-                                                        : ($programme->staut_place == 'presque_complet'
+                                                        : ($statusKey == 'presque_complet'
                                                             ? 'bg-yellow-500'
                                                             : 'bg-red-500') }}">
                                                 </div>
                                                 <span
-                                                    class="font-semibold {{ $programme->staut_place == 'vide'
+                                                    class="font-semibold {{ $statusKey == 'disponible'
+                                                        ? 'text-green-700'
+                                                        : ($statusKey == 'presque_complet'
+                                                            ? 'text-yellow-700'
+                                                            : 'text-red-700') }}">
+                                                    {{ $statusTexts[$statusKey] ?? 'Statut inconnu' }}
+                                                </span>
+                                            </div>
+                                        </div>
                                                         ? 'text-green-600'
                                                         : ($programme->staut_place == 'presque_complet'
                                                             ? 'text-yellow-600'

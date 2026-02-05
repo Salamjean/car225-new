@@ -161,7 +161,24 @@ class PaymentController extends Controller
 
             if ($reservation->programme && $reservation->programme->compagnie) {
                  $deductionQty = $reservation->is_aller_retour ? 2 : 1;
+                 
+                 // DEBUG: Verify company before deduction
+                 \Illuminate\Support\Facades\Log::info("PaymentController: Finalize - Prêt à déduire", [
+                    'reservation_id' => $reservation->id,
+                    'is_aller_retour' => $reservation->is_aller_retour,
+                    'qty' => $deductionQty,
+                    'program_id' => $reservation->programme->id,
+                    'RESOLVED_COMPANY_ID' => $reservation->programme->compagnie->id, // C'est ici qu'on verra si c'est 2 ou autre
+                    'RESOLVED_COMPANY_NAME' => $reservation->programme->compagnie->name
+                 ]);
+
                  $reservation->programme->compagnie->deductTickets($deductionQty, "Réservation #{$reservation->reference} (CinetPay - {$reservation->payment_transaction_id})");
+            } else {
+                 \Illuminate\Support\Facades\Log::error("PaymentController: IMPOSSIBLE DE DÉDUIRE - Compagnie introuvable", [
+                    'reservation_id' => $reservation->id,
+                    'has_programme' => (bool)$reservation->programme,
+                    'has_compagnie' => $reservation->programme ? (bool)$reservation->programme->compagnie : false
+                 ]);
             }
 
             Log::info('Finalisation réservation terminée avec succès (Email envoyé)', ['id' => $reservation->id]);

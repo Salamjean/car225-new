@@ -50,6 +50,7 @@ class UserAuthenticate extends Controller
                 'password' => 'required|min:8|confirmed',
                 'adresse' => 'required|string|max:255',
                 'contact' => 'required|string|max:255',
+                'contact_urgence' => 'nullable|string|max:255',
                 'photo_profile' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             ],
             [
@@ -83,6 +84,10 @@ class UserAuthenticate extends Controller
                 'contact.string' => 'Le contact doit être une chaîne de caractères.',
                 'contact.max' => 'Le contact ne doit pas dépasser 255 caractères.',
 
+                // Contact d'urgence
+                'contact_urgence.string' => 'Le contact d\'urgence doit être une chaîne de caractères.',
+                'contact_urgence.max' => 'Le contact d\'urgence ne doit pas dépasser 255 caractères.',
+
                 // Photo de profil
                 'photo_profile.image' => 'Le fichier doit être une image.',
                 'photo_profile.mimes' => 'L\'image doit être au format : jpeg, png, jpg ou gif.',
@@ -98,6 +103,7 @@ class UserAuthenticate extends Controller
                 'email' => $validated['email'],
                 'pays' => 'Cote d\'ivoire',
                 'contact' => $validated['contact'],
+                'contact_urgence' => $validated['contact_urgence'] ?? null,
                 'adresse' => $validated['adresse'],
                 'password' => Hash::make($validated['password']),
             ];

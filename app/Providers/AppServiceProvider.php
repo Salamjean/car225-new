@@ -18,11 +18,13 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
-   public function boot()
-{
-    // Force HTTPS si on est en production OU si la requête vient de ngrok (via le header X-Forwarded-Proto)
-    if($this->app->environment('production') || request()->header('X-Forwarded-Proto') === 'https') {
-        URL::forceScheme('https');
+    public function boot(): void
+    {
+        // Fix for MySQL index length issue with utf8mb4
+        \Illuminate\Support\Facades\Schema::defaultStringLength(191);
+        
+        if ($this->app->environment('production')) {
+            URL::forceScheme('https');
+        }
     }
-}
 }

@@ -52,7 +52,7 @@
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Immatriculation</th>
-                                <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Marque/Modèle</th>
+                                <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Numéro de Série</th>
                                 <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Type</th>
                                 <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Places</th>
                                 <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Statut</th>
@@ -66,8 +66,7 @@
                                     <div class="text-sm font-mono font-bold text-gray-900 text-center">{{ $vehicule->immatriculation }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center">
-                                    <div class="text-sm font-semibold text-gray-900">{{ $vehicule->marque }}</div>
-                                    <div class="text-sm text-gray-500">{{ $vehicule->modele ?? 'N/A' }}</div>
+                                    <div class="text-sm text-gray-600">{{ $vehicule->numero_serie ?? 'N/A' }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center">
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -196,8 +195,6 @@ document.addEventListener('DOMContentLoaded', function() {
         @foreach($vehicules as $vehicule)
         {{ $vehicule->id }}: {
             id: {{ $vehicule->id }},
-            marque: "{{ $vehicule->marque }}",
-            modele: "{{ $vehicule->modele ?? 'N/A' }}",
             immatriculation: "{{ $vehicule->immatriculation }}",
             numero_serie: "{{ $vehicule->numero_serie ?? 'N/A' }}",
             type_range: "{{ $vehicule->type_range }}",
@@ -226,8 +223,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <span class="font-mono">${vehicule.immatriculation}</span>
                             </div>
                             <div>
-                                <strong>Marque/Modèle:</strong><br>
-                                ${vehicule.marque} ${vehicule.modele}
+                                <strong>Numéro de série:</strong><br>
+                                ${vehicule.numero_serie}
                             </div>
                             <div>
                                 <strong>Type de rangée:</strong><br>
@@ -238,10 +235,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div>
                                 <strong>Nombre de places:</strong><br>
                                 ${vehicule.nombre_place} places
-                            </div>
-                            <div>
-                                <strong>Numéro de série:</strong><br>
-                                ${vehicule.numero_serie}
                             </div>
                             <div>
                                 <strong>Statut:</strong><br>

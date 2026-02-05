@@ -23,7 +23,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'compagnie' => \App\Http\Middleware\CompagnieMiddleware::class,
             'sapeur_pompier' => \App\Http\Middleware\SapeurPompierMiddleware::class,
             'agent' => \App\Http\Middleware\AgentMiddleware::class,
+            'caisse' => \App\Http\Middleware\CaisseMiddleware::class,
         ]);
+
 
     })
     ->withExceptions(function (Exceptions $exceptions): void {

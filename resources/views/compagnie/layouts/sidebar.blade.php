@@ -49,6 +49,12 @@
                                     Terminées
                                 </a>
                             </div>
+                            <div class="mdc-list-item mdc-drawer-item">
+                                <a class="mdc-drawer-link"
+                                    href="{{ route('company.reservation.details') }}">
+                                    Détails & Stats
+                                </a>
+                            </div>
                         </nav>
                     </div>
                 </div>
@@ -127,6 +133,30 @@
                         </nav>
                     </div>
                 </div>
+                 <!-- Gestion Caissières -->
+                <div class="mdc-list-item mdc-drawer-item">
+                    <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel"
+                        data-target="ui-sub-caisses">
+                        <i class="fas fa-cash-register mdc-list-item__start-detail mdc-drawer-item-icon"
+                            aria-hidden="true"></i>
+                        Gestion Caissières
+                        <i class="mdc-drawer-arrow material-icons">chevron_right</i>
+                    </a>
+                    <div class="mdc-expansion-panel" id="ui-sub-caisses">
+                        <nav class="mdc-list mdc-drawer-submenu">
+                            <div class="mdc-list-item mdc-drawer-item">
+                                <a class="mdc-drawer-link" href="{{ route('compagnie.caisse.create') }}">
+                                    Ajouter
+                                </a>
+                            </div>
+                            <div class="mdc-list-item mdc-drawer-item">
+                                <a class="mdc-drawer-link" href="{{ route('compagnie.caisse.index') }}">
+                                    Liste
+                                </a>
+                            </div>
+                        </nav>
+                    </div>
+                </div>
                 <div class="mdc-list-item mdc-drawer-item">
                     <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel"
                         data-target="ui-sub-perso">
@@ -171,6 +201,8 @@
                         </nav>
                     </div>
                 </div>
+                
+               
                 
                 <!-- Onglet Signalements -->
                 <div class="mdc-list-item mdc-drawer-item">

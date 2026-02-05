@@ -32,14 +32,11 @@ class VehiculeController extends Controller
     {
         // Validation des données
         $request->validate([
-            'marque' => 'required|string|max:255',
-            'modele' => 'nullable|string|max:255',
             'immatriculation' => 'required|string|max:20|unique:vehicules,immatriculation',
             'numero_serie' => 'nullable|string|max:255',
             'type_range' => 'required|string|in:2x2,2x3,2x4',
             'nombre_place' => 'required|integer|min:4|max:30',
         ], [
-            'marque.required' => 'La marque est obligatoire.',
             'immatriculation.required' => 'L\'immatriculation est obligatoire.',
             'immatriculation.unique' => 'Cette immatriculation est déjà utilisée.',
             'type_range.required' => 'Le type de rangée est obligatoire.',
@@ -53,8 +50,6 @@ class VehiculeController extends Controller
         try {
             // Création du véhicule
             $vehicule = Vehicule::create([
-                'marque' => $request->marque,
-                'modele' => $request->modele,
                 'immatriculation' => strtoupper($request->immatriculation),
                 'numero_serie' => $request->numero_serie,
                 'type_range' => $request->type_range,

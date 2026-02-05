@@ -7,7 +7,7 @@ use App\Http\Controllers\Agent\AgentController;
 use App\Http\Controllers\Agent\AgentDashboard;
 use App\Http\Controllers\Agent\AuthenticateAgent;
 use App\Http\Controllers\Agent\ReservationController as AgentReservationController;
-use App\Http\Controllers\Api\User\WalletController;
+use App\Http\Controllers\User\WalletController;
 use App\Http\Controllers\Compagnie\Agent\AgentCompagnieController;
 use App\Http\Controllers\Compagnie\CompagnieAuthenticate;
 use Illuminate\Http\Request;
@@ -133,6 +133,16 @@ Route::middleware('compagnie')->prefix('company')->group(function () {
         Route::delete('/{personnel}', [PersonnelController::class, 'destroy'])->name('personnels.destroy');
     });
 
+    //Les routes de gestion des caissières
+    Route::prefix('caisse')->group(function () {
+        Route::get('/index', [App\Http\Controllers\Compagnie\CaisseController::class, 'index'])->name('compagnie.caisse.index');
+        Route::get('/create', [App\Http\Controllers\Compagnie\CaisseController::class, 'create'])->name('compagnie.caisse.create');
+        Route::post('/store', [App\Http\Controllers\Compagnie\CaisseController::class, 'store'])->name('compagnie.caisse.store');
+        Route::post('/{caisse}/recharge', [App\Http\Controllers\Compagnie\CaisseController::class, 'recharge'])->name('compagnie.caisse.recharge');
+        Route::post('/{caisse}/toggle-archive', [App\Http\Controllers\Compagnie\CaisseController::class, 'toggleArchive'])->name('compagnie.caisse.toggle-archive');
+        Route::delete('/{caisse}', [App\Http\Controllers\Compagnie\CaisseController::class, 'destroy'])->name('compagnie.caisse.destroy');
+    });
+
     //Les routes de programmation 
     Route::prefix('programme')->group(function () {
         Route::get('/prgramme', [ProgrammeController::class, 'index'])->name('programme.index');
@@ -154,6 +164,8 @@ Route::middleware('compagnie')->prefix('company')->group(function () {
     //Les routes de gestion des réservations
     Route::prefix('booking')->group(function () {
         Route::get('/all', [CompagnieReservationController::class, 'index'])->name('company.reservation.index');
+        Route::get('/details', [CompagnieReservationController::class, 'details'])->name('company.reservation.details');
+        Route::get('/occupied-seats', [CompagnieReservationController::class, 'getOccupiedSeats'])->name('company.reservation.occupied-seats');
     });
 
     // Routes de gestion des signalements pour la compagnie
@@ -162,6 +174,40 @@ Route::middleware('compagnie')->prefix('company')->group(function () {
         Route::get('/{id}', [CompagnieSignalementController::class, 'show'])->name('compagnie.signalements.show');
     });
 });
+
+//Les routes de gestion des @caissières
+Route::prefix('caisse')->group(function () {
+    // Public routes (before authentication)
+    Route::get('/verify-otp', [App\Http\Controllers\Caisse\CaisseAuthController::class, 'showOtpVerification'])->name('caisse.auth.verify-otp');
+    Route::post('/verify-otp', [App\Http\Controllers\Caisse\CaisseAuthController::class, 'verifyOtp'])->name('caisse.auth.verify-otp.submit');
+    Route::post('/resend-otp', [App\Http\Controllers\Caisse\CaisseAuthController::class, 'resendOtp'])->name('caisse.auth.resend-otp');
+    
+    Route::get('/setup-password', [App\Http\Controllers\Caisse\CaisseAuthController::class, 'showPasswordSetup'])->name('caisse.auth.setup-password');
+    Route::post('/setup-password', [App\Http\Controllers\Caisse\CaisseAuthController::class, 'setupPassword'])->name('caisse.auth.setup-password.submit');
+    
+    Route::get('/login', [App\Http\Controllers\Caisse\CaisseAuthController::class, 'showLogin'])->name('caisse.auth.login');
+    Route::post('/login', [App\Http\Controllers\Caisse\CaisseAuthController::class, 'login'])->name('caisse.auth.login.submit');
+});
+
+Route::middleware('caisse')->prefix('caisse')->group(function () {
+    Route::get('/dashboard', [App\Http\Controllers\Caisse\CaisseController::class, 'dashboard'])->name('caisse.dashboard');
+    Route::get('/logout', [App\Http\Controllers\Caisse\CaisseAuthController::class, 'logout'])->name('caisse.logout');
+    
+    // Profile routes
+    Route::get('/profile', [App\Http\Controllers\Caisse\CaisseController::class, 'profile'])->name('caisse.profile');
+    Route::post('/profile/update', [App\Http\Controllers\Caisse\CaisseController::class, 'updateProfile'])->name('caisse.profile.update');
+    Route::post('/profile/password', [App\Http\Controllers\Caisse\CaisseController::class, 'updatePassword'])->name('caisse.profile.password');
+    
+    // Ticket selling routes
+    Route::get('/vendre-ticket', [App\Http\Controllers\Caisse\CaisseController::class, 'vendreTicket'])->name('caisse.vendre-ticket');
+    Route::post('/vendre-ticket', [App\Http\Controllers\Caisse\CaisseController::class, 'vendreTicketSubmit'])->name('caisse.vendre-ticket.submit');
+    Route::get('/vente-success', [App\Http\Controllers\Caisse\CaisseController::class, 'venteSuccess'])->name('caisse.vente-success');
+    
+    // Sales history and printing
+    Route::get('/ventes', [App\Http\Controllers\Caisse\CaisseController::class, 'ventes'])->name('caisse.ventes');
+    Route::get('/ticket/{reservation}/imprimer', [App\Http\Controllers\Caisse\CaisseController::class, 'imprimerTicket'])->name('caisse.ticket.imprimer');
+});
+
 
 //Les routes de gestion des @agents
 Route::prefix('agent')->group(function () {

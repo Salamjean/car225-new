@@ -17,6 +17,7 @@ class Reservation extends Model
         'paiement_id',
         'payment_transaction_id',
         'user_id',
+        'caisse_id',
         'programme_id',
         'seat_number',
         'passager_nom',
@@ -65,6 +66,14 @@ class Reservation extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Relation avec la caisse (si vente en caisse)
+     */
+    public function caisse()
+    {
+        return $this->belongsTo(Caisse::class);
     }
 
     /**

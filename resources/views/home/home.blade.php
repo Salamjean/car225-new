@@ -490,6 +490,39 @@
     <!-- Section Newsletter & Avantages -->
 <section id="call-to-action" class="call-to-action section light-background">
 
+    <!-- Section Compteur Utilisateurs -->
+    <div class="container mb-5" data-aos="fade-up">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="bg-white p-5 rounded-xl shadow-lg border border-orange-100 text-center relative overflow-hidden group hover:shadow-xl transition-all duration-300">
+                    <!-- Background Elements -->
+                    <div class="absolute top-0 left-0 w-24 h-24 bg-orange-50 rounded-br-full opacity-50"></div>
+                    <div class="absolute bottom-0 right-0 w-32 h-32 bg-orange-50 rounded-tl-full opacity-50"></div>
+                    
+                    <div class="relative z-10">
+                        <div class="inline-flex items-center justify-center p-3 bg-orange-100 rounded-full mb-4 group-hover:scale-110 transition-transform duration-300">
+                            <i class="bi bi-people-fill text-3xl text-[#e94f1b]"></i>
+                        </div>
+                        
+                        <h3 class="text-2xl font-bold text-gray-800 mb-2">Ils nous font confiance</h3>
+                        
+                        <div class="flex items-center justify-center gap-2 mb-2">
+                            <span data-purecounter-start="0" 
+                                  data-purecounter-end="{{ $usersCount ?? 0 }}" 
+                                  data-purecounter-duration="2" 
+                                  class="purecounter text-5xl font-extrabold text-[#e94f1b]">
+                                0
+                            </span>
+                            <span class="text-3xl font-bold text-[#e94f1b]">+</span>
+                        </div>
+                        
+                        <p class="text-gray-600 font-medium">Utilisateurs inscrits sur la plateforme</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="container" data-aos="fade-up" data-aos-delay="100">
         <div class="newsletter-section" data-aos="fade-up" data-aos-delay="300">
             <div class="newsletter-card">

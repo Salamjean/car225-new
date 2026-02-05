@@ -24,6 +24,7 @@ class User extends Authenticatable
         'prenom',
         'email',
         'contact',
+        'contact_urgence',
         'adresse',
         'pays',
         'email_verified_at',

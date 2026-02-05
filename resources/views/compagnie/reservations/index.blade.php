@@ -12,12 +12,20 @@
                 </p>
             </div>
 
-            <!-- Bouton Actualiser -->
-            <button onclick="window.location.reload();"
-                class="inline-flex items-center px-6 py-3 bg-white text-gray-700 font-bold rounded-xl hover:bg-gray-50 transform hover:-translate-y-1 transition-all duration-200 shadow-md hover:shadow-lg border border-gray-200">
-                <i class="mdi mdi-refresh mr-2 text-xl"></i>
-                Actualiser
-            </button>
+            <!-- Actions -->
+            <div class="flex flex-col md:flex-row gap-4">
+                <a href="{{ route('company.reservation.details') }}" 
+                   class="inline-flex items-center justify-center px-6 py-3 bg-[#e94f1b] text-white font-bold rounded-xl hover:bg-orange-600 transform hover:-translate-y-1 transition-all duration-200 shadow-md hover:shadow-lg">
+                    <i class="mdi mdi-chart-bar mr-2 text-xl"></i>
+                    Détails & Statistiques
+                </a>
+
+                <button onclick="window.location.reload();"
+                    class="inline-flex items-center justify-center px-6 py-3 bg-white text-gray-700 font-bold rounded-xl hover:bg-gray-50 transform hover:-translate-y-1 transition-all duration-200 shadow-md hover:shadow-lg border border-gray-200">
+                    <i class="mdi mdi-refresh mr-2 text-xl"></i>
+                    Actualiser
+                </button>
+            </div>
         </div>
 
         <!-- Statistiques rapides -->

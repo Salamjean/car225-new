@@ -30,7 +30,7 @@
                             <i class="fas fa-wallet text-green-600 text-xl"></i>
                         </div>
                     </div>
-                    <p class="text-sm font-bold text-gray-400 uppercase tracking-wider">Chiffre d'Affaires</p>
+                    <p class="text-sm font-bold text-gray-400 uppercase tracking-wider">Soldes</p>
                     <h3 class="text-2xl font-black text-gray-900 mt-2">{{ number_format($totalRevenue, 0, ',', ' ') }} FCFA
                     </h3>
                     <div class="mt-4 flex items-center text-xs text-green-600 font-bold">

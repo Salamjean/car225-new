@@ -70,13 +70,29 @@
                                 <i class="fas fa-search"></i>
                                 <span>Rechercher un voyage</span>
                             </button>
-                            <button type="button" onclick="openProgramsListModal()"
+                            <button type="button" onclick="toggleProgramsList()"
                                 class="bg-white text-[#e94f1b] border-2 border-[#e94f1b] px-6 sm:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl font-bold transition-all duration-300 transform hover:-translate-y-1 shadow-md hover:shadow-xl flex items-center justify-center gap-3 text-sm sm:text-base hover:bg-[#e94f1b]">
                                 <i class="fas fa-list group-hover:text-white transition-colors"></i>
                                 <span>Voir tous les voyages</span>
                             </button>
                         </div>
                     </form>
+                </div>
+
+                <!-- CONTENEUR INLINE POUR LA LISTE DES VOYAGES -->
+                <div id="inlineProgramsList" class="hidden mt-6 bg-white rounded-xl shadow-lg border border-gray-100 p-6 animate-fade-in-down">
+                     <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900" id="inlineListTitle">Choisir votre ligne</h3>
+                            <p class="text-gray-500" id="inlineListSubtitle">Sélectionnez votre trajet pour voir les disponibilités</p>
+                        </div>
+                        <button onclick="toggleProgramsList()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                     </div>
+                     <div id="programsListContent">
+                         <!-- Le contenu sera chargé ici via JS -->
+                     </div>
                 </div>
             </div>
              <!-- Alerte si l'heure recherchée n'existe pas -->
@@ -416,6 +432,32 @@
         var currentRequestId = 0;
         var userWantsAllerRetour = false;
         var selectedReturnDate = null; // Date de retour sélectionnée pour Aller-Retour
+        // Fonction pour basculer l'affichage de la liste des programmes
+        window.toggleProgramsList = function() {
+            const listContainer = document.getElementById('inlineProgramsList');
+            if (listContainer) {
+                listContainer.classList.toggle('hidden');
+                
+                // Si la liste devient visible et est vide, on peut charger les programmes via AJAX
+                if (!listContainer.classList.contains('hidden')) {
+                     // Logique de chargement AJAX si nécessaire, pour l'instant on laisse vide ou on affiche un message
+                     // Ici, comme "groupedRoutes" est géré par Laravel (blade), la liste est déjà affichée si groupedRoutes existe.
+                     // Si c'est un bouton "Voir tous" qui doit faire un appel AJAX, il faudrait ajouter la logique ici.
+                     // D'après le code existant, "Voir tous les voyages" semble simplement vouloir afficher/masquer une zone.
+                     
+                     // Si le contenu est vide, on peut simuler un chargement ou rediriger
+                     const content = document.getElementById('programsListContent');
+                     if(content && content.innerHTML.trim() === '') {
+                        // Charger tous les voyages via AJAX ou recharger la page sans filtre ?
+                        // Pour l'instant, on redirige vers l'index sans filtre
+                        window.location.href = "{{ route('reservation.create') }}";
+                     }
+                }
+            } else {
+                console.error("L'élément inlineProgramsList est introuvable");
+            }
+        };
+
         window.currentUser = @json(Auth::user()); // Injecter l'utilisateur connecté
      // Définition explicite sur window pour s'assurer que le HTML peut voir la fonction
         window.handleReservationClick = function(button) {
@@ -2566,76 +2608,131 @@ function onAllerRetourChoiceChange() {
             }
         }
 
-        function proceedToPassengerInfo() {
+    function proceedToPassengerInfo() {
             const formArea = document.getElementById('passengersFormArea');
             formArea.innerHTML = '';
 
             // Trier les places pour assigner les passagers dans l'ordre
             const sortedSeats = [...selectedSeats].sort((a, b) => a - b);
+            
+            // AUTOFILL TOGGLE
+            if (window.currentUser) {
+                const toggleHtml = `
+                    <div class="flex items-center justify-end mb-4 bg-blue-50 p-3 rounded-lg border border-blue-100">
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="autofillToggle" class="sr-only peer" onchange="toggleAutofill(this.checked)">
+                            <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#e94f1b]"></div>
+                            <span class="ms-3 text-sm font-medium text-gray-900"> <i class="fas fa-user-check me-1"></i> Remplir avec mes informations (Passager 1)</span>
+                        </label>
+                    </div>
+                `;
+                formArea.insertAdjacentHTML('beforeend', toggleHtml);
+                // AJOUTER CECI POUR ACTIVER LE PASSAGE A L'ETAPE 3
+                document.getElementById('confirmReservationBtn').disabled = false;
+                document.getElementById('step2').classList.add('hidden');
+                document.getElementById('step3').classList.remove('hidden');
+            }
 
             sortedSeats.forEach((seat, index) => {
-                // AUTOFILL: Pré-remplir les infos du premier passager avec l'utilisateur connecté
+                // On met des valeurs vides par défaut, l'autofill se fera via le toggle
                 let defaultNom = '';
                 let defaultPrenom = '';
                 let defaultTel = '';
                 let defaultEmail = '';
 
-                if (index === 0 && window.currentUser) {
-                    defaultNom = window.currentUser.name || '';
-                    defaultPrenom = window.currentUser.prenom || '';
-                    defaultTel = window.currentUser.contact || '';
-                    defaultEmail = window.currentUser.email || '';
-                }
+                // On garde l'index pour savoir si c'est le "Passager principal"
+                const isMainPassenger = index === 0;
 
                 const passengerHtml = `
-                                                                                        <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                                                                                            <h4 class="font-bold text-[#e94f1b] mb-4 flex items-center gap-2">
-                                                                                                <i class="fas fa-user"></i> Passager pour la place n°${seat}
-                                                                                            </h4>
-                                                                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                                                                <div>
-                                                                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nom</label>
-                                                                                                    <input type="text" name="passenger_${seat}_nom" required
-                                                                                                        value="${defaultNom}"
-                                                                                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all"
-                                                                                                        placeholder="Nom du passager">
-                                                                                                </div>
-                                                                                                <div>
-                                                                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
-                                                                                                    <input type="text" name="passenger_${seat}_prenom" required
-                                                                                                        value="${defaultPrenom}"
-                                                                                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all"
-                                                                                                        placeholder="Prénom du passager">
-                                                                                                </div>
-                                                                                                <div>
-                                                                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
-                                                                                                    <input type="tel" name="passenger_${seat}_telephone" required
-                                                                                                        value="${defaultTel}"
-                                                                                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all"
-                                                                                                        placeholder="Ex: 0700000000">
-                                                                                                </div>
-                                                                                                <div>
-                                                                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                                                                                                    <input type="email" name="passenger_${seat}_email" required
-                                                                                                        value="${defaultEmail}"
-                                                                                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all"
-                                                                                                        placeholder="email@exemple.com">
-                                                                                                </div>
-                                                                                                <div class="md:col-span-2">
-                                                                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Contact d'urgence (Nom & Tél)</label>
-                                                                                                    <input type="text" name="passenger_${seat}_urgence" required
-                                                                                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all"
-                                                                                                        placeholder="Ex: Jean Dupont - 0500000000">
-                                                                                                </div>
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    `;
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 transition-all hover:shadow-md" id="passenger_card_${seat}">
+                        <h4 class="font-bold text-[#e94f1b] mb-4 flex items-center gap-2">
+                            <i class="fas fa-user"></i> Passager pour la place n°${seat}
+                            ${isMainPassenger ? '<span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded ml-2">Principal</span>' : ''}
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+                                <input type="text" name="passenger_${seat}_nom" required
+                                    value="${defaultNom}"
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all"
+                                    placeholder="Nom du passager">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
+                                <input type="text" name="passenger_${seat}_prenom" required
+                                    value="${defaultPrenom}"
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all"
+                                    placeholder="Prénom du passager">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
+                                <input type="tel" name="passenger_${seat}_telephone" required
+                                    value="${defaultTel}"
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all"
+                                    placeholder="Ex: 0700000000">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                <input type="email" name="passenger_${seat}_email" required
+                                    value="${defaultEmail}"
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all"
+                                    placeholder="email@exemple.com">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Contact d'urgence (Nom & Tél)</label>
+                                <input type="text" name="passenger_${seat}_urgence" required
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all"
+                                    placeholder="Ex: Jean Dupont - 0500000000">
+                            </div>
+                        </div>
+                    </div>
+                `;
                 formArea.insertAdjacentHTML('beforeend', passengerHtml);
             });
+        }
 
-            document.getElementById('confirmReservationBtn').disabled = false;
-            document.getElementById('step2').classList.add('hidden');
-            document.getElementById('step3').classList.remove('hidden');
+        // ============================================
+        // FONCTION 10.3: Autofill Passager 1
+        // ============================================
+        function toggleAutofill(isChecked) {
+            if (!window.currentUser || selectedSeats.length === 0) return;
+            
+            // Le premier siège sélectionné (trié)
+            const sortedSeats = [...selectedSeats].sort((a, b) => a - b);
+            const firstSeat = sortedSeats[0];
+            
+            const user = window.currentUser;
+            const fields = [
+                { name: 'nom', value: user.name || '' },
+                { name: 'prenom', value: user.prenom || '' },
+                { name: 'telephone', value: user.contact || '' },
+                { name: 'email', value: user.email || '' }
+            ];
+            
+            // Si l'utilisateur a un contact d'urgence (à vérifier si dispo dans le modèle User)
+            if (user.contact_urgence) {
+                fields.push({ name: 'urgence', value: user.contact_urgence });
+            }
+
+            fields.forEach(field => {
+                const input = document.querySelector(`[name="passenger_${firstSeat}_${field.name}"]`);
+                if (input) {
+                    if (isChecked) {
+                        input.value = field.value;
+                        input.classList.add('bg-orange-50', 'border-orange-300');
+                        setTimeout(() => input.classList.remove('bg-orange-50', 'border-orange-300'), 500);
+                    } else {
+                        input.value = '';
+                    }
+                }
+            });
+            
+            // Feedback visuel sur la carte
+            const card = document.getElementById(`passenger_card_${firstSeat}`);
+            if(card) {
+                if(isChecked) card.classList.add('ring-2', 'ring-[#e94f1b]', 'ring-offset-2');
+                else card.classList.remove('ring-2', 'ring-[#e94f1b]', 'ring-offset-2');
+            }
         }
 
         // ============================================
@@ -2882,24 +2979,27 @@ function onAllerRetourChoiceChange() {
         let selectedRoute = null;
         let selectedDate = null;
 
-        window.openProgramsListModal = function() {
-            document.getElementById('programsListModal').classList.remove('hidden');
-            loadRoutesForSelection();
-        };
-
-        window.closeProgramsListModal = function() { 
-            document.getElementById('programsListModal').classList.add('hidden'); 
+        window.toggleProgramsList = function() {
+            const container = document.getElementById('inlineProgramsList');
+            if (container.classList.contains('hidden')) {
+                container.classList.remove('hidden');
+                loadRoutesForSelection();
+                // Scroll to container
+                container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                container.classList.add('hidden');
+            }
         };
 
 
         async function loadRoutesForSelection() {
             const container = document.getElementById('programsListContent');
-            const title = document.getElementById('modalTitle');
-            const subtitle = document.getElementById('modalSubtitle');
+            const title = document.getElementById('inlineListTitle');
+            const subtitle = document.getElementById('inlineListSubtitle');
             
             // Mettre à jour le titre
-            title.textContent = 'Choisir votre ligne';
-            subtitle.textContent = 'Sélectionnez votre trajet pour voir les disponibilités';
+            if(title) title.textContent = 'Choisir votre ligne';
+            if(subtitle) subtitle.textContent = 'Sélectionnez votre trajet pour voir les disponibilités';
             
             container.innerHTML = `<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-4xl text-[#e94f1b]"></i><p class="mt-2 text-gray-500">Chargement des lignes...</p></div>`;
 
@@ -2963,8 +3063,9 @@ function onAllerRetourChoiceChange() {
 
         // Nouvelle fonction: dès qu'on sélectionne une ligne, demander la date de départ
         function selectRouteAndLaunchFlow(route) {
-            // Fermer le modal "Voir tous les voyages"
-            document.getElementById('programsListModal').classList.add('hidden');
+            // Cacher la liste inline pour faire place à la suite ou la laisser ? 
+            // UX: On peut la laisser visible ou la cacher. Cachons-la pour focus.
+            // document.getElementById('inlineProgramsList').classList.add('hidden');
             
             // Afficher sélecteur de date de départ
             showDepartureDateSelection(route);
@@ -3187,7 +3288,8 @@ function onAllerRetourChoiceChange() {
                 const paramsAller = new URLSearchParams({
                     point_depart: route.point_depart,
                     point_arrive: route.point_arrive,
-                    date: selectedDate
+                    date: selectedDate,
+                    compagnie_id: route.compagnie_id // CRUCIAL : Filtrer par compagnie
                 });
                 const responseAller = await fetch('{{ route("api.route-schedules") }}?' + paramsAller);
                 const dataAller = await responseAller.json();
@@ -3290,7 +3392,7 @@ function onAllerRetourChoiceChange() {
                                     <p class="text-lg font-bold text-[#e94f1b]">${Number(prog.montant_billet).toLocaleString('fr-FR')} FCFA</p>
                                     <p class="text-xs text-gray-500">${prog.compagnie?.name || ''}</p>
                                 </div>
-                                <button onclick="closeProgramsListModal(); initiateReservationProcess(${prog.id}, '${selectedDate}')" 
+                                <button onclick="toggleProgramsList(); initiateReservationProcess(${prog.id}, '${selectedDate}')" 
                                         class="bg-[#e94f1b] text-white px-5 py-2.5 rounded-lg font-bold hover:bg-orange-600 transition-colors flex items-center gap-2">
                                     <i class="fas fa-ticket-alt"></i>
                                     <span>Réserver</span>
@@ -3484,31 +3586,7 @@ function onAllerRetourChoiceChange() {
         }
     </script>
 
-     <!-- Modal Liste des programmes (Simplifié) -->
-    <div id="programsListModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-[60]">
-        <div class="relative top-10 mx-auto p-5 border w-11/12 lg:w-3/4 max-w-4xl shadow-lg rounded-2xl bg-white">
-            <div class="flex flex-col gap-4">
-                <!-- En-tête -->
-                <div class="flex justify-between items-center border-b pb-4">
-                    <div>
-                        <h3 id="modalTitle" class="text-xl font-bold text-gray-900">Choisir votre ligne</h3>
-                        <p id="modalSubtitle" class="text-sm text-gray-500">Sélectionnez votre trajet pour voir les disponibilités</p>
-                    </div>
-                    <button onclick="closeProgramsListModal()" class="text-gray-400 hover:text-gray-500 p-2">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-                
-                <!-- Contenu dynamique -->
-                <div id="programsListContent" class="max-h-[60vh] overflow-y-auto p-2">
-                    <div class="col-span-full text-center py-8">
-                        <i class="fas fa-spinner fa-spin text-4xl text-[#e94f1b]"></i>
-                        <p class="mt-2 text-gray-500">Chargement des lignes...</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+
  <!-- Modal Confirmation Aller-Retour -->
     <div id="allerRetourConfirmModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-[75] flex items-center justify-center">
         <div class="relative w-[450px] mx-auto p-6 border shadow-2xl rounded-2xl bg-white">
@@ -3594,4 +3672,3 @@ function onAllerRetourChoiceChange() {
         </div>
     </div>
 @endsection
-```

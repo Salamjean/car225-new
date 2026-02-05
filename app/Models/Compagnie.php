@@ -61,11 +61,31 @@ class Compagnie extends Authenticatable
         return $this->hasMany(HistoriqueTicket::class);
     }
 
+    public function caisses()
+    {
+        return $this->hasMany(Caisse::class);
+    }
+
+    public function programmes()
+    {
+        return $this->hasMany(Programme::class);
+    }
+
     /**
      * Deduct tickets from company balance
      */
     public function deductTickets($quantity, $motif)
     {
+        // DEBUG: Trace ticket deduction
+        \Illuminate\Support\Facades\Log::info("DEDUCTION TICKET APPELÉE", [
+            'target_company_id' => $this->id,
+            'target_company_name' => $this->name,
+            'tickets_before' => $this->tickets,
+            'deducting' => $quantity,
+            'motif' => $motif,
+            // 'trace' => collect(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3))->pluck('class', 'function') // Optionnel si trop verbeux
+        ]);
+
         $this->decrement('tickets', $quantity);
         
         $this->historiqueTickets()->create([

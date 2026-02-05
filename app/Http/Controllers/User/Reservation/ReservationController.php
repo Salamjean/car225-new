@@ -281,7 +281,18 @@ class ReservationController extends Controller
                       ->orWhereNull('date_fin');
                 });
 
+            // DEBUG: Log Query execution
+            \Illuminate\Support\Facades\DB::enableQueryLog();
+
             $allProgrammes = $query->orderBy('heure_depart', 'asc')->get();
+
+            \Illuminate\Support\Facades\Log::info("ReservationController::create - DEBUG RECHERCHE", [
+                'search_params' => $request->all(),
+                'sql_query' => \Illuminate\Support\Facades\DB::getQueryLog(),
+                'results_count_RAW' => $allProgrammes->count(), // Combien de lignes brutes avant groupement ?
+                'found_company_ids' => $allProgrammes->pluck('compagnie_id')->unique()->values(), // Quelles compagnies sont trouvées ?
+                'found_program_ids' => $allProgrammes->pluck('id')->take(10)
+            ]);
 
             // Grouper par route unique (compagnie + itinéraire) pour éviter les duplications
             $groupedRoutes = $allProgrammes->groupBy(function($p) {
@@ -1932,8 +1943,11 @@ public function apiGroupedRoutes()
             DB::raw('GROUP_CONCAT(DISTINCT heure_depart ORDER BY heure_depart SEPARATOR ", ") as horaires')
         )
         ->with('compagnie:id,name')
-        ->where('date_depart', '>=', $today)
         ->where('statut', 'actif')
+        ->where(function($query) use ($today) {
+             $query->where('date_depart', '>=', $today)
+                   ->orWhere('date_fin', '>=', $today);
+        })
         ->groupBy('point_depart', 'point_arrive', 'compagnie_id')
         ->orderBy('point_depart')
         ->get();
@@ -1979,6 +1993,10 @@ public function apiRouteDates(Request $request)
             ->where('point_depart', $request->point_depart)
             ->where('point_arrive', $request->point_arrive)
             ->where('statut', 'actif')
+            // NOUVEAU : Filtrer par compagnie si fournie (pour le fix View All Trips)
+            ->when($request->compagnie_id, function($q) use ($request) {
+                return $q->where('compagnie_id', $request->compagnie_id);
+            })
             // LOGIQUE CORRIGÉE : On vérifie juste si la date demandée est dans la plage de validité du programme
             ->where(function($query) use ($requestedDate) {
                 $query->whereRaw('DATE(date_depart) <= ?', [$requestedDate])

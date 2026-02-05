@@ -32,6 +32,19 @@
                             </div>
                         </div>
 
+                        <!-- Date du voyage -->
+                        <div class="bg-blue-50 p-4 rounded-xl flex items-center gap-4">
+                            <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-blue-500 text-xl shadow-sm">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div>
+                                <div class="text-xs text-blue-500 font-bold uppercase">Date du départ</div>
+                                <div class="font-bold text-gray-900 text-lg">
+                                    {{ \Carbon\Carbon::parse($programme->date_depart)->translatedFormat('d F Y') }}
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Trajet -->
                         <div class="relative pl-8 border-l-2 border-gray-200 ml-4 space-y-8">
                             <div class="relative">
@@ -131,17 +144,14 @@
                         <div id="step1" class="step-content">
                             <h3 class="text-xl font-bold text-gray-900 mb-6">Configuration de votre voyage</h3>
                             
-                            @if($programme->type_programmation === 'recurrent')
-                            <div class="mb-6">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Choisir une date de voyage</label>
-                                <input type="date" id="date_voyage_input" 
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent"
-                                    min="{{ date('Y-m-d') }}"
-                                    value="{{ request('date') ?? date('Y-m-d') }}"
-                                >
-                                <p class="text-sm text-gray-500 mt-2">Ce programme est récurrent. Veuillez sélectionner votre date de départ.</p>
+                            <!-- Date de voyage fixée par le programme -->
+                            <div class="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-100">
+                                <label class="block text-sm font-medium text-blue-800 mb-1">Date du voyage</label>
+                                <div class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                                    <i class="fas fa-calendar-alt text-blue-500"></i>
+                                    {{ \Carbon\Carbon::parse($programme->date_depart)->translatedFormat('d F Y') }}
+                                </div>
                             </div>
-                            @endif
 
                             <h4 class="font-semibold text-gray-900 mb-4">Combien de places souhaitez-vous ?</h4>
                             <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
@@ -202,7 +212,7 @@
                                 @csrf
                                 <input type="hidden" name="programme_id" value="{{ $programme->id }}">
                                 <input type="hidden" name="nombre_places" id="form_nombre_places">
-                                <input type="hidden" name="date_voyage" id="form_date_voyage" value="{{ $programme->date_depart ? \Carbon\Carbon::parse($programme->date_depart)->format('Y-m-d') : date('Y-m-d') }}">
+                                <input type="hidden" name="date_voyage" id="form_date_voyage" value="{{ \Carbon\Carbon::parse($programme->date_depart)->format('Y-m-d') }}">
                                 
                                 <div id="passengers-container" class="space-y-6 mb-8">
                                     <!-- Champs générés dynamiquement -->
@@ -259,7 +269,7 @@
         nbPlaces: 0,
         selectedSeats: [], // [1, 2, ...]
         reservedSeats: [], // [5, 6, ...] (Occupés)
-        dateVoyage: "{{ $programme->date_depart ? \Carbon\Carbon::parse($programme->date_depart)->format('Y-m-d') : date('Y-m-d') }}"
+        dateVoyage: "{{ \Carbon\Carbon::parse($programme->date_depart)->format('Y-m-d') }}"
     };
 
     // Config Visuelle
@@ -271,16 +281,7 @@
 
     // Initialisation
     document.addEventListener('DOMContentLoaded', () => {
-        // Gestion changement date pour récurrent
-        const dateInput = document.getElementById('date_voyage_input');
-        if (dateInput) {
-            dateInput.addEventListener('change', (e) => {
-                state.dateVoyage = e.target.value;
-                document.getElementById('form_date_voyage').value = state.dateVoyage;
-                // Si on change la date, on doit recharger les places si on est à l'étape 2
-                if(state.step === 2) loadSeats();
-            });
-        }
+        // Plus de gestion de changement de date car date fixe
     });
 
     // Navigation
