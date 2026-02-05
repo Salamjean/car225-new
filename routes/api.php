@@ -2,12 +2,12 @@
 
 use App\Http\Controllers\Api\User\AuthController as UserAuthController;
 use App\Http\Controllers\Api\User\UserController;
-use App\Http\Controllers\Api\User\ReservationController as UserReservationController;
+use App\Http\Controllers\Api\User\ReservationApiController as UserReservationController;
 use App\Http\Controllers\Api\User\WalletController;
 use App\Http\Controllers\Api\User\CompagnieController;
 use App\Http\Controllers\Api\Agent\AuthController as AgentAuthController;
 use App\Http\Controllers\Api\Agent\AgentController;
-use App\Http\Controllers\Api\Agent\ReservationController as AgentReservationController;
+use App\Http\Controllers\Api\Agent\ReservationApiController as AgentReservationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
