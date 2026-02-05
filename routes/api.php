@@ -59,6 +59,10 @@ Route::prefix('user')->group(function () {
         Route::get('/reservations/{reservation}/ticket', [UserReservationController::class, 'ticket']);
         Route::get('/reservations/{reservation}/download', [UserReservationController::class, 'download']);
         
+        // Vérification du statut de paiement CinetPay (polling mobile)
+        Route::get('/payment/status/{transactionId}', [UserReservationController::class, 'getPaymentStatus']);
+        Route::post('/payment/verify/{transactionId}', [UserReservationController::class, 'verifyAndConfirmPayment']);
+        
         // Portefeuille (Wallet)
         Route::get('/wallet', [WalletController::class, 'index']);
         Route::post('/wallet/recharge', [WalletController::class, 'recharge']);
