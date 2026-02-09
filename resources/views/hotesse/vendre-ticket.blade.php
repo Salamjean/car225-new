@@ -295,7 +295,7 @@
             min_date: currentBooking.dateRetour
         });
 
-        fetch(`{{ route('api.return-trips') }}?${params}`)
+        fetch(`{{ route('hotesse.api.return-trips') }}?${params}`)
             .then(r => r.json())
             .then(data => {
                 if(data.success && data.return_trips.length > 0) {

@@ -250,6 +250,9 @@ Route::middleware('hotesse')->prefix('hotesse')->group(function () {
     // Sales history and printing
     Route::get('/ventes', [App\Http\Controllers\Hotesse\HotesseController::class, 'ventes'])->name('hotesse.ventes');
     Route::get('/ticket/{reservation}/imprimer', [App\Http\Controllers\Hotesse\HotesseController::class, 'imprimerTicket'])->name('hotesse.ticket.imprimer');
+    
+    // API Route for Return Trips (Shared Logic with User)
+    Route::get('/api/return-trips', [App\Http\Controllers\User\Reservation\ReservationController::class, 'apiReturnTrips'])->name('hotesse.api.return-trips');
 });
 
 

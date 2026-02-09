@@ -9,7 +9,7 @@ use App\Models\Vehicule;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
-class ReservationController extends Controller
+class ReservationApiController extends Controller
 {
     /**
      * Liste des réservations de la compagnie
