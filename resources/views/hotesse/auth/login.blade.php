@@ -104,15 +104,7 @@
                     </button>
                 </form>
 
-                <!-- First Time User Link -->
-                <div class="mt-6 text-center border-t border-gray-200 pt-6">
-                    <p class="text-sm text-gray-600">
-                        Première connexion ?
-                        <a href="{{ route('hotesse.auth.verify-otp') }}" class="text-[#e94e1a] font-semibold hover:underline">
-                            Activer votre compte
-                        </a>
-                    </p>
-                </div>
+               
             </div>
         </div>
 

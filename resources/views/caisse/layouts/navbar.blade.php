@@ -10,12 +10,16 @@
         <button class="mdc-button mdc-menu-button">
           <span class="d-flex align-items-center">
             <span class="figure"
-              style="width:40px; height:40px; border-radius:50%; background:#d33d0f; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold;">
+              style="width:40px; height:40px; border-radius:50%; background:#d33d0f; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; overflow: hidden;">
               @php
                 $caisse = Auth::guard('caisse')->user();
                 $initials = strtoupper(substr($caisse->name, 0, 1) . substr($caisse->prenom, 0, 1));
               @endphp
-              {{ $initials }}
+              @if($caisse->profile_picture)
+                <img src="{{ asset('storage/' . $caisse->profile_picture) }}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
+              @else
+                {{ $initials }}
+              @endif
             </span>
             <span class="user-name text-white ml-2">{{ $caisse->name }} {{ $caisse->prenom }}</span>
             <span class="ml-2 text-white">&#9662;</span>
@@ -44,8 +48,12 @@
       <div class="d-md-none mobile-menu-container">
         <button class="mdc-icon-button text-white mobile-profile-toggle">
           <span class="figure"
-            style="width:35px; height:35px; border-radius:50%; background:#d33d0f; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:14px;">
-            {{ $initials }}
+            style="width:35px; height:35px; border-radius:50%; background:#d33d0f; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:14px; overflow: hidden;">
+            @if($caisse->profile_picture)
+                <img src="{{ asset('storage/' . $caisse->profile_picture) }}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
+            @else
+                {{ $initials }}
+            @endif
           </span>
         </button>
         <div class="mobile-menu mdc-menu mdc-menu-surface" tabindex="-1">

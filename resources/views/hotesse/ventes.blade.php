@@ -42,12 +42,12 @@
             <div class="bg-white rounded-2xl shadow-lg p-6">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-gray-600 text-sm mb-1">Tickets Restants</p>
-                        <p class="text-3xl font-bold text-gray-900">{{ Auth::guard('hotesse')->user()->tickets }}</p>
+                        <p class="text-gray-600 text-sm mb-1">Tickets Annulés</p>
+                        <p class="text-3xl font-bold text-red-600">{{ $totalAnnulations }}</p>
                     </div>
-                    <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-                        <svg class="w-6 h-6 text-[#e94e1a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/>
+                    <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                         </svg>
                     </div>
                 </div>
@@ -58,8 +58,13 @@
         <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
             <form method="GET" action="{{ route('hotesse.ventes') }}" class="flex gap-4 items-end">
                 <div class="flex-1">
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Date</label>
-                    <input type="date" name="date" value="{{ request('date') }}"
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Date Début</label>
+                    <input type="date" name="date_debut" value="{{ request('date_debut') }}"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
+                </div>
+                <div class="flex-1">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Date Fin</label>
+                    <input type="date" name="date_fin" value="{{ request('date_fin') }}"
                         class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
                 </div>
                 <div class="flex-1">

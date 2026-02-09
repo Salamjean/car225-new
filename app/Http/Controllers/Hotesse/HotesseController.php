@@ -25,7 +25,6 @@ class HotesseController extends Controller
         $today = now()->toDateString();
         
         $stats = [
-            'tickets_disponibles' => $hotesse->tickets,
             'compagnie' => $hotesse->compagnie->name ?? 'N/A',
             'compagnie_logo' => $hotesse->compagnie->path_logo ?? null,
             'compagnie_slogan' => $hotesse->compagnie->slogan ?? null,
@@ -35,9 +34,23 @@ class HotesseController extends Controller
             'revenu_aujourdhui' => Reservation::where('hotesse_id', $hotesse->id)
                 ->whereDate('created_at', $today)
                 ->sum('montant'),
+            'revenu_global' => Reservation::where('hotesse_id', $hotesse->id)
+                ->sum('montant'),
         ];
 
-        return view('hotesse.dashboard', compact('hotesse', 'stats'));
+        // Données pour le graphique des 7 derniers jours
+        $chartData = [];
+        $chartLabels = [];
+        
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i);
+            $chartLabels[] = $date->format('d/m');
+            $chartData[] = Reservation::where('hotesse_id', $hotesse->id)
+                ->whereDate('created_at', $date->toDateString())
+                ->sum('montant');
+        }
+
+        return view('hotesse.dashboard', compact('hotesse', 'stats', 'chartData', 'chartLabels'));
     }
 
     public function profile()
@@ -99,22 +112,30 @@ class HotesseController extends Controller
         $hotesse = Auth::guard('hotesse')->user();
         
         $query = Reservation::where('hotesse_id', $hotesse->id)
-            ->with(['programme'])
-            ->latest();
+            ->with(['programme']);
 
-        if ($request->filled('date')) {
-            $query->whereDate('date_voyage', $request->date);
+        // Filtre Date Début / Fin
+        if ($request->filled('date_debut')) {
+            $query->whereDate('date_voyage', '>=', $request->date_debut);
+        }
+        if ($request->filled('date_fin')) {
+            $query->whereDate('date_voyage', '<=', $request->date_fin);
         }
 
+        // Filtre Statut
         if ($request->filled('statut')) {
             $query->where('statut', $request->statut);
         }
 
-        $ventes = $query->paginate(10);
-        $totalVentes = $query->count();
-        $totalRevenu = $query->sum('montant');
+        // Stats globales (basées sur les filtres)
+        $totalVentes = (clone $query)->where('statut', 'confirmee')->count();
+        $totalRevenu = (clone $query)->where('statut', 'confirmee')->sum('montant');
+        $totalAnnulations = (clone $query)->where('statut', 'annulee')->count();
 
-        return view('hotesse.ventes', compact('ventes', 'totalVentes', 'totalRevenu'));
+        // Pagination
+        $ventes = $query->latest()->paginate(10);
+
+        return view('hotesse.ventes', compact('ventes', 'totalVentes', 'totalRevenu', 'totalAnnulations'));
     }
 
     public function venteSuccess(Request $request)
@@ -142,19 +163,157 @@ class HotesseController extends Controller
         return view('hotesse.ticket-pdf', compact('reservation'));
     }
 
-    public function vendreTicket()
+   public function vendreTicket(Request $request)
     {
         $hotesse = Auth::guard('hotesse')->user();
         
-        // Récupérer les programmes actifs de la compagnie de l'hotesse
-        $programmes = Programme::with(['compagnie', 'vehicule'])
-            ->where('compagnie_id', $hotesse->compagnie_id)
-            ->where('statut', 'actif')
-            ->whereDate('date_depart', '>=', now()->toDateString())
-            ->orderBy('date_depart')
-            ->get();
-        
-        return view('hotesse.vendre-ticket', compact('hotesse', 'programmes'));
+        // Paramètres de recherche
+        $searchParams = [
+            'point_depart' => $request->input('point_depart'),
+            'point_arrive' => $request->input('point_arrive'),
+            'date_depart' => $request->input('date_depart', date('Y-m-d')),
+        ];
+
+        // Est-ce qu'on doit charger les résultats ?
+        // OUI si : on a cliqué sur "Voir tout", OU on a fait une recherche
+        $shouldLoad = $request->has('view_all') || 
+                      $request->filled('point_depart') || 
+                      $request->filled('point_arrive') ||
+                      $request->filled('date_depart'); // Ajout date_depart aussi
+
+        // Si aucun paramètre n'est passé (page par défaut), on NE charge PAS
+        if (!$shouldLoad && !$request->has('page')) {
+            $shouldLoad = false; 
+        }
+
+        $groupedRoutes = collect();
+
+        if ($shouldLoad) {
+            // ... (reste du code inchangé) ...
+            Log::info('VendreTicket: Searching with params:', $request->all());
+
+            $query = Programme::with(['compagnie', 'vehicule'])
+                ->where('compagnie_id', $hotesse->compagnie_id)
+                ->where('statut', 'actif');
+
+            DB::enableQueryLog();
+
+            // 1. Filtre Point de Départ
+            if ($request->filled('point_depart')) {
+                $term = trim(explode(',', $request->point_depart)[0]);
+                Log::info('VendreTicket: Filtering by cleaned point_depart: ' . $term);
+                
+                $query->where(function($q) use ($term) {
+                    $q->where('point_depart', 'LIKE', '%' . $term . '%')
+                      ->orWhereHas('itineraire', function($subQ) use ($term) {
+                          $subQ->where('point_depart', 'LIKE', '%' . $term . '%');
+                      });
+                });
+            }
+
+            // 2. Filtre Point d'Arrivée
+            if ($request->filled('point_arrive')) {
+                $term = trim(explode(',', $request->point_arrive)[0]);
+                Log::info('VendreTicket: Filtering by cleaned point_arrive: ' . $term);
+
+                $query->where(function($q) use ($term) {
+                    $q->where('point_arrive', 'LIKE', '%' . $term . '%')
+                      ->orWhereHas('itineraire', function($subQ) use ($term) {
+                          $subQ->where('point_arrive', 'LIKE', '%' . $term . '%');
+                      });
+                });
+            }
+
+            // 3. Filtre Date
+            // Gestion de la récurrence : On cherche les programmes actifs à la date demandée
+            if ($request->filled('date_depart')) {
+                $searchDate = $request->date_depart;
+                Log::info('VendreTicket: Filtering by date: ' . $searchDate);
+                
+                $query->where(function($q) use ($searchDate) {
+                    // Cas 1: Date de départ exacte (Voyage ponctuel ou début de récurrence)
+                    $q->whereDate('date_depart', '=', $searchDate)
+                      // Cas 2: Programme récurrent qui inclut cette date
+                      ->orWhere(function($sub) use ($searchDate) {
+                          $sub->whereDate('date_depart', '<=', $searchDate)
+                              ->whereDate('date_fin', '>=', $searchDate);
+                      });
+                });
+            } else {
+                $today = now()->format('Y-m-d');
+                Log::info('VendreTicket: Filtering by active programs (>= ' . $today . ')');
+                
+                $query->where(function($q) use ($today) {
+                    // Programmes futurs
+                    $q->whereDate('date_depart', '>=', $today)
+                      // Ou programmes en cours (récurrents) qui ne sont pas finis
+                      ->orWhereDate('date_fin', '>=', $today);
+                });
+            }
+
+            $programmes = $query->orderBy('date_depart')->orderBy('heure_depart')->get();
+            
+            // Log moins verbeux pour la requete SQL
+            // Log::info('VendreTicket: SQL Query:', DB::getQueryLog());
+            Log::info('VendreTicket: Found ' . $programmes->count() . ' programmes.');
+
+            // 4. Groupement intelligent (Par trajet Départ-Arrivée)
+            $groupedRoutes = $programmes->groupBy(function($item) {
+                return strtolower(trim($item->point_depart)) . '-' . strtolower(trim($item->point_arrive));
+            })->map(function ($progs) {
+                $first = $progs->first();
+                
+                // On récupère les horaires pour ce trajet spécifique
+                // On ne garde que ceux qui sont futurs si c'est la date d'aujourd'hui
+                $now = now();
+                $todayStr = $now->format('Y-m-d');
+                $currentTime = $now->format('H:i');
+
+                $allerHoraires = $progs->filter(function($p) use ($todayStr, $currentTime) {
+                    if ($p->date_depart == $todayStr && $p->heure_depart < $currentTime) {
+                        return false; 
+                    }
+                    return true;
+                })->values()->map(function($p) {
+                    return [
+                        'id' => $p->id,
+                        'heure_depart' => $p->heure_depart,
+                        'heure_arrive' => $p->heure_arrive,
+                        'date_depart' => $p->date_depart,
+                        'vehicule' => $p->vehicule ? $p->vehicule->type_range : 'Standard'
+                    ];
+                });
+
+                // Vérification s'il y a des retours (Trajet inverse)
+                $hasRetour = Programme::where('point_depart', $first->point_arrive)
+                    ->where('point_arrive', $first->point_depart)
+                    ->where('compagnie_id', $first->compagnie_id)
+                    ->where('statut', 'actif')
+                    ->whereDate('date_depart', '>=', $first->date_depart)
+                    ->exists();
+
+                return (object)[
+                    'id_group' => $first->id, // Juste pour avoir un ID unique
+                    'compagnie' => $first->compagnie,
+                    'point_depart' => $first->point_depart,
+                    'point_arrive' => $first->point_arrive,
+                    'montant_billet' => $first->montant_billet,
+                    'durer_parcours' => $first->durer_parcours,
+                    'aller_horaires' => $allerHoraires,
+                    'has_retour' => $hasRetour,
+                    'default_date' => $first->date_depart // Pour initialiser le calendrier
+                ];
+            })->filter(function($route) {
+                // On ne garde que les routes qui ont au moins un horaire valide
+                return count($route->aller_horaires) > 0;
+            })->values();
+
+            Log::info('VendreTicket: Grouped into ' . $groupedRoutes->count() . ' routes.');
+        } else {
+            Log::info('VendreTicket: Not loading results (shouldLoad=false)');
+        }
+
+        return view('hotesse.vendre-ticket', compact('hotesse', 'searchParams', 'groupedRoutes'));
     }
 
     public function vendreTicketSubmit(Request $request)
@@ -163,71 +322,84 @@ class HotesseController extends Controller
 
         $request->validate([
             'programme_id' => 'required|exists:programmes,id',
-            'nombre_tickets' => 'required|integer|min:1|max:' . $hotesse->tickets,
+            'date_voyage' => 'required|date',
+            'heure_depart' => 'required',
+            'nombre_passagers' => 'required|integer|min:1|max:70',
             'passenger_details' => 'required|array|min:1',
             'passenger_details.*.nom' => 'required|string|max:255',
             'passenger_details.*.prenom' => 'required|string|max:255',
             'passenger_details.*.telephone' => 'required|string|max:20',
             'passenger_details.*.email' => 'nullable|email|max:255',
+            'programme_retour_id' => 'nullable|exists:programmes,id',
+            'date_retour' => 'nullable|required_with:programme_retour_id|date',
+            'heure_retour' => 'nullable|required_with:programme_retour_id',
         ]);
 
-        $programme = Programme::with(['compagnie', 'vehicule'])->findOrFail($request->programme_id);
-        $nombreTickets = $request->nombre_tickets;
+        $programmeAller = Programme::with(['compagnie', 'vehicule'])->findOrFail($request->programme_id);
+        $nombrePassagers = $request->nombre_passagers;
+        $isAllerRetour = $request->filled('programme_retour_id');
 
-        // Vérifier que l'hotesse a assez de tickets
-        if ($hotesse->tickets < $nombreTickets) {
-            return back()->withErrors(['nombre_tickets' => 'Vous n\'avez pas assez de tickets disponibles.']);
+        // Vérifier que les passagers correspondent au nombre
+        if (count($request->passenger_details) !== (int)$nombrePassagers) {
+            Log::error('Validation Passagers Mismatch:', [
+                'expected' => $nombrePassagers,
+                'received_count' => count($request->passenger_details),
+                'received_data' => $request->passenger_details
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Le nombre de passagers ne correspond pas aux informations fournies (' . count($request->passenger_details) . '/' . $nombrePassagers . ').'
+            ], 400);
         }
 
         DB::beginTransaction();
         try {
-            $reservations = [];
+            $reservationIds = [];
 
-            // Récupérer les sièges déjà réservés pour ce programme
-            $reservedSeats = Reservation::where('programme_id', $programme->id)
-                ->pluck('seat_number')
-                ->toArray();
-
-            // Trouver le prochain siège disponible
-            $nextSeat = 1;
-            while (in_array($nextSeat, $reservedSeats)) {
-                $nextSeat++;
+            // ========== ALLER ==========
+            // Assigner automatiquement les places pour l'aller
+            $seatsAller = $this->assignSeatsAutomatically($programmeAller->id, $request->date_voyage, $nombrePassagers);
+            
+            if (count($seatsAller) < $nombrePassagers) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pas assez de places disponibles pour le trajet aller.'
+                ], 400);
             }
 
+            // Créer les réservations aller
             foreach ($request->passenger_details as $index => $passenger) {
-                // Trouver le prochain siège disponible pour chaque passager
-                while (in_array($nextSeat, $reservedSeats)) {
-                    $nextSeat++;
-                }
-
-                // Utiliser le helper du modèle pour la référence
-                $reference = Reservation::generateReference($nextSeat);
+                $seatNumber = $seatsAller[$index];
+                $reference = Reservation::generateReference($seatNumber);
 
                 $reservation = Reservation::create([
                     'reference' => $reference,
-                    'programme_id' => $programme->id,
-                    'user_id' => null, 
-                    'seat_number' => $nextSeat,
+                    'programme_id' => $programmeAller->id,
+                    'user_id' => null,
+                    'seat_number' => $seatNumber,
                     'passager_nom' => $passenger['nom'],
                     'passager_prenom' => $passenger['prenom'],
                     'passager_telephone' => $passenger['telephone'],
                     'passager_email' => $passenger['email'] ?? null,
-                    'date_voyage' => $programme->date_depart,
-                    'heure_depart' => $programme->heure_depart,
-                    'heure_arrive' => $programme->heure_arrive,
-                    'montant' => $programme->montant_billet,
-                    'statut' => 'confirmee',
+                    'passager_urgence' => null,
+                    'date_voyage' => $request->date_voyage,
+                    'heure_depart' => $request->heure_depart,
+                    'heure_arrive' => $programmeAller->heure_arrive,
+                    'montant' => $programmeAller->montant_billet,
+                    'statut' => 'confirmee', // Directement confirmé
+                    'is_retour' => false,
                     'hotesse_id' => $hotesse->id,
                     'compagnie_id' => $hotesse->compagnie_id,
                 ]);
 
-                // Générer le QR Code pour cette réservation
+                // Générer le QR Code
                 try {
                     $qrCodeData = $this->generateAndSaveQRCode(
                         $reservation->reference,
                         $reservation->id,
-                        $programme->date_depart,
-                        null 
+                        $request->date_voyage,
+                        null
                     );
 
                     $reservation->update([
@@ -235,26 +407,118 @@ class HotesseController extends Controller
                         'qr_code_path' => $qrCodeData['path']
                     ]);
                 } catch (\Exception $e) {
-                    Log::error('Erreur génération QR Code Hotesse: ' . $e->getMessage());
+                    Log::error('Erreur génération QR Code: ' . $e->getMessage());
                 }
 
-                $reservedSeats[] = $nextSeat;
-                $nextSeat++;
-                $reservations[] = $reservation;
+                $reservationIds[] = $reservation->id;
             }
 
-            // Déduire les tickets de l'hotesse
-            $hotesse->deductTickets($nombreTickets);
+            // ========== RETOUR (si Aller-Retour) ==========
+            if ($isAllerRetour) {
+                $programmeRetour = Programme::with(['compagnie', 'vehicule'])->findOrFail($request->programme_retour_id);
+                
+                // Assigner automatiquement les places pour le retour
+                $seatsRetour = $this->assignSeatsAutomatically($programmeRetour->id, $request->date_retour, $nombrePassagers);
+                
+                if (count($seatsRetour) < $nombrePassagers) {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Pas assez de places disponibles pour le trajet retour.'
+                    ], 400);
+                }
+
+                // Créer les réservations retour
+                foreach ($request->passenger_details as $index => $passenger) {
+                    $seatNumber = $seatsRetour[$index];
+                    $reference = Reservation::generateReference($seatNumber);
+
+                    $reservation = Reservation::create([
+                        'reference' => $reference,
+                        'programme_id' => $programmeRetour->id,
+                        'user_id' => null,
+                        'seat_number' => $seatNumber,
+                        'passager_nom' => $passenger['nom'],
+                        'passager_prenom' => $passenger['prenom'],
+                        'passager_telephone' => $passenger['telephone'],
+                        'passager_email' => $passenger['email'] ?? null,
+                        'passager_urgence' => null,
+                        'date_voyage' => $request->date_retour,
+                        'heure_depart' => $request->heure_retour,
+                        'heure_arrive' => $programmeRetour->heure_arrive,
+                        'montant' => $programmeRetour->montant_billet,
+                        'statut' => 'confirmee',
+                        'is_retour' => true,
+                        'hotesse_id' => $hotesse->id,
+                        'compagnie_id' => $hotesse->compagnie_id,
+                    ]);
+
+                    // Générer le QR Code
+                    try {
+                        $qrCodeData = $this->generateAndSaveQRCode(
+                            $reservation->reference,
+                            $reservation->id,
+                            $request->date_retour,
+                            null
+                        );
+
+                        $reservation->update([
+                            'qr_code' => $qrCodeData['base64'],
+                            'qr_code_path' => $qrCodeData['path']
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::error('Erreur génération QR Code retour: ' . $e->getMessage());
+                    }
+
+                    $reservationIds[] = $reservation->id;
+                }
+            }
 
             DB::commit();
 
-            $ids = array_map(function($r) { return $r->id; }, $reservations);
-            return redirect()->route('hotesse.vente-success', ['reservations' => $ids])->with('success', $nombreTickets . ' ticket(s) vendu(s) avec succès !');
+            $message = $isAllerRetour 
+                ? "{$nombrePassagers} passager(s) réservé(s) pour un voyage aller-retour !"
+                : "{$nombrePassagers} passager(s) réservé(s) avec succès !";
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'redirect' => route('hotesse.vente-success', ['reservations' => $reservationIds])
+            ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withErrors(['error' => 'Erreur lors de la vente : ' . $e->getMessage()]);
+            Log::error('Erreur vente hotesse: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la réservation: ' . $e->getMessage()
+            ], 500);
         }
+    }
+
+    /**
+     * Assigner automatiquement les places disponibles
+     */
+    private function assignSeatsAutomatically($programmeId, $dateVoyage, $count)
+    {
+        // Récupérer les places déjà réservées pour ce programme et cette date
+        $reservedSeats = Reservation::where('programme_id', $programmeId)
+            ->where('date_voyage', $dateVoyage)
+            ->pluck('seat_number')
+            ->toArray();
+
+        $assignedSeats = [];
+        $nextSeat = 1;
+
+        // Trouver les prochaines places disponibles
+        while (count($assignedSeats) < $count && $nextSeat <= 70) {
+            if (!in_array($nextSeat, $reservedSeats)) {
+                $assignedSeats[] = $nextSeat;
+            }
+            $nextSeat++;
+        }
+
+        return $assignedSeats;
     }
 
     /**

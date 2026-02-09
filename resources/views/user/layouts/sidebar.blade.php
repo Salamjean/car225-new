@@ -80,12 +80,7 @@
                         </nav>
                     </div>
                 </div>
-                 <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-drawer-link" href="{{ route('user.profile') }}">
-                        <i class="fas fa-user-circle mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
-                        Mon Profil
-                    </a>
-                </div>
+
                 <div class="mdc-list-item mdc-drawer-item">
                     <a class="mdc-drawer-link" href="{{ route('signalement.create') }}">
                         <i class="fas fa-exclamation-triangle mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>

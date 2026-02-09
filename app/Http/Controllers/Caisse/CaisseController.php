@@ -16,6 +16,7 @@ use App\Models\Paiement;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon; // N'oublie pas d'importer Carbon
 
 class CaisseController extends Controller
 {
@@ -170,17 +171,37 @@ class CaisseController extends Controller
         return view('caisse.ticket-pdf', compact('reservation'));
     }
 
-    public function vendreTicket()
+  public function vendreTicket()
     {
         $caisse = Auth::guard('caisse')->user();
         
-        // Récupérer les programmes actifs de la compagnie du caissier
+        // 1. On récupère la date et l'heure actuelles
+        $now = Carbon::now();
+        $dateAujourdhui = $now->toDateString(); // Ex: 2025-05-20
+        $heureActuelle = $now->format('H:i');   // Ex: 14:30
+        
+        // 2. Récupérer les programmes
         $programmes = Programme::with(['compagnie', 'vehicule'])
             ->where('compagnie_id', $caisse->compagnie_id)
-            ->where('statut', 'actif')
-            ->whereDate('date_depart', '>=', now()->toDateString())
-            ->orderBy('date_depart')
+            ->where('statut', 'actif') // On s'assure qu'il est actif
+            
+            // LOGIQUE DATE : Le programme doit être en cours de validité aujourd'hui
+            // La date de fin doit être future ou aujourd'hui
+            ->whereDate('date_fin', '>=', $dateAujourdhui)
+            // La date de début doit être passée ou aujourd'hui (le programme a commencé)
+            ->whereDate('date_depart', '<=', $dateAujourdhui)
+            
+            // LOGIQUE HEURE : On ne veut que les départs FUTURS pour la journée d'aujourd'hui
+            ->where('heure_depart', '>', $heureActuelle)
+            
+            // On trie par heure de départ la plus proche
+            ->orderBy('heure_depart', 'asc')
             ->get();
+            
+        Log::info('Caisse VendreTicket Filtré:', [
+            'heure_actuelle' => $heureActuelle,
+            'programmes_trouves' => $programmes->count()
+        ]);
         
         return view('caisse.vendre-ticket', compact('caisse', 'programmes'));
     }
@@ -200,56 +221,60 @@ class CaisseController extends Controller
         ]);
 
         $programme = Programme::with(['compagnie', 'vehicule'])->findOrFail($request->programme_id);
-        $nombreTickets = $request->nombre_tickets;
+        
+        // IMPORTANT : Puisqu'on vend pour "Aujourd'hui", la date de voyage est MAINTENANT
+        // et non pas la date de création du programme ($programme->date_depart)
+        $dateVoyageEffective = now()->toDateString(); 
 
         DB::beginTransaction();
         try {
             $reservations = [];
 
-            // Récupérer les sièges déjà réservés pour ce programme
+            // Récupérer les sièges déjà réservés pour ce programme ET pour cette date spécifique
             $reservedSeats = Reservation::where('programme_id', $programme->id)
+                ->whereDate('date_voyage', $dateVoyageEffective) // Ajout crucial : filtre par date du jour
                 ->pluck('seat_number')
                 ->toArray();
 
-            // Trouver le prochain siège disponible
             $nextSeat = 1;
             while (in_array($nextSeat, $reservedSeats)) {
                 $nextSeat++;
             }
 
             foreach ($request->passenger_details as $index => $passenger) {
-                // Trouver le prochain siège disponible pour chaque passager
                 while (in_array($nextSeat, $reservedSeats)) {
                     $nextSeat++;
                 }
 
-                // Utiliser le helper du modèle pour la référence
                 $reference = Reservation::generateReference($nextSeat);
 
                 $reservation = Reservation::create([
                     'reference' => $reference,
                     'programme_id' => $programme->id,
-                    'user_id' => null, // Vente caisse, pas d'utilisateur
+                    'user_id' => null,
                     'seat_number' => $nextSeat,
                     'passager_nom' => $passenger['nom'],
                     'passager_prenom' => $passenger['prenom'],
                     'passager_telephone' => $passenger['telephone'],
                     'passager_email' => $passenger['email'] ?? null,
-                    'date_voyage' => $programme->date_depart,
+                    
+                    // ICI : On met la date d'aujourd'hui, pas la date de début du planning
+                    'date_voyage' => $dateVoyageEffective, 
+                    
                     'heure_depart' => $programme->heure_depart,
                     'heure_arrive' => $programme->heure_arrive,
                     'montant' => $programme->montant_billet,
-                    'statut' => 'terminee',
+                    'statut' => 'confirmee',
                     'caisse_id' => $caisse->id,
                 ]);
 
-                // Générer le QR Code pour cette réservation
+                // Génération du QR Code avec la BONNE date de voyage
                 try {
                     $qrCodeData = $this->generateAndSaveQRCode(
                         $reservation->reference,
                         $reservation->id,
-                        $programme->date_depart,
-                        null // Pas d'utilisateur spécifique pour une vente caisse
+                        $dateVoyageEffective, // Utilisation de la date effective
+                        null
                     );
 
                     $reservation->update([
@@ -257,7 +282,7 @@ class CaisseController extends Controller
                         'qr_code_path' => $qrCodeData['path']
                     ]);
                 } catch (\Exception $e) {
-                    Log::error('Erreur génération QR Code Caisse: ' . $e->getMessage());
+                    Log::error('Erreur QR: ' . $e->getMessage());
                 }
 
                 $reservedSeats[] = $nextSeat;
@@ -265,12 +290,10 @@ class CaisseController extends Controller
                 $reservations[] = $reservation;
             }
 
-            // Pas de déduction de tickets
-
             DB::commit();
 
             $ids = array_map(function($r) { return $r->id; }, $reservations);
-            return redirect()->route('caisse.vente-success', ['reservations' => $ids])->with('success', $nombreTickets . ' ticket(s) vendu(s) avec succès !');
+            return redirect()->route('caisse.vente-success', ['reservations' => $ids])->with('success', $request->nombre_tickets . ' ticket(s) vendu(s) avec succès !');
 
         } catch (\Exception $e) {
             DB::rollBack();

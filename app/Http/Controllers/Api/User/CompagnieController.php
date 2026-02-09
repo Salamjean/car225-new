@@ -180,7 +180,7 @@ class CompagnieController extends Controller
 
         // Logo URL
         $logoUrl = $compagnie->path_logo 
-            ? asset('storage/' . $compagnie->path_logo) 
+            ? 'storage/' . $compagnie->path_logo 
             : null;
 
         // Générer les initiales pour le sigle
@@ -202,8 +202,17 @@ class CompagnieController extends Controller
                 'vehicules' => $totalVehicules,
                 'programmes' => $totalProgrammes,
                 'reservations' => $totalReservations,
+                'itineraires' => $compagnie->itineraires()->count(),
             ],
             'tags' => $tags,
+            'itineraires' => $compagnie->itineraires->map(function($itineraire) {
+                return [
+                    'id' => $itineraire->id,
+                    'point_depart' => $itineraire->point_depart,
+                    'point_arrive' => $itineraire->point_arrive,
+                    'durer_parcours' => $itineraire->durer_parcours,
+                ];
+            }),
         ];
 
         // Ajouter plus de détails si demandé

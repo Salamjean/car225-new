@@ -10,12 +10,16 @@
         <button class="mdc-button mdc-menu-button">
           <span class="d-flex align-items-center">
             <span class="figure"
-              style="width:40px; height:40px; border-radius:50%; background:#0e914b; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold;">
+              style="width:40px; height:40px; border-radius:50%; background:#0e914b; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; overflow: hidden;">
               @php
                 $user = Auth::guard('web')->user();
                 $initials = strtoupper(substr($user->name, 0, 1) . substr($user->prenom, 0, 1));
               @endphp
-              {{ $initials }}
+              @if($user->photo_profile_path)
+                <img src="{{ asset('storage/' . $user->photo_profile_path) }}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
+              @else
+                {{ $initials }}
+              @endif
             </span>
             <span class="user-name text-white ml-2"> {{ $user->name }} {{ $user->prenom }}</span>
             <span class="ml-2 text-white">&#9662;</span>
@@ -23,6 +27,12 @@
         </button>
         <div class="mdc-menu mdc-menu-surface" tabindex="-1">
           <ul class="mdc-list" role="menu" aria-hidden="true" aria-orientation="vertical">
+            <li class="mdc-list-item" role="menuitem">
+              <a href="{{route('user.profile')}}" class="d-flex align-items-center w-100 text-decoration-none text-dark">
+                <i class="mdi mdi-account mr-2" style="color: #193561; font-size: 1.5rem;"></i>
+                <span>Mon Profil</span>
+              </a>
+            </li>
             <li class="mdc-list-item" role="menuitem">
               <a href="{{route('user.logout')}}" class="d-flex align-items-center w-100 text-decoration-none text-dark">
                 <i class="mdi mdi-logout mr-2" style="color: #193561; font-size: 1.5rem;"></i>

@@ -39,6 +39,8 @@ class Reservation extends Model
         'embarquement_vehicule_id',
         'embarquement_location',
         'embarquement_status',
+        'hotesse_id',
+        'compagnie_id',
     ];
 
     protected $casts = [

@@ -23,24 +23,32 @@
                 @csrf
 
                 <!-- Sélection du programme -->
-                <div class="mb-6">
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Programme *</label>
-                    <select name="programme_id" id="programme_id" required
-                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
-                        <option value="">-- Sélectionnez un programme --</option>
-                        @foreach($programmes as $programme)
-                            <option value="{{ $programme->id }}">
-                                {{ $programme->point_depart }} → {{ $programme->point_arrive }} 
-                                | {{ \Carbon\Carbon::parse($programme->date_depart)->format('d/m/Y') }} à {{ \Carbon\Carbon::parse($programme->heure_depart)->format('H:i') }}
-                                | {{ $programme->vehicule->immatriculation ?? 'N/A' }}
-                                | {{ number_format($programme->montant_billet, 0, ',', ' ') }} FCFA
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('programme_id')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
+<div class="mb-6">
+    <label class="block text-sm font-semibold text-gray-700 mb-2">Programme (Départs d'aujourd'hui) *</label>
+    <select name="programme_id" id="programme_id" required
+        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
+        <option value="">-- Sélectionnez un départ --</option>
+        @foreach($programmes as $programme)
+            <option value="{{ $programme->id }}">
+                {{-- 1. L'heure (c'est le plus important pour un départ imminent) --}}
+                {{ \Carbon\Carbon::parse($programme->heure_depart)->format('H:i') }} 
+                
+                {{-- 2. Le trajet --}}
+                | {{ $programme->point_depart }} → {{ $programme->point_arrive }} 
+                
+                {{-- 3. La date (On affiche explicitement la date d'aujourd'hui) --}}
+                | {{ \Carbon\Carbon::now()->format('d/m/Y') }} 
+                
+                {{-- 4. Infos véhicule et prix --}}
+                | {{ $programme->vehicule->immatriculation ?? 'Bus' }}
+                | {{ number_format($programme->montant_billet, 0, ',', ' ') }} FCFA
+            </option>
+        @endforeach
+    </select>
+    @error('programme_id')
+        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+    @enderror
+</div>
 
                 <!-- Nombre de tickets -->
                 <div class="mb-6">

@@ -71,6 +71,11 @@ class Compagnie extends Authenticatable
         return $this->hasMany(Programme::class);
     }
 
+    public function itineraires()
+    {
+        return $this->hasMany(Itineraire::class);
+    }
+
     /**
      * Deduct tickets from company balance
      */

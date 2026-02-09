@@ -11,6 +11,7 @@ use App\Models\Vehicule;
 use App\Models\Paiement;
 use App\Models\WalletTransaction;
 use App\Models\User;
+use App\Models\Itineraire;
 use App\Notifications\ReservationConfirmeeNotification;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -22,6 +23,7 @@ use Illuminate\Support\Str;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
 use Illuminate\Support\Facades\DB;
+
 
 class ReservationApiController extends Controller
 {
@@ -861,27 +863,52 @@ class ReservationApiController extends Controller
     }
     /**
      * GET /api/user/itineraires
-     * Liste des itinéraires disponibles
+     * Liste des itinéraires/trajets par compagnie
+     * 
+     * Query params:
+     * - compagnie_id: Filter by company ID
+     * - point_depart: Filter by departure point
+     * - point_arrive: Filter by arrival point
+     * - paginate: true/false (default: true)
+     * - per_page: Number of items per page (default: 20)
      */
-    public function getItineraires()
+    public function getItineraires(Request $request)
     {
         try {
-            $itineraires = Programme::select('point_depart', 'point_arrive')
-                ->where('statut', 'actif')
-                ->distinct()
-                ->orderBy('point_depart')
-                ->orderBy('point_arrive')
-                ->get();
+            $query = Itineraire::with(['compagnie']);
+
+            // Filtre par compagnie si spécifié
+            if ($request->filled('compagnie_id')) {
+                $query->where('compagnie_id', $request->compagnie_id);
+            }
+
+            // Filtre par point de départ si spécifié
+            if ($request->filled('point_depart')) {
+                $query->where('point_depart', 'like', '%' . $request->point_depart . '%');
+            }
+
+            // Filtre par point d'arrivée si spécifié
+            if ($request->filled('point_arrive')) {
+                $query->where('point_arrive', 'like', '%' . $request->point_arrive . '%');
+            }
+
+            // Récupérer avec ou sans pagination
+            if ($request->get('paginate', true)) {
+                $perPage = $request->get('per_page', 20);
+                $itineraires = $query->orderBy('point_depart', 'asc')->paginate($perPage);
+            } else {
+                $itineraires = $query->orderBy('point_depart', 'asc')->get();
+            }
 
             return response()->json([
                 'success' => true,
                 'data' => $itineraires
             ]);
         } catch (\Exception $e) {
-            Log::error('Erreur itinéraires API: ' . $e->getMessage());
+            Log::error('Erreur liste itinéraires API: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Erreur lors de la récupération',
+                'message' => 'Erreur lors de la récupération des itinéraires',
                 'error' => $e->getMessage()
             ], 500);
         }
