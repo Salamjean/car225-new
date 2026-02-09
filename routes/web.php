@@ -78,6 +78,17 @@ Route::middleware('admin')->prefix('admin')->group(function () {
 
     // Gestion des Sapeurs Pompiers
     Route::resource('sapeur-pompier', SapeurPompierController::class);
+
+    // Gestion des Hotesses
+    Route::prefix('hotesse')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\HotesseController::class, 'index'])->name('admin.hotesse.index');
+        Route::get('/create', [App\Http\Controllers\Admin\HotesseController::class, 'create'])->name('admin.hotesse.create');
+        Route::post('/store', [App\Http\Controllers\Admin\HotesseController::class, 'store'])->name('admin.hotesse.store');
+        Route::get('/{hotesse}', [App\Http\Controllers\Admin\HotesseController::class, 'show'])->name('admin.hotesse.show');
+        Route::post('/{hotesse}/recharge', [App\Http\Controllers\Admin\HotesseController::class, 'recharge'])->name('admin.hotesse.recharge');
+        Route::post('/{hotesse}/toggle-archive', [App\Http\Controllers\Admin\HotesseController::class, 'toggleArchive'])->name('admin.hotesse.toggle-archive');
+        Route::delete('/{hotesse}', [App\Http\Controllers\Admin\HotesseController::class, 'destroy'])->name('admin.hotesse.destroy');
+    });
 });
 
 //Les routes de gestion du @admin
@@ -206,6 +217,39 @@ Route::middleware('caisse')->prefix('caisse')->group(function () {
     // Sales history and printing
     Route::get('/ventes', [App\Http\Controllers\Caisse\CaisseController::class, 'ventes'])->name('caisse.ventes');
     Route::get('/ticket/{reservation}/imprimer', [App\Http\Controllers\Caisse\CaisseController::class, 'imprimerTicket'])->name('caisse.ticket.imprimer');
+});
+
+//Les routes de gestion des @hotesses
+Route::prefix('hotesse')->group(function () {
+    // Public routes (before authentication)
+    Route::get('/verify-otp', [App\Http\Controllers\Hotesse\HotesseAuthController::class, 'showOtpVerification'])->name('hotesse.auth.verify-otp');
+    Route::post('/verify-otp', [App\Http\Controllers\Hotesse\HotesseAuthController::class, 'verifyOtp'])->name('hotesse.auth.verify-otp.submit');
+    Route::post('/resend-otp', [App\Http\Controllers\Hotesse\HotesseAuthController::class, 'resendOtp'])->name('hotesse.auth.resend-otp');
+    
+    Route::get('/setup-password', [App\Http\Controllers\Hotesse\HotesseAuthController::class, 'showPasswordSetup'])->name('hotesse.auth.setup-password');
+    Route::post('/setup-password', [App\Http\Controllers\Hotesse\HotesseAuthController::class, 'setupPassword'])->name('hotesse.auth.setup-password.submit');
+    
+    Route::get('/login', [App\Http\Controllers\Hotesse\HotesseAuthController::class, 'showLogin'])->name('hotesse.auth.login');
+    Route::post('/login', [App\Http\Controllers\Hotesse\HotesseAuthController::class, 'login'])->name('hotesse.auth.login.submit');
+});
+
+Route::middleware('hotesse')->prefix('hotesse')->group(function () {
+    Route::get('/dashboard', [App\Http\Controllers\Hotesse\HotesseController::class, 'dashboard'])->name('hotesse.dashboard');
+    Route::get('/logout', [App\Http\Controllers\Hotesse\HotesseAuthController::class, 'logout'])->name('hotesse.logout');
+    
+    // Profile routes
+    Route::get('/profile', [App\Http\Controllers\Hotesse\HotesseController::class, 'profile'])->name('hotesse.profile');
+    Route::post('/profile/update', [App\Http\Controllers\Hotesse\HotesseController::class, 'updateProfile'])->name('hotesse.profile.update');
+    Route::post('/profile/password', [App\Http\Controllers\Hotesse\HotesseController::class, 'updatePassword'])->name('hotesse.profile.password');
+    
+    // Ticket selling routes
+    Route::get('/vendre-ticket', [App\Http\Controllers\Hotesse\HotesseController::class, 'vendreTicket'])->name('hotesse.vendre-ticket');
+    Route::post('/vendre-ticket', [App\Http\Controllers\Hotesse\HotesseController::class, 'vendreTicketSubmit'])->name('hotesse.vendre-ticket.submit');
+    Route::get('/vente-success', [App\Http\Controllers\Hotesse\HotesseController::class, 'venteSuccess'])->name('hotesse.vente-success');
+    
+    // Sales history and printing
+    Route::get('/ventes', [App\Http\Controllers\Hotesse\HotesseController::class, 'ventes'])->name('hotesse.ventes');
+    Route::get('/ticket/{reservation}/imprimer', [App\Http\Controllers\Hotesse\HotesseController::class, 'imprimerTicket'])->name('hotesse.ticket.imprimer');
 });
 
 

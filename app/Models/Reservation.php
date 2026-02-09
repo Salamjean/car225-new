@@ -76,6 +76,11 @@ class Reservation extends Model
         return $this->belongsTo(Caisse::class);
     }
 
+    public function hotesse()
+    {
+        return $this->belongsTo(Hotesse::class);
+    }
+
     /**
      * Relation avec le programme (voyage)
      */

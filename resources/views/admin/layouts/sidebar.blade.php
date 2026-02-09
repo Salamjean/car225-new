@@ -84,6 +84,27 @@
           </div>
         </div>
         <div class="mdc-list-item mdc-drawer-item">
+          <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel" data-target="ui-sub-hotesse">
+            <i class="fas fa-user-tie mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
+            Gestion Hôtesses
+            <i class="mdc-drawer-arrow material-icons">chevron_right</i>
+          </a>
+          <div class="mdc-expansion-panel" id="ui-sub-hotesse">
+            <nav class="mdc-list mdc-drawer-submenu">
+              <div class="mdc-list-item mdc-drawer-item">
+                <a class="mdc-drawer-link" href="{{route('admin.hotesse.create')}}">
+                  Ajouter
+                </a>
+              </div>
+              <div class="mdc-list-item mdc-drawer-item">
+                <a class="mdc-drawer-link" href="{{route('admin.hotesse.index')}}">
+                  Liste
+                </a>
+              </div>
+            </nav>
+          </div>
+        </div>
+        <div class="mdc-list-item mdc-drawer-item">
           <a class="mdc-drawer-link" href="{{route('admin.itineraire.index')}}">
             <i class="fas fa-route mdc-list-item__start-detail mdc-drawer-item-icon"></i>
             Itinéraire

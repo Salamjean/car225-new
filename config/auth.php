@@ -63,6 +63,10 @@ return [
             'driver' => 'session',
             'provider' => 'caisses',
         ],
+        'hotesse' => [
+            'driver' => 'session',
+            'provider' => 'hotesses',
+        ],
     ],
 
     /*
@@ -109,6 +113,10 @@ return [
         'caisses' => [
             'driver' => 'eloquent',
             'model' => App\Models\Caisse::class,
+        ],
+        'hotesses' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Hotesse::class,
         ],
 
         // 'users' => [

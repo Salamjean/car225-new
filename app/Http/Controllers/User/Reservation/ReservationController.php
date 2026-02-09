@@ -613,6 +613,8 @@ class ReservationController extends Controller
             'passagers.*.telephone' => 'required|string',
             'passagers.*.urgence' => 'required|string',
             'passagers.*.seat_number' => 'required|integer',
+            'seats_retour' => 'nullable|array', // AJOUTÉ
+            'seats_retour.*' => 'nullable|integer', // AJOUTÉ
         ]);
 
         Log::info('Données reçues (après validation):', [
@@ -831,9 +833,9 @@ $dateAller = $request->date_voyage;
                 }
             }
 
-            // 3. Créer réservations (UNE PAR PLACE)
+          // 3. Créer réservations (UNE PAR PLACE)
             $createdReservations = [];
-            foreach ($request->passagers as $passager) {
+            foreach ($request->passagers as $index => $passager) {
                 $seatNumber = $passager['seat_number'];
                 $reference = $transactionId . '-' . $seatNumber;
 
@@ -849,11 +851,13 @@ $dateAller = $request->date_voyage;
                     'passager_telephone' => $passager['telephone'],
                     'passager_urgence' => $passager['urgence'],
                     'is_aller_retour' => $isAllerRetour,
-                    'montant' => $prixUnitaire, // Montant unitaire
+                    'montant' => $prixUnitaire,
                     'statut' => $reservationStatus,
                     'reference' => $reference,
                     'date_voyage' => $dateVoyage,
-                    'qr_code' => Str::random(32) // Placeholder par défaut
+                    'qr_code' => Str::random(32),
+                    'heure_depart' => $programme->heure_depart,
+                    'heure_arrive' => $programme->heure_arrive
                 ];
 
                 if ($isAllerRetour) {
@@ -869,28 +873,25 @@ $dateAller = $request->date_voyage;
                     $reservationData['statut_aller'] = $reservationStatus;
                 }
                 
-                // Assigner le QR code correspondant
+                // Assigner le QR code (Code existant conservé)
                 foreach ($passagersData as $pData) {
                     if ($pData['seat'] == $seatNumber) {
                          if (isset($pData['qr_code_base64'])) {
                              $reservationData['qr_code'] = $pData['qr_code_base64'];
                              $reservationData['qr_code_path'] = $pData['qr_code_path'];
-                             $reservationData['qr_code_data'] = $pData['qr_data']; // Déjà un array
+                             $reservationData['qr_code_data'] = $pData['qr_data'];
                          }
                          break;
                     }
                 }
-
-                // AJOUT DES HEURES DEPART/ARRIVEE
-                $reservationData['heure_depart'] = $programme->heure_depart;
-                $reservationData['heure_arrive'] = $programme->heure_arrive;
 
                 $res = Reservation::create($reservationData);
                 $createdReservations[] = $res;
 
                 // --- CREATION AUTOMATIQUE DU RETOUR ---
                 if ($isAllerRetour && isset($dateRetour)) {
-                    // Trouver un programme retour correspondant
+                    $seatsRetour = $request->seats_retour ?? [];
+                    
                     $returnProgram = Programme::where('compagnie_id', $programme->compagnie_id)
                         ->where('point_depart', $programme->point_arrive)
                         ->where('point_arrive', $programme->point_depart)
@@ -898,44 +899,93 @@ $dateAller = $request->date_voyage;
                         ->first();
 
                     if ($returnProgram) {
-                        // Trouver une place libre pour le retour (Auto-assign)
-                        $usedSeats = Reservation::where('programme_id', $returnProgram->id)
-                            ->where('date_voyage', $dateRetour)
-                            ->where('statut', 'confirmee')
-                            ->pluck('seat_number')
-                            ->toArray();
-                        
-                        $capacity = $returnProgram->vehicule ? intval($returnProgram->vehicule->nombre_place) : 30;
-                        $returnSeat = null;
-                        for ($s = 1; $s <= $capacity; $s++) {
-                            if (!in_array($s, $usedSeats)) {
-                                $returnSeat = $s;
-                                break;
+                        // 1. Cas sélection manuelle (Si l'utilisateur a choisi sa place)
+                        if (!empty($seatsRetour) && isset($seatsRetour[$index])) {
+                            $seatNumberAller = $passager['seat_number'];
+                            $returnSeat = $seatsRetour[$index];
+                            
+                            $reservationDataRetour = [
+                                'paiement_id' => $paiement->id,
+                                'payment_transaction_id' => $transactionId,
+                                'user_id' => Auth::id(),
+                                'programme_id' => $returnProgram->id,
+                                'seat_number' => $returnSeat,
+                                'passager_nom' => $passager['nom'],
+                                'passager_prenom' => $passager['prenom'],
+                                'passager_email' => $passager['email'],
+                                'passager_telephone' => $passager['telephone'],
+                                'passager_urgence' => $passager['urgence'],
+                                'is_aller_retour' => $isAllerRetour,
+                                'montant' => $prixUnitaire,
+                                'statut' => $reservationStatus,
+                                'date_voyage' => $dateRetour,
+                                'date_retour' => $dateRetour,
+                                'statut_aller' => $reservationStatus,
+                                'statut_retour' => $reservationStatus,
+                                'heure_depart' => $returnProgram->heure_depart,
+                                'heure_arrive' => $returnProgram->heure_arrive,
+                                'reference' => $transactionId . '-RET-' . $seatNumberAller,
+                                'qr_code' => Str::random(32),
+                                'qr_code_path' => 'qrcodes/' . $transactionId . '-RET-' . $seatNumberAller . '.png'
+                            ];
+                            
+                            $resRetour = Reservation::create($reservationDataRetour);
+                            $createdReservations[] = $resRetour;
+                        } 
+                        // 2. Cas Fallback (Assignation Auto) - LE ELSE EST ICI, CORRECTEMENT PLACÉ
+                        else {
+                            $seatNumberAller = $passager['seat_number'];
+                            
+                            $usedSeats = Reservation::where('programme_id', $returnProgram->id)
+                                ->where('date_voyage', $dateRetour)
+                                ->where('statut', 'confirmee')
+                                ->pluck('seat_number')
+                                ->toArray();
+                            
+                            $capacity = $returnProgram->vehicule ? intval($returnProgram->vehicule->nombre_place) : 30;
+                            $returnSeat = null;
+                            for ($s = 1; $s <= $capacity; $s++) {
+                                if (!in_array($s, $usedSeats)) {
+                                    $returnSeat = $s;
+                                    break;
+                                }
                             }
-                        }
 
-                        if ($returnSeat) {
-                             $reservationDataRetour = $reservationData;
-                             $reservationDataRetour['programme_id'] = $returnProgram->id;
-                             $reservationDataRetour['date_voyage'] = $dateRetour;
-                             // Heures du retour
-                             $reservationDataRetour['heure_depart'] = $returnProgram->heure_depart;
-                             $reservationDataRetour['heure_arrive'] = $returnProgram->heure_arrive;
-                             $reservationDataRetour['seat_number'] = $returnSeat;
-                             $reservationDataRetour['reference'] = $transactionId . '-RET-' . $seatNumber;
-                             $reservationDataRetour['qr_code'] = Str::random(32); // Nouveau QR
-                             // On enlève les champs spécifiques 'Aller' qui n'ont pas de sens ici si la table ne les a pas, mais on garde la structure
-                             // Note: On ne met pas 'is_aller_retour' à true pour éviter récursion infinie si logique externe
-                             // Mais ici c'est juste un record.
-                             
-                             $resRetour = Reservation::create($reservationDataRetour);
-                             $createdReservations[] = $resRetour;
+                            if ($returnSeat) {
+                                $reservationDataRetour = [
+                                    'paiement_id' => $paiement->id,
+                                    'payment_transaction_id' => $transactionId,
+                                    'user_id' => Auth::id(),
+                                    'programme_id' => $returnProgram->id,
+                                    'seat_number' => $returnSeat,
+                                    'passager_nom' => $passager['nom'],
+                                    'passager_prenom' => $passager['prenom'],
+                                    'passager_email' => $passager['email'],
+                                    'passager_telephone' => $passager['telephone'],
+                                    'passager_urgence' => $passager['urgence'],
+                                    'is_aller_retour' => $isAllerRetour,
+                                    'montant' => $prixUnitaire,
+                                    'statut' => $reservationStatus,
+                                    'date_voyage' => $dateRetour,
+                                    'date_retour' => $dateRetour,
+                                    'statut_aller' => $reservationStatus,
+                                    'statut_retour' => $reservationStatus,
+                                    'heure_depart' => $returnProgram->heure_depart,
+                                    'heure_arrive' => $returnProgram->heure_arrive,
+                                    'reference' => $transactionId . '-RET-' . $seatNumberAller,
+                                    'qr_code' => Str::random(32),
+                                    'qr_code_path' => 'qrcodes/' . $transactionId . '-RET-' . $seatNumberAller . '.png'
+                                ];
+                                
+                                $resRetour = Reservation::create($reservationDataRetour);
+                                $createdReservations[] = $resRetour;
+                            }
                         }
                     }
                 }
-            }
-
-        } else {
+            }  
+         
+          } else { 
             // === LOGIQUE CINETPAY: PLUSIEURS RÉSERVATIONS (UNE PAR PASSAGER) ===
             foreach ($passagers as $passager) {
                 $seatNumber = $passager['seat_number'];
@@ -966,6 +1016,8 @@ $dateAller = $request->date_voyage;
 
                 // --- CREATION AUTOMATIQUE DU RETOUR (CinetPay) ---
                 if ($isAllerRetour && isset($dateRetour)) {
+                    $seatsRetour = $request->seats_retour ?? [];
+                    
                     // Trouver un programme retour
                     $returnProgram = Programme::where('compagnie_id', $programme->compagnie_id)
                         ->where('point_depart', $programme->point_arrive)
@@ -974,34 +1026,55 @@ $dateAller = $request->date_voyage;
                         ->first();
 
                     if ($returnProgram) {
-                         // Auto-assign seat
-                        $usedSeats = Reservation::where('programme_id', $returnProgram->id)
-                            ->where('date_voyage', $dateRetour)
-                            ->where('statut', 'confirmee')
-                            ->pluck('seat_number')
-                            ->toArray();
+                        // Trouver l'index du passager actuel
+                        $currentPassagerIndex = array_search($passager, $passagers);
                         
-                        $capacity = $returnProgram->vehicule ? intval($returnProgram->vehicule->nombre_place) : 30;
-                        $returnSeat = null;
-                        for ($s = 1; $s <= $capacity; $s++) {
-                            if (!in_array($s, $usedSeats)) {
-                                $returnSeat = $s;
-                                break;
+                        // Si l'utilisateur a sélectionné des places retour ET qu'il y a une place pour ce passager
+                        if (!empty($seatsRetour) && isset($seatsRetour[$currentPassagerIndex])) {
+                            // Utiliser la place sélectionnée
+                            $returnSeat = $seatsRetour[$currentPassagerIndex];
+                            
+                            $reservationDataRetour = $reservationData;
+                            $reservationDataRetour['programme_id'] = $returnProgram->id;
+                            $reservationDataRetour['date_voyage'] = $dateRetour;
+                            $reservationDataRetour['heure_depart'] = $returnProgram->heure_depart;
+                            $reservationDataRetour['heure_arrive'] = $returnProgram->heure_arrive;
+                            $reservationDataRetour['seat_number'] = $returnSeat;
+                            $reservationDataRetour['reference'] = $transactionId . '-RET-' . $seatNumber;
+                            $reservationDataRetour['qr_code'] = Str::random(32);
+                            
+                            $resRetour = Reservation::create($reservationDataRetour);
+                            $createdReservations[] = $resRetour;
+                        } else {
+                            // Fallback : Auto-assign seat
+                            $usedSeats = Reservation::where('programme_id', $returnProgram->id)
+                                ->where('date_voyage', $dateRetour)
+                                ->where('statut', 'confirmee')
+                                ->pluck('seat_number')
+                                ->toArray();
+                            
+                            $capacity = $returnProgram->vehicule ? intval($returnProgram->vehicule->nombre_place) : 30;
+                            $returnSeat = null;
+                            for ($s = 1; $s <= $capacity; $s++) {
+                                if (!in_array($s, $usedSeats)) {
+                                    $returnSeat = $s;
+                                    break;
+                                }
                             }
-                        }
 
-                        if ($returnSeat) {
-                             $reservationDataRetour = $reservationData;
-                             $reservationDataRetour['programme_id'] = $returnProgram->id;
-                             $reservationDataRetour['date_voyage'] = $dateRetour;
-                             $reservationDataRetour['heure_depart'] = $returnProgram->heure_depart; // AJOUT
-                             $reservationDataRetour['heure_arrive'] = $returnProgram->heure_arrive; // AJOUT
-                             $reservationDataRetour['seat_number'] = $returnSeat;
-                             $reservationDataRetour['reference'] = $transactionId . '-RET-' . $seatNumber;
-                             $reservationDataRetour['qr_code'] = Str::random(32);
-                             
-                             $resRetour = Reservation::create($reservationDataRetour);
-                             $createdReservations[] = $resRetour;
+                            if ($returnSeat) {
+                                $reservationDataRetour = $reservationData;
+                                $reservationDataRetour['programme_id'] = $returnProgram->id;
+                                $reservationDataRetour['date_voyage'] = $dateRetour;
+                                $reservationDataRetour['heure_depart'] = $returnProgram->heure_depart;
+                                $reservationDataRetour['heure_arrive'] = $returnProgram->heure_arrive;
+                                $reservationDataRetour['seat_number'] = $returnSeat;
+                                $reservationDataRetour['reference'] = $transactionId . '-RET-' . $seatNumber;
+                                $reservationDataRetour['qr_code'] = Str::random(32);
+                                
+                                $resRetour = Reservation::create($reservationDataRetour);
+                                $createdReservations[] = $resRetour;
+                            }
                         }
                     }
                 }

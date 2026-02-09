@@ -336,12 +336,76 @@
                             </button>
                         </div>
                     </div>
+<!-- Étape 2.5: Sélection des places RETOUR (si Aller-Retour) -->
+<div id="step2_5" class="hidden">
+    <div class="flex justify-between items-center mb-6">
+        <h3 class="text-xl font-bold text-gray-900">Sélectionnez vos places RETOUR</h3>
+        <div class="flex items-center gap-4">
+            <span id="selectedSeatsCountRetour" class="text-lg font-bold text-blue-600">0 place sélectionnée</span>
+            <button onclick="backToStep2()"
+                class="text-gray-600 hover:text-gray-800 flex items-center gap-2">
+                <i class="fas fa-arrow-left"></i>
+                <span>Retour</span>
+            </button>
+        </div>
+    </div>
 
+    <!-- Info programme retour -->
+    <div class="bg-blue-50 p-4 rounded-lg mb-6 border border-blue-200">
+        <div class="flex items-center gap-3">
+            <i class="fas fa-undo text-blue-600 text-2xl"></i>
+            <div>
+                <p class="font-bold text-blue-900">Voyage Retour</p>
+                <p id="returnProgramInfo" class="text-sm text-blue-700"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Visualisation des places RETOUR -->
+    <div id="seatSelectionAreaRetour" class="mb-8">
+        <!-- Les places seront générées dynamiquement -->
+    </div>
+
+    <!-- Légende -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-green-500 rounded"></div>
+            <span class="text-sm">Place disponible</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-blue-600 rounded"></div>
+            <span class="text-sm">Place sélectionnée</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-red-500 rounded"></div>
+            <span class="text-sm">Place réservée</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-blue-500 rounded"></div>
+            <span class="text-sm">Place côté gauche</span>
+        </div>
+    </div>
+
+    <!-- Boutons de navigation -->
+    <div class="flex justify-between">
+        <button onclick="backToStep2()"
+            class="bg-gray-200 text-gray-800 px-6 py-3 rounded-lg font-bold hover:bg-gray-300 transition-all duration-300 flex items-center gap-2">
+            <i class="fas fa-arrow-left"></i>
+            <span>Retour</span>
+        </button>
+        <button id="showPassengerInfoBtnRetour" onclick="proceedToPassengerInfoFromRetour()"
+            class="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            disabled>
+            <span>Informations passagers</span>
+            <i class="fas fa-arrow-right"></i>
+        </button>
+    </div>
+</div>
                     <!-- Étape 3: Informations des passagers -->
                     <div id="step3" class="hidden">
                         <div class="flex justify-between items-center mb-6">
                             <h3 class="text-xl font-bold text-gray-900">Informations des passagers</h3>
-                            <button onclick="backToStep2()"
+                            <button onclick="backFromPassengerInfo()"
                                 class="text-gray-600 hover:text-gray-800 flex items-center gap-2">
                                 <i class="fas fa-arrow-left"></i>
                                 <span>Retour aux places</span>
@@ -354,7 +418,7 @@
 
                         <!-- Bouton de confirmation finale -->
                         <div class="flex justify-between">
-                            <button onclick="backToStep2()"
+                            <button onclick="backFromPassengerInfo()"
                                 class="bg-gray-200 text-gray-800 px-6 py-3 rounded-lg font-bold hover:bg-gray-300 transition-all duration-300 flex items-center gap-2">
                                 <i class="fas fa-arrow-left"></i>
                                 <span>Retour</span>
@@ -430,6 +494,10 @@
         var reservedSeats = [];
         var vehicleDetails = null;
         var currentRequestId = 0;
+        var selectedSeatsRetour = [];
+var reservedSeatsRetour = [];
+var vehicleDetailsRetour = null;
+var currentRetourProgramId = null;
         var userWantsAllerRetour = false;
         var selectedReturnDate = null; // Date de retour sélectionnée pour Aller-Retour
         // Fonction pour basculer l'affichage de la liste des programmes
@@ -2593,21 +2661,424 @@ function onAllerRetourChoiceChange() {
         // ============================================
         // FONCTION 10.2: Afficher les infos passagers
         // ============================================
-        function showPassengerInfo() {
-            // Si aucune place sélectionnée, on lance l'assignation automatique
-            if (selectedSeats.length === 0) {
-                const success = autoAssignSeats();
-                if (!success) return; // Stop si échec
-                
-                // Petit délai pour montrer les places sélectionnées avant de passer à la suite
-                setTimeout(() => {
-                    proceedToPassengerInfo();
-                }, 500);
-            } else {
-                proceedToPassengerInfo();
+      function showPassengerInfo() {
+    // Si aucune place sélectionnée, on lance l'assignation automatique
+    if (selectedSeats.length === 0) {
+        const success = autoAssignSeats();
+        if (!success) return;
+        
+        setTimeout(() => {
+            checkIfNeedRetourSelection();
+        }, 500);
+    } else {
+        checkIfNeedRetourSelection();
+    }
+}
+
+function checkIfNeedRetourSelection() {
+    // Si c'est un aller-retour ET qu'on n'a pas encore sélectionné les places retour
+    if (window.userChoseAllerRetour && selectedSeatsRetour.length === 0) {
+        // Charger et afficher la sélection des places retour
+        loadRetourSeatsSelection();
+    } else {
+        // Sinon, passer directement aux infos passagers
+        proceedToPassengerInfo();
+    }
+}
+async function loadRetourSeatsSelection() {
+    // Récupérer le programme retour
+    const retourProgId = window.selectedRetourProgramId || window.selectedReturnProgram?.id;
+    
+    if (!retourProgId) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Erreur',
+            text: 'Programme retour introuvable.'
+        });
+        return;
+    }
+
+    currentRetourProgramId = retourProgId;
+
+    Swal.fire({
+        title: 'Chargement...',
+        text: 'Récupération des places disponibles pour le retour',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+    });
+
+    try {
+        // 1. Récupérer le programme retour
+        const programUrl = `/user/booking/program/${retourProgId}`;
+        const programResponse = await fetch(programUrl);
+        const programData = await programResponse.json();
+
+        if (!programData.success) {
+            throw new Error(programData.error || 'Programme retour non trouvé');
+        }
+
+        const programRetour = programData.programme;
+
+        // 2. Récupérer le véhicule
+        let vehicleId = programRetour.vehicule_id;
+        
+        if (!vehicleId) {
+            // Fallback : véhicule par défaut
+            const defaultVehicleUrl = `/user/booking/program/${retourProgId}/default-vehicle`;
+            const defaultVehicleResponse = await fetch(defaultVehicleUrl);
+            if (defaultVehicleResponse.ok) {
+                const defaultVehicleData = await defaultVehicleResponse.json();
+                if (defaultVehicleData.success && defaultVehicleData.vehicule_id) {
+                    vehicleId = defaultVehicleData.vehicule_id;
+                }
+            }
+        }
+        
+        if (!vehicleId) {
+            vehicleDetailsRetour = {
+                type_range: '2x3',
+                capacite_total: 70,
+                marque: 'Bus',
+                modele: 'Standard'
+            };
+        } else {
+            const vehicleUrl = `/user/booking/vehicle/${vehicleId}`;
+            const vehicleResponse = await fetch(vehicleUrl);
+            const vehicleData = await vehicleResponse.json();
+            
+            if (!vehicleData.success) {
+                throw new Error('Véhicule retour non trouvé');
+            }
+            
+            vehicleDetailsRetour = vehicleData.vehicule;
+        }
+
+        // 3. Récupérer les places réservées pour le retour
+        const dateRetour = window.selectedReturnDate || window.currentReservationDate;
+        const seatsUrl = `/user/booking/reservation/reserved-seats/${retourProgId}?date=${encodeURIComponent(dateRetour)}`;
+        const seatsResponse = await fetch(seatsUrl);
+
+        if (seatsResponse.ok) {
+            const seatsData = await seatsResponse.json();
+            if (seatsData.success) {
+                reservedSeatsRetour = seatsData.reservedSeats || [];
             }
         }
 
+        Swal.close();
+
+        // 4. Afficher les infos du retour
+        const dateRetourFormatted = new Date(dateRetour).toLocaleDateString('fr-FR');
+        document.getElementById('returnProgramInfo').innerHTML = `
+            <span><i class="fas fa-map-marker-alt"></i> ${programRetour.point_depart} → ${programRetour.point_arrive}</span>
+            <span class="mx-2">|</span>
+            <span><i class="fas fa-calendar"></i> ${dateRetourFormatted}</span>
+            <span class="mx-2">|</span>
+            <span><i class="fas fa-clock"></i> ${programRetour.heure_depart}</span>
+        `;
+
+        // 5. Générer la vue de sélection des places retour
+        generateSeatSelectionViewRetour();
+
+        // 6. Masquer step2, afficher step2_5
+        document.getElementById('step2').classList.add('hidden');
+        document.getElementById('step2_5').classList.remove('hidden');
+
+    } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Erreur',
+            text: error.message,
+            confirmButtonColor: '#e94f1b',
+        });
+    }
+}
+function generateSeatSelectionViewRetour() {
+    if (!vehicleDetailsRetour) {
+        document.getElementById('seatSelectionAreaRetour').innerHTML =
+            '<p class="text-center text-red-500">Impossible de charger les informations du véhicule.</p>';
+        return;
+    }
+
+    const config = typeRangeConfig[vehicleDetailsRetour.type_range];
+    if (!config) {
+        document.getElementById('seatSelectionAreaRetour').innerHTML =
+            '<p class="text-center text-red-500">Configuration de places non reconnue.</p>';
+        return;
+    }
+
+    const placesGauche = config.placesGauche;
+    const placesDroite = config.placesDroite;
+    const placesParRanger = placesGauche + placesDroite;
+    const totalPlaces = parseInt(vehicleDetailsRetour.capacite_total || vehicleDetailsRetour.nombre_place || 70);
+    const nombreRanger = Math.ceil(totalPlaces / placesParRanger);
+    
+    const vehicleName = vehicleDetailsRetour.marque + ' ' + (vehicleDetailsRetour.modele || '');
+    const vehicleImmat = vehicleDetailsRetour.immatriculation || '';
+    const vehicleTitle = vehicleImmat ? `${vehicleName.trim()} - ${vehicleImmat}` : vehicleName.trim();
+
+    let html = `
+        <div class="bg-gray-50 p-6 rounded-xl mb-6">
+            <div class="text-center mb-4">
+                <h4 class="font-bold text-lg mb-2">${vehicleTitle}</h4>
+                <p class="text-gray-600">Type: ${vehicleDetailsRetour.type_range} | Total places: ${totalPlaces}</p>
+            </div>
+            
+            <!-- Option assignation automatique -->
+            <div class="flex justify-center gap-4 mb-6">
+                <button type="button" onclick="toggleSelectionModeRetour('manual')" id="btnManualSelectRetour" class="px-4 py-2 rounded-lg font-semibold transition bg-blue-600 text-white">
+                    <i class="fas fa-hand-pointer mr-2"></i>Sélection manuelle
+                </button>
+                <button type="button" onclick="autoAssignSeatsRetour()" id="btnAutoAssignRetour" class="px-4 py-2 rounded-lg font-semibold transition bg-green-500 text-white hover:bg-green-600">
+                    <i class="fas fa-random mr-2"></i>Assignation automatique
+                </button>
+            </div>
+
+            <!-- Vue avant du bus -->
+            <div class="flex justify-center mb-8">
+                <div class="w-32 h-16 bg-gray-800 rounded-t-2xl flex items-center justify-center">
+                    <i class="fas fa-bus text-white text-2xl"></i>
+                </div>
+            </div>
+
+            <!-- Grille des places -->
+            <div class="overflow-x-auto">
+    `;
+
+    let numeroPlace = 1;
+
+    for (let ranger = 1; ranger <= nombreRanger; ranger++) {
+        const placesRestantes = totalPlaces - (numeroPlace - 1);
+        const placesCetteRanger = Math.min(placesParRanger, placesRestantes);
+        const placesGaucheCetteRanger = Math.min(placesGauche, placesCetteRanger);
+        const placesDroiteCetteRanger = Math.min(placesDroite, placesCetteRanger - placesGaucheCetteRanger);
+
+        html += `
+            <div class="flex items-center justify-center mb-8 gap-8">
+                <!-- Côté gauche -->
+                <div class="flex flex-col items-center">
+                    <div class="text-sm text-gray-600 mb-2">Rangée ${ranger}</div>
+                    <div class="flex gap-3">
+        `;
+
+        // Places côté gauche
+        for (let i = 0; i < placesGaucheCetteRanger; i++) {
+            const seatNumber = numeroPlace + i;
+            const isReserved = reservedSeatsRetour.includes(seatNumber);
+            const isSelected = selectedSeatsRetour.includes(seatNumber);
+
+            html += `
+                <div class="seat w-14 h-14 rounded-lg flex flex-col items-center justify-center font-bold transition-all duration-200
+                          ${isReserved ? 'bg-red-500 text-white cursor-not-allowed opacity-60' :
+                    isSelected ? 'bg-blue-600 text-white shadow-lg transform scale-110' :
+                        'bg-blue-500 text-white hover:bg-blue-600 hover:shadow-md cursor-pointer'}"
+                     ${!isReserved ? `onclick="toggleSeatRetour(${seatNumber})"` : ''}
+                     title="Place ${seatNumber}${isReserved ? ' (Réservée)' : ''}">
+                    <span class="text-lg">${seatNumber}</span>
+                    <span class="text-xs">${isReserved ? '✗' : (isSelected ? '✓' : '')}</span>
+                </div>
+            `;
+        }
+
+        html += `
+                    </div>
+                </div>
+
+                <!-- Allée -->
+                <div class="w-20 h-2 bg-gray-400 rounded my-8"></div>
+
+                <!-- Côté droit -->
+                <div class="flex flex-col items-center">
+                    <div class="text-sm text-gray-600 mb-2">Rangée ${ranger}</div>
+                    <div class="flex gap-3">
+        `;
+
+        // Places côté droit
+        for (let i = 0; i < placesDroiteCetteRanger; i++) {
+            const seatNumber = numeroPlace + placesGaucheCetteRanger + i;
+            const isReserved = reservedSeatsRetour.includes(seatNumber);
+            const isSelected = selectedSeatsRetour.includes(seatNumber);
+
+            html += `
+                <div class="seat w-14 h-14 rounded-lg flex flex-col items-center justify-center font-bold transition-all duration-200
+                          ${isReserved ? 'bg-red-500 text-white cursor-not-allowed opacity-60' :
+                    isSelected ? 'bg-blue-600 text-white shadow-lg transform scale-110' :
+                        'bg-green-500 text-white hover:bg-green-600 hover:shadow-md cursor-pointer'}"
+                     ${!isReserved ? `onclick="toggleSeatRetour(${seatNumber})"` : ''}
+                     title="Place ${seatNumber}${isReserved ? ' (Réservée)' : ''}">
+                    <span class="text-lg">${seatNumber}</span>
+                    <span class="text-xs">${isReserved ? '✗' : (isSelected ? '✓' : '')}</span>
+                </div>
+            `;
+        }
+
+        html += `
+                    </div>
+                </div>
+            </div>
+        `;
+
+        numeroPlace += placesCetteRanger;
+    }
+
+    html += `
+            </div>
+
+            <!-- Information -->
+            <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                <p class="text-sm text-gray-700">
+                    <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+                    Sélectionnez ${selectedNumberOfPlaces} place${selectedNumberOfPlaces > 1 ? 's' : ''} pour le retour.
+                    Les places en rouge sont déjà réservées.
+                </p>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('seatSelectionAreaRetour').innerHTML = html;
+    updateSelectedSeatsCountRetour();
+}
+function toggleSeatRetour(seatNumber) {
+    const index = selectedSeatsRetour.indexOf(seatNumber);
+
+    if (index === -1) {
+        if (selectedSeatsRetour.length >= selectedNumberOfPlaces) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Limite atteinte',
+                text: `Vous ne pouvez sélectionner que ${selectedNumberOfPlaces} place(s). Désélectionnez d'abord une place si vous voulez en choisir une autre.`,
+                confirmButtonColor: '#3b82f6',
+            });
+            return;
+        }
+        selectedSeatsRetour.push(seatNumber);
+    } else {
+        selectedSeatsRetour.splice(index, 1);
+    }
+
+    // Mettre à jour l'affichage
+    const seatElement = document.querySelector(`[onclick="toggleSeatRetour(${seatNumber})"]`);
+    if (seatElement) {
+        const isSelected = selectedSeatsRetour.includes(seatNumber);
+        const isLeftSide = seatNumber <= typeRangeConfig[vehicleDetailsRetour.type_range].placesGauche;
+
+        seatElement.classList.toggle('bg-blue-600', isSelected);
+        seatElement.classList.toggle('transform', isSelected);
+        seatElement.classList.toggle('scale-110', isSelected);
+        seatElement.classList.toggle('shadow-lg', isSelected);
+
+        if (!isSelected) {
+            seatElement.classList.add(isLeftSide ? 'bg-blue-500' : 'bg-green-500');
+            seatElement.classList.remove(isLeftSide ? 'bg-green-500' : 'bg-blue-500');
+        } else {
+            seatElement.classList.remove('bg-blue-500', 'bg-green-500');
+        }
+
+        const checkmark = seatElement.querySelector('.text-xs');
+        if (checkmark) {
+            checkmark.textContent = isSelected ? '✓' : '';
+        }
+    }
+
+    updateSelectedSeatsCountRetour();
+}
+
+function updateSelectedSeatsCountRetour() {
+    const count = selectedSeatsRetour.length;
+    const countElement = document.getElementById('selectedSeatsCountRetour');
+    const nextBtn = document.getElementById('showPassengerInfoBtnRetour');
+
+    countElement.textContent =
+        `${count} place${count > 1 ? 's' : ''} sélectionnée${count > 1 ? 's' : ''} / ${selectedNumberOfPlaces} demandée${selectedNumberOfPlaces > 1 ? 's' : ''}`;
+
+    countElement.classList.remove('text-blue-600', 'text-red-500', 'text-green-500');
+    if (count === 0) {
+        countElement.classList.add('text-gray-600');
+    } else if (count < selectedNumberOfPlaces) {
+        countElement.classList.add('text-blue-600');
+    } else if (count === selectedNumberOfPlaces) {
+        countElement.classList.add('text-green-500');
+    }
+
+    nextBtn.disabled = (count !== 0 && count !== parseInt(selectedNumberOfPlaces));
+    
+    if (count === 0) {
+        nextBtn.innerHTML = '<i class="fas fa-magic mr-2"></i>Selection Auto & Continuer';
+        nextBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+        nextBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+    } else {
+        nextBtn.innerHTML = '<span class="mr-2">Suivant</span> <i class="fas fa-arrow-right"></i>';
+        nextBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+        nextBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+    }
+}
+
+function autoAssignSeatsRetour() {
+    selectedSeatsRetour = [];
+    
+    const totalPlaces = parseInt(vehicleDetailsRetour.capacite_total || vehicleDetailsRetour.nombre_place || 70);
+    const availableSeats = [];
+    
+    for (let i = 1; i <= totalPlaces; i++) {
+        if (!reservedSeatsRetour.includes(i)) {
+            availableSeats.push(i);
+        }
+    }
+    
+    if (availableSeats.length < selectedNumberOfPlaces) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Pas assez de places',
+            text: 'Il ne reste pas suffisamment de places disponibles pour le retour.',
+            confirmButtonColor: '#3b82f6'
+        });
+        return false;
+    }
+    
+    const shuffled = availableSeats.sort(() => 0.5 - Math.random());
+    const selected = shuffled.slice(0, selectedNumberOfPlaces);
+    
+    selected.forEach(seat => {
+        selectedSeatsRetour.push(seat);
+        const seatElement = document.querySelector(`[onclick="toggleSeatRetour(${seat})"]`);
+        if (seatElement) {
+            const isLeftSide = seat <= typeRangeConfig[vehicleDetailsRetour.type_range].placesGauche;
+            seatElement.classList.add('bg-blue-600', 'text-white', 'shadow-lg', 'transform', 'scale-110');
+            seatElement.classList.remove(isLeftSide ? 'bg-blue-500' : 'bg-green-500');
+            seatElement.querySelector('.text-xs').textContent = '✓';
+        }
+    });
+    
+    updateSelectedSeatsCountRetour();
+    return true;
+}
+
+function toggleSelectionModeRetour(mode) {
+    selectedSeatsRetour.forEach(seat => {
+        const el = document.querySelector(`[onclick="toggleSeatRetour(${seat})"]`);
+        if(el) {
+            el.classList.remove('bg-blue-600', 'shadow-lg', 'transform', 'scale-110');
+            el.querySelector('.text-xs').textContent = '';
+            const isLeftSide = seat <= typeRangeConfig[vehicleDetailsRetour.type_range].placesGauche;
+            el.classList.add(isLeftSide ? 'bg-blue-500' : 'bg-green-500');
+        }
+    });
+    selectedSeatsRetour = [];
+    updateSelectedSeatsCountRetour();
+}
+
+function proceedToPassengerInfoFromRetour() {
+    if (selectedSeatsRetour.length === 0) {
+        const success = autoAssignSeatsRetour();
+        if (!success) return;
+        
+        setTimeout(() => {
+            proceedToPassengerInfo();
+        }, 500);
+    } else {
+        proceedToPassengerInfo();
+    }
+}
     function proceedToPassengerInfo() {
             const formArea = document.getElementById('passengersFormArea');
             formArea.innerHTML = '';
@@ -2628,9 +3099,13 @@ function onAllerRetourChoiceChange() {
                 `;
                 formArea.insertAdjacentHTML('beforeend', toggleHtml);
                 // AJOUTER CECI POUR ACTIVER LE PASSAGE A L'ETAPE 3
-                document.getElementById('confirmReservationBtn').disabled = false;
-                document.getElementById('step2').classList.add('hidden');
-                document.getElementById('step3').classList.remove('hidden');
+              document.getElementById('step2').classList.add('hidden');
+    // On cache AUSSI l'étape Retour (C'est ça qui manque)
+    document.getElementById('step2_5').classList.add('hidden');
+    
+    // On affiche l'étape 3
+    document.getElementById('step3').classList.remove('hidden');
+    document.getElementById('confirmReservationBtn').disabled = false;
             }
 
             sortedSeats.forEach((seat, index) => {
@@ -2689,6 +3164,22 @@ function onAllerRetourChoiceChange() {
                 `;
                 formArea.insertAdjacentHTML('beforeend', passengerHtml);
             });
+        }
+
+        // ============================================
+        // Retour INTELLIGENT depuis Informations Passagers
+        // ============================================
+        function backFromPassengerInfo() {
+            // Si c'est un aller-retour et que l'utilisateur a sélectionné des places retour,
+            // retourner à step2_5 (sélection places retour)
+            if (window.userChoseAllerRetour && selectedSeatsRetour.length > 0) {
+                document.getElementById('step3').classList.add('hidden');
+                document.getElementById('step2_5').classList.remove('hidden');
+            } else {
+                // Sinon, retourner à step2 (sélection places aller)
+                document.getElementById('step3').classList.add('hidden');
+                document.getElementById('step2').classList.remove('hidden');
+            }
         }
 
         // ============================================
@@ -2881,16 +3372,17 @@ function onAllerRetourChoiceChange() {
                                 'Accept': 'application/json',
                                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
                             },
-                            body: JSON.stringify({
-                                programme_id: currentProgramId,
-                                seats: sortedSeats,
-                                nombre_places: selectedNumberOfPlaces,
-                                date_voyage: dateVoyageFinal, // Utilisation de la variable corrigée
-                                is_aller_retour: window.userChoseAllerRetour,
-                                date_retour: window.selectedReturnDate,
-                                passagers: passengers,
-                                payment_method: paymentMethod
-                            })
+                           body: JSON.stringify({
+    programme_id: currentProgramId,
+    seats: sortedSeats,
+    seats_retour: selectedSeatsRetour.length > 0 ? selectedSeatsRetour.sort((a, b) => a - b) : [], // AJOUTÉ
+    nombre_places: selectedNumberOfPlaces,
+    date_voyage: dateVoyageFinal,
+    is_aller_retour: window.userChoseAllerRetour,
+    date_retour: window.selectedReturnDate,
+    passagers: passengers,
+    payment_method: paymentMethod
+})
                         });
 
                         const data = await response.json();

@@ -1,4 +1,4 @@
-@extends('caisse.layouts.template')
+@extends('hotesse.layouts.template')
 
 @section('content')
 <div class="min-h-screen bg-gradient-to-br from-gray-50 to-orange-50 py-8 px-4">
@@ -9,7 +9,29 @@
             <p class="text-lg text-gray-600">Gérez vos ventes de tickets</p>
         </div>
 
+        <!-- Alerte tickets faibles -->
+        @if($hotesse->tickets < 10)
+        <div class="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-500 rounded-xl">
+            <div class="flex items-center">
+                <svg class="w-6 h-6 text-yellow-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                <p class="text-yellow-800 font-medium">
+                    Attention : Il vous reste seulement <strong>{{ $hotesse->tickets }}</strong> ticket(s). Pensez à demander un rechargement à votre compagnie.
+                </p>
+            </div>
+        </div>
+        @endif
 
+        @if($hotesse->tickets == 0)
+        <div class="bg-white rounded-3xl shadow-xl p-12 text-center">
+            <svg class="w-20 h-20 mx-auto text-red-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <h2 class="text-2xl font-bold text-gray-900 mb-2">Aucun ticket disponible</h2>
+            <p class="text-gray-600">Vous n'avez plus de tickets en stock. Veuillez contacter votre compagnie pour un rechargement.</p>
+        </div>
+        @else
         <!-- Formulaire de vente -->
         <div class="bg-white rounded-3xl shadow-xl p-8">
             <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center">
@@ -19,7 +41,7 @@
                 Nouvelle Vente
             </h2>
 
-            <form action="{{ route('caisse.vendre-ticket.submit') }}" method="POST" id="ticket-form">
+            <form action="{{ route('hotesse.vendre-ticket.submit') }}" method="POST" id="ticket-form">
                 @csrf
 
                 <!-- Sélection du programme -->
@@ -52,7 +74,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
                             </svg>
                         </button>
-                        <input type="number" name="nombre_tickets" id="nombre_tickets" value="1" min="1" required
+                        <input type="number" name="nombre_tickets" id="nombre_tickets" value="1" min="1" max="{{ $hotesse->tickets }}" required
                             class="w-32 px-4 py-3 border-y border-gray-300 text-center font-bold text-lg focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
                         <button type="button" onclick="incrementTickets()" 
                             class="px-4 py-3 bg-gray-200 text-gray-700 font-bold rounded-r-xl hover:bg-gray-300">
@@ -60,6 +82,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                             </svg>
                         </button>
+                        <span class="ml-4 text-gray-600">/ {{ $hotesse->tickets }} disponibles</span>
                     </div>
                     @error('nombre_tickets')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -87,17 +110,20 @@
                 </div>
             </form>
         </div>
-
+        @endif
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+    const maxTickets = {{ $hotesse->tickets }};
     
     function incrementTickets() {
         const input = document.getElementById('nombre_tickets');
-        input.value = parseInt(input.value) + 1;
-        updatePassengerForms();
+        if (parseInt(input.value) < maxTickets) {
+            input.value = parseInt(input.value) + 1;
+            updatePassengerForms();
+        }
     }
 
     function decrementTickets() {

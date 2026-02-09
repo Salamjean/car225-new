@@ -12,26 +12,19 @@
             <span class="figure"
               style="width:40px; height:40px; border-radius:50%; background:#d33d0f; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold;">
               @php
-                $caisse = Auth::guard('caisse')->user();
-                $initials = strtoupper(substr($caisse->name, 0, 1) . substr($caisse->prenom, 0, 1));
+                $hotesse = Auth::guard('hotesse')->user();
+                $initials = strtoupper(substr($hotesse->name, 0, 1) . substr($hotesse->prenom, 0, 1));
               @endphp
               {{ $initials }}
             </span>
-            <span class="user-name text-white ml-2">{{ $caisse->name }} {{ $caisse->prenom }}</span>
+            <span class="user-name text-white ml-2">{{ $hotesse->name }} {{ $hotesse->prenom }}</span>
             <span class="ml-2 text-white">&#9662;</span>
           </span>
         </button>
         <div class="mdc-menu mdc-menu-surface" tabindex="-1">
           <ul class="mdc-list" role="menu" aria-hidden="true" aria-orientation="vertical">
             <li class="mdc-list-item" role="menuitem">
-              <a href="{{route('caisse.profile')}}" class="d-flex align-items-center w-100 text-decoration-none text-dark">
-                <i class="mdi mdi-account mr-2" style="color: #193561; font-size: 1.5rem;"></i>
-                <span>Mon Profil</span>
-              </a>
-            </li>
-            <li role="separator" class="mdc-list-divider"></li>
-            <li class="mdc-list-item" role="menuitem">
-              <a href="{{route('caisse.logout')}}" class="d-flex align-items-center w-100 text-decoration-none text-dark">
+              <a href="{{route('hotesse.logout')}}" class="d-flex align-items-center w-100 text-decoration-none text-dark">
                 <i class="mdi mdi-logout mr-2" style="color: #193561; font-size: 1.5rem;"></i>
                 <span>Déconnexion</span>
               </a>
@@ -56,11 +49,11 @@
                   style="width:30px; height:30px; border-radius:50%; background:#d33d0f; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:12px;">
                   {{ $initials }}
                 </span>
-                <span class="user-name">{{ $caisse->name }} {{ $caisse->prenom }}</span>
+                <span class="user-name">{{ $hotesse->name }} {{ $hotesse->prenom }}</span>
               </div>
             </li>
             <li class="mdc-list-item" role="menuitem">
-              <a href="{{route('caisse.profile')}}"
+              <a href="{{route('hotesse.profile')}}"
                 class="d-flex align-items-center w-100 text-decoration-none text-dark py-2">
                 <i class="mdi mdi-account mr-2" style="color: #193561; font-size: 1.5rem;"></i>
                 <span>Mon Profil</span>
@@ -68,7 +61,7 @@
             </li>
             <li role="separator" class="mdc-list-divider"></li>
             <li class="mdc-list-item" role="menuitem">
-              <a href="{{route('caisse.logout')}}"
+              <a href="{{route('hotesse.logout')}}"
                 class="d-flex align-items-center w-100 text-decoration-none text-dark py-2">
                 <i class="mdi mdi-logout mr-2" style="color: #193561; font-size: 1.5rem;"></i>
                 <span>Déconnexion</span>

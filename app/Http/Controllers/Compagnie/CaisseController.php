@@ -76,7 +76,6 @@ class CaisseController extends Controller
             'password' => Hash::make('temporary_password_' . time()),
             'profile_picture' => $profilePicturePath,
             'compagnie_id' => $compagnie->id,
-            'tickets' => 0,
         ]);
 
         // Generate and store OTP
@@ -106,42 +105,7 @@ class CaisseController extends Controller
         }
     }
 
-    /**
-     * Recharge tickets for a cashier
-     */
-    public function recharge(Request $request, Caisse $caisse)
-    {
-        $request->validate([
-            'tickets' => 'required|integer|min:1',
-        ]);
 
-        $compagnie = Auth::guard('compagnie')->user();
-
-        // Verify caisse belongs to this company
-        if ($caisse->compagnie_id !== $compagnie->id) {
-            return response()->json(['error' => 'Accès non autorisé'], 403);
-        }
-
-        // Check if company has enough tickets
-        if ($compagnie->tickets < $request->tickets) {
-            return response()->json([
-                'error' => 'Solde de tickets insuffisant. Vous avez ' . $compagnie->tickets . ' tickets disponibles.'
-            ], 400);
-        }
-
-        // Deduct from company
-        $compagnie->deductTickets($request->tickets, 'Rechargement caisse: ' . $caisse->prenom . ' ' . $caisse->name);
-
-        // Add to caisse
-        $caisse->addTickets($request->tickets);
-
-        return response()->json([
-            'success' => true,
-            'message' => $request->tickets . ' tickets rechargés avec succès pour ' . $caisse->prenom . ' ' . $caisse->name,
-            'caisse_tickets' => $caisse->fresh()->tickets,
-            'compagnie_tickets' => $compagnie->fresh()->tickets,
-        ]);
-    }
 
     /**
      * Archive/Unarchive a cashier

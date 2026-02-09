@@ -1,4 +1,4 @@
-@extends('caisse.layouts.template')
+@extends('hotesse.layouts.template')
 
 @section('content')
 <div class="min-h-screen bg-gradient-to-br from-gray-50 to-orange-50 py-8 px-4">
@@ -42,12 +42,12 @@
             <div class="bg-white rounded-2xl shadow-lg p-6">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-gray-600 text-sm mb-1">Tickets Annulés</p>
-                        <p class="text-3xl font-bold text-red-600">{{ $totalAnnulations }}</p>
+                        <p class="text-gray-600 text-sm mb-1">Tickets Restants</p>
+                        <p class="text-3xl font-bold text-gray-900">{{ Auth::guard('hotesse')->user()->tickets }}</p>
                     </div>
-                    <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-[#e94e1a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/>
                         </svg>
                     </div>
                 </div>
@@ -56,23 +56,28 @@
 
         <!-- Filters -->
         <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
-            <form method="GET" action="{{ route('caisse.ventes') }}" class="flex gap-4 items-end">
+            <form method="GET" action="{{ route('hotesse.ventes') }}" class="flex gap-4 items-end">
                 <div class="flex-1">
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Date Début</label>
-                    <input type="date" name="date_debut" value="{{ request('date_debut') }}"
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Date</label>
+                    <input type="date" name="date" value="{{ request('date') }}"
                         class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
                 </div>
                 <div class="flex-1">
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Date Fin</label>
-                    <input type="date" name="date_fin" value="{{ request('date_fin') }}"
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Statut</label>
+                    <select name="statut"
                         class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
+                        <option value="">Tous</option>
+                        <option value="confirmee" {{ request('statut') == 'confirmee' ? 'selected' : '' }}>Confirmée</option>
+                        <option value="terminee" {{ request('statut') == 'terminee' ? 'selected' : '' }}>Terminée</option>
+                        <option value="annulee" {{ request('statut') == 'annulee' ? 'selected' : '' }}>Annulée</option>
+                    </select>
                 </div>
                 <div class="flex gap-2">
                     <button type="submit" 
                         class="px-6 py-2 bg-[#e94e1a] text-white font-bold rounded-xl hover:bg-[#d33d0f] transition-all duration-200">
                         Filtrer
                     </button>
-                    <a href="{{ route('caisse.ventes') }}" 
+                    <a href="{{ route('hotesse.ventes') }}" 
                         class="px-6 py-2 bg-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-300 transition-all duration-200">
                         Réinitialiser
                     </a>
@@ -130,7 +135,7 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4">
-                                <a href="{{ route('caisse.ticket.imprimer', $vente->id) }}" target="_blank"
+                                <a href="{{ route('hotesse.ticket.imprimer', $vente->id) }}" target="_blank"
                                     class="inline-flex items-center px-3 py-2 bg-[#e94e1a] text-white text-sm font-semibold rounded-lg hover:bg-[#d33d0f] transition-all">
                                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
@@ -163,7 +168,7 @@
 
         <!-- Back Button -->
         <div class="mt-8">
-            <a href="{{ route('caisse.dashboard') }}" 
+            <a href="{{ route('hotesse.dashboard') }}" 
                 class="inline-flex items-center px-6 py-3 bg-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-300 transition-all duration-200">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>

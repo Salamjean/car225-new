@@ -182,8 +182,6 @@
             const configType = document.getElementById('config_type');
             const configRanger = document.getElementById('config_ranger');
             const configPlacesRanger = document.getElementById('config_places_ranger');
-            const motifContainer = document.getElementById('motif_container');
-            const statutSelect = document.querySelector('select[name="is_active"]');
             const nombrePlaceInput = document.getElementById('nombre_place');
 
             // Configuration des types de rangées
@@ -304,18 +302,6 @@
                 rangeesContainer.innerHTML = cadreHTML;
             }
 
-            // Gestion de l'affichage du motif selon le statut
-            function toggleMotifVisibility() {
-                if (statutSelect.value === '0') {
-                    motifContainer.style.display = 'block';
-                } else {
-                    motifContainer.style.display = 'none';
-                }
-            }
-
-            statutSelect.addEventListener('change', toggleMotifVisibility);
-            toggleMotifVisibility(); // Initialisation
-
             // Formatage automatique de l'immatriculation
             const immatriculationInput = document.querySelector('input[name="immatriculation"]');
             immatriculationInput.addEventListener('input', function(e) {
@@ -337,6 +323,25 @@
                 updateVisualisation();
             }
         });
+
+        // SweetAlert pour les messages de session
+        @if(session('success'))
+            Swal.fire({
+                icon: 'success',
+                title: 'Succès',
+                text: '{{ session('success') }}',
+                confirmButtonColor: '#e94f1b'
+            });
+        @endif
+
+        @if(session('error'))
+            Swal.fire({
+                icon: 'error',
+                title: 'Erreur',
+                text: '{{ session('error') }}',
+                confirmButtonColor: '#d33'
+            });
+        @endif
     </script>
 
     <style>

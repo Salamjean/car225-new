@@ -3,199 +3,157 @@
 @section('title', 'Mon Profil')
 
 @section('content')
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                <h4 class="mb-sm-0 font-size-18">Mon Profil</h4>
-                <div class="page-title-right">
-                    <ol class="breadcrumb m-0">
-                        <li class="breadcrumb-item"><a href="{{ route('user.dashboard') }}">Dashboard</a></li>
-                        <li class="breadcrumb-item active">Profil</li>
-                    </ol>
-                </div>
-            </div>
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-orange-50 py-8 px-4">
+    <div class="mx-auto" style="width: 90%">
+        <!-- En-tête -->
+        <div class="mb-8">
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">Mon Profil</h1>
+            <p class="text-lg text-gray-600">Gérez vos informations personnelles</p>
         </div>
-    </div>
 
-    <div class="row">
-        <!-- Photo de profil -->
-        <div class="col-xl-4">
-            <div class="card overflow-hidden">
-                <div class="bg-primary bg-soft">
-                    <div class="row">
-                        <div class="col-12">
-                            <div class="text-primary p-3">
-                                <h5 class="text-primary">Bienvenue!</h5>
-                                <p>Gérez votre profil</p>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Photo de profil -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-3xl shadow-xl p-8">
+                    <div class="text-center">
+                        <div class="relative w-40 h-40 mx-auto mb-4 group cursor-pointer" onclick="document.getElementById('photoInput').click()">
+                            <img src="{{ $user->photo_profile_path ? asset('storage/' . $user->photo_profile_path) : asset('assets/images/default-avatar.png') }}" 
+                                 class="w-full h-full rounded-full object-cover border-4 border-[#e94e1a] transition-all duration-300 group-hover:opacity-75" 
+                                 id="profilePhotoPreview"
+                                 alt="Photo de profil">
+                            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                <i class="fas fa-camera text-2xl text-gray-800"></i>
                             </div>
+                        </div>
+                        
+                        <h3 class="text-2xl font-bold text-gray-900">{{ $user->name }} {{ $user->prenom }}</h3>
+                        <p class="text-gray-600">{{ $user->email }}</p>
+                        
+                        <div class="mt-6 space-y-3">
+                            <div class="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                                <span class="text-sm text-gray-600">Solde</span>
+                                <span class="font-bold text-[#e94e1a]">{{ number_format($user->solde, 0, ',', ' ') }} FCFA</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                                <span class="text-sm text-gray-600">Contact</span>
+                                <span class="font-bold text-gray-800">{{ $user->contact ?? 'N/A' }}</span>
+                            </div>
+                            <!-- Formulaire caché pour upload photo -->
+                            <form id="photoForm" enctype="multipart/form-data">
+                                @csrf
+                                <input type="file" id="photoInput" name="photo" accept="image/*" style="display: none;" onchange="uploadPhoto()">
+                            </form>
                         </div>
                     </div>
                 </div>
-                <div class="card-body pt-0">
-                    <div class="row">
-                        <div class="col-sm-12">
-                            <div class="avatar-xl profile-user-wid mb-4 mx-auto">
-                                <div class="position-relative">
-                                    <img src="{{ $user->photo_profile_path ? asset('storage/' . $user->photo_profile_path) : asset('assets/images/default-avatar.png') }}" 
-                                         alt="" 
-                                         class="img-thumbnail rounded-circle avatar-xl" 
-                                         id="profilePhotoPreview">
-                                    <span class="avatar-title rounded-circle bg-light text-primary font-size-16" 
-                                          style="position: absolute; bottom: 0; right: 0; cursor: pointer;"
-                                          onclick="document.getElementById('photoInput').click()">
-                                        <i class="bx bx-camera"></i>
-                                    </span>
-                                </div>
-                            </div>
-                            <h5 class="font-size-15 text-truncate text-center">{{ $user->name }}</h5>
-                            <p class="text-muted mb-0 text-truncate text-center">{{ $user->email }}</p>
-                        </div>
-                    </div>
-
-                    <!-- Formulaire caché pour upload photo -->
-                    <form id="photoForm" enctype="multipart/form-data">
-                        @csrf
-                        <input type="file" id="photoInput" name="photo" accept="image/*" style="display: none;" onchange="uploadPhoto()">
-                    </form>
-                </div>
             </div>
 
-            <!-- Informations supplémentaires -->
-            <div class="card">
-                <div class="card-body">
-                    <h4 class="card-title mb-4">Informations</h4>
-                    <div class="table-responsive">
-                        <table class="table table-nowrap mb-0">
-                            <tbody>
-                                <tr>
-                                    <th scope="row">Nom complet :</th>
-                                    <td>{{ $user->name }} {{ $user->prenom }}</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">Téléphone :</th>
-                                    <td>{{ $user->contact ?? 'Non renseigné' }}</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">Email :</th>
-                                    <td>{{ $user->email }}</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">Adresse :</th>
-                                    <td>{{ $user->adresse ?? 'Non renseignée' }}</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">Solde :</th>
-                                    <td><span class="badge badge-soft-success font-size-12">{{ number_format($user->solde, 0, ',', ' ') }} FCFA</span></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modification du profil -->
-        <div class="col-xl-8">
-            <div class="card">
-                <div class="card-body">
-                    <h4 class="card-title mb-4">Modifier mes informations</h4>
+            <!-- Formulaires -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Informations personnelles -->
+                <div class="bg-white rounded-3xl shadow-xl p-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                        <svg class="w-6 h-6 mr-2 text-[#e94e1a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                        Informations Personnelles
+                    </h2>
 
                     <form id="profileForm">
                         @csrf
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="name" class="form-label">Nom <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="name" name="name" value="{{ $user->name }}" required>
-                                    <div class="invalid-feedback"></div>
-                                </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Nom *</label>
+                                <input type="text" id="name" name="name" value="{{ $user->name }}" required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
+                                <div class="invalid-feedback text-red-500 text-sm mt-1"></div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="prenom" class="form-label">Prénom</label>
-                                    <input type="text" class="form-control" id="prenom" name="prenom" value="{{ $user->prenom }}">
-                                </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Prénom</label>
+                                <input type="text" id="prenom" name="prenom" value="{{ $user->prenom }}"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
+                                <div class="invalid-feedback text-red-500 text-sm mt-1"></div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Email *</label>
+                                <input type="email" id="email" name="email" value="{{ $user->email }}" required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
+                                <div class="invalid-feedback text-red-500 text-sm mt-1"></div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Contact</label>
+                                <input type="text" id="contact" name="contact" value="{{ $user->contact }}"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
+                                <div class="invalid-feedback text-red-500 text-sm mt-1"></div>
+                            </div>
+
+                            <div class="md:col-span-1">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Adresse</label>
+                                <input type="text" id="adresse" name="adresse" value="{{ $user->adresse }}"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
+                                <div class="invalid-feedback text-red-500 text-sm mt-1"></div>
+                            </div>
+                            
+                            <div class="md:col-span-1">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Commune</label>
+                                <input type="text" id="commune" name="commune" value="{{ $user->commune }}"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
+                                <div class="invalid-feedback text-red-500 text-sm mt-1"></div>
                             </div>
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
-                                    <input type="email" class="form-control" id="email" name="email" value="{{ $user->email }}" required>
-                                    <div class="invalid-feedback"></div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="contact" class="form-label">Téléphone</label>
-                                    <input type="text" class="form-control" id="contact" name="contact" value="{{ $user->contact }}">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="adresse" class="form-label">Adresse</label>
-                                    <input type="text" class="form-control" id="adresse" name="adresse" value="{{ $user->adresse }}">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="commune" class="form-label">Commune</label>
-                                    <input type="text" class="form-control" id="commune" name="commune" value="{{ $user->commune }}">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="text-end">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bx bx-save font-size-16 align-middle me-2"></i> Enregistrer les modifications
+                        <div class="mt-6">
+                            <button type="submit" 
+                                class="w-full md:w-auto px-8 py-3 bg-[#e94e1a] text-white font-bold rounded-xl hover:bg-[#d33d0f] transform hover:-translate-y-1 transition-all duration-200 shadow-lg hover:shadow-xl">
+                                Enregistrer les modifications
                             </button>
                         </div>
                     </form>
                 </div>
-            </div>
 
-            <!-- Changer le mot de passe -->
-            <div class="card">
-                <div class="card-body">
-                    <h4 class="card-title mb-4">Changer le mot de passe</h4>
+                <!-- Changer le mot de passe -->
+                <div class="bg-white rounded-3xl shadow-xl p-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                        <svg class="w-6 h-6 mr-2 text-[#e94e1a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                        Changer le Mot de Passe
+                    </h2>
 
                     <form id="passwordForm">
                         @csrf
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="mb-3">
-                                    <label for="current_password" class="form-label">Mot de passe actuel <span class="text-danger">*</span></label>
-                                    <input type="password" class="form-control" id="current_password" name="current_password" required>
-                                    <div class="invalid-feedback"></div>
-                                </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Mot de passe actuel *</label>
+                                <input type="password" id="current_password" name="current_password" required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
+                                <div class="invalid-feedback text-red-500 text-sm mt-1"></div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Nouveau mot de passe *</label>
+                                <input type="password" id="new_password" name="new_password" required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
+                                <div class="invalid-feedback text-red-500 text-sm mt-1"></div>
+                                <p class="text-xs text-gray-500 mt-1">Minimum 8 caractères</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Confirmer le mot de passe *</label>
+                                <input type="password" id="new_password_confirmation" name="new_password_confirmation" required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
                             </div>
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="new_password" class="form-label">Nouveau mot de passe <span class="text-danger">*</span></label>
-                                    <input type="password" class="form-control" id="new_password" name="new_password" required>
-                                    <div class="invalid-feedback"></div>
-                                    <small class="text-muted">Minimum 8 caractères</small>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="new_password_confirmation" class="form-label">Confirmer le mot de passe <span class="text-danger">*</span></label>
-                                    <input type="password" class="form-control" id="new_password_confirmation" name="new_password_confirmation" required>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="text-end">
-                            <button type="submit" class="btn btn-success">
-                                <i class="bx bx-lock font-size-16 align-middle me-2"></i> Changer le mot de passe
+                        <div class="mt-6">
+                            <button type="submit" 
+                                class="w-full md:w-auto px-8 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transform hover:-translate-y-1 transition-all duration-200 shadow-lg hover:shadow-xl">
+                                Changer le mot de passe
                             </button>
                         </div>
                     </form>
@@ -208,13 +166,26 @@
 
 @push('scripts')
 <script>
+    // Helper to clear errors
+    function clearErrors(form) {
+        form.find('input').removeClass('border-red-500 focus:ring-red-500').addClass('border-gray-300 focus:ring-[#e94e1a]');
+        form.find('.invalid-feedback').text('');
+    }
+
+    // Helper to show errors
+    function showErrors(errors) {
+        for (let field in errors) {
+            let input = $(`#${field}`);
+            input.removeClass('border-gray-300 focus:ring-[#e94e1a]').addClass('border-red-500 focus:ring-red-500');
+            input.next('.invalid-feedback').text(errors[field][0]);
+        }
+    }
+
     // Mise à jour du profil
     $('#profileForm').on('submit', function(e) {
         e.preventDefault();
-        
-        // Retirer les anciennes erreurs
-        $('.is-invalid').removeClass('is-invalid');
-        $('.invalid-feedback').text('');
+        const form = $(this);
+        clearErrors(form);
         
         const formData = new FormData(this);
         
@@ -229,6 +200,7 @@
                     icon: 'success',
                     title: 'Succès!',
                     text: response.message,
+                    confirmButtonColor: '#e94e1a',
                     timer: 2000,
                     showConfirmButton: false
                 }).then(() => {
@@ -237,16 +209,13 @@
             },
             error: function(xhr) {
                 if (xhr.status === 422) {
-                    const errors = xhr.responseJSON.errors;
-                    for (let field in errors) {
-                        $(`#${field}`).addClass('is-invalid');
-                        $(`#${field}`).next('.invalid-feedback').text(errors[field][0]);
-                    }
+                    showErrors(xhr.responseJSON.errors);
                 } else {
                     Swal.fire({
                         icon: 'error',
                         title: 'Erreur!',
-                        text: xhr.responseJSON?.message || 'Une erreur est survenue'
+                        text: xhr.responseJSON?.message || 'Une erreur est survenue',
+                        confirmButtonColor: '#e94e1a'
                     });
                 }
             }
@@ -256,10 +225,8 @@
     // Changement de mot de passe
     $('#passwordForm').on('submit', function(e) {
         e.preventDefault();
-        
-        // Retirer les anciennes erreurs
-        $('.is-invalid').removeClass('is-invalid');
-        $('.invalid-feedback').text('');
+        const form = $(this);
+        clearErrors(form);
         
         const formData = new FormData(this);
         
@@ -274,23 +241,21 @@
                     icon: 'success',
                     title: 'Succès!',
                     text: response.message,
+                    confirmButtonColor: '#e94e1a',
                     timer: 2000,
                     showConfirmButton: false
                 });
-                $('#passwordForm')[0].reset();
+                form[0].reset();
             },
             error: function(xhr) {
                 if (xhr.status === 422) {
-                    const errors = xhr.responseJSON.errors;
-                    for (let field in errors) {
-                        $(`#${field}`).addClass('is-invalid');
-                        $(`#${field}`).next('.invalid-feedback').text(errors[field][0]);
-                    }
+                    showErrors(xhr.responseJSON.errors);
                 } else {
                     Swal.fire({
                         icon: 'error',
                         title: 'Erreur!',
-                        text: xhr.responseJSON?.message || 'Une erreur est survenue'
+                        text: xhr.responseJSON?.message || 'Une erreur est survenue',
+                        confirmButtonColor: '#e94e1a'
                     });
                 }
             }
@@ -313,6 +278,7 @@
                     icon: 'success',
                     title: 'Succès!',
                     text: response.message,
+                    confirmButtonColor: '#e94e1a',
                     timer: 2000,
                     showConfirmButton: false
                 });
@@ -321,7 +287,8 @@
                 Swal.fire({
                     icon: 'error',
                     title: 'Erreur!',
-                    text: xhr.responseJSON?.message || 'Erreur lors du téléchargement'
+                    text: xhr.responseJSON?.message || 'Erreur lors du téléchargement',
+                    confirmButtonColor: '#e94e1a'
                 });
             }
         });

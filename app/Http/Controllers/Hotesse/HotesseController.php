@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Caisse;
+namespace App\Http\Controllers\Hotesse;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -17,57 +17,38 @@ use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
 use Illuminate\Support\Facades\Log;
 
-class CaisseController extends Controller
+class HotesseController extends Controller
 {
     public function dashboard()
     {
-        $caisse = Auth::guard('caisse')->user();
+        $hotesse = Auth::guard('hotesse')->user();
         $today = now()->toDateString();
         
         $stats = [
-            'compagnie' => $caisse->compagnie->name ?? 'N/A',
-            'compagnie_logo' => $caisse->compagnie->path_logo ?? null,
-            'compagnie_slogan' => $caisse->compagnie->slogan ?? null,
-            'ventes_aujourdhui' => Reservation::where('caisse_id', $caisse->id)
+            'tickets_disponibles' => $hotesse->tickets,
+            'compagnie' => $hotesse->compagnie->name ?? 'N/A',
+            'compagnie_logo' => $hotesse->compagnie->path_logo ?? null,
+            'compagnie_slogan' => $hotesse->compagnie->slogan ?? null,
+            'ventes_aujourdhui' => Reservation::where('hotesse_id', $hotesse->id)
                 ->whereDate('created_at', $today)
                 ->count(),
-            'revenu_aujourdhui' => Reservation::where('caisse_id', $caisse->id)
+            'revenu_aujourdhui' => Reservation::where('hotesse_id', $hotesse->id)
                 ->whereDate('created_at', $today)
-                ->sum('montant'),
-            'revenu_global' => Reservation::where('caisse_id', $caisse->id)
                 ->sum('montant'),
         ];
 
-        // Données pour le graphique (7 derniers jours)
-        $salesData = Reservation::where('caisse_id', $caisse->id)
-            ->where('created_at', '>=', now()->subDays(6)->startOfDay())
-            ->selectRaw('DATE(created_at) as date, SUM(montant) as total')
-            ->groupBy('date')
-            ->orderBy('date')
-            ->get()
-            ->pluck('total', 'date');
-
-        $chartLabels = [];
-        $chartData = [];
-
-        for ($i = 6; $i >= 0; $i--) {
-            $date = now()->subDays($i)->toDateString();
-            $chartLabels[] = now()->subDays($i)->format('d/m');
-            $chartData[] = $salesData[$date] ?? 0;
-        }
-
-        return view('caisse.dashboard', compact('caisse', 'stats', 'chartLabels', 'chartData'));
+        return view('hotesse.dashboard', compact('hotesse', 'stats'));
     }
 
     public function profile()
     {
-        $caisse = Auth::guard('caisse')->user();
-        return view('caisse.profile', compact('caisse'));
+        $hotesse = Auth::guard('hotesse')->user();
+        return view('hotesse.profile', compact('hotesse'));
     }
 
     public function updateProfile(Request $request)
     {
-        $caisse = Auth::guard('caisse')->user();
+        $hotesse = Auth::guard('hotesse')->user();
         
         $request->validate([
             'name' => 'required|string|max:255',
@@ -81,32 +62,32 @@ class CaisseController extends Controller
         $data = $request->only(['name', 'prenom', 'contact', 'cas_urgence', 'commune']);
 
         if ($request->hasFile('profile_picture')) {
-            if ($caisse->profile_picture) {
-                Storage::disk('public')->delete($caisse->profile_picture);
+            if ($hotesse->profile_picture) {
+                Storage::disk('public')->delete($hotesse->profile_picture);
             }
-            $path = $request->file('profile_picture')->store('caisse_profiles', 'public');
+            $path = $request->file('profile_picture')->store('hotesse_profiles', 'public');
             $data['profile_picture'] = $path;
         }
 
-        $caisse->update($data);
+        $hotesse->update($data);
 
         return back()->with('success', 'Profil mis à jour avec succès !');
     }
 
     public function updatePassword(Request $request)
     {
-        $caisse = Auth::guard('caisse')->user();
+        $hotesse = Auth::guard('hotesse')->user();
 
         $request->validate([
             'current_password' => 'required',
             'new_password' => 'required|string|min:8|confirmed',
         ]);
 
-        if (!Hash::check($request->current_password, $caisse->password)) {
+        if (!Hash::check($request->current_password, $hotesse->password)) {
             return back()->withErrors(['current_password' => 'Le mot de passe actuel ne correspond pas.']);
         }
 
-        $caisse->update([
+        $hotesse->update([
             'password' => Hash::make($request->new_password)
         ]);
 
@@ -115,21 +96,16 @@ class CaisseController extends Controller
 
     public function ventes(Request $request)
     {
-        $caisse = Auth::guard('caisse')->user();
+        $hotesse = Auth::guard('hotesse')->user();
         
-        $query = Reservation::where('caisse_id', $caisse->id)
+        $query = Reservation::where('hotesse_id', $hotesse->id)
             ->with(['programme'])
             ->latest();
 
-        if ($request->filled('date_debut')) {
-            $query->whereDate('date_voyage', '>=', $request->date_debut);
+        if ($request->filled('date')) {
+            $query->whereDate('date_voyage', $request->date);
         }
 
-        if ($request->filled('date_fin')) {
-            $query->whereDate('date_voyage', '<=', $request->date_fin);
-        }
-
-        // Le filtre statut a été supprimé de la vue, mais on le garde conditionnel au cas où
         if ($request->filled('statut')) {
             $query->where('statut', $request->statut);
         }
@@ -137,13 +113,8 @@ class CaisseController extends Controller
         $ventes = $query->paginate(10);
         $totalVentes = $query->count();
         $totalRevenu = $query->sum('montant');
-        
-        // Calculer les tickets annulés pour remplacer "Tickets Restants"
-        $totalAnnulations = Reservation::where('caisse_id', $caisse->id)
-            ->where('statut', 'annulee')
-            ->count();
 
-        return view('caisse.ventes', compact('ventes', 'totalVentes', 'totalRevenu', 'totalAnnulations'));
+        return view('hotesse.ventes', compact('ventes', 'totalVentes', 'totalRevenu'));
     }
 
     public function venteSuccess(Request $request)
@@ -152,46 +123,47 @@ class CaisseController extends Controller
         $reservations = Reservation::whereIn('id', $ids)->with(['programme.vehicule'])->get();
         
         if ($reservations->isEmpty()) {
-            return redirect()->route('caisse.dashboard');
+            return redirect()->route('hotesse.dashboard');
         }
 
-        return view('caisse.vente-success', compact('reservations'));
+        return view('hotesse.vente-success', compact('reservations'));
     }
 
     public function imprimerTicket(Reservation $reservation)
     {
-        $caisse = Auth::guard('caisse')->user();
+        $hotesse = Auth::guard('hotesse')->user();
         
-        // Vérifier que le ticket appartient bien au caissier ou à sa compagnie
-        if ($reservation->caisse_id !== $caisse->id && $reservation->compagnie_id !== $caisse->compagnie_id) {
+        // Vérifier que le ticket appartient bien à l'hotesse ou à sa compagnie
+        // Vérifier que le ticket appartient bien à l'hotesse ou à sa compagnie
+        if ($reservation->hotesse_id !== $hotesse->id && $reservation->compagnie_id !== $hotesse->compagnie_id) {
             abort(403);
         }
 
-        return view('caisse.ticket-pdf', compact('reservation'));
+        return view('hotesse.ticket-pdf', compact('reservation'));
     }
 
     public function vendreTicket()
     {
-        $caisse = Auth::guard('caisse')->user();
+        $hotesse = Auth::guard('hotesse')->user();
         
-        // Récupérer les programmes actifs de la compagnie du caissier
+        // Récupérer les programmes actifs de la compagnie de l'hotesse
         $programmes = Programme::with(['compagnie', 'vehicule'])
-            ->where('compagnie_id', $caisse->compagnie_id)
+            ->where('compagnie_id', $hotesse->compagnie_id)
             ->where('statut', 'actif')
             ->whereDate('date_depart', '>=', now()->toDateString())
             ->orderBy('date_depart')
             ->get();
         
-        return view('caisse.vendre-ticket', compact('caisse', 'programmes'));
+        return view('hotesse.vendre-ticket', compact('hotesse', 'programmes'));
     }
 
     public function vendreTicketSubmit(Request $request)
     {
-        $caisse = Auth::guard('caisse')->user();
+        $hotesse = Auth::guard('hotesse')->user();
 
         $request->validate([
             'programme_id' => 'required|exists:programmes,id',
-            'nombre_tickets' => 'required|integer|min:1',
+            'nombre_tickets' => 'required|integer|min:1|max:' . $hotesse->tickets,
             'passenger_details' => 'required|array|min:1',
             'passenger_details.*.nom' => 'required|string|max:255',
             'passenger_details.*.prenom' => 'required|string|max:255',
@@ -201,6 +173,11 @@ class CaisseController extends Controller
 
         $programme = Programme::with(['compagnie', 'vehicule'])->findOrFail($request->programme_id);
         $nombreTickets = $request->nombre_tickets;
+
+        // Vérifier que l'hotesse a assez de tickets
+        if ($hotesse->tickets < $nombreTickets) {
+            return back()->withErrors(['nombre_tickets' => 'Vous n\'avez pas assez de tickets disponibles.']);
+        }
 
         DB::beginTransaction();
         try {
@@ -229,7 +206,7 @@ class CaisseController extends Controller
                 $reservation = Reservation::create([
                     'reference' => $reference,
                     'programme_id' => $programme->id,
-                    'user_id' => null, // Vente caisse, pas d'utilisateur
+                    'user_id' => null, 
                     'seat_number' => $nextSeat,
                     'passager_nom' => $passenger['nom'],
                     'passager_prenom' => $passenger['prenom'],
@@ -239,8 +216,9 @@ class CaisseController extends Controller
                     'heure_depart' => $programme->heure_depart,
                     'heure_arrive' => $programme->heure_arrive,
                     'montant' => $programme->montant_billet,
-                    'statut' => 'terminee',
-                    'caisse_id' => $caisse->id,
+                    'statut' => 'confirmee',
+                    'hotesse_id' => $hotesse->id,
+                    'compagnie_id' => $hotesse->compagnie_id,
                 ]);
 
                 // Générer le QR Code pour cette réservation
@@ -249,7 +227,7 @@ class CaisseController extends Controller
                         $reservation->reference,
                         $reservation->id,
                         $programme->date_depart,
-                        null // Pas d'utilisateur spécifique pour une vente caisse
+                        null 
                     );
 
                     $reservation->update([
@@ -257,7 +235,7 @@ class CaisseController extends Controller
                         'qr_code_path' => $qrCodeData['path']
                     ]);
                 } catch (\Exception $e) {
-                    Log::error('Erreur génération QR Code Caisse: ' . $e->getMessage());
+                    Log::error('Erreur génération QR Code Hotesse: ' . $e->getMessage());
                 }
 
                 $reservedSeats[] = $nextSeat;
@@ -265,12 +243,13 @@ class CaisseController extends Controller
                 $reservations[] = $reservation;
             }
 
-            // Pas de déduction de tickets
+            // Déduire les tickets de l'hotesse
+            $hotesse->deductTickets($nombreTickets);
 
             DB::commit();
 
             $ids = array_map(function($r) { return $r->id; }, $reservations);
-            return redirect()->route('caisse.vente-success', ['reservations' => $ids])->with('success', $nombreTickets . ' ticket(s) vendu(s) avec succès !');
+            return redirect()->route('hotesse.vente-success', ['reservations' => $ids])->with('success', $nombreTickets . ' ticket(s) vendu(s) avec succès !');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -333,7 +312,7 @@ class CaisseController extends Controller
                 'qr_content' => $qrContent
             ];
         } catch (\Exception $e) {
-            Log::error('Erreur génération QR Code Caisse (private): ' . $e->getMessage());
+            Log::error('Erreur génération QR Code Hotesse (private): ' . $e->getMessage());
             throw $e;
         }
     }

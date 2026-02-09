@@ -24,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'sapeur_pompier' => \App\Http\Middleware\SapeurPompierMiddleware::class,
             'agent' => \App\Http\Middleware\AgentMiddleware::class,
             'caisse' => \App\Http\Middleware\CaisseMiddleware::class,
+            'hotesse' => \App\Http\Middleware\HotesseMiddleware::class,
         ]);
 
 

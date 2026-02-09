@@ -58,6 +58,7 @@ Route::prefix('user')->group(function () {
         Route::delete('/reservations/{reservation}', [UserReservationController::class, 'cancel']);
         Route::get('/reservations/{reservation}/ticket', [UserReservationController::class, 'ticket']);
         Route::get('/reservations/{reservation}/download', [UserReservationController::class, 'download']);
+        Route::get('/reservations/{reservation}/round-trip-tickets', [UserReservationController::class, 'getRoundTripTickets']);
         
         // Vérification du statut de paiement CinetPay (polling mobile)
         Route::get('/payment/status/{transactionId}', [UserReservationController::class, 'getPaymentStatus']);

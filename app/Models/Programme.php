@@ -225,7 +225,7 @@ class Programme extends Model
      */
     public function scopeAVenir($query)
     {
-        return $query->where('date_depart', '>=', now()->format('Y-m-d'));
+        return $query->where('date_fin', '>=', now()->format('Y-m-d'));
     }
 
     /**
@@ -257,7 +257,8 @@ class Programme extends Model
      */
     public function scopeParDate($query, $date)
     {
-        return $query->whereDate('date_depart', $date);
+        return $query->where('date_depart', '<=', $date)
+                     ->where('date_fin', '>=', $date);
     }
 
     /**
