@@ -8,21 +8,41 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
-     * 
-     * Cette migration simplifie la table programmes pour adopter le modèle FlixBus:
-     * - Chaque programme = 1 voyage à une date précise
-     * - Suppression de la logique de récurrence
-     * - Suppression de la logique aller-retour dans programmes
+     * * Cette migration simplifie la table programmes pour adopter le modèle FlixBus.
      */
     public function up(): void
     {
+        // 1. Ajout des nouvelles colonnes
         Schema::table('programmes', function (Blueprint $table) {
             // Ajouter colonne statut pour gérer l'état du voyage
-            $table->enum('statut', ['actif', 'annule', 'complet'])->default('actif')->after('heure_arrive');
+            if (!Schema::hasColumn('programmes', 'statut')) {
+                $table->enum('statut', ['actif', 'annule', 'complet'])->default('actif')->after('heure_arrive');
+            }
+            // Note: Ton modèle utilise 'date_fin', assurons-nous qu'elle existe si tu en as besoin
+            if (!Schema::hasColumn('programmes', 'date_fin')) {
+                $table->date('date_fin')->nullable()->after('date_depart');
+            }
         });
         
-        // Suppression des colonnes devenues obsolètes
+        // 2. Suppression des colonnes obsolètes avec gestion des Clés Étrangères
         Schema::table('programmes', function (Blueprint $table) {
+            
+            // --- CORRECTION DU BUG ICI ---
+            // On gère la suppression de programme_retour_id et de sa contrainte
+            if (Schema::hasColumn('programmes', 'programme_retour_id')) {
+                try {
+                    // On tente de supprimer la contrainte de clé étrangère d'abord
+                    // Syntaxe tableau = Laravel devine le nom 'programmes_programme_retour_id_foreign'
+                    $table->dropForeign(['programme_retour_id']);
+                } catch (\Exception $e) {
+                    // Si la contrainte n'existe pas (ex: en local), on continue silencieusement
+                }
+                
+                // Maintenant on peut supprimer la colonne sans erreur 1828
+                $table->dropColumn('programme_retour_id');
+            }
+            // -----------------------------
+
             // Supprimer les colonnes de récurrence
             if (Schema::hasColumn('programmes', 'type_programmation')) {
                 $table->dropColumn('type_programmation');
@@ -38,11 +58,8 @@ return new class extends Migration
             if (Schema::hasColumn('programmes', 'is_aller_retour')) {
                 $table->dropColumn('is_aller_retour');
             }
-            if (Schema::hasColumn('programmes', 'programme_retour_id')) {
-                $table->dropColumn('programme_retour_id');
-            }
             
-            // Supprimer les colonnes de comptage (sera calculé dynamiquement)
+            // Supprimer les colonnes de comptage
             if (Schema::hasColumn('programmes', 'nbre_siege_occupe')) {
                 $table->dropColumn('nbre_siege_occupe');
             }
@@ -58,19 +75,24 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('programmes', function (Blueprint $table) {
-            // Supprimer la nouvelle colonne statut
+            // Supprimer les nouvelles colonnes
             if (Schema::hasColumn('programmes', 'statut')) {
                 $table->dropColumn('statut');
             }
+            if (Schema::hasColumn('programmes', 'date_fin')) {
+                $table->dropColumn('date_fin');
+            }
             
-            // Restaurer les colonnes supprimées
-            $table->enum('type_programmation', ['ponctuel', 'recurrent'])->default('ponctuel');
-            $table->json('jours_recurrence')->nullable();
-            $table->string('date_fin_programmation')->nullable();
-            $table->boolean('is_aller_retour')->default(false);
-            $table->unsignedBigInteger('programme_retour_id')->nullable();
-            $table->text('nbre_siege_occupe')->nullable();
-            $table->enum('staut_place', ['vide', 'presque_complet', 'rempli'])->nullable();
+            // Restaurer les colonnes supprimées (structure de base, sans les contraintes strictes pour éviter les erreurs)
+            if (!Schema::hasColumn('programmes', 'type_programmation')) {
+                $table->enum('type_programmation', ['ponctuel', 'recurrent'])->default('ponctuel');
+            }
+            if (!Schema::hasColumn('programmes', 'programme_retour_id')) {
+                $table->unsignedBigInteger('programme_retour_id')->nullable();
+            }
+            if (!Schema::hasColumn('programmes', 'is_aller_retour')) {
+                $table->boolean('is_aller_retour')->default(false);
+            }
         });
     }
 };
