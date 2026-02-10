@@ -8,6 +8,7 @@ use App\Services\OtpService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 
 class CaisseAuthController extends Controller
 {
@@ -99,7 +100,6 @@ class CaisseAuthController extends Controller
         session()->forget('caisse_email_verified');
 
         // Auto login
-        Auth::guard('caisse')->login($caisse);
 
         return redirect()->route('caisse.dashboard')
             ->with('success', 'Votre mot de passe a été défini avec succès ! Bienvenue.');
@@ -186,7 +186,7 @@ class CaisseAuthController extends Controller
         $this->otpService->storeOtp($caisse->email, $otpCode);
 
         // Send email (you would use the CaisseCreatedMail or create a new one)
-        \Mail::to($caisse->email)->send(new \App\Mail\CaisseCreatedMail(
+        Mail::to($caisse->email)->send(new \App\Mail\CaisseCreatedMail(
             [
                 'prenom' => $caisse->prenom,
                 'name' => $caisse->name,
