@@ -100,6 +100,7 @@ class CaisseAuthController extends Controller
         session()->forget('caisse_email_verified');
 
         // Auto login
+        Auth::guard('caisse')->login($caisse);
 
         return redirect()->route('caisse.dashboard')
             ->with('success', 'Votre mot de passe a été défini avec succès ! Bienvenue.');
@@ -145,7 +146,7 @@ class CaisseAuthController extends Controller
         }
 
         // Attempt login
-        if (auth('agent')->attempt($credentials, $request->filled('remember'))) {
+        if (auth('caisse')->attempt($credentials, $request->filled('remember'))) {
             $request->session()->regenerate();
             return redirect()->intended(route('caisse.dashboard'));
         }
