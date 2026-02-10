@@ -381,19 +381,7 @@
 
                     </div>
 
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="contact_urgence"><i class="fas fa-phone-volume"></i> Contact d'urgence</label>
-                            <input type="text" id="contact_urgence" name="contact_urgence" class="form-control"
-                                value="{{ old('contact_urgence') }}" placeholder="Numéro d'urgence">
-                            <div class="input-icon">
-                                <i class="fas fa-life-ring"></i>
-                            </div>
-                            @error('contact_urgence')
-                                <div class="error-message">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
+
 
                     <div class="form-row">
                         <div class="form-group">
@@ -423,15 +411,10 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="adresse"><i class="fas fa-home"></i> Adresse</label>
-                            <input type="text" id="adresse" name="adresse" class="form-control"
-                                value="{{ old('adresse') }}" required placeholder="Votre adresse complète">
-                            <div class="input-icon">
-                                <i class="fas fa-map-marker-alt"></i>
+                            <label for="placeholder_space" style="visibility:hidden"><i class="fas fa-home"></i> Placeholder</label>
+                            <div style="visibility:hidden">
+                                <input type="text" class="form-control">
                             </div>
-                            @error('adresse')
-                                <div class="error-message">{{ $message }}</div>
-                            @enderror
                         </div>
                         <div class="form-group">
                             <label for="photo_profile"><i class="fas fa-camera"></i> Photo de profil

@@ -170,6 +170,10 @@ class UserController extends Controller
     /**
      * Dashboard - Statistiques utilisateur
      */
+
+    /**
+     * Dashboard - Statistiques utilisateur
+     */
     public function dashboard(Request $request)
     {
         $user = $request->user();
@@ -223,6 +227,65 @@ class UserController extends Controller
                 'total_signalements' => $totalSignalements,
             ],
             'recent_reservations' => $recentReservations,
+        ]);
+    }
+
+    /**
+     * Obtenir la liste des appareils connectés
+     */
+    public function getDevices(Request $request)
+    {
+        $user = $request->user();
+        
+        $devices = $user->devices()
+            ->orderBy('last_login_at', 'desc')
+            ->get()
+            ->map(function ($device) {
+                return [
+                    'nom_device' => $device->nom_device,
+                    'ip_address' => $device->ip_address,
+                    'last_login_at' => $device->last_login_at->format('d/m/Y H:i'),
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'devices' => $devices
+        ]);
+    }
+
+    /**
+     * Désactiver le compte utilisateur
+     */
+    public function deactivateAccount(Request $request)
+    {
+        \Illuminate\Support\Facades\Log::info('Deactivate Account Payload:', $request->all());
+
+        $user = $request->user();
+
+        // Validation du mot de passe pour confirmer la désactivation
+        $request->validate([
+            'password' => 'required',
+        ]);
+
+        if (!Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Mot de passe incorrect.',
+            ], 422);
+        }
+
+        $user->update([
+            'is_active' => false,
+            'deactivated_at' => now(),
+        ]);
+
+        // On peut révoquer les tokens ici si on veut forcer la déconnexion
+        $user->tokens()->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Votre compte a été désactivé. Il sera supprimé définitivement dans 30 jours si vous ne vous reconnectez pas.',
         ]);
     }
 }

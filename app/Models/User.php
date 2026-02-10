@@ -25,14 +25,16 @@ class User extends Authenticatable
         'email',
         'contact',
         'contact_urgence',
-        'adresse',
-        'pays',
+        'nom_urgence',
+        'prenom_urgence',
         'email_verified_at',
         'photo_profile_path',
         'password',
         'fcm_token',
         'nom_device',
         'solde',
+        'is_active',
+        'deactivated_at',
     ];
 
     /**
@@ -56,11 +58,18 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'solde' => 'decimal:2',
+            'is_active' => 'boolean',
+            'deactivated_at' => 'datetime',
         ];
     }
 
     public function walletTransactions()
     {
         return $this->hasMany(WalletTransaction::class);
+    }
+
+    public function devices()
+    {
+        return $this->hasMany(UserDevice::class);
     }
 }

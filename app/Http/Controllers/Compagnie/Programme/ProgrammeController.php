@@ -286,7 +286,7 @@ class ProgrammeController extends Controller
 
         // Dates par défaut: aujourd'hui jusqu'à fin d'année
         $dateDebut = Carbon::now()->format('Y-m-d');
-        $dateFin = Carbon::now()->endOfYear()->format('Y-m-d');
+        $dateFin = Carbon::now()->addYears(5)->format('Y-m-d');
 
         try {
             $createdAller = 0;

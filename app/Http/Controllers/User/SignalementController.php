@@ -33,15 +33,25 @@ class SignalementController extends Controller
             'description' => 'required|string',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:10240', // Validation Image (10MB max)
         ]);
 
         $signalement = new Signalement();
-        $signalement->user_id = Auth::id() ?? 1; // Fallback or strict auth
+        $signalement->user_id = Auth::id() ?? 1;
         $signalement->programme_id = $validated['programme_id'];
         $signalement->type = $validated['type'];
         $signalement->description = $validated['description'];
         $signalement->latitude = $validated['latitude'];
         $signalement->longitude = $validated['longitude'];
+
+        // Gestion de l'upload photo
+        if ($request->hasFile('photo')) {
+            // Stocke dans storage/app/public/signalements
+            // Assurez-vous d'avoir fait : php artisan storage:link
+            $path = $request->file('photo')->store('signalements', 'public');
+            $signalement->photo_path = $path; // Assurez-vous d'avoir une colonne 'photo_path' dans votre migration
+        }
+
         $signalement->save();
 
         if ($validated['type'] === 'accident') {
@@ -51,14 +61,13 @@ class SignalementController extends Controller
                 $signalement->sapeur_pompier_id = $nearestSP->id;
                 $signalement->save();
 
-                // Send notification
                 Notification::route('mail', $nearestSP->email)
                     ->notify(new SendSignalementToSapeurPompierNotification($signalement));
             }
         }
 
-        return redirect()->route('user.reservations.index') // Or wherever appropriate
-            ->with('success', 'Votre signalement a bien été enregistré. Les secours ont été contactés si nécessaire.');
+        return redirect()->route('user.reservations.index')
+            ->with('success', 'Votre signalement a bien été enregistré.');
     }
 
     private function findNearestSapeurPompier($lat, $lng)

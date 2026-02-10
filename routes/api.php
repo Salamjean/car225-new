@@ -47,6 +47,10 @@ Route::prefix('user')->group(function () {
         Route::post('/change-password', [UserController::class, 'changePassword']);
         Route::post('/fcm-token', [UserController::class, 'updateFcmToken']);
         Route::post('/test-notification', [UserController::class, 'testNotification']);
+
+        // Gestion du compte
+        Route::get('/devices', [UserController::class, 'getDevices']);
+        Route::post('/deactivate', [UserController::class, 'deactivateAccount']);
         
         // Dashboard
         Route::get('/dashboard', [UserController::class, 'dashboard']);

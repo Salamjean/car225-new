@@ -38,14 +38,62 @@ class AuthController extends Controller
             ]);
         }
 
+        // Vérifier si le compte est désactivé
+        if (!$user->is_active) {
+            // Si le compte est désactivé, on vérifie depuis quand
+            if ($user->deactivated_at) {
+                $deletionDate = $user->deactivated_at->copy()->addDays(30);
+                
+                if (now()->greaterThanOrEqualTo($deletionDate)) {
+                    // Supprimer le compte s'il a dépassé les 30 jours (ou rejeter la connexion)
+                    // Ici on rejette, le job de nettoyage s'occupera de la suppression
+                    throw ValidationException::withMessages([
+                        'email' => ['Votre compte a été supprimé définitivement.'],
+                    ]);
+                } else {
+                    // Réactiver le compte
+                    $user->update([
+                        'is_active' => true,
+                        'deactivated_at' => null,
+                    ]);
+                }
+            } else {
+                // Cas bizarre où deactivated_at est null mais is_active false
+                $user->update(['is_active' => true]);
+            }
+        }
+
         // Mettre à jour le token FCM si fourni
         if ($request->filled('fcm_token')) {
             $user->update(['fcm_token' => $request->fcm_token]);
         }
 
-        // Mettre à jour le nom de l'appareil si fourni
+        // Mettre à jour le nom de l'appareil si fourni (Legacy field)
         if ($request->filled('nom_device')) {
             $user->update(['nom_device' => $request->nom_device]);
+        }
+
+        // Enregistrer l'appareil dans l'historique
+        if ($request->filled('nom_device')) {
+            $user->devices()->min('id'); // Just to load relationship? No.
+            
+            // On peut limiter le nombre d'appareils stockés si besoin, mais pour l'instant on log tout
+            // Ou on update si même nom ?
+            // Le mieux est d'ajouter une entrée à chaque login ou update le last_login si existe
+            $device = $user->devices()->where('nom_device', $request->nom_device)->first();
+            
+            if ($device) {
+                $device->update([
+                    'last_login_at' => now(),
+                    'ip_address' => $request->ip(),
+                ]);
+            } else {
+                $user->devices()->create([
+                    'nom_device' => $request->nom_device,
+                    'last_login_at' => now(),
+                    'ip_address' => $request->ip(),
+                ]);
+            }
         }
 
         // Créer un nouveau token (on ne révoque plus les anciens pour permettre plusieurs sessions persistantes)
@@ -60,9 +108,9 @@ class AuthController extends Controller
                 'prenom' => $user->prenom,
                 'email' => $user->email,
                 'contact' => $user->contact,
-                'adresse' => $user->adresse,
                 'photo_profile_path' => $user->photo_profile_path ? 'storage/' . $user->photo_profile_path : null,
                 'nom_device' => $user->nom_device,
+                'is_active' => $user->is_active, // Renvoie l'état
             ],
             'token' => $token,
             'token_type' => 'Bearer',
@@ -79,7 +127,6 @@ class AuthController extends Controller
             'prenom' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:8|confirmed',
-            'adresse' => 'required|string|max:255',
             'contact' => 'required|string|max:255',
             'photo_profile' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ], [
@@ -91,7 +138,6 @@ class AuthController extends Controller
             'password.required' => 'Le mot de passe est obligatoire.',
             'password.min' => 'Le mot de passe doit contenir au moins 8 caractères.',
             'password.confirmed' => 'Les mots de passe ne correspondent pas.',
-            'adresse.required' => 'L\'adresse est obligatoire.',
             'contact.required' => 'Le numéro de contact est obligatoire.',
             'photo_profile.required' => 'La photo de profil est obligatoire.',
             'photo_profile.image' => 'Le fichier doit être une image.',
@@ -104,9 +150,7 @@ class AuthController extends Controller
                 'name' => $validated['name'],
                 'prenom' => $validated['prenom'],
                 'email' => $validated['email'],
-                'pays' => 'Cote d\'ivoire',
                 'contact' => $validated['contact'],
-                'adresse' => $validated['adresse'],
                 'password' => Hash::make($validated['password']),
             ];
 
@@ -132,7 +176,6 @@ class AuthController extends Controller
                     'prenom' => $user->prenom,
                     'email' => $user->email,
                     'contact' => $user->contact,
-                    'adresse' => $user->adresse,
                     'photo_profile_path' => $user->photo_profile_path ? 'storage/' . $user->photo_profile_path : null,
                 ],
                 'token' => $token,

@@ -31,8 +31,9 @@ class ProfileController extends Controller
             'prenom' => 'nullable|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
             'contact' => 'nullable|string|max:20',
-            'adresse' => 'nullable|string|max:255',
-            'commune' => 'nullable|string|max:255',
+            'nom_urgence' => 'nullable|string|max:255',
+            'prenom_urgence' => 'nullable|string|max:255',
+            'contact_urgence' => 'nullable|string|max:20',
         ]);
 
         try {

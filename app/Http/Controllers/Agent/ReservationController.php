@@ -20,58 +20,24 @@ class ReservationController extends Controller
         $heureMinimum = $now->copy()->subMinutes(30)->format('H:i');
         $today = Carbon::today()->toDateString();
 
-        // Récupérer les programmes aller d'aujourd'hui (ponctuels + récurrents)
-        $programmesAller = Programme::where('compagnie_id', $agent->compagnie_id)
+        // Récupérer les programmes du jour (FlixBus Model: Simple date check)
+        // On cherche les programmes dont la date de départ est aujourd'hui
+        // OU les programmes "continus" qui incluent aujourd'hui (si date_fin existe)
+        $programmesDuJour = Programme::where('compagnie_id', $agent->compagnie_id)
+            ->where('statut', 'actif')
             ->where(function ($query) use ($today) {
-                // Programmes ponctuels avec date_depart = aujourd'hui
-                $query->where('type_programmation', 'ponctuel')
-                    ->whereDate('date_depart', $today);
-
-                // Programmes récurrents actifs
-                $query->orWhere(function ($q) use ($today) {
-                    $q->where('type_programmation', 'recurrent')
-                        ->whereDate('date_depart', '<=', $today)
-                        ->where(function ($subQ) use ($today) {
-                            $subQ->whereNull('date_fin_programmation')
-                                ->orWhereDate('date_fin_programmation', '>=', $today);
-                        });
-                });
+                // Cas standard : Voyage à date unique
+                $query->whereDate('date_depart', $today)
+                      // Cas étendu : Période de validité (si utilisé)
+                      ->orWhere(function ($q) use ($today) {
+                          $q->where('date_depart', '<=', $today)
+                            ->where('date_fin', '>=', $today);
+                      });
             })
             ->where('heure_depart', '>=', $heureMinimum)
             ->with('vehicule')
             ->orderBy('heure_depart')
             ->get();
-
-        // Récupérer les programmes retour d'aujourd'hui
-        // Supposons que vous avez un champ 'programme_retour_id' qui lie l'aller au retour
-        $programmesRetourIds = Programme::where('compagnie_id', $agent->compagnie_id)
-            ->whereNotNull('programme_retour_id')
-            ->pluck('programme_retour_id')
-            ->toArray();
-
-        $programmesRetour = Programme::whereIn('id', $programmesRetourIds)
-            ->where(function ($query) use ($today) {
-                // Programmes ponctuels retour
-                $query->where('type_programmation', 'ponctuel')
-                    ->whereDate('date_depart', $today);
-
-                // Programmes récurrents retour
-                $query->orWhere(function ($q) use ($today) {
-                    $q->where('type_programmation', 'recurrent')
-                        ->whereDate('date_depart', '<=', $today)
-                        ->where(function ($subQ) use ($today) {
-                            $subQ->whereNull('date_fin_programmation')
-                                ->orWhereDate('date_fin_programmation', '>=', $today);
-                        });
-                });
-            })
-            ->where('heure_depart', '>=', $heureMinimum)
-            ->with('vehicule')
-            ->orderBy('heure_depart')
-            ->get();
-
-        // Fusionner les programmes aller et retour
-        $programmesDuJour = $programmesAller->merge($programmesRetour)->sortBy('heure_depart');
 
         // Récupération des réservations
         $reservations = Reservation::with(['programme', 'user'])
@@ -101,18 +67,13 @@ class ReservationController extends Controller
         $today = Carbon::today()->toDateString();
 
         $programmesDuJour = Programme::where('compagnie_id', $agent->compagnie_id)
+            ->where('statut', 'actif')
             ->where(function ($query) use ($today) {
-                $query->where('type_programmation', 'ponctuel')
-                    ->whereDate('date_depart', $today);
-
-                $query->orWhere(function ($q) use ($today) {
-                    $q->where('type_programmation', 'recurrent')
-                        ->whereDate('date_depart', '<=', $today)
-                        ->where(function ($subQ) use ($today) {
-                            $subQ->whereNull('date_fin_programmation')
-                                ->orWhereDate('date_fin_programmation', '>=', $today);
-                        });
-                });
+                $query->whereDate('date_depart', $today)
+                      ->orWhere(function ($q) use ($today) {
+                          $q->where('date_depart', '<=', $today)
+                            ->where('date_fin', '>=', $today);
+                      });
             })
             ->where('heure_depart', '>=', $heureMinimum)
             ->with('vehicule')
@@ -124,6 +85,7 @@ class ReservationController extends Controller
             ->whereHas('programme', function ($q) use ($agent) {
                 $q->where('compagnie_id', $agent->compagnie_id);
             })
+            ->where('embarquement_agent_id', $agent->id) // Filtrer par l'agent actuel
             ->whereDate('embarquement_scanned_at', Carbon::today())
             ->orderBy('embarquement_scanned_at', 'desc')
             ->limit(10)

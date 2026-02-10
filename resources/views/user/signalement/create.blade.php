@@ -105,7 +105,7 @@
                         </div>
                     </div>
 
-                    <!-- Section 2: Le Problème -->
+                       <!-- Section 2: Le Problème -->
                     <div>
                         <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2 mb-4 border-b border-gray-100 pb-2">
                             <span class="bg-red-100 text-red-600 w-8 h-8 rounded-full flex items-center justify-center text-sm">2</span>
@@ -119,7 +119,7 @@
                                     <i class="fas fa-exclamation-triangle text-orange-500 mr-1"></i> Type d'incident
                                 </label>
                                 <div class="relative">
-                                    <select id="type" name="type" required onchange="checkAccident(this.value)"
+                                    <select id="type" name="type" required onchange="handleProblemType(this.value)"
                                         class="block w-full pl-4 pr-10 py-3 text-base border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent sm:text-sm rounded-xl shadow-sm transition-all duration-300 appearance-none bg-gray-50 hover:bg-white">
                                         <option value="">-- Sélectionner --</option>
                                         <option value="accident">🚨 Accident Grave</option>
@@ -132,21 +132,28 @@
                                         <i class="fas fa-chevron-down text-xs"></i>
                                     </div>
                                 </div>
+                                
+                                <!-- Lien pour afficher la photo manuellement (pour les cas non urgents) -->
+                                <div id="manual-photo-trigger" class="hidden mt-3 text-right">
+                                    <button type="button" onclick="showPhotoUploader()" class="text-sm text-red-600 hover:text-red-800 underline flex items-center justify-end gap-1 ml-auto">
+                                        <i class="fas fa-camera"></i> Ajouter une photo justificative ?
+                                    </button>
+                                </div>
                             </div>
 
-                            <!-- Photo Upload -->
-                            <div>
-                                <label for="photo" class="block text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-camera text-blue-500 mr-1"></i> Photo (Optionnel)
+                            <!-- Photo Upload (Caché par défaut) -->
+                            <div id="photo-container" class="hidden animate-fade-in-down">
+                                <label for="photo" class="block text-sm font-medium text-gray-700 mb-2" id="photo-label">
+                                    <i class="fas fa-camera text-blue-500 mr-1"></i> Preuve Photo
                                 </label>
                                 <label class="flex justify-center px-6 pt-3 pb-3 border-2 border-gray-300 border-dashed rounded-xl cursor-pointer hover:border-red-400 hover:bg-red-50 transition-colors group">
                                     <div class="space-y-1 text-center">
                                         <i class="fas fa-image text-gray-400 text-2xl group-hover:text-red-500 transition-colors"></i>
                                         <div class="text-xs text-gray-600">
-                                            <span class="font-medium text-red-600 hover:text-red-500">Ajouter une image</span>
+                                            <span class="font-medium text-red-600 hover:text-red-500">Cliquez pour ajouter</span>
                                         </div>
                                         <input id="photo" name="photo" type="file" class="sr-only" accept="image/*" onchange="previewImage(this)">
-                                        <p class="text-xs text-gray-500" id="photo-filename">PNG, JPG jusqu'à 10MB</p>
+                                        <p class="text-xs text-gray-500" id="photo-filename">PNG, JPG (Max 10MB)</p>
                                     </div>
                                 </label>
                             </div>
@@ -161,8 +168,8 @@
                                 <div class="ml-3">
                                     <h3 class="text-sm font-bold text-red-800 uppercase tracking-wide">Urgence Détectée</h3>
                                     <div class="mt-2 text-sm text-red-700">
-                                        <p>Nous activons la géolocalisation haute précision pour guider les secours.</p>
-                                        <p class="font-bold mt-1">Gardez votre calme, les pompiers seront alertés.</p>
+                                        <p>Veuillez prendre une photo de la situation si cela est possible sans danger.</p>
+                                        <p class="font-bold mt-1">Géolocalisation activée pour les secours.</p>
                                     </div>
                                 </div>
                             </div>
@@ -201,6 +208,37 @@
 
     <!-- Scripts Logic -->
     <script>
+        function handleProblemType(val) {
+        const photoContainer = document.getElementById('photo-container');
+        const manualTrigger = document.getElementById('manual-photo-trigger');
+        const accidentWarning = document.getElementById('accident-warning');
+        const photoLabel = document.getElementById('photo-label');
+
+        // Reset visuel initial
+        photoContainer.classList.add('hidden');
+        manualTrigger.classList.add('hidden');
+        accidentWarning.classList.add('hidden');
+
+        if (val === 'accident') {
+            // CAS ACCIDENT : On force l'affichage de l'upload et du message d'urgence
+            photoContainer.classList.remove('hidden');
+            accidentWarning.classList.remove('hidden');
+            photoLabel.innerHTML = '<i class="fas fa-camera text-red-500 mr-1"></i> Photo de l\'accident (Fortement recommandé)';
+            
+            getLocationImportant(); // Force refresh loc
+        } 
+        else if (val !== "") {
+            // AUTRES CAS (Panne, Retard, etc) : On affiche juste le petit lien
+            manualTrigger.classList.remove('hidden');
+            photoLabel.innerHTML = '<i class="fas fa-camera text-blue-500 mr-1"></i> Photo (Optionnel)';
+        }
+    }
+
+    // Fonction déclenchée quand on clique sur le lien texte "Ajouter une photo"
+    function showPhotoUploader() {
+        document.getElementById('manual-photo-trigger').classList.add('hidden'); // Cache le lien
+        document.getElementById('photo-container').classList.remove('hidden'); // Affiche l'uploader
+    }
         // Géolocalisation Initiale
         if (navigator.geolocation) {
              navigator.geolocation.getCurrentPosition(

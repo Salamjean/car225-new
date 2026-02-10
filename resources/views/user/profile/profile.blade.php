@@ -91,18 +91,31 @@
                                 <div class="invalid-feedback text-red-500 text-sm mt-1"></div>
                             </div>
 
-                            <div class="md:col-span-1">
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Adresse</label>
-                                <input type="text" id="adresse" name="adresse" value="{{ $user->adresse }}"
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
-                                <div class="invalid-feedback text-red-500 text-sm mt-1"></div>
-                            </div>
-                            
-                            <div class="md:col-span-1">
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Commune</label>
-                                <input type="text" id="commune" name="commune" value="{{ $user->commune }}"
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
-                                <div class="invalid-feedback text-red-500 text-sm mt-1"></div>
+                            <div class="md:col-span-2 mt-4 border-t pt-4">
+                                <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                                    <i class="fas fa-life-ring mr-2 text-red-500"></i>
+                                    Personne à contacter d'urgence
+                                </h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 mb-2">Nom personne à contacter</label>
+                                        <input type="text" id="nom_urgence" name="nom_urgence" value="{{ $user->nom_urgence }}"
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
+                                        <div class="invalid-feedback text-red-500 text-sm mt-1"></div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 mb-2">Prénom personne à contacter</label>
+                                        <input type="text" id="prenom_urgence" name="prenom_urgence" value="{{ $user->prenom_urgence }}"
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
+                                        <div class="invalid-feedback text-red-500 text-sm mt-1"></div>
+                                    </div>
+                                    <div class="md:col-span-2">
+                                        <label class="block text-sm font-semibold text-gray-700 mb-2">Contact d'urgence</label>
+                                        <input type="text" id="contact_urgence" name="contact_urgence" value="{{ $user->contact_urgence }}"
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
+                                        <div class="invalid-feedback text-red-500 text-sm mt-1"></div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 

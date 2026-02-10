@@ -84,7 +84,7 @@
                 <div class="mdc-list-item mdc-drawer-item">
                     <a class="mdc-drawer-link" href="{{ route('signalement.create') }}">
                         <i class="fas fa-exclamation-triangle mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
-                       Signaler un problème
+                       Déclarer un incident
                     </a>
                 </div>
                 {{-- <div class="mdc-list-item mdc-drawer-item">

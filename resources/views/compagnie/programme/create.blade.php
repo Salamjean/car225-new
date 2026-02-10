@@ -755,8 +755,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Calculate arrival time
-    function calculateArrivalTime(departureInput) {
+    window.calculateArrivalTime = function(departureInput) {
+        if (!departureInput || !departureInput.value) return;
+        
         const [hours, mins] = departureInput.value.split(':').map(Number);
+        if (isNaN(hours) || isNaN(mins)) return;
+
         const departDate = new Date(2026, 0, 1, hours, mins);
         departDate.setMinutes(departDate.getMinutes() + currentDurationMinutes);
         
@@ -765,16 +769,18 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Find the corresponding arrival input
         const scheduleItem = departureInput.closest('.schedule-item');
-        const arrivalInput = scheduleItem.querySelector('.time-input.arrival');
-        if (arrivalInput) {
-            arrivalInput.value = `${arriveHours}:${arriveMins}`;
+        if (scheduleItem) {
+            const arrivalInput = scheduleItem.querySelector('.time-input.arrival');
+            if (arrivalInput) {
+                arrivalInput.value = `${arriveHours}:${arriveMins}`;
+            }
         }
-    }
+    };
 
     // Update all arrival times
     function updateAllArrivalTimes() {
         document.querySelectorAll('.departure-time').forEach(input => {
-            calculateArrivalTime(input);
+            window.calculateArrivalTime(input);
         });
     }
 
@@ -814,11 +820,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Injecter les données existantes depuis le contrôleur
-    const existingAller = @json($existingAller ?? []);
-    const existingRetour = @json($existingRetour ?? []);
-    const preselectedItineraireId = "{{ $preselectedItineraireId ?? '' }}";
-    
     // Données pour les selects
     const vehicules = @json($vehicules ?? []);
     const chauffeurs = @json($chauffeurs ?? []);
@@ -830,13 +831,14 @@ document.addEventListener('DOMContentLoaded', function() {
             html += '<option value="same">Identique au précédent</option>';
         }
         items.forEach(item => {
-            html += `<option value="${item[valueField]}">${item[labelField]} ${item.prenom ? item.prenom : ''}</option>`; // Handle name+prenom for chauffeurs
+            const label = item[labelField] + (item.prenom ? ' ' + item.prenom : '');
+            html += `<option value="${item[valueField]}">${label}</option>`;
         });
         return html;
     }
 
     // Add schedule function
-    window.addSchedule = function(type, initialTime = null, initialArrivalTime = null, initialVehicule = null, initialPersonnel = null) {
+    window.addSchedule = function(type, initialTime = null, initialArrivalTime = null) {
         const container = document.getElementById(`${type}-schedules`);
         const items = container.querySelectorAll('.schedule-item');
         const newIndex = items.length;
@@ -845,15 +847,13 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (initialTime) {
             nextTime = initialTime;
-        } else {
+        } else if (items.length > 0) {
             const lastItem = items[items.length - 1];
-            if (lastItem) {
-                const lastTimeInput = lastItem.querySelector('.departure-time');
-                if (lastTimeInput && lastTimeInput.value) {
-                    const [hours, mins] = lastTimeInput.value.split(':').map(Number);
-                    let nextHour = (hours + 1) % 24;
-                    nextTime = `${nextHour.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
-                }
+            const lastTimeInput = lastItem.querySelector('.departure-time');
+            if (lastTimeInput && lastTimeInput.value) {
+                const [hours, mins] = lastTimeInput.value.split(':').map(Number);
+                let nextHour = (hours + 1) % 24;
+                nextTime = `${nextHour.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
             }
         }
         
@@ -863,7 +863,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const scheduleHtml = `
             <div class="schedule-item ${type}" data-index="${newIndex}">
                 <span class="badge">Horaire ${newIndex + 1}</span>
-                ${newIndex > 0 ? `<button type="button" class="remove-schedule" onclick="this.closest('.schedule-item').remove(); updateSummary(); updateIndices('${type}')"><i class="fas fa-times"></i></button>` : ''}
+                ${newIndex > 0 ? `<button type="button" class="remove-schedule" onclick="window.removeSchedule('${type}', ${newIndex})"><i class="fas fa-times"></i></button>` : ''}
                 
                 <div class="schedule-times">
                     <div class="time-input-group">
@@ -871,7 +871,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         <input type="time" name="${type}_horaires[${newIndex}][heure_depart]" 
                                class="time-input ${type} departure-time" 
                                value="${nextTime}" required
-                               onchange="calculateArrivalTime(this)"
                                data-type="${type}" data-index="${newIndex}">
                     </div>
                     <div class="time-arrow">
@@ -889,13 +888,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="mt-3 grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Chauffeur</label>
-                        <select name="${type}_horaires[${newIndex}][personnel_id]" class="input-modern text-sm py-2 px-3 personnel-select">
+                        <select name="${type}_horaires[${newIndex}][personnel_id]" class="input-modern text-sm py-2 px-3 personnel-select" required>
                             ${chauffeurOptions}
                         </select>
                     </div>
                      <div>
                         <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Véhicule</label>
-                        <select name="${type}_horaires[${newIndex}][vehicule_id]" class="input-modern text-sm py-2 px-3 vehicule-select">
+                        <select name="${type}_horaires[${newIndex}][vehicule_id]" class="input-modern text-sm py-2 px-3 vehicule-select" required>
                             ${vehiculeOptions}
                         </select>
                     </div>
@@ -903,90 +902,14 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
         
-        // Insert and update...
-        if (newIndex === 0) {
-             container.innerHTML = scheduleHtml; // Replace initial placeholder
-        } else {
-             container.insertAdjacentHTML('beforeend', scheduleHtml);
-        }
+        container.insertAdjacentHTML('beforeend', scheduleHtml);
         
-        const newRow = container.querySelector(`[data-index="${newIndex}"]`);
-        
-        // Update arrival time
+        const newRow = container.querySelector(`.schedule-item[data-index="${newIndex}"]`);
         const departInput = newRow.querySelector('.departure-time');
-        calculateArrivalTime(departInput);
+        window.calculateArrivalTime(departInput);
         
         updateSummary();
-    }
-    
-    // Fonction pour résoudre les "Même que précédent" avant soumission
-    document.getElementById('programmeForm').addEventListener('submit', function(e) {
-        // Resolve drivers
-        ['aller', 'retour'].forEach(type => {
-            const tempDrivers = [];
-            const tempVehicles = [];
-            
-            const driverSelects = document.querySelectorAll(`select[name^="${type}_horaires"][name$="[personnel_id]"]`);
-            driverSelects.forEach((select, idx) => {
-                if (select.value === 'same') {
-                    select.value = tempDrivers[idx - 1] || '';
-                    // If still empty (e.g. previous was empty), select is empty.
-                    // Important: select.value will only update if the value exists in options. 
-                    // Since "same" option is present, we must ensure we select the correct ID.
-                    // If previous was "" (empty), select.value = "" is valid.
-                }
-                tempDrivers.push(select.value);
-            });
-            
-             const vehicleSelects = document.querySelectorAll(`select[name^="${type}_horaires"][name$="[vehicule_id]"]`);
-            vehicleSelects.forEach((select, idx) => {
-                if (select.value === 'same') {
-                    select.value = tempVehicles[idx - 1] || '';
-                }
-                tempVehicles.push(select.value);
-            });
-        });
-    });
-
-
-
-    // Initialisation avec les données existantes
-    if (preselectedItineraireId) {
-        // Sélectionner l'itinéraire
-        if (itineraireSelect) {
-            itineraireSelect.value = preselectedItineraireId;
-            // Déclencher l'événement change pour afficher le formulaire
-            setTimeout(() => {
-                itineraireSelect.dispatchEvent(new Event('change'));
-                
-                // Attendre que le changement soit traité
-                setTimeout(() => {
-                    // Vider les conteneurs (au cas où il y aurait des valeurs par défaut)
-                    const allerContainer = document.getElementById('aller-schedules');
-                    const retourContainer = document.getElementById('retour-schedules');
-                    allerContainer.innerHTML = '';
-                    retourContainer.innerHTML = '';
-                    
-                    // Remplir avec les données existantes
-                    if (existingAller.length > 0) {
-                        existingAller.forEach(h => window.addSchedule('aller', h.heure_depart, h.heure_arrive));
-                    } else {
-                        window.addSchedule('aller');
-                    }
-                    
-                    if (existingRetour.length > 0) {
-                        existingRetour.forEach(h => window.addSchedule('retour', h.heure_depart, h.heure_arrive));
-                    } else {
-                        window.addSchedule('retour');
-                    }
-                }, 100);
-            }, 100);
-        }
-    } else {
-        // Comportement par défaut si pas de pré-sélection
-        window.addSchedule('aller');
-        window.addSchedule('retour');
-    }
+    };
 
     // Remove schedule function
     window.removeSchedule = function(type, index) {
@@ -1000,12 +923,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const item = container.querySelector(`.schedule-item[data-index="${index}"]`);
         if (item) {
-            item.style.animation = 'slideIn 0.3s ease-out reverse';
-            setTimeout(() => {
-                item.remove();
-                reindexSchedules(type);
-                updateSummary();
-            }, 250);
+            item.remove();
+            reindexSchedules(type);
+            updateSummary();
         }
     };
 
@@ -1027,25 +947,80 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const removeBtn = item.querySelector('.remove-schedule');
             if (removeBtn) {
-                removeBtn.setAttribute('onclick', `removeSchedule('${type}', ${idx})`);
+                removeBtn.setAttribute('onclick', `window.removeSchedule('${type}', ${idx})`);
             }
         });
     }
 
-    // Attach event listeners to departure inputs
-    document.querySelectorAll('.departure-time').forEach(input => {
-        input.addEventListener('input', function() {
-            calculateArrivalTime(this);
+    // Event Delegation for all departure time inputs
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('departure-time')) {
+            window.calculateArrivalTime(e.target);
+        }
+    });
+
+    // Form submission: resolve "same as previous" options
+    document.getElementById('programmeForm').addEventListener('submit', function(e) {
+        ['aller', 'retour'].forEach(type => {
+            let lastDriver = '';
+            let lastVehicle = '';
+            
+            const driverSelects = document.querySelectorAll(`select[name^="${type}_horaires"][name$="[personnel_id]"]`);
+            driverSelects.forEach((select) => {
+                if (select.value === 'same') {
+                    select.value = lastDriver;
+                } else {
+                    lastDriver = select.value;
+                }
+            });
+            
+            const vehicleSelects = document.querySelectorAll(`select[name^="${type}_horaires"][name$="[vehicule_id]"]`);
+            vehicleSelects.forEach((select) => {
+                if (select.value === 'same') {
+                    select.value = lastVehicle;
+                } else {
+                    lastVehicle = select.value;
+                }
+            });
         });
     });
 
-    // Price update
-    montantBillet.addEventListener('input', updateSummary);
+    // Initial load
+    const existingAller = @json($existingAller ?? []);
+    const existingRetour = @json($existingRetour ?? []);
+    const preselectedItineraireId = "{{ $preselectedItineraireId ?? '' }}";
 
-    // Initial trigger if already selected
-    if (itineraireSelect.value) {
+    if (preselectedItineraireId) {
+        itineraireSelect.value = preselectedItineraireId;
         itineraireSelect.dispatchEvent(new Event('change'));
+        
+        setTimeout(() => {
+            const allerContainer = document.getElementById('aller-schedules');
+            const retourContainer = document.getElementById('retour-schedules');
+            allerContainer.innerHTML = '';
+            retourContainer.innerHTML = '';
+            
+            if (existingAller.length > 0) {
+                existingAller.forEach(h => window.addSchedule('aller', h.heure_depart, h.heure_arrive));
+            } else {
+                window.addSchedule('aller');
+            }
+            
+            if (existingRetour.length > 0) {
+                existingRetour.forEach(h => window.addSchedule('retour', h.heure_depart, h.heure_arrive));
+            } else {
+                window.addSchedule('retour');
+            }
+        }, 300);
+    } else {
+        // Clear containers and add initial ones
+        document.getElementById('aller-schedules').innerHTML = '';
+        document.getElementById('retour-schedules').innerHTML = '';
+        window.addSchedule('aller');
+        window.addSchedule('retour');
     }
+
+    montantBillet.addEventListener('input', updateSummary);
 });
 </script>
 @endsection

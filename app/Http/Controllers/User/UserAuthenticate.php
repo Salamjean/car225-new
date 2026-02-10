@@ -48,9 +48,7 @@ class UserAuthenticate extends Controller
                 'prenom' => 'required|string|max:255',
                 'email' => 'required|email|unique:users,email',
                 'password' => 'required|min:8|confirmed',
-                'adresse' => 'required|string|max:255',
                 'contact' => 'required|string|max:255',
-                'contact_urgence' => 'nullable|string|max:255',
                 'photo_profile' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             ],
             [
@@ -74,19 +72,10 @@ class UserAuthenticate extends Controller
                 'password.min' => 'Le mot de passe doit contenir au moins 8 caractères.',
                 'password.confirmed' => 'Les mots de passe ne correspondent pas.',
 
-                // Adresse
-                'adresse.required' => 'L\'adresse est obligatoire.',
-                'adresse.string' => 'L\'adresse doit être une chaîne de caractères.',
-                'adresse.max' => 'L\'adresse ne doit pas dépasser 255 caractères.',
-
                 // Contact
                 'contact.required' => 'Le numéro de contact est obligatoire.',
                 'contact.string' => 'Le contact doit être une chaîne de caractères.',
                 'contact.max' => 'Le contact ne doit pas dépasser 255 caractères.',
-
-                // Contact d'urgence
-                'contact_urgence.string' => 'Le contact d\'urgence doit être une chaîne de caractères.',
-                'contact_urgence.max' => 'Le contact d\'urgence ne doit pas dépasser 255 caractères.',
 
                 // Photo de profil
                 'photo_profile.image' => 'Le fichier doit être une image.',
@@ -101,10 +90,7 @@ class UserAuthenticate extends Controller
                 'name' => $validated['name'],
                 'prenom' => $validated['prenom'],
                 'email' => $validated['email'],
-                'pays' => 'Cote d\'ivoire',
                 'contact' => $validated['contact'],
-                'contact_urgence' => $validated['contact_urgence'] ?? null,
-                'adresse' => $validated['adresse'],
                 'password' => Hash::make($validated['password']),
             ];
 
