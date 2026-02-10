@@ -276,7 +276,9 @@
     const typeRangeConfig = {
         '2x2': { left: 2, right: 2 },
         '2x3': { left: 2, right: 3 },
-        '2x4': { left: 2, right: 4 }
+        '2x4': { left: 2, right: 4 },
+        'Gamme Prestige': { left: 2, right: 2 },
+        'Gamme Standard': { left: 2, right: 3 }
     };
 
     // Initialisation

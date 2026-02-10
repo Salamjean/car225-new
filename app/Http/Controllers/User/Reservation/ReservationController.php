@@ -105,20 +105,11 @@ class ReservationController extends Controller
             abort(403);
         }
 
-        if (!$reservation->qr_code_path) {
-            abort(404, 'QR Code non trouvé');
-        }
-
-        $path = storage_path('app/public/' . $reservation->qr_code_path);
-
-        if (!file_exists($path)) {
-            abort(404, 'Fichier non trouvé');
-        }
-
-        return response()->download($path, 'billet-' . $reservation->reference . '.png');
+        // On appelle la même logique que ticket mais avec download au lieu de stream
+        return $this->ticket(request(), $reservation, true);
     }
 
-    public function ticket(Request $request, Reservation $reservation)
+    public function ticket(Request $request, Reservation $reservation, $forceDownload = false)
     {
         // Vérifier que la réservation appartient à l'utilisateur
         if ($reservation->user_id !== Auth::id()) {
@@ -207,6 +198,10 @@ class ReservationController extends Controller
                 'isRemoteEnabled' => true,
                 'dpi' => 150,
             ]);
+
+        if ($forceDownload) {
+            return $pdf->download($nomFichier . '.pdf');
+        }
 
         return $pdf->stream($nomFichier . '.pdf');
     }

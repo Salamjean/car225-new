@@ -1,237 +1,89 @@
-<header class="mdc-top-app-bar" style="background-color: #e94f1b">
-  <div class="mdc-top-app-bar__row">
-    <div class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start">
-      <button
-        class="material-icons mdc-top-app-bar__navigation-icon mdc-icon-button sidebar-toggler text-white">menu</button>
-    </div>
-    <div class="mdc-top-app-bar__section mdc-top-app-bar__section--align-end mdc-top-app-bar__section-right">
-      <!-- Version desktop (cachée sur mobile) -->
-      <div class="menu-button-container menu-profile d-none d-md-block">
-        <button class="mdc-button mdc-menu-button">
-          <span class="d-flex align-items-center">
-            <span class="figure"
-              style="width:40px; height:40px; border-radius:50%; background:#0e914b; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; overflow: hidden;">
-              @php
-                $user = Auth::guard('web')->user();
-                $initials = strtoupper(substr($user->name, 0, 1) . substr($user->prenom, 0, 1));
-              @endphp
-              @if($user->photo_profile_path)
-                <img src="{{ asset('storage/' . $user->photo_profile_path) }}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
-              @else
-                {{ $initials }}
-              @endif
-            </span>
-            <span class="user-name text-white ml-2"> {{ $user->name }} {{ $user->prenom }}</span>
-            <span class="ml-2 text-white">&#9662;</span>
-          </span>
+<header class="fixed top-0 right-0 left-0 md:left-64 z-40 px-4 sm:px-8 py-4 shadow-lg shadow-[#e94f1b]/10" style="background-color: #e94f1b !important;">
+    @php
+        $user = Auth::guard('web')->user();
+        $initials = strtoupper(substr($user->name, 0, 1) . substr($user->prenom, 0, 1));
+    @endphp
+    <div class="flex items-center justify-between gap-4">
+        <!-- Mobile Toggle -->
+        <button id="sidebar-toggle" class="md:hidden w-11 h-11 flex items-center justify-center bg-white/10 rounded-xl text-white">
+            <i class="fas fa-bars"></i>
         </button>
-        <div class="mdc-menu mdc-menu-surface" tabindex="-1">
-          <ul class="mdc-list" role="menu" aria-hidden="true" aria-orientation="vertical">
-            <li class="mdc-list-item" role="menuitem">
-              <a href="{{route('user.profile')}}" class="d-flex align-items-center w-100 text-decoration-none text-dark">
-                <i class="mdi mdi-account mr-2" style="color: #193561; font-size: 1.5rem;"></i>
-                <span>Mon Profil</span>
-              </a>
-            </li>
-            <li class="mdc-list-item" role="menuitem">
-              <a href="{{route('user.logout')}}" class="d-flex align-items-center w-100 text-decoration-none text-dark">
-                <i class="mdi mdi-logout mr-2" style="color: #193561; font-size: 1.5rem;"></i>
-                <span>Déconnexion</span>
-              </a>
-            </li>
-          </ul>
-        </div>
-      </div>
 
-      <!-- Version mobile (affichée uniquement sur mobile) -->
-      <div class="d-md-none mobile-menu-container">
-        <button class="mdc-icon-button text-white mobile-profile-toggle">
-          <span class="figure"
-            style="width:35px; height:35px; border-radius:50%; background:#0e914b; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:14px;">
-            {{ $initials }}
-          </span>
-        </button>
-        <div class="mobile-menu mdc-menu mdc-menu-surface" tabindex="-1">
-          <ul class="mdc-list" role="menu" aria-hidden="true" aria-orientation="vertical">
-            <li class="mobile-user-info mdc-list-item" style="pointer-events: none;">
-              <div class="d-flex align-items-center w-100">
-                <span class="figure mr-2"
-                  style="width:30px; height:30px; border-radius:50%; background:#0e914b; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:12px;">
-                  {{ $initials }}
-                </span>
-                <span class="user-name">{{ $user->name }} {{ $user->prenom }}</span>
-              </div>
-            </li>
-            <li class="mdc-list-item" role="menuitem">
-              <a href="{{route('user.profile')}}"
-                class="d-flex align-items-center w-100 text-decoration-none text-dark py-2">
-                <i class="mdi mdi-account mr-2" style="color: #193561; font-size: 1.5rem;"></i>
-                <span>Mon Profil</span>
-              </a>
-            </li>
-            <li role="separator" class="mdc-list-divider"></li>
-            <li class="mdc-list-item" role="menuitem">
-              <a href="{{route('user.logout')}}"
-                class="d-flex align-items-center w-100 text-decoration-none text-dark py-2">
-                <i class="mdi mdi-logout mr-2" style="color: #193561; font-size: 1.5rem;"></i>
-                <span>Déconnexion</span>
-              </a>
-            </li>
-          </ul>
+        <div class="flex-1"></div>
+
+        <!-- Right Side Actions -->
+        <div class="flex items-center gap-3 sm:gap-6">
+            <!-- Notifications -->
+            <button class="relative w-11 h-11 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-xl transition-all group">
+                <i class="far fa-bell text-white group-hover:scale-110 transition-all"></i>
+                <span class="absolute top-3 right-3 w-2 h-2 bg-white rounded-full border-2 border-[#e94f1b]"></span>
+            </button>
+
+            <!-- User Profile & Logout Group -->
+            <div class="flex items-center gap-3 pl-3 sm:pl-6 border-l border-white/20 h-11">
+                <div class="text-right hidden sm:block">
+                    <p class="text-xs font-black text-white tracking-tight leading-none mb-1 uppercase">{{ $user->name }}</p>
+                    <p class="text-[10px] font-bold text-white/70 uppercase tracking-widest leading-none">Voyageur</p>
+                </div>
+                <div class="mdc-menu-surface--anchor relative">
+                    <button id="profile-dropdown-btn" class="w-11 h-11 rounded-xl bg-white flex items-center justify-center text-[#e94f1b] font-black overflow-hidden shadow-lg transition-transform hover:scale-105 active:scale-95">
+                        @if($user->photo_profile_path)
+                            <img src="{{ asset('storage/' . $user->photo_profile_path) }}" alt="Profile" class="w-full h-full object-cover">
+                        @else
+                            {{ $initials }}
+                        @endif
+                    </button>
+                    <!-- Dropdown Menu -->
+                    <div id="profile-dropdown" class="absolute right-0 mt-3 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                        <a href="{{ route('user.profile') }}" class="flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-user-circle text-[#e94f1b]"></i> Mon Profil
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Logout Icon -->
+                <a href="{{ route('user.logout') }}" class="w-10 h-10 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-xl transition-all group text-white ms-2" title="Déconnexion">
+                    <i class="fas fa-power-off text-sm group-hover:scale-110 transition-all"></i>
+                </a>
+            </div>
         </div>
-      </div>
     </div>
-  </div>
 </header>
 
-<style>
-  .mdc-menu-button .ml-2 {
-    font-size: 0.9rem;
-    transition: transform 0.3s ease;
-  }
-
-  .mdc-menu-button:focus .ml-2 {
-    transform: rotate(180deg);
-  }
-
-  /* Styles pour la version mobile */
-  .mobile-menu-container {
-    position: relative;
-  }
-
-  .mobile-profile-toggle {
-    padding: 8px;
-  }
-
-  .mobile-user-info {
-    background-color: #f8f9fa;
-    border-bottom: 1px solid #dee2e6;
-    min-height: 60px;
-  }
-
-  .mobile-menu .mdc-list-item {
-    min-height: 48px;
-    display: flex;
-    align-items: center;
-  }
-
-  /* Ajustement pour les écrans très petits */
-  @media (max-width: 576px) {
-    .mobile-menu .mdc-list-item {
-      padding: 12px 16px;
-    }
-
-    .mobile-menu {
-      min-width: 200px;
-      right: 0 !important;
-      left: auto !important;
-    }
-
-    .mobile-user-info .user-name {
-      font-size: 0.9rem;
-      font-weight: 500;
-    }
-  }
-
-  /* Correction pour l'alignement des menus */
-  .mdc-menu-surface {
-    z-index: 1000;
-  }
-
-  .mobile-menu .mdc-list {
-    padding: 0;
-  }
-
-  /* Assurer que les menus s'affichent à droite */
-  .mdc-menu {
-    position: absolute;
-    right: 0;
-    top: 100%;
-    left: auto !important;
-  }
-
-  .menu-button-container {
-    position: relative;
-  }
-
-  /* Forcer l'alignement à droite pour tous les menus */
-  .mdc-menu-surface--open {
-    right: 0 !important;
-    left: auto !important;
-  }
-</style>
-
 <script>
-  // Initialisation du menu mobile
-  document.addEventListener('DOMContentLoaded', function () {
-    // Menu desktop
-    const menuButton = document.querySelector('.mdc-menu-button');
-    const menu = document.querySelector('.mdc-menu');
+    document.addEventListener('DOMContentLoaded', function() {
+        // Sidebar Toggle
+        const toggle = document.getElementById('sidebar-toggle');
+        const sidebar = document.getElementById('main-sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
 
-    // Menu mobile
-    const mobileMenuButton = document.querySelector('.mobile-profile-toggle');
-    const mobileMenu = document.querySelector('.mobile-menu');
+        if(toggle && sidebar && overlay) {
+            toggle.addEventListener('click', () => {
+                sidebar.classList.toggle('-translate-x-full');
+                overlay.classList.toggle('hidden');
+            });
 
-    // Initialiser le menu desktop
-    if (menuButton && menu) {
-      const menuInstance = new mdc.menu.MDCMenu(menu);
-      // Forcer l'ancrage en bas à droite
-      menuInstance.setAnchorCorner(mdc.menu.Corner.BOTTOM_END);
-      menuInstance.setAnchorMargin({ top: 0, bottom: 0, left: 0, right: 0 });
-
-      menuButton.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        menuInstance.open = !menuInstance.open;
-      });
-    }
-
-    // Initialiser le menu mobile
-    if (mobileMenuButton && mobileMenu) {
-      const mobileMenuInstance = new mdc.menu.MDCMenu(mobileMenu);
-      // Forcer l'ancrage en bas à droite
-      mobileMenuInstance.setAnchorCorner(mdc.menu.Corner.BOTTOM_END);
-      mobileMenuInstance.setAnchorMargin({ top: 0, bottom: 0, left: 0, right: 0 });
-
-      mobileMenuButton.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        mobileMenuInstance.open = !mobileMenuInstance.open;
-      });
-
-      // Fermer le menu quand on clique sur un lien
-      mobileMenu.addEventListener('click', (e) => {
-        if (e.target.closest('a')) {
-          setTimeout(() => {
-            mobileMenuInstance.open = false;
-          }, 100);
+            overlay.addEventListener('click', () => {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            });
         }
-      });
-    }
 
-    // Fermer les menus quand on clique ailleurs
-    document.addEventListener('click', function (e) {
-      if (menu && menuButton && !menuButton.contains(e.target) && !menu.contains(e.target)) {
-        const menuInstance = mdc.menu.MDCMenu.attachTo(menu);
-        menuInstance.open = false;
-      }
-      if (mobileMenu && mobileMenuButton && !mobileMenuButton.contains(e.target) && !mobileMenu.contains(e.target)) {
-        const mobileMenuInstance = mdc.menu.MDCMenu.attachTo(mobileMenu);
-        mobileMenuInstance.open = false;
-      }
+        // Profile Dropdown
+        const profileBtn = document.getElementById('profile-dropdown-btn');
+        const profileDropdown = document.getElementById('profile-dropdown');
+
+        if(profileBtn && profileDropdown) {
+            profileBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                profileDropdown.classList.toggle('hidden');
+            });
+
+            document.addEventListener('click', (e) => {
+                if(!profileDropdown.contains(e.target)) {
+                    profileDropdown.classList.add('hidden');
+                }
+            });
+        }
     });
-  });
-
-  // Correction supplémentaire pour forcer l'alignement à droite
-  function fixMenuPosition() {
-    const menus = document.querySelectorAll('.mdc-menu-surface');
-    menus.forEach(menu => {
-      menu.style.left = 'auto';
-      menu.style.right = '0';
-    });
-  }
-
-  // Appliquer la correction après le chargement et après chaque ouverture de menu
-  document.addEventListener('DOMContentLoaded', fixMenuPosition);
-  setTimeout(fixMenuPosition, 100);
 </script>

@@ -1,183 +1,67 @@
-<aside class="mdc-drawer mdc-drawer--dismissible mdc-drawer--open" style="background-color: #ffeaca">
-    <div class="mdc-drawer__header">
-        <a href="{{ route('user.dashboard') }}" class="brand-logo">
-            @auth
-                @if (Auth::user()->photo_profile_path)
-                    <img src="{{ asset('storage/' . Auth::user()->photo_profile_path) }}"
-                        style="width: 50%; margin-left: 50px; border-radius: 50%; object-fit: cover;" alt="Photo de profil">
-                @else
-                    <div style="width: 50%; margin-left: 50px; display: flex; align-items: center; justify-content: center;">
-                        <div
-                            style="width: 100px; height: 100px; border-radius: 50%; background: linear-gradient(to right, #e94f1b, #d94818); display: flex; align-items: center; justify-content: center; color: white; font-size: 40px; font-weight: bold;">
-                            {{ strtoupper(substr(Auth::user()->prenom, 0, 1)) }}{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
-                        </div>
-                    </div>
-                @endif
-            @else
-                <img src="{{ asset('assetsPoster/assets/images/logo_car225.png') }}" style="width: 50%; margin-left: 50px" alt="logo">
-            @endauth
-        </a>
-    </div>
-    <div class="mdc-drawer__content">
-        <div class="user-info">
-            <p class="name text-center text-black"> {{ Auth::guard('web')->user()->name }}
-                {{ Auth::guard('web')->user()->prenom }}</p>
-            <p class="email text-center text-black">{{ Auth::guard('web')->user()->email }}</p>
+<aside id="main-sidebar" class="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-100 z-50 transition-transform duration-300 transform md:translate-x-0 -translate-x-full">
+    <div class="flex flex-col h-full">
+        <!-- Logo Section -->
+        <div class="p-8">
+            <a href="{{ route('user.dashboard') }}" class="flex items-center gap-3">
+                <div class="w-10 h-10 flex items-center justify-center">
+                    <img src="{{ asset('assetsPoster/assets/images/Car225_favicon.png') }}" alt="Logo" class="w-full h-full object-contain">
+                </div>
+                <span class="text-xl font-black text-[#1A1D1F] italic tracking-tighter">CAR225</span>
+            </a>
         </div>
-        <div class="mdc-list-group">
-            <nav class="mdc-list mdc-drawer-menu">
-                <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-drawer-link" href="{{ route('user.dashboard') }}">
-                        <i class="fas fa-home mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
-                        Tableau de bord
-                    </a>
-                </div>
-                <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-drawer-link" href="{{ route('user.wallet.index') }}">
-                        <i class="fas fa-wallet mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
-                        Compte
-                    </a>
-                </div>
-               
-                {{-- <div class="mdc-list-item mdc-drawer-item">
-              <a class="mdc-drawer-link" href="#">
-                <i class="material-icons mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true">save</i>
-                Demandes 
-              </a>
-            </div> --}}
-                {{-- <div class="mdc-list-item mdc-drawer-item">
-              <a class="mdc-drawer-link" href="{{route('user.permanent-personnel.create')}}">
-                <i class="material-icons mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true">dashboard</i>
-                Personnel permanent
-              </a>
-            </div> --}}
-                {{-- <div class="mdc-list-item mdc-drawer-item">
-              <a class="mdc-drawer-link" href="#">
-                <i class="material-icons mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true">dashboard</i>
-                Historiques des visites
-              </a>
-            </div> --}}
-                <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel"
-                        data-target="ui-sub-perso">
-                        <i class="fas fa-file-signature mdc-list-item__start-detail mdc-drawer-item-icon"
-                            aria-hidden="true"></i>
-                        Réservation
-                        <i class="mdc-drawer-arrow material-icons">chevron_right</i>
-                    </a>
-                    <div class="mdc-expansion-panel" id="ui-sub-perso">
-                        <nav class="mdc-list mdc-drawer-submenu">
-                            <div class="mdc-list-item mdc-drawer-item">
-                                <a class="mdc-drawer-link" href="{{route('reservation.create')}}">
-                                    Réserver
-                                </a>
-                            </div>
-                            <div class="mdc-list-item mdc-drawer-item">
-                                <a class="mdc-drawer-link" href="{{route('reservation.index')}}">
-                                    Liste
-                                </a>
-                            </div>
-                        </nav>
-                    </div>
-                </div>
 
-                <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-drawer-link" href="{{ route('signalement.create') }}">
-                        <i class="fas fa-exclamation-triangle mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
-                       Déclarer un incident
+        <!-- Navigation Section -->
+        <div class="flex-1 overflow-y-auto px-4 py-4 space-y-8">
+            <!-- Main Menu -->
+            <div>
+                <p class="px-4 text-[10px] font-bold text-gray-500/80 uppercase tracking-[0.2em] mb-4">Menu Principal</p>
+                <nav class="space-y-1">
+                    <a href="{{ route('user.dashboard') }}" class="flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all group {{ request()->routeIs('user.dashboard') ? 'bg-[#e94f1b]/5 text-[#e94f1b]' : 'text-[#1A1D1F]/80 hover:bg-gray-50 hover:text-[#1A1D1F]' }}">
+                        <i class="fas fa-th-large text-sm {{ request()->routeIs('user.dashboard') ? 'text-[#e94f1b]' : 'group-hover:text-[#1A1D1F]' }}"></i>
+                        <span class="text-sm font-bold tracking-tight">Tableau de bord</span>
                     </a>
-                </div>
-                {{-- <div class="mdc-list-item mdc-drawer-item">
-              <a class="mdc-drawer-link" href="{{route('demande-recuperation.create')}}">
-                <i class="fas fa-truck-pickup mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
-                Recupération 
-              </a>
-            </div> --}}
-                {{-- <div class="mdc-list-item mdc-drawer-item">
-              <a class="mdc-drawer-link" href="#">
-                <i class="material-icons mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true">home</i>
-                Mes factures
-              </a>
-            </div> --}}
-                <!-- <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel"
-                        data-target="ui-sub-agent">
-                        <i class="material-icons mdc-list-item__start-detail mdc-drawer-item-icon"
-                            aria-hidden="true">home</i>
-                        Depot/Recupération
-                        <i class="mdc-drawer-arrow material-icons">chevron_right</i>
+                    <a href="{{ route('user.wallet.index') }}" class="flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all group {{ request()->routeIs('user.wallet.*') ? 'bg-[#e94f1b]/5 text-[#e94f1b]' : 'text-[#1A1D1F]/80 hover:bg-gray-50 hover:text-[#1A1D1F]' }}">
+                        <i class="fas fa-wallet text-sm {{ request()->routeIs('user.wallet.*') ? 'text-[#e94f1b]' : 'group-hover:text-[#1A1D1F]' }}"></i>
+                        <span class="text-sm font-bold tracking-tight">Portefeuille</span>
                     </a>
-                    <div class="mdc-expansion-panel" id="ui-sub-agent">
-                        <nav class="mdc-list mdc-drawer-submenu">
-                            <div class="mdc-list-item mdc-drawer-item">
-                                <a class="mdc-drawer-link" href="#">
-                                    Demande
-                                </a>
-                            </div>
-                            <div class="mdc-list-item mdc-drawer-item">
-                                <a class="mdc-drawer-link" href="#">
-                                    Liste
-                                </a>
-                            </div>
-                            {{-- <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-drawer-link" href="#">
-                      Présences
+                    <a href="{{ route('reservation.create') }}" class="flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all group {{ request()->routeIs('reservation.create') ? 'bg-[#e94f1b]/5 text-[#e94f1b]' : 'text-[#1A1D1F]/80 hover:bg-gray-50 hover:text-[#1A1D1F]' }}">
+                        <i class="fas fa-plus-circle text-sm {{ request()->routeIs('reservation.create') ? 'text-[#e94f1b]' : 'group-hover:text-[#1A1D1F]' }}"></i>
+                        <span class="text-sm font-bold tracking-tight">Réserver un voyage</span>
                     </a>
-                  </div> --}}
-                        </nav>
-                    </div>
-                </div> -->
-                {{-- <div class="mdc-list-item mdc-drawer-item">
-              <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel" data-target="ui-sub-menu">
-                <i class="material-icons mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true">home</i>
-                Structure
-                <i class="mdc-drawer-arrow material-icons">chevron_right</i>
-              </a>
-              <div class="mdc-expansion-panel" id="ui-sub-menu">
-                <nav class="mdc-list mdc-drawer-submenu">
-                  <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-drawer-link" href="#">
-                      Ajout Structure
+                    <a href="{{ route('reservation.index') }}" class="flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all group {{ request()->routeIs('reservation.index') ? 'bg-[#e94f1b]/5 text-[#e94f1b]' : 'text-[#1A1D1F]/80 hover:bg-gray-50 hover:text-[#1A1D1F]' }}">
+                        <i class="fas fa-ticket-alt text-sm {{ request()->routeIs('reservation.index') ? 'text-[#e94f1b]' : 'group-hover:text-[#1A1D1F]' }}"></i>
+                        <span class="text-sm font-bold tracking-tight">Mes Billets</span>
                     </a>
-                  </div>
-                  <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-drawer-link" href="#">
-                      Liste Structure
-                    </a>
-                  </div>
-                  <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-drawer-link" href="#">
-                      Structure desactivées
-                    </a>
-                  </div>
                 </nav>
-              </div>
-            </div> --}}
-                {{-- <div class="mdc-list-item mdc-drawer-item">
-              <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel" data-target="ui-sub-code">
-                <i class="material-icons mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true">home</i>
-                Code QR Accès
-                <i class="mdc-drawer-arrow material-icons">chevron_right</i>
-              </a>
-              <div class="mdc-expansion-panel" id="ui-sub-code">
-                <nav class="mdc-list mdc-drawer-submenu">
-                  <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-drawer-link" href="#">
-                      Ajouter
+            </div>
+
+            <!-- Analysis & Incidents -->
+            <div>
+                <p class="px-4 text-[10px] font-bold text-gray-500/80 uppercase tracking-[0.2em] mb-4">Signalements</p>
+                <nav class="space-y-1">
+                    <a href="{{ route('signalement.create') }}" class="flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all group {{ request()->routeIs('signalement.create') ? 'bg-[#e94f1b]/5 text-[#e94f1b]' : 'text-[#1A1D1F]/80 hover:bg-gray-50 hover:text-[#1A1D1F]' }}">
+                        <i class="fas fa-exclamation-triangle text-sm {{ request()->routeIs('signalement.create') ? 'text-[#e94f1b]' : 'group-hover:text-[#1A1D1F]' }}"></i>
+                        <span class="text-sm font-bold tracking-tight">Déclarer incident</span>
                     </a>
-                  </div>
-                  <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-drawer-link" href="#">
-                      Code QR accès
+                    <a href="{{ route('user.support.index') }}" class="flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all group {{ request()->routeIs('user.support.*') ? 'bg-[#e94f1b]/5 text-[#e94f1b]' : 'text-[#1A1D1F]/80 hover:bg-gray-50 hover:text-[#1A1D1F]' }}">
+                        <i class="fas fa-headset text-sm {{ request()->routeIs('user.support.*') ? 'text-[#e94f1b]' : 'group-hover:text-[#1A1D1F]' }}"></i>
+                        <span class="text-sm font-bold tracking-tight">Support Client</span>
                     </a>
-                  </div>
-                  <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-drawer-link" href="#">
-                      Structure desactivées
-                    </a>
-                  </div>
                 </nav>
-              </div> --}}
+            </div>
+
+
         </div>
     </div>
 </aside>
+
+<!-- Overlay for mobile -->
+<div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-40 hidden md:hidden"></div>
+
+<style>
+    @media (max-width: 768px) {
+        #main-sidebar.active {
+            transform: translateX(0);
+        }
+    }
+</style>

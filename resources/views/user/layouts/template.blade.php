@@ -1,65 +1,82 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr" class="bg-[#F8F9FA]">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <meta name="csrf-token" content="{{ csrf_token() }}">
-  <title>Espace - User</title>
-  <!-- plugins:css -->
-  <link rel="stylesheet" href="{{asset('assetsPoster/assets/vendors/mdi/css/materialdesignicons.min.css')}}">
-  <link rel="stylesheet" href="{{asset('assetsPoster/assets/vendors/css/vendor.bundle.base.css')}}">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- endinject -->
-  <!-- Plugin css for this page -->
-  <link rel="stylesheet" href="{{asset('assetsPoster/assets/vendors/flag-icon-css/css/flag-icon.min.css')}}">
-  <link rel="stylesheet" href="{{asset('assetsPoster/assets/vendors/jvectormap/jquery-jvectormap.css')}}">
-  <!-- End plugin css for this page -->
-  <!-- Layout styles -->
-  <link rel="stylesheet" href="{{asset('assetsPoster/assets/css/demo/style.css')}}">
-  <!-- End layout styles -->
-  <link rel="shortcut icon" href="{{asset('assetsPoster/assets/images/Car225_favicon.png')}}" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Espace Voyageur</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ asset('assetsPoster/assets/vendors/mdi/css/materialdesignicons.min.css') }}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="shortcut icon" href="{{ asset('assetsPoster/assets/images/Car225_favicon.png') }}" />
+
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #e5e7eb;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #d1d5db;
+        }
+    </style>
+    
+    @stack('styles')
 </head>
 
-<body>
-  <script src="{{asset('assetsPoster/assets/js/preloader.js')}}"></script>
-  <div class="body-wrapper">
-    <!-- partial:partials/_sidebar.html -->
+<body class="bg-[#F8F9FA] min-h-screen">
+    
+    <!-- Sidebar -->
     @include('user.layouts.sidebar')
-    <!-- partial -->
-    <div class="main-wrapper mdc-drawer-app-content">
-      <!-- partial:partials/_navbar.html -->
-      @include('user.layouts.navbar')
-      <!-- partial -->
-      <div class="page-wrapper mdc-toolbar-fixed-adjust">
-        @yield('content')
-      </div>
+
+    <!-- Main Content Area -->
+    <div class="md:pl-64 flex flex-col min-h-screen">
+        <!-- Navbar -->
+        @include('user.layouts.navbar')
+
+        <!-- Page Content -->
+        <main class="flex-1 pt-24 pb-12">
+            <div class="container mx-auto px-4 sm:px-8">
+                @yield('content')
+            </div>
+        </main>
+
+        <!-- Footer (Simple) -->
+        <footer class="py-6 px-8 text-center sm:text-left border-t border-gray-100">
+            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                &copy; {{ date('Y') }} CAR225. TOUS DROITS RÉSERVÉS.
+            </p>
+        </footer>
     </div>
-  </div>
-  <!-- plugins:js -->
-  <script src="{{asset('assetsPoster/assets/vendors/js/vendor.bundle.base.js')}} "></script>
-  <!-- endinject -->
-  <!-- Plugin js for this page-->
-  <script src="{{asset('assetsPoster/assets/vendors/chartjs/Chart.min.js')}}"></script>
-  <script src="{{asset('assetsPoster/assets/vendors/jvectormap/jquery-jvectormap.min.js')}}"></script>
-  <script src="{{asset('assetsPoster/assets/vendors/jvectormap/jquery-jvectormap-world-mill-en.js')}}"></script>
-  <!-- End plugin js for this page-->
-  <!-- inject:js -->
-  <script src="{{asset('assetsPoster/assets/js/material.js')}}"></script>
-  <script src="{{asset('assetsPoster/assets/js/misc.js')}}"></script>
-  <!-- endinject -->
-  <!-- Custom js for this page-->
-  <script src="{{asset('assetsPoster/assets/js/dashboard.js')}}"></script>
-  <!-- End custom js for this page-->
 
-  <!-- SweetAlert2 -->
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-  <!-- Scripts personnalisés des pages -->
-  @stack('scripts')
+    <!-- Scripts Core -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Chart.js and other plugins used in subpages -->
+    @stack('scripts')
 </body>
 
 </html>

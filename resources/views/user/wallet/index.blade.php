@@ -7,8 +7,8 @@
         <!-- Header -->
         <div class="mb-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div class="flex items-center gap-5">
-                <div class="w-16 h-16 bg-gradient-to-tr from-orange-600 to-orange-400 rounded-2xl shadow-lg flex items-center justify-center text-white text-2xl font-black">
-                    <i class="fas fa-wallet"></i>
+                <div class="w-16 h-16 bg-white rounded-2xl shadow-lg flex items-center justify-center p-2">
+                    <img src="{{ asset('assetsPoster/assets/images/logo_car225.png') }}" alt="CAR225" class="w-full h-full object-contain">
                 </div>
                 <div>
                     <h1 class="text-3xl font-black text-gray-900 tracking-tight">CarPAY</h1>
@@ -59,26 +59,20 @@
 
             <!-- Carte Solde -->
             <div>
-                <div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 shadow-2xl text-white relative overflow-hidden h-full flex flex-col justify-center">
-                    <div class="absolute top-0 right-0 p-4 opacity-10">
-                        <i class="fas fa-coins text-9xl text-white"></i>
+                <div class="relative bg-gray-900 rounded-3xl p-8 shadow-2xl text-white overflow-hidden h-full flex flex-col justify-center border border-white/5">
+                    <!-- Background Illustration -->
+                    <div class="absolute inset-0 z-0 opacity-20">
+                         <img src="{{ asset('assetsPoster/assets/images/logo_car225.png') }}" alt="" class="w-full h-full object-cover scale-150 rotate-12 blur-[2px]">
                     </div>
+                    <!-- Overlay Gradient -->
+                    <div class="absolute inset-0 bg-gradient-to-br from-gray-900 via-transparent to-[#e94f1b]/20 z-10"></div>
                     
-                    <p class="text-gray-400 text-sm font-bold uppercase tracking-widest mb-2">Solde Actuel</p>
-                    <h2 class="text-5xl font-black mb-6 tracking-tight">
-                        {{ number_format($user->solde, 0, ',', ' ') }} <span class="text-2xl text-gray-400">FCFA</span>
-                    </h2>
+                    <div class="relative z-20">
+                        <p class="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] mb-2 opacity-70">Solde Actuel</p>
+                        <h2 class="text-5xl font-black mb-6 tracking-tight flex items-baseline gap-2">
+                            {{ number_format($user->solde, 0, ',', ' ') }} <span class="text-xl font-bold text-[#e94f1b]">FCFA</span>
+                        </h2>
 
-                    <div class="mt-auto pt-6 border-t border-gray-700">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center">
-                                <i class="fas fa-user text-gray-300"></i>
-                            </div>
-                            <div>
-                                <p class="font-bold">{{ $user->name }} {{ $user->prenom }}</p>
-                                <p class="text-xs text-gray-400">{{ $user->email }}</p>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>

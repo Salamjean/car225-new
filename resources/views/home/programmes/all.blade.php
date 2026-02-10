@@ -275,7 +275,9 @@
         const typeRangeConfig = {
             '2x2': { placesGauche: 2, placesDroite: 2, description: "2 places par côté" },
             '2x3': { placesGauche: 2, placesDroite: 3, description: "2 places à gauche, 3 à droite" },
-            '2x4': { placesGauche: 2, placesDroite: 4, description: "2 places à gauche, 4 à droite" }
+            '2x4': { placesGauche: 2, placesDroite: 4, description: "2 places à gauche, 4 à droite" },
+            'Gamme Prestige': { placesGauche: 2, placesDroite: 2, description: "Catégorie Prestige (2+2)" },
+            'Gamme Standard': { placesGauche: 2, placesDroite: 3, description: "Catégorie Standard (2+3)" }
         };
 
         window.updateModalContent = async function(vehicleId, dateVoyage, programId) {
@@ -388,8 +390,13 @@
         }
 
         function generatePlacesVisualization(vehicle, reservedSeats = []) {
-            const config = typeRangeConfig[vehicle.type_range];
-            if (!config) return '<div class="p-4 text-red-600">Configuration inconnue</div>';
+            let config = typeRangeConfig[vehicle.type_range];
+            
+            // Fallback pour les configurations inconnues (par défaut 2x2)
+            if (!config) {
+                config = { placesGauche: 2, placesDroite: 2, description: "Configuration Standard" };
+                console.warn(`Configuration de véhicule inconnue: ${vehicle.type_range}. Utilisation du mode par défaut 2x2.`);
+            }
 
             const { placesGauche, placesDroite } = config;
             const placesParRanger = placesGauche + placesDroite;

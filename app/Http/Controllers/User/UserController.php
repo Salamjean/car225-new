@@ -44,6 +44,20 @@ class UserController extends Controller
             ->take(1)
             ->get();
 
+        // 3. Données pour le graphique (6 derniers mois)
+        $chartData = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $month = now()->subMonths($i);
+            $count = Reservation::where('user_id', $user->id)
+                ->where('statut', 'confirmee')
+                ->whereYear('date_voyage', $month->year)
+                ->whereMonth('date_voyage', $month->month)
+                ->count();
+            
+            $chartData['labels'][] = $month->translatedFormat('M');
+            $chartData['values'][] = $count;
+        }
+
         return view('user.dashboard', compact(
             'user',
             'totalReservations',
@@ -51,7 +65,8 @@ class UserController extends Controller
             'activeReservations',
             'totalSignalements',
             'recentReservations',
-            'recentSignalements'
+            'recentSignalements',
+            'chartData'
         ));
     }
 

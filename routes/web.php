@@ -335,6 +335,13 @@ Route::middleware('auth')->prefix('user')->group(function () {
         Route::get('/create', [SignalementController::class, 'create'])->name('signalement.create');
         Route::post('/store', [SignalementController::class, 'store'])->name('signalement.store');
     });
+
+    // Support Client
+    Route::prefix('support')->group(function () {
+        Route::get('/', [App\Http\Controllers\User\SupportController::class, 'index'])->name('user.support.index');
+        Route::get('/create', [App\Http\Controllers\User\SupportController::class, 'create'])->name('user.support.create');
+        Route::post('/store', [App\Http\Controllers\User\SupportController::class, 'store'])->name('user.support.store');
+    });
 });
 
 // Paiement CinetPay (Hors Auth pour le webhook)
