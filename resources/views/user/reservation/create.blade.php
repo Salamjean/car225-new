@@ -166,14 +166,16 @@
                                                         $statusClass = $horaire['reserved_count'] >= $horaire['total_seats'] ? 'bg-red-50 border-red-200 text-red-700' : 
                                                                       ($occupancyRate > 80 ? 'bg-orange-50 border-orange-200 text-orange-700' : 'bg-green-50 border-green-200 text-green-700');
                                                     @endphp
-                                                    <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl border {{ $statusClass }} transition-all hover:scale-105 shadow-sm">
-                                                        <span class="font-black text-sm">{{ substr($horaire['heure_depart'], 0, 5) }}</span>
-                                                        <div class="w-px h-3 bg-current opacity-20"></div>
-                                                        <div class="flex items-center gap-1">
-                                                            <i class="fas fa-couch text-[10px]"></i>
-                                                            <span class="text-[10px] font-black">{{ $horaire['reserved_count'] }}/{{ $horaire['total_seats'] }}</span>
-                                                        </div>
-                                                    </div>
+                                                    <div onclick="showVehicleDetails('{{ $horaire['vehicule_id'] }}', '{{ $horaire['id'] }}', '{{ $searchParams['date_depart'] }}')" 
+                                                         class="flex items-center gap-2 px-3 py-1.5 rounded-xl border {{ $statusClass }} transition-all hover:scale-110 active:scale-95 shadow-sm cursor-pointer group hover:shadow-md" 
+                                                         title="Cliquez pour voir les places disponibles">
+                                                         <span class="font-black text-sm">{{ substr($horaire['heure_depart'], 0, 5) }}</span>
+                                                         <div class="w-px h-3 bg-current opacity-20"></div>
+                                                         <div class="flex items-center gap-1">
+                                                             <i class="fas fa-couch text-[10px] group-hover:text-[#e94f1b]"></i>
+                                                             <span class="text-[10px] font-black">{{ $horaire['reserved_count'] }}/{{ $horaire['total_seats'] }}</span>
+                                                         </div>
+                                                     </div>
                                                 @endforeach
                                             </div>
                                         </div>
@@ -1997,7 +1999,7 @@ function onAllerRetourChoiceChange() {
             try {
                 // CORRECTION: Passer l'ID et la date dans la route
                 const url = "{{ route('user.reservation.vehicle', ':id') }}".replace(':id', vehicleId);
-                const response = await fetch(url + `?date=${encodeURIComponent(dateVoyage)}`);
+                const response = await fetch(url + `?date=${encodeURIComponent(dateVoyage)}&program_id=${programId}`);
                 const data = await response.json();
                 if (!data.success) {
                     throw new Error(data.error || 'Véhicule non trouvé');
@@ -2024,9 +2026,10 @@ function onAllerRetourChoiceChange() {
         // FONCTION 2: Générer la visualisation des places
         // ============================================
         function generatePlacesVisualization(vehicle) {
-            const config = typeRangeConfig[vehicle.type_range];
+            let config = typeRangeConfig[vehicle.type_range];
             if (!config) {
-                return '<p style="color: #ef4444;">Configuration non reconnue</p>';
+                config = { placesGauche: 2, placesDroite: 2 };
+                console.warn(`Configuration de véhicule inconnue: ${vehicle.type_range}. Utilisation du mode par défaut 2x2.`);
             }
             const placesGauche = config.placesGauche;
             const placesDroite = config.placesDroite;

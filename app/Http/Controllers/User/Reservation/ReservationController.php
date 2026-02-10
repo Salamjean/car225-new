@@ -301,6 +301,7 @@ class ReservationController extends Controller
                     'heure_arrive' => $p->heure_arrive,
                     'reserved_count' => $reservationCounts[$p->id] ?? 0,
                     'total_seats' => $p->vehicule ? $p->vehicule->nombre_place : 70,
+                    'vehicule_id' => $p->vehicule_id,
                 ];
             })->values();
             
@@ -318,6 +319,7 @@ class ReservationController extends Controller
                     'id' => $p->id,
                     'heure_depart' => $p->heure_depart,
                     'heure_arrive' => $p->heure_arrive,
+                    'vehicule_id' => $p->vehicule_id,
                 ];
             })->values();
             
@@ -405,18 +407,24 @@ class ReservationController extends Controller
         $reservedSeats = [];
         if ($dateVoyage) {
             $formattedDate = date('Y-m-d', strtotime($dateVoyage));
+            $programId = $request->get('program_id');
 
-            // Trouver les programmes associés à ce véhicule pour cette date
-            $programmes = Programme::where('vehicule_id', $vehicule->id)
-                ->where('statut', 'actif')
-                ->where(function($query) use ($formattedDate) {
-                    $query->whereRaw('DATE(date_depart) <= ?', [$formattedDate])
-                          ->where(function($subQ) use ($formattedDate) {
-                              $subQ->whereNull('date_fin')
-                                   ->orWhere('date_fin', '>=', $formattedDate);
-                          });
-                })
-                ->get();
+            if ($programId) {
+                // Si on a un program_id spécifique, on ne prend que celui-là
+                $programmes = Programme::where('id', $programId)->get();
+            } else {
+                // Trouver les programmes associés à ce véhicule pour cette date
+                $programmes = Programme::where('vehicule_id', $vehicule->id)
+                    ->where('statut', 'actif')
+                    ->where(function($query) use ($formattedDate) {
+                        $query->whereRaw('DATE(date_depart) <= ?', [$formattedDate])
+                              ->where(function($subQ) use ($formattedDate) {
+                                  $subQ->whereNull('date_fin')
+                                       ->orWhere('date_fin', '>=', $formattedDate);
+                              });
+                    })
+                    ->get();
+            }
 
             // Pour chaque programme, récupérer les places réservées
             foreach ($programmes as $programme) {
