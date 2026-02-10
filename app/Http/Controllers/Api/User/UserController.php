@@ -27,8 +27,10 @@ class UserController extends Controller
                 'name' => $user->name,
                 'prenom' => $user->prenom,
                 'email' => $user->email,
-                'contact' => $user->contact,
-                'adresse' => $user->adresse,
+                'contact' => $user->contact,  
+                'nom_urgence' => $user->nom_urgence,
+                'prenom_urgence' => $user->prenom_urgence,
+                'contact_urgence' => $user->contact_urgence,
                 'pays' => $user->pays,
                 'photo_profile_path' => $user->photo_profile_path ? 'storage/' . $user->photo_profile_path : null,
                 'photo_profile_url' => $user->photo_profile_path 

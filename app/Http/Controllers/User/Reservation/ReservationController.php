@@ -294,9 +294,9 @@ class ReservationController extends Controller
 
         // Grouper par route unique (compagnie + itinéraire)
         $groupedRoutes = $allProgrammes->groupBy(function($p) {
-            return $p->compagnie_id . '|' . $p->itineraire_id;
-        })->map(function($group) use ($reservationCounts) {
-            $first = $group->first();
+    return $p->compagnie_id . '|' . $p->itineraire_id;
+})->map(function($group) use ($reservationCounts) {
+    $first = $group->first();
             
             // Tous les horaires aller
             $allerHoraires = $group->sortBy('heure_depart')->map(function($p) use ($reservationCounts) {
@@ -333,7 +333,7 @@ class ReservationController extends Controller
                 'itineraire_id' => $first->itineraire_id,
                 'point_depart' => $first->point_depart,
                 'point_arrive' => $first->point_arrive,
-                'montant_billet' => $first->montant_billet,
+               'montant_billet' => (int) str_replace(' ', '', $first->montant_billet), 
                 'durer_parcours' => $first->durer_parcours,
                 'vehicule' => $first->vehicule,
                 'vehicule_id' => $first->vehicule_id,
@@ -647,18 +647,6 @@ $dateAller = $request->date_voyage;
             return response()->json([
                 'success' => false,
                 'message' => 'Ce voyage n\'est plus disponible.'
-            ], 422);
-        }
-
-        // Vérifier le délai minimum de 4 heures avant le départ
-        $departureDateTime = \Carbon\Carbon::parse($dateVoyage . ' ' . $programme->heure_depart);
-        $now = \Carbon\Carbon::now();
-        $hoursDiff = $now->diffInHours($departureDateTime, false);
-
-        if ($hoursDiff < 4) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Les réservations doivent être effectuées au moins 4 heures avant le départ. Départ prévu : ' . $departureDateTime->format('d/m/Y à H:i')
             ], 422);
         }
 
@@ -2044,7 +2032,7 @@ public function apiRouteDates(Request $request)
 /**
  * API pour obtenir les horaires pour une ligne et une date spécifique
  */
- public function apiRouteSchedules(Request $request)
+  public function apiRouteSchedules(Request $request)
     {
         $requestedDate = $request->date ?? now()->format('Y-m-d');
         
@@ -2052,17 +2040,15 @@ public function apiRouteDates(Request $request)
             ->where('point_depart', $request->point_depart)
             ->where('point_arrive', $request->point_arrive)
             ->where('statut', 'actif')
-            // NOUVEAU : Filtrer par compagnie si fournie (pour le fix View All Trips)
-            ->when($request->compagnie_id, function($q) use ($request) {
+            ->when($request->compagnie_id && $request->compagnie_id !== 'undefined', function($q) use ($request) {
                 return $q->where('compagnie_id', $request->compagnie_id);
             })
-            // LOGIQUE CORRIGÉE : On vérifie juste si la date demandée est dans la plage de validité du programme
+            // LOGIQUE DATE : Le voyage doit être commencé (date_depart <= requestedDate)
+            // ET NE PAS être terminé (date_fin >= requestedDate OU date_fin est NULL)
+            ->where('date_depart', '<=', $requestedDate . ' 23:59:59')
             ->where(function($query) use ($requestedDate) {
-                $query->whereRaw('DATE(date_depart) <= ?', [$requestedDate])
-                      ->where(function($subQ) use ($requestedDate) {
-                          $subQ->whereNull('date_fin')
-                               ->orWhere('date_fin', '>=', $requestedDate);
-                      });
+                $query->whereNull('date_fin')
+                      ->orWhere('date_fin', '>=', $requestedDate);
             })
             ->orderBy('heure_depart')
             ->get();
@@ -2079,7 +2065,7 @@ public function apiRouteDates(Request $request)
                 'id' => $programme->id,
                 'heure_depart' => $programme->heure_depart,
                 'heure_arrive' => $programme->heure_arrive,
-                'montant_billet' => $programme->montant_billet,
+                'montant_billet' => (int) str_replace(' ', '', $programme->montant_billet), // Nettoyage prix
                 'vehicule' => $programme->vehicule ? $programme->vehicule->immatriculation : 'N/A',
                 'vehicule_id' => $programme->vehicule_id,
                 'places_totales' => $capacite,
@@ -2094,49 +2080,48 @@ public function apiRouteDates(Request $request)
         ]);
     }
 
+
 /**
  * API pour obtenir les voyages retour disponibles (sens inversé)
  * Recherche les programmes avec point_depart et point_arrive inversés
  */
-public function apiReturnTrips(Request $request)
-{
-    $requestedDate = $request->min_date ?? now()->format('Y-m-d');
-    
-    // Le retour = sens inverse
-    // Les programmes sont valables de date_depart à date_fin
-    $returnTrips = Programme::with(['compagnie', 'vehicule'])
-        ->where('point_depart', $request->original_arrive) // Le retour part de l'arrivée de l'aller
-        ->where('point_arrive', $request->original_depart) // Et arrive au départ de l'aller
-        ->where('statut', 'actif')
-        ->where(function($query) use ($requestedDate) {
-            // La date demandée doit être >= date_depart (début validité)
-            $query->whereRaw('DATE(date_depart) <= ?', [$requestedDate]);
-        })
-        ->where(function($query) use ($requestedDate) {
-            // Et <= date_fin (fin validité) ou date_fin est NULL
-            $query->whereNull('date_fin')
-                  ->orWhere('date_fin', '>=', $requestedDate);
-        })
-        ->orderBy('heure_depart')
-        ->get();
+ public function apiReturnTrips(Request $request)
+    {
+        $requestedDate = $request->min_date ?? now()->format('Y-m-d');
+        
+        $returnTrips = Programme::with(['compagnie', 'vehicule'])
+            ->where('point_depart', $request->original_arrive)
+            ->where('point_arrive', $request->original_depart)
+            ->where('statut', 'actif')
+            ->when($request->compagnie_id && $request->compagnie_id !== 'undefined', function($q) use ($request) {
+                return $q->where('compagnie_id', $request->compagnie_id);
+            })
+            // Même correction de date que ci-dessus
+            ->where('date_depart', '<=', $requestedDate . ' 23:59:59')
+            ->where(function($query) use ($requestedDate) {
+                $query->whereNull('date_fin')
+                      ->orWhere('date_fin', '>=', $requestedDate);
+            })
+            ->orderBy('heure_depart')
+            ->get();
 
-    // Ajouter la date demandée à chaque trip pour l'affichage
-    $returnTrips = $returnTrips->map(function($trip) use ($requestedDate) {
-        $trip->display_date = $requestedDate;
-        return $trip;
-    });
+        $returnTrips = $returnTrips->map(function($trip) use ($requestedDate) {
+            $trip->display_date = $requestedDate;
+            // Nettoyage prix
+            $trip->montant_billet = (int) str_replace(' ', '', $trip->montant_billet); 
+            return $trip;
+        });
 
-    // Grouper par heure de départ pour le même jour
-    $groupedByTime = $returnTrips->groupBy(function($trip) {
-        return $trip->heure_depart;
-    });
+        $groupedByTime = $returnTrips->groupBy(function($trip) {
+            return $trip->heure_depart;
+        });
 
-    return response()->json([
-        'success' => true,
-        'return_trips' => $returnTrips,
-        'grouped' => $groupedByTime,
-        'count' => $returnTrips->count(),
-        'requested_date' => $requestedDate
-    ]);
-}
+        return response()->json([
+            'success' => true,
+            'return_trips' => $returnTrips,
+            'grouped' => $groupedByTime,
+            'count' => $returnTrips->count(),
+            'requested_date' => $requestedDate
+        ]);
+    }
 }

@@ -190,6 +190,7 @@
                                             @php
                                                 $routeData = [
                                                     'id' => $route->id,
+                                                    'compagnie_id' => $route->compagnie_id ?? null,
                                                     'compagnie' => $route->compagnie->name ?? 'Compagnie',
                                                     'point_depart' => $route->point_depart,
                                                     'point_arrive' => $route->point_arrive,
@@ -198,6 +199,7 @@
                                                     'aller_horaires' => $route->aller_horaires,
                                                     'retour_horaires' => $route->retour_horaires,
                                                     'has_retour' => $route->has_retour,
+                                                    'date_fin' => $route->date_fin ?? null,
                                                 ];
                                             @endphp
                                             <button type="button" 
@@ -496,7 +498,7 @@ var currentRetourProgramId = null;
             console.log("Bouton réserver cliqué"); // Debug
             try {
                 const routeDataJson = button.getAttribute('data-route');
-                const dateDepart = button.getAttribute('data-date');
+                const dateDepartInitial = button.getAttribute('data-date');
                 
                 if (!routeDataJson) {
                     console.error("Pas de données data-route trouvées");
@@ -504,16 +506,10 @@ var currentRetourProgramId = null;
                 }
 
                 const routeData = JSON.parse(routeDataJson);
-                
                 console.log('Données route:', routeData);
                 
-                if (typeof window.showRouteSchedulesModal === 'function') {
-                    window.showRouteSchedulesModal(routeData, dateDepart);
-                } else {
-                    console.error('Erreur: showRouteSchedulesModal n\'est pas définie');
-                    // Fallback si la modale groupée ne marche pas
-                    initiateReservationProcess(routeData.id, dateDepart);
-                }
+                // Toujours demander le type de voyage en premier
+                showRouteTripTypeModal(routeData, dateDepartInitial);
             } catch (e) {
                 console.error('Erreur JS lors du clic:', e);
                 Swal.fire({
@@ -563,48 +559,42 @@ var currentRetourProgramId = null;
             window.currentRouteData = routeData;
             window.currentDateDepart = dateDepart;
 
-            // 1. Si retour disponible, demander le type de voyage
-            if (routeData.has_retour) {
-                showRouteTripTypeModal(routeData, dateDepart);
-            } else {
-                // Sinon, afficher directement les horaires aller (en mode simple)
-                showRouteDepartureTimes(routeData, dateDepart, false);
-            }
+            // Toujours demander le type de voyage d'abord
+            showRouteTripTypeModal(routeData, dateDepart);
         };
 
         // ÉTAPE 1: Choix Type de Voyage (Aller Simple / Aller-Retour)
         function showRouteTripTypeModal(routeData, dateDepart) {
-            const dateFormatted = new Date(dateDepart).toLocaleDateString('fr-FR', { 
-                weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
-            });
-            
-            const priceSimple = Number(routeData.montant_billet);
-            const priceReturn = priceSimple * 2; // Estimation
+    // Conversion sécurisée du prix en nombre
+    // On convertit d'abord en string, on enlève tout sauf chiffres et points, puis on parse
+    let priceString = String(routeData.montant_billet || '0');
+    let priceRaw = priceString.replace(/[^\d.]/g, '');
+    const priceSimple = parseFloat(priceRaw) || 0;
+    const priceReturn = priceSimple * 2;
 
-            Swal.fire({
-                title: '<i class="fas fa-bus text-[#e94f1b]"></i> Type de voyage',
-                html: `
-                    <div class="text-left space-y-4">
-                        <div class="bg-orange-50 p-4 rounded-lg border border-orange-200">
-                            <p class="font-bold text-gray-800">${routeData.point_depart} → ${routeData.point_arrive}</p>
-                            <p class="text-sm text-gray-600"><i class="fas fa-calendar mr-2"></i>${dateFormatted}</p>
-                            <p class="text-sm font-bold text-gray-800 mt-1">${routeData.compagnie}</p>
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="border-2 border-gray-200 rounded-lg p-4 text-center hover:border-[#e94f1b] hover:bg-orange-50 transition-all cursor-pointer" id="btnRouteSimple">
-                                <i class="fas fa-arrow-right text-3xl text-gray-500 mb-2"></i>
-                                <p class="font-bold">Aller Simple</p>
-                                <p class="text-lg font-bold text-[#e94f1b]">${priceSimple.toLocaleString('fr-FR')} FCFA</p>
-                            </div>
-                            <div class="border-2 border-[#e94f1b] bg-orange-50 rounded-lg p-4 text-center hover:bg-orange-100 transition-all cursor-pointer" id="btnRouteReturn">
-                                <i class="fas fa-exchange-alt text-3xl text-[#e94f1b] mb-2"></i>
-                                <p class="font-bold">Aller-Retour</p>
-                                <p class="text-lg font-bold text-[#e94f1b]">${priceReturn.toLocaleString('fr-FR')} FCFA</p>
-                                <p class="text-xs text-gray-500">Prix estimé</p>
-                            </div>
-                        </div>
+    Swal.fire({
+        title: '<i class="fas fa-bus text-[#e94f1b]"></i> Type de voyage',
+        html: `
+            <div class="text-left space-y-4">
+                <div class="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                    <p class="font-bold text-gray-800">${routeData.point_depart} → ${routeData.point_arrive}</p>
+                    <p class="text-sm font-bold text-gray-800 mt-1">${routeData.compagnie}</p>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="border-2 border-gray-200 rounded-lg p-4 text-center hover:border-[#e94f1b] hover:bg-orange-50 transition-all cursor-pointer" id="btnRouteSimple">
+                        <i class="fas fa-arrow-right text-3xl text-gray-500 mb-2"></i>
+                        <p class="font-bold">Aller Simple</p>
+                        <p class="text-lg font-bold text-[#e94f1b]">${priceSimple.toLocaleString('fr-FR')} FCFA</p>
                     </div>
-                `,
+                    <div class="border-2 ${routeData.has_retour ? 'border-[#e94f1b] bg-orange-50' : 'border-gray-100 bg-gray-50 opacity-60 cursor-not-allowed'} rounded-lg p-4 text-center transition-all" id="btnRouteReturn">
+                        <i class="fas fa-exchange-alt text-3xl ${routeData.has_retour ? 'text-[#e94f1b]' : 'text-gray-300'} mb-2"></i>
+                        <p class="font-bold">Aller-Retour</p>
+                        <p class="text-lg font-bold ${routeData.has_retour ? 'text-[#e94f1b]' : 'text-gray-400'}">${priceReturn.toLocaleString('fr-FR')} FCFA</p>
+                        ${!routeData.has_retour ? '<p class="text-[10px] text-red-500 font-bold">Non disponible</p>' : '<p class="text-xs text-gray-500">Prix estimé</p>'}
+                    </div>
+                </div>
+            </div>
+        `,
                 showConfirmButton: false,
                 showCancelButton: true,
                 cancelButtonText: 'Annuler',
@@ -614,97 +604,96 @@ var currentRetourProgramId = null;
                         window.userWantsAllerRetour = false;
                         window.userChoseAllerRetour = false;
                         Swal.close();
-                        showRouteDepartureTimes(routeData, dateDepart, false);
+                        // Après le type, on demande la date (Aller Simple)
+                        showDepartureDateSelection(routeData); 
                     });
-                    document.getElementById('btnRouteReturn').addEventListener('click', () => {
-                        window.userWantsAllerRetour = true;
-                        window.userChoseAllerRetour = true;
-                        Swal.close();
-                        showRouteDepartureTimes(routeData, dateDepart, true);
-                    });
+                    
+                    if (routeData.has_retour) {
+                        document.getElementById('btnRouteReturn').addEventListener('click', () => {
+                            window.userWantsAllerRetour = true;
+                            window.userChoseAllerRetour = true;
+                            Swal.close();
+                            // Après le type, on demande la date (Aller-Retour)
+                            showDepartureDateSelection(routeData);
+                        });
+                        document.getElementById('btnRouteReturn').classList.add('cursor-pointer', 'hover:bg-orange-100');
+                    }
                 }
             });
         }
 
         // ÉTAPE 2: Choix de l'heure de départ
-        function showRouteDepartureTimes(routeData, dateDepart, isAllerRetour) {
-            const dateFormatted = new Date(dateDepart).toLocaleDateString('fr-FR', { 
-                weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
-            });
+    function showRouteDepartureTimes(routeData, dateDepart, isAllerRetour) {
+    const dateFormatted = new Date(dateDepart).toLocaleDateString('fr-FR', { 
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
+    });
 
-            // Filtrer les horaires pour ne garder que ceux qui sont au moins 4h dans le futur
-            const now = new Date();
-            const validSchedules = (routeData.aller_horaires || []).filter(h => {
-                const departDateTime = new Date(dateDepart + ' ' + h.heure_depart);
-                const hoursDiff = (departDateTime - now) / (1000 * 60 * 60);
-                return hoursDiff >= 4;
-            });
+    // MODIFICATION MAJEURE : On ne filtre plus rien. On prend tout ce que la BDD donne.
+    const validSchedules = routeData.aller_horaires || [];
 
-            // Construire la grille
-            let timeSlotsHtml = '';
-            if (validSchedules.length > 0) {
-                timeSlotsHtml = '<div class="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto p-2">';
-                validSchedules.forEach(h => {
-                    timeSlotsHtml += `
-                        <div class="route-time-btn border-2 border-green-200 bg-green-50 rounded-lg p-4 cursor-pointer hover:border-green-500 hover:bg-green-100 transition-all text-center"
-                             data-id="${h.id}" data-time="${h.heure_depart}">
-                            <p class="font-bold text-xl text-green-700">${h.heure_depart}</p>
-                            <p class="text-sm text-gray-500">→ ${h.heure_arrive}</p>
-                        </div>
-                    `;
+    // Construire la grille
+    let timeSlotsHtml = '';
+    if (validSchedules.length > 0) {
+        timeSlotsHtml = '<div class="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto p-2">';
+        validSchedules.forEach(h => {
+            timeSlotsHtml += `
+                <div class="route-time-btn border-2 border-green-200 bg-green-50 rounded-lg p-4 cursor-pointer hover:border-green-500 hover:bg-green-100 transition-all text-center"
+                     data-id="${h.id}" data-time="${h.heure_depart}">
+                    <p class="font-bold text-xl text-green-700">${h.heure_depart}</p>
+                    <p class="text-sm text-gray-500">→ ${h.heure_arrive}</p>
+                </div>
+            `;
+        });
+        timeSlotsHtml += '</div>';
+    } else {
+        timeSlotsHtml = '<p class="text-center text-red-500 font-medium py-4">Aucun horaire de départ programmé pour cette date.</p>';
+    }
+
+    Swal.fire({
+        title: '<i class="fas fa-clock text-green-600"></i> Heure de départ',
+        html: `
+            <div class="text-left space-y-4">
+                <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                     <p class="font-bold text-gray-800">${routeData.point_depart} → ${routeData.point_arrive}</p>
+                     <p class="text-sm text-gray-600">${dateFormatted}</p>
+                     <p class="text-xs text-${isAllerRetour ? 'orange' : 'green'}-600 font-semibold mt-1">
+                        <i class="fas fa-${isAllerRetour ? 'exchange-alt' : 'arrow-right'} mr-1"></i>
+                        ${isAllerRetour ? 'Aller-Retour' : 'Aller Simple'}
+                     </p>
+                </div>
+                <p class="font-medium text-gray-700">→ Choisissez l'heure de départ :</p>
+                ${timeSlotsHtml}
+            </div>
+        `,
+        showCancelButton: true,
+        showConfirmButton: false,
+        cancelButtonText: 'Retour',
+        customClass: { popup: 'rounded-2xl' },
+        didOpen: () => {
+            document.querySelectorAll('.route-time-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const progId = this.dataset.id;
+                    const time = this.dataset.time;
+                    
+                    window.selectedDepartureTime = time;
+                    window.selectedAllerProgramId = progId;
+                    
+                    Swal.close();
+                    
+                    if (isAllerRetour) {
+                        showReturnDateSelection(routeData, dateDepart);
+                    } else {
+                        startReservationFromRoute(progId, dateDepart, false);
+                    }
                 });
-                timeSlotsHtml += '</div>';
-            } else {
-                timeSlotsHtml = '<p class="text-center text-red-500">Aucun horaire de départ disponible (minimum 4h d\'avance requis).</p>';
-            }
-
-            Swal.fire({
-                title: '<i class="fas fa-clock text-green-600"></i> Heure de départ',
-                html: `
-                    <div class="text-left space-y-4">
-                        <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                             <p class="font-bold text-gray-800">${routeData.point_depart} → ${routeData.point_arrive}</p>
-                             <p class="text-sm text-gray-600">${dateFormatted}</p>
-                             <p class="text-xs text-${isAllerRetour ? 'orange' : 'green'}-600 font-semibold mt-1">
-                                <i class="fas fa-${isAllerRetour ? 'exchange-alt' : 'arrow-right'} mr-1"></i>
-                                ${isAllerRetour ? 'Aller-Retour' : 'Aller Simple'}
-                             </p>
-                        </div>
-                        <p class="font-medium text-gray-700">→ Choisissez l'heure de départ :</p>
-                        ${timeSlotsHtml}
-                    </div>
-                `,
-                showCancelButton: true,
-                showConfirmButton: false,
-                cancelButtonText: 'Retour',
-                customClass: { popup: 'rounded-2xl' },
-                didOpen: () => {
-                    document.querySelectorAll('.route-time-btn').forEach(btn => {
-                        btn.addEventListener('click', function() {
-                            const progId = this.dataset.id;
-                            const time = this.dataset.time;
-                            
-                            window.selectedDepartureTime = time;
-                            window.selectedAllerProgramId = progId;
-                            
-                            Swal.close();
-                            
-                            if (isAllerRetour) {
-                                // Pour Aller-Retour, demander d'abord la date de retour
-                                showReturnDateSelection(routeData, dateDepart);
-                            } else {
-                                startReservationFromRoute(progId, dateDepart, false);
-                            }
-                        });
-                    });
-                }
-            }).then((result) => {
-                if (result.dismiss === Swal.DismissReason.cancel && routeData.has_retour) {
-                    showRouteTripTypeModal(routeData, dateDepart); // Retour au choix du type
-                }
             });
         }
-
+    }).then((result) => {
+        if (result.dismiss === Swal.DismissReason.cancel && routeData.has_retour) {
+            showRouteTripTypeModal(routeData, dateDepart);
+        }
+    });
+}
         // ÉTAPE 2.5: Sélection de la date de retour (pour Aller-Retour) avec calendrier mensuel
         function showReturnDateSelection(routeData, dateDep) {
             const minDate = new Date(dateDep); // Date de retour minimum = date de départ
@@ -725,12 +714,23 @@ var currentRetourProgramId = null;
                 Swal.update({
                     html: `
                         <div class="text-left space-y-4">
-                            <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                                <p class="font-bold text-gray-800">Retour : ${routeData.point_arrive} → ${routeData.point_depart}</p>
-                                <p class="text-sm text-gray-600">Sélectionnez la date de votre retour</p>
+                            <div class="bg-purple-100 p-3 rounded-lg border border-purple-200">
+                                <p class="font-bold text-purple-900">Retour : ${routeData.point_arrive} → ${routeData.point_depart}</p>
+                                <p class="text-sm text-gray-700">Sélectionnez la date de votre retour</p>
                             </div>
-                            <div class="bg-green-50 p-2 rounded border border-green-200 text-sm mb-2">
-                                <span class="font-bold text-green-700">Départ :</span> ${new Date(dateDep).toLocaleDateString('fr-FR')} à ${window.selectedDepartureTime}
+                            <div class="bg-green-50 p-2 rounded border border-green-200 text-sm flex justify-between items-center">
+                                <div><span class="font-bold text-green-700">Départ :</span> ${new Date(dateDep).toLocaleDateString('fr-FR')}</div>
+                                <div class="text-xs bg-green-100 px-2 py-1 rounded font-bold">${window.selectedDepartureTime}</div>
+                            </div>
+
+                            <!-- Options rapides Retour -->
+                            <div class="flex justify-center gap-4">
+                                <button id="btnReturnSameDay" class="flex-1 bg-purple-50 hover:bg-purple-100 text-purple-700 px-3 py-2 rounded-lg font-bold border-2 border-purple-200 transition-all text-sm">
+                                    Même jour
+                                </button>
+                                <button id="btnReturnNextDay" class="flex-1 bg-purple-50 hover:bg-purple-100 text-purple-700 px-3 py-2 rounded-lg font-bold border-2 border-purple-200 transition-all text-sm">
+                                    Lendemain
+                                </button>
                             </div>
                             
                             <!-- Navigation mois -->
@@ -757,6 +757,29 @@ var currentRetourProgramId = null;
             }
             
             function attachCalendarEvents() {
+                // Bouton Même Jour
+                const btnSame = document.getElementById('btnReturnSameDay');
+                if (btnSame) {
+                    btnSame.addEventListener('click', () => {
+                        const sameDayStr = new Date(dateDep).toISOString().split('T')[0];
+                        window.selectedReturnDate = sameDayStr;
+                        Swal.close();
+                        loadReturnSchedulesForDate(routeData, sameDayStr);
+                    });
+                }
+
+                // Bouton Lendemain
+                const btnNext = document.getElementById('btnReturnNextDay');
+                if (btnNext) {
+                    btnNext.addEventListener('click', () => {
+                        const nextDay = new Date(dateDep);
+                        nextDay.setDate(nextDay.getDate() + 1);
+                        const nextDayStr = nextDay.toISOString().split('T')[0];
+                        window.selectedReturnDate = nextDayStr;
+                        Swal.close();
+                        loadReturnSchedulesForDate(routeData, nextDayStr);
+                    });
+                }
                 // Navigation mois précédent
                 const prevBtn = document.getElementById('prevMonthReturn');
                 if (prevBtn) {
@@ -804,7 +827,7 @@ var currentRetourProgramId = null;
                 dayBtns.forEach(btn => {
                     btn.addEventListener('click', function() {
                         const selectedDate = this.dataset.date;
-                        selectedReturnDate = selectedDate;
+                        window.selectedReturnDate = selectedDate;
                         Swal.close();
                         loadReturnSchedulesForDate(routeData, selectedDate);
                     });
@@ -878,76 +901,71 @@ var currentRetourProgramId = null;
         }
 
         // ÉTAPE 3: Choix de l'heure de retour (si Aller-Retour)
-        function showRouteReturnTimes(routeData, dateDepart) {
-            // Filtrer les horaires de retour pour ne garder que ceux qui sont au moins 4h dans le futur
-            const now = new Date();
-            const validReturnSchedules = (routeData.retour_horaires || []).filter(h => {
-                const returnDateTime = new Date(dateDepart + ' ' + h.heure_depart);
-                const hoursDiff = (returnDateTime - now) / (1000 * 60 * 60);
-                return hoursDiff >= 4;
-            });
+  function showRouteReturnTimes(routeData, dateDepart) {
+    // MODIFICATION MAJEURE : On ne filtre plus rien.
+    const validReturnSchedules = routeData.retour_horaires || [];
 
-            // Construire la grille retour
-            let timeSlotsHtml = '';
-            if (validReturnSchedules.length > 0) {
-                timeSlotsHtml = '<div class="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto p-2">';
-                validReturnSchedules.forEach(h => {
-                    timeSlotsHtml += `
-                        <div class="route-return-btn border-2 border-blue-200 bg-blue-50 rounded-lg p-4 cursor-pointer hover:border-blue-500 hover:bg-blue-100 transition-all text-center"
-                             data-id="${h.id}" data-time="${h.heure_depart}">
-                            <p class="font-bold text-xl text-blue-700">${h.heure_depart}</p>
-                            <p class="text-sm text-gray-500">→ ${h.heure_arrive}</p>
-                        </div>
-                    `;
+    // Construire la grille retour
+    let timeSlotsHtml = '';
+    if (validReturnSchedules.length > 0) {
+        timeSlotsHtml = '<div class="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto p-2">';
+        validReturnSchedules.forEach(h => {
+            timeSlotsHtml += `
+                <div class="route-return-btn border-2 border-blue-200 bg-blue-50 rounded-lg p-4 cursor-pointer hover:border-blue-500 hover:bg-blue-100 transition-all text-center"
+                     data-id="${h.id}" data-time="${h.heure_depart}">
+                    <p class="font-bold text-xl text-blue-700">${h.heure_depart}</p>
+                    <p class="text-sm text-gray-500">→ ${h.heure_arrive}</p>
+                </div>
+            `;
+        });
+        timeSlotsHtml += '</div>';
+    } else {
+        timeSlotsHtml = '<div class="text-center text-orange-500 mb-4"><p>Aucun horaire retour disponible pour cette date.</p></div>';
+    }
+
+    Swal.fire({
+        title: '<i class="fas fa-undo text-blue-600"></i> Heure de retour',
+        html: `
+            <div class="text-left space-y-4">
+                <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                     <p class="font-bold text-gray-800">Retour : ${routeData.point_arrive} → ${routeData.point_depart}</p>
+                     <p class="text-sm text-gray-600">Date : ${new Date(dateDepart).toLocaleDateString('fr-FR')}</p>
+                </div>
+                 <div class="bg-green-50 p-2 rounded border border-green-200 text-sm mb-2">
+                    <span class="font-bold text-green-700">Départ choisi :</span> ${window.selectedDepartureTime}
+                </div>
+                <p class="font-medium text-gray-700">→ Choisissez l'heure de retour :</p>
+                ${timeSlotsHtml}
+            </div>
+        `,
+        showCancelButton: true,
+        showConfirmButton: false,
+        cancelButtonText: 'Retour',
+        customClass: { popup: 'rounded-2xl' },
+        didOpen: () => {
+            document.querySelectorAll('.route-return-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const progId = this.dataset.id;
+                    const time = this.dataset.time;
+                    
+                    window.selectedReturnTime = time;
+                    window.selectedRetourProgramId = progId;
+                    
+                    // Trouver les détails du programme retour dans routeData si nécessaire
+                    const returnProg = routeData.retour_horaires.find(p => p.id == progId);
+                    window.selectedReturnProgram = returnProg; 
+
+                    Swal.close();
+                    startReservationFromRoute(window.selectedAllerProgramId, dateDepart, true);
                 });
-                timeSlotsHtml += '</div>';
-            } else {
-                timeSlotsHtml = '<div class="text-center text-orange-500 mb-4"><p>Aucun horaire retour disponible (minimum 4h d\'avance requis).</p></div>';
-            }
-
-            Swal.fire({
-                title: '<i class="fas fa-undo text-blue-600"></i> Heure de retour',
-                html: `
-                    <div class="text-left space-y-4">
-                        <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                             <p class="font-bold text-gray-800">Retour : ${routeData.point_arrive} → ${routeData.point_depart}</p>
-                             <p class="text-sm text-gray-600">Date : ${new Date(dateDepart).toLocaleDateString('fr-FR')}</p>
-                        </div>
-                         <div class="bg-green-50 p-2 rounded border border-green-200 text-sm mb-2">
-                            <span class="font-bold text-green-700">Départ choisi :</span> ${window.selectedDepartureTime}
-                        </div>
-                        <p class="font-medium text-gray-700">→ Choisissez l'heure de retour :</p>
-                        ${timeSlotsHtml}
-                    </div>
-                `,
-                showCancelButton: true,
-                showConfirmButton: false,
-                cancelButtonText: 'Retour',
-                customClass: { popup: 'rounded-2xl' },
-                didOpen: () => {
-                    document.querySelectorAll('.route-return-btn').forEach(btn => {
-                        btn.addEventListener('click', function() {
-                            const progId = this.dataset.id;
-                            const time = this.dataset.time;
-                            
-                            window.selectedReturnTime = time;
-                            window.selectedRetourProgramId = progId;
-                            
-                            // Trouver les détails du programme retour dans routeData si nécessaire
-                            const returnProg = routeData.retour_horaires.find(p => p.id == progId);
-                            window.selectedReturnProgram = returnProg; 
-
-                            Swal.close();
-                            startReservationFromRoute(window.selectedAllerProgramId, dateDepart, true);
-                        });
-                    });
-                }
-            }).then((result) => {
-                if (result.dismiss === Swal.DismissReason.cancel) {
-                    showRouteDepartureTimes(routeData, dateDepart, true); // Retour au choix départ
-                }
             });
         }
+    }).then((result) => {
+        if (result.dismiss === Swal.DismissReason.cancel) {
+            showRouteDepartureTimes(routeData, dateDepart, true);
+        }
+    });
+}
 
         // Helper pour lancer la réservation finale
         function startReservationFromRoute(programId, dateVoyage, isAllerRetour) {
@@ -969,105 +987,78 @@ var currentRetourProgramId = null;
  // --- NOUVELLE FONCTION PRINCIPALE D'INITIATION ---
         // C'est elle qui est appelée par le bouton "Réserver"
      async function initiateReservationProcess(programId, searchDateFormatted, searchedTime = null) {
-    console.log("Initiation réservation pour ID:", programId, "Date:", searchDateFormatted, "Heure cherchée:", searchedTime);
-    
-    // 1. Réinitialisation des variables globales
-    userWantsAllerRetour = false;
-    window.userChoseAllerRetour = false;
-    window.selectedReturnProgram = null;
-    window.outboundProgram = null;
-    window.outboundDate = searchDateFormatted;
-    window.selectedReturnDate = null; 
-    window.selectedDepartureTime = null;
-    window.selectedReturnTime = null;
-    currentSelectedProgram = null;
-    selectedReturnDate = null; // Réinitialiser la date de retour
-    
-    // Fermer les autres modals
-    closeProgramsListModal();
-
-    Swal.fire({
-        title: 'Chargement...',
-        allowOutsideClick: false,
-        didOpen: () => { Swal.showLoading(); }
-    });
-
-    try {
-        const response = await fetch(`/user/booking/program/${programId}`);
-        const data = await response.json();
+        console.log("Initiation réservation pour ID:", programId, "Date:", searchDateFormatted, "Heure cherchée:", searchedTime);
         
-        if (!data.success) throw new Error("Impossible de charger les détails du programme");
+        // 1. Réinitialisation des variables globales
+        userWantsAllerRetour = false;
+        window.userChoseAllerRetour = false;
+        window.selectedReturnProgram = null;
+        window.outboundProgram = null;
+        window.outboundDate = searchDateFormatted;
+        window.selectedReturnDate = null; 
+        window.selectedDepartureTime = null;
+        window.selectedReturnTime = null;
+        currentSelectedProgram = null;
+        selectedReturnDate = null; 
         
-        const program = data.programme;
-        window.outboundProgram = program;
-        currentSelectedProgram = program;
-        
-        Swal.close();
+        Swal.fire({
+            title: 'Chargement...',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
 
-        // NOUVEAU FLUX: D'abord demander le type de voyage (image 2)
-        showTripTypeModal(program, searchDateFormatted);
-
-    } catch (error) {
-        console.error(error);
-        Swal.close();
-        Swal.fire({ icon: 'error', title: 'Erreur', text: 'Une erreur est survenue.' });
-    }
-}
-
-// === NOUVEAU: Popup Type de voyage (style image 2) ===
-async function showTripTypeModal(program, departureDate) {
-    const dateFormatted = new Date(departureDate).toLocaleDateString('fr-FR', { 
-        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
-    });
-    
-    const priceSimple = Number(program.montant_billet);
-    const priceReturn = priceSimple * 2;
-    
-    Swal.fire({
-        title: '<i class="fas fa-bus text-[#e94f1b]"></i> Type de voyage',
-        html: `
-            <div class="text-left space-y-4">
-                <div class="bg-orange-50 p-4 rounded-lg border border-orange-200">
-                    <p class="font-bold text-gray-800">${program.point_depart} → ${program.point_arrive}</p>
-                    <p class="text-sm text-gray-600"><i class="fas fa-calendar mr-2"></i>${dateFormatted}</p>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="border-2 border-gray-200 rounded-lg p-4 text-center hover:border-[#e94f1b] hover:bg-orange-50 transition-all cursor-pointer" id="choiceSimple">
-                        <i class="fas fa-arrow-right text-3xl text-gray-500 mb-2"></i>
-                        <p class="font-bold">Aller Simple</p>
-                        <p class="text-lg font-bold text-[#e94f1b]">${priceSimple.toLocaleString('fr-FR')} FCFA</p>
-                    </div>
-                    <div class="border-2 border-[#e94f1b] bg-orange-50 rounded-lg p-4 text-center hover:bg-orange-100 transition-all cursor-pointer" id="choiceReturn">
-                        <i class="fas fa-exchange-alt text-3xl text-[#e94f1b] mb-2"></i>
-                        <p class="font-bold">Aller-Retour</p>
-                        <p class="text-lg font-bold text-[#e94f1b]">${priceReturn.toLocaleString('fr-FR')} FCFA</p>
-                        <p class="text-xs text-gray-500">Prix estimé</p>
-                    </div>
-                </div>
-            </div>
-        `,
-        showConfirmButton: false,
-        showCancelButton: true,
-        cancelButtonText: 'Annuler',
-        customClass: { popup: 'rounded-2xl' },
-        didOpen: () => {
-            document.getElementById('choiceSimple').addEventListener('click', () => {
-                userWantsAllerRetour = false;
-                window.userChoseAllerRetour = false;
-                Swal.close();
-                // Aller Simple: On demande l'heure de départ
-                showDepartureSchedulesModal(program, departureDate, false);
+        try {
+            const response = await fetch(`/user/booking/program/${programId}`);
+            const data = await response.json();
+            
+            if (!data.success) throw new Error("Impossible de charger les détails du programme");
+            
+            const program = data.programme;
+            window.outboundProgram = program;
+            currentSelectedProgram = program;
+            
+            // Vérifier la disponibilité du retour via l'API
+            const paramsRetour = new URLSearchParams({
+                original_arrive: program.point_arrive,
+                original_depart: program.point_depart,
+                min_date: searchDateFormatted
             });
-            document.getElementById('choiceReturn').addEventListener('click', () => {
-                userWantsAllerRetour = true;
-                window.userChoseAllerRetour = true;
-                Swal.close();
-                // Aller-Retour: On demande l'heure de départ, puis le retour
-                showDepartureSchedulesModal(program, departureDate, true);
-            });
+            const responseRetour = await fetch('{{ route("api.return-trips") }}?' + paramsRetour);
+            const dataRetour = await responseRetour.json();
+            
+            // Construire un objet routeData compatible
+            const routeData = {
+                id: program.id,
+                compagnie: program.compagnie?.name || 'Compagnie',
+                compagnie_id: program.compagnie_id,
+                point_depart: program.point_depart,
+                point_arrive: program.point_arrive,
+                montant_billet: program.montant_billet,
+                durer_parcours: program.durer_parcours,
+                has_retour: (dataRetour.success && dataRetour.return_trips && dataRetour.return_trips.length > 0),
+                aller_horaires: [{
+                    id: program.id,
+                    heure_depart: program.heure_depart,
+                    heure_arrive: program.heure_arrive,
+                    montant_billet: program.montant_billet
+                }],
+                retour_horaires: dataRetour.success ? dataRetour.return_trips : [],
+                date_fin: program.date_fin_programmation || program.date_fin || null
+            };
+
+            Swal.close();
+
+            // Lancer le flux unifié
+            showRouteTripTypeModal(routeData, searchDateFormatted);
+
+        } catch (error) {
+            console.error(error);
+            Swal.close();
+            Swal.fire({ icon: 'error', title: 'Erreur', text: 'Une erreur est survenue.' });
         }
-    });
-}
+    }
+
+// Redundant function removed as it is now unified in showRouteTripTypeModal
 
 // === NOUVEAU: Popup sélection heure de départ (depuis BDD) ===
 async function showDepartureSchedulesModal(program, departureDate, isAllerRetour) {
@@ -3625,6 +3616,14 @@ function proceedToPassengerInfoFromRetour() {
                                 <p class="text-sm text-gray-600">Sélectionnez votre date de départ</p>
                             </div>
                             
+                            <!-- Option rapide Demain -->
+                            <div class="flex justify-center">
+                                <button id="btnSelectTomorrow" class="flex items-center gap-2 bg-orange-100 text-orange-700 px-4 py-2 rounded-lg font-bold hover:bg-orange-200 transition-colors border border-orange-300">
+                                    <i class="fas fa-magic"></i>
+                                    <span>Sélectionner demain (${tomorrow.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })})</span>
+                                </button>
+                            </div>
+
                             <!-- Navigation mois -->
                             <div class="flex items-center justify-between bg-gray-50 p-2 rounded">
                                 <button id="prevMonth" class="px-3 py-1 bg-white border rounded hover:bg-gray-100">
@@ -3649,6 +3648,15 @@ function proceedToPassengerInfoFromRetour() {
             }
             
             function attachCalendarEvents() {
+                // Bouton Demain
+                const btnTomorrow = document.getElementById('btnSelectTomorrow');
+                if (btnTomorrow) {
+                    btnTomorrow.addEventListener('click', () => {
+                        const tomorrowStr = tomorrow.toISOString().split('T')[0];
+                        Swal.close();
+                        loadSchedulesAndLaunchFlow(route, tomorrowStr);
+                    });
+                }
                 // Navigation mois précédent
                 const prevBtn = document.getElementById('prevMonth');
                 if (prevBtn) {
@@ -3761,15 +3769,15 @@ function proceedToPassengerInfoFromRetour() {
                     has_retour: (dataRetour.success && dataRetour.return_trips && dataRetour.return_trips.length > 0),
                     retour_horaires: (dataRetour.success ? dataRetour.return_trips : []),
                     compagnie: route.compagnie?.name || 'Compagnie',
-                    montant_billet: dataAller.schedules && dataAller.schedules.length > 0 ? dataAller.schedules[0].montant_billet : route.prix_min,
+                    montant_billet: dataAller.schedules && dataAller.schedules.length > 0 ? dataAller.schedules[0].montant_billet : (route.prix_min || 0),
                     date_fin: route.date_fin || dataAller.schedules?.[0]?.date_fin || null // S'assurer que date_fin est présent
                 };
                 
-                // 4. Lancer le flux unifié (Type → Départ → Date Retour → Heure Retour)
-                if (typeof window.showRouteSchedulesModal === 'function') {
-                    window.showRouteSchedulesModal(routeData, selectedDate);
+                // 4. Lancer la sélection de l'heure (Départ)
+                if (typeof window.showRouteDepartureTimes === 'function') {
+                    window.showRouteDepartureTimes(routeData, selectedDate, window.userWantsAllerRetour);
                 } else {
-                    console.error('showRouteSchedulesModal non disponible');
+                    console.error('showRouteDepartureTimes non disponible');
                     Swal.fire({
                         icon: 'error',
                         title: 'Erreur technique',

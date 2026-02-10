@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\User\UserController;
 use App\Http\Controllers\Api\User\ReservationApiController as UserReservationController;
 use App\Http\Controllers\Api\User\WalletController;
 use App\Http\Controllers\Api\User\CompagnieController;
+use App\Http\Controllers\Api\User\SignalementApiController;
 use App\Http\Controllers\Api\Agent\AuthController as AgentAuthController;
 use App\Http\Controllers\Api\Agent\AgentController;
 use App\Http\Controllers\Api\Agent\ReservationApiController as AgentReservationController;
@@ -72,6 +73,11 @@ Route::prefix('user')->group(function () {
         Route::get('/wallet', [WalletController::class, 'index']);
         Route::post('/wallet/recharge', [WalletController::class, 'recharge']);
         Route::post('/wallet/verify', [WalletController::class, 'verify']);
+
+        // Signalements
+        Route::get('/signalements/active-reservations', [SignalementApiController::class, 'getActiveReservations']);
+        Route::get('/signalements', [SignalementApiController::class, 'index']);
+        Route::post('/signalements', [SignalementApiController::class, 'store']);
     });
 
     // Routes Publiques (Recherche & Programmes)

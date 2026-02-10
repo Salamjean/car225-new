@@ -41,4 +41,9 @@ class Signalement extends Model
     {
         return $this->belongsTo(SapeurPompier::class);
     }
+
+    public function vehicule()
+    {
+        return $this->belongsTo(Vehicule::class);
+    }
 }
