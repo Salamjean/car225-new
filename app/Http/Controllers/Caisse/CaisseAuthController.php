@@ -145,7 +145,7 @@ class CaisseAuthController extends Controller
         }
 
         // Attempt login
-        if (Auth::guard('caisse')->attempt($credentials, $request->filled('remember'))) {
+        if (auth('agent')->attempt($credentials, $request->filled('remember'))) {
             $request->session()->regenerate();
             return redirect()->intended(route('caisse.dashboard'));
         }
