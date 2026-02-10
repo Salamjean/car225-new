@@ -103,7 +103,7 @@
                 <p style="margin: 0; text-align: center; color: #666;">Votre code OTP</p>
                 <div class="otp-code">{{ $otpCode }}</div>
                 <p style="margin: 0; text-align: center; color: #666; font-size: 12px;">
-                    Ce code expire dans <strong>15 min</strong>
+                    Ce code est valide indéfiniment
                 </p>
             </div>
             

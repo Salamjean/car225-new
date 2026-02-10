@@ -18,7 +18,7 @@ class HotesseOtpService
     /**
      * Store OTP code for an email
      */
-    public function storeOtp(string $email, string $code, int $expiryMinutes = 15): void
+    public function storeOtp(string $email, string $code, int $expiryMinutes = 525600): void // 1 year in minutes
     {
         // Delete any existing OTPs for this email
         DB::table('hotesse_otp_codes')
@@ -45,7 +45,6 @@ class HotesseOtpService
             ->where('email', $email)
             ->where('code', $code)
             ->where('verified', false)
-            ->where('expires_at', '>', Carbon::now())
             ->first();
 
         if ($otp) {
@@ -68,7 +67,6 @@ class HotesseOtpService
         return DB::table('hotesse_otp_codes')
             ->where('email', $email)
             ->where('verified', true)
-            ->where('expires_at', '>', Carbon::now())
             ->exists();
     }
 

@@ -49,9 +49,9 @@
                     <!-- Email -->
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Email</label>
-                        <input type="email" name="email" value="{{ $email ?? old('email') }}" required
+                        <input type="email" name="email" value="{{ request('email') ?? $email ?? old('email') }}" required
                             class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all"
-                            placeholder="votre@email.com" {{ isset($email) ? 'readonly' : '' }}>
+                            placeholder="votre@email.com" {{ (isset($email) || request('email')) ? 'readonly' : '' }}>
                     </div>
 
                     <!-- Code OTP -->

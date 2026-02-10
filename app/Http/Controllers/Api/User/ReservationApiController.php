@@ -1008,6 +1008,8 @@ class ReservationApiController extends Controller
                 'nombre_places' => 'required|integer|min:1',
                 'date_voyage' => 'required|date',
                 'date_retour' => 'nullable|date|after_or_equal:date_voyage',
+                'heure_depart' => 'nullable|string', // AJOUTÉ
+                'heure_depart_retour' => 'nullable|string', // AJOUTÉ
                 'passagers' => 'required|array',
                 'passagers.*.nom' => 'required|string',
                 'passagers.*.prenom' => 'required|string',
@@ -1015,6 +1017,9 @@ class ReservationApiController extends Controller
                 'passagers.*.telephone' => 'required|string',
                 'passagers.*.urgence' => 'required|string',
                 'passagers.*.seat_number' => 'required|integer',
+                'passagers.*.return_seat_number' => 'nullable|integer', // AJOUTÉ
+                'seats_retour' => 'nullable|array', // AJOUTÉ
+                'seats_retour.*' => 'nullable|integer', // AJOUTÉ
                 'payment_method' => 'required|in:wallet,cinetpay'
             ]);
 
@@ -1104,10 +1109,66 @@ class ReservationApiController extends Controller
                 }
             }
             
+            // --- VÉRIFICATION CÔTÉ RETOUR SI ALLER-RETOUR ---
+            $returnProgram = null;
+            $reservedSeatsRetour = [];
+            if ($isAllerRetour && $dateRetour) {
+                $returnProgramQuery = Programme::where('compagnie_id', $programme->compagnie_id)
+                    ->where('point_depart', $programme->point_arrive)
+                    ->where('point_arrive', $programme->point_depart)
+                    ->where('statut', 'actif');
+
+                if ($request->filled('heure_depart_retour')) {
+                    $returnProgramQuery->where('heure_depart', $request->heure_depart_retour);
+                }
+
+                $returnProgram = $returnProgramQuery->first();
+
+                if ($returnProgram) {
+                    $reservedSeatsRetour = Reservation::where('programme_id', $returnProgram->id)
+                        ->where('date_voyage', $dateRetour)
+                        ->where(function($q) use ($timeoutMinutes) {
+                            $q->where('statut', 'confirmee')
+                              ->orWhere(function($q2) use ($timeoutMinutes) {
+                                  $q2->where('statut', 'en_attente')
+                                     ->where('created_at', '>=', now()->subMinutes($timeoutMinutes));
+                              });
+                        })
+                        ->pluck('seat_number')
+                        ->toArray();
+                        
+                    // Vérifier si des places retour sont spécifiées
+                    $seatsRetour = $request->seats_retour ?? [];
+                    if (empty($seatsRetour)) {
+                        // Chercher dans les passagers
+                        foreach ($request->passagers as $p) {
+                            if (isset($p['return_seat_number'])) {
+                                $seatsRetour[] = $p['return_seat_number'];
+                            }
+                        }
+                    }
+
+                    foreach ($seatsRetour as $seat) {
+                        if (in_array($seat, $reservedSeatsRetour)) {
+                            DB::rollBack();
+                            return response()->json([
+                                'success' => false,
+                                'message' => "La place de retour $seat n'est plus disponible pour le " . date('d/m/Y', strtotime($dateRetour))
+                            ], 422);
+                        }
+                    }
+                }
+            }
+            
             // Calcul prix
             $paymentMethod = $request->input('payment_method', 'cinetpay');
             $prixUnitaire = $programme->montant_billet;
             $montantTotal = $prixUnitaire * $request->nombre_places;
+            
+            // Si Aller-Retour, on double le prix (chaque passager paie l'aller et le retour)
+            if ($isAllerRetour) {
+                $montantTotal = $montantTotal * 2;
+            }
             
             $user = Auth::user();
             $passagers = $request->passagers;
@@ -1163,7 +1224,7 @@ class ReservationApiController extends Controller
                 ]);
 
                 // Créer les réservations (CONFIRMÉES pour wallet)
-                foreach ($passagers as $passager) {
+                foreach ($passagers as $index => $passager) {
                     $seatNumber = $passager['seat_number'];
                     $reference = $transactionId . '-' . $seatNumber;
 
@@ -1212,12 +1273,6 @@ class ReservationApiController extends Controller
 
                     // Création automatique du retour si aller-retour
                     if ($isAllerRetour && $dateRetour) {
-                        $returnProgram = Programme::where('compagnie_id', $programme->compagnie_id)
-                            ->where('point_depart', $programme->point_arrive)
-                            ->where('point_arrive', $programme->point_depart)
-                            ->where('statut', 'actif')
-                            ->first();
-
                         if ($returnProgram) {
                             $usedSeats = Reservation::where('programme_id', $returnProgram->id)
                                 ->where('date_voyage', $dateRetour)
@@ -1227,10 +1282,22 @@ class ReservationApiController extends Controller
 
                             $capacity = $returnProgram->vehicule ? intval($returnProgram->vehicule->nombre_place) : 30;
                             $returnSeat = null;
-                            for ($s = 1; $s <= $capacity; $s++) {
-                                if (!in_array($s, $usedSeats)) {
-                                    $returnSeat = $s;
-                                    break;
+
+                            // 1. Essayer d'utiliser le siège spécifié pour ce passager
+                            if (isset($passager['return_seat_number'])) {
+                                $returnSeat = $passager['return_seat_number'];
+                            } elseif (isset($request->seats_retour[$index])) {
+                                $returnSeat = $request->seats_retour[$index];
+                            }
+
+                            // 2. Si non spécifié ou déjà pris, chercher une place libre
+                            if (!$returnSeat || in_array($returnSeat, $usedSeats)) {
+                                $returnSeat = null;
+                                for ($s = 1; $s <= $capacity; $s++) {
+                                    if (!in_array($s, $usedSeats)) {
+                                        $returnSeat = $s;
+                                        break;
+                                    }
                                 }
                             }
 
@@ -1336,7 +1403,7 @@ class ReservationApiController extends Controller
                 ]);
 
                 // Création réservations (EN ATTENTE pour CinetPay)
-                foreach ($passagers as $passager) {
+                foreach ($passagers as $index => $passager) {
                     $seatNumber = $passager['seat_number'];
                     $reference = $transactionId . '-' . $seatNumber;
 
@@ -1375,12 +1442,6 @@ class ReservationApiController extends Controller
 
                     // Création automatique du retour si aller-retour
                     if ($isAllerRetour && $dateRetour) {
-                        $returnProgram = Programme::where('compagnie_id', $programme->compagnie_id)
-                            ->where('point_depart', $programme->point_arrive)
-                            ->where('point_arrive', $programme->point_depart)
-                            ->where('statut', 'actif')
-                            ->first();
-
                         if ($returnProgram) {
                             $usedSeats = Reservation::where('programme_id', $returnProgram->id)
                                 ->where('date_voyage', $dateRetour)
@@ -1390,10 +1451,22 @@ class ReservationApiController extends Controller
 
                             $capacity = $returnProgram->vehicule ? intval($returnProgram->vehicule->nombre_place) : 30;
                             $returnSeat = null;
-                            for ($s = 1; $s <= $capacity; $s++) {
-                                if (!in_array($s, $usedSeats)) {
-                                    $returnSeat = $s;
-                                    break;
+
+                            // 1. Essayer d'utiliser le siège spécifié pour ce passager
+                            if (isset($passager['return_seat_number'])) {
+                                $returnSeat = $passager['return_seat_number'];
+                            } elseif (isset($request->seats_retour[$index])) {
+                                $returnSeat = $request->seats_retour[$index];
+                            }
+
+                            // 2. Si non spécifié ou déjà pris, chercher une place libre
+                            if (!$returnSeat || in_array($returnSeat, $usedSeats)) {
+                                $returnSeat = null;
+                                for ($s = 1; $s <= $capacity; $s++) {
+                                    if (!in_array($s, $usedSeats)) {
+                                        $returnSeat = $s;
+                                        break;
+                                    }
                                 }
                             }
 

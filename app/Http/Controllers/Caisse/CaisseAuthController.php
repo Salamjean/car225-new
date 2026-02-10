@@ -141,7 +141,7 @@ class CaisseAuthController extends Controller
         // Check if password looks like temporary password
         if (str_starts_with($caisse->password, Hash::make('temporary_password_')) || 
             Hash::check('temporary_password_' . $caisse->created_at->timestamp, $caisse->password)) {
-            return redirect()->route('caisse.auth.verify-otp')
+            return redirect()->route('caisse.auth.verify-otp', ['email' => $caisse->email])
                 ->with('info', 'Veuillez d\'abord configurer votre mot de passe en utilisant le code OTP reçu par email.');
         }
 

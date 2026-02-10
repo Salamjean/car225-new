@@ -602,6 +602,8 @@ class ReservationController extends Controller
             'passagers.*.telephone' => 'required|string',
             'passagers.*.urgence' => 'required|string',
             'passagers.*.seat_number' => 'required|integer',
+            'heure_depart' => 'nullable|string', // AJOUTÉ
+            'heure_depart_retour' => 'nullable|string', // AJOUTÉ
             'seats_retour' => 'nullable|array', // AJOUTÉ
             'seats_retour.*' => 'nullable|integer', // AJOUTÉ
         ]);
@@ -678,6 +680,11 @@ $dateAller = $request->date_voyage;
             // Calculer le prix (FlixBus model: prix simple par place)
             $prixUnitaire = $programme->montant_billet;
             $montantTotal = $prixUnitaire * $request->nombre_places;
+            
+            // Si Aller-Retour, on double le prix
+            if ($request->boolean('is_aller_retour', false)) {
+                $montantTotal = $montantTotal * 2;
+            }
         
         // 1. DÉMARRER LA TRANSACTION (Sécurité absolue)
         DB::beginTransaction();
@@ -996,11 +1003,16 @@ $dateAller = $request->date_voyage;
                     $seatsRetour = $request->seats_retour ?? [];
                     
                     // Trouver un programme retour
-                    $returnProgram = Programme::where('compagnie_id', $programme->compagnie_id)
+                    $returnProgramQuery = Programme::where('compagnie_id', $programme->compagnie_id)
                         ->where('point_depart', $programme->point_arrive)
                         ->where('point_arrive', $programme->point_depart)
-                        ->where('statut', 'actif')
-                        ->first();
+                        ->where('statut', 'actif');
+
+                    if ($request->filled('heure_depart_retour')) {
+                        $returnProgramQuery->where('heure_depart', $request->heure_depart_retour);
+                    }
+
+                    $returnProgram = $returnProgramQuery->first();
 
                     if ($returnProgram) {
                         // Trouver l'index du passager actuel

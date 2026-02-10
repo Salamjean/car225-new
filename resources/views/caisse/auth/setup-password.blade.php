@@ -34,6 +34,13 @@
                 <form action="{{ route('caisse.auth.setup-password.submit') }}" method="POST" class="space-y-6">
                     @csrf
 
+                    <!-- Email (Read-only) -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Compte</label>
+                        <input type="email" value="{{ session('caisse_email_verified') }}" readonly
+                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-500 cursor-not-allowed">
+                    </div>
+
                     <!-- Password -->
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Nouveau mot de passe</label>

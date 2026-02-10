@@ -299,9 +299,9 @@
                     @csrf
 
                     <div class="form-group">
-                        <label for="email"><i class="fas fa-envelope"></i> Adresse Email</label>
-                        <input type="email" id="email" name="email" class="form-control"
-                            value="{{ old('email') }}" required autofocus placeholder="votre@email.com">
+                        <label for="login"><i class="fas fa-user"></i> Email ou Contact</label>
+                        <input type="text" id="login" name="login" class="form-control"
+                            value="{{ old('login') }}" required autofocus placeholder="votre@email.com ou 0700000000">
                     </div>
 
                     <div class="form-group">

@@ -138,6 +138,13 @@ class HotesseAuthController extends Controller
         if ($hotesse->isArchived()) {
             return back()->withErrors(['email' => 'Votre compte a été archivé. Contactez votre compagnie.'])->withInput();
         }
+        
+        // Check if password looks like temporary password
+        if (str_starts_with($hotesse->password, Hash::make('temporary_password_')) || 
+            Hash::check('temporary_password_' . $hotesse->created_at->timestamp, $hotesse->password)) {
+            return redirect()->route('hotesse.auth.verify-otp', ['email' => $hotesse->email])
+                ->with('info', 'Veuillez d\'abord configurer votre mot de passe en utilisant le code OTP reçu par email.');
+        }
 
         // Attempt login
 

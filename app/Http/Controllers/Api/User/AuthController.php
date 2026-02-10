@@ -19,23 +19,29 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'login' => 'required',
             'password' => 'required|min:8',
             'fcm_token' => 'nullable|string',
             'nom_device' => 'nullable|string|max:255',
         ], [
-            'email.required' => 'L\'adresse email est obligatoire.',
-            'email.email' => 'Veuillez saisir une adresse email valide.',
+            'login.required' => 'L\'identifiant (email ou contact) est obligatoire.',
             'password.required' => 'Le mot de passe est obligatoire.',
             'password.min' => 'Le mot de passe doit contenir au moins 8 caractères.',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $loginValue = $request->login;
+        $field = filter_var($loginValue, FILTER_VALIDATE_EMAIL) ? 'email' : 'contact';
+
+        $user = User::where($field, $loginValue)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['Les identifiants fournis sont incorrects.'],
-            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Les identifiants fournis sont incorrects.',
+                'errors' => [
+                    'login' => ['Les identifiants fournis sont incorrects.']
+                ]
+            ], 422);
         }
 
         // Vérifier si le compte est désactivé
@@ -45,11 +51,13 @@ class AuthController extends Controller
                 $deletionDate = $user->deactivated_at->copy()->addDays(30);
                 
                 if (now()->greaterThanOrEqualTo($deletionDate)) {
-                    // Supprimer le compte s'il a dépassé les 30 jours (ou rejeter la connexion)
-                    // Ici on rejette, le job de nettoyage s'occupera de la suppression
-                    throw ValidationException::withMessages([
-                        'email' => ['Votre compte a été supprimé définitivement.'],
-                    ]);
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Votre compte a été supprimé définitivement.',
+                        'errors' => [
+                            'login' => ['Votre compte a été supprimé définitivement.']
+                        ]
+                    ], 403);
                 } else {
                     // Réactiver le compte
                     $user->update([

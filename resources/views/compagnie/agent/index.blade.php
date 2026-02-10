@@ -1392,7 +1392,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Confirmation de suppression
     window.confirmDelete = function(agentId) {
         const form = document.getElementById('deleteForm');
-        form.action = `/compagnie/agents/${agentId}`;
+        form.action = `/company/agent/${agentId}`;
         
         const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
         modal.show();

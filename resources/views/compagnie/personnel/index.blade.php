@@ -390,7 +390,7 @@
             };
 
             // En production, utilisez un appel AJAX pour récupérer les données
-            fetch(`/compagnie/personnels/${personnelId}`)
+            fetch(`/company/personal/${personnelId}`)
                 .then(response => response.json())
                 .then(personnel => {
                     showPersonnelModal(personnel);
@@ -489,7 +489,7 @@
                     // Soumettre le formulaire de suppression
                     const form = document.createElement('form');
                     form.method = 'POST';
-                    form.action = `/compagnie/personnels/${personnelId}`;
+                    form.action = `/company/personal/${personnelId}`;
 
                     const csrfToken = document.createElement('input');
                     csrfToken.type = 'hidden';

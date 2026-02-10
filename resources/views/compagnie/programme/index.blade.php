@@ -215,7 +215,7 @@ function manageSchedules(routeData) {
                     <span class="text-gray-600">${h.heure_arrive}</span>
                 </div>
                 <div class="flex gap-2">
-                    <a href="/compagnie/programme/${h.id}/edit" target="_blank" class="text-blue-500 hover:text-blue-700" title="Modifier cet horaire">
+                    <a href="/company/programme/${h.id}/edit" target="_blank" class="text-blue-500 hover:text-blue-700" title="Modifier cet horaire">
                         <i class="fas fa-edit"></i>
                     </a>
                     <button type="button" onclick="deleteSchedule(${h.id})" class="text-red-400 hover:text-red-600" title="Supprimer">
@@ -376,7 +376,7 @@ function deleteSchedule(programId) {
         if (result.isConfirmed) {
             const form = document.createElement('form');
             form.method = 'POST';
-            form.action = `/compagnie/programme/${programId}`;
+            form.action = `/company/programme/${programId}`;
             form.innerHTML = `
                 @csrf
                 @method('DELETE')

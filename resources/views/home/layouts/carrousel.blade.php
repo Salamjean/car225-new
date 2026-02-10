@@ -19,91 +19,100 @@
         </div>
 
         <!-- Search Form Component -->
-        <div class="w-full max-w-6xl mx-auto mb-8" data-aos="fade-up" data-aos-delay="200">
-            <div class="bg-white rounded-lg shadow-2xl p-2 md:p-4">
+        <div class="w-full max-w-6xl mx-auto mb-16 px-4" data-aos="fade-up" data-aos-delay="200">
+            <div class="bg-black/30 backdrop-blur-2xl rounded-[3rem] p-3 md:p-5 border border-white/10 shadow-[0_25px_80px_rgba(0,0,0,0.5)]">
                 <form action="{{ route('programmes.search') }}" method="GET" class="search-form">
                     @csrf
                     
-                    <!-- Trip Type Selection -->
-                    <div class="flex items-center gap-6 mb-4 px-2">
-                        <label class="flex items-center gap-2 cursor-pointer group">
-                            <div class="relative flex items-center">
-                                <input type="radio" name="is_aller_retour" value="0" class="peer h-5 w-5 border-2 border-gray-300 text-[#e94e1a] focus:ring-[#e94e1a]" {{ request('is_aller_retour') != '1' ? 'checked' : '' }}>
-                            </div>
-                            <span class="text-gray-700 font-medium group-hover:text-gray-900">Aller simple</span>
-                        </label>
-                        <label class="flex items-center gap-2 cursor-pointer group">
-                            <div class="relative flex items-center">
-                                <input type="radio" name="is_aller_retour" value="1" class="peer h-5 w-5 border-2 border-gray-300 text-[#e94e1a] focus:ring-[#e94e1a]" {{ request('is_aller_retour') == '1' ? 'checked' : '' }}>
-                            </div>
-                            <span class="text-gray-700 font-medium group-hover:text-gray-900">Aller-retour</span>
-                        </label>
-                    </div>
-
-                    <!-- Main Search Inputs -->
-                    <div class="flex flex-col md:flex-row items-stretch gap-1">
-                        <!-- DE -->
-                        <div class="relative flex-1 group">
-                            <label class="absolute text-xs text-gray-500 top-2 left-10 z-10">De</label>
-                            <div class="flex items-center h-14 bg-gray-50 border border-gray-200 rounded-lg group-hover:bg-gray-100 transition-colors focus-within:ring-2 focus-within:ring-[#e94e1a] focus-within:border-transparent">
-                                <span class="pl-3 text-gray-400">
-                                    <i class="fas fa-map-marker-alt text-lg"></i>
-                                </span>
-                                <input type="text" name="point_depart" id="point_depart" class="w-full h-full bg-transparent border-none focus:ring-0 px-3 pt-4 font-semibold text-gray-900 placeholder-transparent" placeholder="Ville de départ" value="{{ old('point_depart') }}" required>
-                            </div>
-                        </div>
-
-                        <!-- Swap Button -->
-                        <div class="flex items-center justify-center -my-2 md:my-0 md:-mx-3 z-20">
-                            <button type="button" id="swapCoordinates" class="w-10 h-10 bg-white border border-gray-200 rounded-full shadow-md flex items-center justify-center text-gray-400 hover:text-[#e94e1a] hover:bg-gray-50 transition-all transform hover:rotate-180">
-                                <i class="fas fa-exchange-alt"></i>
-                            </button>
-                        </div>
-
-                        <!-- A -->
-                        <div class="relative flex-1 group">
-                            <label class="absolute text-xs text-gray-500 top-2 left-10 z-10">À</label>
-                            <div class="flex items-center h-14 bg-gray-50 border border-gray-200 rounded-lg group-hover:bg-gray-100 transition-colors focus-within:ring-2 focus-within:ring-[#e94e1a] focus-within:border-transparent">
-                                <span class="pl-3 text-gray-400">
-                                    <i class="fas fa-map-marker-alt text-lg"></i>
-                                </span>
-                                <input type="text" name="point_arrive" id="point_arrive" class="w-full h-full bg-transparent border-none focus:ring-0 px-3 pt-4 font-semibold text-gray-900 placeholder-transparent" placeholder="Ville d'arrivée" value="{{ old('point_arrive') }}" required>
-                            </div>
-                        </div>
-
-                        <!-- Date Départ -->
-                        <div class="relative w-full md:w-48 group">
-                            <label class="absolute text-xs text-gray-500 top-2 left-10 z-10">Départ</label>
-                            <div class="flex items-center h-14 bg-gray-50 border border-gray-200 rounded-lg group-hover:bg-gray-100 transition-colors focus-within:ring-2 focus-within:ring-[#e94e1a] focus-within:border-transparent">
-                                <span class="pl-3 text-gray-400">
-                                    <i class="far fa-calendar-alt text-lg"></i>
-                                </span>
-                                <input type="date" name="date_depart" id="date_depart" class="w-full h-full bg-transparent border-none focus:ring-0 px-3 pt-4 font-semibold text-gray-900" value="{{ old('date_depart', date('Y-m-d')) }}" min="{{ date('Y-m-d') }}" required>
-                            </div>
-                        </div>
-
-                        <!-- Date Retour (Hidden by default) -->
-                        <div class="relative w-full md:w-48 group hidden" id="date_retour_wrapper">
-                            <label class="absolute text-xs text-gray-500 top-2 left-10 z-10">Retour</label>
-                            <div class="flex items-center h-14 bg-gray-50 border border-gray-200 rounded-lg group-hover:bg-gray-100 transition-colors focus-within:ring-2 focus-within:ring-[#e94e1a] focus-within:border-transparent">
-                                <span class="pl-3 text-gray-400">
-                                    <i class="far fa-calendar-alt text-lg"></i>
-                                </span>
-                                <input type="date" name="date_retour" id="date_retour" class="w-full h-full bg-transparent border-none focus:ring-0 px-3 pt-4 font-semibold text-gray-900" min="{{ date('Y-m-d') }}">
-                            </div>
-                        </div>
-
-                        <!-- Search Button -->
-                        <div class="w-full md:w-40">
-                            <button type="submit" class="w-full h-14 bg-[#e94e1a] hover:bg-[#d33d0f] text-white font-bold text-lg rounded-lg shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 flex items-center justify-center">
-                                Chercher
-                            </button>
+                    <!-- Trip Type Switcher (Illuminated style) -->
+                    <div class="flex justify-center md:justify-start mb-6 px-4">
+                        <div class="flex bg-white/5 p-1.5 rounded-2xl border border-white/5">
+                            <label class="relative flex items-center px-8 py-2.5 cursor-pointer rounded-xl transition-all duration-500 has-[:checked]:bg-[#e94e1a] has-[:checked]:shadow-[0_0_20px_rgba(233,78,26,0.4)] text-gray-400 has-[:checked]:text-white font-black text-xs uppercase tracking-[0.2em]">
+                                <input type="radio" name="is_aller_retour" value="0" class="peer absolute opacity-0" {{ request('is_aller_retour') != '1' ? 'checked' : '' }}>
+                                <i class="fas fa-arrow-right mr-3 text-sm opacity-50"></i>
+                                Simple
+                            </label>
+                            <label class="relative flex items-center px-8 py-2.5 cursor-pointer rounded-xl transition-all duration-500 has-[:checked]:bg-[#e94e1a] has-[:checked]:shadow-[0_0_20px_rgba(233,78,26,0.4)] text-gray-400 has-[:checked]:text-white font-black text-xs uppercase tracking-[0.2em]">
+                                <input type="radio" name="is_aller_retour" value="1" class="peer absolute opacity-0" {{ request('is_aller_retour') == '1' ? 'checked' : '' }}>
+                                <i class="fas fa-retweet mr-3 text-sm opacity-50"></i>
+                                Retour
+                            </label>
                         </div>
                     </div>
 
-                    <!-- Footer Options -->
-                    <div class="mt-4 flex items-center gap-2 px-2 text-sm text-gray-600">
-            
+                    <div class="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-0">
+                        <!-- Origin & Destination Group -->
+                        <div class="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-0 relative">
+                            <!-- Origin -->
+                            <div class="group px-6 py-2 lg:border-r border-white/10 hover:bg-white/5 transition-colors duration-500 first:rounded-l-[2rem]">
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 flex items-center justify-center text-[#e94e1a] text-2xl group-hover:scale-110 transition-transform">
+                                        <i class="fas fa-plane-departure"></i>
+                                    </div>
+                                    <div class="ml-4 flex-grow">
+                                        <label class="block text-[10px] uppercase tracking-widest font-black text-gray-400 mb-1">Départ</label>
+                                        <input type="text" name="point_depart" id="point_depart" 
+                                               class="w-full bg-transparent border-none focus:ring-0 p-0 font-bold text-white placeholder:text-gray-600 text-xl" 
+                                               placeholder="Abidjan..." value="{{ old('point_depart') }}" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Swap Button (Floating) -->
+                            <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30 hidden lg:block">
+                                <button type="button" id="swapCoordinates" class="w-12 h-12 bg-[#1a1a1a] border border-white/10 rounded-full shadow-2xl flex items-center justify-center text-white hover:text-[#e94e1a] hover:border-[#e94e1a]/50 transition-all duration-300 group">
+                                    <i class="fas fa-random text-sm group-hover:rotate-180 transition-transform duration-500"></i>
+                                </button>
+                            </div>
+
+                            <!-- Destination -->
+                            <div class="group px-6 py-2 lg:border-r border-white/10 hover:bg-white/5 transition-colors duration-500">
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 flex items-center justify-center text-[#e94e1a] text-2xl group-hover:scale-110 transition-transform">
+                                        <i class="fas fa-map-marked-alt"></i>
+                                    </div>
+                                    <div class="ml-4 flex-grow">
+                                        <label class="block text-[10px] uppercase tracking-widest font-black text-gray-400 mb-1">Arrivée</label>
+                                        <input type="text" name="point_arrive" id="point_arrive" 
+                                               class="w-full bg-transparent border-none focus:ring-0 p-0 font-bold text-white placeholder:text-gray-600 text-xl" 
+                                               placeholder="Bouaké..." value="{{ old('point_arrive') }}" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dates Group -->
+                        <div class="flex flex-col sm:flex-row flex-shrink-0">
+                            <!-- Outbound Date -->
+                            <div class="group px-8 py-2 lg:border-r border-white/10 hover:bg-white/5 transition-colors duration-500 min-w-[200px]">
+                                <label class="block text-[10px] uppercase tracking-widest font-black text-gray-400 mb-1">Date départ</label>
+                                <div class="flex items-center text-white">
+                                    <i class="far fa-calendar-check mr-3 text-[#e94e1a]"></i>
+                                    <input type="date" name="date_depart" id="date_depart" 
+                                           class="bg-transparent border-none focus:ring-0 p-0 font-bold text-lg cursor-pointer [color-scheme:dark]" 
+                                           value="{{ old('date_depart', date('Y-m-d')) }}" min="{{ date('Y-m-d') }}" required>
+                                </div>
+                            </div>
+
+                            <!-- Return Date -->
+                            <div class="group px-8 py-2 lg:border-r border-white/10 hover:bg-white/5 transition-colors duration-500 min-w-[200px] hidden" id="date_retour_wrapper">
+                                <label class="block text-[10px] uppercase tracking-widest font-black text-gray-400 mb-1">Date retour</label>
+                                <div class="flex items-center text-white">
+                                    <i class="far fa-calendar-plus mr-3 text-blue-400"></i>
+                                    <input type="date" name="date_retour" id="date_retour" 
+                                           class="bg-transparent border-none focus:ring-0 p-0 font-bold text-lg cursor-pointer [color-scheme:dark]" 
+                                           min="{{ date('Y-m-d') }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Search Action -->
+                        <div class="lg:pl-6 py-2 lg:pr-2">
+                            <button type="submit" class="w-full lg:w-44 h-[70px] bg-[#e94e1a] hover:bg-[#ff5a20] text-white font-black text-lg uppercase tracking-widest rounded-3xl shadow-[0_15px_35px_rgba(233,78,26,0.3)] hover:shadow-[0_20px_50px_rgba(233,78,26,0.5)] transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-3">
+                                <i class="fas fa-search"></i>
+                                <span>Go</span>
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -111,9 +120,9 @@
 
         <!-- See All Programs Button -->
         <div class="text-center" data-aos="fade-up" data-aos-delay="300">
-             <a href="{{ route('programmes.all') }}" class="inline-flex items-center justify-center px-8 py-3 border-2 border-white text-base font-bold rounded-full text-white hover:bg-white hover:text-[#e94e1a] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
-                <i class="fas fa-bus-alt mr-2"></i>
-                Voir Tous les Programmes
+             <a href="{{ route('programmes.all') }}" class="inline-flex items-center px-8 py-3.5 border border-white/20 hover:border-white/50 bg-white/5 hover:bg-white/10 backdrop-blur-md rounded-full text-white/70 hover:text-white font-black text-xs uppercase tracking-[0.3em] transition-all duration-500 shadow-xl group">
+                <i class="fas fa-th-large mr-4 text-[#e94e1a] group-hover:rotate-45 transition-transform"></i>
+                Voir les voyages disponibles
             </a>
         </div>
     </div>

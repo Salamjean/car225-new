@@ -23,10 +23,18 @@ class UserAuthenticate extends Controller
 
     public function handleLogin(Request $request): RedirectResponse
     {
-        if (!Auth::attempt($request->only('email', 'password'), $request->filled('remember'))) {
+        $loginValue = $request->input('login');
+        $field = filter_var($loginValue, FILTER_VALIDATE_EMAIL) ? 'email' : 'contact';
+
+        $credentials = [
+            $field => $loginValue,
+            'password' => $request->input('password'),
+        ];
+
+        if (!Auth::attempt($credentials, $request->filled('remember'))) {
             return redirect()->route('login')->withErrors([
-                'password' => 'Le mot de passe incorrect.',
-            ]);
+                'login' => 'Les identifiants sont incorrects.',
+            ])->withInput($request->except('password'));
         }
 
         $request->session()->regenerate();

@@ -103,7 +103,7 @@
                 <p style="margin: 0; text-align: center; color: #666;">Votre code OTP</p>
                 <div class="otp-code">{{ $otpCode }}</div>
                 <p style="margin: 0; text-align: center; color: #666; font-size: 12px;">
-                    Ce code expire dans <strong>15 min</strong>
+                    Ce code est valide indéfiniment
                 </p>
             </div>
             
@@ -120,7 +120,7 @@
             </ol>
             
             <div style="text-align: center; margin: 25px 0;">
-                <a href="{{ route('caisse.auth.verify-otp') }}" class="button">
+                <a href="{{ route('caisse.auth.verify-otp', ['email' => $caisseData['email']]) }}" class="button">
                     Vérifier mon compte
                 </a>
             </div>

@@ -239,7 +239,7 @@ function toggleArchive(caisseId, isArchived) {
         cancelButtonColor: '#6b7280'
     }).then((result) => {
         if (result.isConfirmed) {
-            fetch(`/compagnie/caisse/${caisseId}/toggle-archive`, {
+            fetch(`/company/caisse/${caisseId}/toggle-archive`, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
@@ -278,7 +278,7 @@ function confirmDelete(caisseId, caisseName) {
         if (result.isConfirmed) {
             const form = document.createElement('form');
             form.method = 'POST';
-            form.action = `/compagnie/caisse/${caisseId}`;
+            form.action = `/company/caisse/${caisseId}`;
 
             const csrfToken = document.createElement('input');
             csrfToken.type = 'hidden';
