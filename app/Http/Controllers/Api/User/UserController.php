@@ -51,13 +51,18 @@ class UserController extends Controller
             'prenom' => 'sometimes|string|max:255',
             'contact' => 'sometimes|string|max:255',
             'adresse' => 'sometimes|string|max:255',
+            'nom_urgence' => 'nullable|string|max:255',
+            'prenom_urgence' => 'nullable|string|max:255',
+            'contact_urgence' => 'nullable|string|max:20|different:contact',
             'photo_profile' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ], [
+            'contact_urgence.different' => 'Le contact d\'urgence doit être différent de votre contact principal.',
         ]);
 
         // Gestion de l'upload de la photo de profil
         if ($request->hasFile('photo_profile')) {
             // Supprimer l'ancienne photo si elle existe
-            if ($user->photo_profile_path) {
+            if ($user->photo_profile_path && Storage::disk('public')->exists($user->photo_profile_path)) {
                 Storage::disk('public')->delete($user->photo_profile_path);
             }
 
@@ -79,6 +84,9 @@ class UserController extends Controller
                 'email' => $user->email,
                 'contact' => $user->contact,
                 'adresse' => $user->adresse,
+                'nom_urgence' => $user->nom_urgence,
+                'prenom_urgence' => $user->prenom_urgence,
+                'contact_urgence' => $user->contact_urgence,
                 'photo_profile_path' => $user->photo_profile_path ? 'storage/' . $user->photo_profile_path : null,
             ],
         ]);
