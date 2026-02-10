@@ -91,14 +91,14 @@
                                         </div>
                                     </div>
 
-                                    <!-- Changement de véhicule -->
-                                    <div class="mt-4 pt-3 border-t border-gray-100">
-                                        <label for="vehicule_id" class="text-xs text-gray-500 flex items-center gap-1 cursor-pointer mb-2">
-                                            <i class="fas fa-edit"></i> Le véhicule a été remplacé ?
-                                        </label>
-                                        <select id="vehicule_id" name="vehicule_id" class="block w-full text-sm border-gray-300 rounded-lg shadow-sm focus:ring-red-500 focus:border-red-500 bg-white py-2">
-                                            <option value="">-- Conserver le véhicule prévu --</option>
-                                        </select>
+                                    <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+                                        <div>
+                                            <p class="text-xs text-gray-500 mb-1">Passagers à bord</p>
+                                            <p id="display-occupancy" class="font-black text-red-600 text-lg">chargement...</p>
+                                        </div>
+                                        <button type="button" onclick="showPassengersPopup()" class="bg-red-50 text-red-600 px-4 py-2 rounded-xl text-xs font-bold hover:bg-red-100 transition-colors border border-red-100 flex items-center gap-2">
+                                            <i class="fas fa-users"></i> Liste Passagers
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -302,38 +302,89 @@
                 displayCompagnie.textContent = compName;
                 displayVehicule.textContent = `${vehImmat} (${vehMarque})`;
                 
-                // Charger la liste des véhicules de la compagnie pour permettre un changement
-                fetchVehicles(compId, vehId);
+                // NOUVEAU: Récupérer l'occupation du véhicule
+                fetchOccupancy(select.value);
 
             } else {
                 section.classList.add('hidden');
             }
         }
 
-        function fetchVehicles(compagnieId, defaultVehiculeId) {
-            const select = document.getElementById('vehicule_id');
-            select.innerHTML = '<option value="">Chargement...</option>';
+        let currentPassengers = [];
 
-            fetch(`/api/company/${compagnieId}/vehicles`)
+        function fetchOccupancy(programmeId) {
+            const occupancyDisplay = document.getElementById('display-occupancy');
+            occupancyDisplay.textContent = '...';
+            
+            fetch(`/api/program/${programmeId}/occupancy`)
                 .then(res => res.json())
                 .then(data => {
-                    select.innerHTML = '<option value="">-- Conserver le véhicule prévu --</option>';
-                    data.forEach(v => {
-                        // On n'affiche pas le véhicule prévu dans la liste des choix de "changement" pour éviter la confusion, 
-                        // ou alors on le marque. Ici on l'ajoute simplement.
-                        const isDefault = v.id == defaultVehiculeId ? ' (Prévu)' : '';
-                        const option = document.createElement('option');
-                        option.value = v.id;
-                        option.textContent = `${v.immatriculation} - ${v.marque} ${v.modele}${isDefault}`;
-                        if(v.id == defaultVehiculeId) option.className = "font-bold bg-gray-100";
-                        select.appendChild(option);
-                    });
+                    if (data.success) {
+                        occupancyDisplay.textContent = `${data.count} passagers`;
+                        currentPassengers = data.passengers;
+                    } else {
+                        occupancyDisplay.textContent = 'Erreur';
+                    }
                 })
                 .catch(err => {
                     console.error(err);
-                    select.innerHTML = '<option value="">Erreur chargement liste</option>';
+                    occupancyDisplay.textContent = 'Calcul impossible';
                 });
         }
+
+        function showPassengersPopup() {
+            if (currentPassengers.length === 0) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Liste des passagers',
+                    text: 'Aucun autre passager confirmé sur ce trajet pour le moment.',
+                    confirmButtonColor: '#dc2626'
+                });
+                return;
+            }
+
+            let passengerHtml = `
+                <div class="max-h-60 overflow-y-auto mt-4 px-2">
+                    <table class="w-full text-sm text-left">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                            <tr>
+                                <th class="px-3 py-2">Place</th>
+                                <th class="px-3 py-2">Nom & Prénoms</th>
+                                <th class="px-3 py-2">Contact</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            currentPassengers.forEach(p => {
+                passengerHtml += `
+                    <tr class="border-b">
+                        <td class="px-3 py-2 font-bold text-red-600">#${p.seat_number}</td>
+                        <td class="px-3 py-2 font-medium">${p.passager_nom} ${p.passager_prenom}</td>
+                        <td class="px-3 py-2 text-gray-600">${p.passager_telephone || 'N/A'}</td>
+                    </tr>
+                `;
+            });
+
+            passengerHtml += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            Swal.fire({
+                title: 'Passagers du Bus',
+                html: passengerHtml,
+                width: '600px',
+                confirmButtonText: 'Fermer',
+                confirmButtonColor: '#dc2626',
+                customClass: {
+                    title: 'text-xl font-black text-gray-900',
+                    html_container: 'text-left'
+                }
+            });
+        }
+
 
         function previewImage(input) {
             if (input.files && input.files[0]) {

@@ -33,7 +33,9 @@ class ProfileController extends Controller
             'contact' => 'nullable|string|max:20',
             'nom_urgence' => 'nullable|string|max:255',
             'prenom_urgence' => 'nullable|string|max:255',
-            'contact_urgence' => 'nullable|string|max:20',
+            'contact_urgence' => 'nullable|string|max:20|different:contact',
+        ], [
+            'contact_urgence.different' => 'Le contact d\'urgence doit être différent de votre contact principal.',
         ]);
 
         try {

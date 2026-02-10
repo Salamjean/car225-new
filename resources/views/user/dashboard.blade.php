@@ -12,7 +12,7 @@
                         {{ substr($user->name, 0, 1) }}
                     </div>
                     <div>
-                        <h1 class="text-3xl font-black text-gray-900 tracking-tight">Bonjour, {{ $user->name }} !</h1>
+                        <h1 class="text-3xl font-black text-gray-900 tracking-tight">Bonjour, {{ $user->name }}</h1>
                         <p class="text-gray-500 font-medium">Heureux de vous revoir. Où allez-vous aujourd'hui ?</p>
                     </div>
                 </div>

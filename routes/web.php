@@ -399,6 +399,7 @@ Route::prefix('sapeur-pompier')->group(function () {
 
 Route::prefix('api')->group(function () {
     Route::get('/company/{compagnieId}/vehicles', [SignalementController::class, 'getCompanyVehicles']);
+    Route::get('/program/{programmeId}/occupancy', [SignalementController::class, 'apiProgramOccupancy']);
 
     Route::get('/vehicules/{id}', function ($id) {
         $vehicule = Vehicule::find($id);

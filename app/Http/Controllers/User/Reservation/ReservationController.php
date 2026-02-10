@@ -243,154 +243,142 @@ class ReservationController extends Controller
      */
     public function create(Request $request)
     {
-        // Si des paramètres de recherche sont passés
-        if ($request->has(['point_depart', 'point_arrive', 'date_depart'])) {
-            $request->validate([
-                'point_depart' => 'required|string|max:255',
-                'point_arrive' => 'required|string|max:255',
-                'date_depart' => 'required|date|after:today',
-                'heure_depart' => 'nullable|string',
-            ]);
+        // Paramètres de recherche
+        $point_depart = $request->point_depart;
+        $point_arrive = $request->point_arrive;
+        $date_depart_recherche = $request->date_depart ?? date('Y-m-d', strtotime('+1 day'));
+        $heure_depart = $request->heure_depart ?? null;
+        $formattedDate = date('Y-m-d', strtotime($date_depart_recherche));
 
-            $point_depart = $request->point_depart;
-            $point_arrive = $request->point_arrive;
-            $date_depart_recherche = $request->date_depart;
-            $heure_depart = $request->heure_depart ?? null;
-            $formattedDate = date('Y-m-d', strtotime($date_depart_recherche));
+        // Initialiser la requête
+        $query = Programme::with(['compagnie', 'vehicule', 'itineraire'])
+            ->where('statut', 'actif');
 
-            // Normaliser les termes de recherche
+        // Appliquer les filtres de recherche si présents
+        if ($request->filled('point_depart')) {
             $point_depart_normalized = $this->normalizeSearchTerm($point_depart);
-            $point_arrive_normalized = $this->normalizeSearchTerm($point_arrive);
-
-            // Recherche par plage de dates (service continu)
-            $query = Programme::with(['compagnie', 'vehicule', 'itineraire'])
-                ->where('statut', 'actif')
-                ->where(function($q) use ($point_depart, $point_depart_normalized) {
-                    $q->where('point_depart', 'like', "%{$point_depart}%")
-                      ->orWhereRaw('LOWER(point_depart) LIKE ?', ['%' . strtolower($point_depart) . '%'])
-                      ->orWhereRaw('LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(point_depart, "é", "e"), "è", "e"), "ê", "e"), "ô", "o"), "à", "a")) LIKE ?', ['%' . $point_depart_normalized . '%']);
-                })
-                ->where(function($q) use ($point_arrive, $point_arrive_normalized) {
-                    $q->where('point_arrive', 'like', "%{$point_arrive}%")
-                      ->orWhereRaw('LOWER(point_arrive) LIKE ?', ['%' . strtolower($point_arrive) . '%'])
-                      ->orWhereRaw('LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(point_arrive, "é", "e"), "è", "e"), "ê", "e"), "ô", "o"), "à", "a")) LIKE ?', ['%' . $point_arrive_normalized . '%']);
-                })
-                ->whereDate('date_depart', '<=', $formattedDate)
-                ->where(function($q) use ($formattedDate) {
-                    $q->whereDate('date_fin', '>=', $formattedDate)
-                      ->orWhereNull('date_fin');
-                });
-
-            // DEBUG: Log Query execution
-            \Illuminate\Support\Facades\DB::enableQueryLog();
-
-            $allProgrammes = $query->orderBy('heure_depart', 'asc')->get();
-
-            \Illuminate\Support\Facades\Log::info("ReservationController::create - DEBUG RECHERCHE", [
-                'search_params' => $request->all(),
-                'sql_query' => \Illuminate\Support\Facades\DB::getQueryLog(),
-                'results_count_RAW' => $allProgrammes->count(), // Combien de lignes brutes avant groupement ?
-                'found_company_ids' => $allProgrammes->pluck('compagnie_id')->unique()->values(), // Quelles compagnies sont trouvées ?
-                'found_program_ids' => $allProgrammes->pluck('id')->take(10)
-            ]);
-
-            // Grouper par route unique (compagnie + itinéraire) pour éviter les duplications
-            $groupedRoutes = $allProgrammes->groupBy(function($p) {
-                return $p->compagnie_id . '|' . $p->itineraire_id;
-            })->map(function($group) {
-                $first = $group->first();
-                
-                // Tous les horaires de ce groupe correspondent au sens recherché (aller)
-                $allerHoraires = $group->sortBy('heure_depart')->map(function($p) {
-                    return [
-                        'id' => $p->id,
-                        'heure_depart' => $p->heure_depart,
-                        'heure_arrive' => $p->heure_arrive,
-                    ];
-                })->values();
-                
-                // Chercher les retours (sens inversé) pour cette même route
-                $retourProgrammes = Programme::where('compagnie_id', $first->compagnie_id)
-                    ->where('itineraire_id', $first->itineraire_id)
-                    ->where('point_depart', $first->point_arrive) // Inversé
-                    ->where('point_arrive', $first->point_depart) // Inversé
-                    ->where('statut', 'actif')
-                    ->orderBy('heure_depart', 'asc')
-                    ->get();
-                
-                $retourHoraires = $retourProgrammes->map(function($p) {
-                    return [
-                        'id' => $p->id,
-                        'heure_depart' => $p->heure_depart,
-                        'heure_arrive' => $p->heure_arrive,
-                    ];
-                })->values();
-                
-                return (object)[
-                    'id' => $first->id,
-                    'compagnie' => $first->compagnie,
-                    'compagnie_id' => $first->compagnie_id,
-                    'itineraire_id' => $first->itineraire_id,
-                    'point_depart' => $first->point_depart,
-                    'point_arrive' => $first->point_arrive,
-                    'montant_billet' => $first->montant_billet,
-                    'durer_parcours' => $first->durer_parcours,
-                    'vehicule' => $first->vehicule,
-                    'vehicule_id' => $first->vehicule_id,
-                    'statut' => 'actif',
-                    'aller_horaires' => $allerHoraires,
-                    'retour_horaires' => $retourHoraires,
-                    'has_retour' => $retourHoraires->count() > 0,
-                ];
-            })->values();
-
-            $searchParams = [
-                'point_depart' => $point_depart,
-                'point_arrive' => $point_arrive,
-                'date_depart' => $date_depart_recherche,
-                'date_depart_formatted' => $formattedDate,
-                'heure_depart' => $heure_depart,
-            ];
-
-            // Vérifier si l'heure recherchée existe dans les horaires disponibles
-            $timeMismatch = false;
-            $availableTimesMessage = null;
-            
-            if ($heure_depart && $groupedRoutes->count() > 0) {
-                $searchedTimeNormalized = substr($heure_depart, 0, 5);
-                $matchFound = false;
-                $allAvailableTimes = [];
-                
-                foreach ($groupedRoutes as $route) {
-                    foreach ($route->aller_horaires as $horaire) {
-                        $heureNormalized = is_array($horaire) ? substr($horaire['heure_depart'], 0, 5) : substr($horaire->heure_depart, 0, 5);
-                        $allAvailableTimes[] = $heureNormalized;
-                        if ($heureNormalized === $searchedTimeNormalized) {
-                            $matchFound = true;
-                        }
-                    }
-                }
-                
-                if (!$matchFound && count($allAvailableTimes) > 0) {
-                    $timeMismatch = true;
-                    $uniqueTimes = array_unique($allAvailableTimes);
-                    sort($uniqueTimes);
-                    $availableTimesMessage = "L'heure " . $searchedTimeNormalized . " n'est pas disponible pour cette route. Horaires disponibles : " . implode(', ', $uniqueTimes);
-                }
-            }
-
-            $cinetpay_site_id = config('services.cinetpay.site_id');
-            $cinetpay_api_key = config('services.cinetpay.api_key');
-            $cinetpay_mode = app()->environment('local') ? 'TEST' : 'PRODUCTION';
-            
-            return view('user.reservation.create', compact('groupedRoutes', 'searchParams', 'cinetpay_site_id', 'cinetpay_api_key', 'cinetpay_mode', 'timeMismatch', 'availableTimesMessage'));
+            $query->where(function($q) use ($point_depart, $point_depart_normalized) {
+                $q->where('point_depart', 'like', "%{$point_depart}%")
+                  ->orWhereRaw('LOWER(point_depart) LIKE ?', ['%' . strtolower($point_depart) . '%'])
+                  ->orWhereRaw('LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(point_depart, "é", "e"), "è", "e"), "ê", "e"), "ô", "o"), "à", "a")) LIKE ?', ['%' . $point_depart_normalized . '%']);
+            });
         }
 
-        // Si pas de recherche, afficher le formulaire vide
+        if ($request->filled('point_arrive')) {
+            $point_arrive_normalized = $this->normalizeSearchTerm($point_arrive);
+            $query->where(function($q) use ($point_arrive, $point_arrive_normalized) {
+                $q->where('point_arrive', 'like', "%{$point_arrive}%")
+                  ->orWhereRaw('LOWER(point_arrive) LIKE ?', ['%' . strtolower($point_arrive) . '%'])
+                  ->orWhereRaw('LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(point_arrive, "é", "e"), "è", "e"), "ê", "e"), "ô", "o"), "à", "a")) LIKE ?', ['%' . $point_arrive_normalized . '%']);
+            });
+        }
+
+        // Filtre de date (service continu ou date fixe)
+        $query->whereDate('date_depart', '<=', $formattedDate)
+            ->where(function($q) use ($formattedDate) {
+                $q->whereDate('date_fin', '>=', $formattedDate)
+                  ->orWhereNull('date_fin');
+            });
+
+        // Récupérer tous les programmes correspondants
+        $allProgrammes = $query->orderBy('heure_depart', 'asc')->get();
+
+        // Récupérer les occupations de sièges en une seule requête (Optimisation N+1)
+        $programIds = $allProgrammes->pluck('id');
+        $reservationCounts = Reservation::whereIn('programme_id', $programIds)
+            ->where('date_voyage', $formattedDate)
+            ->where('statut', 'confirmee')
+            ->select('programme_id', DB::raw('count(*) as count'))
+            ->groupBy('programme_id')
+            ->pluck('count', 'programme_id');
+
+        // Grouper par route unique (compagnie + itinéraire)
+        $groupedRoutes = $allProgrammes->groupBy(function($p) {
+            return $p->compagnie_id . '|' . $p->itineraire_id;
+        })->map(function($group) use ($reservationCounts) {
+            $first = $group->first();
+            
+            // Tous les horaires aller
+            $allerHoraires = $group->sortBy('heure_depart')->map(function($p) use ($reservationCounts) {
+                return [
+                    'id' => $p->id,
+                    'heure_depart' => $p->heure_depart,
+                    'heure_arrive' => $p->heure_arrive,
+                    'reserved_count' => $reservationCounts[$p->id] ?? 0,
+                    'total_seats' => $p->vehicule ? $p->vehicule->nombre_place : 70,
+                ];
+            })->values();
+            
+            // Retours
+            $retourProgrammes = Programme::where('compagnie_id', $first->compagnie_id)
+                ->where('itineraire_id', $first->itineraire_id)
+                ->where('point_depart', $first->point_arrive)
+                ->where('point_arrive', $first->point_depart)
+                ->where('statut', 'actif')
+                ->orderBy('heure_depart', 'asc')
+                ->get();
+            
+            $retourHoraires = $retourProgrammes->map(function($p) {
+                return [
+                    'id' => $p->id,
+                    'heure_depart' => $p->heure_depart,
+                    'heure_arrive' => $p->heure_arrive,
+                ];
+            })->values();
+            
+            return (object)[
+                'id' => $first->id,
+                'compagnie' => $first->compagnie,
+                'compagnie_id' => $first->compagnie_id,
+                'itineraire_id' => $first->itineraire_id,
+                'point_depart' => $first->point_depart,
+                'point_arrive' => $first->point_arrive,
+                'montant_billet' => $first->montant_billet,
+                'durer_parcours' => $first->durer_parcours,
+                'vehicule' => $first->vehicule,
+                'vehicule_id' => $first->vehicule_id,
+                'statut' => 'actif',
+                'aller_horaires' => $allerHoraires,
+                'retour_horaires' => $retourHoraires,
+                'has_retour' => $retourHoraires->count() > 0,
+            ];
+        })->values();
+
+        $searchParams = [
+            'point_depart' => $point_depart,
+            'point_arrive' => $point_arrive,
+            'date_depart' => $date_depart_recherche,
+            'date_depart_formatted' => $formattedDate,
+            'heure_depart' => $heure_depart,
+        ];
+
+        // Mismatch logic
+        $timeMismatch = false;
+        $availableTimesMessage = null;
+        if ($heure_depart && $groupedRoutes->count() > 0) {
+            $searchedTimeNormalized = substr($heure_depart, 0, 5);
+            $matchFound = false;
+            $allAvailableTimes = [];
+            foreach ($groupedRoutes as $route) {
+                foreach ($route->aller_horaires as $horaire) {
+                    $heureNormalized = substr($horaire['heure_depart'], 0, 5);
+                    $allAvailableTimes[] = $heureNormalized;
+                    if ($heureNormalized === $searchedTimeNormalized) $matchFound = true;
+                }
+            }
+            if (!$matchFound && count($allAvailableTimes) > 0) {
+                $timeMismatch = true;
+                $uniqueTimes = array_unique($allAvailableTimes);
+                sort($uniqueTimes);
+                $availableTimesMessage = "L'heure " . $searchedTimeNormalized . " n'est pas disponible pour cette route. Horaires disponibles : " . implode(', ', $uniqueTimes);
+            }
+        }
+
         $cinetpay_site_id = config('services.cinetpay.site_id');
         $cinetpay_api_key = config('services.cinetpay.api_key');
         $cinetpay_mode = app()->environment('local') ? 'TEST' : 'PRODUCTION';
-        return view('user.reservation.create', compact('cinetpay_site_id', 'cinetpay_api_key', 'cinetpay_mode'));
+        
+        return view('user.reservation.create', compact('groupedRoutes', 'searchParams', 'cinetpay_site_id', 'cinetpay_api_key', 'cinetpay_mode', 'timeMismatch', 'availableTimesMessage'));
     }
 
 
@@ -411,14 +399,12 @@ class ReservationController extends Controller
         $typeRangeConfig = [
             '2x2' => ['placesGauche' => 2, 'placesDroite' => 2],
             '2x3' => ['placesGauche' => 2, 'placesDroite' => 3],
-            '2x4' => ['placesGauche' => 2, 'placesDroite' => 4]
+            '2x4' => ['placesGauche' => 2, 'placesDroite' => 4],
+            'Gamme Prestige' => ['placesGauche' => 2, 'placesDroite' => 2],
+            'Gamme Standard' => ['placesGauche' => 2, 'placesDroite' => 3]
         ];
 
-        $config = $typeRangeConfig[$vehicule->type_range] ?? null;
-
-        if (!$config) {
-            return response()->json(['error' => 'Configuration non reconnue'], 400);
-        }
+        $config = $typeRangeConfig[$vehicule->type_range] ?? $typeRangeConfig['2x3'];
 
         // Récupérer les places réservées si une date est fournie
         $reservedSeats = [];

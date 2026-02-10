@@ -37,6 +37,21 @@ class SignalementController extends Controller
         return response()->json($vehicules);
     }
 
+    public function apiProgramOccupancy($programmeId)
+    {
+        $today = now()->format('Y-m-d');
+        $reservations = \App\Models\Reservation::where('programme_id', $programmeId)
+            ->whereDate('date_voyage', $today)
+            ->where('statut', 'confirmee')
+            ->get(['id', 'passager_nom', 'passager_prenom', 'seat_number', 'passager_telephone']);
+
+        return response()->json([
+            'success' => true,
+            'count' => $reservations->count(),
+            'passengers' => $reservations
+        ]);
+    }
+
     /**
      * Enregistre le signalement.
      */
@@ -59,8 +74,14 @@ class SignalementController extends Controller
             $signalement->user_id = Auth::id(); // Assure que l'utilisateur est connecté
             $signalement->programme_id = $validated['programme_id'];
 
-            if (isset($validated['vehicule_id'])) {
+            if (isset($validated['vehicule_id']) && !empty($validated['vehicule_id'])) {
                 $signalement->vehicule_id = $validated['vehicule_id'];
+            } else {
+                // Par défaut, lier au véhicule prévu du programme
+                $programme = Programme::find($validated['programme_id']);
+                if ($programme) {
+                    $signalement->vehicule_id = $programme->vehicule_id;
+                }
             }
             $signalement->type = $validated['type'];
             $signalement->description = $validated['description'];

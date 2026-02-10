@@ -70,30 +70,11 @@
                                 <i class="fas fa-search"></i>
                                 <span>Rechercher un voyage</span>
                             </button>
-                            <button type="button" onclick="toggleProgramsList()"
-                                class="bg-white text-[#e94f1b] border-2 border-[#e94f1b] px-6 sm:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl font-bold transition-all duration-300 transform hover:-translate-y-1 shadow-md hover:shadow-xl flex items-center justify-center gap-3 text-sm sm:text-base hover:bg-[#e94f1b]">
-                                <i class="fas fa-list group-hover:text-white transition-colors"></i>
-                                <span>Voir tous les voyages</span>
-                            </button>
                         </div>
                     </form>
                 </div>
 
-                <!-- CONTENEUR INLINE POUR LA LISTE DES VOYAGES -->
-                <div id="inlineProgramsList" class="hidden mt-6 bg-white rounded-xl shadow-lg border border-gray-100 p-6 animate-fade-in-down">
-                     <div class="flex justify-between items-center mb-6">
-                        <div>
-                            <h3 class="text-xl font-bold text-gray-900" id="inlineListTitle">Choisir votre ligne</h3>
-                            <p class="text-gray-500" id="inlineListSubtitle">Sélectionnez votre trajet pour voir les disponibilités</p>
-                        </div>
-                        <button onclick="toggleProgramsList()" class="text-gray-400 hover:text-gray-600">
-                            <i class="fas fa-times text-xl"></i>
-                        </button>
-                     </div>
-                     <div id="programsListContent">
-                         <!-- Le contenu sera chargé ici via JS -->
-                     </div>
-                </div>
+
             </div>
              <!-- Alerte si l'heure recherchée n'existe pas -->
             @if (isset($timeMismatch) && $timeMismatch && isset($availableTimesMessage))
@@ -117,24 +98,32 @@
                         <div class="flex justify-between items-center">
                             <h2 class="text-xl sm:text-2xl font-bold text-gray-900">Voyages disponibles</h2>
                             <span class="bg-[#e94f1b] text-white px-4 py-2 rounded-xl font-bold text-lg">
-                                {{ $groupedRoutes->count() }} route(s) trouvée(s)
+                                {{ $groupedRoutes->count() }} trajet(s) disponible(s)
                             </span>
                         </div>
 
-                        <!-- Filtres appliqués -->
+                        <!-- Filtres ou Date actuelle -->
                         <div class="mt-4 flex flex-wrap gap-2">
-                            <div class="flex items-center gap-2 bg-orange-50 px-3 py-1 rounded-full">
-                                <i class="fas fa-map-marker-alt text-[#e94f1b]"></i>
-                                <span class="font-semibold">{{ $searchParams['point_depart'] }}</span>
-                            </div>
-                            <i class="fas fa-arrow-right text-[#e94f1b] my-auto"></i>
-                            <div class="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-full">
-                                <i class="fas fa-flag text-green-500"></i>
-                                <span class="font-semibold">{{ $searchParams['point_arrive'] }}</span>
-                            </div>
+                            @if(isset($searchParams['point_depart']) && $searchParams['point_depart'])
+                                <div class="flex items-center gap-2 bg-orange-50 px-3 py-1 rounded-full">
+                                    <i class="fas fa-map-marker-alt text-[#e94f1b]"></i>
+                                    <span class="font-semibold">{{ $searchParams['point_depart'] }}</span>
+                                </div>
+                                <i class="fas fa-arrow-right text-[#e94f1b] my-auto"></i>
+                                <div class="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-full">
+                                    <i class="fas fa-flag text-green-500"></i>
+                                    <span class="font-semibold">{{ $searchParams['point_arrive'] }}</span>
+                                </div>
+                            @else
+                                <div class="flex items-center gap-2 bg-purple-50 px-3 py-1 rounded-full">
+                                    <i class="fas fa-globe text-purple-600"></i>
+                                    <span class="font-semibold text-purple-700">Toutes les destinations</span>
+                                </div>
+                            @endif
+                            
                             <div class="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full">
                                 <i class="fas fa-calendar text-blue-500"></i>
-                                <span>{{ date('d/m/Y', strtotime($searchParams['date_depart'])) }}</span>
+                                <span class="font-bold text-blue-700">{{ date('d/m/Y', strtotime($searchParams['date_depart'])) }}</span>
                             </div>
                         </div>
                     </div>
@@ -144,53 +133,60 @@
                         @foreach ($groupedRoutes as $route)
                             <div class="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
                                 <div class="p-5">
-                                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                                    <div class="flex flex-col lg:flex-row lg:items-center gap-6">
                                         <!-- Compagnie & Trajet -->
-                                        <div class="flex items-center gap-4 flex-1">
-                                            <div class="w-14 h-14 bg-gradient-to-r from-[#e94f1b] to-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                                <i class="fas fa-bus text-white text-xl"></i>
+                                        <div class="flex items-center gap-4 min-w-[280px]">
+                                            <div class="w-16 h-16 bg-gradient-to-br from-[#e94f1b] to-orange-400 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-inner">
+                                                <i class="fas fa-bus text-white text-2xl"></i>
                                             </div>
                                             <div>
-                                                <h3 class="font-bold text-gray-900 text-lg">
+                                                <h3 class="font-black text-gray-900 text-xl tracking-tight">
                                                     {{ $route->compagnie->name ?? 'Compagnie' }}
                                                 </h3>
-                                                <div class="flex items-center gap-2 text-sm text-gray-600 mt-1">
-                                                    <span class="font-semibold">{{ $route->point_depart }}</span>
-                                                    <i class="fas fa-arrow-right text-[#e94f1b]"></i>
-                                                    <span class="font-semibold">{{ $route->point_arrive }}</span>
+                                                <div class="flex items-center gap-2 text-sm text-gray-500 mt-1 font-medium">
+                                                    <span>{{ $route->point_depart }}</span>
+                                                    <i class="fas fa-long-arrow-alt-right text-[#e94f1b]"></i>
+                                                    <span>{{ $route->point_arrive }}</span>
+                                                </div>
+                                                <div class="mt-2 text-xs font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full inline-block">
+                                                    <i class="fas fa-hourglass-half mr-1"></i>{{ $route->durer_parcours }}
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <!-- Horaires disponibles -->
-                                        <div class="flex items-center gap-3">
-                                            <div class="text-center px-3 py-2 bg-green-50 rounded-lg">
-                                                <p class="text-xs text-green-600 uppercase font-semibold">Aller</p>
-                                                <p class="text-lg font-bold text-green-700">{{ $route->aller_horaires->count() }}</p>
-                                                <p class="text-xs text-green-600">horaire(s)</p>
-                                            </div>
-                                            @if($route->has_retour)
-                                            <div class="text-center px-3 py-2 bg-blue-50 rounded-lg">
-                                                <p class="text-xs text-blue-600 uppercase font-semibold">Retour</p>
-                                                <p class="text-lg font-bold text-blue-700">{{ $route->retour_horaires->count() }}</p>
-                                                <p class="text-xs text-blue-600">horaire(s)</p>
-                                            </div>
-                                            @endif
-                                        </div>
-
-                                        <!-- Durée & Prix -->
-                                        <div class="text-center">
-                                            <div class="flex items-center gap-2 text-gray-600 mb-1">
-                                                <i class="fas fa-hourglass-half text-purple-500"></i>
-                                                <span class="font-semibold">{{ $route->durer_parcours }}</span>
-                                            </div>
-                                            <div class="text-xl font-bold text-[#e94f1b]">
-                                                {{ number_format($route->montant_billet, 0, ',', ' ') }} FCFA
+                                        <!-- Horaires & Occupation (Liste défilante ou grille) -->
+                                        <div class="flex-1">
+                                            <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                                                <i class="fas fa-clock text-[#e94f1b]"></i> Horaires & Disponibilité
+                                            </p>
+                                            <div class="flex flex-wrap gap-2">
+                                                @foreach($route->aller_horaires as $horaire)
+                                                    @php
+                                                        $occupancyRate = ($horaire['reserved_count'] / $horaire['total_seats']) * 100;
+                                                        $statusClass = $horaire['reserved_count'] >= $horaire['total_seats'] ? 'bg-red-50 border-red-200 text-red-700' : 
+                                                                      ($occupancyRate > 80 ? 'bg-orange-50 border-orange-200 text-orange-700' : 'bg-green-50 border-green-200 text-green-700');
+                                                    @endphp
+                                                    <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl border {{ $statusClass }} transition-all hover:scale-105 shadow-sm">
+                                                        <span class="font-black text-sm">{{ substr($horaire['heure_depart'], 0, 5) }}</span>
+                                                        <div class="w-px h-3 bg-current opacity-20"></div>
+                                                        <div class="flex items-center gap-1">
+                                                            <i class="fas fa-couch text-[10px]"></i>
+                                                            <span class="text-[10px] font-black">{{ $horaire['reserved_count'] }}/{{ $horaire['total_seats'] }}</span>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
                                             </div>
                                         </div>
 
-                                        <!-- Actions -->
-                                        <div class="flex gap-2">
+                                        <!-- Prix & Action -->
+                                        <div class="lg:text-right flex lg:flex-col items-center lg:items-end justify-between lg:justify-center gap-4 border-t lg:border-t-0 lg:border-l border-gray-100 pt-4 lg:pt-0 lg:pl-6 min-w-[200px]">
+                                            <div>
+                                                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Prix à partir de</p>
+                                                <p class="text-2xl font-black text-[#e94f1b]">
+                                                    {{ number_format($route->montant_billet, 0, ',', ' ') }} <small class="text-xs">FCFA</small>
+                                                </p>
+                                            </div>
+                                            
                                             @php
                                                 $routeData = [
                                                     'id' => $route->id,
@@ -199,26 +195,18 @@
                                                     'point_arrive' => $route->point_arrive,
                                                     'montant_billet' => $route->montant_billet,
                                                     'durer_parcours' => $route->durer_parcours,
-                                                    'aller_horaires' => $route->aller_horaires->toArray(),
-                                                    'retour_horaires' => $route->retour_horaires->toArray(),
+                                                    'aller_horaires' => $route->aller_horaires,
+                                                    'retour_horaires' => $route->retour_horaires,
                                                     'has_retour' => $route->has_retour,
                                                 ];
                                             @endphp
                                             <button type="button" 
                                                 data-route="{{ json_encode($routeData, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) }}"
                                                 data-date="{{ $searchParams['date_depart'] }}"
-                                                onclick="openDetailsModal(this)"
-                                                class="bg-blue-600 text-white px-5 py-3 rounded-lg font-bold hover:bg-blue-700 transition-all duration-300 flex items-center gap-2">
-                                                <i class="fas fa-info-circle"></i>
-                                                <span class="hidden sm:inline">Détails</span>
-                                            </button>
-                                            <button type="button" 
-                                                data-route="{{ json_encode($routeData, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) }}"
-                                                data-date="{{ $searchParams['date_depart'] }}"
                                                 onclick="handleReservationClick(this)"
-                                                class="bg-[#e94f1b] text-white px-5 py-3 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 flex items-center gap-2">
-                                                <i class="fas fa-ticket-alt"></i>
-                                                <span>Réserver</span>
+                                                class="bg-gradient-to-r from-[#e94f1b] to-orange-600 text-white px-8 py-3 rounded-xl font-black text-sm hover:shadow-lg hover:shadow-orange-200 transition-all duration-300 transform active:scale-95 flex items-center gap-2">
+                                                <span>RÉSERVER</span>
+                                                <i class="fas fa-chevron-right text-[10px]"></i>
                                             </button>
                                         </div>
                                     </div>
@@ -500,31 +488,7 @@ var vehicleDetailsRetour = null;
 var currentRetourProgramId = null;
         var userWantsAllerRetour = false;
         var selectedReturnDate = null; // Date de retour sélectionnée pour Aller-Retour
-        // Fonction pour basculer l'affichage de la liste des programmes
-        window.toggleProgramsList = function() {
-            const listContainer = document.getElementById('inlineProgramsList');
-            if (listContainer) {
-                listContainer.classList.toggle('hidden');
-                
-                // Si la liste devient visible et est vide, on peut charger les programmes via AJAX
-                if (!listContainer.classList.contains('hidden')) {
-                     // Logique de chargement AJAX si nécessaire, pour l'instant on laisse vide ou on affiche un message
-                     // Ici, comme "groupedRoutes" est géré par Laravel (blade), la liste est déjà affichée si groupedRoutes existe.
-                     // Si c'est un bouton "Voir tous" qui doit faire un appel AJAX, il faudrait ajouter la logique ici.
-                     // D'après le code existant, "Voir tous les voyages" semble simplement vouloir afficher/masquer une zone.
-                     
-                     // Si le contenu est vide, on peut simuler un chargement ou rediriger
-                     const content = document.getElementById('programsListContent');
-                     if(content && content.innerHTML.trim() === '') {
-                        // Charger tous les voyages via AJAX ou recharger la page sans filtre ?
-                        // Pour l'instant, on redirige vers l'index sans filtre
-                        window.location.href = "{{ route('reservation.create') }}";
-                     }
-                }
-            } else {
-                console.error("L'élément inlineProgramsList est introuvable");
-            }
-        };
+
 
         window.currentUser = @json(Auth::user()); // Injecter l'utilisateur connecté
      // Définition explicite sur window pour s'assurer que le HTML peut voir la fonction
@@ -585,18 +549,11 @@ var currentRetourProgramId = null;
 
         // Configuration des types de rangées
         const typeRangeConfig = {
-            '2x2': {
-                placesGauche: 2,
-                placesDroite: 2
-            },
-            '2x3': {
-                placesGauche: 2,
-                placesDroite: 3
-            },
-            '2x4': {
-                placesGauche: 2,
-                placesDroite: 4
-            }
+            '2x2': { placesGauche: 2, placesDroite: 2 },
+            '2x3': { placesGauche: 2, placesDroite: 3 },
+            '2x4': { placesGauche: 2, placesDroite: 4 },
+            'Gamme Prestige': { placesGauche: 2, placesDroite: 2 },
+            'Gamme Standard': { placesGauche: 2, placesDroite: 3 }
         };
  // --- NOUVELLE FONCTION: Modal de sélection des horaires pour les routes groupées ---
         window.showRouteSchedulesModal = function(routeData, dateDepart) {
@@ -2333,10 +2290,10 @@ function onAllerRetourChoiceChange() {
                 return;
             }
 
-            const config = typeRangeConfig[vehicleDetails.type_range];
+            const config = typeRangeConfig[vehicleDetails.type_range] || typeRangeConfig['2x3'];
             if (!config) {
                 document.getElementById('seatSelectionArea').innerHTML =
-                    '<p class="text-center text-red-500">Configuration de places non reconnue.</p>';
+                    '<p class="text-center text-red-500">Impossible de charger la configuration des places.</p>';
                 return;
             }
 

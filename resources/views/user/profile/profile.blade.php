@@ -113,6 +113,7 @@
                                         <label class="block text-sm font-semibold text-gray-700 mb-2">Contact d'urgence</label>
                                         <input type="text" id="contact_urgence" name="contact_urgence" value="{{ $user->contact_urgence }}"
                                             class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
+                                        <p class="text-[10px] text-gray-500 mt-1 italic">Doit être différent de votre contact principal.</p>
                                         <div class="invalid-feedback text-red-500 text-sm mt-1"></div>
                                     </div>
                                 </div>
@@ -201,6 +202,16 @@
         clearErrors(form);
         
         const formData = new FormData(this);
+        
+        // Validation additionnelle côté client
+        const contact = $('#contact').val();
+        const contactUrgence = $('#contact_urgence').val();
+        
+        if (contact && contactUrgence && contact === contactUrgence) {
+            $('#contact_urgence').addClass('border-red-500 focus:ring-red-500').removeClass('border-gray-300');
+            $('#contact_urgence').next('.invalid-feedback').text('Le contact d\'urgence doit être différent de votre contact principal.');
+            return;
+        }
         
         $.ajax({
             url: '{{ route("user.profile.update") }}',
