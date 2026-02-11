@@ -87,6 +87,10 @@
                                         <span>Disposition du bus</span>
                                     </h3>
                                     <div class="flex items-center gap-4">
+                                        <div id="live-indicator" class="hidden flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-[10px] font-bold animate-pulse">
+                                            <div class="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                                            LIVE
+                                        </div>
                                         <span id="available-count" class="px-3 py-1 bg-green-50 text-green-700 rounded-full text-xs font-bold">0 places libres</span>
                                         <span id="vehicle-info" class="text-xs font-bold text-gray-500 bg-gray-50 px-3 py-1 rounded border border-gray-200"></span>
                                     </div>
@@ -229,6 +233,8 @@
     let selectedSeats = [];
     let currentPrice = 0;
     let availableSeats = [];
+    let currentReservedSeats = [];
+    let pollingInterval = null;
     let typeRangeConfig = {
         '1x1': { placesGauche: 1, placesDroite: 1 },
         '2x1': { placesGauche: 2, placesDroite: 1 },
@@ -268,24 +274,86 @@
         wrapper.style.opacity = '1';
         container.innerHTML = '<div class="flex flex-col items-center gap-4 text-orange-500"><i class="fas fa-circle-notch fa-spin fa-2x"></i><span>Chargement du plan...</span></div>';
         
-        resetSelection();
-
+        if (pollingInterval) clearInterval(pollingInterval);
+        
         const dateQuery = new Date().toISOString().split('T')[0];
-        fetch(`{{ url("/caisse/api/vehicle") }}/${vehicleId}?date=${dateQuery}&program_id=${programId}`)
+        fetchData(vehicleId, dateQuery, programId);
+
+        // Start polling every 2 seconds
+        pollingInterval = setInterval(() => {
+            fetchData(vehicleId, dateQuery, programId, true);
+        }, 2000);
+        
+        document.getElementById('live-indicator').classList.remove('hidden');
+    });
+
+    function fetchData(vehicleId, date, programId, isPolling = false) {
+        fetch(`{{ url("/caisse/api/vehicle") }}/${vehicleId}?date=${date}&program_id=${programId}`)
             .then(res => res.json())
             .then(data => {
                 if(data.success) {
-                    info.textContent = `${data.vehicule.marque || 'Bus'} - ${data.vehicule.immatriculation}`;
-                    generateSeatMap(data.vehicule, data.reserved_seats || []);
-                } else {
+                    if (!isPolling) {
+                        info.textContent = `${data.vehicule.marque || 'Bus'} - ${data.vehicule.immatriculation}`;
+                        generateSeatMap(data.vehicule, data.reserved_seats || []);
+                    } else {
+                        updateOccupiedSeats(data.reserved_seats || []);
+                    }
+                } else if (!isPolling) {
                     container.innerHTML = '<p class="text-red-500">Erreur lors de la récupération des données.</p>';
                 }
             })
             .catch(err => {
                 console.error(err);
-                container.innerHTML = '<p class="text-red-500">Erreur de connexion.</p>';
+                if (!isPolling) container.innerHTML = '<p class="text-red-500">Erreur de connexion.</p>';
             });
-    });
+    }
+
+    function updateOccupiedSeats(newReservedSeats) {
+        // Compare with old reserved seats to show warnings if needed
+        const newlyOccupied = newReservedSeats.filter(s => !currentReservedSeats.includes(s));
+        
+        // Update current reference
+        currentReservedSeats = [...newReservedSeats];
+
+        // Update UI
+        document.querySelectorAll('.seat-item').forEach(seat => {
+            const num = parseInt(seat.getAttribute('data-num'));
+            if (newReservedSeats.includes(num)) {
+                if (!seat.classList.contains('occupied')) {
+                    seat.classList.add('occupied');
+                    seat.classList.remove('selected');
+                    // If the seat was selected by user, remove it from selection
+                    const sIndex = selectedSeats.indexOf(num);
+                    if (sIndex > -1) {
+                        selectedSeats.splice(sIndex, 1);
+                        updateUI();
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Place vendue !',
+                            text: `La place ${num} vient d'être vendue à un autre guichet.`,
+                            toast: true,
+                            position: 'top-end',
+                            showConfirmButton: false,
+                            timer: 4000
+                        });
+                    }
+                }
+            } else {
+                seat.classList.remove('occupied');
+            }
+        });
+
+        // Update available count
+        const total = document.querySelectorAll('.seat-item').length;
+        const free = total - newReservedSeats.length;
+        availableSpan.textContent = `${free} places libres`;
+        
+        // Update availableSeats array for the +/- logic
+        availableSeats = [];
+        for(let i=1; i<=total; i++) {
+            if(!newReservedSeats.includes(i)) availableSeats.push(i);
+        }
+    }
 
     function generateSeatMap(vehicle, reservedSeats) {
         let config = typeRangeConfig[vehicle.type_range] || typeRangeConfig['2x2'];
@@ -294,6 +362,7 @@
         const total = parseInt(vehicle.nombre_place);
         const rows = Math.ceil(total / (pg + pd));
         
+        currentReservedSeats = [...reservedSeats];
         availableSeats = [];
         for(let i=1; i<=total; i++) {
             if(!reservedSeats.includes(i)) availableSeats.push(i);

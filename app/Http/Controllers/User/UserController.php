@@ -75,4 +75,17 @@ class UserController extends Controller
         Auth::guard('web')->logout();
         return redirect()->route('login');
     }
+
+    public function markNotificationRead(Request $request)
+    {
+        $notification = Auth::user()->notifications()->findOrFail($request->id);
+        $notification->markAsRead();
+        return response()->json(['success' => true]);
+    }
+
+    public function markAllNotificationsRead()
+    {
+        Auth::user()->unreadNotifications->markAsRead();
+        return response()->json(['success' => true]);
+    }
 }

@@ -89,6 +89,13 @@ Route::middleware('admin')->prefix('admin')->group(function () {
         Route::post('/{hotesse}/toggle-archive', [App\Http\Controllers\Admin\HotesseController::class, 'toggleArchive'])->name('admin.hotesse.toggle-archive');
         Route::delete('/{hotesse}', [App\Http\Controllers\Admin\HotesseController::class, 'destroy'])->name('admin.hotesse.destroy');
     });
+
+    // Gestion des Notifications
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\NotificationController::class, 'index'])->name('admin.notifications.index');
+        Route::post('/send', [App\Http\Controllers\Admin\NotificationController::class, 'send'])->name('admin.notifications.send');
+        Route::get('/search-users', [App\Http\Controllers\Admin\NotificationController::class, 'searchUsers'])->name('admin.notifications.search');
+    });
 });
 
 //Les routes de gestion du @admin
@@ -352,6 +359,10 @@ Route::middleware('auth')->prefix('user')->group(function () {
         Route::get('/create', [App\Http\Controllers\User\SupportController::class, 'create'])->name('user.support.create');
         Route::post('/store', [App\Http\Controllers\User\SupportController::class, 'store'])->name('user.support.store');
     });
+
+    // Notifications
+    Route::post('/notifications/mark-read', [UserController::class, 'markNotificationRead'])->name('user.notifications.mark-read');
+    Route::post('/notifications/mark-all-read', [UserController::class, 'markAllNotificationsRead'])->name('user.notifications.mark-all-read');
 });
 
 // Paiement CinetPay (Hors Auth pour le webhook)
