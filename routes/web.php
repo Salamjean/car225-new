@@ -212,6 +212,8 @@ Route::middleware('caisse')->prefix('caisse')->group(function () {
     // Ticket selling routes
     Route::get('/vendre-ticket', [App\Http\Controllers\Caisse\CaisseController::class, 'vendreTicket'])->name('caisse.vendre-ticket');
     Route::post('/vendre-ticket', [App\Http\Controllers\Caisse\CaisseController::class, 'vendreTicketSubmit'])->name('caisse.vendre-ticket.submit');
+    Route::get('/vente', [App\Http\Controllers\Caisse\CaisseController::class, 'vente'])->name('caisse.vente');
+    Route::post('/vente', [App\Http\Controllers\Caisse\CaisseController::class, 'venteSubmit'])->name('caisse.vente.submit');
     Route::get('/vente-success', [App\Http\Controllers\Caisse\CaisseController::class, 'venteSuccess'])->name('caisse.vente-success');
     
     // API Route for Vehicle Details (Shared Logic)

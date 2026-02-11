@@ -312,6 +312,111 @@ class CaisseController extends Controller
         }
     }
 
+    public function vente()
+    {
+        $caisse = Auth::guard('caisse')->user();
+        $now = Carbon::now();
+        $dateAujourdhui = $now->toDateString();
+        $heureActuelle = $now->format('H:i');
+        
+        $programmes = Programme::with(['compagnie', 'vehicule'])
+            ->where('compagnie_id', $caisse->compagnie_id)
+            ->where('statut', 'actif')
+            ->whereDate('date_fin', '>=', $dateAujourdhui)
+            ->whereDate('date_depart', '<=', $dateAujourdhui)
+            ->where('heure_depart', '>', $heureActuelle)
+            ->orderBy('heure_depart', 'asc')
+            ->get();
+            
+        return view('caisse.vente', compact('caisse', 'programmes'));
+    }
+
+    public function venteSubmit(Request $request)
+    {
+        $caisse = Auth::guard('caisse')->user();
+
+        $request->validate([
+            'programme_id' => 'required|exists:programmes,id',
+            'seat_numbers' => 'required|string',
+        ]);
+
+        $programme = Programme::with(['compagnie', 'vehicule'])->findOrFail($request->programme_id);
+        $seatNumbers = explode(',', $request->seat_numbers);
+        $nombreTickets = count($seatNumbers);
+        
+        $montantTotal = $programme->montant_billet * $nombreTickets;
+
+        if ($programme->compagnie->tickets < $montantTotal) {
+            return back()->withErrors(['error' => 'Solde de la compagnie insuffisant pour effectuer cette vente.']);
+        }
+
+        $dateVoyageEffective = now()->toDateString(); 
+
+        DB::beginTransaction();
+        try {
+            $programme->compagnie->deductTickets($montantTotal, "Vente Caisse Express - {$nombreTickets} tickets");
+
+            $reservations = [];
+
+            foreach ($seatNumbers as $seatNumber) {
+                // Vérifier si le siège est déjà pris (sécurité)
+                $alreadyReserved = Reservation::where('programme_id', $programme->id)
+                    ->whereDate('date_voyage', $dateVoyageEffective)
+                    ->where('seat_number', $seatNumber)
+                    ->exists();
+                
+                if ($alreadyReserved) {
+                    throw new \Exception("Le siège {$seatNumber} est déjà réservé.");
+                }
+
+                $reference = Reservation::generateReference($seatNumber);
+
+                $reservation = Reservation::create([
+                    'reference' => $reference,
+                    'programme_id' => $programme->id,
+                    'user_id' => null,
+                    'seat_number' => $seatNumber,
+                    'passager_nom' => 'PASSAGER',
+                    'passager_prenom' => $seatNumber,
+                    'passager_telephone' => $caisse->compagnie->contact ?? 'N/A',
+                    'date_voyage' => $dateVoyageEffective, 
+                    'heure_depart' => $programme->heure_depart,
+                    'heure_arrive' => $programme->heure_arrive,
+                    'montant' => $programme->montant_billet,
+                    'statut' => 'confirmee',
+                    'caisse_id' => $caisse->id,
+                ]);
+
+                try {
+                    $qrCodeData = $this->generateAndSaveQRCode(
+                        $reservation->reference,
+                        $reservation->id,
+                        $dateVoyageEffective,
+                        null
+                    );
+
+                    $reservation->update([
+                        'qr_code' => $qrCodeData['base64'],
+                        'qr_code_path' => $qrCodeData['path']
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Erreur QR: ' . $e->getMessage());
+                }
+
+                $reservations[] = $reservation;
+            }
+
+            DB::commit();
+
+            $ids = array_map(function($r) { return $r->id; }, $reservations);
+            return redirect()->route('caisse.vente-success', ['reservations' => $ids])->with('success', $nombreTickets . ' ticket(s) vendu(s) avec succès !');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Erreur lors de la vente : ' . $e->getMessage()]);
+        }
+    }
+
     /**
      * Générer et sauvegarder le QR Code avec Endroid
      */

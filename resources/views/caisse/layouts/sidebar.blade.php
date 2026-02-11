@@ -34,6 +34,14 @@
                     </a>
                 </div>
 
+                <!-- Vente Rapide (New) -->
+                <div class="mdc-list-item mdc-drawer-item">
+                    <a class="mdc-drawer-link" href="{{ route('caisse.vente') }}">
+                        <i class="fas fa-bolt mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
+                        Vente Rapide
+                    </a>
+                </div>
+
                 <!-- Vendre Ticket -->
                 <div class="mdc-list-item mdc-drawer-item">
                     <a class="mdc-drawer-link" href="{{ route('caisse.vendre-ticket') }}">
