@@ -161,18 +161,17 @@ class CompagnieController extends Controller
                 $compagnie->path_logo = $logoPath;
             }
 
-            // Gestion du rechargement de tickets
+            // Gestion du rechargement du solde (Ex-tickets)
             if ($request->filled('add_tickets') && $request->add_tickets > 0) {
-                $ticketsToAdd = $request->input('add_tickets');
-                $montant = $request->input('montant_paye');
+                $amountToAdd = $request->input('add_tickets');
                 
-                $compagnie->tickets = ($compagnie->tickets ?? 0) + $ticketsToAdd;
+                $compagnie->tickets = ($compagnie->tickets ?? 0) + $amountToAdd;
                 
                 // Enregistrer dans l'historique
                 $compagnie->historiqueTickets()->create([
-                    'quantite' => $ticketsToAdd,
-                    'montant' => $montant,
-                    'motif' => 'Recharge administrateur (Edit)'
+                    'quantite' => $amountToAdd, // On garde le nom du champ 'quantite' mais on y stocke le montant
+                    'montant' => $amountToAdd,
+                    'motif' => 'Recharge administrateur (Solde)'
                 ]);
             }
 
@@ -187,7 +186,7 @@ class CompagnieController extends Controller
             }
 
             return redirect()->route('compagnie.index')
-                ->with('success', 'Compagnie mise à jour avec succès (et tickets rechargés si applicable)!');
+                ->with('success', 'Compagnie mise à jour avec succès (Solde rechargé si renseigné)!');
 
         } catch (\Exception $e) {
             return redirect()->back()

@@ -222,12 +222,23 @@ class CaisseController extends Controller
 
         $programme = Programme::with(['compagnie', 'vehicule'])->findOrFail($request->programme_id);
         
+        // Calcul du montant total
+        $montantTotal = $programme->montant_billet * $request->nombre_tickets;
+
+        // VÉRIFICATION DU SOLDE DE LA COMPAGNIE
+        if ($programme->compagnie->tickets < $montantTotal) {
+            return back()->withErrors(['error' => 'Solde de la compagnie insuffisant pour effectuer cette vente. Veuillez recharger votre compte.']);
+        }
+
         // IMPORTANT : Puisqu'on vend pour "Aujourd'hui", la date de voyage est MAINTENANT
         // et non pas la date de création du programme ($programme->date_depart)
         $dateVoyageEffective = now()->toDateString(); 
 
         DB::beginTransaction();
         try {
+            // Déduction du solde compagnie
+            $programme->compagnie->deductTickets($montantTotal, "Vente Caisse - {$request->nombre_tickets} tickets");
+
             $reservations = [];
 
             // Récupérer les sièges déjà réservés pour ce programme ET pour cette date spécifique

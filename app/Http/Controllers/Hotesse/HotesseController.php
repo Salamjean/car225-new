@@ -347,6 +347,23 @@ class HotesseController extends Controller
         $nombrePassagers = $request->nombre_passagers;
         $isAllerRetour = $request->filled('programme_retour_id');
 
+        // Calcul du montant total
+        $montantAller = $programmeAller->montant_billet * $nombrePassagers;
+        $montantRetour = 0;
+        if ($isAllerRetour) {
+            $programmeRetour = Programme::findOrFail($request->programme_retour_id);
+            $montantRetour = $programmeRetour->montant_billet * $nombrePassagers;
+        }
+        $montantTotal = $montantAller + $montantRetour;
+
+        // VÉRIFICATION DU SOLDE DE LA COMPAGNIE
+        if ($programmeAller->compagnie->tickets < $montantTotal) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Solde de la compagnie insuffisant pour effectuer cette vente. Veuillez contacter l\'administrateur.'
+            ], 400);
+        }
+
         // Vérifier que les passagers correspondent au nombre
         if (count($request->passenger_details) !== (int)$nombrePassagers) {
             Log::error('Validation Passagers Mismatch:', [
@@ -362,6 +379,9 @@ class HotesseController extends Controller
 
         DB::beginTransaction();
         try {
+            // Déduction du solde compagnie
+            $programmeAller->compagnie->deductTickets($montantTotal, "Vente Hôtesse - {$nombrePassagers} passager(s)");
+
             $reservationIds = [];
 
             // ========== ALLER ==========

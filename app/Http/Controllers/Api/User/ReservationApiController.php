@@ -1054,15 +1054,25 @@ class ReservationApiController extends Controller
                 ], 422);
             }
 
-            // Vérifier délai minimum 4 heures
-            $departureDateTime = \Carbon\Carbon::parse($dateVoyage . ' ' . $programme->heure_depart);
-            $now = \Carbon\Carbon::now();
-            $hoursDiff = $now->diffInHours($departureDateTime, false);
-
             if ($hoursDiff < 4) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Les réservations doivent être effectuées au moins 4 heures avant le départ'
+                ], 422);
+            }
+
+            // Calcul du montant total prévisionnel
+            $prixUnitaire = $programme->montant_billet;
+            $montantTotalPrevu = $prixUnitaire * $request->nombre_places;
+            if ($isAllerRetour) {
+                $montantTotalPrevu = $montantTotalPrevu * 2;
+            }
+
+            // VÉRIFICATION DU SOLDE DE LA COMPAGNIE
+            if ($programme->compagnie->tickets < $montantTotalPrevu) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Désolé, cette compagnie n\'a plus assez de crédit pour accepter de nouvelles réservations.'
                 ], 422);
             }
 
@@ -1211,6 +1221,9 @@ class ReservationApiController extends Controller
                         'passagers' => $passagers
                     ])
                 ]);
+
+                // DÉDUCTION SOLDE COMPAGNIE (Wallet = immédiat)
+                $programme->compagnie->deductTickets($montantTotal, "Réservation Wallet API #{$transactionId}");
 
                 // Créer le paiement (déjà confirmé pour wallet)
                 $paiement = Paiement::create([

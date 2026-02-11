@@ -79,22 +79,22 @@ class Compagnie extends Authenticatable
     /**
      * Deduct tickets from company balance
      */
-    public function deductTickets($quantity, $motif)
+    public function deductTickets($amount, $motif)
     {
-        // DEBUG: Trace ticket deduction
-        \Illuminate\Support\Facades\Log::info("DEDUCTION TICKET APPELÉE", [
+        // DEBUG: Trace balance deduction
+        \Illuminate\Support\Facades\Log::info("DEDUCTION SOLDE APPELÉE", [
             'target_company_id' => $this->id,
             'target_company_name' => $this->name,
-            'tickets_before' => $this->tickets,
-            'deducting' => $quantity,
+            'balance_before' => $this->tickets,
+            'deducting' => $amount,
             'motif' => $motif,
-            // 'trace' => collect(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3))->pluck('class', 'function') // Optionnel si trop verbeux
         ]);
 
-        $this->decrement('tickets', $quantity);
+        $this->decrement('tickets', $amount);
         
         $this->historiqueTickets()->create([
-            'quantite' => -$quantity, // Negative for deduction
+            'quantite' => -$amount, // Valeur négative pour la déduction
+            'montant' => $amount,
             'motif' => $motif
         ]);
     }

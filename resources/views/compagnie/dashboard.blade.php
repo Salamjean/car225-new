@@ -78,27 +78,21 @@
                     <p class="mt-4 text-xs text-amber-600 font-bold">Nécessitant attention</p>
                 </div>
 
-                <!-- Tickets Card (NEW) -->
-                <div class="bg-white rounded-2xl p-6 shadow-xl border border-purple-100 transform hover:-translate-y-1 transition-all cursor-pointer" onclick="addTicketsModal()">
+                <!-- Balance Card -->
+                <div class="bg-white rounded-2xl p-6 shadow-xl border border-purple-100 transform hover:-translate-y-1 transition-all">
                     <div class="flex items-center justify-between mb-4">
                         <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600 font-bold">
-                            <i class="fas fa-tags text-xl"></i>
+                            <i class="fas fa-wallet text-xl"></i>
                         </div>
-                        
                     </div>
-                    <p class="text-sm font-bold text-gray-400 uppercase tracking-wider">Montant des Tickets</p>
+                    <p class="text-sm font-bold text-gray-400 uppercase tracking-wider">Solde Compagnie</p>
                     <h3 class="text-2xl font-black text-purple-900 mt-2">
-                        {{ Auth::guard('compagnie')->user()->tickets }}
+                        {{ number_format(Auth::guard('compagnie')->user()->tickets, 0, ',', ' ') }} FCFA
                     </h3>
-                    <p class="mt-4 text-xs text-purple-600 font-bold">Disponibles pour réservations</p>
+                    <p class="mt-4 text-xs text-purple-600 font-bold">Crédit disponible pour les réservations</p>
                 </div>
             </div>
 
-            <!-- Formulaire caché pour ajout tickets -->
-            <form id="add-tickets-form" action="{{ route('compagnie.tickets.add') }}" method="POST" class="hidden">
-                @csrf
-                <input type="hidden" name="quantite" id="ticket-quantite">
-            </form>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
                 <!-- Chart Section -->
@@ -279,33 +273,6 @@
             });
         });
 
-        function addTicketsModal() {
-            Swal.fire({
-                title: 'Recharger le solde de tickets',
-                text: "Entrez le nombre de tickets à ajouter",
-                input: 'number',
-                inputAttributes: {
-                    min: 1,
-                    step: 1
-                },
-                showCancelButton: true,
-                confirmButtonText: 'Ajouter',
-                cancelButtonText: 'Annuler',
-                confirmButtonColor: '#9333ea', // Purple
-                showLoaderOnConfirm: true,
-                preConfirm: (amount) => {
-                    if (!amount || amount <= 0) {
-                        Swal.showValidationMessage('Veuillez entrer un nombre valide');
-                    }
-                    return amount;
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    document.getElementById('ticket-quantite').value = result.value;
-                    document.getElementById('add-tickets-form').submit();
-                }
-            });
-        }
     </script>
 
     <style>

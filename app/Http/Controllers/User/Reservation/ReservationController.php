@@ -685,6 +685,14 @@ $dateAller = $request->date_voyage;
             if ($request->boolean('is_aller_retour', false)) {
                 $montantTotal = $montantTotal * 2;
             }
+
+            // VÉRIFICATION DU SOLDE DE LA COMPAGNIE
+            if ($programme->compagnie->tickets < $montantTotal) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Désolé, cette compagnie n\'a plus assez de crédit pour accepter de nouvelles réservations.'
+                ], 422);
+            }
         
         // 1. DÉMARRER LA TRANSACTION (Sécurité absolue)
         DB::beginTransaction();
@@ -735,9 +743,8 @@ $dateAller = $request->date_voyage;
             $reservationStatus = 'confirmee';
             $isWallet = true;
 
-            // Déduction des tickets de la compagnie (Wallet = immédiat)
-            $ticketsToDeduct = $request->nombre_places * ($request->boolean('is_aller_retour', false) ? 2 : 1);
-            $programme->compagnie->deductTickets($ticketsToDeduct, "Réservation Wallet #{$transactionId}");
+            // Déduction du solde de la compagnie (Wallet = immédiat)
+            $programme->compagnie->deductTickets($montantTotal, "Réservation Wallet #{$transactionId}");
 
         } else {
             // CinetPay

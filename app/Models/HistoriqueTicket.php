@@ -12,6 +12,7 @@ class HistoriqueTicket extends Model
     protected $fillable = [
         'compagnie_id',
         'quantite',
+        'montant',
         'motif',
     ];
 
