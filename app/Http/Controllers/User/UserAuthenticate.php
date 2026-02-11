@@ -144,8 +144,8 @@ class UserAuthenticate extends Controller
                 'google_id' => $googleUser->id,
                 'google_token' => $googleUser->token,
                 'google_refresh_token' => $googleUser->refreshToken,
-                // On peut aussi gérer la photo de profil si on veut
-                // 'photo_profile_path' => $googleUser->avatar, 
+                'photo_profile_path' => $googleUser->avatar,
+                'contact' => $googleUser->user['phone_number'] ?? ($user->contact ?? null),
             ]);
 
             Auth::login($user);

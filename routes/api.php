@@ -31,6 +31,7 @@ Route::prefix('user')->group(function () {
     // Routes publiques (sans authentification)
     Route::post('/login', [UserAuthController::class, 'login']);
     Route::post('/register', [UserAuthController::class, 'register']);
+    Route::post('/google-auth', [UserAuthController::class, 'googleAuth']);
     
     // Mot de passe oublié
     Route::post('/password/send-otp', [UserAuthController::class, 'sendOtp']);

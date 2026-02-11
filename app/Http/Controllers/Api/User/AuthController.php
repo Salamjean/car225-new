@@ -382,4 +382,111 @@ class AuthController extends Controller
             'message' => 'Votre mot de passe a été réinitialisé avec succès.'
         ]);
     }
+
+    /**
+     * Connexion / Inscription via Google (API)
+     */
+    public function googleAuth(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'google_id' => 'required|string',
+            'name' => 'required|string|max:255',
+            'prenom' => 'nullable|string|max:255',
+            'contact' => 'nullable|string|max:255',
+            'avatar_url' => 'nullable|string',
+            'google_token' => 'nullable|string',
+            'fcm_token' => 'nullable|string',
+            'nom_device' => 'nullable|string|max:255',
+        ]);
+
+        try {
+            // Rechercher l'utilisateur par google_id ou par email
+            $user = User::where('google_id', $request->google_id)
+                        ->orWhere('email', $request->email)
+                        ->first();
+
+            $userData = [
+                'google_id' => $request->google_id,
+                'google_token' => $request->google_token,
+                'name' => $request->name,
+                'prenom' => $request->prenom ?? ($user ? $user->prenom : ''),
+                'email' => $request->email,
+            ];
+
+            // Ne mettre à jour le contact que s'il est fourni (pour ne pas écraser par null)
+            if ($request->filled('contact')) {
+                $userData['contact'] = $request->contact;
+            }
+
+            // Ne mettre à jour l'avatar que s'il est fourni
+            if ($request->filled('avatar_url')) {
+                $userData['photo_profile_path'] = $request->avatar_url;
+            }
+
+            if ($user) {
+                // Mise à jour de l'utilisateur existant
+                $user->update($userData);
+            } else {
+                // Création d'un nouvel utilisateur
+                $userData['password'] = null; // Pas de mot de passe car authentification Google
+                $userData['is_active'] = true;
+                $user = User::create($userData);
+            }
+
+            // Gérer le token FCM et le device
+            if ($request->filled('fcm_token')) {
+                $user->update(['fcm_token' => $request->fcm_token]);
+            }
+
+            if ($request->filled('nom_device')) {
+                $user->update(['nom_device' => $request->nom_device]);
+                
+                $device = $user->devices()->where('nom_device', $request->nom_device)->first();
+                if ($device) {
+                    $device->update(['last_login_at' => now(), 'ip_address' => $request->ip()]);
+                } else {
+                    $user->devices()->create([
+                        'nom_device' => $request->nom_device,
+                        'last_login_at' => now(),
+                        'ip_address' => $request->ip(),
+                    ]);
+                }
+            }
+
+            // Générer le token Sanctum
+            $token = $user->createToken('mobile-app')->plainTextToken;
+
+            // Préparer l'URL de la photo de profil
+            $photoUrl = $user->photo_profile_path;
+            if ($photoUrl && !str_starts_with($photoUrl, 'http')) {
+                $photoUrl = asset('storage/' . $photoUrl);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Authentification Google réussie',
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'prenom' => $user->prenom,
+                    'email' => $user->email,
+                    'contact' => $user->contact,
+                    'photo_profile_path' => $photoUrl,
+                    'google_id' => $user->google_id,
+                    'fcm_token' => $user->fcm_token,
+                ],
+                'token' => $token,
+                'token_type' => 'Bearer',
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Erreur API Google Auth: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Une erreur est survenue lors de l\'authentification Google.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
