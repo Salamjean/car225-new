@@ -195,5 +195,47 @@
             // Un petit délai pour pas agresser l'utilisateur direct
             setTimeout(showNotificationsSequentially, 1500);
         @endif
+
+        // --- Laravel Reverb : Listen for Real-time notifications ---
+        if (window.Echo) {
+            window.Echo.private('App.Models.User.{{ $user->id }}')
+                .notification((notification) => {
+                    console.log('Real-time notification received:', notification);
+                    
+                    // 1. Update Badge
+                    const badge = document.getElementById('notif-badge');
+                    if (badge) {
+                        badge.textContent = notification.count;
+                    } else {
+                        // Create badge if it doesn't exist
+                        const btn = document.getElementById('notif-dropdown-btn');
+                        const newBadge = document.createElement('span');
+                        newBadge.id = 'notif-badge';
+                        newBadge.className = 'absolute top-3 right-3 w-4 h-4 bg-white text-[#e94f1b] text-[10px] font-black flex items-center justify-center rounded-full border border-[#e94f1b]';
+                        newBadge.textContent = notification.count;
+                        btn.appendChild(newBadge);
+                    }
+
+                    // 2. Show SweetAlert
+                    Swal.fire({
+                        title: notification.title || 'Notification',
+                        text: notification.message || '',
+                        icon: notification.type === 'error' ? 'error' : (notification.type === 'warning' ? 'warning' : (notification.type === 'success' ? 'success' : 'info')),
+                        confirmButtonText: 'Fermer',
+                        confirmButtonColor: '#e94f1b',
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 5000,
+                        timerProgressBar: true,
+                        customClass: {
+                            popup: 'rounded-2xl border-2 border-[#e94f1b]/10 shadow-xl'
+                        }
+                    });
+                    
+                    // 3. Mark as read on backend (optional, or wait for user to click)
+                    // We don't mark as read automatically in real-time to allow user to see it in history later
+                });
+        }
     });
 </script>

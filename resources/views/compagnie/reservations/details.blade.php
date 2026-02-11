@@ -193,18 +193,19 @@
                                         <div class="flex-1">
                                             <div class="text-sm font-medium text-gray-900">{{ $reservation->passager_prenom }} {{ $reservation->passager_nom }}</div>
                                             <div class="text-xs text-gray-500">{{ $reservation->passager_telephone }}</div>
-                                            @if($reservation->caisse_id)
+                                            @if($reservation->hotesse_id)
                                                 <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200 mt-1">
-                                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                                                    </svg>
+                                                    <i class="mdi mdi-account-tie mr-1"></i>
+                                                    Vente Hôtesse
+                                                </span>
+                                            @elseif($reservation->caisse_id)
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-indigo-100 text-indigo-800 border border-indigo-200 mt-1">
+                                                    <i class="mdi mdi-cash-register mr-1"></i>
                                                     Vente Caisse
                                                 </span>
                                             @else
                                                 <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200 mt-1">
-                                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
-                                                    </svg>
+                                                    <i class="mdi mdi-earth mr-1"></i>
                                                     Vente en Ligne
                                                 </span>
                                             @endif

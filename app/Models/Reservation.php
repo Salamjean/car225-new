@@ -115,9 +115,9 @@ class Reservation extends Model
      * Générer une référence unique pour une réservation
      * Format: RES-YYYYMMDD-RANDOM-SEAT
      */
-    public static function generateReference(int $seatNumber = 1): string
+    public static function generateReference(int $seatNumber = 1, string $prefix = 'RES'): string
     {
-        return 'RES-' . date('Ymd') . '-' . strtoupper(Str::random(6)) . '-' . $seatNumber;
+        return strtoupper($prefix) . '-' . date('Ymd') . '-' . strtoupper(Str::random(6)) . '-' . $seatNumber;
     }
 
     // ========================================

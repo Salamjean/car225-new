@@ -116,5 +116,11 @@
             Notifications
           </a>
         </div>
+        <div class="mdc-list-item mdc-drawer-item">
+          <a class="mdc-drawer-link" href="{{route('admin.support.index')}}">
+            <i class="fas fa-headset mdc-list-item__start-detail mdc-drawer-item-icon"></i>
+            Support Client
+          </a>
+        </div>
     </div>
 </aside>

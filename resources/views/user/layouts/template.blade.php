@@ -19,6 +19,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <link rel="shortcut icon" href="{{ asset('assetsPoster/assets/images/Car225_favicon.png') }}" />
+    @vite(['resources/js/app.js'])
 
     <style>
         body {

@@ -84,7 +84,6 @@
                         @enderror
                     </div>
 
-                    <!-- Informations des passagers -->
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-4">Informations des Passagers</label>
                         <div class="max-h-[60vh] overflow-y-auto scrollbar-thin pr-2 rounded-xl border border-gray-100 bg-gray-50/50 p-2">
@@ -117,7 +116,13 @@
                                     <i class="fas fa-bus text-[#e94e1a]"></i>
                                     <span>Disponibilité</span>
                                 </span>
-                                <span id="vehicle-info" class="text-xs font-bold text-gray-500 bg-white px-2 py-1 rounded border border-gray-200"></span>
+                                <div class="flex items-center gap-3">
+                                    <div id="live-indicator" class="hidden flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-[10px] font-bold animate-pulse">
+                                        <div class="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                                        LIVE
+                                    </div>
+                                    <span id="vehicle-info" class="text-xs font-bold text-gray-500 bg-white px-2 py-1 rounded border border-gray-200"></span>
+                                </div>
                             </h3>
 
                             <!-- Nouveau Bloc d'Informations -->
@@ -216,7 +221,7 @@
         container.innerHTML = '<div class="animate-pulse flex space-x-4 p-4"><div class="h-12 w-full bg-gray-200 rounded">Chargement...</div></div>';
 
         // Fetch Data
-        const dateQuery = new Date().toISOString().split('T')[0];
+        const dateQuery = '{{ now()->toDateString() }}';
         
         fetch(`{{ url("/caisse/api/vehicle") }}/${vehicleId}?date=${dateQuery}&program_id=${programId}`)
             .then(res => res.json())
@@ -245,6 +250,26 @@
                     }
 
                     container.innerHTML = generatePlacesVisualization(data.vehicule, data.reserved_seats || []);
+
+                    // --- Real-time updates ---
+                    if (window.Echo) {
+                        window.Echo.leaveChannel(`program.${programId}.${dateQuery}`);
+                        window.Echo.channel(`program.${programId}.${dateQuery}`)
+                            .listen('.seat.updated', (e) => {
+                                console.log('Real-time seat update in vendre-ticket:', e);
+                                // Simple approach: just re-fetch or re-render map
+                                container.innerHTML = generatePlacesVisualization(data.vehicule, e.reservedSeats);
+                                // Update infoOccupied too
+                                if(infoOccupied) {
+                                    const percentage = totalSeats > 0 ? Math.round((e.reservedSeats.length / totalSeats) * 100) : 0;
+                                    infoOccupied.innerHTML = `
+                                        <span class="mr-1">${e.reservedSeats.length} / ${totalSeats}</span>
+                                        <span class="text-xs font-normal text-gray-500">(${percentage}%)</span>
+                                    `;
+                                }
+                            });
+                        document.getElementById('live-indicator').classList.remove('hidden');
+                    }
                 } else {
                     container.innerHTML = '<p class="text-red-500">Erreur de chargement du plan</p>';
                 }
@@ -377,6 +402,26 @@
                             <input type="email" name="passenger_details[${i-1}][email]"
                                 value="${currentData[`passenger_details[${i-1}][email]`] || ''}"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
+                        </div>
+                    </div>
+                    <!-- Contact urgence -->
+                    <div class="mt-4 pt-4 border-t border-gray-200">
+                        <p class="text-xs font-bold text-gray-400 uppercase mb-3 tracking-wider">Contact d'urgence</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nom Urgence</label>
+                                <input type="text" name="passenger_details[${i-1}][urgence_nom]"
+                                    value="${currentData[`passenger_details[${i-1}][urgence_nom]`] || ''}"
+                                    placeholder="Nom & Prénom"
+                                    class="w-full px-3 py-2 border border-blue-100 rounded-lg focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent bg-white">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Téléphone Urgence</label>
+                                <input type="tel" name="passenger_details[${i-1}][urgence_telephone]"
+                                    value="${currentData[`passenger_details[${i-1}][urgence_telephone]`] || ''}"
+                                    placeholder="Contact urgence"
+                                    class="w-full px-3 py-2 border border-blue-100 rounded-lg focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent bg-white">
+                            </div>
                         </div>
                     </div>
                 </div>

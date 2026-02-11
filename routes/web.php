@@ -96,6 +96,14 @@ Route::middleware('admin')->prefix('admin')->group(function () {
         Route::post('/send', [App\Http\Controllers\Admin\NotificationController::class, 'send'])->name('admin.notifications.send');
         Route::get('/search-users', [App\Http\Controllers\Admin\NotificationController::class, 'searchUsers'])->name('admin.notifications.search');
     });
+
+    // Gestion du Support Client
+    Route::prefix('support')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\SupportController::class, 'index'])->name('admin.support.index');
+        Route::get('/{supportRequest}', [App\Http\Controllers\Admin\SupportController::class, 'show'])->name('admin.support.show');
+        Route::post('/{supportRequest}/repondre', [App\Http\Controllers\Admin\SupportController::class, 'repondre'])->name('admin.support.repondre');
+        Route::patch('/{supportRequest}/statut', [App\Http\Controllers\Admin\SupportController::class, 'changeStatut'])->name('admin.support.statut');
+    });
 });
 
 //Les routes de gestion du @admin

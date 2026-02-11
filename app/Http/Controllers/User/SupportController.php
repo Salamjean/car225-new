@@ -21,16 +21,21 @@ class SupportController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'type' => 'required',
+        $validated = $request->validate([
+            'type' => 'required|string',
             'objet' => 'required|string|max:255',
             'description' => 'required|string',
             'reservation_id' => 'nullable|exists:reservations,id',
         ]);
 
-        // Pour l'instant, on peut imaginer un modèle Reclamation
-        // Ou juste envoyer un mail/notif
+        \App\Models\SupportRequest::create([
+            'user_id' => Auth::id(),
+            'type' => $validated['type'],
+            'objet' => $validated['objet'],
+            'description' => $validated['description'],
+            'reservation_id' => $validated['reservation_id'],
+        ]);
         
-        return redirect()->route('user.support.index')->with('success', 'Votre demande a bien été enregistrée.');
+        return redirect()->route('user.support.index')->with('success', 'Votre demande a bien été enregistrée. Un administrateur vous répondra prochainement.');
     }
 }

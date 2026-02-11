@@ -101,7 +101,7 @@
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Trajet</th>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Date Voyage</th>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Siège</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Montant</th>
+
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Statut</th>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Actions</th>
                         </tr>
@@ -127,9 +127,7 @@
                             <td class="px-6 py-4">
                                 <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm font-semibold">N° {{ $vente->seat_number }}</span>
                             </td>
-                            <td class="px-6 py-4">
-                                <p class="text-sm font-bold text-[#e94e1a]">{{ number_format($vente->montant, 0, ',', ' ') }} FCFA</p>
-                            </td>
+
                             <td class="px-6 py-4">
                                 @if($vente->statut == 'confirmee')
                                     <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">Confirmée</span>

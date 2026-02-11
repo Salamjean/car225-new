@@ -172,6 +172,19 @@ class PaymentController extends Controller
 
             Log::info('Finalisation réservation terminée avec succès (Email envoyé)', ['id' => $reservation->id]);
 
+            // Real-time update for Seat Map
+            try {
+                $allReserved = Reservation::where('programme_id', $reservation->programme_id)
+                    ->whereDate('date_voyage', $dateVoyageStr)
+                    ->where('statut', 'confirmee')
+                    ->pluck('seat_number')
+                    ->toArray();
+                
+                broadcast(new \App\Events\SeatUpdated($reservation->programme_id, $dateVoyageStr, $allReserved))->toOthers();
+            } catch (\Exception $e) {
+                Log::error('Real-time broadcast error: ' . $e->getMessage());
+            }
+
         } catch (\Exception $e) {
             Log::error('Erreur critique lors de la finalisation de la réservation:', [
                 'id' => $reservation->id,

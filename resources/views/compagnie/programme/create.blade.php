@@ -359,13 +359,13 @@
     /* Summary Section */
     .summary-grid {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: 1rem;
     }
 
     @media (max-width: 768px) {
         .summary-grid {
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
         }
     }
 
@@ -456,6 +456,116 @@
         border-color: #d97706;
         box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.2);
     }
+
+    /* Toggle Switch */
+    .switch-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #f8fafc;
+        padding: 1.25rem 1.5rem;
+        border-radius: 1.25rem;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 2rem;
+        transition: all 0.3s ease;
+    }
+
+    .switch-wrapper:hover {
+        border-color: var(--retour-color);
+        background: white;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .switch-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .switch-icon {
+        width: 40px;
+        height: 40px;
+        background: rgba(59, 130, 246, 0.1);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--retour-color);
+        font-size: 1.1rem;
+    }
+
+    .switch-text h4 {
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .switch-text p {
+        font-size: 0.75rem;
+        color: #64748b;
+        margin: 0;
+    }
+
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 54px;
+        height: 28px;
+    }
+
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-color: #cbd5e1;
+        transition: .4s;
+        border-radius: 34px;
+    }
+
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 20px;
+        width: 20px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    input:checked + .toggle-slider {
+        background-color: var(--retour-color);
+    }
+
+    input:checked + .toggle-slider:before {
+        transform: translateX(26px);
+    }
+
+    #retour-section-container {
+        transition: all 0.4s ease;
+    }
+
+    #retour-section-container.collapsed {
+        opacity: 0;
+        transform: scale(0.95);
+        pointer-events: none;
+        display: none;
+    }
+
+    .dual-card-container.single {
+        grid-template-columns: 1fr;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
 </style>
 
 <div class="min-h-screen bg-gray-50">
@@ -534,7 +644,24 @@
                         <h2 class="text-lg font-bold text-gray-800">Configurer les horaires</h2>
                     </div>
 
-                    <div class="dual-card-container">
+                    <!-- Toggle Retour -->
+                    <div class="switch-wrapper">
+                        <div class="switch-info">
+                            <div class="switch-icon">
+                                <i class="fas fa-exchange-alt"></i>
+                            </div>
+                            <div class="switch-text">
+                                <h4>Créer le trajet retour ?</h4>
+                                <p>Activez cette option pour configurer le voyage dans le sens inverse</p>
+                            </div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="with_retour" id="toggle-retour" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="dual-card-container" id="dual-cards">
                         <!-- Card ALLER -->
                         <div class="programme-card aller">
                             <div class="card-header aller">
@@ -601,7 +728,8 @@
                         </div>
 
                         <!-- Card RETOUR -->
-                        <div class="programme-card retour">
+                        <div id="retour-section-container">
+                            <div class="programme-card retour">
                             <div class="card-header retour">
                                 <div class="card-icon">
                                     <i class="fas fa-plane-arrival"></i>
@@ -664,7 +792,7 @@
                                 </button>
                             </div>
                         </div>
-                    </div>
+                    </div></div>
 
                     <!-- Section 3: Tarification -->
                     <div class="tarif-section">
@@ -680,7 +808,7 @@
                             <span class="icon">💰</span>
                             <input type="number" name="montant_billet" id="montant_billet" 
                                    class="tarif-input"
-                                   min="0" step="100" value="{{ old('montant_billet', $existingMontantBillet ?? 5000) }}" required>
+                                   min="0" step="100" value="{{ old('montant_billet', $existingMontantBillet ?? 0) }}" required>
                             <span class="currency">FCFA</span>
                         </div>
                     </div>
@@ -700,7 +828,7 @@
                         <p class="value" id="summary-aller">1</p>
                         <p class="label">Programme(s) Aller</p>
                     </div>
-                    <div class="feature-card">
+                    <div class="feature-card" id="summary-retour-card">
                         <div class="icon">🔄</div>
                         <p class="value" id="summary-retour">1</p>
                         <p class="label">Programme(s) Retour</p>
@@ -712,7 +840,7 @@
                     </div>
                     <div class="feature-card">
                         <div class="icon">💵</div>
-                        <p class="value" id="summary-price">5000</p>
+                        <p class="value" id="summary-price">0</p>
                         <p class="label">FCFA / Billet</p>
                     </div>
                 </div>
@@ -740,6 +868,32 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentDurationMinutes = 90;
     let allerCount = 1;
     let retourCount = 1;
+
+    const toggleRetour = document.getElementById('toggle-retour');
+    const retourSection = document.getElementById('retour-section-container');
+    const dualCards = document.getElementById('dual-cards');
+    const summaryRetourCard = document.getElementById('summary-retour-card');
+
+    function handleRetourToggle() {
+        const isWithRetour = toggleRetour.checked;
+        
+        if (isWithRetour) {
+            retourSection.classList.remove('collapsed');
+            dualCards.classList.remove('single');
+            summaryRetourCard.style.display = 'block';
+            // Enable inputs
+            retourSection.querySelectorAll('input, select').forEach(el => el.disabled = false);
+        } else {
+            retourSection.classList.add('collapsed');
+            dualCards.classList.add('single');
+            summaryRetourCard.style.display = 'none';
+            // Disable inputs so they are not sent in form
+            retourSection.querySelectorAll('input, select').forEach(el => el.disabled = true);
+        }
+        updateSummary();
+    }
+
+    toggleRetour.addEventListener('change', handleRetourToggle);
 
     // Parse duration string to minutes
     function parseDurationToMinutes(durationStr) {
@@ -787,7 +941,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update summary
     function updateSummary() {
         const allerSchedules = document.querySelectorAll('#aller-schedules .schedule-item').length;
-        const retourSchedules = document.querySelectorAll('#retour-schedules .schedule-item').length;
+        const retourSchedules = toggleRetour.checked ? document.querySelectorAll('#retour-schedules .schedule-item').length : 0;
         
         document.getElementById('summary-aller').textContent = allerSchedules;
         document.getElementById('summary-retour').textContent = retourSchedules;
@@ -1021,6 +1175,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     montantBillet.addEventListener('input', updateSummary);
+    
+    // Initial state check
+    handleRetourToggle();
 });
 </script>
 @endsection

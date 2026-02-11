@@ -1116,7 +1116,22 @@ $dateAller = $request->date_voyage;
                      }
                  }
              }
+
+             // Real-time update for Seat Map (Wallet)
+             try {
+                $dateVoyageStr = $dateVoyage instanceof \Carbon\Carbon ? $dateVoyage->format('Y-m-d') : $dateVoyage;
+                $allReserved = Reservation::where('programme_id', $programme->id)
+                    ->whereDate('date_voyage', $dateVoyageStr)
+                    ->where('statut', 'confirmee')
+                    ->pluck('seat_number')
+                    ->toArray();
+                
+                broadcast(new \App\Events\SeatUpdated($programme->id, $dateVoyageStr, $allReserved))->toOthers();
+            } catch (\Exception $e) {
+                Log::error('Real-time broadcast error: ' . $e->getMessage());
+            }
         }
+
 
         if ($isWallet) {
              return response()->json([

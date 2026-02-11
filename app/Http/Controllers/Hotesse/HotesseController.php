@@ -338,6 +338,8 @@ class HotesseController extends Controller
             'passenger_details.*.prenom' => 'required|string|max:255',
             'passenger_details.*.telephone' => 'required|string|max:20',
             'passenger_details.*.email' => 'nullable|email|max:255',
+            'passenger_details.*.urgence_nom' => 'nullable|string|max:255',
+            'passenger_details.*.urgence_telephone' => 'nullable|string|max:20',
             'programme_retour_id' => 'nullable|exists:programmes,id',
             'date_retour' => 'nullable|required_with:programme_retour_id|date',
             'heure_retour' => 'nullable|required_with:programme_retour_id',
@@ -399,7 +401,7 @@ class HotesseController extends Controller
             // Créer les réservations aller
             foreach ($request->passenger_details as $index => $passenger) {
                 $seatNumber = $seatsAller[$index];
-                $reference = Reservation::generateReference($seatNumber);
+                $reference = Reservation::generateReference($seatNumber, $hotesse->compagnie->sigle ?? 'RES');
 
                 $reservation = Reservation::create([
                     'reference' => $reference,
@@ -410,7 +412,7 @@ class HotesseController extends Controller
                     'passager_prenom' => $passenger['prenom'],
                     'passager_telephone' => $passenger['telephone'],
                     'passager_email' => $passenger['email'] ?? null,
-                    'passager_urgence' => null,
+                    'passager_urgence' => ($passenger['urgence_nom'] ?? '') . ' (' . ($passenger['urgence_telephone'] ?? '') . ')',
                     'date_voyage' => $request->date_voyage,
                     'heure_depart' => $request->heure_depart,
                     'heure_arrive' => $programmeAller->heure_arrive,
@@ -459,7 +461,7 @@ class HotesseController extends Controller
                 // Créer les réservations retour
                 foreach ($request->passenger_details as $index => $passenger) {
                     $seatNumber = $seatsRetour[$index];
-                    $reference = Reservation::generateReference($seatNumber);
+                    $reference = Reservation::generateReference($seatNumber, $hotesse->compagnie->sigle ?? 'RES');
 
                     $reservation = Reservation::create([
                         'reference' => $reference,
@@ -470,7 +472,7 @@ class HotesseController extends Controller
                         'passager_prenom' => $passenger['prenom'],
                         'passager_telephone' => $passenger['telephone'],
                         'passager_email' => $passenger['email'] ?? null,
-                        'passager_urgence' => null,
+                        'passager_urgence' => ($passenger['urgence_nom'] ?? '') . ' (' . ($passenger['urgence_telephone'] ?? '') . ')',
                         'date_voyage' => $request->date_retour,
                         'heure_depart' => $request->heure_retour,
                         'heure_arrive' => $programmeRetour->heure_arrive,
@@ -503,6 +505,27 @@ class HotesseController extends Controller
             }
 
             DB::commit();
+
+            // Broadcast real-time updates
+            try {
+                // Broadcast for Aller
+                $allReservedAller = Reservation::where('programme_id', $programmeAller->id)
+                    ->whereDate('date_voyage', $request->date_voyage)
+                    ->where('statut', 'confirmee')
+                    ->pluck('seat_number')->toArray();
+                broadcast(new \App\Events\SeatUpdated($programmeAller->id, $request->date_voyage, $allReservedAller))->toOthers();
+
+                // Broadcast for Retour if applicable
+                if ($isAllerRetour && isset($programmeRetour)) {
+                    $allReservedRetour = Reservation::where('programme_id', $programmeRetour->id)
+                        ->whereDate('date_voyage', $request->date_retour)
+                        ->where('statut', 'confirmee')
+                        ->pluck('seat_number')->toArray();
+                    broadcast(new \App\Events\SeatUpdated($programmeRetour->id, $request->date_retour, $allReservedRetour))->toOthers();
+                }
+            } catch (\Exception $e) {
+                Log::error('Erreur Broadcast Hotesse: ' . $e->getMessage());
+            }
 
             $message = $isAllerRetour 
                 ? "{$nombrePassagers} passager(s) réservé(s) pour un voyage aller-retour !"

@@ -21,7 +21,7 @@
                 <svg class="w-6 h-6 mr-2 text-[#e94e1a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/>
                 </svg>
-                Nouvelle Vente Rapide
+                Nouvelle achat de places
             </h2>
 
             <form action="{{ route('caisse.vente.submit') }}" method="POST" id="ticket-form">
@@ -155,7 +155,7 @@
                                 <button type="submit" id="submit-btn" disabled
                                     class="w-full py-4 bg-[#e94e1a] text-white font-bold rounded-xl hover:bg-[#d33d0f] transform hover:-translate-y-1 transition-all duration-200 shadow-lg hover:shadow-xl opacity-50 cursor-not-allowed flex items-center justify-center gap-2">
                                     <i class="fas fa-check-circle"></i>
-                                    Confirmer la vente
+                                    Confirmer les places
                                 </button>
                                 <button type="reset" onclick="resetSelection()"
                                     class="w-full py-4 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-all duration-200">
@@ -276,16 +276,51 @@
         
         if (pollingInterval) clearInterval(pollingInterval);
         
-        const dateQuery = new Date().toISOString().split('T')[0];
+        const dateQuery = '{{ now()->toDateString() }}';
         fetchData(vehicleId, dateQuery, programId);
 
-        // Start polling every 2 seconds
+        // --- Laravel Reverb (Echo) Listener ---
+        if (window.Echo) {
+            window.Echo.leaveChannel(`program.${programId}.${dateQuery}`);
+            window.Echo.channel(`program.${programId}.${dateQuery}`)
+                .listen('.seat.updated', (e) => {
+                    console.log('Mise à jour temps réel reçue:', e);
+                    updateReservedSeatsUI(e.reservedSeats);
+                });
+            document.getElementById('live-indicator').classList.remove('hidden');
+        }
+
         pollingInterval = setInterval(() => {
             fetchData(vehicleId, dateQuery, programId, true);
-        }, 2000);
-        
-        document.getElementById('live-indicator').classList.remove('hidden');
+        }, 1500); // 1.5s backup instead of 10s
     });
+
+    function updateReservedSeatsUI(newReservedSeats) {
+        const total = document.querySelectorAll('.seat-item').length;
+        
+        document.querySelectorAll('.seat-item').forEach(seat => {
+            const num = parseInt(seat.getAttribute('data-num'));
+            if (newReservedSeats.includes(num)) {
+                seat.classList.add('occupied');
+                seat.classList.remove('selected');
+                const idx = selectedSeats.indexOf(num);
+                if (idx > -1) selectedSeats.splice(idx, 1);
+            } else {
+                seat.classList.remove('occupied');
+            }
+        });
+
+        currentReservedSeats = [...newReservedSeats];
+        availableSeats = [];
+        for(let i=1; i<=total; i++) {
+            if(!newReservedSeats.includes(i)) availableSeats.push(i);
+        }
+        if (availableSpan) {
+            availableSpan.textContent = `${availableSeats.length} places libres`;
+        }
+        
+        updateUI();
+    }
 
     function fetchData(vehicleId, date, programId, isPolling = false) {
         fetch(`{{ url("/caisse/api/vehicle") }}/${vehicleId}?date=${date}&program_id=${programId}`)
@@ -460,12 +495,14 @@
         if (newCount > currentCount) {
             // Add seats
             let added = 0;
+            let diff = newCount - currentCount;
             for (let seatNum of availableSeats) {
                 if (!selectedSeats.includes(seatNum)) {
                     selectedSeats.push(seatNum);
-                    document.querySelector(`.seat-item[data-num="${seatNum}"]`).classList.add('selected');
+                    const el = document.querySelector(`.seat-item[data-num="${seatNum}"]`);
+                    if (el) el.classList.add('selected');
                     added++;
-                    if (added === delta) break;
+                    if (added === diff) break;
                 }
             }
         } else if (newCount < currentCount) {
@@ -474,7 +511,8 @@
             let countToRemove = currentCount - newCount;
             while (removed < countToRemove && selectedSeats.length > 0) {
                 let seatNum = selectedSeats.pop();
-                document.querySelector(`.seat-item[data-num="${seatNum}"]`).classList.remove('selected');
+                const el = document.querySelector(`.seat-item[data-num="${seatNum}"]`);
+                if (el) el.classList.remove('selected');
                 removed++;
             }
         }
@@ -511,11 +549,11 @@
     }
 
     @if(session('success'))
-        Swal.fire({ icon: 'success', title: 'Succès!', text: '{{ session('success') }}', confirmButtonColor: '#e94e1a' });
+        Swal.fire({ icon: 'success', title: 'Succès!', text: "{{ session('success') }}", confirmButtonColor: '#e94e1a' });
     @endif
 
     @if($errors->any())
-        Swal.fire({ icon: 'error', title: 'Erreur!', html: '@foreach($errors->all() as $error) {{ $error }}<br> @endforeach', confirmButtonColor: '#d33' });
+        Swal.fire({ icon: 'error', title: 'Erreur!', html: "@foreach($errors->all() as $error) {{ $error }}<br> @endforeach", confirmButtonColor: '#d33' });
     @endif
 </script>
 @endsection

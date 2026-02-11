@@ -110,6 +110,15 @@
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="text-sm font-bold text-gray-900">{{ $reservation->passager_prenom }} {{ $reservation->passager_nom }}</div>
                                             <div class="text-xs text-gray-500">{{ $reservation->passager_telephone ?? 'N/A' }}</div>
+                                            <div class="flex gap-1 mt-1">
+                                                @if($reservation->hotesse_id)
+                                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200">Hôtesse</span>
+                                                @elseif($reservation->caisse_id)
+                                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200">Caisse</span>
+                                                @else
+                                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700 border border-blue-200">En ligne</span>
+                                                @endif
+                                            </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             @if($reservation->programme)
@@ -198,7 +207,16 @@
                                                 <div>
                                                     <div class="text-sm font-bold text-gray-900">{{ $reservation->passager_prenom }} {{ $reservation->passager_nom }}</div>
                                                     <div class="text-xs text-gray-500">{{ $reservation->passager_telephone ?? 'N/A' }}</div>
-                                                    <div class="text-xs text-gray-400 font-mono">{{ $reservation->reference }}</div>
+                                                    <div class="flex flex-wrap gap-1 mt-1">
+                                                        <span class="text-[10px] text-gray-400 font-mono">{{ $reservation->reference }}</span>
+                                                        @if($reservation->hotesse_id)
+                                                            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200">Hôtesse</span>
+                                                        @elseif($reservation->caisse_id)
+                                                            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200">Caisse</span>
+                                                        @else
+                                                            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700 border border-blue-200">En ligne</span>
+                                                        @endif
+                                                    </div>
                                                 </div>
                                             </div>
                                         </td>

@@ -3,11 +3,11 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 
-class GeneralNotification extends Notification
+class GeneralNotification extends Notification implements ShouldBroadcastNow
 {
     use Queueable;
 
@@ -32,7 +32,7 @@ class GeneralNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database', 'broadcast'];
     }
 
     /**
@@ -47,5 +47,26 @@ class GeneralNotification extends Notification
             'message' => $this->message,
             'type' => $this->type,
         ];
+    }
+
+    /**
+     * Get the broadcastable representation of the notification.
+     */
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage([
+            'title' => $this->title,
+            'message' => $this->message,
+            'type' => $this->type,
+            'count' => $notifiable->unreadNotifications()->count() + 1, // +1 because this one isn't saved yet in some contexts
+        ]);
+    }
+
+    /**
+     * The type of the notification being broadcast.
+     */
+    public function broadcastType(): string
+    {
+        return 'general.notification';
     }
 }

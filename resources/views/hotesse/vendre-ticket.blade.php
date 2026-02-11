@@ -732,11 +732,18 @@
             html += `
                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
                     <h4 class="font-bold text-[#e94f1b] text-xs mb-3 uppercase tracking-wider">Passager ${i+1}</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
                         <input type="text" name="passenger_details[${i}][nom]" placeholder="Nom *" required class="w-full rounded-lg border-gray-300 p-2 focus:ring-[#e94f1b] focus:border-[#e94f1b]">
                         <input type="text" name="passenger_details[${i}][prenom]" placeholder="Prénom *" required class="w-full rounded-lg border-gray-300 p-2 focus:ring-[#e94f1b] focus:border-[#e94f1b]">
                         <input type="tel" name="passenger_details[${i}][telephone]" placeholder="Téléphone *" required class="w-full rounded-lg border-gray-300 p-2 focus:ring-[#e94f1b] focus:border-[#e94f1b]">
                         <input type="email" name="passenger_details[${i}][email]" placeholder="Email (Optionnel)" class="w-full rounded-lg border-gray-300 p-2 focus:ring-[#e94f1b] focus:border-[#e94f1b]">
+                    </div>
+                    <div class="pt-2 border-t border-gray-100">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase mb-2">Contact d'urgence</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <input type="text" name="passenger_details[${i}][urgence_nom]" placeholder="Nom & Prénom Urgence" class="w-full rounded-lg border-gray-100 bg-white p-2 text-sm focus:ring-[#e94f1b] focus:border-[#e94f1b]">
+                            <input type="tel" name="passenger_details[${i}][urgence_telephone]" placeholder="Téléphone Urgence" class="w-full rounded-lg border-gray-100 bg-white p-2 text-sm focus:ring-[#e94f1b] focus:border-[#e94f1b]">
+                        </div>
                     </div>
                 </div>
             `;

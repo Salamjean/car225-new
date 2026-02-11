@@ -268,9 +268,12 @@ class ProgrammeController extends Controller
             'aller_horaires.*.heure_arrive' => 'required|date_format:H:i',
             'aller_horaires.*.vehicule_id' => 'nullable|exists:vehicules,id',
             'aller_horaires.*.personnel_id' => 'nullable|exists:personnels,id',
-            'retour_horaires' => 'required|array|min:1',
-            'retour_horaires.*.heure_depart' => 'required|date_format:H:i',
-            'retour_horaires.*.heure_arrive' => 'required|date_format:H:i',
+            
+            // Retour optionnel
+            'with_retour' => 'nullable',
+            'retour_horaires' => 'required_if:with_retour,on|array',
+            'retour_horaires.*.heure_depart' => 'required_if:with_retour,on|date_format:H:i',
+            'retour_horaires.*.heure_arrive' => 'required_if:with_retour,on|date_format:H:i',
             'retour_horaires.*.vehicule_id' => 'nullable|exists:vehicules,id',
             'retour_horaires.*.personnel_id' => 'nullable|exists:personnels,id',
         ]);
@@ -331,42 +334,44 @@ class ProgrammeController extends Controller
                 }
             }
 
-            // === CRÉER LES PROGRAMMES RETOUR (points inversés) ===
-            foreach ($validated['retour_horaires'] as $index => $horaire) {
-                 // Check driver availability
-                 if (!empty($horaire['personnel_id'])) {
-                    if (!$this->isDriverAvailable($horaire['personnel_id'], $horaire['heure_depart'], $dureeMinutes)) {
-                        return back()->withInput()->with('error', "Le chauffeur sélectionné pour l'horaire Retour " . ($index+1) . " (" . $horaire['heure_depart'] . ") est déjà occupé sur ce créneau.");
+            // === CRÉER LES PROGRAMMES RETOUR (points inversés) - SEULEMENT SI DEMANDÉ ===
+            if ($request->has('with_retour') && !empty($validated['retour_horaires'])) {
+                foreach ($validated['retour_horaires'] as $index => $horaire) {
+                    // Check driver availability
+                    if (!empty($horaire['personnel_id'])) {
+                        if (!$this->isDriverAvailable($horaire['personnel_id'], $horaire['heure_depart'], $dureeMinutes)) {
+                            return back()->withInput()->with('error', "Le chauffeur sélectionné pour l'horaire Retour " . ($index+1) . " (" . $horaire['heure_depart'] . ") est déjà occupé sur ce créneau.");
+                        }
                     }
-                }
 
-                // Vérifier si ce programme existe déjà
-                $exists = Programme::where('compagnie_id', $compagnieId)
-                    ->where('itineraire_id', $itineraire->id)
-                    ->where('point_depart', $itineraire->point_arrive) // Inversé
-                    ->where('point_arrive', $itineraire->point_depart) // Inversé
-                    ->where('heure_depart', $horaire['heure_depart'])
-                    ->where('statut', 'actif')
-                    ->exists();
+                    // Vérifier si ce programme existe déjà
+                    $exists = Programme::where('compagnie_id', $compagnieId)
+                        ->where('itineraire_id', $itineraire->id)
+                        ->where('point_depart', $itineraire->point_arrive) // Inversé
+                        ->where('point_arrive', $itineraire->point_depart) // Inversé
+                        ->where('heure_depart', $horaire['heure_depart'])
+                        ->where('statut', 'actif')
+                        ->exists();
 
-                if (!$exists) {
-                    Programme::create([
-                        'compagnie_id' => $compagnieId,
-                        'itineraire_id' => $itineraire->id,
-                        'vehicule_id' => $horaire['vehicule_id'] ?? null,
-                        'personnel_id' => $horaire['personnel_id'] ?? null,
-                        'convoyeur_id' => null,
-                        'point_depart' => $itineraire->point_arrive, // Inversé
-                        'point_arrive' => $itineraire->point_depart, // Inversé
-                        'durer_parcours' => $itineraire->durer_parcours,
-                        'montant_billet' => $validated['montant_billet'],
-                        'date_depart' => $dateDebut,
-                        'date_fin' => $dateFin,
-                        'heure_depart' => $horaire['heure_depart'],
-                        'heure_arrive' => $horaire['heure_arrive'],
-                        'statut' => 'actif',
-                    ]);
-                    $createdRetour++;
+                    if (!$exists) {
+                        Programme::create([
+                            'compagnie_id' => $compagnieId,
+                            'itineraire_id' => $itineraire->id,
+                            'vehicule_id' => $horaire['vehicule_id'] ?? null,
+                            'personnel_id' => $horaire['personnel_id'] ?? null,
+                            'convoyeur_id' => null,
+                            'point_depart' => $itineraire->point_arrive, // Inversé
+                            'point_arrive' => $itineraire->point_depart, // Inversé
+                            'durer_parcours' => $itineraire->durer_parcours,
+                            'montant_billet' => $validated['montant_billet'],
+                            'date_depart' => $dateDebut,
+                            'date_fin' => $dateFin,
+                            'heure_depart' => $horaire['heure_depart'],
+                            'heure_arrive' => $horaire['heure_arrive'],
+                            'statut' => 'actif',
+                        ]);
+                        $createdRetour++;
+                    }
                 }
             }
 

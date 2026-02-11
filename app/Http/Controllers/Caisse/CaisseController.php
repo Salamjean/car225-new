@@ -218,6 +218,8 @@ class CaisseController extends Controller
             'passenger_details.*.prenom' => 'required|string|max:255',
             'passenger_details.*.telephone' => 'required|string|max:20',
             'passenger_details.*.email' => 'nullable|email|max:255',
+            'passenger_details.*.urgence_nom' => 'nullable|string|max:255',
+            'passenger_details.*.urgence_telephone' => 'nullable|string|max:20',
         ]);
 
         $programme = Programme::with(['compagnie', 'vehicule'])->findOrFail($request->programme_id);
@@ -257,7 +259,7 @@ class CaisseController extends Controller
                     $nextSeat++;
                 }
 
-                $reference = Reservation::generateReference($nextSeat);
+                $reference = Reservation::generateReference($nextSeat, $caisse->compagnie->sigle ?? 'RES');
 
                 $reservation = Reservation::create([
                     'reference' => $reference,
@@ -268,6 +270,7 @@ class CaisseController extends Controller
                     'passager_prenom' => $passenger['prenom'],
                     'passager_telephone' => $passenger['telephone'],
                     'passager_email' => $passenger['email'] ?? null,
+                    'passager_urgence' => ($passenger['urgence_nom'] ?? '') . ' (' . ($passenger['urgence_telephone'] ?? '') . ')',
                     
                     // ICI : On met la date d'aujourd'hui, pas la date de début du planning
                     'date_voyage' => $dateVoyageEffective, 
@@ -302,6 +305,19 @@ class CaisseController extends Controller
             }
 
             DB::commit();
+
+            // Broadcast the update for real-time seat map
+            try {
+                $allReserved = \App\Models\Reservation::where('programme_id', $programme->id)
+                    ->whereDate('date_voyage', $dateVoyageEffective)
+                    ->where('statut', 'confirmee')
+                    ->pluck('seat_number')
+                    ->toArray();
+                    
+                broadcast(new \App\Events\SeatUpdated($programme->id, $dateVoyageEffective, $allReserved))->toOthers();
+            } catch (\Exception $e) {
+                \Log::error('Erreur Broadcast Caisse: ' . $e->getMessage());
+            }
 
             $ids = array_map(function($r) { return $r->id; }, $reservations);
             return redirect()->route('caisse.vente-success', ['reservations' => $ids])->with('success', $request->nombre_tickets . ' ticket(s) vendu(s) avec succès !');
@@ -369,7 +385,7 @@ class CaisseController extends Controller
                     throw new \Exception("Le siège {$seatNumber} est déjà réservé.");
                 }
 
-                $reference = Reservation::generateReference($seatNumber);
+                $reference = Reservation::generateReference($seatNumber, $caisse->compagnie->sigle ?? 'RES');
 
                 $reservation = Reservation::create([
                     'reference' => $reference,
@@ -403,12 +419,25 @@ class CaisseController extends Controller
                     Log::error('Erreur QR: ' . $e->getMessage());
                 }
 
-                $reservations[] = $reservation;
-            }
+            $reservations[] = $reservation;
+        }
 
-            DB::commit();
+        DB::commit();
 
-            $ids = array_map(function($r) { return $r->id; }, $reservations);
+        // Broadcast the update for real-time seat map
+        try {
+            $allReserved = \App\Models\Reservation::where('programme_id', $programme->id)
+                ->whereDate('date_voyage', $dateVoyageEffective)
+                ->where('statut', 'confirmee')
+                ->pluck('seat_number')
+                ->toArray();
+                
+            broadcast(new \App\Events\SeatUpdated($programme->id, $dateVoyageEffective, $allReserved))->toOthers();
+        } catch (\Exception $e) {
+            \Log::error('Erreur Broadcast: ' . $e->getMessage());
+        }
+
+        $ids = array_map(function($r) { return $r->id; }, $reservations);
             return redirect()->route('caisse.vente-success', ['reservations' => $ids])->with('success', $nombreTickets . ' ticket(s) vendu(s) avec succès !');
 
         } catch (\Exception $e) {

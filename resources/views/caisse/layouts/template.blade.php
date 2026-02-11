@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="{{asset('assetsPoster/assets/vendors/jvectormap/jquery-jvectormap.css')}}">
   <link rel="stylesheet" href="{{asset('assetsPoster/assets/css/demo/style.css')}}">
   <link rel="shortcut icon" href="{{asset('assetsPoster/assets/images/Car225_favicon.png')}}" />
+  @vite(['resources/js/app.js'])
 </head>
 
 <body>
