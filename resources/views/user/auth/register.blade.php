@@ -316,6 +316,51 @@
             margin-top: 5px;
             display: block;
         }
+        .btn-google {
+            background: #ffffff;
+            color: #757575;
+            border: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn-google:hover {
+            background: #f1f1f1;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .btn-google i {
+            color: #4285F4;
+            font-size: 18px;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 20px 0;
+            color: var(--gray);
+            font-size: 14px;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .divider:not(:empty)::before {
+            margin-right: .5em;
+        }
+
+        .divider:not(:empty)::after {
+            margin-left: .5em;
+        }
     </style>
 </head>
 
@@ -434,6 +479,12 @@
                     <button type="submit" class="btn btn-success">
                         <i class="fas fa-user-plus"></i> Créer mon compte
                     </button>
+
+                    <div class="divider">OU</div>
+
+                    <a href="{{ route('auth.google') }}" class="btn btn-google">
+                        <i class="fab fa-google"></i> S'inscrire avec Google
+                    </a>
                 </form>
             </div>
         </div>

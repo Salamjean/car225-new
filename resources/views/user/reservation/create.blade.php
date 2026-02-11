@@ -47,10 +47,10 @@
                                 </div>
                             </div>
 
-                            <!-- Date de départ (Prend 3 colonnes sur 12) -->
-                            <div class="relative lg:col-span-3">
+                            <!-- Date de départ (Prend 2 colonnes sur 12) -->
+                            <div class="relative lg:col-span-2">
                                 <label for="date_depart" class="block text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-calendar text-blue-500 mr-2"></i>Date de départ
+                                    <i class="fas fa-calendar text-blue-500 mr-2"></i>Date
                                 </label>
                                 <div class="relative">
                                     <input type="date" id="date_depart" name="date_depart"
@@ -60,16 +60,14 @@
                                 </div>
                             </div>
 
-
-                        </div>
-
-                        <!-- Boutons d'action -->
-                        <div class="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-4 justify-center items-center">
-                            <button type="submit"
-                                class="bg-[#e94f1b] text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl font-bold hover:bg-orange-600 transition-all duration-300 transform hover:-translate-y-1 shadow-lg hover:shadow-xl flex items-center justify-center gap-3 text-sm sm:text-base">
-                                <i class="fas fa-search"></i>
-                                <span>Rechercher un voyage</span>
-                            </button>
+                            <!-- Bouton Rechercher (Prend 3 colonnes sur 12) -->
+                            <div class="lg:col-span-3">
+                                <button type="submit"
+                                    class="w-full bg-[#e94f1b] text-white px-4 py-3.5 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 shadow-lg flex items-center justify-center gap-2">
+                                    <i class="fas fa-search"></i>
+                                    <span>Rechercher</span>
+                                </button>
+                            </div>
                         </div>
                     </form>
                 </div>

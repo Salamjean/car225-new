@@ -18,6 +18,14 @@
   <link rel="stylesheet" href="{{asset('assetsPoster/assets/vendors/jvectormap/jquery-jvectormap.css')}}">
   <link rel="stylesheet" href="{{asset('assetsPoster/assets/css/demo/style.css')}}">
   <link rel="shortcut icon" href="{{asset('assetsPoster/assets/images/Car225_favicon.png')}}" />
+  <style>
+    body, html { margin: 0; padding: 0; background-color: #231f20 !important; }
+    .body-wrapper { background-color: #231f20 !important; }
+    .mdc-drawer { border-right: none !important; background-color: #231f20 !important; height: 100vh !important; }
+    .mdc-drawer--dismissible.mdc-drawer--open { width: 260px !important; }
+    .main-wrapper { background-color: #f8f9fa !important; border-left: none !important; }
+    .page-wrapper { padding: 0 !important; }
+  </style>
 </head>
 
 <body>

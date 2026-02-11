@@ -1,56 +1,45 @@
-<aside class="mdc-drawer mdc-drawer--dismissible mdc-drawer--open" style="background-color: #ffeaca">
-    <div class="mdc-drawer__header">
-        <a href="{{ route('hotesse.dashboard') }}" class="brand-logo">
-            @auth('hotesse')
-                @if (Auth::guard('hotesse')->user()->profile_picture)
-                    <img src="{{ asset('storage/' . Auth::guard('hotesse')->user()->profile_picture) }}"
-                        style="width: 50%; margin-left: 50px; border-radius: 50%; object-fit: cover;" alt="Photo de profil">
-                @else
-                    <div style="width: 50%; margin-left: 50px; display: flex; align-items: center; justify-content: center;">
-                        <div
-                            style="width: 100px; height: 100px; border-radius: 50%; background: linear-gradient(to right, #e94e1a, #d33d0f); display: flex; align-items: center; justify-content: center; color: white; font-size: 40px; font-weight: bold;">
-                            {{ strtoupper(substr(Auth::guard('hotesse')->user()->prenom, 0, 1)) }}{{ strtoupper(substr(Auth::guard('hotesse')->user()->name, 0, 1)) }}
-                        </div>
-                    </div>
-                @endif
-            @else
-                <img src="{{ asset('assetsPoster/assets/images/logo_car225.png') }}" style="width: 50%; margin-left: 50px" alt="logo">
-            @endauth
+<aside class="mdc-drawer mdc-drawer--dismissible mdc-drawer--open" style="background-color: #231f20 !important; border-right: none !important; box-shadow: none !important;">
+    <div class="mdc-drawer__header" style="padding: 30px 24px; background-color: #231f20 !important; margin: 0 !important; border-bottom: none !important;">
+        <a href="{{ route('hotesse.dashboard') }}" class="brand-logo flex items-center gap-3 text-decoration-none">
+            <div class="w-10 h-10 rounded-xl bg-black flex items-center justify-center shadow-lg shadow-black/20 p-1.5">
+                <img src="{{asset('assetsPoster/assets/images/Car225_favicon.png')}}" class="w-full h-full object-contain" alt="Logo">
+            </div>
+            <div class="flex flex-col">
+                <span class="text-white font-bold text-lg leading-tight tracking-tight">VoyageExpress</span>
+                <span class="text-gray-400 text-[10px] font-bold uppercase tracking-wider opacity-60">Page hotesse</span>
+            </div>
         </a>
     </div>
-    <div class="mdc-drawer__content">
-        <div class="user-info">
-            <p class="name text-center text-black">{{ Auth::guard('hotesse')->user()->name }}
-                {{ Auth::guard('hotesse')->user()->prenom }}</p>
-            <p class="email text-center text-black">{{ Auth::guard('hotesse')->user()->email }}</p>
-        </div>
+    <div class="mdc-drawer__content" style="background-color: #231f20 !important; padding-top: 0 !important;">
         <div class="mdc-list-group">
-            <nav class="mdc-list mdc-drawer-menu">
+            <div class="px-6 py-6 text-[11px] font-bold text-gray-500 uppercase tracking-[2px]">NAVIGATION</div>
+            <nav class="mdc-list mdc-drawer-menu px-3 space-y-3">
                 <!-- Tableau de bord -->
-                <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-drawer-link" href="{{ route('hotesse.dashboard') }}">
-                        <i class="fas fa-home mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
-                        Tableau de bord
+                <div class="mdc-list-item mdc-drawer-item" style="height: auto; margin: 0; padding: 0;">
+                    <a class="mdc-drawer-link group flex items-center px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('hotesse.dashboard') ? 'bg-[#e94e1a] !important; text-white !important;' : 'text-gray-300 hover:text-white' }}" 
+                       href="{{ route('hotesse.dashboard') }}" style="{{ request()->routeIs('hotesse.dashboard') ? 'background-color: #e94e1a !important; color: white !important;' : 'color: #d1d5db;' }}">
+                        <i class="fas fa-th-large mr-3 text-lg {{ request()->routeIs('hotesse.dashboard') ? 'text-white' : 'text-gray-400 group-hover:text-white' }}"></i>
+                        <span class="font-medium">Tableau de bord</span>
                     </a>
                 </div>
 
                 <!-- Vendre Ticket -->
-                <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-drawer-link" href="{{ route('hotesse.vendre-ticket') }}">
-                        <i class="fas fa-ticket-alt mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
-                        Vendre Ticket
+                <div class="mdc-list-item mdc-drawer-item" style="height: auto; margin: 0; padding: 0;">
+                    <a class="mdc-drawer-link group flex items-center px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('hotesse.vendre-ticket') ? 'bg-[#e94e1a] !important; text-white !important;' : 'text-gray-300 hover:text-white' }}" 
+                       href="{{ route('hotesse.vendre-ticket') }}" style="{{ request()->routeIs('hotesse.vendre-ticket') ? 'background-color: #e94e1a !important; color: white !important;' : 'color: #d1d5db;' }}">
+                        <i class="fas fa-plus-circle mr-3 text-lg {{ request()->routeIs('hotesse.vendre-ticket') ? 'text-white' : 'text-gray-400 group-hover:text-white' }}"></i>
+                        <span class="font-medium">Nouveau ticket</span>
                     </a>
                 </div>
 
                 <!-- Historique des Ventes -->
-                <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-drawer-link" href="{{ route('hotesse.ventes') }}">
-                        <i class="fas fa-history mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
-                        Historique
+                <div class="mdc-list-item mdc-drawer-item" style="height: auto; margin: 0; padding: 0;">
+                    <a class="mdc-drawer-link group flex items-center px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('hotesse.ventes') ? 'bg-[#e94e1a] !important; text-white !important;' : 'text-gray-300 hover:text-white' }}" 
+                       href="{{ route('hotesse.ventes') }}" style="{{ request()->routeIs('hotesse.ventes') ? 'background-color: #e94e1a !important; color: white !important;' : 'color: #d1d5db;' }}">
+                        <i class="fas fa-history mr-3 text-lg {{ request()->routeIs('hotesse.ventes') ? 'text-white' : 'text-gray-400 group-hover:text-white' }}"></i>
+                        <span class="font-medium">Historique</span>
                     </a>
                 </div>
-
-
             </nav>
         </div>
     </div>

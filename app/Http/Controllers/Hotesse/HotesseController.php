@@ -50,7 +50,13 @@ class HotesseController extends Controller
                 ->sum('montant');
         }
 
-        return view('hotesse.dashboard', compact('hotesse', 'stats', 'chartData', 'chartLabels'));
+        $recent_reservations = Reservation::where('hotesse_id', $hotesse->id)
+            ->with(['programme', 'programme.vehicule']) // Eager load for performance
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
+
+        return view('hotesse.dashboard', compact('hotesse', 'stats', 'chartData', 'chartLabels', 'recent_reservations'));
     }
 
     public function profile()
@@ -175,18 +181,10 @@ class HotesseController extends Controller
         ];
 
         // Est-ce qu'on doit charger les résultats ?
-        // OUI si : on a cliqué sur "Voir tout", OU on a fait une recherche
-        $shouldLoad = $request->has('view_all') || 
-                      $request->filled('point_depart') || 
-                      $request->filled('point_arrive') ||
-                      $request->filled('date_depart'); // Ajout date_depart aussi
+     // Par défaut, l'hôtesse voit tous les voyages de sa compagnie
+     $shouldLoad = true;
 
-        // Si aucun paramètre n'est passé (page par défaut), on NE charge PAS
-        if (!$shouldLoad && !$request->has('page')) {
-            $shouldLoad = false; 
-        }
-
-        $groupedRoutes = collect();
+     $groupedRoutes = collect();
 
         if ($shouldLoad) {
             // ... (reste du code inchangé) ...
@@ -257,10 +255,12 @@ class HotesseController extends Controller
             // Log::info('VendreTicket: SQL Query:', DB::getQueryLog());
             Log::info('VendreTicket: Found ' . $programmes->count() . ' programmes.');
 
+            $searchDateRequested = $request->input('date_depart', date('Y-m-d'));
+
             // 4. Groupement intelligent (Par trajet Départ-Arrivée)
             $groupedRoutes = $programmes->groupBy(function($item) {
                 return strtolower(trim($item->point_depart)) . '-' . strtolower(trim($item->point_arrive));
-            })->map(function ($progs) {
+            })->map(function ($progs) use ($request, $searchDateRequested) {
                 $first = $progs->first();
                 
                 // On récupère les horaires pour ce trajet spécifique
@@ -274,13 +274,21 @@ class HotesseController extends Controller
                         return false; 
                     }
                     return true;
-                })->values()->map(function($p) {
+                })->values()->map(function($p) use ($searchDateRequested) {
+                    $reservedCount = Reservation::where('programme_id', $p->id)
+                        ->where('date_voyage', $searchDateRequested)
+                        ->where('statut', 'confirmee')
+                        ->count();
+
                     return [
                         'id' => $p->id,
                         'heure_depart' => $p->heure_depart,
                         'heure_arrive' => $p->heure_arrive,
                         'date_depart' => $p->date_depart,
-                        'vehicule' => $p->vehicule ? $p->vehicule->type_range : 'Standard'
+                        'vehicule' => $p->vehicule ? $p->vehicule->type_range : 'Standard',
+                        'vehicule_id' => $p->vehicule_id,
+                        'reserved_count' => $reservedCount,
+                        'total_seats' => $p->vehicule ? $p->vehicule->nombre_place : 70
                     ];
                 });
 
@@ -301,7 +309,7 @@ class HotesseController extends Controller
                     'durer_parcours' => $first->durer_parcours,
                     'aller_horaires' => $allerHoraires,
                     'has_retour' => $hasRetour,
-                    'default_date' => $first->date_depart // Pour initialiser le calendrier
+                    'default_date' => $searchDateRequested // Pour initialiser le calendrier
                 ];
             })->filter(function($route) {
                 // On ne garde que les routes qui ont au moins un horaire valide

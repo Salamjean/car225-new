@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Laravel\Socialite\Facades\Socialite;
 
 class UserAuthenticate extends Controller
 {
@@ -122,6 +123,37 @@ class UserAuthenticate extends Controller
             return redirect()->back()
                 ->with('error', 'Une erreur est survenue lors de la création du compte. Veuillez réessayer.')
                 ->withInput();
+        }
+    }
+
+    public function redirectToGoogle()
+    {
+        return Socialite::driver('google')->redirect();
+    }
+
+    public function handleGoogleCallback()
+    {
+        try {
+            $googleUser = Socialite::driver('google')->user();
+            
+            $user = User::updateOrCreate([
+                'email' => $googleUser->email,
+            ], [
+                'name' => $googleUser->user['family_name'] ?? $googleUser->name,
+                'prenom' => $googleUser->user['given_name'] ?? '',
+                'google_id' => $googleUser->id,
+                'google_token' => $googleUser->token,
+                'google_refresh_token' => $googleUser->refreshToken,
+                // On peut aussi gérer la photo de profil si on veut
+                // 'photo_profile_path' => $googleUser->avatar, 
+            ]);
+
+            Auth::login($user);
+
+            return redirect()->intended(route('user.dashboard'))->with('success', 'Bienvenue sur votre page!');
+        } catch (\Exception $e) {
+            Log::error('Erreur Google Login: ' . $e->getMessage());
+            return redirect()->route('login')->with('error', 'Erreur lors de la connexion avec Google.');
         }
     }
 }

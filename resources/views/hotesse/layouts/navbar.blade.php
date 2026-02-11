@@ -1,83 +1,88 @@
-<header class="mdc-top-app-bar" style="background-color: #e94e1a">
+<header class="mdc-top-app-bar bg-white border-b border-gray-200 shadow-sm" style="background-color: #fff; color: #333;">
   <div class="mdc-top-app-bar__row">
     <div class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start">
-      <button
-        class="material-icons mdc-top-app-bar__navigation-icon mdc-icon-button sidebar-toggler text-white">menu</button>
+      <button class="material-icons mdc-top-app-bar__navigation-icon mdc-icon-button sidebar-toggler text-gray-800 hover:text-[#e94e1a] transition-all" style="font-size: 24px;">notes</button>
     </div>
     <div class="mdc-top-app-bar__section mdc-top-app-bar__section--align-end mdc-top-app-bar__section-right">
       <!-- Version desktop (cachée sur mobile) -->
       <div class="menu-button-container menu-profile d-none d-md-block">
-        <button class="mdc-button mdc-menu-button">
+        <button class="mdc-button mdc-menu-button flex items-center gap-2 hover:bg-gray-50 rounded-lg px-2 py-1 transition-all">
           <span class="d-flex align-items-center">
-            <span class="figure"
-              style="width:40px; height:40px; border-radius:50%; background:#d33d0f; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; overflow: hidden;">
+            <span class="figure shadow-sm mr-2"
+              style="width:36px; height:36px; border-radius:50%; background:#fcf0e8; display:flex; align-items:center; justify-content:center; color:#e94e1a; font-weight:bold; overflow: hidden; border: 1px solid #fee2d5;">
               @php
                 $hotesse = Auth::guard('hotesse')->user();
-                $initials = strtoupper(substr($hotesse->name, 0, 1) . substr($hotesse->prenom, 0, 1));
               @endphp
               @if($hotesse->profile_picture)
                 <img src="{{ asset('storage/' . $hotesse->profile_picture) }}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
               @else
-                {{ $initials }}
+                <i class="fas fa-user-circle text-xl"></i>
               @endif
             </span>
-            <span class="user-name text-white ml-2">{{ $hotesse->name }} {{ $hotesse->prenom }}</span>
-            <span class="ml-2 text-white">&#9662;</span>
+            <span class="text-sm font-bold text-gray-900 tracking-tight ml-1">Hôtesse</span>
+            <i class="mdi mdi-chevron-down ml-1 text-gray-400"></i>
           </span>
         </button>
-        <div class="mdc-menu mdc-menu-surface" tabindex="-1">
-            <li class="mdc-list-item" role="menuitem">
-              <a href="{{route('hotesse.profile')}}" class="d-flex align-items-center w-100 text-decoration-none text-dark">
-                <i class="mdi mdi-account mr-2" style="color: #193561; font-size: 1.5rem;"></i>
-                <span>Mon Profil</span>
-              </a>
-            </li>
-            <li class="mdc-list-item" role="menuitem">
-              <a href="{{route('hotesse.logout')}}" class="d-flex align-items-center w-100 text-decoration-none text-dark">
-                <i class="mdi mdi-logout mr-2" style="color: #193561; font-size: 1.5rem;"></i>
-                <span>Déconnexion</span>
-              </a>
-            </li>
-          </ul>
+        <div class="mdc-menu mdc-menu-surface shadow-xl rounded-xl border border-gray-100 mt-2" tabindex="-1">
+            <ul class="mdc-list py-2" role="menu" aria-hidden="true" aria-orientation="vertical">
+                <li class="mdc-list-item hover:bg-orange-50 cursor-pointer" role="menuitem">
+                  <a href="{{route('hotesse.profile')}}" class="d-flex align-items-center w-100 text-decoration-none text-gray-700 px-4 py-2">
+                    <i class="mdi mdi-account-outline mr-3 text-[#e94e1a] text-lg"></i>
+                    <span class="font-medium">Mon Profil</span>
+                  </a>
+                </li>
+                <li class="mdc-list-divider my-1 border-gray-100"></li>
+                <li class="mdc-list-item hover:bg-red-50 cursor-pointer" role="menuitem">
+                  <a href="{{route('hotesse.logout')}}" class="d-flex align-items-center w-100 text-decoration-none text-red-600 px-4 py-2">
+                    <i class="mdi mdi-logout mr-3 text-red-500 text-lg"></i>
+                    <span class="font-medium">Déconnexion</span>
+                  </a>
+                </li>
+            </ul>
         </div>
       </div>
 
-      <!-- Version mobile (affichée uniquement sur mobile) -->
+      <!-- Version mobile -->
       <div class="d-md-none mobile-menu-container">
-        <button class="mdc-icon-button text-white mobile-profile-toggle">
-          <span class="figure"
-            style="width:35px; height:35px; border-radius:50%; background:#d33d0f; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:14px; overflow: hidden;">
+        <button class="mdc-icon-button text-gray-600 mobile-profile-toggle">
+          <span class="figure shadow-sm"
+            style="width:35px; height:35px; border-radius:50%; background:#fcf0e8; display:flex; align-items:center; justify-content:center; color:#e94e1a; font-weight:bold; font-size:14px; overflow: hidden; border: 1px solid #fee2d5;">
             @if($hotesse->profile_picture)
                 <img src="{{ asset('storage/' . $hotesse->profile_picture) }}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
             @else
-                {{ $initials }}
+                <i class="fas fa-user-circle"></i>
             @endif
           </span>
         </button>
-        <div class="mobile-menu mdc-menu mdc-menu-surface" tabindex="-1">
-          <ul class="mdc-list" role="menu" aria-hidden="true" aria-orientation="vertical">
-            <li class="mobile-user-info mdc-list-item" style="pointer-events: none;">
+        <div class="mobile-menu mdc-menu mdc-menu-surface shadow-xl rounded-xl border border-gray-100 mt-2" tabindex="-1">
+          <ul class="mdc-list py-2" role="menu" aria-hidden="true" aria-orientation="vertical">
+            <li class="mobile-user-info mdc-list-item bg-gray-50 border-b border-gray-100 px-4 py-3" style="pointer-events: none;">
               <div class="d-flex align-items-center w-100">
-                <span class="figure mr-2"
-                  style="width:30px; height:30px; border-radius:50%; background:#d33d0f; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:12px;">
-                  {{ $initials }}
+                <span class="figure mr-3"
+                  style="width:32px; height:32px; border-radius:50%; background:#fcf0e8; display:flex; align-items:center; justify-content:center; color:#e94e1a; font-weight:bold; font-size:12px; border: 1px solid #fee2d5;">
+                  @if($hotesse->profile_picture)
+                    <img src="{{ asset('storage/' . $hotesse->profile_picture) }}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
+                  @else
+                    <i class="fas fa-user"></i>
+                  @endif
                 </span>
-                <span class="user-name">{{ $hotesse->name }} {{ $hotesse->prenom }}</span>
+                <div class="flex flex-col">
+                    <span class="user-name font-bold text-gray-800 text-sm leading-tight">{{ $hotesse->name }} {{ $hotesse->prenom }}</span>
+                    <span class="text-xs text-gray-500">Hôtesse</span>
+                </div>
               </div>
             </li>
-            <li class="mdc-list-item" role="menuitem">
-              <a href="{{route('hotesse.profile')}}"
-                class="d-flex align-items-center w-100 text-decoration-none text-dark py-2">
-                <i class="mdi mdi-account mr-2" style="color: #193561; font-size: 1.5rem;"></i>
-                <span>Mon Profil</span>
+            <li class="mdc-list-item hover:bg-orange-50 cursor-pointer" role="menuitem">
+              <a href="{{route('hotesse.profile')}}" class="d-flex align-items-center w-100 text-decoration-none text-gray-700 px-4 py-2">
+                <i class="mdi mdi-account-outline mr-3 text-[#e94e1a] text-lg"></i>
+                <span class="font-medium">Mon Profil</span>
               </a>
             </li>
-            <li role="separator" class="mdc-list-divider"></li>
-            <li class="mdc-list-item" role="menuitem">
-              <a href="{{route('hotesse.logout')}}"
-                class="d-flex align-items-center w-100 text-decoration-none text-dark py-2">
-                <i class="mdi mdi-logout mr-2" style="color: #193561; font-size: 1.5rem;"></i>
-                <span>Déconnexion</span>
+            <li class="mdc-list-divider my-1 border-gray-100"></li>
+            <li class="mdc-list-item hover:bg-red-50 cursor-pointer" role="menuitem">
+              <a href="{{route('hotesse.logout')}}" class="d-flex align-items-center w-100 text-decoration-none text-red-600 px-4 py-2">
+                <i class="mdi mdi-logout mr-3 text-red-500 text-lg"></i>
+                <span class="font-medium">Déconnexion</span>
               </a>
             </li>
           </ul>

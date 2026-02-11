@@ -84,11 +84,9 @@
                         <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600 font-bold">
                             <i class="fas fa-tags text-xl"></i>
                         </div>
-                        <span class="bg-purple-50 text-purple-600 text-[10px] font-bold px-2 py-1 rounded-lg uppercase">
-                            <i class="fas fa-plus"></i> Ajouter
-                        </span>
+                        
                     </div>
-                    <p class="text-sm font-bold text-gray-400 uppercase tracking-wider">Solde Tickets</p>
+                    <p class="text-sm font-bold text-gray-400 uppercase tracking-wider">Montant des Tickets</p>
                     <h3 class="text-2xl font-black text-purple-900 mt-2">
                         {{ Auth::guard('compagnie')->user()->tickets }}
                     </h3>

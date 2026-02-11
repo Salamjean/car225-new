@@ -214,6 +214,9 @@ Route::middleware('caisse')->prefix('caisse')->group(function () {
     Route::post('/vendre-ticket', [App\Http\Controllers\Caisse\CaisseController::class, 'vendreTicketSubmit'])->name('caisse.vendre-ticket.submit');
     Route::get('/vente-success', [App\Http\Controllers\Caisse\CaisseController::class, 'venteSuccess'])->name('caisse.vente-success');
     
+    // API Route for Vehicle Details (Shared Logic)
+    Route::get('/api/vehicle/{id}', [App\Http\Controllers\User\Reservation\ReservationController::class, 'showVehicle'])->name('caisse.api.vehicle');
+    
     // Sales history and printing
     Route::get('/ventes', [App\Http\Controllers\Caisse\CaisseController::class, 'ventes'])->name('caisse.ventes');
     Route::get('/ticket/{reservation}/imprimer', [App\Http\Controllers\Caisse\CaisseController::class, 'imprimerTicket'])->name('caisse.ticket.imprimer');
@@ -253,6 +256,7 @@ Route::middleware('hotesse')->prefix('hotesse')->group(function () {
     
     // API Route for Return Trips (Shared Logic with User)
     Route::get('/api/return-trips', [App\Http\Controllers\User\Reservation\ReservationController::class, 'apiReturnTrips'])->name('hotesse.api.return-trips');
+    Route::get('/api/vehicle/{id}', [App\Http\Controllers\User\Reservation\ReservationController::class, 'showVehicle'])->name('hotesse.api.vehicle');
 });
 
 
@@ -284,6 +288,10 @@ Route::prefix('user')->group(function () {
     Route::post('/login', [UserAuthenticate::class, 'handleLogin'])->name('user.handleLogin');
     Route::get('/register', [UserAuthenticate::class, 'register'])->name('user.register');
     Route::post('/register', [UserAuthenticate::class, 'handleRegister'])->name('user.handleRegister');
+
+    // Google Auth Routes
+    Route::get('/auth/google', [UserAuthenticate::class, 'redirectToGoogle'])->name('auth.google');
+    Route::get('/auth/google/callback', [UserAuthenticate::class, 'handleGoogleCallback'])->name('auth.google.callback');
     
     // Password Reset Routes
     Route::get('/password/reset', [PasswordResetController::class, 'showResetForm'])->name('password.request');

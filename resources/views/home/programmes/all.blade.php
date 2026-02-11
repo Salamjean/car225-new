@@ -390,84 +390,123 @@
         }
 
         function generatePlacesVisualization(vehicle, reservedSeats = []) {
-            let config = typeRangeConfig[vehicle.type_range];
+    // 1. Récupération de la configuration
+    let config = typeRangeConfig[vehicle.type_range];
+    
+    if (!config) {
+        config = { placesGauche: 2, placesDroite: 2, description: "Configuration Standard" };
+        console.warn(`Configuration de véhicule inconnue: ${vehicle.type_range}. Utilisation du mode par défaut 2x2.`);
+    }
+
+    const { placesGauche, placesDroite } = config;
+    const placesParRanger = placesGauche + placesDroite;
+    const totalPlaces = parseInt(vehicle.nombre_place);
+    const nombreRanger = Math.ceil(totalPlaces / placesParRanger);
+
+    // 2. Début du HTML (Style Tableau Clean)
+    let html = `
+    <div class="flex flex-col items-center w-full font-sans">
+        
+        <!-- Conducteur (Style épuré) -->
+        <div class="w-full mb-3 flex justify-start px-4">
+            <div class="bg-gray-100 border border-gray-200 w-10 h-10 rounded-full flex items-center justify-center shadow-sm" title="Conducteur">
+                <i class="fas fa-steering-wheel text-gray-400"></i>
+            </div>
+        </div>
+
+        <!-- Conteneur Tableau -->
+        <div class="w-full border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
+            <!-- En-têtes -->
+            <div class="grid grid-cols-[60px_1fr_40px_1fr] bg-gray-50 border-b border-gray-100 py-3 px-2">
+                <div class="text-xs font-black text-gray-400 uppercase text-center">RANG</div>
+                <div class="text-xs font-black text-gray-400 uppercase text-center">GAUCHE</div>
+                <div class="text-xs font-black text-gray-400 uppercase text-center border-l border-r border-gray-200 mx-1">ALLÉE</div>
+                <div class="text-xs font-black text-gray-400 uppercase text-center">DROITE</div>
+            </div>
             
-            // Fallback pour les configurations inconnues (par défaut 2x2)
-            if (!config) {
-                config = { placesGauche: 2, placesDroite: 2, description: "Configuration Standard" };
-                console.warn(`Configuration de véhicule inconnue: ${vehicle.type_range}. Utilisation du mode par défaut 2x2.`);
-            }
+            <div class="max-h-[350px] overflow-y-auto scrollbar-thin p-3 space-y-2">
+    `;
 
-            const { placesGauche, placesDroite } = config;
-            const placesParRanger = placesGauche + placesDroite;
-            const totalPlaces = parseInt(vehicle.nombre_place);
-            const nombreRanger = Math.ceil(totalPlaces / placesParRanger);
+    // 3. Boucle des places
+    let numeroPlace = 1;
+    for (let ranger = 1; ranger <= nombreRanger; ranger++) {
+        // Calcul des places pour cette rangée spécifique
+        const placesRestantes = totalPlaces - (numeroPlace - 1);
+        const placesCetteRanger = Math.min(placesParRanger, placesRestantes);
+        const placesGaucheCetteRanger = Math.min(placesGauche, placesCetteRanger);
+        const placesDroiteCetteRanger = Math.min(placesDroite, placesCetteRanger - placesGaucheCetteRanger);
 
-            let html = `
-            <div class="flex flex-col items-center w-full">
-                <!-- Conducteur -->
-                <div class="w-full max-w-lg mb-4 relative h-10">
-                    <div class="absolute left-4 top-0 bg-gray-200 border-2 border-gray-300 w-10 h-10 rounded-full flex items-center justify-center shadow-inner">
-                        <i class="fas fa-steering-wheel text-gray-500"></i>
-                    </div>
-                </div>
+        html += `
+            <div class="grid grid-cols-[60px_1fr_40px_1fr] items-center py-1">
+                <!-- Numéro Rangée -->
+                <div class="text-center font-black text-gray-300 text-sm">R${ranger}</div>
+                
+                <!-- Places Gauche -->
+                <div class="flex justify-center gap-3 flex-wrap">
+        `;
 
-                <div class="w-full max-w-lg border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
-                    <div class="grid grid-cols-[50px_1fr_40px_1fr] gap-2 p-2 bg-gray-50 border-b text-xs font-bold text-gray-500 uppercase">
-                        <div class="text-center">Rang</div>
-                        <div class="text-center">Gauche</div>
-                        <div class="text-center">Allée</div>
-                        <div class="text-center">Droite</div>
-                    </div>
-                    <div class="max-h-[350px] overflow-y-auto custom-scrollbar">
-            `;
-
-            let numeroPlace = 1;
-            for (let ranger = 1; ranger <= nombreRanger; ranger++) {
-                const placesRestantes = totalPlaces - (numeroPlace - 1);
-                const placesCetteRanger = Math.min(placesParRanger, placesRestantes);
-                const placesGaucheCetteRanger = Math.min(placesGauche, placesCetteRanger);
-                const placesDroiteCetteRanger = Math.min(placesDroite, placesCetteRanger - placesGaucheCetteRanger);
-
-                html += `
-                    <div class="grid grid-cols-[50px_1fr_40px_1fr] gap-2 p-2 items-center border-b border-gray-50 hover:bg-gray-50">
-                        <div class="text-center font-bold text-gray-400 text-sm">R${ranger}</div>
-                        <div class="flex justify-center flex-wrap gap-2">
-                `;
-
-                // Gauche
-                for (let i = 0; i < placesGaucheCetteRanger; i++) {
-                    const sn = numeroPlace + i;
-                    const isRes = reservedSeats.includes(sn);
-                    const colorClass = isRes ? 'bg-red-500 text-white opacity-80' : 'bg-white text-gray-700 border border-[#e94e1a] hover:bg-[#e94e1a] hover:text-white';
-                    
-                    html += `<div class="w-8 h-8 rounded flex items-center justify-center font-bold text-sm ${colorClass} cursor-default" title="Place ${sn}">${sn}</div>`;
-                }
-
-                html += `</div>
-                        <div class="flex justify-center h-full"><div class="w-1 h-full bg-gray-100 rounded"></div></div>
-                        <div class="flex justify-center flex-wrap gap-2">`;
-
-                // Droite
-                for (let i = 0; i < placesDroiteCetteRanger; i++) {
-                    const sn = numeroPlace + placesGaucheCetteRanger + i;
-                    const isRes = reservedSeats.includes(sn);
-                     const colorClass = isRes ? 'bg-red-500 text-white opacity-80' : 'bg-white text-gray-700 border border-green-500 hover:bg-green-500 hover:text-white';
-
-                     html += `<div class="w-8 h-8 rounded flex items-center justify-center font-bold text-sm ${colorClass} cursor-default" title="Place ${sn}">${sn}</div>`;
-                }
-
-                html += `</div></div>`;
-                numeroPlace += placesCetteRanger;
-            }
-
-            html += `</div>
-                <div class="bg-gray-50 p-2 text-xs flex justify-center gap-4 border-t">
-                    <span class="flex items-center gap-1"><span class="w-3 h-3 bg-red-500 rounded"></span> Occupé</span>
-                    <span class="flex items-center gap-1"><span class="w-3 h-3 border border-[#e94e1a] bg-white rounded"></span> Libre</span>
-                </div>
-            </div></div>`;
-            return html;
+        // Génération Gauche
+        for (let i = 0; i < placesGaucheCetteRanger; i++) {
+            const sn = numeroPlace + i; // sn = Seat Number
+            const isRes = reservedSeats.includes(sn);
+            
+            // STYLE EXACT DU POPUP PRÉCÉDENT
+            // Occupé : Fond rouge, texte blanc
+            // Libre : Fond blanc, bordure grise. Hover : Bordure orange, texte orange
+            const styleClass = isRes 
+                ? 'bg-[#ef4444] text-white border-transparent cursor-not-allowed opacity-100' 
+                : 'bg-white text-gray-700 border-gray-300 hover:border-[#e94f1b] hover:text-[#e94f1b] cursor-pointer shadow-sm';
+            
+            html += `<div class="w-9 h-9 border-2 rounded-lg flex items-center justify-center font-bold text-sm transition-all duration-200 ${styleClass}" title="Place ${sn}">
+                        ${sn}
+                     </div>`;
         }
+
+        html += `</div>
+                <!-- Allée visuelle -->
+                <div class="flex justify-center h-full">
+                    <div class="w-px bg-gray-100 h-full"></div>
+                </div>
+                <!-- Places Droite -->
+                <div class="flex justify-center gap-3 flex-wrap">`;
+
+        // Génération Droite
+        for (let i = 0; i < placesDroiteCetteRanger; i++) {
+            const sn = numeroPlace + placesGaucheCetteRanger + i;
+            const isRes = reservedSeats.includes(sn);
+            
+            // Même style ici
+            const styleClass = isRes 
+                ? 'bg-[#ef4444] text-white border-transparent cursor-not-allowed opacity-100' 
+                : 'bg-white text-gray-700 border-gray-300 hover:border-[#e94f1b] hover:text-[#e94f1b] cursor-pointer shadow-sm';
+
+             html += `<div class="w-9 h-9 border-2 rounded-lg flex items-center justify-center font-bold text-sm transition-all duration-200 ${styleClass}" title="Place ${sn}">
+                        ${sn}
+                     </div>`;
+        }
+
+        html += `</div></div>`;
+        
+        // Mise à jour du compteur global
+        numeroPlace += placesCetteRanger;
+    }
+
+    // 4. Pied de page (Légende)
+    html += `   </div>
+                <div class="border-t border-gray-100 bg-gray-50 p-3 flex justify-center gap-6 rounded-b-xl">
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-[#ef4444]"></div>
+                        <span class="text-xs font-bold text-gray-600">Occupé</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-white border border-gray-300"></div>
+                        <span class="text-xs font-bold text-gray-600">Libre</span>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    
+    return html;
+}
     </script>
 @endsection
