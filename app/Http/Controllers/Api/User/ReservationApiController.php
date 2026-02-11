@@ -1054,6 +1054,11 @@ class ReservationApiController extends Controller
                 ], 422);
             }
 
+            // Vérifier délai minimum 4 heures
+            $departureDateTime = \Carbon\Carbon::parse($dateVoyage . ' ' . $programme->heure_depart);
+            $now = \Carbon\Carbon::now();
+            $hoursDiff = $now->diffInHours($departureDateTime, false);
+
             if ($hoursDiff < 4) {
                 return response()->json([
                     'success' => false,
@@ -1370,7 +1375,7 @@ class ReservationApiController extends Controller
                 // Réponse pour paiement Wallet (PAS DE LIEN DE PAIEMENT)
                 return response()->json([
                     'success' => true,
-                    'message' => 'Paiement effectué avec succès via Mon Compte.',
+                    'message' => 'Félicitations ! Votre réservation a été effectuée avec succès.',
                     'wallet_payment' => true,
                     'requires_payment' => false, // PAS DE PAIEMENT SUPPLÉMENTAIRE
                     'data' => [
@@ -1562,7 +1567,7 @@ class ReservationApiController extends Controller
                     // Réponse pour paiement CinetPay (AVEC LIEN DE PAIEMENT)
                     return response()->json([
                         'success' => true,
-                        'message' => 'Réservations créées. Veuillez procéder au paiement.',
+                        'message' => 'Réservation enregistrée avec succès ! Veuillez finaliser votre paiement CinetPay.',
                         'requires_payment' => true, // PAIEMENT REQUIS
                         'wallet_payment' => false,
                         'payment_details' => [
