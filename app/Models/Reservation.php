@@ -41,6 +41,11 @@ class Reservation extends Model
         'embarquement_status',
         'hotesse_id',
         'compagnie_id',
+        'annulation_date',
+        'annulation_reason',
+        'refund_amount',
+        'refund_percentage',
+        'is_aller_retour',
     ];
 
     protected $casts = [

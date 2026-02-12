@@ -346,11 +346,21 @@ Route::middleware('auth')->prefix('user')->group(function () {
         Route::get('/reservations/{reservation}/download', [ReservationController::class, 'download'])->name('reservations.download');
         Route::get('/reservations/{reservation}/ticket', [ReservationController::class, 'ticket'])->name('reservations.ticket');
         Route::delete('/reservations/{reservation}', [ReservationController::class, 'cancel'])->name('reservations.cancel');
+        Route::get('/reservations/{reservation}/refund-preview', [ReservationController::class, 'getRefundPreview'])->name('reservations.refund-preview');
+        Route::post('/reservations/{reservation}/cancel', [ReservationController::class, 'cancelReservation'])->name('reservations.cancel-refund');
+        Route::post('/reservations/{reservation}/modify', [ReservationController::class, 'modifyReservation'])->name('reservations.modify');
         Route::get('/api/programmes', [ReservationController::class, 'apiProgrammes'])->name('api.programmes');
         Route::get('/api/grouped-routes', [ReservationController::class, 'apiGroupedRoutes'])->name('api.grouped-routes');
         Route::get('/api/route-dates', [ReservationController::class, 'apiRouteDates'])->name('api.route-dates');
         Route::get('/api/route-schedules', [ReservationController::class, 'apiRouteSchedules'])->name('api.route-schedules');
         Route::get('/api/return-trips', [ReservationController::class, 'apiReturnTrips'])->name('api.return-trips');
+        
+        // Modification API endpoints
+        Route::get('/reservations/{reservation}/modification-data', [ReservationController::class, 'getModificationData'])->name('reservations.modification-data');
+        Route::get('/programmes/{programme}/available-dates', [ReservationController::class, 'getAvailableDates'])->name('programmes.available-dates');
+        Route::get('/programmes/{programme}/available-times', [ReservationController::class, 'getAvailableTimes'])->name('programmes.available-times');
+        Route::get('/programmes/{programme}/seats', [ReservationController::class, 'getSeats'])->name('programmes.seats');
+        Route::post('/reservations/{reservation}/calculate-delta', [ReservationController::class, 'calculateModificationDelta'])->name('reservations.calculate-delta');
     });
     Route::get('/programmes/{programme}/recalculate-status', [ReservationController::class, 'recalculateProgramStatus'])->name('programmes.recalculate-status');
     Route::get('/programmes/{programme}/status-for-date/{date}', [ReservationController::class, 'getProgramStatusForDate'])->name('programmes.status-for-date');

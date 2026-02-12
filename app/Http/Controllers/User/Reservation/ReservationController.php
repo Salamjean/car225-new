@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\User\Reservation;
 
 use App\Http\Controllers\Controller;
+use App\Services\ReservationService;
 use App\Models\Programme;
 use App\Models\ProgrammeStatutDate;
 use App\Models\Reservation;
@@ -226,11 +227,75 @@ class ReservationController extends Controller
             'annulation_date' => now(),
         ]);
 
-        // Libérer les places réservées
-        // TODO: Implémenter la logique pour libérer les places dans le programme
-
-        return redirect()->route('user.reservations.index')
+        return redirect()->route('reservation.index')
             ->with('success', 'Réservation annulée avec succès.');
+    }
+
+    /**
+     * Get refund preview for a reservation (AJAX).
+     */
+    public function getRefundPreview(Reservation $reservation)
+    {
+        if ($reservation->user_id !== Auth::id()) {
+            return response()->json(['error' => 'Non autorisé'], 403);
+        }
+
+        if ($reservation->statut !== 'confirmee') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cette réservation est déjà ' . ($reservation->statut === 'annulee' ? 'annulée' : $reservation->statut) . '.'
+            ], 400);
+        }
+
+        $service = new ReservationService();
+        $preview = $service->getRefundPreview($reservation);
+
+        return response()->json($preview);
+    }
+
+    /**
+     * Cancel a confirmed reservation with wallet refund (AJAX).
+     */
+    public function cancelReservation(Request $request, Reservation $reservation)
+    {
+        if ($reservation->user_id !== Auth::id()) {
+            return response()->json(['error' => 'Non autorisé'], 403);
+        }
+
+        $service = new ReservationService();
+        $result = $service->cancelReservation($reservation, $request->reason);
+
+        return response()->json($result, $result['success'] ? 200 : 422);
+    }
+
+    /**
+     * Modify a reservation (cancel & rebook).
+     */
+    public function modifyReservation(Request $request, Reservation $reservation)
+    {
+        if ($reservation->user_id !== Auth::id()) {
+            return response()->json(['success' => false, 'message' => 'Non autorisé'], 403);
+        }
+
+        $request->validate([
+            'programme_id' => 'required|exists:programmes,id',
+            'date_voyage' => 'required|date',
+            'seat_number' => 'required|integer',
+            'heure_depart' => 'required|string',
+            'heure_arrive' => 'nullable|string',
+            
+            // Return parameters (optional, only for round-trips)
+            'return_programme_id' => 'nullable|exists:programmes,id',
+            'return_date_voyage' => 'nullable|date',
+            'return_seat_number' => 'nullable|integer',
+            'return_heure_depart' => 'nullable|string',
+            'return_heure_arrive' => 'nullable|string',
+        ]);
+
+        $service = new ReservationService();
+        $result = $service->modifyReservation($reservation, $request->all());
+
+        return response()->json($result, $result['success'] ? 200 : 422);
     }
     /**
      * Recherche et affichage des lignes disponibles - Groupé par route unique
@@ -2160,5 +2225,347 @@ public function apiRouteDates(Request $request)
             'count' => $returnTrips->count(),
             'requested_date' => $requestedDate
         ]);
+    }
+
+    /**
+     * Get modification data for the modal
+     */
+    public function getModificationData(Reservation $reservation)
+    {
+        try {
+            $user = Auth::user();
+            
+            if ($reservation->user_id !== $user->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Non autorisé'
+                ], 403);
+            }
+
+            // Get residual value
+            $reservationService = new ReservationService();
+            $refundData = $reservationService->calculateRefundPercentage($reservation);
+
+            $isRoundTrip = false;
+            $pairedReservation = $reservationService->findPairedReservation($reservation);
+            $montant = (float)$reservation->montant;
+
+            if ($pairedReservation && $pairedReservation->statut === 'confirmee') {
+                $isRoundTrip = true;
+                $montant += (float)$pairedReservation->montant;
+            }
+
+            if ($refundData['percentage'] !== null) {
+                $totalResidualValue = round($montant * $refundData['percentage'] / 100, 0);
+            } else {
+                $totalResidualValue = max(0, $montant - $refundData['penalty']);
+            }
+
+            // Get available trips (active programmes)
+            $programmes = Programme::with(['compagnie', 'vehicule'])
+                ->where('statut', 'actif')
+                ->get()
+                ->groupBy(function($p) {
+                    return $p->point_depart . '→' . $p->point_arrive;
+                })
+                ->map(function($group) {
+                    $first = $group->first();
+                    
+                    // Check if return trips exist
+                    $retourExists = Programme::where('point_depart', $first->point_arrive)
+                        ->where('point_arrive', $first->point_depart)
+                        ->where('statut', 'actif')
+                        ->exists();
+                    
+                    return [
+                        'id' => $first->id,
+                        'name' => $first->point_depart . ' → ' . $first->point_arrive,
+                        'point_depart' => $first->point_depart,
+                        'point_arrive' => $first->point_arrive,
+                        'compagnie' => $first->compagnie->name ?? 'N/A',
+                        'has_return' => $retourExists,
+                        'prix' => (int) str_replace(' ', '', $first->montant_billet ?? $first->prix ?? 0),
+                    ];
+                })->values();
+
+            return response()->json([
+                'success' => true,
+                'reservation' => $reservation->load(['programme', 'programme.compagnie']),
+                'paired_reservation' => $pairedReservation,
+                'residual_value' => $totalResidualValue,
+                'residual_percentage' => $refundData['percentage'],
+                'residual_penalty' => $refundData['penalty'],
+                'can_modify' => $refundData['can_cancel'],
+                'time_remaining' => $refundData['time_remaining'],
+                'is_round_trip' => $isRoundTrip,
+                'available_trips' => $programmes,
+                'user_solde' => (float) $user->solde,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to get modification data: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors du chargement des données'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get available dates for a programme
+     */
+    public function getAvailableDates(Programme $programme)
+    {
+        try {
+            // Get dates from ProgrammeStatutDate
+            $dates = ProgrammeStatutDate::where('programme_id', $programme->id)
+                ->where('date_voyage', '>=', now()->format('Y-m-d'))
+                ->where('statut', '!=', 'complet')
+                ->orderBy('date_voyage')
+                ->get()
+                ->map(function($sd) {
+                    return [
+                        'date' => $sd->date_voyage,
+                        'available' => $sd->statut === 'disponible',
+                        'places_disponibles' => ($sd->total_places ?? 70) - ($sd->places_reservees ?? 0),
+                    ];
+                });
+
+            // If no specific dates, return next 30 days
+            if ($dates->isEmpty()) {
+                $dates = collect();
+                for ($i = 0; $i < 30; $i++) {
+                    $date = now()->addDays($i)->format('Y-m-d');
+                    $dates->push([
+                        'date' => $date,
+                        'available' => true,
+                        'places_disponibles' => 70,
+                    ]);
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'dates' => $dates
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to get available dates: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors du chargement des dates'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get available times for a programme on a specific date
+     */
+    public function getAvailableTimes(Programme $programme, Request $request)
+    {
+        $date = $request->query('date');
+
+        if (!$date) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Date requise'
+            ], 400);
+        }
+
+        try {
+            // Get all programmes with same route
+            $programmes = Programme::where('point_depart', $programme->point_depart)
+                ->where('point_arrive', $programme->point_arrive)
+                ->where('statut', 'actif')
+                ->orderBy('heure_depart')
+                ->get()
+                ->map(function($p) {
+                    return [
+                        'programme_id' => $p->id,
+                        'heure_depart' => $p->heure_depart,
+                        'heure_arrive' => $p->heure_arrive,
+                        'available' => true,
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'heures' => $programmes
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to get available times: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors du chargement des horaires'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get seat availability for a programme
+     */
+    public function getSeats(Programme $programme, Request $request)
+    {
+        $date = $request->query('date');
+        $heure = $request->query('heure');
+
+        if (!$date) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Date requise'
+            ], 400);
+        }
+
+        try {
+            // Get specific programme if heure is provided
+            $targetProgramme = $programme;
+            if ($heure) {
+                $targetProgramme = Programme::where('point_depart', $programme->point_depart)
+                    ->where('point_arrive', $programme->point_arrive)
+                    ->where('heure_depart', $heure)
+                    ->where('statut', 'actif')
+                    ->first() ?? $programme;
+            }
+
+            // Get reserved seats for this date
+            $reservedSeats = Reservation::where('programme_id', $targetProgramme->id)
+                ->where('date_voyage', $date)
+                ->where('statut', 'confirmee')
+                ->pluck('seat_number')
+                ->toArray();
+
+            // Generate seat grid (70 seats)
+            $totalSeats = $targetProgramme->vehicule->nombre_places ?? 70;
+            $seats = [];
+            
+            for ($i = 1; $i <= $totalSeats; $i++) {
+                $seats[] = [
+                    'number' => $i,
+                    'available' => !in_array($i, $reservedSeats),
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'seats' => $seats,
+                'total_seats' => $totalSeats,
+                'reserved_count' => count($reservedSeats),
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to get seats: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors du chargement des places'
+            ], 500);
+        }
+    }
+
+    /**
+     * Calculate modification delta in real-time
+     */
+    public function calculateModificationDelta(Reservation $reservation, Request $request)
+    {
+        try {
+            $user = Auth::user();
+            
+            if ($reservation->user_id !== $user->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Non autorisé'
+                ], 403);
+            }
+
+            // Get new selections
+            $programmeId = $request->input('programme_id');
+            $returnProgrammeId = $request->input('return_programme_id');
+
+            if (!$programmeId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Programme requis'
+                ], 400);
+            }
+
+            // Calculate residual value
+            $reservationService = new ReservationService();
+            $refundData = $reservationService->calculateRefundPercentage($reservation);
+
+            $oldTotal = (float) $reservation->montant;
+
+            // Check for paired reservation
+            $pairedReservation = null;
+            if ($reservation->is_aller_retour) {
+                if ($reservation->payment_transaction_id) {
+                    $pairedReservation = Reservation::where('payment_transaction_id', $reservation->payment_transaction_id)
+                        ->where('id', '!=', $reservation->id)
+                        ->where('statut', 'confirmee')
+                        ->first();
+                }
+
+                if (!$pairedReservation) {
+                    if (str_contains($reservation->reference, '-RET-')) {
+                        $outboundRef = str_replace('-RET-', '-', $reservation->reference);
+                        $pairedReservation = Reservation::where('reference', $outboundRef)
+                            ->where('statut', 'confirmee')
+                            ->first();
+                    } else {
+                        $parts = explode('-', $reservation->reference);
+                        if (count($parts) >= 3) {
+                            $lastIndex = count($parts) - 1;
+                            $parts[$lastIndex] = 'RET-' . $parts[$lastIndex];
+                            $returnRef = implode('-', $parts);
+                            $pairedReservation = Reservation::where('reference', $returnRef)
+                                ->where('statut', 'confirmee')
+                                ->first();
+                        }
+                    }
+                }
+
+                if ($pairedReservation) {
+                    $oldTotal += (float) $pairedReservation->montant;
+                }
+            }
+
+            if ($refundData['percentage'] !== null) {
+                $residualValue = round($oldTotal * $refundData['percentage'] / 100, 0);
+            } else {
+                $residualValue = max(0, $oldTotal - $refundData['penalty']);
+            }
+
+            // Get new price
+            $newProgramme = Programme::findOrFail($programmeId);
+            $newTotal = (int) str_replace(' ', '', $newProgramme->montant_billet ?? $newProgramme->prix ?? 0);
+
+            // If round trip, add return price
+            if ($returnProgrammeId) {
+                $returnProgramme = Programme::findOrFail($returnProgrammeId);
+                $newTotal += (int) str_replace(' ', '', $returnProgramme->montant_billet ?? $returnProgramme->prix ?? 0);
+            }
+
+            // Calculate delta
+            $delta = $newTotal - $residualValue;
+            $action = $delta > 0 ? 'debit' : ($delta < 0 ? 'credit' : 'neutral');
+            $walletSufficient = $delta <= 0 || (float) $user->solde >= $delta;
+
+            return response()->json([
+                'success' => true,
+                'old_total' => $oldTotal,
+                'new_total' => $newTotal,
+                'residual_value' => $residualValue,
+                'delta' => abs($delta),
+                'action' => $action,
+                'wallet_sufficient' => $walletSufficient,
+                'user_solde' => (float) $user->solde,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to calculate delta: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors du calcul'
+            ], 500);
+        }
     }
 }
