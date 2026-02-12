@@ -34,6 +34,10 @@ use App\Models\Signalement;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
+// Routes Google Auth (Accessibles directement à la racine /auth/...)
+Route::get('/auth/google', [UserAuthenticate::class, 'redirectToGoogle'])->name('auth.google');
+Route::get('/auth/google/callback', [UserAuthenticate::class, 'handleGoogleCallback'])->name('auth.google.callback');
+
 //Les routes de la pages 
 Route::prefix('/')->group(function () {
     Route::get('/', [HomeController::class, 'home'])->name('home');
@@ -299,6 +303,7 @@ Route::middleware('agent')->prefix('agent')->group(function () {
     });
 });
 
+
 //Les routes de gestion du @user
 Route::prefix('user')->group(function () {
     Route::get('/login', [UserAuthenticate::class, 'login'])->name('login');
@@ -306,10 +311,7 @@ Route::prefix('user')->group(function () {
     Route::get('/register', [UserAuthenticate::class, 'register'])->name('user.register');
     Route::post('/register', [UserAuthenticate::class, 'handleRegister'])->name('user.handleRegister');
 
-    // Google Auth Routes
-    Route::get('/auth/google', [UserAuthenticate::class, 'redirectToGoogle'])->name('auth.google');
-    Route::get('/auth/google/callback', [UserAuthenticate::class, 'handleGoogleCallback'])->name('auth.google.callback');
-    
+  
     // Password Reset Routes
     Route::get('/password/reset', [PasswordResetController::class, 'showResetForm'])->name('password.request');
     Route::post('/password/send-otp', [PasswordResetController::class, 'sendOtp'])->name('password.sendOtp');
