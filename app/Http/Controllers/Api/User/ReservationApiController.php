@@ -137,8 +137,43 @@ class ReservationApiController extends Controller
     }
 
     /**
+     * GET /api/user/reservations/{reservation}/refund-preview
+     * Aperçu du remboursement avant annulation
+     */
+    public function getRefundPreview(Reservation $reservation)
+    {
+        try {
+            if ($reservation->user_id !== Auth::id()) {
+                return response()->json(['success' => false, 'message' => 'Non autorisé'], 403);
+            }
+
+            if ($reservation->statut !== 'confirmee') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cette réservation est déjà ' . ($reservation->statut === 'annulee' ? 'annulée' : $reservation->statut) . '.'
+                ], 400);
+            }
+
+            $service = new \App\Services\ReservationService();
+            $preview = $service->getRefundPreview($reservation);
+
+            return response()->json([
+                'success' => true,
+                'data' => $preview
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Erreur refund preview API: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors du calcul du remboursement',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * DELETE /api/user/reservations/{reservation}
-     * Annuler une réservation
+     * Annuler une réservation avec remboursement au portefeuille (si confirmée)
      */
     public function cancel(Request $request, Reservation $reservation)
     {
@@ -151,20 +186,46 @@ class ReservationApiController extends Controller
                 ], 403);
             }
 
-            // Vérifier que la réservation peut être annulée
-            if ($reservation->statut !== 'en_attente') {
+            // Si la réservation est déjà annulée
+            if ($reservation->statut === 'annulee') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Seules les réservations en attente peuvent être annulées.'
+                    'message' => 'Cette réservation est déjà annulée.'
                 ], 422);
             }
 
-            // Annuler la réservation
+            $service = new \App\Services\ReservationService();
+            
+            // Si c'est une réservation confirmée, utiliser le service pour gérer le remboursement
+            if ($reservation->statut === 'confirmee') {
+                $result = $service->cancelReservation($reservation, $request->reason);
+                return response()->json($result, $result['success'] ? 200 : 422);
+            }
+
+            // Pour les autres états (ex: en attente), annulation simple sans remboursement
             $reservation->update([
                 'statut' => 'annulee',
                 'annulation_reason' => $request->reason ?? 'Annulé par l\'utilisateur',
                 'annulation_date' => now(),
             ]);
+
+            // Notification pour annulation (même sans remboursement)
+            try {
+                $user = Auth::user();
+                $user->notify(new \App\Notifications\ReservationCancelledNotification($reservation, 0, 0));
+                
+                if ($user->fcm_token) {
+                    $fcmService = app(\App\Services\FcmService::class);
+                        $fcmService->sendNotification(
+                            $user->fcm_token, 
+                            'Annulation effectuée ❌', 
+                            "Votre réservation {$reservation->reference} a été annulée.",
+                            ['type' => 'cancellation', 'reservation_id' => $reservation->id]
+                        );
+                }
+            } catch (\Exception $e) {
+                Log::error("Notification error (cancel API): " . $e->getMessage());
+            }
 
             return response()->json([
                 'success' => true,
@@ -2158,20 +2219,50 @@ class ReservationApiController extends Controller
                 return;
             }
 
-            Notification::route('mail', $email)->notify(
-                new ReservationConfirmeeNotification(
-                    $reservation, 
-                    $programme, 
-                    $qrCodeBase64, 
-                    $name, 
-                    $seatNumber, 
-                    $ticketType, 
-                    $qrCodeRetourBase64, 
-                    $programmeRetour
-                )
-            );
+            if ($user) {
+                $user->notify(
+                    new ReservationConfirmeeNotification(
+                        $reservation, 
+                        $programme, 
+                        $qrCodeBase64, 
+                        $name, 
+                        $seatNumber, 
+                        $ticketType, 
+                        $qrCodeRetourBase64, 
+                        $programmeRetour
+                    )
+                );
 
-            Log::info('Email envoyé avec succès');
+                // Notification Push FCM
+                if ($user->fcm_token) {
+                    try {
+                        $fcmService = app(\App\Services\FcmService::class);
+                        $fcmService->sendNotification(
+                            $user->fcm_token, 
+                            'Réservation confirmée ✅', 
+                            "Votre réservation {$reservation->reference} pour {$programme->point_depart} est confirmée.",
+                            ['type' => 'confirmation', 'reservation_id' => $reservation->id]
+                        );
+                    } catch (\Exception $e) {
+                        Log::error('FCM Error (Confirmation API): ' . $e->getMessage());
+                    }
+                }
+            } else {
+                Notification::route('mail', $email)->notify(
+                    new ReservationConfirmeeNotification(
+                        $reservation, 
+                        $programme, 
+                        $qrCodeBase64, 
+                        $name, 
+                        $seatNumber, 
+                        $ticketType, 
+                        $qrCodeRetourBase64, 
+                        $programmeRetour
+                    )
+                );
+            }
+
+            Log::info('Notification envoyée (Mail + Database)');
         } catch (\Exception $e) {
             Log::error('Erreur envoi email: ' . $e->getMessage());
         }

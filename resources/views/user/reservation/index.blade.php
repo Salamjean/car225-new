@@ -515,677 +515,431 @@
         });
 
         // =========================================
-        // MODIFICATION LOGIC - ALL-IN-ONE MODAL
-        // =========================================
-        let modificationState = {
-            reservationId: null,
-            isRoundTrip: false,
-            residualValue: 0,
-            selectedTrip: null,
-            selectedDate: null,
-            selectedTime: null,
-            selectedSeat: null,
-            selectedReturnProgramme: null,
-            selectedReturnDate: null,
-            selectedReturnTime: null,
-            selectedReturnSeat: null,
-            availableTrips: [],
-            userSolde: 0,
-            currentReservation: null
-        };
+        // MODIFICATION LOGIC - NEW IMPLEMENTATION
+      let modifState = {
+        resId: null,
+        residualValue: 0,
+        userSolde: 0,
+        isRoundTrip: false,
+        current: {
+            progId: null,
+            date: null,
+            time: null,
+            seat: null,
+            retProgId: null,
+            retDate: null,
+            retTime: null,
+            retSeat: null 
+        }
+    };
 
-        $(document).on('click', '.modify-btn:not([disabled])', function() {
-            const reservationId = $(this).data('id');
-            modificationState.reservationId = reservationId;
+    $('body').on('click', '.modify-btn:not([disabled])', async function() {
+        const resId = $(this).data('id');
+        modifState.resId = resId;
 
-            // Show loading modal
-            Swal.fire({
-                title: '<span class="text-lg font-black uppercase tracking-tight">Chargement...</span>',
-                html: '<div class="flex items-center justify-center py-8"><div class="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div></div>',
-                showConfirmButton: false,
-                allowOutsideClick: false,
-                width: '480px',
-                customClass: { popup: 'rounded-[32px]' }
-            });
-
-            // Fetch modification data
-            $.get(`/user/booking/reservations/${reservationId}/modification-data`)
-                .done(function(data) {
-                    if (!data.success) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Erreur',
-                            text: data.message || 'Impossible de charger les données',
-                            confirmButtonColor: '#1A1D1F',
-                            customClass: { popup: 'rounded-[32px]' }
-                        });
-                        return;
-                    }
-
-                    if (!data.can_modify) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: '<span class="text-lg font-black uppercase tracking-tight text-red-600">Action impossible</span>',
-                            html: '<p class="text-sm text-gray-600">La modification est impossible moins de 15 minutes avant le départ.</p>',
-                            confirmButtonText: 'Compris',
-                            confirmButtonColor: '#1A1D1F',
-                            customClass: { popup: 'rounded-[32px]', confirmButton: 'rounded-xl px-8 py-3 font-black uppercase tracking-widest text-xs' }
-                        });
-                        return;
-                    }
-
-                    // Store data
-                    modificationState.isRoundTrip = data.is_round_trip;
-                    modificationState.residualValue = data.residual_value;
-                    modificationState.availableTrips = data.available_trips;
-                    modificationState.userSolde = data.user_solde;
-                    modificationState.currentReservation = data.reservation;
-                    modificationState.pairedReservation = data.paired_reservation;
-
-                    // Show modification modal
-                    showModificationModal(data);
-                })
-                .fail(function() {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Erreur',
-                        text: 'Impossible de récupérer les détails.',
-                        confirmButtonColor: '#1A1D1F',
-                        customClass: { popup: 'rounded-[32px]' }
-                        });
-                });
+        Swal.fire({
+            title: 'Chargement...',
+            html: '<div class="flex flex-col items-center"><div class="animate-spin w-8 h-8 border-4 border-[#e94f1b] border-t-transparent rounded-full mb-2"></div><span class="text-sm text-gray-500">Récupération des données...</span></div>',
+            showConfirmButton: false,
+            allowOutsideClick: false,
+            width: '450px',
+            customClass: { popup: 'rounded-[32px]' }
         });
 
-        function showModificationModal(data) {
-            const reservation = data.reservation;
-            const isRoundTrip = data.is_round_trip;
-            const pairedReservation = data.paired_reservation;
+        try {
+            const response = await $.get(`/user/booking/reservations/${resId}/modification-data`);
+            
+            if(!response.success) throw new Error(response.message);
 
-            // Create trip options HTML
-            const tripOptions = data.available_trips.map(trip => {
-                const isSelected = reservation.programme_id == trip.id || 
-                    (reservation.programme && reservation.programme.point_depart == trip.point_depart && reservation.programme.point_arrive == trip.point_arrive);
-                return `<option value="${trip.id}" ${isSelected ? 'selected' : ''} data-has-return="${trip.has_return}" data-prix="${trip.prix}" data-depart="${trip.point_depart}" data-arrive="${trip.point_arrive}">
-                    ${trip.name} - ${trip.compagnie} (${Number(trip.prix).toLocaleString('fr-FR')} FCFA)
+            // 1. Initialiser l'état
+            modifState.residualValue = response.residual_value;
+            modifState.userSolde = response.user_solde;
+            modifState.isRoundTrip = response.is_aller_retour;
+
+            // Données ALLER (Normalisation des formats)
+            modifState.current.progId = response.reservation.programme_id;
+            modifState.current.date = response.formatted_date_aller;
+            // On garde seulement HH:mm pour la comparaison
+            modifState.current.time = response.reservation.heure_depart.substring(0, 5); 
+            modifState.current.seat = response.reservation.seat_number;
+
+            // Données RETOUR
+            if(modifState.isRoundTrip && response.return_details) {
+                modifState.current.retProgId = response.return_details.prog_id;
+                modifState.current.retDate = response.return_details.date;
+                modifState.current.retTime = response.return_details.time ? response.return_details.time.substring(0, 5) : null;
+                modifState.current.retSeat = response.return_details.seat;
+            }
+
+            // 2. Construire le Select Trajet
+            let routeOptions = '';
+            response.available_routes.forEach(route => {
+                const isSelected = route.unique_key === response.current_route_key ? 'selected' : '';
+                routeOptions += `<option value="${route.id}" ${isSelected} 
+                    data-depart="${route.depart}" 
+                    data-arrive="${route.arrive}" 
+                    data-compagnie="${route.compagnie_id}"
+                    data-prix="${route.prix}">
+                    ${route.name} - ${route.compagnie}
                 </option>`;
-            }).join('');
+            });
 
-            const modalHtml = `
-                <div class="text-left space-y-4 py-4" style="max-height: 70vh; overflow-y: auto;">
-                    <!-- Current Reservation Info -->
-                    <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200">
-                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">📊 Réservation actuelle</p>
-                        <div class="text-xs space-y-1">
-                            <p><strong>Référence:</strong> ${reservation.reference}</p>
-                            <p><strong>Trajet:</strong> ${reservation.programme?.point_depart || 'N/A'} → ${reservation.programme?.point_arrive || 'N/A'}</p>
-                            <p><strong>Date:</strong> ${reservation.date_voyage} | <strong>Heure:</strong> ${reservation.heure_depart || 'N/A'}</p>
-                            <p><strong>Place:</strong> ${reservation.seat_number}</p>
-                            <p><strong>Montant:</strong> ${Number(reservation.montant).toLocaleString('fr-FR')} FCFA</p>
+            // HTML Retour
+            let returnHtml = '';
+            if(modifState.isRoundTrip) {
+                returnHtml = `
+                    <div class="mt-4 pt-4 border-t border-gray-100">
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="px-2 py-1 bg-orange-100 text-orange-600 text-[10px] font-black rounded uppercase">Retour</span>
+                            <p class="text-xs font-bold text-gray-700">Informations de retour</p>
                         </div>
-                    </div>
-
-                    ${isRoundTrip && pairedReservation ? `
-                    <div class="bg-orange-50 p-4 rounded-2xl border border-orange-200">
-                        <p class="text-[10px] font-black text-orange-600 uppercase tracking-widest mb-2">🔄 Retour</p>
-                        <div class="text-xs space-y-1">
-                            <p><strong>Référence:</strong> ${pairedReservation.reference}</p>
-                            <p><strong>Date:</strong> ${pairedReservation.date_voyage} | <strong>Heure:</strong> ${pairedReservation.heure_depart || 'N/A'}</p>
-                            <p><strong>Place:</strong> ${pairedReservation.seat_number}</p>
-                        </div>
-                    </div>
-                    ` : ''}
-
-                    <!-- Residual Value -->
-                    <div class="bg-blue-50 p-4 rounded-2xl border border-blue-200">
-                        <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">💰 Valeur résiduelle</p>
-                        <p class="text-2xl font-black text-blue-600">
-                            ${Number(data.residual_value).toLocaleString('fr-FR')} FCFA 
-                            <span class="text-sm font-normal text-gray-500">
-                                (${data.residual_percentage !== null ? data.residual_percentage + '%' : '-' + Number(data.residual_penalty).toLocaleString('fr-FR') + ' FCFA'})
-                            </span>
-                        </p>
-                        <p class="text-xs text-gray-500 mt-1">${isRoundTrip ? 'Total pour les deux billets' : ''}</p>
-                    </div>
-
-                    <hr class="border-gray-300">
-
-                    <!-- NEW RESERVATION SECTION -->
-                    <div class="space-y-4">
-                        <p class="text-sm font-black text-gray-700 uppercase">✏️ Nouvelle réservation</p>
-
-                        <!-- Trip Selection -->
-                        <div>
-                            <label class="block text-xs font-bold text-gray-600 mb-1">🚌 Trajet</label>
-                            <select id="modify-trip" class="w-full p-2 border border-gray-300 rounded-lg text-sm">
-                                <option value="">Sélectionner un trajet...</option>
-                                ${tripOptions}
-                            </select>
-                            <p id="modify-trip-warning" class="text-xs text-red-500 mt-1 hidden">⚠️ Ce trajet n'a pas de retour disponible. Modification impossible pour aller-retour.</p>
-                        </div>
-
-                        <!-- Date Selection -->
-                        <div id="modify-date-container" class="hidden">
-                            <label class="block text-xs font-bold text-gray-600 mb-1">📅 Date de voyage</label>
-                            <input type="date" id="modify-date" class="w-full p-2 border border-gray-300 rounded-lg text-sm" min="${new Date().toISOString().split('T')[0]}">
-                        </div>
-
-                        <!-- Time Selection -->
-                        <div id="modify-time-container" class="hidden">
-                            <label class="block text-xs font-bold text-gray-600 mb-1">🕒 Heure de départ</label>
-                            <select id="modify-time" class="w-full p-2 border border-gray-300 rounded-lg text-sm">
-                                <option value="">Chargement...</option>
-                            </select>
-                        </div>
-
-                        <!-- Seat Selection -->
-                        <div id="modify-seat-container" class="hidden">
-                            <label class="block text-xs font-bold text-gray-600 mb-2">💺 Sélectionner une place</label>
-                            <div id="modify-seat-grid" class="grid grid-cols-7 gap-2">
-                                <!-- Seats will be loaded here -->
-                            </div>
-                            <p class="text-xs text-gray-500 mt-2"><span class="inline-block w-3 h-3 bg-gray-300 rounded"></span> Occupé | <span class="inline-block w-3 h-3 bg-blue-500 rounded"></span> Sélectionné</p>
-                        </div>
-
-                        ${isRoundTrip ? `
-                        <hr class="border-gray-300">
-                        
-                        <!-- RETURN SECTION -->
-                        <div id="modify-return-section" class="space-y-4 hidden">
-                            <p class="text-sm font-black text-orange-600 uppercase">🔄 Retour</p>
-
+                        <div class="grid grid-cols-2 gap-4 mb-3">
                             <div>
-                                <label class="block text-xs font-bold text-gray-600 mb-1">📅 Date retour</label>
-                                <input type="date" id="modify-return-date" class="w-full p-2 border border-gray-300 rounded-lg text-sm" min="${new Date().toISOString().split('T')[0]}">
+                                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Date Retour</label>
+                                <input type="date" id="mod-ret-date" class="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-orange-500">
                             </div>
-
-                            <div id="modify-return-time-container" class="hidden">
-                                <label class="block text-xs font-bold text-gray-600 mb-1">🕒 Heure retour</label>
-                                <select id="modify-return-time" class="w-full p-2 border border-gray-300 rounded-lg text-sm">
+                            <div>
+                                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Heure Retour</label>
+                                <select id="mod-ret-time" class="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-orange-500">
                                     <option value="">Chargement...</option>
                                 </select>
                             </div>
-
-                            <div id="modify-return-seat-container" class="hidden">
-                                <label class="block text-xs font-bold text-gray-600 mb-2">💺 Place retour</label>
-                                <div id="modify-return-seat-grid" class="grid grid-cols-7 gap-2"></div>
-                            </div>
                         </div>
-                        ` : ''}
+                        <div>
+                            <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Place Retour</label>
+                            <div id="mod-ret-seat-container" class="mt-1 p-3 bg-gray-50 border border-gray-100 rounded-xl min-h-[50px] flex items-center justify-center text-xs text-gray-400">
+                                En attente...
+                            </div>
+                            <input type="hidden" id="mod-ret-seat-input">
+                        </div>
+                    </div>
+                `;
+            }
+
+            const modalHtml = `
+                <div class="text-left font-outfit space-y-5">
+                    <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100 flex justify-between items-center">
+                        <div>
+                            <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest">Valeur Actuelle</p>
+                            <p class="text-xl font-black text-blue-600">${Number(response.residual_value).toLocaleString()} FCFA</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[10px] text-gray-400">Pénalité: ${response.penalty_info}</p>
+                        </div>
                     </div>
 
-                    <hr class="border-gray-300">
+                    <div class="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Trajet</label>
+                        <select id="mod-route" class="w-full p-2 bg-white border border-gray-200 rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-[#e94f1b]">
+                            ${routeOptions}
+                        </select>
+                    </div>
 
-                    <!-- Delta Summary -->
-                    <div id="modify-delta-summary" class="hidden">
-                        <div class="bg-green-50 p-4 rounded-2xl border border-green-200">
-                            <p class="text-[10px] font-black text-green-600 uppercase tracking-widest mb-2">📊 Résumé</p>
-                            <div class="text-sm space-y-1">
-                                <p><strong>Nouveau prix total:</strong> <span id="modify-new-price">0</span> FCFA</p>
-                                <p><strong>Valeur résiduelle:</strong> -${Number(data.residual_value).toLocaleString('fr-FR')} FCFA</p>
-                                <hr class="my-2">
-                                <p class="text-lg font-bold"><span id="modify-action-label"></span>: <span id="modify-delta-amount" class="text-green-600"></span> FCFA</p>
-                                <p id="modify-wallet-warning" class="text-xs text-red-500 hidden">⚠️ Solde insuffisant (Solde: ${Number(data.user_solde).toLocaleString('fr-FR')} FCFA)</p>
+                    <div>
+                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Voyage Aller</p>
+                        <div class="grid grid-cols-2 gap-4 mb-3">
+                            <div>
+                                <label class="text-[9px] font-bold text-gray-400 uppercase block mb-1">Date</label>
+                                <input type="date" id="mod-date" class="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-[#e94f1b]" min="${new Date().toISOString().split('T')[0]}">
+                            </div>
+                            <div>
+                                <label class="text-[9px] font-bold text-gray-400 uppercase block mb-1">Heure</label>
+                                <select id="mod-time" class="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-[#e94f1b]">
+                                    <option value="">Chargement...</option>
+                                </select>
                             </div>
                         </div>
+                        <div>
+                            <label class="text-[9px] font-bold text-gray-400 uppercase block mb-1">Place</label>
+                            <div id="mod-seat-container" class="mt-1 p-3 bg-gray-50 border border-gray-100 rounded-xl min-h-[50px] flex items-center justify-center text-xs text-gray-400">
+                                En attente...
+                            </div>
+                            <input type="hidden" id="mod-seat-input">
+                        </div>
+                    </div>
+
+                    ${returnHtml}
+
+                    <div id="delta-box" class="hidden bg-gray-900 text-white p-4 rounded-2xl mt-4">
+                        <div class="flex justify-between items-center">
+                            <span id="delta-label" class="text-xs font-medium text-gray-400 uppercase">Total à payer</span>
+                            <span id="delta-amount" class="text-xl font-black text-white">0 FCFA</span>
+                        </div>
+                        <p id="wallet-error" class="text-[10px] text-red-400 mt-1 hidden">Solde insuffisant</p>
                     </div>
                 </div>
             `;
 
             Swal.fire({
-                title: '<span class="text-lg font-black uppercase tracking-tight">🔄 Modifier la réservation</span>',
+                title: '<span class="text-xl font-black uppercase tracking-tight">Modifier Réservation</span>',
                 html: modalHtml,
                 showCancelButton: true,
-                confirmButtonText: '<i class="fas fa-check mr-2"></i> Confirmer la modification',
+                confirmButtonText: 'Confirmer',
                 cancelButtonText: 'Annuler',
-                confirmButtonColor: '#10b981',
-                cancelButtonColor: '#6b7280',
-                width: '700px',
+                confirmButtonColor: '#1A1D1F',
+                cancelButtonColor: '#f3f4f6',
+                width: '600px',
                 padding: '2rem',
-                showConfirmButton: true,
-                preConfirm: () => {
-                    return validateAndSubmitModification();
-                },
-                customClass: {
-                    popup: 'rounded-[32px]',
-                    confirmButton: 'rounded-xl px-6 py-3 font-black uppercase tracking-widest text-xs',
-                    cancelButton: 'rounded-xl px-6 py-3 font-black uppercase tracking-widest text-xs'
-                },
-                didOpen: () => {
-                    setupModificationHandlers();
+                customClass: { popup: 'rounded-[32px]', confirmButton: 'rounded-xl px-8 py-3', cancelButton: 'rounded-xl px-8 py-3 text-gray-800' },
+                didOpen: async () => {
+                    initEvents();
                     
-                    // Pre-fill and trigger loading
-                    const currentTripId = $('#modify-trip').val();
-                    if (currentTripId) {
-                        $('#modify-trip').trigger('change');
-                        
-                        // Set current date if possible
-                        if (reservation.date_voyage) {
-                            $('#modify-date').val(reservation.date_voyage).trigger('change');
-                        }
+                    // --- PRE-REMPLISSAGE ET CHARGEMENT ---
+                    
+                    // 1. ALLER
+                    if(modifState.current.date) {
+                        $('#mod-date').val(modifState.current.date);
+                        await preloadAllerData();
                     }
-                }
-            });
-        }
 
-        function setupModificationHandlers() {
-            // Trip selection handler
-            $('#modify-trip').on('change', function() {
-                const selectedOption = $(this).find('option:selected');
-                const tripId = $(this).val();
-                const hasReturn = selectedOption.data('has-return') === true || selectedOption.data('has-return') === 'true';
-                
-                if (!tripId) {
-                    resetModificationForm();
-                    return;
-                }
-
-                modificationState.selectedTrip = tripId;
-
-                // Check if round-trip and selected trip has no return
-                if (modificationState.isRoundTrip && !hasReturn) {
-                    $('#modify-trip-warning').removeClass('hidden');
-                    $('#modify-date-container').addClass('hidden');
-                    return;
-                } else {
-                    $('#modify-trip-warning').addClass('hidden');
-                }
-
-                // Show date picker
-                $('#modify-date-container').removeClass('hidden');
-                
-                // For round trip, show return section
-                if (modificationState.isRoundTrip && hasReturn) {
-                    $('#modify-return-section').removeClass('hidden');
-                }
-            });
-
-            // Date selection handler
-            $('#modify-date').on('change', function() {
-                const date = $(this).val();
-                if (!date || !modificationState.selectedTrip) return;
-
-                modificationState.selectedDate = date;
-                loadAvailableTimes(modificationState.selectedTrip, date);
-            });
-
-            // Time selection handler
-            $('#modify-time').on('change', function() {
-                const selectedOption = $(this).find('option:selected');
-                const programmeId = selectedOption.data('programme-id');
-                const time = $(this).val();
-                const arriveTime = selectedOption.data('heure-arrive');
-                
-                if (!time || !modificationState.selectedDate) return;
-
-                modificationState.selectedTime = time;
-                modificationState.selectedHeureArrive = arriveTime;
-                modificationState.selectedProgrammeId = programmeId;
-                loadSeats(programmeId || modificationState.selectedTrip, modificationState.selectedDate, time);
-            });
-
-            // Return date handler
-            $('#modify-return-date').on('change', function() {
-                const returnDate = $(this).val();
-                if (!returnDate) return;
-
-                modificationState.selectedReturnDate = returnDate;
-                loadReturnTimes(returnDate);
-            });
-
-            // Return time handler
-            $('#modify-return-time').on('change', function() {
-                const selectedOption = $(this).find('option:selected');
-                const programmeId = selectedOption.data('programme-id');
-                const time = $(this).val();
-                const arriveTime = selectedOption.data('heure-arrive');
-                
-                if (!time || !modificationState.selectedReturnDate) return;
-
-                modificationState.selectedReturnTime = time;
-                modificationState.selectedReturnHeureArrive = arriveTime;
-                modificationState.selectedReturnProgrammeId = programmeId;
-                loadReturnSeats(programmeId, modificationState.selectedReturnDate, time);
-            });
-        }
-
-        function loadAvailableTimes(programmeId, date) {
-            $('#modify-time').html('<option value="">Chargement...</option>');
-            $('#modify-time-container').removeClass('hidden');
-
-            $.get(`/user/booking/programmes/${programmeId}/available-times?date=${date}`)
-                .done(function(data) {
-                    if (data.success && data.heures.length > 0) {
-                        const options = data.heures.map(h => 
-                            `<option value="${h.heure_depart}" data-programme-id="${h.programme_id}" data-heure-arrive="${h.heure_arrive}">${h.heure_depart} → ${h.heure_arrive}</option>`
-                        ).join('');
-                        $('#modify-time').html('<option value="">Sélectionner une heure...</option>' + options);
-                        
-                        // Try auto-select if current reservation time matches
-                        if (modificationState.currentReservation.heure_depart) {
-                            $('#modify-time').val(modificationState.currentReservation.heure_depart).trigger('change');
-                        }
-                    } else {
-                        $('#modify-time').html('<option value="">Aucune heure disponible</option>');
+                    // 2. RETOUR
+                    if(modifState.isRoundTrip && modifState.current.retDate) {
+                        $('#mod-ret-date').val(modifState.current.retDate);
+                        await preloadRetourData();
                     }
-                })
-                .fail(function() {
-                    $('#modify-time').html('<option value="">Erreur de chargement</option>');
-                });
-        }
-
-        function loadSeats(programmeId, date, heure) {
-            $('#modify-seat-grid').html('<div class="col-span-7 text-center text-sm text-gray-500">Chargement...</div>');
-            $('#modify-seat-container').removeClass('hidden');
-
-            $.get(`/user/booking/programmes/${programmeId}/seats?date=${date}&heure=${heure}`)
-                .done(function(data) {
-                    if (data.success) {
-                        renderSeatGrid(data.seats, '#modify-seat-grid', 'seat');
-                    } else {
-                        $('#modify-seat-grid').html('<div class="col-span-7 text-center text-sm text-red-500">Erreur</div>');
-                    }
-                })
-                .fail(function() {
-                    $('#modify-seat-grid').html('<div class="col-span-7 text-center text-sm text-red-500">Erreur de chargement</div>');
-                });
-        }
-
-        function loadReturnTimes(date) {
-            const tripOption = $('#modify-trip').find('option:selected');
-            const depart = tripOption.data('arrive'); // Return is reverse
-            const arrive = tripOption.data('depart');
-
-            // Find return programme
-            const returnTrip = modificationState.availableTrips.find(t => 
-                t.point_depart === depart && t.point_arrive === arrive
-            );
-
-            if (!returnTrip) {
-                $('#modify-return-time').html('<option value="">Aucun retour trouvé</option>');
-                return;
-            }
-
-            modificationState.selectedReturnProgramme = returnTrip.id;
-            
-            $('#modify-return-time').html('<option value="">Chargement...</option>');
-            $('#modify-return-time-container').removeClass('hidden');
-
-            $.get(`/user/booking/programmes/${returnTrip.id}/available-times?date=${date}`)
-                .done(function(data) {
-                    if (data.success && data.heures.length > 0) {
-                        const options = data.heures.map(h => 
-                            `<option value="${h.heure_depart}" data-programme-id="${h.programme_id}" data-heure-arrive="${h.heure_arrive}">${h.heure_depart} → ${h.heure_arrive}</option>`
-                        ).join('');
-                        $('#modify-return-time').html('<option value="">Sélectionner une heure...</option>' + options);
-
-                        // Try auto-select return time
-                        if (modificationState.pairedReservation && modificationState.pairedReservation.heure_depart) {
-                            $('#modify-return-time').val(modificationState.pairedReservation.heure_depart).trigger('change');
-                        }
-                    } else {
-                        $('#modify-return-time').html('<option value="">Aucun retour disponible</option>');
-                    }
-                })
-                .fail(function() {
-                    $('#modify-return-time').html('<option value="">Erreur</option>');
-                });
-        }
-
-        function loadReturnSeats(programmeId, date, heure) {
-            $('#modify-return-seat-grid').html('<div class="col-span-7 text-center text-sm text-gray-500">Chargement...</div>');
-            $('#modify-return-seat-container').removeClass('hidden');
-
-            $.get(`/user/booking/programmes/${programmeId}/seats?date=${date}&heure=${heure}`)
-                .done(function(data) {
-                    if (data.success) {
-                        renderSeatGrid(data.seats, '#modify-return-seat-grid', 'return-seat');
-                    } else {
-                        $('#modify-return-seat-grid').html('<div class="col-span-7 text-center text-sm text-red-500">Erreur</div>');
-                    }
-                })
-                .fail(function() {
-                    $('#modify-return-seat-grid').html('<div class="col-span-7 text-center text-sm text-red-500">Erreur de chargement</div>');
-                });
-        }
-
-        function renderSeatGrid(seats, containerId, type) {
-            // Find if current reservation seat should be pre-selected
-            let preSelectedSeat = null;
-            if (type === 'seat') {
-                if (modificationState.currentReservation.programme_id == modificationState.selectedProgrammeId &&
-                    modificationState.currentReservation.date_voyage == modificationState.selectedDate &&
-                    modificationState.currentReservation.heure_depart == modificationState.selectedTime) {
-                    preSelectedSeat = modificationState.currentReservation.seat_number;
-                }
-            } else if (type === 'return-seat') { // Changed from 'return' to 'return-seat' to match data-type
-                if (modificationState.pairedReservation &&
-                    modificationState.pairedReservation.programme_id == modificationState.selectedReturnProgrammeId &&
-                    modificationState.pairedReservation.date_voyage == modificationState.selectedReturnDate &&
-                    modificationState.pairedReservation.heure_depart == modificationState.selectedReturnTime) {
-                    preSelectedSeat = modificationState.pairedReservation.seat_number;
-                }
-            }
-
-            const html = seats.map(seat => {
-                const isReserved = !seat.available;
-                const isCurrentSeat = seat.number == preSelectedSeat;
-
-                // If it's the current seat of the reservation being modified, treat it as available and selected
-                const bgClass = (seat.available || isCurrentSeat) ? 'bg-white hover:bg-blue-100' : 'bg-gray-300 cursor-not-allowed';
-                const borderClass = 'border-2 border-gray-300';
-                const selectedClass = isCurrentSeat ? 'bg-blue-500 text-white border-blue-600' : '';
-                if (isCurrentSeat) {
-                    if (type === 'seat') modificationState.selectedSeat = seat.number;
-                    else modificationState.selectedReturnSeat = seat.number;
-                }
-
-                return `
-                    <button type="button"
-                            class="seat-btn ${bgClass} ${borderClass} ${selectedClass} rounded-lg p-2 text-xs font-bold transition-all"
-                            data-seat="${seat.number}"
-                            data-type="${type}"
-                            ${(!seat.available && !isCurrentSeat) ? 'disabled' : ''}>
-                        ${seat.number}
-                    </button>
-                `;
-            }).join('');
-
-            $(containerId).html(html);
-
-            // If seat was pre-selected, trigger delta
-            if (preSelectedSeat) {
-                calculateDelta();
-            }
-
-            // Seat click handler
-            $(containerId).find('.seat-btn:not([disabled])').on('click', function() {
-                const seatNumber = $(this).data('seat');
-                const seatType = $(this).data('type');
-
-                // Remove previous selection
-                $(containerId).find('.seat-btn').removeClass('bg-blue-500 text-white border-blue-600').addClass('bg-white');
-                
-                // Highlight selected
-                $(this).removeClass('bg-white').addClass('bg-blue-500 text-white border-blue-600');
-
-                // Update state
-                if (seatType === 'seat') {
-                    modificationState.selectedSeat = seatNumber;
-                } else {
-                    modificationState.selectedReturnSeat = seatNumber;
-                }
-
-                // Calculate delta after seat selection                                
-                calculateDelta();
+                },
+                preConfirm: handleModificationSubmit
             });
+
+        } catch (error) {
+            Swal.fire('Erreur', error.message, 'error');
         }
+    });
 
-        function calculateDelta() {
-            // Check if we have enough info
-            if (!modificationState.selectedSeat || !modificationState.selectedProgrammeId) {
-                return;
-            }
+    // --- FONCTIONS AJAX (Avec normalisation) ---
 
-            // For round trip, need both seats
-            if (modificationState.isRoundTrip && (!modificationState.selectedReturnSeat || !modificationState.selectedReturnProgrammeId)) {
-                return;
-            }
-
-            const requestData = {
-                programme_id: modificationState.selectedProgrammeId,
-                date_voyage: modificationState.selectedDate,
-                heure_depart: modificationState.selectedTime,
-                seat_number: modificationState.selectedSeat,
-                heure_arrive: modificationState.selectedHeureArrive || ''
-            };
-
-            if (modificationState.isRoundTrip) {
-                requestData.return_programme_id = modificationState.selectedReturnProgrammeId;
-                requestData.return_date_voyage = modificationState.selectedReturnDate;
-                requestData.return_heure_depart = modificationState.selectedReturnTime;
-                requestData.return_seat_number = modificationState.selectedReturnSeat;
-                requestData.return_heure_arrive = modificationState.selectedReturnHeureArrive || '';
-            }
-
-            $.post(`/user/booking/reservations/${modificationState.reservationId}/calculate-delta`, requestData)
-                .done(function(data) {
-                    if (data.success) {
-                        $('#modify-new-price').text(Number(data.new_total).toLocaleString('fr-FR'));
-                        $('#modify-delta-amount').text(Number(data.delta).toLocaleString('fr-FR'));
-                        
-                        if (data.action === 'debit') {
-                            $('#modify-action-label').text('À PAYER');
-                            $('#modify-delta-amount').removeClass('text-green-600').addClass('text-red-600');
-                            
-                            if (!data.wallet_sufficient) {
-                                $('#modify-wallet-warning').removeClass('hidden');
-                            } else {
-                                $('#modify-wallet-warning').addClass('hidden');
-                            }
-                        } else if (data.action === 'credit') {
-                            $('#modify-action-label').text('À CRÉDITER');
-                            $('#modify-delta-amount').removeClass('text-red-600').addClass('text-green-600');
-                            $('#modify-wallet-warning').addClass('hidden');
-                        } else {
-                            $('#modify-action-label').text('Différence');
-                            $('#modify-delta-amount').text('0');
-                            $('#modify-wallet-warning').addClass('hidden');
-                        }
-
-                        $('#modify-delta-summary').removeClass('hidden');
-                        modificationState.deltaData = data;
-                    }
-                })
-                .fail(function() {
-                    console.error('Failed to calculate delta');
-                });
+    async function preloadAllerData() {
+        const date = $('#mod-date').val();
+        // loadTimes va déjà mettre l'attribut 'selected' si l'heure correspond
+        await loadTimes('aller', date, modifState.current.time);
+        
+        const time = $('#mod-time').val();
+        if(time) {
+            const progId = $('#mod-time option:selected').data('prog-id');
+            await loadSeats('aller', progId, date, time, modifState.current.seat);
         }
+    }
 
-        function validateAndSubmitModification() {
-            // Validation
-            if (!modificationState.selectedProgrammeId || !modificationState.selectedDate || !modificationState.selectedSeat) {
-                Swal.showValidationMessage('Veuillez sélectionner un trajet, une date et une place');
-                return false;
-            }
+    async function preloadRetourData() {
+        const date = $('#mod-ret-date').val();
+        // loadTimes va déjà mettre l'attribut 'selected' si l'heure correspond
+        await loadTimes('retour', date, modifState.current.retTime);
 
-            if (modificationState.isRoundTrip && (!modificationState.selectedReturnProgrammeId || !modificationState.selectedReturnDate || !modificationState.selectedReturnSeat)) {
-                Swal.showValidationMessage('Veuillez compléter les informations de retour');
-                return false;
-            }
-
-            if (modificationState.deltaData && !modificationState.deltaData.wallet_sufficient) {
-                Swal.showValidationMessage('Solde wallet insuffisant');
-                return false;
-            }
-
-            // Prepare submission data
-            const submitData = {
-                programme_id: modificationState.selectedProgrammeId,
-                date_voyage: modificationState.selectedDate,
-                heure_depart: modificationState.selectedTime,
-                seat_number: modificationState.selectedSeat,
-                heure_arrive: modificationState.selectedHeureArrive || ''
-            };
-
-            if (modificationState.isRoundTrip) {
-                submitData.return_programme_id = modificationState.selectedReturnProgrammeId;
-                submitData.return_date_voyage = modificationState.selectedReturnDate;
-                submitData.return_heure_depart = modificationState.selectedReturnTime;
-                submitData.return_seat_number = modificationState.selectedReturnSeat;
-                submitData.return_heure_arrive = modificationState.selectedReturnHeureArrive || '';
-            }
-
-            // Submit modification
-            return $.ajax({
-                url: `/user/booking/reservations/${modificationState.reservationId}/modify`,
-                method: 'POST',
-                data: submitData,
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                }
-            }).then(function(response) {
-                if (response.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: '<span class="text-lg font-black uppercase tracking-tight text-green-600">✅ Modification réussie !</span>',
-                        html: `
-                            <div class="text-left space-y-2 py-4">
-                                <p class="text-sm text-gray-600">Votre réservation a été modifiée avec succès.</p>
-                                <div class="bg-blue-50 p-3 rounded-xl border border-blue-200 text-xs">
-                                    <p><strong>Nouvelle référence:</strong> ${response.new_reservation?.reference || 'N/A'}</p>
-                                    <p><strong>Nouvelle date:</strong> ${modificationState.selectedDate}</p>
-                                    <p><strong>Nouvelle place:</strong> ${modificationState.selectedSeat}</p>
-                                </div>
-                            </div>
-                        `,
-                        confirmButtonText: 'OK',
-                        confirmButtonColor: '#10b981',
-                        customClass: {
-                            popup: 'rounded-[32px]',
-                            confirmButton: 'rounded-xl px-8 py-3 font-black uppercase tracking-widest text-xs'
-                        }
-                    }).then(() => {
-                        // Reload page to show updated reservation
-                        window.location.reload();
-                    });
-                } else {
-                    throw new Error(response.message || 'Erreur de modification');
-                }
-            }).catch(function(error) {
-                const errorMsg = error.responseJSON?.message || error.message || 'Une erreur est survenue';
-                Swal.showValidationMessage(errorMsg);
-                return false;
-            });
+        const time = $('#mod-ret-time').val();
+        if(time) {
+            const progId = $('#mod-ret-time option:selected').data('prog-id');
+            await loadSeats('retour', progId, date, time, modifState.current.retSeat); 
         }
+    }
 
-        function resetModificationForm() {
-            $('#modify-date-container, #modify-time-container, #modify-seat-container, #modify-return-section, #modify-delta-summary').addClass('hidden');
-            $('#modify-trip-warning').addClass('hidden');
-            modificationState.selectedTrip = null;
-            modificationState.selectedDate = null;
-            modificationState.selectedTime = null;
-            modificationState.selectedSeat = null;
-        }
-
-        // =========================================
-        // AUTO-DISABLE BUTTONS (every 30 seconds)
-        // =========================================
-        function checkAndDisableButtons() {
-            const now = new Date();
-            const fifteenMinutesMs = 15 * 60 * 1000;
-
-            document.querySelectorAll('.cancel-btn:not([disabled]), .modify-btn:not([disabled])').forEach(btn => {
-                const departure = new Date(btn.dataset.departure);
-                if (departure - now < fifteenMinutesMs) {
-                    btn.disabled = true;
-                    btn.classList.remove('bg-red-500', 'bg-blue-500', 'text-white', 'hover:bg-red-600', 'hover:bg-blue-600', 'hover:scale-110', 'active:scale-95');
-                    btn.classList.add('bg-gray-200', 'text-gray-400', 'cursor-not-allowed');
-                }
-            });
+    async function loadTimes(type, date, preSelectedTime = null) {
+        const routeOption = $('#mod-route option:selected');
+        let depart, arrive;
+        if (type === 'retour') {
+            depart = routeOption.data('arrive'); 
+            arrive = routeOption.data('depart');
+        } else {
+            depart = routeOption.data('depart');
+            arrive = routeOption.data('arrive');
         }
         
-        setInterval(checkAndDisableButtons, 30000);
-    });
+        const compagnie = routeOption.data('compagnie');
+        const selector = type === 'retour' ? '#mod-ret-time' : '#mod-time';
+
+        $(selector).html('<option value="">Chargement...</option>').prop('disabled', true);
+
+        try {
+            // Utilisation de l'endpoint interne correct
+            const res = await $.get(`/user/booking/api/route-schedules?point_depart=${depart}&point_arrive=${arrive}&compagnie_id=${compagnie}&date=${date}`);
+            
+            if(res.success && res.schedules.length > 0) {
+                let opts = '<option value="">-- Choisir Heure --</option>';
+                res.schedules.forEach(sch => {
+                    // Normalisation pour affichage : HH:mm
+                    const schDisplay = sch.heure_depart.substring(0, 5);
+                    const schTime = sch.heure_depart; // On garde la valeur brute (ex: 08:00:00)
+                    
+                    const preTime = preSelectedTime ? preSelectedTime.substring(0, 5) : '';
+                    const isSelected = (preTime && schDisplay === preTime) ? 'selected' : '';
+                    
+                    opts += `<option value="${schTime}" ${isSelected} data-prog-id="${sch.id}" data-prix="${sch.montant_billet}">${schDisplay}</option>`;
+                });
+                $(selector).html(opts).prop('disabled', false);
+            } else {
+                $(selector).html('<option value="">Aucun départ</option>');
+            }
+        } catch(e) {
+            $(selector).html('<option>Erreur</option>');
+        }
+    }
+
+    async function loadSeats(type, progId, date, time, preSelectedSeat = null) {
+        const container = type === 'retour' ? '#mod-ret-seat-container' : '#mod-seat-container';
+        const input = type === 'retour' ? '#mod-ret-seat-input' : '#mod-seat-input';
+
+        $(container).html('<div class="flex justify-center p-2"><div class="animate-spin w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full"></div></div>');
+
+        try {
+            // Note: time doit être envoyé au format attendu par ton API (peut-être ajouter :00 si besoin)
+            const res = await $.get(`/user/booking/programmes/${progId}/seats?date=${date}&heure=${time}`);
+            
+            if(res.success) {
+                let html = '<div class="grid grid-cols-7 gap-2">';
+                res.seats.forEach(seat => {
+                    const isMine = (preSelectedSeat && seat.number == preSelectedSeat);
+                    
+                    let css = 'bg-gray-100 text-gray-300 cursor-not-allowed';
+                    let action = '';
+
+                    if (seat.available) {
+                        css = 'bg-white border border-gray-200 text-gray-700 hover:border-[#e94f1b] hover:text-[#e94f1b] cursor-pointer';
+                        action = `onclick="selectSeat('${type}', this, ${seat.number})"`;
+                    } else if (isMine) {
+                        css = 'bg-[#e94f1b] text-white border border-[#e94f1b] cursor-pointer shadow-md transform scale-105';
+                        action = `onclick="selectSeat('${type}', this, ${seat.number})"`;
+                        $(input).val(seat.number);
+                    }
+
+                    html += `<div ${action} class="seat-item-${type} h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all ${css}">${seat.number}</div>`;
+                });
+                html += '</div>';
+                $(container).html(html);
+                
+                if($(input).val()) calculateTotal();
+            }
+        } catch(e) {
+            $(container).text('Erreur chargement');
+        }
+    }
+
+    // --- EVENTS UI & UTILS ---
+    function initEvents() {
+        $('#mod-route').change(function() {
+            $('#mod-time, #mod-ret-time').html('<option value="">Date requise</option>').prop('disabled', true);
+            $('#mod-seat-container, #mod-ret-seat-container').html('<span class="text-xs text-gray-400">Sélectionnez une heure</span>');
+            $('#mod-seat-input, #mod-ret-seat-input').val('');
+            $('#delta-box').addClass('hidden');
+            
+            if($('#mod-date').val()) loadTimes('aller', $('#mod-date').val());
+            if(modifState.isRoundTrip && $('#mod-ret-date').val()) loadTimes('retour', $('#mod-ret-date').val());
+        });
+
+        $('#mod-date').change(function() { loadTimes('aller', $(this).val()); });
+        $('#mod-ret-date').change(function() { loadTimes('retour', $(this).val()); });
+
+        $('#mod-time').change(function() {
+            const progId = $(this).find(':selected').data('prog-id');
+            if(progId) loadSeats('aller', progId, $('#mod-date').val(), $(this).val());
+        });
+
+        $('#mod-ret-time').change(function() {
+            const progId = $(this).find(':selected').data('prog-id');
+            if(progId) loadSeats('retour', progId, $('#mod-ret-date').val(), $(this).val());
+        });
+    }
+
+    window.selectSeat = function(type, el, number) {
+        const selector = `.seat-item-${type}`;
+        const input = type === 'retour' ? '#mod-ret-seat-input' : '#mod-seat-input';
+
+        $(selector).removeClass('bg-[#e94f1b] text-white border-[#e94f1b]').addClass('bg-white text-gray-700');
+        $(el).removeClass('bg-white text-gray-700').addClass('bg-[#e94f1b] text-white border-[#e94f1b]');
+        
+        $(input).val(number);
+        calculateTotal();
+    };
+
+    async function calculateTotal() {
+        const progIdAller = $('#mod-time option:selected').data('prog-id');
+        const seatAller = $('#mod-seat-input').val();
+        
+        if(!progIdAller || !seatAller) return;
+
+        let data = {
+            new_programme_id: progIdAller,
+            _token: $('meta[name="csrf-token"]').attr('content')
+        };
+
+        if(modifState.isRoundTrip) {
+            const progIdRetour = $('#mod-ret-time option:selected').data('prog-id');
+            const seatRetour = $('#mod-ret-seat-input').val();
+            if(!progIdRetour || !seatRetour) return;
+            data.new_return_programme_id = progIdRetour;
+        }
+
+        $('#delta-box').removeClass('hidden').addClass('opacity-50');
+
+        try {
+            const res = await $.post(`/user/booking/reservations/${modifState.resId}/calculate-delta`, data);
+            
+            $('#delta-box').removeClass('opacity-50');
+            $('#delta-amount').text(Number(res.delta).toLocaleString() + ' FCFA');
+            
+            const btn = Swal.getConfirmButton();
+            if(res.action === 'pay') {
+                $('#delta-label').text('Reste à payer');
+                $('#delta-amount').removeClass('text-green-400').addClass('text-red-400');
+                if(!res.can_afford) {
+                    $('#wallet-error').removeClass('hidden');
+                    btn.disabled = true;
+                } else {
+                    $('#wallet-error').addClass('hidden');
+                    btn.disabled = false;
+                }
+            } else {
+                $('#delta-label').text(res.action === 'refund' ? 'Crédit à rembourser' : 'Aucune différence');
+                $('#delta-amount').removeClass('text-red-400').addClass('text-green-400');
+                $('#wallet-error').addClass('hidden');
+                btn.disabled = false;
+            }
+        } catch(e) { console.error(e); }
+    }
+
+    async function handleModificationSubmit() {
+        const seatAller = $('#mod-seat-input').val();
+        const progIdAller = $('#mod-time option:selected').data('prog-id');
+        const dateAller = $('#mod-date').val();
+        const heureAller = $('#mod-time').val();
+
+        if(!seatAller || !progIdAller) {
+            Swal.showValidationMessage('Veuillez sélectionner le voyage aller complet');
+            return false;
+        }
+
+        let payload = {
+            programme_id: progIdAller,
+            date_voyage: dateAller,
+            heure_depart: heureAller,
+            seat_number: seatAller,
+            _token: $('meta[name="csrf-token"]').attr('content')
+        };
+
+        if(modifState.isRoundTrip) {
+            const seatRetour = $('#mod-ret-seat-input').val();
+            const progIdRetour = $('#mod-ret-time option:selected').data('prog-id');
+            const dateRetour = $('#mod-ret-date').val();
+            const heureRetour = $('#mod-ret-time').val();
+
+            if(!seatRetour || !progIdRetour) {
+                Swal.showValidationMessage('Veuillez compléter le voyage retour');
+                return false;
+            }
+
+            payload.return_programme_id = progIdRetour;
+            payload.return_date_voyage = dateRetour;
+            payload.return_heure_depart = heureRetour;
+            payload.return_seat_number = seatRetour;
+        }
+
+        try {
+            const result = await $.post(`/user/booking/reservations/${modifState.resId}/modify`, payload);
+            return result;
+        } catch (error) {
+            Swal.showValidationMessage(error.responseJSON?.message || 'Erreur technique');
+            return false;
+        }
+    }
+});
 </script>
 @endpush
 

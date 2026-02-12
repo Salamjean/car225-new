@@ -218,6 +218,13 @@ class WalletController extends Controller
                     if ($user) {
                         $user->solde += $transaction->amount;
                         $user->save();
+
+                        // Notification Database + Broadcast
+                        $user->notify(new \App\Notifications\GeneralNotification(
+                            'Portefeuille rechargé ✅',
+                            "Votre compte a été crédité de {$transaction->amount} FCFA.",
+                            'success'
+                        ));
                     }
 
                     DB::commit();
@@ -289,6 +296,13 @@ class WalletController extends Controller
                     $user = $transaction->user;
                     $user->solde += $transaction->amount;
                     $user->save();
+                    
+                    // Notification Database + Broadcast
+                    $user->notify(new \App\Notifications\GeneralNotification(
+                        'Portefeuille rechargé ✅',
+                        "Votre compte a été crédité de {$transaction->amount} FCFA.",
+                        'success'
+                    ));
                     
                     DB::commit();
 

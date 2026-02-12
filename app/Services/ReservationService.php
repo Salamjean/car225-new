@@ -9,10 +9,14 @@ use App\Models\User;
 use App\Models\WalletTransaction;
 use App\Services\FcmService;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+// --- AJOUT DES IMPORTS QR CODE ---
+use Endroid\QrCode\QrCode;
+use Endroid\QrCode\Writer\PngWriter;
 
 class ReservationService
 {
@@ -74,41 +78,38 @@ class ReservationService
     /**
      * Get refund preview.
      */
-    public function getRefundPreview(Reservation $reservation): array
+    public function getRefundPreview(Reservation $reservation)
     {
         $refundData = $this->calculateRefundPercentage($reservation);
-        $montant = (float) $reservation->montant;
-        $isRoundTrip = false;
-        $pairedReference = null;
+        
+        $relatedReservations = $this->getRelatedConfirmReservations($reservation);
+        $totalMontant = (float) $reservation->montant;
+        $relatedReferences = [];
 
-        if ($reservation->is_aller_retour) {
-            $pairedReservation = $this->findPairedReservation($reservation);
-            if ($pairedReservation) {
-                $isRoundTrip = true;
-                $montant += (float) $pairedReservation->montant;
-                $pairedReference = $pairedReservation->reference;
-            }
+        foreach ($relatedReservations as $related) {
+            $totalMontant += (float) $related->montant;
+            $relatedReferences[] = $related->reference;
         }
 
         // Calculate refund amount
         if ($refundData['percentage'] !== null) {
-            $refundAmount = round($montant * $refundData['percentage'] / 100, 0);
+            $refundAmount = round($totalMontant * $refundData['percentage'] / 100, 0);
         } else {
-            $refundAmount = max(0, $montant - $refundData['penalty']);
+            $refundAmount = max(0, $totalMontant - $refundData['penalty']);
         }
 
         return [
             'can_cancel' => $refundData['can_cancel'],
             'penalty' => $refundData['penalty'],
             'percentage' => $refundData['percentage'],
-            'montant_original' => $montant,
+            'montant_original' => $totalMontant,
             'refund_amount' => $refundAmount,
             'time_remaining' => $refundData['time_remaining'],
-            'is_round_trip' => $isRoundTrip,
+            'is_round_trip' => $reservation->is_aller_retour || count($relatedReservations) > 0,
             'reference' => $reservation->reference,
-            'paired_reference' => $pairedReference,
-            'fee_amount' => $montant - $refundAmount,
-            'fee_percentage' => ($montant > 0) ? round(($montant - $refundAmount) / $montant * 100, 1) : 0,
+            'related_references' => $relatedReferences,
+            'fee_amount' => $totalMontant - $refundAmount,
+            'fee_percentage' => ($totalMontant > 0) ? round(($totalMontant - $refundAmount) / $totalMontant * 100, 1) : 0,
         ];
     }
 
@@ -131,18 +132,13 @@ class ReservationService
         try {
             DB::beginTransaction();
 
-            $reservationsToCancel = [$reservation];
-            $totalMontant = (float) $reservation->montant;
+            $reservationsToCancel = collect([$reservation]);
+            $related = $this->getRelatedConfirmReservations($reservation);
+            $reservationsToCancel = $reservationsToCancel->merge($related);
+            
+            $totalMontant = $reservationsToCancel->sum(fn($r) => (float)$r->montant);
 
-            if ($reservation->is_aller_retour) {
-                $pairedReservation = $this->findPairedReservation($reservation);
-                if ($pairedReservation && $pairedReservation->statut === 'confirmee') {
-                    $reservationsToCancel[] = $pairedReservation;
-                    $totalMontant += (float) $pairedReservation->montant;
-                }
-            }
-
-            // Calculate refund amount based on new rules
+            // Calculate refund amount
             if ($refundData['percentage'] !== null) {
                 $refundAmount = round($totalMontant * $refundData['percentage'] / 100, 0);
             } else {
@@ -168,7 +164,7 @@ class ReservationService
                     'user_id' => $user->id,
                     'amount' => $refundAmount,
                     'type' => 'credit',
-                    'description' => "Remboursement annulation " . ($reservation->is_aller_retour ? "aller-retour" : "réservation") . " {$reservation->reference}",
+                    'description' => "Remboursement annulation réservation multi-places/liée {$reservation->reference}",
                     'status' => 'completed',
                     'reference' => 'RMB-' . strtoupper(Str::random(10)),
                     'payment_method' => 'wallet'
@@ -178,6 +174,43 @@ class ReservationService
             }
 
             DB::commit();
+
+            // Send Notifications (Email, Database & Push)
+            try {
+                $user = $reservation->user ?? User::find($reservation->user_id) ?? Auth::user();
+                
+                if ($user) {
+                    // 1. Send Notification (Email + Database + Broadcast)
+                    $relatedRef = $related->count() > 0 ? $related->first()->reference : null;
+                    $user->notify(new \App\Notifications\ReservationCancelledNotification(
+                        $reservation, 
+                        $refundAmount, 
+                        $refundData['percentage'], 
+                        $reservationsToCancel->count() > 1, 
+                        $relatedRef
+                    ));
+                    
+                    // 2. Send Push Notification (FCM)
+                    if (!empty($user->fcm_token)) {
+                        Log::info("Sending FCM cancellation to user {$user->id}");
+                        $fcmService = app(FcmService::class);
+                        $title = 'Annulation confirmée ❌';
+                        $body = "Votre réservation " . ($reservationsToCancel->count() > 1 ? "groupe (" . $reservationsToCancel->count() . " places)" : $reservation->reference) . " a été annulée. " . 
+                                ($refundAmount > 0 ? "Un montant de {$refundAmount} FCFA a été crédité." : "Aucun remboursement possible.");
+                        
+                        $fcmService->sendNotification($user->fcm_token, $title, $body, [
+                            'type' => 'cancellation',
+                            'reservation_id' => $reservation->id,
+                        ]);
+                    } else {
+                        Log::warning("User {$user->id} has no FCM token for cancellation notification");
+                    }
+                } else {
+                    Log::warning("No user found to notify for reservation cancellation {$reservation->id}");
+                }
+            } catch (\Exception $e) {
+                Log::error("Notification error in cancelReservation: " . $e->getMessage());
+            } 
 
             return [
                 'success' => true,
@@ -189,6 +222,33 @@ class ReservationService
             Log::error("Failed to cancel reservation: " . $e->getMessage());
             return ['success' => false, 'message' => 'Erreur lors de l\'annulation: ' . $e->getMessage()];
         }
+    }
+
+    /**
+     * Get all confirmed reservations related to this one (same transaction or round trip).
+     */
+    public function getRelatedConfirmReservations(Reservation $reservation)
+    {
+        $related = collect();
+
+        // Strategy 1: Same payment_transaction_id (multi-seats / same booking)
+        if ($reservation->payment_transaction_id) {
+            $others = Reservation::where('payment_transaction_id', $reservation->payment_transaction_id)
+                ->where('id', '!=', $reservation->id)
+                ->where('statut', 'confirmee')
+                ->get();
+            $related = $related->merge($others);
+        }
+
+        // Strategy 2: Round trip logic via reference (if no transaction ID or manually linked)
+        if ($reservation->is_aller_retour && $related->isEmpty()) {
+            $paired = $this->findPairedReservation($reservation);
+            if ($paired && $paired->statut === 'confirmee') {
+                $related->push($paired);
+            }
+        }
+
+        return $related->unique('id');
     }
 
     /**
@@ -210,15 +270,16 @@ class ReservationService
         // Strategy 2: Same reference (different ID)
         $paired = Reservation::where('reference', $reservation->reference)
             ->where('id', '!=', $reservation->id)
+            ->where('statut', 'confirmee')
             ->first();
         if ($paired) return $paired;
 
         // Strategy 3: Reference with/without -RET suffix
         if (str_ends_with($reservation->reference, '-RET')) {
             $baseRef = substr($reservation->reference, 0, -4);
-            return Reservation::where('reference', $baseRef)->first();
+            return Reservation::where('reference', $baseRef)->where('statut', 'confirmee')->first();
         } else {
-            return Reservation::where('reference', $reservation->reference . '-RET')->first();
+            return Reservation::where('reference', $reservation->reference . '-RET')->where('statut', 'confirmee')->first();
         }
 
         return null;
@@ -226,6 +287,7 @@ class ReservationService
 
     /**
      * Modify a reservation (cancel & rebook model).
+     * CORRIGE: Ajout de paiement_id, payment_transaction_id, heure_arrive et génération QR
      */
     public function modifyReservation(Reservation $oldReservation, array $data): array
     {
@@ -260,6 +322,7 @@ class ReservationService
         $newPrice = (float)str_replace(' ', '', $newProgramme->montant_billet ?? $newProgramme->prix ?? 0);
         $newTotal = $newPrice;
 
+        $returnProgramme = null;
         if ($oldReservation->is_aller_retour && isset($data['return_programme_id'])) {
             $returnProgramme = \App\Models\Programme::findOrFail($data['return_programme_id']);
             $newTotal += (float)str_replace(' ', '', $returnProgramme->montant_billet ?? $returnProgramme->prix ?? 0);
@@ -295,8 +358,17 @@ class ReservationService
                 $newReference = 'MOD-' . $newReference . '-' . strtoupper(Str::random(4));
             }
 
+            // Calcul heure arrivée Aller
+            $heureArriveAller = $newProgramme->heure_arrive;
+            if (empty($heureArriveAller)) {
+                $heureArriveAller = $this->calculateArrivalTime($data['heure_depart'], $newProgramme->durer_parcours);
+            }
+
+            // Creation Aller
             $newReservation = Reservation::create([
                 'user_id' => $oldReservation->user_id,
+                'paiement_id' => $oldReservation->paiement_id, // Transfert ID paiement
+                'payment_transaction_id' => $newReference, // Nouvelle ref transaction
                 'programme_id' => $data['programme_id'],
                 'compagnie_id' => $newProgramme->compagnie_id,
                 'seat_number' => $data['seat_number'],
@@ -307,7 +379,7 @@ class ReservationService
                 'passager_urgence' => $oldReservation->passager_urgence,
                 'date_voyage' => $data['date_voyage'],
                 'heure_depart' => $data['heure_depart'],
-                'heure_arrive' => $data['heure_arrive'] ?? '',
+                'heure_arrive' => $heureArriveAller, // Transfert heure arrivée
                 'montant' => $newPrice,
                 'reference' => $newReference,
                 'statut' => 'confirmee',
@@ -316,9 +388,21 @@ class ReservationService
                 'payment_status' => 'payé'
             ]);
 
-            if ($oldReservation->is_aller_retour && isset($data['return_programme_id'])) {
-                Reservation::create([
+            // --- GENERATION QR CODE ALLER ---
+            $this->generateAndSaveQR($newReservation);
+
+            // Creation Retour
+            if ($oldReservation->is_aller_retour && $returnProgramme) {
+                
+                $heureArriveRetour = $returnProgramme->heure_arrive;
+                if (empty($heureArriveRetour)) {
+                    $heureArriveRetour = $this->calculateArrivalTime($data['return_heure_depart'], $returnProgramme->durer_parcours);
+                }
+
+                $resRetour = Reservation::create([
                     'user_id' => $oldReservation->user_id,
+                    'paiement_id' => $oldReservation->paiement_id,
+                    'payment_transaction_id' => $newReference,
                     'programme_id' => $data['return_programme_id'],
                     'compagnie_id' => $returnProgramme->compagnie_id,
                     'seat_number' => $data['return_seat_number'],
@@ -329,7 +413,7 @@ class ReservationService
                     'passager_urgence' => $oldReservation->passager_urgence,
                     'date_voyage' => $data['return_date_voyage'],
                     'heure_depart' => $data['return_heure_depart'],
-                    'heure_arrive' => $data['return_heure_arrive'] ?? '',
+                    'heure_arrive' => $heureArriveRetour,
                     'montant' => $newTotal - $newPrice,
                     'reference' => $newReference . '-RET',
                     'statut' => 'confirmee',
@@ -337,6 +421,9 @@ class ReservationService
                     'payment_method' => 'wallet',
                     'payment_status' => 'payé'
                 ]);
+
+                // --- GENERATION QR CODE RETOUR ---
+                $this->generateAndSaveQR($resRetour);
             }
 
             if ($difference != 0) {
@@ -354,12 +441,61 @@ class ReservationService
                 ]);
             }
 
+            // Mise à jour des places dans ProgrammeStatutDate
+            $this->occupySeat($newReservation);
+            if(isset($resRetour)) $this->occupySeat($resRetour);
+
             DB::commit();
             return ['success' => true, 'message' => 'Modification réussie.', 'new_reservation' => $newReservation];
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error("Modification error: " . $e->getMessage());
             return ['success' => false, 'message' => 'Erreur technique: ' . $e->getMessage()];
+        }
+    }
+
+    /**
+     * Helper pour générer et sauvegarder le QR Code (Privé au Service)
+     */
+    private function generateAndSaveQR(Reservation $reservation)
+    {
+        try {
+            $qrData = [
+                'user_id' => $reservation->user_id,
+                'reference' => $reservation->reference,
+                'timestamp' => time(),
+                'date_voyage' => $reservation->date_voyage,
+                'reservation_id' => $reservation->id,
+            ];
+
+            $qrData['verification_hash'] = hash(
+                'sha256',
+                $reservation->reference . $reservation->id . $reservation->date_voyage . config('app.key')
+            );
+            
+            $qrContent = json_encode($qrData);
+
+            $qrCode = QrCode::create($qrContent)->setSize(180)->setMargin(5);
+            $writer = new PngWriter();
+            $qrCodeResult = $writer->write($qrCode);
+            $qrCodeImage = $qrCodeResult->getString();
+            $qrCodeBase64 = base64_encode($qrCodeImage);
+
+            $qrCodePath = 'qrcodes/' . $reservation->reference . '.png';
+            $fullPath = storage_path('app/public/' . $qrCodePath);
+
+            if (!file_exists(dirname($fullPath))) {
+                mkdir(dirname($fullPath), 0755, true);
+            }
+            file_put_contents($fullPath, $qrCodeImage);
+
+            $reservation->update([
+                'qr_code' => $qrCodeBase64,
+                'qr_code_path' => $qrCodePath,
+                'qr_code_data' => $qrData
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Failed to generate QR for modification: " . $e->getMessage());
         }
     }
 
@@ -370,30 +506,47 @@ class ReservationService
         return Carbon::parse("{$date} {$time}");
     }
 
+    private function calculateArrivalTime($departure, $duration) {
+        if(!$duration) return null;
+        try {
+            // Supposons que duration est "04:30" ou "4h30"
+            $dep = Carbon::parse($departure);
+            // Logique simple, à adapter selon format de duree_parcours
+            $parts = preg_split('/[h:]/', $duration);
+            if(count($parts) >= 1) $dep->addHours((int)$parts[0]);
+            if(count($parts) >= 2) $dep->addMinutes((int)$parts[1]);
+            return $dep->format('H:i');
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
     private function freeSeat(Reservation $reservation): void
     {
-        $statutDate = ProgrammeStatutDate::where('programme_id', $reservation->programme_id)
-            ->where('date_voyage', Carbon::parse($reservation->date_voyage)->format('Y-m-d'))
-            ->first();
-            
-        if ($statutDate) {
-            // Correct column names: nbre_siege_occupe, staut_place
-            $statutDate->decrement('nbre_siege_occupe');
-            
-            // Re-calculate status based on InitializeProgrammeStatuts logic
-            $totalReservedSeats = $statutDate->nbre_siege_occupe;
-            $totalPlaces = optional(optional($reservation->programme)->vehicule)->nombre_place ?? 50;
-            $percentage = ($totalReservedSeats / max($totalPlaces, 1)) * 100;
+        $this->updateProgramStats($reservation, 'decrement');
+    }
 
-            if ($percentage >= 100) {
-                $status = 'rempli';
-            } elseif ($percentage >= 80) {
-                $status = 'presque_complet';
-            } else {
-                $status = 'vide';
-            }
+    private function occupySeat(Reservation $reservation): void
+    {
+        $this->updateProgramStats($reservation, 'increment');
+    }
+
+    private function updateProgramStats(Reservation $reservation, $action) 
+    {
+        $statutDate = ProgrammeStatutDate::firstOrCreate(
+            ['programme_id' => $reservation->programme_id, 'date_voyage' => Carbon::parse($reservation->date_voyage)->format('Y-m-d')],
+            ['nbre_siege_occupe' => 0]
+        );
             
-            $statutDate->update(['staut_place' => $status]);
-        }
+        if ($action === 'increment') $statutDate->increment('nbre_siege_occupe');
+        else $statutDate->decrement('nbre_siege_occupe');
+        
+        // Re-calculate status
+        $totalReservedSeats = $statutDate->nbre_siege_occupe;
+        $totalPlaces = optional(optional($reservation->programme)->vehicule)->nombre_place ?? 50;
+        $percentage = ($totalReservedSeats / max($totalPlaces, 1)) * 100;
+
+        $status = $percentage >= 100 ? 'rempli' : ($percentage >= 80 ? 'presque_complet' : 'vide');
+        $statutDate->update(['staut_place' => $status]);
     }
 }

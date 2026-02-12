@@ -62,6 +62,7 @@ Route::prefix('user')->group(function () {
         Route::post('/reservations', [UserReservationController::class, 'store']);
         Route::get('/reservations/{reservation}', [UserReservationController::class, 'show']);
         Route::delete('/reservations/{reservation}', [UserReservationController::class, 'cancel']);
+        Route::get('/reservations/{reservation}/refund-preview', [UserReservationController::class, 'getRefundPreview']);
         Route::get('/reservations/{reservation}/ticket', [UserReservationController::class, 'ticket']);
         Route::get('/reservations/{reservation}/download', [UserReservationController::class, 'download']);
         Route::get('/reservations/{reservation}/round-trip-tickets', [UserReservationController::class, 'getRoundTripTickets']);
@@ -79,6 +80,13 @@ Route::prefix('user')->group(function () {
         Route::get('/signalements/active-reservations', [SignalementApiController::class, 'getActiveReservations']);
         Route::get('/signalements', [SignalementApiController::class, 'index']);
         Route::post('/signalements', [SignalementApiController::class, 'store']);
+
+        // Notifications
+        Route::get('/notifications', [\App\Http\Controllers\Api\User\NotificationApiController::class, 'index']);
+        Route::get('/notifications/unread-count', [\App\Http\Controllers\Api\User\NotificationApiController::class, 'unreadCount']);
+        Route::post('/notifications/{id}/mark-as-read', [\App\Http\Controllers\Api\User\NotificationApiController::class, 'markAsRead']);
+        Route::post('/notifications/mark-all-as-read', [\App\Http\Controllers\Api\User\NotificationApiController::class, 'markAllAsRead']);
+        Route::delete('/notifications/{id}', [\App\Http\Controllers\Api\User\NotificationApiController::class, 'destroy']);
     });
 
     // Routes Publiques (Recherche & Programmes)

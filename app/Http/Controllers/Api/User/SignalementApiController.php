@@ -116,6 +116,17 @@ class SignalementApiController extends Controller
                 Log::error('Erreur envoi email API compagnie: ' . $e->getMessage());
             }
 
+            // Notification de confirmation à l'utilisateur (Database pour le "Bell" icon)
+            try {
+                Auth::user()->notify(new \App\Notifications\GeneralNotification(
+                    'Signalement enregistré ⚠️',
+                    "Votre signalement de type '" . ucfirst($signalement->type) . "' a été reçu et est en cours de traitement.",
+                    'warning'
+                ));
+            } catch (\Exception $e) {
+                Log::error('Erreur notification utilisateur signalement: ' . $e->getMessage());
+            }
+
             DB::commit();
 
             return response()->json([

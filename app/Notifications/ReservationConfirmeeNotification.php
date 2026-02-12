@@ -10,7 +10,10 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Barryvdh\DomPDF\Facade\Pdf;
 
-class ReservationConfirmeeNotification extends Notification
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
+use Illuminate\Notifications\Messages\BroadcastMessage;
+
+class ReservationConfirmeeNotification extends Notification implements ShouldBroadcastNow
 {
     use Queueable;
 
@@ -44,8 +47,22 @@ class ReservationConfirmeeNotification extends Notification
      */
     public function via($notifiable): array
     {
-        // Retirez 'database' temporairement si la table n'existe pas
-        return ['mail']; // Retirez 'database' de la liste
+        return ['mail', 'database', 'broadcast'];
+    }
+
+    /**
+     * Get the broadcastable representation of the notification.
+     */
+    public function toBroadcast($notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage([
+            'reservation_id' => $this->reservation->id,
+            'reference' => $this->reservation->reference,
+            'title' => 'Réservation confirmée ✅',
+            'message' => "Votre réservation {$this->reservation->reference} est confirmée.",
+            'type' => 'confirmation',
+            'count' => $notifiable->unreadNotifications()->count() + 1,
+        ]);
     }
 
     /**
@@ -144,6 +161,7 @@ class ReservationConfirmeeNotification extends Notification
             'date_voyage' => $this->reservation->date_voyage,
             'montant' => $this->reservation->montant,
             'status' => 'confirmed',
+            'type' => 'confirmation',
             'is_aller_retour' => $this->programme->is_aller_retour,
         ];
     }
