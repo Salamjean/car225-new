@@ -1,7 +1,26 @@
-<section id="travel-hero" class="travel-hero section relative overflow-visible" style="min-height: 600px; padding-top: 0; background: url('{{ asset('assets/images/Bus avec Numéro Plaque.png') }}') center/cover no-repeat;">
+<section id="travel-hero" class="travel-hero section relative overflow-visible z-[50]" style="min-height: 600px; padding-top: 0;">
     
-    <!-- Dark Overlay -->
-    <div class="absolute inset-0 bg-black/10 pointer-events-none"></div>
+    <!-- Background Slider - Restricted overflow to its own container -->
+    <div class="absolute inset-0 z-0 overflow-hidden">
+        <div class="swiper hero-slider h-full w-full">
+            <div class="swiper-wrapper">
+                <!-- Slide 1 -->
+                <div class="swiper-slide">
+                    <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('{{ asset('assets/images/Bus avec Numéro Plaque.png') }}');"></div>
+                </div>
+                <!-- Slide 2 -->
+                <div class="swiper-slide">
+                    <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('{{ asset('assets/images/_Image 3 copy.png') }}');"></div>
+                </div>
+                <!-- Slide 3 -->
+                <div class="swiper-slide">
+                    <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('{{ asset('assets/images/Bus avec Plaque Immatriculation (1).png') }}');"></div>
+                </div>
+            </div>
+            <!-- Optional: Overlay gradient to make text readable on all slides -->
+            <div class="absolute inset-0 bg-black/20 z-10 pointer-events-none"></div>
+        </div>
+    </div>
 
     <div class="container relative z-20 h-full flex flex-col justify-end" style="min-height: 600px;">
         
@@ -167,5 +186,20 @@
 
     // Run on load to set initial state
     toggleReturnDate();
+
+    // Initialize Hero Slider
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof Swiper !== 'undefined') {
+            new Swiper('.hero-slider', {
+                autoplay: {
+                    delay: 5000,
+                    disableOnInteraction: false,
+                },
+                loop: true,
+                speed: 1000,
+                grabCursor: true,
+            });
+        }
+    });
 
 </script>
