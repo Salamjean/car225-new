@@ -1,0 +1,173 @@
+<?php
+
+namespace App\Http\Controllers\User;
+
+use App\Http\Controllers\Controller;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use Laravel\Socialite\Facades\Socialite;
+
+class UserAuthenticate extends Controller
+{
+    public function login()
+    {
+        if (auth('web')->check()) {
+            return redirect()->route('user.dashboard');
+        }
+        return view('user.auth.login');
+    }
+
+    public function handleLogin(Request $request): RedirectResponse
+    {
+        $loginValue = $request->input('login');
+        $field = filter_var($loginValue, FILTER_VALIDATE_EMAIL) ? 'email' : 'contact';
+
+        $credentials = [
+            $field => $loginValue,
+            'password' => $request->input('password'),
+        ];
+
+        if (!Auth::attempt($credentials, $request->filled('remember'))) {
+            return redirect()->route('login')->withErrors([
+                'login' => 'Les identifiants sont incorrects.',
+            ])->withInput($request->except('password'));
+        }
+
+        $request->session()->regenerate();
+
+        return redirect()->intended(route('user.dashboard', absolute: false))->with('success', 'Bienvenue sur votre page!');
+    }
+
+
+    public function register()
+    {
+        return view('user.auth.register');
+    }
+
+    public function handleRegister(Request $request): RedirectResponse
+    {
+        $validated = $request->validate(
+            [
+                'name' => 'required|string|max:255',
+                'prenom' => 'required|string|max:255',
+                'email' => 'required|email|unique:users,email',
+                'password' => 'required|min:8|confirmed',
+                'contact' => 'required|string|max:255',
+                'photo_profile' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            ],
+            [
+                // Nom
+                'name.required' => 'Le nom est obligatoire.',
+                'name.string' => 'Le nom doit être une chaîne de caractères.',
+                'name.max' => 'Le nom ne doit pas dépasser 255 caractères.',
+
+                // Prénom
+                'prenom.required' => 'Le prénom est obligatoire.',
+                'prenom.string' => 'Le prénom doit être une chaîne de caractères.',
+                'prenom.max' => 'Le prénom ne doit pas dépasser 255 caractères.',
+
+                // Email
+                'email.required' => 'L\'adresse email est obligatoire.',
+                'email.email' => 'Veuillez saisir une adresse email valide.',
+                'email.unique' => 'Cette adresse email est déjà utilisée.',
+
+                // Mot de passe
+                'password.required' => 'Le mot de passe est obligatoire.',
+                'password.min' => 'Le mot de passe doit contenir au moins 8 caractères.',
+                'password.confirmed' => 'Les mots de passe ne correspondent pas.',
+
+                // Contact
+                'contact.required' => 'Le numéro de contact est obligatoire.',
+                'contact.string' => 'Le contact doit être une chaîne de caractères.',
+                'contact.max' => 'Le contact ne doit pas dépasser 255 caractères.',
+
+                // Photo de profil
+                'photo_profile.image' => 'Le fichier doit être une image.',
+                'photo_profile.mimes' => 'L\'image doit être au format : jpeg, png, jpg ou gif.',
+                'photo_profile.max' => 'L\'image ne doit pas dépasser 2 Mo.',
+            ]
+        );
+
+        try {
+            // Préparation des données utilisateur
+            $userData = [
+                'name' => $validated['name'],
+                'prenom' => $validated['prenom'],
+                'email' => $validated['email'],
+                'contact' => $validated['contact'],
+                'password' => Hash::make($validated['password']),
+            ];
+
+            // Gestion de l'upload de la photo de profil
+            if ($request->hasFile('photo_profile')) {
+                $photoFile = $request->file('photo_profile');
+                $photoName = 'profile_' . time() . '_' . Str::random(10) . '.' . $photoFile->getClientOriginalExtension();
+                $photoPath = $photoFile->storeAs('users/profiles', $photoName, 'public');
+                $userData['photo_profile_path'] = $photoPath;
+            }
+
+            // Création de l'utilisateur
+            User::create($userData);
+
+            return redirect()->route('login')
+                ->with('success', 'Votre compte a été créé avec succès. Vous pouvez vous connecter.');
+        } catch (\Exception $e) {
+            // Log l'erreur pour le débogage
+            Log::error('Erreur lors de la création du compte: ' . $e->getMessage());
+
+            return redirect()->back()
+                ->with('error', 'Une erreur est survenue lors de la création du compte. Veuillez réessayer.')
+                ->withInput();
+        }
+    }
+
+    public function redirectToGoogle()
+    {
+        return Socialite::driver('google')->redirect();
+    }
+
+   public function handleGoogleCallback()
+{
+    try {
+        $googleUser = Socialite::driver('google')->user();
+        
+        // On vérifie si l'utilisateur existe déjà par email
+        $user = User::where('email', $googleUser->email)->first();
+
+        if (!$user) {
+            // Création d'un nouvel utilisateur
+            $user = User::create([
+                'name' => $googleUser->user['family_name'] ?? $googleUser->name, // Nom de famille
+                'prenom' => $googleUser->user['given_name'] ?? '', // Prénom
+                'email' => $googleUser->email,
+                'google_id' => $googleUser->id,
+                'photo_profile_path' => $googleUser->avatar,
+                'email_verified_at' => now(), // On considère l'email validé car il vient de Google
+                // On génère un mot de passe aléatoire car il se connecte via Google
+                'password' => Hash::make(Str::random(24)), 
+                // On met un contact vide ou par défaut si Google ne le donne pas
+                'contact' => $googleUser->user['phone_number'] ?? null, 
+            ]);
+        } else {
+            // Mise à jour de l'utilisateur existant (optionnel)
+            $user->update([
+                'google_id' => $googleUser->id,
+                'photo_profile_path' => $googleUser->avatar, // Met à jour la photo si tu veux
+            ]);
+        }
+
+        Auth::login($user);
+
+        return redirect()->intended(route('user.dashboard'))->with('success', 'Bienvenue ' . $user->prenom . ' !');
+
+    } catch (\Exception $e) {
+        Log::error('Erreur Google Login: ' . $e->getMessage());
+        return redirect()->route('login')->with('error', 'Erreur lors de la connexion avec Google. Détails : ' . $e->getMessage());
+    }
+}
+}
