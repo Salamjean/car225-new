@@ -77,7 +77,7 @@ class ReservationApiController extends Controller
             'programme_id' => 'nullable|integer', // Pour detection aller/retour
         ]);
 
-        $reservation = Reservation::with(['programme.vehicule', 'user', 'embarquementVehicule'])
+        $reservation = Reservation::with(['programme', 'user', 'embarquementVehicule'])
             ->where('reference', $request->reference)
             ->first();
 
@@ -358,7 +358,7 @@ class ReservationApiController extends Controller
                       });
                 });
             })
-            ->with('vehicule')
+            ->with('compagnie')
             ->orderBy('heure_depart')
             ->get()
             ->map(function($programme) {
@@ -367,11 +367,11 @@ class ReservationApiController extends Controller
                     'point_depart' => $programme->point_depart,
                     'point_arrive' => $programme->point_arrive,
                     'heure_depart' => $programme->heure_depart,
-                    'vehicule' => $programme->vehicule ? [
-                        'id' => $programme->vehicule->id,
-                        'marque' => $programme->vehicule->marque,
-                        'modele' => $programme->vehicule->modele,
-                        'immatriculation' => $programme->vehicule->immatriculation,
+                    'vehicule' => $programme->getVehiculeForDate($today) ? [
+                        'id' => $programme->getVehiculeForDate($today)->id,
+                        'marque' => $programme->getVehiculeForDate($today)->marque,
+                        'modele' => $programme->getVehiculeForDate($today)->modele,
+                        'immatriculation' => $programme->getVehiculeForDate($today)->immatriculation,
                     ] : null,
                 ];
             });
@@ -460,7 +460,7 @@ class ReservationApiController extends Controller
     {
         $agent = $request->user();
 
-        $reservation = Reservation::with(['programme.vehicule', 'user'])
+        $reservation = Reservation::with(['programme', 'user'])
             ->whereHas('programme', function($q) use ($agent) {
                 $q->where('compagnie_id', $agent->compagnie_id);
             })
@@ -496,10 +496,10 @@ class ReservationApiController extends Controller
                     'point_depart' => $reservation->programme->point_depart,
                     'point_arrive' => $reservation->programme->point_arrive,
                     'heure_depart' => $reservation->programme->heure_depart,
-                    'vehicule' => $reservation->programme->vehicule ? [
-                        'marque' => $reservation->programme->vehicule->marque,
-                        'modele' => $reservation->programme->vehicule->modele,
-                        'immatriculation' => $reservation->programme->vehicule->immatriculation,
+                    'vehicule' => $reservation->programme->getVehiculeForDate($reservation->date_voyage) ? [
+                        'marque' => $reservation->programme->getVehiculeForDate($reservation->date_voyage)->marque,
+                        'modele' => $reservation->programme->getVehiculeForDate($reservation->date_voyage)->modele,
+                        'immatriculation' => $reservation->programme->getVehiculeForDate($reservation->date_voyage)->immatriculation,
                     ] : null,
                 ] : null,
             ],

@@ -155,6 +155,8 @@ class ReservationConfirmeeNotification extends Notification implements ShouldBro
     public function toArray($notifiable): array
     {
         return [
+            'title' => 'Réservation confirmée ✅',
+            'message' => "Votre réservation {$this->reservation->reference} pour {$this->programme->point_depart} est confirmée.",
             'reservation_id' => $this->reservation->id,
             'reference' => $this->reservation->reference,
             'programme' => $this->programme->point_depart . ' → ' . $this->programme->point_arrive,

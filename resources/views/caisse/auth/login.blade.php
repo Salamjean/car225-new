@@ -90,11 +90,16 @@
                         </div>
                     </div>
 
-                    <!-- Remember Me -->
-                    <div class="flex items-center">
-                        <input type="checkbox" name="remember" id="remember"
-                            class="w-4 h-4 text-[#e94e1a] border-gray-300 rounded focus:ring-[#e94e1a]">
-                        <label for="remember" class="ml-2 text-sm text-gray-700">Se souvenir de moi</label>
+                    <!-- Remember Me & Forgot Password -->
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <input type="checkbox" name="remember" id="remember"
+                                class="w-4 h-4 text-[#e94e1a] border-gray-300 rounded focus:ring-[#e94e1a]">
+                            <label for="remember" class="ml-2 text-sm text-gray-700">Se souvenir de moi</label>
+                        </div>
+                        <a href="{{ route('caisse.password.request') }}" class="text-sm text-[#e94e1a] hover:underline font-semibold">
+                            Mot de passe oublié ?
+                        </a>
                     </div>
 
                     <!-- Submit Button -->

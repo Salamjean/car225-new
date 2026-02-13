@@ -126,19 +126,19 @@
     </div>
 
     <!-- Reservations Table -->
-  <div class="bg-white rounded-[32px] border border-gray-100 shadow-xl shadow-gray-200/40 overflow-hidden">
+ <div class="bg-white rounded-[32px] border border-gray-100 shadow-xl shadow-gray-200/40 overflow-hidden">
     <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
             <thead>
                 <tr class="bg-gray-50/80 border-b border-gray-100">
-                    <th class="px-6 py-5 text-[10px] font-extrabold text-gray-400 uppercase tracking-widest pl-8">Billet</th>
-                    <th class="px-6 py-5 text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Itinéraire & Compagnie</th>
-                    <th class="px-6 py-5 text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Départ</th>
-                    <th class="px-6 py-5 text-[10px] font-extrabold text-gray-400 uppercase tracking-widest text-center">Siège</th>
-                    <th class="px-6 py-5 text-[10px] font-extrabold text-gray-400 uppercase tracking-widest text-center">Info Passager</th>
-                    <th class="px-6 py-5 text-[10px] font-extrabold text-gray-400 uppercase tracking-widest text-right">Tarif</th>
-                    <th class="px-6 py-5 text-[10px] font-extrabold text-gray-400 uppercase tracking-widest text-center">Statut</th>
-                    <th class="px-6 py-5 text-[10px] font-extrabold text-gray-400 uppercase tracking-widest text-center pr-8">Actions</th>
+                    <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-8">Billet</th>
+                    <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Itinéraire & Compagnie</th>
+                    <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Départ</th>
+                    <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Siège</th>
+                    <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Info Passager</th>
+                    <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Tarif</th>
+                    <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Statut</th>
+                    <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center pr-8">Actions</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-50">
@@ -151,7 +151,7 @@
                                 <i class="fas fa-barcode text-lg"></i>
                             </div>
                             <div>
-                                <span class="block text-xs font-mono font-bold text-gray-600 bg-gray-100 px-2 py-1 rounded-md mb-1 group-hover:bg-white group-hover:shadow-sm transition-all">
+                                <span class="block text-xs font-mono font-semibold text-gray-600 bg-gray-100 px-2 py-1 rounded-md mb-1 group-hover:bg-white group-hover:shadow-sm transition-all">
                                     {{ $reservation->reference }}
                                 </span>
                                 <span class="text-[10px] font-medium text-gray-400 flex items-center gap-1">
@@ -165,17 +165,27 @@
                     <td class="px-6 py-5">
                         <div class="flex flex-col">
                             <div class="flex items-center gap-2 mb-1">
-                                <span class="text-sm font-black text-[#1A1D1F]">{{ $reservation->programme->point_depart }}</span>
-                                <div class="w-12 h-[2px] bg-gray-200 relative flex items-center justify-center">
+                                <div>
+                                    <span class="text-sm font-medium text-[#1A1D1F] block">{{ $reservation->programme->point_depart }}</span>
+                                    @if($reservation->programme->gareDepart)
+                                        <span class="text-[10px] text-gray-400 block"><i class="fas fa-building mr-1"></i>{{ $reservation->programme->gareDepart->nom_gare }}</span>
+                                    @endif
+                                </div>
+                                <div class="w-12 h-[2px] bg-gray-200 relative flex items-center justify-center mx-2">
                                     <i class="fas fa-bus text-[8px] text-gray-400 absolute bg-white px-1"></i>
                                 </div>
-                                <span class="text-sm font-black text-[#1A1D1F]">{{ $reservation->programme->point_arrive }}</span>
+                                <div>
+                                    <span class="text-sm font-medium text-[#1A1D1F] block">{{ $reservation->programme->point_arrive }}</span>
+                                    @if($reservation->programme->gareArrivee)
+                                        <span class="text-[10px] text-gray-400 block"><i class="fas fa-building mr-1"></i>{{ $reservation->programme->gareArrivee->nom_gare }}</span>
+                                    @endif
+                                </div>
                             </div>
                             <div class="flex items-center gap-2">
                                 <div class="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center">
                                     <i class="fas fa-building text-[8px] text-gray-500"></i>
                                 </div>
-                                <span class="text-[11px] font-bold text-gray-500 uppercase tracking-wide">{{ $reservation->programme->compagnie->name }}</span>
+                                <span class="text-[11px] font-medium text-gray-500 uppercase tracking-wide">{{ $reservation->programme->compagnie->name }}</span>
                             </div>
                         </div>
                     </td>
@@ -183,21 +193,21 @@
                     <td class="px-6 py-5">
                         <div class="flex items-center gap-3">
                             <div class="flex flex-col items-center justify-center bg-gray-50 border border-gray-100 rounded-xl w-12 h-12 group-hover:bg-white group-hover:border-[#e94f1b]/20 group-hover:shadow-md transition-all">
-                                <span class="text-[8px] font-bold text-[#e94f1b] uppercase leading-none mt-1">
+                                <span class="text-[8px] font-semibold text-[#e94f1b] uppercase leading-none mt-1">
                                     {{ Str::upper(\Carbon\Carbon::parse($reservation->date_voyage)->locale('fr')->translatedFormat('M')) }}
                                 </span>
-                                <span class="text-lg font-black text-gray-800 leading-none">
+                                <span class="text-lg font-bold text-gray-800 leading-none">
                                     {{ \Carbon\Carbon::parse($reservation->date_voyage)->format('d') }}
                                 </span>
                             </div>
                             <div>
-                                <p class="text-sm font-bold text-gray-900">{{ \Carbon\Carbon::parse($reservation->heure_depart ?? $reservation->programme->heure_depart)->format('H:i') }}</p>
+                                <p class="text-sm font-semibold text-gray-900">{{ \Carbon\Carbon::parse($reservation->heure_depart ?? $reservation->programme->heure_depart)->format('H:i') }}</p>
                                 @if(str_contains($reservation->reference, '-RET-'))
-                                    <span class="inline-flex items-center gap-1 text-[9px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                                    <span class="inline-flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
                                         <i class="fas fa-undo-alt text-[8px]"></i> Retour
                                     </span>
                                 @elseif($reservation->is_aller_retour)
-                                    <span class="inline-flex items-center gap-1 text-[9px] font-black text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">
+                                    <span class="inline-flex items-center gap-1 text-[9px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">
                                         <i class="fas fa-exchange-alt text-[8px]"></i> Aller
                                     </span>
                                 @else 
@@ -210,7 +220,7 @@
                     <td class="px-6 py-5 text-center">
                         <div class="inline-block relative">
                             <svg class="w-8 h-8 text-gray-200 group-hover:text-[#1A1D1F] transition-colors" fill="currentColor" viewBox="0 0 20 20"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"/></svg>
-                            <span class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[10px] font-black text-gray-600 group-hover:text-white">{{ $reservation->seat_number }}</span>
+                            <span class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-600 group-hover:text-white">{{ $reservation->seat_number }}</span>
                         </div>
                     </td>
 
@@ -230,21 +240,21 @@
                     </td>
 
                     <td class="px-6 py-5 text-right">
-                        <p class="text-sm font-black text-[#1A1D1F]">{{ number_format($reservation->montant, 0, ',', ' ') }}</p>
-                        <p class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">FCFA</p>
+                        <p class="text-sm font-bold text-[#1A1D1F]">{{ number_format($reservation->montant, 0, ',', ' ') }}</p>
+                        <p class="text-[9px] font-medium text-gray-400 uppercase tracking-wider">FCFA</p>
                     </td>
 
                     <td class="px-6 py-5 text-center">
                         @if($reservation->statut == 'confirmee')
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-600 text-[10px] font-black rounded-lg uppercase tracking-widest border border-green-100">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-green-100">
                                 <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Confirmé
                             </span>
                         @elseif($reservation->statut == 'en_attente')
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-yellow-50 text-yellow-600 text-[10px] font-black rounded-lg uppercase tracking-widest border border-yellow-100">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-yellow-50 text-yellow-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-yellow-100">
                                 <span class="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse"></span> En attente
                             </span>
                         @else
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 text-[10px] font-black rounded-lg uppercase tracking-widest border border-red-100">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-red-100">
                                 <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Annulé
                             </span>
                         @endif
@@ -304,9 +314,9 @@
                             <div class="w-24 h-24 bg-orange-50 rounded-full flex items-center justify-center text-[#e94f1b] mb-6 shadow-xl shadow-orange-100">
                                 <i class="fas fa-ticket-alt text-4xl"></i>
                             </div>
-                            <h3 class="text-xl font-black text-gray-900 mb-2 uppercase tracking-tight">Aucun voyage pour le moment</h3>
+                            <h3 class="text-xl font-bold text-gray-900 mb-2 uppercase tracking-tight">Aucun voyage pour le moment</h3>
                             <p class="text-gray-400 font-medium mb-8 max-w-sm mx-auto">Votre historique de réservations est vide. Prêt à partir à l'aventure ?</p>
-                            <a href="{{ route('reservation.create') }}" class="px-10 py-4 bg-[#e94f1b] text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg shadow-[#e94f1b]/30 hover:-translate-y-1 transition-all">
+                            <a href="{{ route('reservation.create') }}" class="px-10 py-4 bg-[#e94f1b] text-white rounded-2xl font-bold text-sm uppercase tracking-widest shadow-lg shadow-[#e94f1b]/30 hover:-translate-y-1 transition-all">
                                 <i class="fas fa-plus mr-2"></i> Réserver un billet
                             </a>
                         </div>

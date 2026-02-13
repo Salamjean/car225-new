@@ -370,7 +370,7 @@
         <div class="form-header">
             <img src="{{ asset('assetsPoster/assets/images/logo_car225.png') }}" class="auth-logo floating"
                 alt="Logo" style="margin-bottom:20px"><br>
-            <p class="subtitle">Connectez-vous avec votre email, contact ou username</p>
+            <p class="subtitle">Connectez-vous avec votre email</p>
         </div>
 
         @csrf
@@ -381,7 +381,7 @@
             <i class="fas fa-user input-icon"></i>
             <input class="input-field" type="text" name="login" placeholder=" " value="{{ old('login') }}"
                 required />
-            <label class="input-label" for="login">Email, Contact ou Username</label>
+            <label class="input-label" for="login">Email</label>
             @error('login')
                 <div class="error-message">
                     <i class="fas fa-exclamation-circle"></i> {{ $message }}
@@ -400,6 +400,12 @@
                     <i class="fas fa-exclamation-circle"></i> {{ $message }}
                 </div>
             @enderror
+        </div>
+
+        <div class="forgot-password">
+            <a href="{{ route('compagnie.password.request') }}">
+                <i class="fas fa-key"></i> Mot de passe oublié ?
+            </a>
         </div>
 
         <button type="submit" class="submit-btn animate__animated animate__pulse animate__infinite animate__slower">

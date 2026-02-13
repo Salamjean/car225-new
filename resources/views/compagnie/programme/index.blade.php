@@ -3,9 +3,7 @@
 @section('content')
 <!-- Initialisation des données pour le JS -->
 <script>
-    // On récupère les données envoyées par le contrôleur pour les utiliser dans le popup
-    const globalVehicules = @json($vehicules ?? []);
-    const globalChauffeurs = @json($chauffeurs ?? []);
+    // Les données des gares et véhicules ne sont plus nécessaires globalement ici pour la création de programme
 </script>
 
 <div class="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8 px-4">
@@ -78,12 +76,12 @@
                                     </div>
                                     <div>
                                         <h3 class="text-lg font-bold text-gray-900">
-                                            {{ $route->point_depart }} <i class="fas fa-arrows-alt-h text-orange-500 mx-2"></i> {{ $route->point_arrive }}
-                                        </h3>
-                                        <p class="text-sm text-gray-500">
-                                            <i class="fas fa-clock mr-1"></i>{{ $route->durer_parcours }} 
+                                            {{ $route->itineraire->point_depart }} <i class="fas fa-arrow-right mx-1"></i> {{ $route->itineraire->point_arrive }}
                                             <span class="mx-2">|</span>
                                             <i class="fas fa-tag mr-1"></i>{{ number_format($route->montant_billet, 0, ',', ' ') }} FCFA
+                                        </h3>
+                                        <p class="text-sm text-gray-500">
+                                            {{ $route->gare_depart?->nom_gare ?? $route->itineraire?->point_depart ?? 'N/A' }} → {{ $route->gare_arrivee?->nom_gare ?? $route->itineraire?->point_arrive ?? 'N/A' }}
                                         </p>
                                     </div>
                                 </div>
@@ -167,7 +165,7 @@ function showSchedulesPopup(routeData) {
     };
 
     Swal.fire({
-        title: `Horaires : ${routeData.point_depart} - ${routeData.point_arrive}`,
+        title: `Horaires : ${routeData.gare_depart.nom_gare} - ${routeData.gare_arrivee.nom_gare}`,
         html: `
             <div class="grid grid-cols-2 gap-4 text-left">
                 <div>
@@ -188,20 +186,9 @@ function showSchedulesPopup(routeData) {
 
 // --- FONCTION 2 : GESTION COMPLETE (Ajout + Visualisation de l'existant) ---
 function manageSchedules(routeData) {
-    // 1. Préparer les options pour les SELECT (véhicules et chauffeurs)
-    let vehiculeOptions = '<option value="">Choisir Véhicule</option>';
-    globalVehicules.forEach(v => {
-        vehiculeOptions += `<option value="${v.id}">${v.marque} - ${v.immatriculation} (${v.nombre_place} pl.)</option>`;
-    });
-
-    let chauffeurOptions = '<option value="">Choisir Chauffeur</option>';
-    globalChauffeurs.forEach(c => {
-        chauffeurOptions += `<option value="${c.id}">${c.prenom} ${c.name}</option>`;
-    });
-
-    // Sauvegarder dans window pour la fonction addNewRow
-    window.currentVehiculeOptions = vehiculeOptions;
-    window.currentChauffeurOptions = chauffeurOptions;
+    // On n'a plus besoin des véhicules et chauffeurs ici pour la création de programme
+    window.currentGareDepartId = routeData.gare_depart.id;
+    window.currentGareArriveeId = routeData.gare_arrivee.id;
 
     // 2. Générer le HTML de la liste EXISTANTE (Lecture seule + boutons edit/delete)
     const generateExistingList = (list, type) => {
@@ -231,9 +218,9 @@ function manageSchedules(routeData) {
         <div class="text-left">
             <div class="bg-gray-100 p-3 rounded-lg mb-4 flex justify-between items-center">
                 <div>
-                    <span class="font-bold text-gray-800">${routeData.point_depart}</span>
-                    <i class="fas fa-exchange-alt text-orange-500 mx-2"></i>
-                    <span class="font-bold text-gray-800">${routeData.point_arrive}</span>
+                    <span class="font-bold text-gray-800">${routeData.gare_depart.nom_gare}</span>
+                    <i class="fas fa-arrow-right text-orange-500 mx-2"></i>
+                    <span class="font-bold text-gray-800">${routeData.gare_arrivee.nom_gare}</span>
                 </div>
                 <div class="text-sm text-gray-600">
                     <i class="fas fa-money-bill-wave mr-1"></i> ${Number(routeData.montant_billet).toLocaleString()} FCFA
@@ -244,6 +231,8 @@ function manageSchedules(routeData) {
                 @csrf
                 <input type="hidden" name="itineraire_id" value="${routeData.itineraire_id}">
                 <input type="hidden" name="montant_billet" value="${routeData.montant_billet}">
+                <input type="hidden" name="gare_depart_id" value="${routeData.gare_depart.id}">
+                <input type="hidden" name="gare_arrivee_id" value="${routeData.gare_arrivee.id}">
                 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <!-- COLONNE ALLER -->
@@ -341,15 +330,6 @@ window.addNewRow = function(type) {
                     <input type="time" name="${type}_horaires[${index}][heure_arrive]" required
                         class="w-full text-sm border-gray-300 rounded focus:ring-1 focus:ring-orange-500 p-1">
                 </div>
-            </div>
-            
-            <div class="grid grid-cols-1 gap-2">
-                <select name="${type}_horaires[${index}][vehicule_id]" class="w-full text-xs border-gray-300 rounded p-1">
-                    ${window.currentVehiculeOptions}
-                </select>
-                <select name="${type}_horaires[${index}][personnel_id]" class="w-full text-xs border-gray-300 rounded p-1">
-                    ${window.currentChauffeurOptions}
-                </select>
             </div>
             
             <div class="mt-1 text-center">

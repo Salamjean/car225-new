@@ -42,7 +42,7 @@ class ReservationController extends Controller
         $user = Auth::user();
 
         // Récupérer les réservations avec les relations nécessaires
-        $query = Reservation::with(['programme', 'programme.compagnie', 'programme.vehicule'])
+        $query = Reservation::with(['programme', 'programme.compagnie', 'programme.gareDepart', 'programme.gareArrivee'])
             ->where('user_id', $user->id)
             ->where('statut', '!=', 'en_attente')
             ->orderBy('created_at', 'desc')
@@ -237,7 +237,7 @@ class ReservationController extends Controller
                 $fcmService->sendNotification(
                     $user->fcm_token, 
                     'Annulation effectuée ❌', 
-                    "Votre réservation {$reservation->reference} a été annulée.",
+                    "Votre réservation {$reservation->reference} (" . ($reservation->programme->point_depart ?? 'N/A') . " → " . ($reservation->programme->point_arrive ?? 'N/A') . ") a été annulée.",
                     ['type' => 'cancellation', 'reservation_id' => $reservation->id]
                 );
             }
@@ -473,7 +473,7 @@ class ReservationController extends Controller
         $formattedDate = date('Y-m-d', strtotime($date_depart_recherche));
 
         // Initialiser la requête
-        $query = Programme::with(['compagnie', 'vehicule', 'itineraire'])
+        $query = Programme::with(['compagnie', 'itineraire', 'gareDepart', 'gareArrivee'])
             ->where('statut', 'actif');
 
         // Appliquer les filtres de recherche si présents
@@ -509,7 +509,7 @@ class ReservationController extends Controller
         $programIds = $allProgrammes->pluck('id');
         $reservationCounts = Reservation::whereIn('programme_id', $programIds)
             ->where('date_voyage', $formattedDate)
-            ->where('statut', 'confirmee')
+            ->whereIn('statut', ['confirmee', 'en_attente', 'terminee'])
             ->select('programme_id', DB::raw('count(*) as count'))
             ->groupBy('programme_id')
             ->pluck('count', 'programme_id');
@@ -517,18 +517,19 @@ class ReservationController extends Controller
         // Grouper par route unique (compagnie + itinéraire)
         $groupedRoutes = $allProgrammes->groupBy(function($p) {
     return $p->compagnie_id . '|' . $p->itineraire_id;
-})->map(function($group) use ($reservationCounts) {
+})->map(function($group) use ($reservationCounts, $formattedDate) {
     $first = $group->first();
             
             // Tous les horaires aller
-            $allerHoraires = $group->sortBy('heure_depart')->map(function($p) use ($reservationCounts) {
+            $allerHoraires = $group->sortBy('heure_depart')->map(function($p) use ($reservationCounts, $formattedDate) {
+                $vehicule = $p->getVehiculeForDate($formattedDate);
                 return [
                     'id' => $p->id,
                     'heure_depart' => $p->heure_depart,
                     'heure_arrive' => $p->heure_arrive,
                     'reserved_count' => $reservationCounts[$p->id] ?? 0,
-                    'total_seats' => $p->vehicule ? $p->vehicule->nombre_place : 70,
-                    'vehicule_id' => $p->vehicule_id,
+                    'total_seats' => $vehicule ? $vehicule->nombre_place : 70,
+                    'vehicule_id' => $vehicule ? $vehicule->id : null,
                 ];
             })->values();
             
@@ -557,10 +558,10 @@ class ReservationController extends Controller
                 'itineraire_id' => $first->itineraire_id,
                 'point_depart' => $first->point_depart,
                 'point_arrive' => $first->point_arrive,
+                'gare_depart' => $first->gareDepart,
+                'gare_arrivee' => $first->gareArrivee,
                'montant_billet' => (int) str_replace(' ', '', $first->montant_billet), 
                 'durer_parcours' => $first->durer_parcours,
-                'vehicule' => $first->vehicule,
-                'vehicule_id' => $first->vehicule_id,
                 'statut' => 'actif',
                 'aller_horaires' => $allerHoraires,
                 'retour_horaires' => $retourHoraires,
@@ -607,98 +608,103 @@ class ReservationController extends Controller
 
 
     // Afficher les détails du véhicule (pour le bouton "Détails véhicule")
-    public function showVehicle($id)
-    {
-        $vehicule = Vehicule::find($id);
+  public function showVehicle($id)
+{
+    $request = request();
+    $dateVoyage = $request->get('date') ?? date('Y-m-d');
+    $programId = $request->get('program_id');
+    $heureDepart = $request->get('heure_depart'); // RÉCUPÉRATION HEURE
 
-        if (!$vehicule) {
-            return response()->json(['error' => 'Véhicule non trouvé'], 404);
-        }
-
-        // Récupérer la date depuis la requête
-        $request = request();
-        $dateVoyage = $request->get('date');
-
-        // Générer le HTML pour la visualisation
-        $typeRangeConfig = [
-            '2x2' => ['placesGauche' => 2, 'placesDroite' => 2],
-            '2x3' => ['placesGauche' => 2, 'placesDroite' => 3],
-            '2x4' => ['placesGauche' => 2, 'placesDroite' => 4],
-            'Gamme Prestige' => ['placesGauche' => 2, 'placesDroite' => 2],
-            'Gamme Standard' => ['placesGauche' => 2, 'placesDroite' => 3]
-        ];
-
-        $config = $typeRangeConfig[$vehicule->type_range] ?? $typeRangeConfig['2x3'];
-
-        // Récupérer les places réservées si une date est fournie
-        $reservedSeats = [];
-        if ($dateVoyage) {
-            $formattedDate = date('Y-m-d', strtotime($dateVoyage));
-            $programId = $request->get('program_id');
-
-            if ($programId) {
-                // Si on a un program_id spécifique, on ne prend que celui-là
-                $programmes = Programme::where('id', $programId)->get();
-            } else {
-                // Trouver les programmes associés à ce véhicule pour cette date
-                $programmes = Programme::where('vehicule_id', $vehicule->id)
-                    ->where('statut', 'actif')
-                    ->where(function($query) use ($formattedDate) {
-                        $query->whereRaw('DATE(date_depart) <= ?', [$formattedDate])
-                              ->where(function($subQ) use ($formattedDate) {
-                                  $subQ->whereNull('date_fin')
-                                       ->orWhere('date_fin', '>=', $formattedDate);
-                              });
-                    })
-                    ->get();
-            }
-
-            // Pour chaque programme, récupérer les places réservées
-            foreach ($programmes as $programme) {
-                $programReservations = Reservation::where('programme_id', $programme->id)
-                    ->where('statut', 'confirmee')
-                    ->where(function ($query) use ($formattedDate) {
-                        // Vérifier si la colonne date_voyage existe
-                        $table = (new Reservation())->getTable();
-                        $columns = Schema::getColumnListing($table);
-
-                        if (in_array('date_voyage', $columns)) {
-                            $query->where('date_voyage', $formattedDate);
-                        } else {
-                            $query->where('date_depart', $formattedDate);
-                        }
-                    })
-                    ->pluck('seat_number')
-                    ->toArray();
-
-                $reservedSeats = array_merge($reservedSeats, $programReservations);
-            }
-
-            $reservedSeats = array_unique($reservedSeats);
-        }
-
-        $visualizationHTML = $this->generatePlacesVisualization($vehicule, $config, $reservedSeats);
-
-        return response()->json([
-            'success' => true,
-            'html' => $visualizationHTML,
-            'vehicule' => $vehicule,
-            'date' => $dateVoyage,
-            'reserved_seats' => $reservedSeats
-        ]);
+    $programme = Programme::find($programId);
+    
+    if (!$programme) {
+        return response()->json(['error' => 'Programme non trouvé'], 404);
     }
+
+    // TENTATIVE 1 : Véhicule via getVehiculeForDate (si relation Voyage existe)
+    $vehicule = $programme->getVehiculeForDate($dateVoyage);
+
+    if (!$vehicule && $programme->compagnie_id) {
+        $vehicule = \App\Models\Vehicule::where('compagnie_id', $programme->compagnie_id)
+            ->where('is_active', true)
+            ->orderBy('id', 'asc')
+            ->first();
+    }
+
+    // TENTATIVE 3 : Si toujours rien, créer un véhicule virtuel par défaut
+    if (!$vehicule) {
+        $vehicule = (object)[
+            'id' => 0,
+            'immatriculation' => 'N/A',
+            'numero_serie' => 'N/A',
+            'type_range' => '2x3',
+            'nombre_place' => 70,
+            'marque' => 'Bus',
+            'modele' => 'Standard'
+        ];
+    }
+
+    // Générer le HTML pour la visualisation
+    $typeRangeConfig = [
+        '2x2' => ['placesGauche' => 2, 'placesDroite' => 2],
+        '2x3' => ['placesGauche' => 2, 'placesDroite' => 3],
+        '2x4' => ['placesGauche' => 2, 'placesDroite' => 4],
+        'Gamme Prestige' => ['placesGauche' => 2, 'placesDroite' => 2],
+        'Gamme Standard' => ['placesGauche' => 2, 'placesDroite' => 3]
+    ];
+
+    $config = $typeRangeConfig[$vehicule->type_range] ?? $typeRangeConfig['2x3'];
+
+    // ✅ CORRECTION MAJEURE : Filtrer par heure_depart
+    $formattedDate = date('Y-m-d', strtotime($dateVoyage));
+    
+    $query = Reservation::where('programme_id', $programId)
+        ->whereIn('statut', ['confirmee', 'en_attente', 'terminee'])
+        ->where('date_voyage', $formattedDate);
+
+    if ($heureDepart) {
+        $query->where('heure_depart', $heureDepart);
+    }
+
+    $reservedSeats = $query->pluck('seat_number')->toArray();
+
+    \Log::info('Détails véhicule - Places réservées:', [
+        'programme_id' => $programId,
+        'date' => $formattedDate,
+        'heure_depart' => $heureDepart,
+        'reserved_seats' => $reservedSeats
+    ]);
+
+    $visualizationHTML = $this->generatePlacesVisualization($vehicule, $config, $reservedSeats);
+
+    return response()->json([
+        'success' => true,
+        'html' => $visualizationHTML,
+        'vehicule' => $vehicule,
+        'date' => $dateVoyage,
+        'heure_depart' => $heureDepart,
+        'reserved_seats' => $reservedSeats
+    ]);
+}
+
 
     // Récupérer les détails d'un programme (pour le modal)
     public function getProgram($id)
     {
         try {
-            $programme = Programme::with(['compagnie', 'vehicule'])->find($id);
+            $programme = Programme::with(['compagnie'])->find($id);
 
             if (!$programme) {
                 return response()->json([
                     'success' => false,
                     'error' => 'Programme non trouvé'
                 ], 404);
+            }
+
+            // Ajouter le véhicule pour la date si fournie
+            $date = request()->get('date');
+            if ($date) {
+                $programme->vehicule_details = $programme->getVehiculeForDate($date);
             }
 
             return response()->json([
@@ -726,10 +732,19 @@ class ReservationController extends Controller
                 ], 404);
             }
 
-            // Récupérer le premier véhicule actif de la compagnie
-            $vehicule = Vehicule::where('compagnie_id', $programme->compagnie_id)
-                ->where('statut', 'actif')
-                ->first();
+            // 1. Chercher si un véhicule est assigné pour cette date via un Voyage
+            $date = request()->get('date');
+            $vehicule = null;
+            if ($date) {
+                $vehicule = $programme->getVehiculeForDate($date);
+            }
+
+            // 2. Fallback: Récupérer le premier véhicule actif de la compagnie
+            if (!$vehicule) {
+                $vehicule = Vehicule::where('compagnie_id', $programme->compagnie_id)
+                    ->where('is_active', true)
+                    ->first();
+            }
 
             if (!$vehicule) {
                 return response()->json([
@@ -751,63 +766,67 @@ class ReservationController extends Controller
         }
     }
 
-    public function getReservedSeats($programId)
-    {
-        try {
-            $request = request();
-            $dateVoyage = $request->get('date');
+  public function getReservedSeats($programId)
+{
+    try {
+        $request = request();
+        $dateVoyage = $request->get('date');
+        $heureDepart = $request->get('heure_depart'); // ✅ AJOUT
 
-            if (!$dateVoyage) {
-                Log::warning('Date non fournie pour getReservedSeats');
-                return response()->json([
-                    'success' => true,
-                    'reservedSeats' => []
-                ]);
-            }
-
-            $formattedDate = date('Y-m-d', strtotime($dateVoyage));
-
-            $programme = Programme::find($programId);
-
-            if (!$programme) {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'Programme non trouvé'
-                ], 404);
-            }
-
-            Log::info('Récupération places réservées pour:', [
-                'programme_id' => $programId,
-                'date_voyage' => $formattedDate,
-                'type' => $programme->type_programmation
-            ]);
-
-            // Nouvelle logique: chaque réservation = 1 place (seat_number)
-            $reservedSeats = Reservation::where('programme_id', $programId)
-                ->where('statut', 'confirmee')
-                ->where('date_voyage', $formattedDate)
-                ->pluck('seat_number')
-                ->toArray();
-
-            Log::info('Places réservées trouvées:', $reservedSeats);
-
+        if (!$dateVoyage) {
+            \Log::warning('Date non fournie pour getReservedSeats');
             return response()->json([
                 'success' => true,
-                'reservedSeats' => $reservedSeats,
-                'programme_type' => $programme->type_programmation
+                'reservedSeats' => []
             ]);
-        } catch (\Exception $e) {
-            Log::error('Erreur getReservedSeats:', [
-                'error' => $e->getMessage(),
-                'programId' => $programId
-            ]);
+        }
 
+        $formattedDate = date('Y-m-d', strtotime($dateVoyage));
+        $programme = Programme::find($programId);
+
+        if (!$programme) {
             return response()->json([
                 'success' => false,
-                'error' => 'Erreur serveur: ' . $e->getMessage()
-            ], 500);
+                'error' => 'Programme non trouvé'
+            ], 404);
         }
+
+        \Log::info('Récupération places réservées pour:', [
+            'programme_id' => $programId,
+            'date_voyage' => $formattedDate,
+            'heure_depart' => $heureDepart
+        ]);
+
+        // ✅ FILTRAGE PAR DATE ET HEURE
+        $query = Reservation::where('programme_id', $programId)
+            ->whereIn('statut', ['confirmee', 'en_attente', 'terminee'])
+            ->where('date_voyage', $formattedDate);
+        
+        if ($heureDepart) {
+            $query->where('heure_depart', $heureDepart);
+        }
+
+        $reservedSeats = $query->pluck('seat_number')->toArray();
+
+        \Log::info('Places réservées trouvées:', $reservedSeats);
+
+        return response()->json([
+            'success' => true,
+            'reservedSeats' => $reservedSeats,
+            'heure_depart' => $heureDepart
+        ]);
+    } catch (\Exception $e) {
+        \Log::error('Erreur getReservedSeats:', [
+            'error' => $e->getMessage(),
+            'programId' => $programId
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'error' => 'Erreur serveur: ' . $e->getMessage()
+        ], 500);
     }
+}
 
     // Stocker la réservation avec PDF et QR Code - UNE RESERVATION PAR PLACE
     public function store(Request $request)
@@ -832,7 +851,9 @@ class ReservationController extends Controller
             'heure_depart' => 'nullable|string', // AJOUTÉ
             'heure_depart_retour' => 'nullable|string', // AJOUTÉ
             'seats_retour' => 'nullable|array', // AJOUTÉ
-            'seats_retour.*' => 'nullable|integer', // AJOUTÉ
+            'seats_retour.*' => 'nullable|integer',
+            'gare_depart_id' => 'nullable|integer|exists:gares,id',
+            'gare_arrivee_id' => 'nullable|integer|exists:gares,id',
         ]);
 
         Log::info('Données reçues (après validation):', [
@@ -846,7 +867,8 @@ class ReservationController extends Controller
 
         $programme = Programme::find($request->programme_id);
 $dateAller = $request->date_voyage;
-  $dateRetour = $request->date_retour;
+  $dateRetour = $request->date_retour;$gareDepartId = $request->gare_depart_id ?? $programme->gare_depart_id;
+  $gareArriveeId = $request->gare_arrivee_id ?? $programme->gare_arrivee_id;
     $isAllerRetour = $request->boolean('is_aller_retour', false);
         if (!$programme) {
             Log::error('Programme non trouvé:', ['id' => $request->programme_id]);
@@ -1075,7 +1097,9 @@ $dateAller = $request->date_voyage;
                     'date_voyage' => $dateVoyage,
                     'qr_code' => Str::random(32),
                     'heure_depart' => $programme->heure_depart,
-                    'heure_arrive' => $programme->heure_arrive
+                    'heure_arrive' => $programme->heure_arrive,
+                    'gare_depart_id' => $gareDepartId,
+                    'gare_arrivee_id' => $gareArriveeId,
                 ];
 
                 if ($isAllerRetour) {
@@ -1144,7 +1168,9 @@ $dateAller = $request->date_voyage;
                                 'heure_arrive' => $returnProgram->heure_arrive,
                                 'reference' => $transactionId . '-RET-' . $seatNumberAller,
                                 'qr_code' => Str::random(32),
-                                'qr_code_path' => 'qrcodes/' . $transactionId . '-RET-' . $seatNumberAller . '.png'
+                                'qr_code_path' => 'qrcodes/' . $transactionId . '-RET-' . $seatNumberAller . '.png',
+                                'gare_depart_id' => $gareArriveeId, // INVERSÉ
+                                'gare_arrivee_id' => $gareDepartId, // INVERSÉ
                             ];
                             
                             $resRetour = Reservation::create($reservationDataRetour);
@@ -1160,7 +1186,8 @@ $dateAller = $request->date_voyage;
                                 ->pluck('seat_number')
                                 ->toArray();
                             
-                            $capacity = $returnProgram->vehicule ? intval($returnProgram->vehicule->nombre_place) : 30;
+                            $vehiculeRetour = $returnProgram->getVehiculeForDate($dateRetour);
+                            $capacity = $vehiculeRetour ? intval($vehiculeRetour->nombre_place) : 70;
                             $returnSeat = null;
                             for ($s = 1; $s <= $capacity; $s++) {
                                 if (!in_array($s, $usedSeats)) {
@@ -1192,7 +1219,9 @@ $dateAller = $request->date_voyage;
                                     'heure_arrive' => $returnProgram->heure_arrive,
                                     'reference' => $transactionId . '-RET-' . $seatNumberAller,
                                     'qr_code' => Str::random(32),
-                                    'qr_code_path' => 'qrcodes/' . $transactionId . '-RET-' . $seatNumberAller . '.png'
+                                    'qr_code_path' => 'qrcodes/' . $transactionId . '-RET-' . $seatNumberAller . '.png',
+                                    'gare_depart_id' => $request->gare_arrivee_id,
+                                    'gare_arrivee_id' => $request->gare_depart_id,
                                 ];
                                 
                                 $resRetour = Reservation::create($reservationDataRetour);
@@ -1225,8 +1254,9 @@ $dateAller = $request->date_voyage;
                     'statut' => $reservationStatus,
                     'reference' => $reference,
                     'date_voyage' => $dateVoyage,
-                    'heure_depart' => $programme->heure_depart, // AJOUT
-                    'heure_arrive' => $programme->heure_arrive, // AJOUT
+                    'heure_arrive' => $programme->heure_arrive,
+                    'gare_depart_id' => $request->gare_depart_id,
+                    'gare_arrivee_id' => $request->gare_arrivee_id,
                 ];
 
                 $reservation = Reservation::create($reservationData);
@@ -1265,6 +1295,8 @@ $dateAller = $request->date_voyage;
                             $reservationDataRetour['seat_number'] = $returnSeat;
                             $reservationDataRetour['reference'] = $transactionId . '-RET-' . $seatNumber;
                             $reservationDataRetour['qr_code'] = Str::random(32);
+                            $reservationDataRetour['gare_depart_id'] = $request->gare_arrivee_id;
+                            $reservationDataRetour['gare_arrivee_id'] = $request->gare_depart_id;
                             
                             $resRetour = Reservation::create($reservationDataRetour);
                             $createdReservations[] = $resRetour;
@@ -1276,7 +1308,8 @@ $dateAller = $request->date_voyage;
                                 ->pluck('seat_number')
                                 ->toArray();
                             
-                            $capacity = $returnProgram->vehicule ? intval($returnProgram->vehicule->nombre_place) : 30;
+                            $vehiculeRetour = $returnProgram->getVehiculeForDate($dateRetour);
+                            $capacity = $vehiculeRetour ? intval($vehiculeRetour->nombre_place) : 70;
                             $returnSeat = null;
                             for ($s = 1; $s <= $capacity; $s++) {
                                 if (!in_array($s, $usedSeats)) {
@@ -1294,6 +1327,8 @@ $dateAller = $request->date_voyage;
                                 $reservationDataRetour['seat_number'] = $returnSeat;
                                 $reservationDataRetour['reference'] = $transactionId . '-RET-' . $seatNumber;
                                 $reservationDataRetour['qr_code'] = Str::random(32);
+                                $reservationDataRetour['gare_depart_id'] = $request->gare_arrivee_id;
+                                $reservationDataRetour['gare_arrivee_id'] = $request->gare_depart_id;
                                 
                                 $resRetour = Reservation::create($reservationDataRetour);
                                 $createdReservations[] = $resRetour;
@@ -1406,7 +1441,7 @@ $dateAller = $request->date_voyage;
     public function recalculateProgramStatus($programId)
     {
         try {
-            $programme = Programme::with('vehicule')->findOrFail($programId);
+            $programme = Programme::findOrFail($programId);
 
             // Si c'est un programme récurrent, on ne peut pas calculer un statut global
             // On calcule plutôt le statut pour chaque jour
@@ -1423,7 +1458,8 @@ $dateAller = $request->date_voyage;
                 ->where('statut', 'confirmee')
                 ->count();
 
-            $totalPlaces = $programme->vehicule->nombre_place ?? 50;
+            $vehicule = $programme->getVehiculeForDate($programme->date_depart);
+            $totalPlaces = $vehicule ? $vehicule->nombre_place : 70;
             $percentage = ($totalReservedSeats / $totalPlaces) * 100;
 
             if ($percentage >= 100) {
@@ -1463,7 +1499,7 @@ $dateAller = $request->date_voyage;
     public function getProgramStatusForDate($programId, $date)
     {
         try {
-            $programme = Programme::with('vehicule')->findOrFail($programId);
+            $programme = Programme::findOrFail($programId);
 
             // Vérifier que c'est bien un programme récurrent
             if ($programme->type_programmation != 'recurrent') {
@@ -1478,7 +1514,8 @@ $dateAller = $request->date_voyage;
                 ->where('statut', 'confirmee')
                 ->count();
 
-            $totalPlaces = $programme->vehicule->nombre_place ?? 50;
+            $vehicule = $programme->getVehiculeForDate($date);
+            $totalPlaces = $vehicule ? $vehicule->nombre_place : 70;
             $percentage = ($totalReservedSeats / $totalPlaces) * 100;
 
             $statut = 'vide';
@@ -1609,10 +1646,12 @@ $dateAller = $request->date_voyage;
                 if ($reservation->user->fcm_token) {
                     try {
                         $fcmService = app(\App\Services\FcmService::class);
+                        $dateVoyage = date('d/m/Y', strtotime($reservation->date_voyage));
+                        $heureDepart = date('H:i', strtotime($programme->heure_depart));
                         $fcmService->sendNotification(
                             $reservation->user->fcm_token, 
                             'Réservation confirmée ✅', 
-                            "Votre réservation {$reservation->reference} pour {$programme->point_depart} est confirmée.",
+                            "Billet {$reservation->reference}: {$programme->point_depart} → {$programme->point_arrive} le {$dateVoyage} à {$heureDepart}. Bon voyage!",
                             ['type' => 'confirmation', 'reservation_id' => $reservation->id]
                         );
                     } catch (\Exception $e) {
@@ -1649,11 +1688,11 @@ $dateAller = $request->date_voyage;
                 $query->where('date_voyage', $dateVoyage);
             }
 
-            $totalReservedSeats = $query->count();
-            $totalPlaces = $programme->vehicule->nombre_place ?? 50;
+            $vehicule = $programme->getVehiculeForDate($dateVoyage ?: $programme->date_depart);
+            $totalPlaces = $vehicule ? $vehicule->nombre_place : 70;
 
             if ($totalPlaces == 0) {
-                $totalPlaces = 50;
+                $totalPlaces = 70;
             }
 
             $percentage = ($totalReservedSeats / $totalPlaces) * 100;
@@ -1784,7 +1823,7 @@ $dateAller = $request->date_voyage;
             }
 
             // Rechercher la réservation
-            $reservation = Reservation::with(['user', 'programme', 'programme.compagnie', 'programme.vehicule'])
+            $reservation = Reservation::with(['user', 'programme', 'programme.compagnie'])
                 ->where('reference', $qrData['reference'])
                 ->where('id', $qrData['reservation_id'])
                 ->where('user_id', $qrData['user_id'])
@@ -1911,7 +1950,7 @@ $dateAller = $request->date_voyage;
                         'heure_arrive' => $reservation->programme->heure_arrive,
                         'compagnie' => $reservation->programme->compagnie->name ?? 'Inconnue',
                         'vehicule' => [
-                            'immatriculation' => $reservation->programme->vehicule->immatriculation ?? 'Inconnue',
+                            'immatriculation' => $reservation->programme->getVehiculeForDate($reservation->date_voyage)->immatriculation ?? 'Inconnue',
                         ]
                     ],
                     'details' => [
@@ -2238,7 +2277,7 @@ $dateAller = $request->date_voyage;
     $today = now()->format('Y-m-d');
     
     // FlixBus Model: Simple query - just get future active programs
-    $programmes = Programme::with(['compagnie', 'vehicule', 'itineraire'])
+    $programmes = Programme::with(['compagnie', 'itineraire'])
         ->where('date_depart', '>=', $today)
         ->where('statut', 'actif')
         ->orderBy('date_depart', 'asc')
@@ -2319,7 +2358,7 @@ public function apiRouteDates(Request $request)
     {
         $requestedDate = $request->date ?? now()->format('Y-m-d');
         
-        $programmes = Programme::with(['compagnie', 'vehicule'])
+        $programmes = Programme::with(['compagnie'])
             ->where('point_depart', $request->point_depart)
             ->where('point_arrive', $request->point_arrive)
             ->where('statut', 'actif')
@@ -2337,7 +2376,8 @@ public function apiRouteDates(Request $request)
             ->get();
 
         $schedules = $programmes->map(function ($programme) use ($requestedDate) {
-            $capacite = $programme->vehicule ? intval($programme->vehicule->nombre_place) : 70;
+            $vehicule = $programme->getVehiculeForDate($requestedDate);
+            $capacite = $vehicule ? intval($vehicule->nombre_place) : 70;
             
             $reservedCount = Reservation::where('programme_id', $programme->id)
                 ->where('date_voyage', $requestedDate)
@@ -2368,11 +2408,11 @@ public function apiRouteDates(Request $request)
  * API pour obtenir les voyages retour disponibles (sens inversé)
  * Recherche les programmes avec point_depart et point_arrive inversés
  */
- public function apiReturnTrips(Request $request)
+    public function apiReturnTrips(Request $request)
     {
         $requestedDate = $request->min_date ?? now()->format('Y-m-d');
         
-        $returnTrips = Programme::with(['compagnie', 'vehicule'])
+        $returnTrips = Programme::with(['compagnie'])
             ->where('point_depart', $request->original_arrive)
             ->where('point_arrive', $request->original_depart)
             ->where('statut', 'actif')
@@ -2635,8 +2675,9 @@ public function apiRouteDates(Request $request)
                 ->pluck('seat_number')
                 ->toArray();
 
-            // Generate seat grid (70 seats)
-            $totalSeats = $targetProgramme->vehicule->nombre_places ?? 70;
+            // Generate seat grid
+            $vehicule = $targetProgramme->getVehiculeForDate($date);
+            $totalSeats = $vehicule ? $vehicule->nombre_place : 70;
             $seats = [];
             
             for ($i = 1; $i <= $totalSeats; $i++) {
@@ -2651,6 +2692,7 @@ public function apiRouteDates(Request $request)
                 'seats' => $seats,
                 'total_seats' => $totalSeats,
                 'reserved_count' => count($reservedSeats),
+                'vehicule' => $vehicule
             ]);
 
         } catch (\Exception $e) {
@@ -2730,4 +2772,55 @@ public function apiRouteDates(Request $request)
         
         return response()->json($result);
     }
+   public function getAvailableSeatsForSchedule(Request $request)
+{
+    $programId = $request->get('program_id');
+    $date = $request->get('date');
+    $heureDepart = $request->get('heure_depart');
+
+    if (!$programId || !$date || !$heureDepart) {
+        return response()->json([
+            'success' => false,
+            'error' => 'Paramètres manquants'
+        ], 400);
+    }
+
+    $programme = Programme::find($programId);
+    
+    if (!$programme) {
+        return response()->json([
+            'success' => false,
+            'error' => 'Programme non trouvé'
+        ], 404);
+    }
+
+    // Récupérer le véhicule
+    $vehicule = $programme->getVehiculeForDate($date);
+    $totalSeats = $vehicule ? $vehicule->nombre_place : 70;
+
+    // Récupérer les places réservées pour ce créneau précis
+    $reservedSeats = Reservation::where('programme_id', $programId)
+        ->where('date_voyage', $date)
+        ->where('heure_depart', $heureDepart)
+        ->where('statut', 'confirmee')
+        ->pluck('seat_number')
+        ->toArray();
+
+    $availableSeats = [];
+    for ($i = 1; $i <= $totalSeats; $i++) {
+        if (!in_array($i, $reservedSeats)) {
+            $availableSeats[] = $i;
+        }
+    }
+
+    return response()->json([
+        'success' => true,
+        'total_seats' => $totalSeats,
+        'reserved_seats' => $reservedSeats,
+        'available_seats' => $availableSeats,
+        'available_count' => count($availableSeats)
+    ]);
+}
+
+
 }

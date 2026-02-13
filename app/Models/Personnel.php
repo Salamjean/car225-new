@@ -5,9 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Personnel extends Model
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+
+class Personnel extends Authenticatable
 {
-    use HasFactory;
+    use HasFactory, Notifiable;
+
+    protected $hidden = [
+        'password',
+    ];
 
     protected $fillable = [
         'name',
@@ -19,6 +26,7 @@ class Personnel extends Model
         'statut',
         'profile_image',
         'compagnie_id',
+        'password',
     ];
 
     /**

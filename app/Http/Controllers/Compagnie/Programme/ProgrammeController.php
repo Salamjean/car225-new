@@ -22,32 +22,31 @@ class ProgrammeController extends Controller
     {
         $compagnieId = Auth::guard('compagnie')->user()->id;
 
-        $programmes = Programme::with(['vehicule', 'chauffeur', 'convoyeur', 'itineraire'])
+        $programmes = Programme::with(['gareDepart', 'gareArrivee', 'itineraire'])
             ->where('compagnie_id', $compagnieId)
             ->where('statut', '!=', 'annule')
             ->orderBy('heure_depart', 'asc')
             ->get();
 
-        // Grouper par itinéraire (route bidirectionnelle)
+        // Grouper par itinéraire
         $groupedProgrammes = $programmes->groupBy('itineraire_id')->map(function($group) {
             $first = $group->first();
             $itineraire = $first->itineraire;
             
             if (!$itineraire) return null;
             
-            // Séparer aller (même sens que l'itinéraire) et retour (sens inversé)
-            $aller = $group->filter(fn($p) => $p->point_depart == $itineraire->point_depart)
+            $aller = $group->filter(fn($p) => $p->gare_depart_id == $first->gare_depart_id)
                            ->sortBy('heure_depart')
                            ->values();
-            $retour = $group->filter(fn($p) => $p->point_depart != $itineraire->point_depart)
+            $retour = $group->filter(fn($p) => $p->gare_depart_id != $first->gare_depart_id)
                             ->sortBy('heure_depart')
                             ->values();
             
             return (object)[
                 'itineraire_id' => $first->itineraire_id,
                 'itineraire' => $itineraire,
-                'point_depart' => $itineraire->point_depart,
-                'point_arrive' => $itineraire->point_arrive,
+                'gare_depart' => $first->gareDepart,
+                'gare_arrivee' => $first->gareArrivee,
                 'montant_billet' => $first->montant_billet,
                 'durer_parcours' => $first->durer_parcours,
                 'date_depart' => $first->date_depart,
@@ -59,12 +58,7 @@ class ProgrammeController extends Controller
             ];
         })->filter()->values();
 
-         // AJOUTEZ CECI AVANT LE RETURN VIEW :
-    $vehicules = Vehicule::where('compagnie_id', $compagnieId)->where('is_active', true)->get();
-    $chauffeurs = Personnel::where('compagnie_id', $compagnieId)->get(); // Filtrez par rôle si nécessaire
-
-    // Modifiez le return pour inclure vehicules et chauffeurs
-    return view('compagnie.programme.index', compact('groupedProgrammes', 'programmes', 'vehicules', 'chauffeurs'));
+        return view('compagnie.programme.index', compact('groupedProgrammes', 'programmes'));
     }
 
     /**
@@ -118,8 +112,9 @@ class ProgrammeController extends Controller
         
         $programme = Programme::where('id', $id)->where('compagnie_id', $compagnieId)->firstOrFail();
         $itineraires = Itineraire::where('compagnie_id', $compagnieId)->get();
+        $gares = \App\Models\Gare::where('compagnie_id', $compagnieId)->get();
 
-        return view('compagnie.programme.edit', compact('programme', 'itineraires'));
+        return view('compagnie.programme.edit', compact('programme', 'itineraires', 'gares'));
     }
 
     /**
@@ -148,9 +143,7 @@ class ProgrammeController extends Controller
     {
         $compagnieId = Auth::guard('compagnie')->user()->id;
         $itineraires = Itineraire::where('compagnie_id', $compagnieId)->get();
-        // Fetch vehicles and drivers
-        $vehicules = Vehicule::where('compagnie_id', $compagnieId)->where('is_active', true)->get();
-        $chauffeurs = Personnel::where('compagnie_id', $compagnieId)->get(); // Filter by type if needed
+        $gares = \App\Models\Gare::where('compagnie_id', $compagnieId)->get();
 
         $existingAller = [];
         $existingRetour = [];
@@ -166,19 +159,18 @@ class ProgrammeController extends Controller
                 ->get();
                 
             if ($programmes->count() > 0) {
-                // Récupérer le prix du premier programme trouvé
                 $existingMontantBillet = $programmes->first()->montant_billet;
-
-                // Trouver l'itinéraire pour savoir le sens
                 $itineraire = Itineraire::find($preselectedItineraireId);
+                
                 if ($itineraire) {
+                    $firstProg = $programmes->first();
                     foreach ($programmes as $prog) {
                         $p = [
                             'heure_depart' => date('H:i', strtotime($prog->heure_depart)),
                             'heure_arrive' => date('H:i', strtotime($prog->heure_arrive))
                         ];
                         
-                        if ($prog->point_depart == $itineraire->point_depart) {
+                        if ($prog->gare_depart_id == $firstProg->gare_depart_id) {
                             $existingAller[] = $p;
                         } else {
                             $existingRetour[] = $p;
@@ -188,7 +180,7 @@ class ProgrammeController extends Controller
             }
         }
 
-        return view('compagnie.programme.create', compact('itineraires', 'existingAller', 'existingRetour', 'preselectedItineraireId', 'existingMontantBillet', 'vehicules', 'chauffeurs'));
+        return view('compagnie.programme.create', compact('itineraires', 'gares', 'existingAller', 'existingRetour', 'preselectedItineraireId', 'existingMontantBillet'));
     }
 
     /**
@@ -258,24 +250,22 @@ class ProgrammeController extends Controller
      */
     public function store(Request $request)
     {
-        Log::info('Création programmes avec multiples horaires', ['data' => $request->all()]);
+        Log::info('Création programmes avec gares', ['data' => $request->all()]);
 
         $validated = $request->validate([
             'itineraire_id' => 'required|exists:itineraires,id',
+            'gare_depart_id' => 'required|exists:gares,id',
+            'gare_arrivee_id' => 'required|exists:gares,id|different:gare_depart_id',
             'montant_billet' => 'required|numeric|min:0',
             'aller_horaires' => 'required|array|min:1',
             'aller_horaires.*.heure_depart' => 'required|date_format:H:i',
             'aller_horaires.*.heure_arrive' => 'required|date_format:H:i',
-            'aller_horaires.*.vehicule_id' => 'nullable|exists:vehicules,id',
-            'aller_horaires.*.personnel_id' => 'nullable|exists:personnels,id',
             
             // Retour optionnel
             'with_retour' => 'nullable',
             'retour_horaires' => 'required_if:with_retour,on|array',
             'retour_horaires.*.heure_depart' => 'required_if:with_retour,on|date_format:H:i',
             'retour_horaires.*.heure_arrive' => 'required_if:with_retour,on|date_format:H:i',
-            'retour_horaires.*.vehicule_id' => 'nullable|exists:vehicules,id',
-            'retour_horaires.*.personnel_id' => 'nullable|exists:personnels,id',
         ]);
 
         $compagnieId = Auth::guard('compagnie')->user()->id;
@@ -297,18 +287,11 @@ class ProgrammeController extends Controller
 
             // === CRÉER LES PROGRAMMES ALLER ===
             foreach ($validated['aller_horaires'] as $index => $horaire) {
-                // Check driver availability
-                if (!empty($horaire['personnel_id'])) {
-                    if (!$this->isDriverAvailable($horaire['personnel_id'], $horaire['heure_depart'], $dureeMinutes)) {
-                        return back()->withInput()->with('error', "Le chauffeur sélectionné pour l'horaire Aller " . ($index+1) . " (" . $horaire['heure_depart'] . ") est déjà occupé sur ce créneau.");
-                    }
-                }
-
                 // Vérifier si ce programme existe déjà
                 $exists = Programme::where('compagnie_id', $compagnieId)
                     ->where('itineraire_id', $itineraire->id)
-                    ->where('point_depart', $itineraire->point_depart)
-                    ->where('point_arrive', $itineraire->point_arrive)
+                    ->where('gare_depart_id', $validated['gare_depart_id'])
+                    ->where('gare_arrivee_id', $validated['gare_arrivee_id'])
                     ->where('heure_depart', $horaire['heure_depart'])
                     ->where('statut', 'actif')
                     ->exists();
@@ -317,10 +300,9 @@ class ProgrammeController extends Controller
                     Programme::create([
                         'compagnie_id' => $compagnieId,
                         'itineraire_id' => $itineraire->id,
-                        'vehicule_id' => $horaire['vehicule_id'] ?? null,
-                        'personnel_id' => $horaire['personnel_id'] ?? null,
-                        'convoyeur_id' => null,
-                        'point_depart' => $itineraire->point_depart,
+                        'gare_depart_id' => $validated['gare_depart_id'],
+                        'gare_arrivee_id' => $validated['gare_arrivee_id'],
+                        'point_depart' => $itineraire->point_depart, // On garde par compatibilité
                         'point_arrive' => $itineraire->point_arrive,
                         'durer_parcours' => $itineraire->durer_parcours,
                         'montant_billet' => $validated['montant_billet'],
@@ -334,21 +316,13 @@ class ProgrammeController extends Controller
                 }
             }
 
-            // === CRÉER LES PROGRAMMES RETOUR (points inversés) - SEULEMENT SI DEMANDÉ ===
+            // === CRÉER LES PROGRAMMES RETOUR ===
             if ($request->has('with_retour') && !empty($validated['retour_horaires'])) {
                 foreach ($validated['retour_horaires'] as $index => $horaire) {
-                    // Check driver availability
-                    if (!empty($horaire['personnel_id'])) {
-                        if (!$this->isDriverAvailable($horaire['personnel_id'], $horaire['heure_depart'], $dureeMinutes)) {
-                            return back()->withInput()->with('error', "Le chauffeur sélectionné pour l'horaire Retour " . ($index+1) . " (" . $horaire['heure_depart'] . ") est déjà occupé sur ce créneau.");
-                        }
-                    }
-
-                    // Vérifier si ce programme existe déjà
                     $exists = Programme::where('compagnie_id', $compagnieId)
                         ->where('itineraire_id', $itineraire->id)
-                        ->where('point_depart', $itineraire->point_arrive) // Inversé
-                        ->where('point_arrive', $itineraire->point_depart) // Inversé
+                        ->where('gare_depart_id', $validated['gare_arrivee_id']) // Inversé
+                        ->where('gare_arrivee_id', $validated['gare_depart_id']) // Inversé
                         ->where('heure_depart', $horaire['heure_depart'])
                         ->where('statut', 'actif')
                         ->exists();
@@ -357,9 +331,8 @@ class ProgrammeController extends Controller
                         Programme::create([
                             'compagnie_id' => $compagnieId,
                             'itineraire_id' => $itineraire->id,
-                            'vehicule_id' => $horaire['vehicule_id'] ?? null,
-                            'personnel_id' => $horaire['personnel_id'] ?? null,
-                            'convoyeur_id' => null,
+                            'gare_depart_id' => $validated['gare_arrivee_id'], // Inversé
+                            'gare_arrivee_id' => $validated['gare_depart_id'], // Inversé
                             'point_depart' => $itineraire->point_arrive, // Inversé
                             'point_arrive' => $itineraire->point_depart, // Inversé
                             'durer_parcours' => $itineraire->durer_parcours,

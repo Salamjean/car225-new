@@ -17,15 +17,14 @@ class Programme extends Model
 
     protected $fillable = [
         'compagnie_id',
-        'vehicule_id',
         'itineraire_id',
-        'personnel_id',
-        'convoyeur_id',
         'point_depart',
         'point_arrive',
+        'gare_depart_id',
+        'gare_arrivee_id',
         'durer_parcours',
         'date_depart',
-        'date_fin', // Fin de validité pour lignes continues
+        'date_fin',
         'heure_depart',
         'heure_arrive',
         'montant_billet',
@@ -50,12 +49,19 @@ class Programme extends Model
         return $this->belongsTo(Compagnie::class);
     }
 
-    /**
-     * Relation avec le véhicule
-     */
-    public function vehicule()
+    public function gareDepart()
     {
-        return $this->belongsTo(Vehicule::class);
+        return $this->belongsTo(Gare::class, 'gare_depart_id');
+    }
+
+    public function gareArrivee()
+    {
+        return $this->belongsTo(Gare::class, 'gare_arrivee_id');
+    }
+
+    public function voyages()
+    {
+        return $this->hasMany(Voyage::class);
     }
 
     /**
@@ -64,22 +70,6 @@ class Programme extends Model
     public function itineraire()
     {
         return $this->belongsTo(Itineraire::class);
-    }
-
-    /**
-     * Relation avec le chauffeur (personnel)
-     */
-    public function chauffeur()
-    {
-        return $this->belongsTo(Personnel::class, 'personnel_id');
-    }
-
-    /**
-     * Relation avec le convoyeur (personnel)
-     */
-    public function convoyeur()
-    {
-        return $this->belongsTo(Personnel::class, 'convoyeur_id');
     }
 
     /**
@@ -98,29 +88,59 @@ class Programme extends Model
         return $this->hasMany(ProgrammeHistorique::class);
     }
 
+    public function getVehiculeForDate($date)
+    {
+        $voyage = $this->voyages()->whereDate('date_voyage', $date)->first();
+        return $voyage ? $voyage->vehicule : null;
+    }
+
     // ========================================
     // ACCESSORS - Places disponibles (calculés dynamiquement)
     // ========================================
 
     /**
-     * Nombre de places réservées (confirmées)
+     * Nombre de places réservées (confirmées) pour une date donnée
      */
-    public function getPlacesReserveesAttribute()
+    public function getPlacesReserveesForDate($date)
     {
         return $this->reservations()
-            ->where('statut', 'confirmee')
+            ->whereIn('statut', ['confirmee', 'en_attente', 'terminee'])
+            ->whereDate('date_voyage', $date)
             ->count();
     }
 
     /**
-     * Nombre de places disponibles
+     * Nombre de places réservées (confirmées) - Aujourd'hui (compatibilité)
+     */
+    public function getPlacesReserveesAttribute()
+    {
+        return $this->getPlacesReserveesForDate(date('Y-m-d'));
+    }
+
+    /**
+     * Nombre de places disponibles pour une date donnée
+     */
+    public function getPlacesDisponiblesForDate($date)
+    {
+        $vehicule = $this->getVehiculeForDate($date);
+        $totalPlaces = $vehicule ? $vehicule->nombre_place : 70; // Fallback to 70
+        return max(0, $totalPlaces - $this->getPlacesReserveesForDate($date));
+    }
+
+    /**
+     * Nombre de places disponibles - Aujourd'hui (compatibilité)
      */
     public function getPlacesDisponiblesAttribute()
     {
-        if (!$this->vehicule) {
-            return 0;
-        }
-        return max(0, $this->vehicule->nombre_place - $this->places_reservees);
+        return $this->getPlacesDisponiblesForDate(date('Y-m-d'));
+    }
+
+    /**
+     * Véhicule - Aujourd'hui (compatibilité)
+     */
+    public function getVehiculeAttribute()
+    {
+        return $this->getVehiculeForDate(date('Y-m-d'));
     }
 
     /**
@@ -195,17 +215,12 @@ class Programme extends Model
     }
 
     /**
-     * Équipage complet
+     * Équipage complet pour une date donnée
      */
-    public function getEquipageCompletAttribute()
+    public function getEquipageCompletForDate($date)
     {
-        $equipage = $this->chauffeur ? $this->chauffeur->prenom . ' ' . $this->chauffeur->name : 'Non assigné';
-
-        if ($this->convoyeur) {
-            $equipage .= ' + ' . $this->convoyeur->prenom . ' ' . $this->convoyeur->name;
-        }
-
-        return $equipage;
+        $voyage = $this->voyages()->whereDate('date_voyage', $date)->first();
+        return $voyage ? ($voyage->personnel ? $voyage->personnel->prenom . ' ' . $voyage->personnel->name : 'Chauffeur non assigné') : 'Voyage non programmé';
     }
 
     // ========================================
@@ -271,18 +286,11 @@ class Programme extends Model
     }
 
     /**
-     * Programmes disponibles (actifs avec places)
+     * Programmes disponibles (actifs)
      */
     public function scopeDisponible($query)
     {
-        return $query->where('statut', 'actif')
-                     ->whereHas('vehicule', function($q) {
-                         $q->whereRaw('vehicules.nombre_place > (
-                             SELECT COUNT(*) FROM reservations 
-                             WHERE reservations.programme_id = programmes.id 
-                             AND reservations.statut = "confirmee"
-                         )');
-                     });
+        return $query->where('statut', 'actif');
     }
 
     // ========================================

@@ -150,7 +150,7 @@ class CaisseController extends Controller
     public function venteSuccess(Request $request)
     {
         $ids = $request->get('reservations', []);
-        $reservations = Reservation::whereIn('id', $ids)->with(['programme.vehicule'])->get();
+        $reservations = Reservation::whereIn('id', $ids)->with(['programme'])->get();
         
         if ($reservations->isEmpty()) {
             return redirect()->route('caisse.dashboard');
@@ -181,7 +181,7 @@ class CaisseController extends Controller
         $heureActuelle = $now->format('H:i');   // Ex: 14:30
         
         // 2. Récupérer les programmes
-        $programmes = Programme::with(['compagnie', 'vehicule'])
+        $programmes = Programme::with(['compagnie'])
             ->where('compagnie_id', $caisse->compagnie_id)
             ->where('statut', 'actif') // On s'assure qu'il est actif
             
@@ -222,7 +222,7 @@ class CaisseController extends Controller
             'passenger_details.*.urgence_telephone' => 'nullable|string|max:20',
         ]);
 
-        $programme = Programme::with(['compagnie', 'vehicule'])->findOrFail($request->programme_id);
+        $programme = Programme::with(['compagnie'])->findOrFail($request->programme_id);
         
         // Calcul du montant total
         $montantTotal = $programme->montant_billet * $request->nombre_tickets;
@@ -335,7 +335,7 @@ class CaisseController extends Controller
         $dateAujourdhui = $now->toDateString();
         $heureActuelle = $now->format('H:i');
         
-        $programmes = Programme::with(['compagnie', 'vehicule'])
+        $programmes = Programme::with(['compagnie'])
             ->where('compagnie_id', $caisse->compagnie_id)
             ->where('statut', 'actif')
             ->whereDate('date_fin', '>=', $dateAujourdhui)
@@ -356,7 +356,7 @@ class CaisseController extends Controller
             'seat_numbers' => 'required|string',
         ]);
 
-        $programme = Programme::with(['compagnie', 'vehicule'])->findOrFail($request->programme_id);
+        $programme = Programme::with(['compagnie'])->findOrFail($request->programme_id);
         $seatNumbers = explode(',', $request->seat_numbers);
         $nombreTickets = count($seatNumbers);
         

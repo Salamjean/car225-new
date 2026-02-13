@@ -38,7 +38,7 @@ class HomeController extends Controller
 
         Log::info('====== DEBUT RECHERCHE PROGRAMME ======');
 
-        $query = Programme::with(['compagnie', 'vehicule', 'itineraire'])
+        $query = Programme::with(['compagnie', 'itineraire'])
             ->where(function($q) use ($point_depart) {
                 $q->where('point_depart', 'like', "%{$point_depart}%");
                 if (strpos($point_depart, ',') !== false) {
@@ -81,7 +81,7 @@ class HomeController extends Controller
 
         // On récupère les programmes valides AUJOURD'HUI
         // C'est-à-dire : Commencés avant ou aujourd'hui ET finissant aujourd'hui ou après
-        $programmes = Programme::with(['compagnie', 'vehicule', 'itineraire'])
+        $programmes = Programme::with(['compagnie', 'itineraire'])
             ->whereRaw('DATE(date_depart) <= ?', [$today])
             ->whereRaw('DATE(date_fin) >= ?', [$today])
             ->where('statut', 'actif')
@@ -96,7 +96,7 @@ class HomeController extends Controller
      */
    public function show(Programme $programme)
     {
-        $programme->load(['compagnie', 'vehicule', 'itineraire', 'chauffeur', 'convoyeur']);
+        $programme->load(['compagnie', 'itineraire', 'chauffeur', 'convoyeur']);
         return view('home.programmes.show', compact('programme'));
     }
 

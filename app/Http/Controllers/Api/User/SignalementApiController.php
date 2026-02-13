@@ -27,7 +27,7 @@ class SignalementApiController extends Controller
             $user = Auth::user();
             $today = now()->format('Y-m-d');
 
-            $reservations = Reservation::with(['programme.compagnie', 'programme.vehicule'])
+            $reservations = Reservation::with(['programme.compagnie'])
                 ->where('user_id', $user->id)
                 ->whereDate('date_voyage', $today)
                 ->where('statut', 'confirmee')

@@ -195,8 +195,8 @@ class ReservationService
                         Log::info("Sending FCM cancellation to user {$user->id}");
                         $fcmService = app(FcmService::class);
                         $title = 'Annulation confirmée ❌';
-                        $body = "Votre réservation " . ($reservationsToCancel->count() > 1 ? "groupe (" . $reservationsToCancel->count() . " places)" : $reservation->reference) . " a été annulée. " . 
-                                ($refundAmount > 0 ? "Un montant de {$refundAmount} FCFA a été crédité." : "Aucun remboursement possible.");
+                        $body = "Votre réservation {$reservation->reference} (" . optional($reservation->programme)->point_depart . " → " . optional($reservation->programme)->point_arrive . ") a été annulée. " . 
+                                ($refundAmount > 0 ? "Un montant de {$refundAmount} FCFA a été crédité sur votre portefeuille." : "Aucun remboursement effectué.");
                         
                         $fcmService->sendNotification($user->fcm_token, $title, $body, [
                             'type' => 'cancellation',

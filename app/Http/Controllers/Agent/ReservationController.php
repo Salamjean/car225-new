@@ -35,7 +35,7 @@ class ReservationController extends Controller
                       });
             })
             ->where('heure_depart', '>=', $heureMinimum)
-            ->with('vehicule')
+
             ->orderBy('heure_depart')
             ->get();
 
@@ -76,7 +76,7 @@ class ReservationController extends Controller
                       });
             })
             ->where('heure_depart', '>=', $heureMinimum)
-            ->with('vehicule')
+
             ->orderBy('heure_depart')
             ->get();
 
@@ -177,7 +177,7 @@ class ReservationController extends Controller
         ]);
 
         // On charge la réservation avec son programme ALLER par défaut
-        $reservation = Reservation::with(['programme.vehicule', 'user'])
+        $reservation = Reservation::with(['programme', 'user'])
             ->where('reference', $request->reference)
             ->first();
 

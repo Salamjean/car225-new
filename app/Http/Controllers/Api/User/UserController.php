@@ -207,7 +207,7 @@ class UserController extends Controller
         // Réservations récentes
         $recentReservations = Reservation::where('user_id', $user->id)
             ->where('statut', 'confirmee')
-            ->with(['programme.compagnie', 'programme.vehicule'])
+            ->with(['programme.compagnie'])
             ->orderBy('created_at', 'desc')
             ->take(5)
             ->get()

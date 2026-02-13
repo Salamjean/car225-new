@@ -9,6 +9,7 @@ use App\Http\Controllers\Agent\AuthenticateAgent;
 use App\Http\Controllers\Agent\ReservationController as AgentReservationController;
 use App\Http\Controllers\User\WalletController;
 use App\Http\Controllers\Compagnie\Agent\AgentCompagnieController;
+use App\Http\Controllers\Compagnie\GareController;
 use App\Http\Controllers\Compagnie\CompagnieAuthenticate;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Compagnie\CompagnieController;
@@ -21,16 +22,22 @@ use App\Http\Controllers\Compagnie\Vehicule\VehiculeController;
 use App\Http\Controllers\Compagnie\SignalementController as CompagnieSignalementController;
 use App\Http\Controllers\Home\AccueilController;
 use App\Http\Controllers\Home\HomeController;
+use App\Http\Controllers\Compagnie\CompagniePasswordResetController;
 use App\Http\Controllers\User\PasswordResetController;
 use App\Http\Controllers\User\ProfileController;
 use App\Http\Controllers\User\Reservation\ReservationController;
 use App\Http\Controllers\User\UserAuthenticate;
 use App\Http\Controllers\User\UserController;
+use App\Http\Controllers\Agent\PasswordResetController as AgentPasswordResetController;
+use App\Http\Controllers\Caisse\PasswordResetController as CaissePasswordResetController;
+use App\Http\Controllers\Hotesse\PasswordResetController as HotessePasswordResetController;
 use App\Models\Vehicule;
 use App\Http\Controllers\SignalementController;
 use App\Http\Controllers\SapeurPompier\SapeurPompierController;
 use App\Http\Controllers\SapeurPompier\SapeurPompierAuthenticate;
 use App\Models\Signalement;
+use App\Http\Controllers\Chauffeur\ChauffeurController;
+use App\Http\Controllers\Chauffeur\ChauffeurAuthenticate;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -114,6 +121,12 @@ Route::middleware('admin')->prefix('admin')->group(function () {
 Route::prefix('company')->group(function () {
     Route::get('/login', [CompagnieAuthenticate::class, 'login'])->name('compagnie.login');
     Route::post('/', [CompagnieAuthenticate::class, 'handleLogin'])->name('compagnie.handleLogin');
+    
+    // Compagnie Password Reset Routes
+    Route::get('/password/reset', [CompagniePasswordResetController::class, 'showResetForm'])->name('compagnie.password.request');
+    Route::post('/password/send-otp', [CompagniePasswordResetController::class, 'sendOtp'])->name('compagnie.password.sendOtp');
+    Route::post('/password/verify-otp', [CompagniePasswordResetController::class, 'verifyOtp'])->name('compagnie.password.verifyOtp');
+    Route::post('/password/reset', [CompagniePasswordResetController::class, 'resetPassword'])->name('compagnie.password.reset');
 });
 
 Route::middleware('compagnie')->prefix('company')->group(function () {
@@ -203,6 +216,16 @@ Route::middleware('compagnie')->prefix('company')->group(function () {
         Route::get('/', [CompagnieSignalementController::class, 'index'])->name('compagnie.signalements.index');
         Route::get('/{id}', [CompagnieSignalementController::class, 'show'])->name('compagnie.signalements.show');
     });
+
+    // Routes de gestion des gares
+    Route::prefix('gare')->group(function () {
+        Route::get('/', [GareController::class, 'index'])->name('gare.index');
+        Route::get('/create', [GareController::class, 'create'])->name('gare.create');
+        Route::post('/store', [GareController::class, 'store'])->name('gare.store');
+        Route::get('/{gare}/edit', [GareController::class, 'edit'])->name('gare.edit');
+        Route::put('/{gare}', [GareController::class, 'update'])->name('gare.update');
+        Route::delete('/{gare}', [GareController::class, 'destroy'])->name('gare.destroy');
+    });
 });
 
 //Les routes de gestion des @caissières
@@ -217,6 +240,12 @@ Route::prefix('caisse')->group(function () {
     
     Route::get('/login', [App\Http\Controllers\Caisse\CaisseAuthController::class, 'showLogin'])->name('caisse.auth.login');
     Route::post('/login', [App\Http\Controllers\Caisse\CaisseAuthController::class, 'login'])->name('caisse.auth.login.submit');
+    
+    // Caisse Password Reset Routes
+    Route::get('/password/reset', [CaissePasswordResetController::class, 'showResetForm'])->name('caisse.password.request');
+    Route::post('/password/send-otp', [CaissePasswordResetController::class, 'sendOtp'])->name('caisse.password.sendOtp');
+    Route::post('/password/verify-otp', [CaissePasswordResetController::class, 'verifyOtp'])->name('caisse.password.verifyOtp');
+    Route::post('/password/reset', [CaissePasswordResetController::class, 'resetPassword'])->name('caisse.password.reset');
 });
 
 Route::middleware('caisse')->prefix('caisse')->group(function () {
@@ -255,6 +284,12 @@ Route::prefix('hotesse')->group(function () {
     
     Route::get('/login', [App\Http\Controllers\Hotesse\HotesseAuthController::class, 'showLogin'])->name('hotesse.auth.login');
     Route::post('/login', [App\Http\Controllers\Hotesse\HotesseAuthController::class, 'login'])->name('hotesse.auth.login.submit');
+    
+    // Hotesse Password Reset Routes
+    Route::get('/password/reset', [HotessePasswordResetController::class, 'showResetForm'])->name('hotesse.password.request');
+    Route::post('/password/send-otp', [HotessePasswordResetController::class, 'sendOtp'])->name('hotesse.password.sendOtp');
+    Route::post('/password/verify-otp', [HotessePasswordResetController::class, 'verifyOtp'])->name('hotesse.password.verifyOtp');
+    Route::post('/password/reset', [HotessePasswordResetController::class, 'resetPassword'])->name('hotesse.password.reset');
 });
 
 Route::middleware('hotesse')->prefix('hotesse')->group(function () {
@@ -285,6 +320,12 @@ Route::middleware('hotesse')->prefix('hotesse')->group(function () {
 Route::prefix('agent')->group(function () {
     Route::get('/login', [AuthenticateAgent::class, 'login'])->name('agent.login');
     Route::post('/login', [AuthenticateAgent::class, 'handleLogin'])->name('agent.handleLogin');
+    
+    // Agent Password Reset Routes
+    Route::get('/password/reset', [AgentPasswordResetController::class, 'showResetForm'])->name('agent.password.request');
+    Route::post('/password/send-otp', [AgentPasswordResetController::class, 'sendOtp'])->name('agent.password.sendOtp');
+    Route::post('/password/verify-otp', [AgentPasswordResetController::class, 'verifyOtp'])->name('agent.password.verifyOtp');
+    Route::post('/password/reset', [AgentPasswordResetController::class, 'resetPassword'])->name('agent.password.reset');
 });
 Route::middleware('agent')->prefix('agent')->group(function () {
     Route::get('/dashboard', [AgentDashboard::class, 'dashboard'])->name('agent.dashboard');
@@ -509,3 +550,22 @@ Route::match(['get', 'post'], '/payment/callback', function (Request $request) {
         'transaction_id' => $transactionId
     ]);
 })->name('payment.callback');
+
+// Routes Chauffeur
+Route::prefix('chauffeur')->group(function () {
+    Route::get('/login', [ChauffeurAuthenticate::class, 'login'])->name('chauffeur.login');
+    Route::post('/login', [ChauffeurAuthenticate::class, 'handleLogin'])->name('chauffeur.handleLogin');
+    Route::get('/logout', [ChauffeurAuthenticate::class, 'logout'])->name('chauffeur.logout');
+
+    // OTP Verification routes
+    Route::get('/verify-otp', [\App\Http\Controllers\Chauffeur\OtpVerificationController::class, 'showVerifyForm'])->name('chauffeur.verify-otp');
+    Route::post('/verify-otp', [\App\Http\Controllers\Chauffeur\OtpVerificationController::class, 'verify'])->name('chauffeur.verify-otp.submit');
+    Route::post('/verify-otp/resend', [\App\Http\Controllers\Chauffeur\OtpVerificationController::class, 'resend'])->name('chauffeur.verify-otp.resend');
+
+    Route::middleware('chauffeur')->group(function () {
+        Route::get('/dashboard', [ChauffeurController::class, 'dashboard'])->name('chauffeur.dashboard');
+        Route::get('/programmes', [ChauffeurController::class, 'availableProgrammes'])->name('chauffeur.programmes');
+        Route::post('/voyage/assign', [ChauffeurController::class, 'assign'])->name('chauffeur.voyage.assign');
+        Route::get('/voyages', [ChauffeurController::class, 'myVoyages'])->name('chauffeur.voyages');
+    });
+});

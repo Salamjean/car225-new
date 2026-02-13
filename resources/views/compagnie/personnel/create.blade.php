@@ -158,7 +158,7 @@
                                            value="{{ old('contact') }}"
                                            required
                                            class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
-                                           placeholder="07 00 00 00 00">
+                                           placeholder="0700000000">
                                 </div>
                             </div>
                             @error('contact')
@@ -194,14 +194,17 @@
                                 </div>
                             </div>
                             <p class="text-xs text-gray-500">Personne à contacter en cas d'urgence</p>
+                            <p id="error-contact-same" class="text-red-500 text-xs mt-1 hidden">Le contact d'urgence doit être différent du contact personnel.</p>
                             @error('contact_urgence')
                                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                             @enderror
                         </div>
                     </div>
                 </div>
+
+
                 <!-- Section 4: Photo de profil (centrée en dernier) -->
-                <div class="mb-12">
+                <div class="on mb-12">
                     <div class="flex items-center mb-6">
                         <div class="w-2 h-8 bg-purple-500 rounded-full mr-4"></div>
                         <h2 class="text-2xl font-bold text-gray-900">Photo de profil</h2>
@@ -342,7 +345,7 @@ document.addEventListener('DOMContentLoaded', function() {
             let value = e.target.value.replace(/\D/g, '');
             
             if (value.length > 0) {
-                value = value.match(/.{1,2}/g).join(' ');
+                value = value.match(/.{1,2}/g).join('');
             }
             
             e.target.value = value;
@@ -351,6 +354,44 @@ document.addEventListener('DOMContentLoaded', function() {
 
     formatPhoneNumber(contactInput);
     formatPhoneNumber(contactUrgenceInput);
+
+    // Validation pour s'assurer que le contact personnel et d'urgence sont différents
+    const errorSameContact = document.getElementById('error-contact-same');
+    const form = document.querySelector('form');
+
+    function validateContacts() {
+        if (contactInput.value && contactUrgenceInput.value && contactInput.value === contactUrgenceInput.value) {
+            errorSameContact.classList.remove('hidden');
+            contactUrgenceInput.classList.add('border-red-500');
+            return false;
+        } else {
+            errorSameContact.classList.add('hidden');
+            contactUrgenceInput.classList.remove('border-red-500');
+            return true;
+        }
+    }
+
+    contactInput.addEventListener('input', validateContacts);
+    contactUrgenceInput.addEventListener('input', validateContacts);
+
+    form.addEventListener('submit', function(e) {
+        if (!validateContacts()) {
+            e.preventDefault();
+            contactUrgenceInput.focus();
+            
+            // Notification SweetAlert2 si disponible (optionnel mais recommandé pour l'UX)
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erreur de validation',
+                    text: 'Le contact d\'urgence doit être différent du contact personnel.',
+                    confirmButtonColor: '#e94f1b'
+                });
+            } else {
+                alert('Le contact personnel et le contact d\'urgence ne peuvent pas être identiques.');
+            }
+        }
+    });
 
     // Validation en temps réel de l'email
     const emailInput = document.querySelector('input[name="email"]');
@@ -437,4 +478,40 @@ select {
     }
 }
 </style>
+
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+// Success message
+@if(session('success'))
+    Swal.fire({
+        icon: 'success',
+        title: 'Succès!',
+        text: "{{ session('success') }}",
+        confirmButtonColor: '#e94f1b',
+        timer: 5000,
+        showConfirmButton: true
+    });
+@endif
+
+// Warning message
+@if(session('warning'))
+    Swal.fire({
+        icon: 'warning',
+        title: 'Attention',
+        text: "{{ session('warning') }}",
+        confirmButtonColor: '#e94f1b'
+    });
+@endif
+
+// Error message
+@if(session('error'))
+    Swal.fire({
+        icon: 'error',
+        title: 'Erreur',
+        text: "{{ session('error') }}",
+        confirmButtonColor: '#e94f1b'
+    });
+@endif
+</script>
 @endsection

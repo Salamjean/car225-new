@@ -181,20 +181,20 @@
                 </div>
                 <div class="mdc-list-item mdc-drawer-item">
                     <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel"
-                        data-target="ui-sub-agent">
-                        <i class="fas fa-car mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
-                        Véhicule
+                        data-target="ui-sub-gare">
+                        <i class="fas fa-building mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
+                        Gares
                         <i class="mdc-drawer-arrow material-icons">chevron_right</i>
                     </a>
-                    <div class="mdc-expansion-panel" id="ui-sub-agent">
+                    <div class="mdc-expansion-panel" id="ui-sub-gare">
                         <nav class="mdc-list mdc-drawer-submenu">
                             <div class="mdc-list-item mdc-drawer-item">
-                                <a class="mdc-drawer-link" href="{{route('vehicule.create')}}">
+                                <a class="mdc-drawer-link" href="{{route('gare.create')}}">
                                     Ajouter
                                 </a>
                             </div>
                             <div class="mdc-list-item mdc-drawer-item">
-                                <a class="mdc-drawer-link" href="{{route('vehicule.index')}}">
+                                <a class="mdc-drawer-link" href="{{route('gare.index')}}">
                                     Liste
                                 </a>
                             </div>
