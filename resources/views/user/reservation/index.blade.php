@@ -126,169 +126,203 @@
     </div>
 
     <!-- Reservations Table -->
-    <div class="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full text-left">
-                <thead>
-                    <tr class="bg-gray-50/50">
-                        <th class="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Référence</th>
-                        <th class="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Itinéraire</th>
-                        <th class="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Voyage</th>
-                        <th class="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Place</th>
-                        <th class="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Passager</th>
-                        <th class="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Montant</th>
-                        <th class="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Statut</th>
-                        <th class="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-50">
-                    @forelse($reservations as $reservation)
-                    <tr class="group hover:bg-gray-50/50 transition-colors">
-                        <td class="px-8 py-6">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 group-hover:text-[#e94f1b] transition-colors">
-                                    <i class="fas fa-receipt text-sm"></i>
-                                </div>
-                                <div>
-                                    <p class="text-sm font-black text-[#e94f1b] leading-none mb-1">{{ $reservation->reference }}</p>
-                                    <p class="text-[10px] font-bold text-gray-400">{{ $reservation->created_at->format('d/m/Y H:i') }}</p>
-                                </div>
+  <div class="bg-white rounded-[32px] border border-gray-100 shadow-xl shadow-gray-200/40 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-gray-50/80 border-b border-gray-100">
+                    <th class="px-6 py-5 text-[10px] font-extrabold text-gray-400 uppercase tracking-widest pl-8">Billet</th>
+                    <th class="px-6 py-5 text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Itinéraire & Compagnie</th>
+                    <th class="px-6 py-5 text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Départ</th>
+                    <th class="px-6 py-5 text-[10px] font-extrabold text-gray-400 uppercase tracking-widest text-center">Siège</th>
+                    <th class="px-6 py-5 text-[10px] font-extrabold text-gray-400 uppercase tracking-widest text-center">Info Passager</th>
+                    <th class="px-6 py-5 text-[10px] font-extrabold text-gray-400 uppercase tracking-widest text-right">Tarif</th>
+                    <th class="px-6 py-5 text-[10px] font-extrabold text-gray-400 uppercase tracking-widest text-center">Statut</th>
+                    <th class="px-6 py-5 text-[10px] font-extrabold text-gray-400 uppercase tracking-widest text-center pr-8">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                @forelse($reservations as $reservation)
+                <tr class="group hover:bg-[#fff5f2] transition-all duration-300">
+                    
+                    <td class="px-6 py-5 pl-8">
+                        <div class="flex items-start gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-white border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-300 group-hover:border-[#e94f1b] group-hover:text-[#e94f1b] transition-colors">
+                                <i class="fas fa-barcode text-lg"></i>
                             </div>
-                        </td>
-                        <td class="px-8 py-6">
                             <div>
-                                <p class="text-sm font-black text-gray-900 flex items-center gap-2">
-                                    {{ $reservation->programme->point_depart }} 
-                                    <i class="fas fa-arrow-right text-[10px] text-[#e94f1b]"></i>
-                                    {{ $reservation->programme->point_arrive }}
-                                </p>
-                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{{ $reservation->programme->compagnie->name }}</p>
+                                <span class="block text-xs font-mono font-bold text-gray-600 bg-gray-100 px-2 py-1 rounded-md mb-1 group-hover:bg-white group-hover:shadow-sm transition-all">
+                                    {{ $reservation->reference }}
+                                </span>
+                                <span class="text-[10px] font-medium text-gray-400 flex items-center gap-1">
+                                    <i class="far fa-clock text-[8px]"></i> 
+                                    {{ $reservation->created_at->locale('fr')->translatedFormat('d M Y') }}
+                                </span>
                             </div>
-                        </td>
-                        <td class="px-8 py-6">
-                            <div class="space-y-1">
-                                <div class="flex items-center gap-2 text-sm font-black text-gray-900">
-                                    <i class="far fa-calendar text-[#e94f1b]"></i>
-                                    {{ \Carbon\Carbon::parse($reservation->date_voyage)->format('d/m/Y') }}
+                        </div>
+                    </td>
+
+                    <td class="px-6 py-5">
+                        <div class="flex flex-col">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-sm font-black text-[#1A1D1F]">{{ $reservation->programme->point_depart }}</span>
+                                <div class="w-12 h-[2px] bg-gray-200 relative flex items-center justify-center">
+                                    <i class="fas fa-bus text-[8px] text-gray-400 absolute bg-white px-1"></i>
                                 </div>
-                                <div class="text-[10px] font-bold text-gray-400 flex items-center gap-2">
-                                    <i class="far fa-clock"></i>
-                                    {{ \Carbon\Carbon::parse($reservation->heure_depart ?? $reservation->programme->heure_depart)->format('H:i') }}
+                                <span class="text-sm font-black text-[#1A1D1F]">{{ $reservation->programme->point_arrive }}</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center">
+                                    <i class="fas fa-building text-[8px] text-gray-500"></i>
                                 </div>
+                                <span class="text-[11px] font-bold text-gray-500 uppercase tracking-wide">{{ $reservation->programme->compagnie->name }}</span>
+                            </div>
+                        </div>
+                    </td>
+
+                    <td class="px-6 py-5">
+                        <div class="flex items-center gap-3">
+                            <div class="flex flex-col items-center justify-center bg-gray-50 border border-gray-100 rounded-xl w-12 h-12 group-hover:bg-white group-hover:border-[#e94f1b]/20 group-hover:shadow-md transition-all">
+                                <span class="text-[8px] font-bold text-[#e94f1b] uppercase leading-none mt-1">
+                                    {{ Str::upper(\Carbon\Carbon::parse($reservation->date_voyage)->locale('fr')->translatedFormat('M')) }}
+                                </span>
+                                <span class="text-lg font-black text-gray-800 leading-none">
+                                    {{ \Carbon\Carbon::parse($reservation->date_voyage)->format('d') }}
+                                </span>
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-gray-900">{{ \Carbon\Carbon::parse($reservation->heure_depart ?? $reservation->programme->heure_depart)->format('H:i') }}</p>
                                 @if(str_contains($reservation->reference, '-RET-'))
-                                    <span class="inline-flex px-2 py-0.5 bg-blue-50 text-blue-600 text-[8px] font-black rounded uppercase tracking-widest">Retour</span>
-                                @elseif($reservation->is_aller_retour)
-                                    <span class="inline-flex px-2 py-0.5 bg-orange-50 text-orange-600 text-[8px] font-black rounded uppercase tracking-widest">Aller</span>
-                                @endif
-                            </div>
-                        </td>
-                        <td class="px-8 py-6 text-center">
-                            <div class="inline-flex items-center justify-center w-8 h-8 bg-gray-900 text-white text-xs font-black rounded-lg">
-                                {{ $reservation->seat_number }}
-                            </div>
-                        </td>
-                        <td class="px-8 py-6 text-center">
-                            <button type="button" 
-                                class="view-passenger-details-btn group/pass w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-all mx-auto"
-                                data-nom="{{ $reservation->passager_nom }}"
-                                data-prenom="{{ $reservation->passager_prenom }}"
-                                data-email="{{ $reservation->passager_email ?? 'Non renseigné' }}"
-                                data-telephone="{{ $reservation->passager_telephone ?? 'Non renseigné' }}"
-                                data-urgence="{{ $reservation->passager_urgence ?? 'Non renseigné' }}">
-                                <i class="far fa-eye text-sm group-hover/pass:scale-110 transition-transform"></i>
-                            </button>
-                        </td>
-                        <td class="px-8 py-6 text-center">
-                            <span class="text-sm font-black text-gray-900">{{ number_format($reservation->montant, 0, ',', ' ') }} <span class="text-[10px] text-gray-400">FCFA</span></span>
-                        </td>
-                        <td class="px-8 py-6 text-center">
-                            @if($reservation->statut == 'confirmee')
-                                <span class="px-3 py-1.5 bg-green-50 text-green-600 text-[10px] font-black rounded-xl uppercase tracking-widest">Confirmé</span>
-                            @elseif($reservation->statut == 'en_attente')
-                                <span class="px-3 py-1.5 bg-yellow-50 text-yellow-600 text-[10px] font-black rounded-xl uppercase tracking-widest">En attente</span>
-                            @else
-                                <span class="px-3 py-1.5 bg-red-50 text-red-600 text-[10px] font-black rounded-xl uppercase tracking-widest">Annulé</span>
-                            @endif
-                        </td>
-                        <td class="px-8 py-6 text-center">
-                            <div class="flex items-center justify-center gap-2">
-                                @if($reservation->statut == 'confirmee')
-                                    @php
-                                        $heureDepart = $reservation->heure_depart ?? $reservation->programme->heure_depart ?? '00:00';
-                                        $dateVoyage = \Carbon\Carbon::parse($reservation->date_voyage)->format('Y-m-d');
-                                        $departureDateTime = \Carbon\Carbon::parse("{$dateVoyage} {$heureDepart}");
-                                        $canAct = $departureDateTime->diffInMinutes(now(), false) < -15;
-                                    @endphp
-                                    {{-- Modify Button --}}
-                                    <button 
-                                        type="button"
-                                        class="modify-btn w-9 h-9 rounded-xl flex items-center justify-center transition-all shadow-sm {{ $canAct ? 'bg-blue-500 text-white hover:bg-blue-600 hover:scale-110 active:scale-95' : 'bg-gray-200 text-gray-400 cursor-not-allowed' }}"
-                                        data-id="{{ $reservation->id }}"
-                                        data-reference="{{ $reservation->reference }}"
-                                        data-departure="{{ $departureDateTime->toISOString() }}"
-                                        title="Modifier"
-                                        {{ !$canAct ? 'disabled' : '' }}>
-                                        <i class="fas fa-edit text-xs"></i>
-                                    </button>
-                                    {{-- Cancel Button --}}
-                                    <button 
-                                        type="button"
-                                        class="cancel-btn w-9 h-9 rounded-xl flex items-center justify-center transition-all shadow-sm {{ $canAct ? 'bg-red-500 text-white hover:bg-red-600 hover:scale-110 active:scale-95' : 'bg-gray-200 text-gray-400 cursor-not-allowed' }}"
-                                        data-id="{{ $reservation->id }}"
-                                        data-reference="{{ $reservation->reference }}"
-                                        data-montant="{{ $reservation->montant }}"
-                                        data-departure="{{ $departureDateTime->toISOString() }}"
-                                        title="Annuler"
-                                        {{ !$canAct ? 'disabled' : '' }}>
-                                        <i class="fas fa-times text-xs"></i>
-                                    </button>
-                                    {{-- PDF Download --}}
-                                    <a href="{{ route('reservations.download', $reservation) }}" class="w-9 h-9 bg-gray-900 text-white rounded-xl flex items-center justify-center transition-transform hover:scale-110 active:scale-95 shadow-lg shadow-gray-900/10" title="Télécharger le billet">
-                                        <i class="fas fa-file-pdf text-xs"></i>
-                                    </a>
-                                @elseif($reservation->statut == 'annulee')
-                                    <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">
-                                        @if($reservation->refund_amount)
-                                            {{ number_format($reservation->refund_amount, 0, ',', ' ') }} FCFA remboursé
-                                        @else
-                                            Annulée
-                                        @endif
+                                    <span class="inline-flex items-center gap-1 text-[9px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                                        <i class="fas fa-undo-alt text-[8px]"></i> Retour
                                     </span>
-                                @elseif($reservation->statut == 'terminee')
-                                    <span class="text-[9px] font-bold text-green-500 uppercase tracking-widest">Terminée</span>
+                                @elseif($reservation->is_aller_retour)
+                                    <span class="inline-flex items-center gap-1 text-[9px] font-black text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">
+                                        <i class="fas fa-exchange-alt text-[8px]"></i> Aller
+                                    </span>
+                                @else 
+                                    <span class="text-[10px] text-gray-400">Voyage simple</span>
                                 @endif
-                                <a href="{{ route('reservations.show', $reservation) }}" class="w-9 h-9 bg-white border border-gray-100 text-gray-900 rounded-xl flex items-center justify-center transition-transform hover:scale-110 active:scale-95 shadow-sm" title="Voir les détails">
-                                    <i class="fas fa-chevron-right text-xs"></i>
-                                </a>
                             </div>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="8" class="px-8 py-20 text-center">
-                            <div class="flex flex-col items-center">
-                                <div class="w-20 h-20 bg-gray-50 rounded-[32px] flex items-center justify-center text-gray-200 mb-6">
-                                    <i class="fas fa-ticket-alt text-4xl"></i>
-                                </div>
-                                <h3 class="text-xl font-black text-gray-900 mb-2 uppercase tracking-tight">Aucune réservation</h3>
-                                <p class="text-gray-400 font-medium mb-8">Commencez par planifier votre prochain voyage.</p>
-                                <a href="{{ route('reservation.create') }}" class="px-8 py-4 bg-[#e94f1b] text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-[#e94f1b]/20 hover:scale-105 active:scale-95 transition-all">
-                                    Réserver un voyage
-                                </a>
+                        </div>
+                    </td>
+
+                    <td class="px-6 py-5 text-center">
+                        <div class="inline-block relative">
+                            <svg class="w-8 h-8 text-gray-200 group-hover:text-[#1A1D1F] transition-colors" fill="currentColor" viewBox="0 0 20 20"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"/></svg>
+                            <span class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[10px] font-black text-gray-600 group-hover:text-white">{{ $reservation->seat_number }}</span>
+                        </div>
+                    </td>
+
+                    <td class="px-6 py-5 text-center">
+                        <button type="button" 
+                            class="view-passenger-details-btn relative inline-flex items-center justify-center w-9 h-9 rounded-full bg-gray-100 text-gray-500 hover:bg-[#e94f1b] hover:text-white hover:shadow-lg hover:shadow-[#e94f1b]/30 transition-all duration-300"
+                            data-nom="{{ $reservation->passager_nom }}"
+                            data-prenom="{{ $reservation->passager_prenom }}"
+                            data-email="{{ $reservation->passager_email ?? 'Non renseigné' }}"
+                            data-telephone="{{ $reservation->passager_telephone ?? 'Non renseigné' }}"
+                            data-urgence="{{ $reservation->passager_urgence ?? 'Non renseigné' }}">
+                            <i class="far fa-user"></i>
+                            <div class="absolute -top-1 -right-1 w-3 h-3 bg-white rounded-full flex items-center justify-center">
+                                <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                             </div>
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        
-        @if($reservations->hasPages())
-        <div class="px-8 py-6 border-t border-gray-50 bg-gray-50/50">
-            {{ $reservations->links() }}
-        </div>
-        @endif
+                        </button>
+                    </td>
+
+                    <td class="px-6 py-5 text-right">
+                        <p class="text-sm font-black text-[#1A1D1F]">{{ number_format($reservation->montant, 0, ',', ' ') }}</p>
+                        <p class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">FCFA</p>
+                    </td>
+
+                    <td class="px-6 py-5 text-center">
+                        @if($reservation->statut == 'confirmee')
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-600 text-[10px] font-black rounded-lg uppercase tracking-widest border border-green-100">
+                                <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Confirmé
+                            </span>
+                        @elseif($reservation->statut == 'en_attente')
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-yellow-50 text-yellow-600 text-[10px] font-black rounded-lg uppercase tracking-widest border border-yellow-100">
+                                <span class="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse"></span> En attente
+                            </span>
+                        @else
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 text-[10px] font-black rounded-lg uppercase tracking-widest border border-red-100">
+                                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Annulé
+                            </span>
+                        @endif
+                    </td>
+
+                    <td class="px-6 py-5 text-center pr-8">
+                        <div class="flex items-center justify-center gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                            @if($reservation->statut == 'confirmee')
+                                @php
+                                    $heureDepart = $reservation->heure_depart ?? $reservation->programme->heure_depart ?? '00:00';
+                                    $dateVoyage = \Carbon\Carbon::parse($reservation->date_voyage)->format('Y-m-d');
+                                    $departureDateTime = \Carbon\Carbon::parse("{$dateVoyage} {$heureDepart}");
+                                    $canAct = $departureDateTime->diffInMinutes(now(), false) < -15;
+                                @endphp
+                                
+                                <button type="button" class="modify-btn w-8 h-8 rounded-lg flex items-center justify-center transition-all {{ $canAct ? 'bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white' : 'bg-gray-100 text-gray-400 cursor-not-allowed' }}"
+                                    data-id="{{ $reservation->id }}"
+                                    data-reference="{{ $reservation->reference }}"
+                                    data-departure="{{ $departureDateTime->toISOString() }}"
+                                    title="Modifier" {{ !$canAct ? 'disabled' : '' }}>
+                                    <i class="fas fa-pen text-xs"></i>
+                                </button>
+                                
+                                <button type="button" class="cancel-btn w-8 h-8 rounded-lg flex items-center justify-center transition-all {{ $canAct ? 'bg-red-50 text-red-600 hover:bg-red-600 hover:text-white' : 'bg-gray-100 text-gray-400 cursor-not-allowed' }}"
+                                    data-id="{{ $reservation->id }}"
+                                    data-reference="{{ $reservation->reference }}"
+                                    data-montant="{{ $reservation->montant }}"
+                                    data-departure="{{ $departureDateTime->toISOString() }}"
+                                    title="Annuler" {{ !$canAct ? 'disabled' : '' }}>
+                                    <i class="fas fa-trash-alt text-xs"></i>
+                                </button>
+
+                                <a href="{{ route('reservations.download', $reservation) }}" class="w-8 h-8 bg-gray-900 text-white rounded-lg flex items-center justify-center hover:scale-110 transition-transform shadow-lg shadow-gray-900/20" title="Télécharger">
+                                    <i class="fas fa-download text-xs"></i>
+                                </a>
+
+                            @elseif($reservation->statut == 'annulee')
+                                <span class="text-[9px] font-bold text-[#e94f1b] uppercase flex items-center gap-1">
+                                    @if($reservation->refund_amount) 
+                                        <i class="fas fa-hand-holding-usd"></i> Remboursé
+                                    @else 
+                                        - 
+                                    @endif
+                                </span>
+                            @endif
+                            
+                            <a href="{{ route('reservations.show', $reservation) }}" class="w-8 h-8 bg-white border border-gray-200 text-gray-400 rounded-lg flex items-center justify-center hover:border-[#e94f1b] hover:text-[#e94f1b] transition-all" title="Détails">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="8" class="px-8 py-24 text-center">
+                        <div class="flex flex-col items-center animate-fade-in-up">
+                            <div class="w-24 h-24 bg-orange-50 rounded-full flex items-center justify-center text-[#e94f1b] mb-6 shadow-xl shadow-orange-100">
+                                <i class="fas fa-ticket-alt text-4xl"></i>
+                            </div>
+                            <h3 class="text-xl font-black text-gray-900 mb-2 uppercase tracking-tight">Aucun voyage pour le moment</h3>
+                            <p class="text-gray-400 font-medium mb-8 max-w-sm mx-auto">Votre historique de réservations est vide. Prêt à partir à l'aventure ?</p>
+                            <a href="{{ route('reservation.create') }}" class="px-10 py-4 bg-[#e94f1b] text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg shadow-[#e94f1b]/30 hover:-translate-y-1 transition-all">
+                                <i class="fas fa-plus mr-2"></i> Réserver un billet
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
+    
+    @if($reservations->hasPages())
+    <div class="px-8 py-6 border-t border-gray-50 bg-gray-50">
+        {{ $reservations->links() }}
+    </div>
+    @endif
+</div>
 </div>
 
 @push('scripts')
