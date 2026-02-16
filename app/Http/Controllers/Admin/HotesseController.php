@@ -65,12 +65,27 @@ class HotesseController extends Controller
         // Generate temporary password (will be overwritten by setup process)
         $password = Str::random(16);
 
+        // Format phone numbers to have +225 prefix
+        $formatPhone = function($phone) {
+            if (!$phone) return null;
+            // Remove all non-numeric characters except +
+            $phone = preg_replace('/[^0-9+]/', '', $phone);
+            if (!str_starts_with($phone, '+')) {
+                if (str_starts_with($phone, '225')) {
+                    $phone = '+' . $phone;
+                } else {
+                    $phone = '+225' . $phone;
+                }
+            }
+            return $phone;
+        };
+
         $hotesse = Hotesse::create([
             'name' => $request->name,
             'prenom' => $request->prenom,
             'email' => $request->email,
-            'contact' => $request->contact,
-            'cas_urgence' => $request->cas_urgence,
+            'contact' => $formatPhone($request->contact),
+            'cas_urgence' => $formatPhone($request->cas_urgence),
             'commune' => $request->commune,
             'compagnie_id' => $request->compagnie_id,
             'password' => Hash::make($password),

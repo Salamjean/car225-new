@@ -106,4 +106,56 @@ class CompagnieDashboard extends Controller
         Auth::guard('compagnie')->logout();
         return redirect()->route('compagnie.login');
     }
+
+    public function profile()
+    {
+        $compagnie = Auth::guard('compagnie')->user();
+        return view('compagnie.profile.index', compact('compagnie'));
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $compagnie = Auth::guard('compagnie')->user();
+        
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'username' => 'required|string|max:255|unique:compagnies,username,' . $compagnie->id,
+            'email' => 'required|email|max:255|unique:compagnies,email,' . $compagnie->id,
+            'contact' => 'required|string|max:255',
+            'commune' => 'required|string|max:255',
+            'adresse' => 'required|string|max:255',
+            'sigle' => 'nullable|string|max:20',
+            'slogan' => 'nullable|string|max:255',
+            'path_logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        if ($request->hasFile('path_logo')) {
+            // Supprimer l'ancien logo si nécessaire
+            if ($compagnie->path_logo && \Illuminate\Support\Facades\Storage::disk('public')->exists($compagnie->path_logo)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($compagnie->path_logo);
+            }
+            $validated['path_logo'] = $request->file('path_logo')->store('logos', 'public');
+        }
+
+        /** @var \App\Models\Compagnie $compagnie */
+        $compagnie->update($validated);
+
+        return back()->with('success', 'Profil mis à jour avec succès !');
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required|current_password',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        /** @var \App\Models\Compagnie $compagnie */
+        $compagnie = Auth::guard('compagnie')->user();
+        $compagnie->update([
+            'password' => \Illuminate\Support\Facades\Hash::make($request->password),
+        ]);
+
+        return back()->with('success', 'Mot de passe mis à jour avec succès !');
+    }
 }

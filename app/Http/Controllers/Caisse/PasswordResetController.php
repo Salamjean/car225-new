@@ -42,7 +42,7 @@ class PasswordResetController extends Controller
         ]);
 
         try {
-            Mail::send('emails.otp', ['otp' => $otpCode], function ($message) use ($email) {
+            Mail::send('emails.otp', ['otp' => $otpCode, 'email' => $email], function ($message) use ($email) {
                 $message->to($email)->subject('Code de réinitialisation Caissier - Car225');
             });
             return response()->json(['success' => true, 'message' => 'OTP envoyé.', 'email' => $email]);

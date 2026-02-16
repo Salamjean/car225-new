@@ -111,6 +111,15 @@
                 <div class="otp-label">Votre code OTP</div>
                 <div class="otp-code">{{ $otp }}</div>
             </div>
+
+            @if(isset($email))
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{{ route('caisse.password.request', ['email' => $email]) }}" 
+                   style="display: inline-block; background-color: #e94f1b; color: #ffffff; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">
+                    Continuer la réinitialisation
+                </a>
+            </div>
+            @endif
             
             <div class="info-box">
                 <p><strong>⏱ Important :</strong> Ce code est valable pendant 10 minutes seulement. Pour votre sécurité, ne partagez ce code avec personne.</p>

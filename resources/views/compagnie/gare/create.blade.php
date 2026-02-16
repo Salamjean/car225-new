@@ -33,9 +33,25 @@
                     <!-- Ville -->
                     <div class="space-y-2">
                         <label class="block text-sm font-semibold text-gray-700">Ville <span class="text-red-500">*</span></label>
-                        <input type="text" name="ville" value="{{ old('ville') }}" required
-                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent outline-none transition-all bg-gray-50 focus:bg-white"
-                            placeholder="Ex: Abidjan">
+                        <select name="ville" required
+                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent outline-none transition-all bg-gray-50 focus:bg-white">
+                            <option value="">Sélectionnez une ville</option>
+                            @php
+                                $villes = [
+                                    'Abidjan', 'Abengourou', 'Adzopé', 'Agboville', 'Anyama', 'Bondoukou', 'Bongouanou', 'Bouaflé', 'Bouaké', 
+                                    'Boundiali', 'Bouna', 'Dabou', 'Daloa', 'Divo', 'Duékoué', 'Ferkessédougou', 'Gagnoa', 
+                                    'Grand-Bassam', 'Guiglo', 'Issia', 'Katiola', 'Korhogo', 'Man', 'Odienné', 'Oumé', 
+                                    'San-Pédro', 'Séguéla', 'Sinfra', 'Soubré', 'Tanda', 'Touba', 'Toumodi', 'Vavoua', 
+                                    'Yamoussoukro', 'Zénoula'
+                                ];
+                                sort($villes);
+                            @endphp
+                            @foreach($villes as $ville)
+                                <option value="{{ $ville }}" {{ old('ville') == $ville ? 'selected' : '' }}>
+                                    {{ $ville }}
+                                </option>
+                            @endforeach
+                        </select>
                         @error('ville')
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                         @enderror

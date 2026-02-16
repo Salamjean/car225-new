@@ -226,6 +226,11 @@ Route::middleware('compagnie')->prefix('company')->group(function () {
         Route::put('/{gare}', [GareController::class, 'update'])->name('gare.update');
         Route::delete('/{gare}', [GareController::class, 'destroy'])->name('gare.destroy');
     });
+
+    // Routes de profil de la compagnie
+    Route::get('/profile', [CompagnieDashboard::class, 'profile'])->name('compagnie.profile');
+    Route::post('/profile/update', [CompagnieDashboard::class, 'updateProfile'])->name('compagnie.profile.update');
+    Route::post('/profile/password', [CompagnieDashboard::class, 'updatePassword'])->name('compagnie.profile.password');
 });
 
 //Les routes de gestion des @caissières
@@ -561,6 +566,12 @@ Route::prefix('chauffeur')->group(function () {
     Route::get('/verify-otp', [\App\Http\Controllers\Chauffeur\OtpVerificationController::class, 'showVerifyForm'])->name('chauffeur.verify-otp');
     Route::post('/verify-otp', [\App\Http\Controllers\Chauffeur\OtpVerificationController::class, 'verify'])->name('chauffeur.verify-otp.submit');
     Route::post('/verify-otp/resend', [\App\Http\Controllers\Chauffeur\OtpVerificationController::class, 'resend'])->name('chauffeur.verify-otp.resend');
+
+    // Password Reset Routes
+    Route::get('/password/forgot', [\App\Http\Controllers\Chauffeur\ChauffeurForgotPasswordController::class, 'showLinkRequestForm'])->name('chauffeur.password.request');
+    Route::post('/password/forgot', [\App\Http\Controllers\Chauffeur\ChauffeurForgotPasswordController::class, 'sendOtp'])->name('chauffeur.password.email');
+    Route::get('/password/reset', [\App\Http\Controllers\Chauffeur\ChauffeurForgotPasswordController::class, 'showResetForm'])->name('chauffeur.password.reset');
+    Route::post('/password/reset', [\App\Http\Controllers\Chauffeur\ChauffeurForgotPasswordController::class, 'resetPassword'])->name('chauffeur.password.update');
 
     Route::middleware('chauffeur')->group(function () {
         Route::get('/dashboard', [ChauffeurController::class, 'dashboard'])->name('chauffeur.dashboard');

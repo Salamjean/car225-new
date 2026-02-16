@@ -204,6 +204,14 @@
                 
                
                 
+                <!-- Onglet Profil -->
+                <!-- <div class="mdc-list-item mdc-drawer-item">
+                    <a class="mdc-drawer-link" href="{{ route('compagnie.profile') }}">
+                        <i class="fas fa-id-card mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
+                        Mon Profil
+                    </a>
+                </div> -->
+
                 <!-- Onglet Signalements -->
                 <div class="mdc-list-item mdc-drawer-item">
                     <a class="mdc-drawer-link" href="{{ route('compagnie.signalements.index') }}">

@@ -181,7 +181,7 @@ class CaisseController extends Controller
         $heureActuelle = $now->format('H:i');   // Ex: 14:30
         
         // 2. Récupérer les programmes
-        $programmes = Programme::with(['compagnie'])
+        $programmes = Programme::with(['compagnie', 'voyages.vehicule'])
             ->where('compagnie_id', $caisse->compagnie_id)
             ->where('statut', 'actif') // On s'assure qu'il est actif
             
@@ -335,7 +335,7 @@ class CaisseController extends Controller
         $dateAujourdhui = $now->toDateString();
         $heureActuelle = $now->format('H:i');
         
-        $programmes = Programme::with(['compagnie'])
+        $programmes = Programme::with(['compagnie', 'voyages.vehicule'])
             ->where('compagnie_id', $caisse->compagnie_id)
             ->where('statut', 'actif')
             ->whereDate('date_fin', '>=', $dateAujourdhui)

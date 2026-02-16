@@ -610,81 +610,89 @@ class ReservationController extends Controller
     // Afficher les détails du véhicule (pour le bouton "Détails véhicule")
   public function showVehicle($id)
 {
-    $request = request();
-    $dateVoyage = $request->get('date') ?? date('Y-m-d');
-    $programId = $request->get('program_id');
-    $heureDepart = $request->get('heure_depart'); // RÉCUPÉRATION HEURE
+    try {
+        $request = request();
+        $dateVoyage = $request->get('date') ?? date('Y-m-d');
+        $programId = $request->get('program_id');
+        $heureDepart = $request->get('heure_depart'); // RÉCUPÉRATION HEURE
 
-    $programme = Programme::find($programId);
-    
-    if (!$programme) {
-        return response()->json(['error' => 'Programme non trouvé'], 404);
-    }
+        $programme = Programme::find($programId);
+        
+        if (!$programme) {
+            return response()->json(['error' => 'Programme non trouvé'], 404);
+        }
 
-    // TENTATIVE 1 : Véhicule via getVehiculeForDate (si relation Voyage existe)
-    $vehicule = $programme->getVehiculeForDate($dateVoyage);
+        // TENTATIVE 1 : Véhicule via getVehiculeForDate (si relation Voyage existe)
+        $vehicule = $programme->getVehiculeForDate($dateVoyage);
 
-    if (!$vehicule && $programme->compagnie_id) {
-        $vehicule = \App\Models\Vehicule::where('compagnie_id', $programme->compagnie_id)
-            ->where('is_active', true)
-            ->orderBy('id', 'asc')
-            ->first();
-    }
+        if (!$vehicule && $programme->compagnie_id) {
+            $vehicule = \App\Models\Vehicule::where('compagnie_id', $programme->compagnie_id)
+                ->where('is_active', true)
+                ->orderBy('id', 'asc')
+                ->first();
+        }
 
-    // TENTATIVE 3 : Si toujours rien, créer un véhicule virtuel par défaut
-    if (!$vehicule) {
-        $vehicule = (object)[
-            'id' => 0,
-            'immatriculation' => 'N/A',
-            'numero_serie' => 'N/A',
-            'type_range' => '2x3',
-            'nombre_place' => 70,
-            'marque' => 'Bus',
-            'modele' => 'Standard'
+        // TENTATIVE 3 : Si toujours rien, créer un véhicule virtuel par défaut
+        if (!$vehicule) {
+            $vehicule = (object)[
+                'id' => 0,
+                'immatriculation' => 'N/A',
+                'numero_serie' => 'N/A',
+                'type_range' => '2x3',
+                'nombre_place' => 70,
+                'marque' => 'Bus',
+                'modele' => 'Standard'
+            ];
+        }
+
+        // Générer le HTML pour la visualisation
+        $typeRangeConfig = [
+            '2x2' => ['placesGauche' => 2, 'placesDroite' => 2],
+            '2x3' => ['placesGauche' => 2, 'placesDroite' => 3],
+            '2x4' => ['placesGauche' => 2, 'placesDroite' => 4],
+            'Gamme Prestige' => ['placesGauche' => 2, 'placesDroite' => 2],
+            'Gamme Standard' => ['placesGauche' => 2, 'placesDroite' => 3]
         ];
+
+        $config = $typeRangeConfig[$vehicule->type_range] ?? $typeRangeConfig['2x3'];
+
+        // ✅ CORRECTION MAJEURE : Filtrer par heure_depart
+        $formattedDate = date('Y-m-d', strtotime($dateVoyage));
+        
+        $query = Reservation::where('programme_id', $programId)
+            ->whereIn('statut', ['confirmee', 'en_attente', 'terminee'])
+            ->where('date_voyage', $formattedDate);
+
+        if ($heureDepart) {
+            $query->where('heure_depart', $heureDepart);
+        }
+
+        $reservedSeats = $query->pluck('seat_number')->toArray();
+
+        Log::info('Détails véhicule - Places réservées:', [
+            'programme_id' => $programId,
+            'date' => $formattedDate,
+            'heure_depart' => $heureDepart,
+            'reserved_seats' => $reservedSeats
+        ]);
+
+        $visualizationHTML = $this->generatePlacesVisualization($vehicule, $config, $reservedSeats);
+
+        return response()->json([
+            'success' => true,
+            'html' => $visualizationHTML,
+            'vehicule' => $vehicule,
+            'date' => $dateVoyage,
+            'heure_depart' => $heureDepart,
+            'reserved_seats' => $reservedSeats
+        ]);
+    } catch (\Exception $e) {
+        Log::error('Error in showVehicle: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'error' => 'Erreur serveur: ' . $e->getMessage()
+        ], 500);
     }
-
-    // Générer le HTML pour la visualisation
-    $typeRangeConfig = [
-        '2x2' => ['placesGauche' => 2, 'placesDroite' => 2],
-        '2x3' => ['placesGauche' => 2, 'placesDroite' => 3],
-        '2x4' => ['placesGauche' => 2, 'placesDroite' => 4],
-        'Gamme Prestige' => ['placesGauche' => 2, 'placesDroite' => 2],
-        'Gamme Standard' => ['placesGauche' => 2, 'placesDroite' => 3]
-    ];
-
-    $config = $typeRangeConfig[$vehicule->type_range] ?? $typeRangeConfig['2x3'];
-
-    // ✅ CORRECTION MAJEURE : Filtrer par heure_depart
-    $formattedDate = date('Y-m-d', strtotime($dateVoyage));
-    
-    $query = Reservation::where('programme_id', $programId)
-        ->whereIn('statut', ['confirmee', 'en_attente', 'terminee'])
-        ->where('date_voyage', $formattedDate);
-
-    if ($heureDepart) {
-        $query->where('heure_depart', $heureDepart);
-    }
-
-    $reservedSeats = $query->pluck('seat_number')->toArray();
-
-    \Log::info('Détails véhicule - Places réservées:', [
-        'programme_id' => $programId,
-        'date' => $formattedDate,
-        'heure_depart' => $heureDepart,
-        'reserved_seats' => $reservedSeats
-    ]);
-
-    $visualizationHTML = $this->generatePlacesVisualization($vehicule, $config, $reservedSeats);
-
-    return response()->json([
-        'success' => true,
-        'html' => $visualizationHTML,
-        'vehicule' => $vehicule,
-        'date' => $dateVoyage,
-        'heure_depart' => $heureDepart,
-        'reserved_seats' => $reservedSeats
-    ]);
 }
 
 

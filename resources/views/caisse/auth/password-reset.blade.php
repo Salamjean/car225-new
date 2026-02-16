@@ -201,5 +201,17 @@
             if (input.type === 'password') { input.type = 'text'; icon.className = 'fas fa-eye-slash'; }
             else { input.type = 'password'; icon.className = 'fas fa-eye'; }
         }
+        
+        // Auto-fill email if present in URL
+        window.addEventListener('DOMContentLoaded', (event) => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const emailParam = urlParams.get('email');
+            if (emailParam) {
+                document.getElementById('email').value = emailParam;
+                userEmail = emailParam;
+                // On peut rester à l'étape 1 ou passer à l'étape 2 si on veut être proactif
+                // Mais l'utilisateur doit quand même cliquer sur "Recevoir le code" s'il vient de la page login
+            }
+        });
     </script>
 </body> </html>
