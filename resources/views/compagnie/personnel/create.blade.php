@@ -157,8 +157,10 @@
                                            name="contact" 
                                            value="{{ old('contact') }}"
                                            required
+                                           maxlength="10"
+                                           oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"
                                            class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
-                                           placeholder="0700000000">
+                                           placeholder="Ex: 0700000000">
                                 </div>
                             </div>
                             @error('contact')
@@ -189,8 +191,10 @@
                                            name="contact_urgence" 
                                            value="{{ old('contact_urgence') }}"
                                            required
+                                           maxlength="10"
+                                           oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"
                                            class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
-                                           placeholder="Numéro en cas d'urgence">
+                                           placeholder="Ex: 0100000000">
                                 </div>
                             </div>
                             <p class="text-xs text-gray-500">Personne à contacter en cas d'urgence</p>
@@ -336,24 +340,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Formatage automatique des numéros de téléphone pour la Côte d'Ivoire
+    // Formatage automatique des numéros de téléphone (géré par oninput inline)
     const contactInput = document.querySelector('input[name="contact"]');
     const contactUrgenceInput = document.querySelector('input[name="contact_urgence"]');
 
-    function formatPhoneNumber(input) {
-        input.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
-            
-            if (value.length > 0) {
-                value = value.match(/.{1,2}/g).join('');
-            }
-            
-            e.target.value = value;
-        });
-    }
-
-    formatPhoneNumber(contactInput);
-    formatPhoneNumber(contactUrgenceInput);
 
     // Validation pour s'assurer que le contact personnel et d'urgence sont différents
     const errorSameContact = document.getElementById('error-contact-same');

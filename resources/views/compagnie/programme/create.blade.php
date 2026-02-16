@@ -2,7 +2,8 @@
 
 @section('title', 'Créer une ligne de transport')
 
-@section('content')
+@section('styles')
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
 <style>
     :root {
         --primary: #e94e1a;
@@ -12,6 +13,31 @@
         --aller-dark: #059669;
         --retour-color: #3b82f6;
         --retour-dark: #2563eb;
+    }
+
+    /* Tom Select Modern Styling */
+    .ts-control {
+        border-radius: 0.75rem !important;
+        padding: 0.875rem 1rem !important;
+        background-color: #f9fafb !important;
+        border: 2px solid #e5e7eb !important;
+        font-size: 1rem !important;
+        transition: all 0.3s ease !important;
+    }
+    .ts-wrapper.focus .ts-control {
+        box-shadow: 0 0 0 4px rgba(233, 78, 26, 0.1) !important;
+        border-color: var(--primary) !important;
+        background-color: white !important;
+    }
+    .ts-dropdown {
+        border-radius: 0.75rem !important;
+        margin-top: 0.5rem !important;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+        border: 1px solid #e5e7eb !important;
+    }
+    .ts-dropdown .active {
+        background-color: rgba(233, 78, 26, 0.1) !important;
+        color: var(--primary) !important;
     }
 
     .hero-gradient {
@@ -76,12 +102,7 @@
     }
 
     select.input-modern {
-        appearance: none;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 1rem center;
-        background-size: 1.25rem;
-        padding-right: 3rem;
+        display: none !important;
     }
 
     /* Dual Card Layout */
@@ -567,7 +588,9 @@
         margin-right: auto;
     }
 </style>
+@endsection
 
+@section('content')
 <div class="min-h-screen bg-gray-50">
     <!-- Hero Header -->
     <div class="hero-gradient text-white py-10 px-6">
@@ -710,26 +733,27 @@
                         <!-- Card RETOUR -->
                         <div id="retour-section-container">
                             <div class="programme-card retour">
-                            <div class="card-header retour">
-                                <div class="card-icon">
-                                    <i class="fas fa-bus"></i>
+                                <div class="card-header retour">
+                                    <div class="card-icon">
+                                        <i class="fas fa-bus"></i>
+                                    </div>
+                                    <div class="card-title">
+                                        <h3>Retour</h3>
+                                        <div class="route" id="retour-route">-- → --</div>
+                                    </div>
                                 </div>
-                                <div class="card-title">
-                                    <h3>Retour</h3>
-                                    <div class="route" id="retour-route">-- → --</div>
+                                <div class="card-body">
+                                    <div class="schedule-container" id="retour-schedules">
+                                        <!-- Initial schedule will be added by JS -->
+                                    </div>
+                                    <button type="button" class="add-schedule-btn retour" onclick="addSchedule('retour')">
+                                        <i class="fas fa-plus-circle"></i>
+                                        Ajouter un horaire
+                                    </button>
                                 </div>
-                            </div>
-                            <div class="card-body">
-                                <div class="schedule-container" id="retour-schedules">
-                                    <!-- Initial schedule will be added by JS -->
-                                </div>
-                                <button type="button" class="add-schedule-btn retour" onclick="addSchedule('retour')">
-                                    <i class="fas fa-plus-circle"></i>
-                                    Ajouter un horaire
-                                </button>
                             </div>
                         </div>
-                    </div></div>
+                    </div>
 
                     <!-- Section 3: Tarification -->
                     <div class="tarif-section">
@@ -794,6 +818,7 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const itineraireSelect = document.getElementById('itineraire_id');
@@ -811,6 +836,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const dualCards = document.getElementById('dual-cards');
     const summaryRetourCard = document.getElementById('summary-retour-card');
 
+    // Initialisation Tom Select
+    const tsSettings = {
+        create: false,
+        placeholder: "-- Choisir --",
+        maxOptions: 50,
+        allowEmptyOption: true
+    };
+
+    const tsItineraire = new TomSelect("#itineraire_id", tsSettings);
+    const tsGareDepart = new TomSelect("#gare_depart_id", tsSettings);
+    const tsGareArrivee = new TomSelect("#gare_arrivee_id", tsSettings);
+
     function handleRetourToggle() {
         const isWithRetour = toggleRetour.checked;
         
@@ -818,13 +855,11 @@ document.addEventListener('DOMContentLoaded', function() {
             retourSection.classList.remove('collapsed');
             dualCards.classList.remove('single');
             summaryRetourCard.style.display = 'block';
-            // Enable inputs
             retourSection.querySelectorAll('input, select').forEach(el => el.disabled = false);
         } else {
             retourSection.classList.add('collapsed');
             dualCards.classList.add('single');
             summaryRetourCard.style.display = 'none';
-            // Disable inputs so they are not sent in form
             retourSection.querySelectorAll('input, select').forEach(el => el.disabled = true);
         }
         updateSummary();
@@ -832,76 +867,59 @@ document.addEventListener('DOMContentLoaded', function() {
 
     toggleRetour.addEventListener('change', handleRetourToggle);
 
-    // Parse duration string to minutes
     function parseDurationToMinutes(durationStr) {
         if (!durationStr) return 90;
-        
         let hours = 0, minutes = 0;
         const hourMatch = durationStr.match(/(\d+)\s*heure/i);
         if (hourMatch) hours = parseInt(hourMatch[1]);
         const minMatch = durationStr.match(/(\d+)\s*min/i);
         if (minMatch) minutes = parseInt(minMatch[1]);
-        
         return (hours * 60) + minutes;
     }
 
-    // Calculate arrival time
     window.calculateArrivalTime = function(departureInput) {
         if (!departureInput || !departureInput.value) return;
-        
         const [hours, mins] = departureInput.value.split(':').map(Number);
         if (isNaN(hours) || isNaN(mins)) return;
-
         const departDate = new Date(2026, 0, 1, hours, mins);
         departDate.setMinutes(departDate.getMinutes() + currentDurationMinutes);
-        
         const arriveHours = departDate.getHours().toString().padStart(2, '0');
         const arriveMins = departDate.getMinutes().toString().padStart(2, '0');
-        
-        // Find the corresponding arrival input
         const scheduleItem = departureInput.closest('.schedule-item');
         if (scheduleItem) {
             const arrivalInput = scheduleItem.querySelector('.time-input.arrival');
-            if (arrivalInput) {
-                arrivalInput.value = `${arriveHours}:${arriveMins}`;
-            }
+            if (arrivalInput) arrivalInput.value = `${arriveHours}:${arriveMins}`;
         }
     };
 
-    // Update all arrival times
     function updateAllArrivalTimes() {
-        document.querySelectorAll('.departure-time').forEach(input => {
-            window.calculateArrivalTime(input);
-        });
+        document.querySelectorAll('.departure-time').forEach(input => calculateArrivalTime(input));
     }
 
-    // Update summary
     function updateSummary() {
         const allerSchedules = document.querySelectorAll('#aller-schedules .schedule-item').length;
         const retourSchedules = toggleRetour.checked ? document.querySelectorAll('#retour-schedules .schedule-item').length : 0;
-        
         document.getElementById('summary-aller').textContent = allerSchedules;
         document.getElementById('summary-retour').textContent = retourSchedules;
         document.getElementById('summary-total').textContent = allerSchedules + retourSchedules;
         document.getElementById('summary-price').textContent = montantBillet.value;
     }
 
-    // Itinerary change
     itineraireSelect.addEventListener('change', function() {
-        const selected = this.selectedOptions[0];
+        const selectedValue = this.value;
+        const option = this.options[this.selectedIndex];
         
-        if (selected && selected.value) {
+        if (selectedValue) {
             cardsContainer.classList.remove('hidden');
             summarySection.style.display = 'block';
             submitSection.style.display = 'flex';
             
-            const depart = selected.dataset.depart;
-            const arrive = selected.dataset.arrive;
-            
+            const depart = option.dataset.depart;
+            const arrive = option.dataset.arrive;
             document.getElementById('aller-route').textContent = `${depart} → ${arrive}`;
             document.getElementById('retour-route').textContent = `${arrive} → ${depart}`;
             
-            currentDurationMinutes = parseDurationToMinutes(selected.dataset.duree);
+            currentDurationMinutes = parseDurationToMinutes(option.dataset.duree);
             updateAllArrivalTimes();
             updateSummary();
         } else {
@@ -911,16 +929,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Données pour les selects
     const vehicules = @json($vehicules ?? []);
     const chauffeurs = @json($chauffeurs ?? []);
 
-    // Helper to generate options
     function generateOptions(items, valueField, labelField, includeSame = false) {
         let html = '<option value="">-- Choisir --</option>';
-        if (includeSame) {
-            html += '<option value="same">Identique au précédent</option>';
-        }
+        if (includeSame) html += '<option value="same">Identique au précédent</option>';
         items.forEach(item => {
             const label = item[labelField] + (item.prenom ? ' ' + item.prenom : '');
             html += `<option value="${item[valueField]}">${label}</option>`;
@@ -928,17 +942,13 @@ document.addEventListener('DOMContentLoaded', function() {
         return html;
     }
 
-    // Add schedule function
     window.addSchedule = function(type, initialTime = null, initialArrivalTime = null) {
         const container = document.getElementById(`${type}-schedules`);
         const items = container.querySelectorAll('.schedule-item');
         const newIndex = items.length;
-        
         let nextTime = type === 'aller' ? '06:00' : '14:00';
-        
-        if (initialTime) {
-            nextTime = initialTime;
-        } else if (items.length > 0) {
+        if (initialTime) nextTime = initialTime;
+        else if (items.length > 0) {
             const lastItem = items[items.length - 1];
             const lastTimeInput = lastItem.querySelector('.departure-time');
             if (lastTimeInput && lastTimeInput.value) {
@@ -948,14 +958,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        const vehiculeOptions = generateOptions(vehicules, 'id', 'immatriculation', newIndex > 0);
-        const chauffeurOptions = generateOptions(chauffeurs, 'id', 'name', newIndex > 0);
-
         const scheduleHtml = `
             <div class="schedule-item ${type}" data-index="${newIndex}">
                 <span class="badge">Horaire ${newIndex + 1}</span>
                 ${newIndex > 0 ? `<button type="button" class="remove-schedule" onclick="window.removeSchedule('${type}', ${newIndex})"><i class="fas fa-times"></i></button>` : ''}
-                
                 <div class="schedule-times">
                     <div class="time-input-group">
                         <label>Départ</label>
@@ -964,9 +970,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                value="${nextTime}" required
                                data-type="${type}" data-index="${newIndex}">
                     </div>
-                    <div class="time-arrow">
-                        <i class="fas fa-long-arrow-alt-right"></i>
-                    </div>
+                    <div class="time-arrow"><i class="fas fa-long-arrow-alt-right"></i></div>
                     <div class="time-input-group">
                         <label>Arrivée</label>
                         <input type="time" name="${type}_horaires[${newIndex}][heure_arrive]" 
@@ -974,112 +978,69 @@ document.addEventListener('DOMContentLoaded', function() {
                                value="${initialArrivalTime || ''}" readonly>
                     </div>
                 </div>
-            </div>
-        `;
-        
+            </div>`;
         container.insertAdjacentHTML('beforeend', scheduleHtml);
-        
         const newRow = container.querySelector(`.schedule-item[data-index="${newIndex}"]`);
-        const departInput = newRow.querySelector('.departure-time');
-        window.calculateArrivalTime(departInput);
-        
+        calculateArrivalTime(newRow.querySelector('.departure-time'));
         updateSummary();
     };
 
-    // Remove schedule function
     window.removeSchedule = function(type, index) {
         const container = document.getElementById(`${type}-schedules`);
         const items = container.querySelectorAll('.schedule-item');
-        
-        if (items.length <= 1) {
-            alert('Vous devez conserver au moins un horaire');
-            return;
-        }
-        
+        if (items.length <= 1) { alert('Vous devez conserver au moins un horaire'); return; }
         const item = container.querySelector(`.schedule-item[data-index="${index}"]`);
-        if (item) {
-            item.remove();
-            reindexSchedules(type);
-            updateSummary();
-        }
+        if (item) { item.remove(); reindexSchedules(type); updateSummary(); }
     };
 
-    // Reindex schedules after removal
     function reindexSchedules(type) {
         const container = document.getElementById(`${type}-schedules`);
         const items = container.querySelectorAll('.schedule-item');
-        
         items.forEach((item, idx) => {
             item.dataset.index = idx;
             item.querySelector('.badge').textContent = `Horaire ${idx + 1}`;
-            
             const departInput = item.querySelector('input[name*="heure_depart"]');
             const arriveInput = item.querySelector('input[name*="heure_arrive"]');
-            
             departInput.name = `${type}_horaires[${idx}][heure_depart]`;
             departInput.dataset.index = idx;
             arriveInput.name = `${type}_horaires[${idx}][heure_arrive]`;
-            
             const removeBtn = item.querySelector('.remove-schedule');
-            if (removeBtn) {
-                removeBtn.setAttribute('onclick', `window.removeSchedule('${type}', ${idx})`);
-            }
+            if (removeBtn) removeBtn.setAttribute('onclick', `window.removeSchedule('${type}', ${idx})`);
         });
     }
 
-    // Event Delegation for all departure time inputs
     document.addEventListener('input', function(e) {
-        if (e.target.classList.contains('departure-time')) {
-            window.calculateArrivalTime(e.target);
-        }
+        if (e.target.classList.contains('departure-time')) calculateArrivalTime(e.target);
     });
 
-    // Form submission: resolve "same as previous" options
-    // Form submission: validation
     document.getElementById('programmeForm').addEventListener('submit', function(e) {
-        const gareDepart = document.getElementById('gare_depart_id').value;
-        const gareArrivee = document.getElementById('gare_arrivee_id').value;
-
-        if (gareDepart === gareArrivee) {
+        if (document.getElementById('gare_depart_id').value === document.getElementById('gare_arrivee_id').value) {
             e.preventDefault();
             alert('La gare de départ et la gare d\'arrivée doivent être différentes.');
-            return;
         }
     });
 
-    // Initial load
     const existingAller = @json($existingAller ?? []);
     const existingRetour = @json($existingRetour ?? []);
-    const preselectedItineraireId = "{{ $preselectedItineraireId ?? '' }}";
-    const oldItineraireId = "{{ old('itineraire_id') }}";
-    const initialId = preselectedItineraireId || oldItineraireId || itineraireSelect.value;
+    const preselectedId = "{{ $preselectedItineraireId ?? '' }}";
+    const oldId = "{{ old('itineraire_id') }}";
+    const initialId = preselectedId || oldId || itineraireSelect.value;
 
     if (initialId) {
-        if (!itineraireSelect.value) itineraireSelect.value = initialId;
-        itineraireSelect.dispatchEvent(new Event('change'));
-        
-        // Si c'est un chargement initial (pas de données existantes passées par le serveur),
-        // on s'assure d'avoir au moins un horaire si les conteneurs sont vides
+        tsItineraire.setValue(initialId);
         setTimeout(() => {
             const allerContainer = document.getElementById('aller-schedules');
             const retourContainer = document.getElementById('retour-schedules');
-            
             if (existingAller.length > 0) {
                 allerContainer.innerHTML = '';
                 existingAller.forEach(h => window.addSchedule('aller', h.heure_depart, h.heure_arrive));
-            } else if (allerContainer.children.length === 0) {
-                window.addSchedule('aller');
-            }
-            
+            } else if (allerContainer.children.length === 0) window.addSchedule('aller');
             if (existingRetour.length > 0) {
                 retourContainer.innerHTML = '';
                 existingRetour.forEach(h => window.addSchedule('retour', h.heure_depart, h.heure_arrive));
-            } else if (retourContainer.children.length === 0) {
-                window.addSchedule('retour');
-            }
+            } else if (retourContainer.children.length === 0) window.addSchedule('retour');
         }, 300);
     } else {
-        // Clear containers and add initial ones
         document.getElementById('aller-schedules').innerHTML = '';
         document.getElementById('retour-schedules').innerHTML = '';
         window.addSchedule('aller');
@@ -1087,8 +1048,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     montantBillet.addEventListener('input', updateSummary);
-    
-    // Initial state check
     handleRetourToggle();
 });
 </script>

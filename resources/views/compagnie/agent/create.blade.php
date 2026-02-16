@@ -176,7 +176,9 @@
                                                    id="contact" 
                                                    name="contact" 
                                                    value="{{ old('contact') }}" 
-                                                   placeholder="+XX XXX XXX XXX"
+                                                   maxlength="10"
+                                                   oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"
+                                                   placeholder="0700000000"
                                                    required>
                                             <div class="input-hint" data-hint="Numéro de téléphone principal"></div>
                                         </div>
@@ -229,7 +231,9 @@
                                                    id="cas_urgence" 
                                                    name="cas_urgence" 
                                                    value="{{ old('cas_urgence') }}" 
-                                                   placeholder="+XX XXX XXX XXX">
+                                                   maxlength="10"
+                                                   oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"
+                                                   placeholder="Ex: 0100000000">
                                             <div class="input-hint" data-hint="Contact en cas d'urgence"></div>
                                         </div>
                                         @error('cas_urgence')

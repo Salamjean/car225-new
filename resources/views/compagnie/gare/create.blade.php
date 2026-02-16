@@ -1,4 +1,26 @@
 @extends('compagnie.layouts.template')
+
+@section('styles')
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+<style>
+    .ts-control {
+        border-radius: 0.75rem !important;
+        padding: 0.75rem 1rem !important;
+        background-color: #f9fafb !important;
+        border: 1px solid #e5e7eb !important;
+    }
+    .ts-wrapper.focus .ts-control {
+        box-shadow: 0 0 0 2px #e94f1b !important;
+        border-color: transparent !important;
+    }
+    .ts-dropdown {
+        border-radius: 0.75rem !important;
+        margin-top: 0.5rem !important;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+    }
+</style>
+@endsection
+
 @section('content')
 <div class="min-h-screen bg-gradient-to-br from-gray-50 to-green-50 py-8 px-4">
     <div class="mx-auto" style="width: 80%">
@@ -33,8 +55,8 @@
                     <!-- Ville -->
                     <div class="space-y-2">
                         <label class="block text-sm font-semibold text-gray-700">Ville <span class="text-red-500">*</span></label>
-                        <select name="ville" required
-                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent outline-none transition-all bg-gray-50 focus:bg-white">
+                        <select id="select-ville" name="ville" required
+                            class="w-full">
                             <option value="">Sélectionnez une ville</option>
                             @php
                                 $villes = [
@@ -88,3 +110,19 @@
     </div>
 </div>
 @endsection
+
+@section('scripts')
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+<script>
+    new TomSelect("#select-ville",{
+        create: false,
+        sortField: {
+            field: "text",
+            direction: "asc"
+        },
+        placeholder: "Rechercher une ville...",
+        maxOptions: 50
+    });
+</script>
+@endsection
+

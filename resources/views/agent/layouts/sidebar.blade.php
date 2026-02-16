@@ -55,10 +55,26 @@
                     </div>
                 </div>
                 <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-drawer-link" href="{{ route('agent.voyages.index') }}">
+                    <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel"
+                        data-target="ui-sub-voyages">
                         <i class="fas fa-plane-departure mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
-                        Programmer Voyages
+                        Gestion Voyages
+                        <i class="mdc-drawer-arrow material-icons">chevron_right</i>
                     </a>
+                    <div class="mdc-expansion-panel" id="ui-sub-voyages" style="{{ request()->routeIs('agent.voyages.*') ? 'display: block;' : '' }}">
+                        <nav class="mdc-list mdc-drawer-submenu">
+                            <div class="mdc-list-item mdc-drawer-item">
+                                <a class="mdc-drawer-link {{ request()->routeIs('agent.voyages.index') ? 'active' : '' }}" href="{{ route('agent.voyages.index') }}">
+                                    Programmation
+                                </a>
+                            </div>
+                            <div class="mdc-list-item mdc-drawer-item">
+                                <a class="mdc-drawer-link {{ request()->routeIs('agent.voyages.history') ? 'active' : '' }}" href="{{ route('agent.voyages.history') }}">
+                                    Historique
+                                </a>
+                            </div>
+                        </nav>
+                    </div>
                 </div>
                 <div class="mdc-list-item mdc-drawer-item">
                     <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel"

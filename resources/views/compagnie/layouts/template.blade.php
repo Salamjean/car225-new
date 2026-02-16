@@ -25,6 +25,7 @@
   <!-- End layout styles -->
    <link rel="shortcut icon" href="{{asset('assetsPoster/assets/images/Car225_favicon.png')}}" />
    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+   @yield('styles')
 </head>
 <body>
 <script src="{{asset('assetsPoster/assets/js/preloader.js')}}"></script>

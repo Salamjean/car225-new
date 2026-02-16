@@ -22,15 +22,21 @@ class VoyageController extends Controller
         $date = $request->input('date', Carbon::today()->toDateString());
 
         // Get programmes from agent's company
-        $programmes = Programme::where('compagnie_id', $agent->compagnie_id)
+        $programmesQuery = Programme::where('compagnie_id', $agent->compagnie_id)
             ->where('statut', 'actif')
             ->whereDate('date_depart', '<=', $date)
             ->whereDate('date_fin', '>=', $date)
+            ->whereDoesntHave('voyages', function ($query) use ($date) {
+                $query->whereDate('date_voyage', $date)
+                      ->where('statut', 'terminé');
+            })
             ->with(['gareDepart', 'gareArrivee', 'voyages' => function ($query) use ($date) {
                 $query->whereDate('date_voyage', $date);
             }])
-            ->orderBy('heure_depart')
-            ->get();
+            ->orderBy('heure_depart');
+
+        $totalProgrammesCount = $programmesQuery->count();
+        $programmes = $programmesQuery->paginate(5);
 
         // Get available drivers (disponible status only)
         $chauffeurs = Personnel::where('compagnie_id', $agent->compagnie_id)
@@ -45,7 +51,26 @@ class VoyageController extends Controller
             ->orderBy('immatriculation')
             ->get();
 
-        return view('agent.voyages.index', compact('programmes', 'chauffeurs', 'vehicules', 'date'));
+        return view('agent.voyages.index', compact('programmes', 'chauffeurs', 'vehicules', 'date', 'totalProgrammesCount'));
+    }
+
+    /**
+     * Display finished voyages history
+     */
+    public function history(Request $request)
+    {
+        $agent = Auth::guard('agent')->user();
+        
+        $voyages = Voyage::whereHas('programme', function($query) use ($agent) {
+                $query->where('compagnie_id', $agent->compagnie_id);
+            })
+            ->where('statut', 'terminé')
+            ->with(['programme.gareDepart', 'programme.gareArrivee', 'chauffeur', 'vehicule'])
+            ->orderBy('date_voyage', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return view('agent.voyages.history', compact('voyages'));
     }
 
     /**

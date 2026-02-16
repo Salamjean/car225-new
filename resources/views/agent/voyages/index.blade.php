@@ -55,7 +55,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-500 font-medium uppercase">Programmes disponibles</p>
-                        <p class="text-3xl font-bold text-gray-900 mt-1">{{ $programmes->count() }}</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-1">{{ $totalProgrammesCount }}</p>
                     </div>
                     <div class="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center">
                         <i class="fas fa-route text-blue-600 text-2xl"></i>
@@ -266,6 +266,11 @@
                     <p class="text-gray-500 max-w-md mx-auto">Il n'y a pas de programmes actifs pour cette date.</p>
                 </div>
             @endforelse
+        </div>
+
+        <!-- Pagination -->
+        <div class="mt-8">
+            {{ $programmes->links() }}
         </div>
     </div>
 </div>

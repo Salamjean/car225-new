@@ -159,6 +159,29 @@
                 </div>
                 <div class="mdc-list-item mdc-drawer-item">
                     <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel"
+                        data-target="ui-sub-vehicule">
+                        <i class="fas fa-bus mdc-list-item__start-detail mdc-drawer-item-icon"
+                            aria-hidden="true"></i>
+                        Véhicules
+                        <i class="mdc-drawer-arrow material-icons">chevron_right</i>
+                    </a>
+                    <div class="mdc-expansion-panel" id="ui-sub-vehicule">
+                        <nav class="mdc-list mdc-drawer-submenu">
+                            <div class="mdc-list-item mdc-drawer-item">
+                                <a class="mdc-drawer-link" href="{{route('vehicule.create')}}">
+                                    Ajouter
+                                </a>
+                            </div>
+                            <div class="mdc-list-item mdc-drawer-item">
+                                <a class="mdc-drawer-link" href="{{route('vehicule.index')}}">
+                                    Liste
+                                </a>
+                            </div>
+                        </nav>
+                    </div>
+                </div>
+                <div class="mdc-list-item mdc-drawer-item">
+                    <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel"
                         data-target="ui-sub-perso">
                         <i class="fas fa-route mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
                         Itinéraire

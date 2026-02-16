@@ -353,6 +353,7 @@ Route::middleware('agent')->prefix('agent')->name('agent.')->group(function () {
     // Gestion des voyages
     Route::prefix('voyages')->name('voyages.')->group(function () {
         Route::get('/', [AgentVoyageController::class, 'index'])->name('index');
+        Route::get('/history', [AgentVoyageController::class, 'history'])->name('history');
         Route::post('/', [AgentVoyageController::class, 'store'])->name('store');
         Route::delete('/{voyage}', [AgentVoyageController::class, 'destroy'])->name('destroy');
     });
