@@ -34,19 +34,19 @@
                     </a>
                 </div>
 
-                <!-- S'assigner un voyage (Programmes) -->
+                <!-- Mes Voyages Assignés -->
                 <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-drawer-link" href="{{ route('chauffeur.programmes') }}">
-                        <i class="fas fa-calendar-check mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
-                        S'assigner un voyage
+                    <a class="mdc-drawer-link" href="{{ route('chauffeur.voyages.index') }}">
+                        <i class="fas fa-road mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
+                        Mes Voyages
                     </a>
                 </div>
 
-                <!-- Mes Voyages -->
+                <!-- Historique Voyages -->
                 <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-drawer-link" href="{{ route('chauffeur.voyages') }}">
-                        <i class="fas fa-road mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
-                        Mes Voyages
+                    <a class="mdc-drawer-link" href="{{ route('chauffeur.voyages.history') }}">
+                        <i class="fas fa-history mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
+                        Historique
                     </a>
                 </div>
             </nav>

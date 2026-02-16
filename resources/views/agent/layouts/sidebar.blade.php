@@ -55,6 +55,12 @@
                     </div>
                 </div>
                 <div class="mdc-list-item mdc-drawer-item">
+                    <a class="mdc-drawer-link" href="{{ route('agent.voyages.index') }}">
+                        <i class="fas fa-plane-departure mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
+                        Programmer Voyages
+                    </a>
+                </div>
+                <div class="mdc-list-item mdc-drawer-item">
                     <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel"
                         data-target="ui-sub-conteneur">
                         <i class="fas fa-boxes mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>

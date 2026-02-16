@@ -7,6 +7,7 @@ use App\Http\Controllers\Agent\AgentController;
 use App\Http\Controllers\Agent\AgentDashboard;
 use App\Http\Controllers\Agent\AuthenticateAgent;
 use App\Http\Controllers\Agent\ReservationController as AgentReservationController;
+use App\Http\Controllers\Agent\VoyageController as AgentVoyageController;
 use App\Http\Controllers\User\WalletController;
 use App\Http\Controllers\Compagnie\Agent\AgentCompagnieController;
 use App\Http\Controllers\Compagnie\GareController;
@@ -38,6 +39,7 @@ use App\Http\Controllers\SapeurPompier\SapeurPompierAuthenticate;
 use App\Models\Signalement;
 use App\Http\Controllers\Chauffeur\ChauffeurController;
 use App\Http\Controllers\Chauffeur\ChauffeurAuthenticate;
+use App\Http\Controllers\Chauffeur\VoyageController as ChauffeurVoyageController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -347,6 +349,13 @@ Route::middleware('agent')->prefix('agent')->group(function () {
         Route::post('/search-by-reference', [AgentReservationController::class, 'searchByReference'])->name('agent.reservations.search-by-reference');
         Route::post('/confirm', [AgentReservationController::class, 'confirm'])->name('agent.reservations.confirm');
     });
+
+    // Gestion des voyages
+    Route::prefix('voyages')->name('voyages.')->group(function () {
+        Route::get('/', [AgentVoyageController::class, 'index'])->name('index');
+        Route::post('/', [AgentVoyageController::class, 'store'])->name('store');
+        Route::delete('/{voyage}', [AgentVoyageController::class, 'destroy'])->name('destroy');
+    });
 });
 
 
@@ -575,8 +584,14 @@ Route::prefix('chauffeur')->group(function () {
 
     Route::middleware('chauffeur')->group(function () {
         Route::get('/dashboard', [ChauffeurController::class, 'dashboard'])->name('chauffeur.dashboard');
-        Route::get('/programmes', [ChauffeurController::class, 'availableProgrammes'])->name('chauffeur.programmes');
-        Route::post('/voyage/assign', [ChauffeurController::class, 'assign'])->name('chauffeur.voyage.assign');
-        Route::get('/voyages', [ChauffeurController::class, 'myVoyages'])->name('chauffeur.voyages');
+        Route::get('/voyages-history', [ChauffeurController::class, 'myVoyages'])->name('chauffeur.voyages.history');
+        
+        // Voyage management routes
+        Route::prefix('voyages')->name('voyages.')->group(function () {
+            Route::get('/', [ChauffeurVoyageController::class, 'index'])->name('index');
+            Route::post('/{voyage}/confirm', [ChauffeurVoyageController::class, 'confirm'])->name('confirm');
+            Route::post('/{voyage}/start', [ChauffeurVoyageController::class, 'start'])->name('start');
+            Route::post('/{voyage}/complete', [ChauffeurVoyageController::class, 'complete'])->name('complete');
+        });
     });
 });

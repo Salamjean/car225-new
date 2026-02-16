@@ -67,7 +67,7 @@
                             <i class="fas fa-road text-gray-300 text-2xl"></i>
                         </div>
                         <p class="text-gray-500 font-medium">Aucun voyage prévu aujourd'hui</p>
-                        <a href="{{ route('chauffeur.programmes') }}" class="text-orange-600 font-bold mt-2 inline-block hover:text-orange-700 transition">
+                        <a href="{{ route('chauffeur.voyages.index') }}" class="text-orange-600 font-bold mt-2 inline-block hover:text-orange-700 transition">
                             S'assigner un horaire &rarr;
                         </a>
                     </div>
@@ -120,7 +120,7 @@
         </div>
 
         <!-- Quick Action -->
-        <a href="{{ route('chauffeur.programmes') }}" class="block mt-8 group">
+        <a href="{{ route('chauffeur.voyages.index') }}" class="block mt-8 group">
             <div class="bg-white rounded-2xl p-6 shadow-md border border-orange-100 flex items-center justify-between group-hover:shadow-lg transition-all duration-300 transform group-hover:-translate-y-1">
                 <div class="flex items-center gap-4">
                     <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center group-hover:bg-orange-600 transition-colors duration-300">
