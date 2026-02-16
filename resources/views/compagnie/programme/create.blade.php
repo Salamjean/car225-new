@@ -617,21 +617,44 @@
                             <i class="fas fa-map-marked-alt"></i>
                             Étape 1
                         </span>
-                        <h2 class="text-lg font-bold text-gray-800">Choisir l'itinéraire</h2>
+                        <h2 class="text-lg font-bold text-gray-800">Choisir l'itinéraire et les gares</h2>
                     </div>
 
-                    <select name="itineraire_id" id="itineraire_id" class="input-modern" required>
-                        <option value="">-- Sélectionner un itinéraire --</option>
-                        @foreach($itineraires as $itineraire)
-                            <option value="{{ $itineraire->id }}" 
-                                    data-depart="{{ $itineraire->point_depart }}"
-                                    data-arrive="{{ $itineraire->point_arrive }}"
-                                    data-duree="{{ $itineraire->durer_parcours }}"
-                                    {{ old('itineraire_id') == $itineraire->id ? 'selected' : '' }}>
-                                {{ $itineraire->point_depart }} → {{ $itineraire->point_arrive }} ({{ $itineraire->durer_parcours }})
-                            </option>
-                        @endforeach
-                    </select>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="md:col-span-1">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Itinéraire</label>
+                            <select name="itineraire_id" id="itineraire_id" class="input-modern" required>
+                                <option value="">-- Sélectionner un itinéraire --</option>
+                                @foreach($itineraires as $itineraire)
+                                    <option value="{{ $itineraire->id }}" 
+                                            data-depart="{{ $itineraire->point_depart }}"
+                                            data-arrive="{{ $itineraire->point_arrive }}"
+                                            data-duree="{{ $itineraire->durer_parcours }}"
+                                            {{ old('itineraire_id', $preselectedItineraireId) == $itineraire->id ? 'selected' : '' }}>
+                                        {{ $itineraire->point_depart }} → {{ $itineraire->point_arrive }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Gare de départ</label>
+                            <select name="gare_depart_id" id="gare_depart_id" class="input-modern" required>
+                                <option value="">-- Sélectionner --</option>
+                                @foreach($gares as $gare)
+                                    <option value="{{ $gare->id }}">{{ $gare->nom_gare }} ({{ $gare->ville }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Gare d'arrivée</label>
+                            <select name="gare_arrivee_id" id="gare_arrivee_id" class="input-modern" required>
+                                <option value="">-- Sélectionner --</option>
+                                @foreach($gares as $gare)
+                                    <option value="{{ $gare->id }}">{{ $gare->nom_gare }} ({{ $gare->ville }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Dual Card Container - Hidden until itinerary selected -->
@@ -656,7 +679,7 @@
                             </div>
                         </div>
                         <label class="toggle-switch">
-                            <input type="checkbox" name="with_retour" id="toggle-retour" checked>
+                            <input type="checkbox" name="with_retour" id="toggle-retour">
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
@@ -666,7 +689,7 @@
                         <div class="programme-card aller">
                             <div class="card-header aller">
                                 <div class="card-icon">
-                                    <i class="fas fa-plane-departure"></i>
+                                    <i class="fas fa-bus-alt"></i>
                                 </div>
                                 <div class="card-title">
                                     <h3>Aller</h3>
@@ -675,50 +698,7 @@
                             </div>
                             <div class="card-body">
                                 <div class="schedule-container" id="aller-schedules">
-                                    <!-- Initial schedule -->
-                                    <div class="schedule-item aller" data-index="0">
-                                        <span class="badge">Horaire 1</span>
-                                        <div class="schedule-times">
-                                            <div class="time-input-group">
-                                                <label>Départ</label>
-                                                <input type="time" name="aller_horaires[0][heure_depart]" 
-                                                       class="time-input aller departure-time" 
-                                                       value="06:00" required
-                                                       data-type="aller" data-index="0">
-                                            </div>
-                                            <div class="time-arrow">
-                                                <i class="fas fa-long-arrow-alt-right"></i>
-                                            </div>
-                                            <div class="time-input-group">
-                                                <label>Arrivée</label>
-                                                 <input type="time" name="aller_horaires[0][heure_arrive]" 
-                                                       class="time-input arrival aller" 
-                                                       value="07:30" readonly>
-                                            </div>
-                                        </div>
-
-                                        <!-- Selects Driver/Vehicle -->
-                                        <div class="mt-3 grid grid-cols-2 gap-3">
-                                            <div>
-                                                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Chauffeur</label>
-                                                <select name="aller_horaires[0][personnel_id]" class="input-modern text-sm py-2 px-3 personnel-select" required>
-                                                    <option value="">-- Choisir --</option>
-                                                    @foreach($chauffeurs as $chauffeur)
-                                                        <option value="{{ $chauffeur->id }}">{{ $chauffeur->name }} {{ $chauffeur->prenom }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                             <div>
-                                                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Véhicule</label>
-                                                <select name="aller_horaires[0][vehicule_id]" class="input-modern text-sm py-2 px-3 vehicule-select" required>
-                                                    <option value="">-- Choisir --</option>
-                                                    @foreach($vehicules as $vehicule)
-                                                        <option value="{{ $vehicule->id }}">{{ $vehicule->immatriculation }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <!-- Initial schedule will be added by JS -->
                                 </div>
                                 <button type="button" class="add-schedule-btn aller" onclick="addSchedule('aller')">
                                     <i class="fas fa-plus-circle"></i>
@@ -732,7 +712,7 @@
                             <div class="programme-card retour">
                             <div class="card-header retour">
                                 <div class="card-icon">
-                                    <i class="fas fa-plane-arrival"></i>
+                                    <i class="fas fa-bus"></i>
                                 </div>
                                 <div class="card-title">
                                     <h3>Retour</h3>
@@ -741,50 +721,7 @@
                             </div>
                             <div class="card-body">
                                 <div class="schedule-container" id="retour-schedules">
-                                    <!-- Initial schedule -->
-                                    <div class="schedule-item retour" data-index="0">
-                                        <span class="badge">Horaire 1</span>
-                                        <div class="schedule-times">
-                                            <div class="time-input-group">
-                                                <label>Départ</label>
-                                                <input type="time" name="retour_horaires[0][heure_depart]" 
-                                                       class="time-input retour departure-time" 
-                                                       value="14:00" required
-                                                       data-type="retour" data-index="0">
-                                            </div>
-                                            <div class="time-arrow">
-                                                <i class="fas fa-long-arrow-alt-right"></i>
-                                            </div>
-                                            <div class="time-input-group">
-                                                <label>Arrivée</label>
-                                                <input type="time" name="retour_horaires[0][heure_arrive]" 
-                                                       class="time-input arrival retour" 
-                                                       value="15:30" readonly>
-                                            </div>
-                                        </div>
-
-                                        <!-- Selects Driver/Vehicle -->
-                                        <div class="mt-3 grid grid-cols-2 gap-3">
-                                            <div>
-                                                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Chauffeur</label>
-                                                <select name="retour_horaires[0][personnel_id]" class="input-modern text-sm py-2 px-3 personnel-select" required>
-                                                    <option value="">-- Choisir --</option>
-                                                    @foreach($chauffeurs as $chauffeur)
-                                                        <option value="{{ $chauffeur->id }}">{{ $chauffeur->name }} {{ $chauffeur->prenom }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                             <div>
-                                                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Véhicule</label>
-                                                <select name="retour_horaires[0][vehicule_id]" class="input-modern text-sm py-2 px-3 vehicule-select" required>
-                                                    <option value="">-- Choisir --</option>
-                                                    @foreach($vehicules as $vehicule)
-                                                        <option value="{{ $vehicule->id }}">{{ $vehicule->immatriculation }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <!-- Initial schedule will be added by JS -->
                                 </div>
                                 <button type="button" class="add-schedule-btn retour" onclick="addSchedule('retour')">
                                     <i class="fas fa-plus-circle"></i>
@@ -808,7 +745,7 @@
                             <span class="icon">💰</span>
                             <input type="number" name="montant_billet" id="montant_billet" 
                                    class="tarif-input"
-                                   min="0" step="100" value="{{ old('montant_billet', $existingMontantBillet ?? 0) }}" required>
+                                   min="0" step="100" value="{{ old('montant_billet', $existingMontantBillet) }}" placeholder="0" required>
                             <span class="currency">FCFA</span>
                         </div>
                     </div>
@@ -1037,22 +974,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                value="${initialArrivalTime || ''}" readonly>
                     </div>
                 </div>
-
-                <!-- Selects Driver/Vehicle -->
-                <div class="mt-3 grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Chauffeur</label>
-                        <select name="${type}_horaires[${newIndex}][personnel_id]" class="input-modern text-sm py-2 px-3 personnel-select" required>
-                            ${chauffeurOptions}
-                        </select>
-                    </div>
-                     <div>
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Véhicule</label>
-                        <select name="${type}_horaires[${newIndex}][vehicule_id]" class="input-modern text-sm py-2 px-3 vehicule-select" required>
-                            ${vehiculeOptions}
-                        </select>
-                    </div>
-                </div>
             </div>
         `;
         
@@ -1114,55 +1035,46 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Form submission: resolve "same as previous" options
+    // Form submission: validation
     document.getElementById('programmeForm').addEventListener('submit', function(e) {
-        ['aller', 'retour'].forEach(type => {
-            let lastDriver = '';
-            let lastVehicle = '';
-            
-            const driverSelects = document.querySelectorAll(`select[name^="${type}_horaires"][name$="[personnel_id]"]`);
-            driverSelects.forEach((select) => {
-                if (select.value === 'same') {
-                    select.value = lastDriver;
-                } else {
-                    lastDriver = select.value;
-                }
-            });
-            
-            const vehicleSelects = document.querySelectorAll(`select[name^="${type}_horaires"][name$="[vehicule_id]"]`);
-            vehicleSelects.forEach((select) => {
-                if (select.value === 'same') {
-                    select.value = lastVehicle;
-                } else {
-                    lastVehicle = select.value;
-                }
-            });
-        });
+        const gareDepart = document.getElementById('gare_depart_id').value;
+        const gareArrivee = document.getElementById('gare_arrivee_id').value;
+
+        if (gareDepart === gareArrivee) {
+            e.preventDefault();
+            alert('La gare de départ et la gare d\'arrivée doivent être différentes.');
+            return;
+        }
     });
 
     // Initial load
     const existingAller = @json($existingAller ?? []);
     const existingRetour = @json($existingRetour ?? []);
     const preselectedItineraireId = "{{ $preselectedItineraireId ?? '' }}";
+    const oldItineraireId = "{{ old('itineraire_id') }}";
+    const initialId = preselectedItineraireId || oldItineraireId || itineraireSelect.value;
 
-    if (preselectedItineraireId) {
-        itineraireSelect.value = preselectedItineraireId;
+    if (initialId) {
+        if (!itineraireSelect.value) itineraireSelect.value = initialId;
         itineraireSelect.dispatchEvent(new Event('change'));
         
+        // Si c'est un chargement initial (pas de données existantes passées par le serveur),
+        // on s'assure d'avoir au moins un horaire si les conteneurs sont vides
         setTimeout(() => {
             const allerContainer = document.getElementById('aller-schedules');
             const retourContainer = document.getElementById('retour-schedules');
-            allerContainer.innerHTML = '';
-            retourContainer.innerHTML = '';
             
             if (existingAller.length > 0) {
+                allerContainer.innerHTML = '';
                 existingAller.forEach(h => window.addSchedule('aller', h.heure_depart, h.heure_arrive));
-            } else {
+            } else if (allerContainer.children.length === 0) {
                 window.addSchedule('aller');
             }
             
             if (existingRetour.length > 0) {
+                retourContainer.innerHTML = '';
                 existingRetour.forEach(h => window.addSchedule('retour', h.heure_depart, h.heure_arrive));
-            } else {
+            } else if (retourContainer.children.length === 0) {
                 window.addSchedule('retour');
             }
         }, 300);

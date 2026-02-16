@@ -306,7 +306,7 @@
                                             <p class="text-lg font-medium mb-2">Aucun personnel trouvé</p>
                                             <p class="text-sm mb-4">Commencez par ajouter un nouveau membre à votre équipe.
                                             </p>
-                                            <a href="{{ route('personnels.create') }}"
+                                            <a href="{{ route('personnel.create') }}"
                                                 class="inline-flex items-center px-4 py-2 bg-[#e94f1b] text-white font-semibold rounded-lg hover:bg-[#e89116] transition-colors duration-200">
                                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24">

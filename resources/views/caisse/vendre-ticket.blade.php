@@ -30,10 +30,10 @@
         <option value="">-- Sélectionnez un départ --</option>
         @foreach($programmes as $programme)
             <option value="{{ $programme->id }}" 
-                data-vehicle-id="{{ $programme->vehicule_id }}"
+                data-vehicle-id="{{ $programme->vehicule->id ?? 0 }}"
                 data-trajet="{{ $programme->point_depart }} → {{ $programme->point_arrive }}"
                 data-date="{{ \Carbon\Carbon::now()->format('d/m/Y') }}"
-                data-heure="{{ \Carbon\Carbon::parse($programme->heure_depart)->format('H:i') }}">
+                data-heure="{{ $programme->heure_depart }}">
                 {{-- 1. L'heure (c'est le plus important pour un départ imminent) --}}
                 {{ \Carbon\Carbon::parse($programme->heure_depart)->format('H:i') }} 
                 
@@ -206,7 +206,8 @@
         }
 
         const selectedOption = this.options[this.selectedIndex];
-        const vehicleId = selectedOption.getAttribute('data-vehicle-id');
+        const vehicleId = selectedOption.getAttribute('data-vehicle-id') || 0;
+        const heureDepart = selectedOption.getAttribute('data-heure');
         
         // Get data from attributes
         const trajet = selectedOption.getAttribute('data-trajet');
@@ -222,8 +223,10 @@
 
         // Fetch Data
         const dateQuery = '{{ now()->toDateString() }}';
+        let url = `{{ url("/caisse/api/vehicle") }}/${vehicleId}?date=${dateQuery}&program_id=${programId}`;
+        if (heureDepart) url += `&heure_depart=${heureDepart}`;
         
-        fetch(`{{ url("/caisse/api/vehicle") }}/${vehicleId}?date=${dateQuery}&program_id=${programId}`)
+        fetch(url)
             .then(res => res.json())
             .then(data => {
                 if(data.success) {

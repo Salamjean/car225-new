@@ -33,7 +33,7 @@ class UserController extends Controller
         // 2. Activités Récentes
         $recentReservations = Reservation::where('user_id', $user->id)
             ->where('statut', 'confirmee')
-            ->with(['programme.compagnie', 'programme.vehicule'])
+            ->with(['programme.compagnie'])
             ->orderBy('created_at', 'desc')
             ->take(3)
             ->get();

@@ -67,6 +67,10 @@ return [
             'driver' => 'session',
             'provider' => 'hotesses',
         ],
+        'chauffeur' => [
+            'driver' => 'session',
+            'provider' => 'personnels',
+        ],
     ],
 
     /*
@@ -117,6 +121,10 @@ return [
         'hotesses' => [
             'driver' => 'eloquent',
             'model' => App\Models\Hotesse::class,
+        ],
+        'personnels' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Personnel::class,
         ],
 
         // 'users' => [

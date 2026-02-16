@@ -4,9 +4,13 @@ namespace App\Http\Controllers\Compagnie\Personnel;
 
 use App\Http\Controllers\Controller;
 use App\Models\Personnel;
+use App\Models\OtpVerification;
+use App\Mail\ChauffeurOtpMail;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class PersonnelController extends Controller
@@ -31,26 +35,37 @@ class PersonnelController extends Controller
      */
     public function store(Request $request)
     {
+        
         // Validation des données
         $validatedData = $request->validate([
-            'name' => 'required|string|max:255',
-            'prenom' => 'required|string|max:255',
+            'name' => 'required|string|min:3|max:255',
+            'prenom' => 'required|string|min:3|max:255',
             'type_personnel' => 'required|string|in:Chauffeur,Convoyeur',
             'email' => 'required|email|unique:personnels,email',
-            'contact' => 'required|string|max:20',
+            'contact' => 'required|string|max:10|unique:personnels,contact',
             'country_code' => 'required|string|max:10',
-            'contact_urgence' => 'required|string|max:20',
+            'contact_urgence' => 'required|string|max:10',
             'country_code_urgence' => 'required|string|max:10',
+            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ], [
             'name.required' => 'Le nom est obligatoire.',
+            'name.min' => 'Le nom doit contenir au moins 3 caractères.',
+            'name.max' => 'Le nom doit contenir au maximum 255 caractères.',
             'prenom.required' => 'Le prénom est obligatoire.',
+            'prenom.min' => 'Le prénom doit contenir au moins 3 caractères.',
+            'prenom.max' => 'Le prénom doit contenir au maximum 255 caractères.',
             'type_personnel.required' => 'Le type de personnel est obligatoire.',
             'type_personnel.in' => 'Le type de personnel doit être Chauffeur ou Convoyeur.',
             'email.required' => 'L\'email est obligatoire.',
             'email.email' => 'L\'email doit être une adresse email valide.',
             'email.unique' => 'Cet email est déjà utilisé.',
+            'country_code.required' => 'Le code pays est obligatoire.',
+            'contact.max' => 'Le contact personnel doit contenir au maximum 10 chiffres.',
+            'contact.unique' => 'Ce contact est déjà utilisé.',
             'contact.required' => 'Le contact personnel est obligatoire.',
+            'country_code_urgence.required' => 'Le code pays est obligatoire.',
+            'contact_urgence.max' => 'Le contact d\'urgence doit contenir au maximum 10 chiffres.',
             'contact_urgence.required' => 'Le contact d\'urgence est obligatoire.',
             'profile_image.image' => 'Le fichier doit être une image.',
             'profile_image.mimes' => 'L\'image doit être au format jpeg, png, jpg ou gif.',
@@ -77,10 +92,22 @@ class PersonnelController extends Controller
                 'type_personnel' => $validatedData['type_personnel'],
                 'email' => $validatedData['email'],
                 'contact' => $contact,
-                'contact_urgence' => $validatedData['contact_urgence'],
+                'contact_urgence' => $contact_urgent,
                 'profile_image' => $profileImagePath,
                 'compagnie_id' => Auth::guard('compagnie')->user()->id ?? null,
+                'password' => Hash::make(Str::random(12)), // Mot de passe temporaire aléatoire
+                'statut' => 'indisponible', // Par défaut indisponible jusqu'à vérification OTP
             ]);
+
+            // Envoi de l'OTP si c'est un chauffeur
+            if ($validatedData['type_personnel'] === 'Chauffeur') {
+                $otp = OtpVerification::createOtp($personnel->email, 'chauffeur');
+                try {
+                    Mail::to($personnel->email)->send(new ChauffeurOtpMail($otp->otp, $personnel->name . ' ' . $personnel->prenom, $personnel->email));
+                } catch (\Exception $e) {
+                    // Log error but continue
+                }
+            }
 
             // Redirection avec message de succès
             return redirect()

@@ -32,19 +32,19 @@ class VehiculeController extends Controller
     {
         // Validation des données
         $request->validate([
-            'immatriculation' => 'required|string|max:20|unique:vehicules,immatriculation',
+            'immatriculation' => 'required|string|min:5|unique:vehicules,immatriculation',
             'numero_serie' => 'nullable|string|max:255',
             'type_range' => 'required|string|in:2x2,2x3,2x4',
-            'nombre_place' => 'required|integer|min:4|max:30',
+            'nombre_place' => 'required|integer|min:15',
         ], [
             'immatriculation.required' => 'L\'immatriculation est obligatoire.',
             'immatriculation.unique' => 'Cette immatriculation est déjà utilisée.',
+            'immatriculation.min' => 'L\'immatriculation doit contenir au moins 5 caractères.',
             'type_range.required' => 'Le type de rangée est obligatoire.',
             'type_range.in' => 'Le type de rangée doit être 2x2, 2x3 ou 2x4.',
             'nombre_place.required' => 'Le nombre de places est obligatoire.',
             'nombre_place.integer' => 'Le nombre de places doit être un nombre entier.',
-            'nombre_place.min' => 'Le nombre de places doit être d\'au moins 4.',
-            'nombre_place.max' => 'Le nombre de places ne peut pas dépasser 30.',
+            'nombre_place.min' => 'Le nombre de places doit être d\'au moins 15.',
         ]);
 
         try {

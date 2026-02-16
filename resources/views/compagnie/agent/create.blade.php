@@ -1331,6 +1331,37 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Validation des contacts (principal vs urgence)
+    const contactInput = document.getElementById('contact');
+    const urgencyInput = document.getElementById('cas_urgence');
+
+    function checkContactEquality() {
+        if (contactInput.value && urgencyInput.value && contactInput.value.trim() === urgencyInput.value.trim()) {
+            urgencyInput.classList.add('is-invalid');
+            let feedback = urgencyInput.closest('.form-group-modern').querySelector('.invalid-feedback-modern');
+            if (!feedback) {
+                feedback = document.createElement('div');
+                feedback.className = 'invalid-feedback-modern';
+                feedback.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i>Le contact d\'urgence doit être différent du contact principal.';
+                urgencyInput.closest('.input-group-modern').after(feedback);
+            } else {
+                feedback.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i>Le contact d\'urgence doit être différent du contact principal.';
+            }
+            return false;
+        } else {
+            urgencyInput.classList.remove('is-invalid');
+            const feedback = urgencyInput.closest('.form-group-modern').querySelector('.invalid-feedback-modern');
+            // On ne supprime que si c'est notre message d'erreur personnalisé
+            if (feedback && feedback.innerText.includes('différent du contact principal')) {
+                feedback.remove();
+            }
+            return true;
+        }
+    }
+
+    contactInput.addEventListener('input', checkContactEquality);
+    urgencyInput.addEventListener('input', checkContactEquality);
+
     // Validation du formulaire
     const form = document.getElementById('agentForm');
     const submitBtn = form.querySelector('.btn-submit-modern');
@@ -1365,6 +1396,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Validation
         let isValid = true;
+
+        // Reset check
+        if (!checkContactEquality()) {
+            isValid = false;
+        }
+
         const requiredFields = form.querySelectorAll('input[required]');
         requiredFields.forEach(field => {
             if (!validateField(field)) {
@@ -1379,8 +1416,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!isValid) {
             Swal.fire({
                 icon: 'warning',
-                title: 'Champs manquants',
-                html: 'Veuillez remplir tous les champs obligatoires.<br>Les champs marqués d\'un <span style="color: var(--danger-color)">*</span> sont requis.',
+                title: 'Champs manquants ou invalides',
+                html: 'Veuillez vérifier les informations saisies.<br>Les contacts doivent être différents et les champs marqués d\'un <span style="color: var(--danger-color)">*</span> sont requis.',
                 confirmButtonColor: '#e94f1b',
                 background: 'var(--light-bg)'
             });
@@ -1396,6 +1433,19 @@ document.addEventListener('DOMContentLoaded', function() {
             form.submit();
         }, 500);
     });
+
+    // Gestion des erreurs de validation Laravel (si présentes)
+    @if($errors->any())
+        Swal.fire({
+            icon: 'error',
+            title: 'Oups...',
+            html: '<ul style="text-align: left;">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>',
+            confirmButtonColor: '#e94f1b',
+            background: 'var(--light-bg)',
+            color: 'var(--text-primary)'
+        });
+        });
+    @endif
 
     // Réinitialisation du formulaire
     const resetBtn = form.querySelector('.btn-reset-modern');

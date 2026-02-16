@@ -51,7 +51,7 @@ class HotesseController extends Controller
         }
 
         $recent_reservations = Reservation::where('hotesse_id', $hotesse->id)
-            ->with(['programme', 'programme.vehicule']) // Eager load for performance
+            ->with(['programme']) // Eager load for performance
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
@@ -147,7 +147,7 @@ class HotesseController extends Controller
     public function venteSuccess(Request $request)
     {
         $ids = $request->get('reservations', []);
-        $reservations = Reservation::whereIn('id', $ids)->with(['programme.vehicule'])->get();
+        $reservations = Reservation::whereIn('id', $ids)->with(['programme'])->get();
         
         if ($reservations->isEmpty()) {
             return redirect()->route('hotesse.dashboard');
@@ -190,7 +190,7 @@ class HotesseController extends Controller
             // ... (reste du code inchangé) ...
             Log::info('VendreTicket: Searching with params:', $request->all());
 
-            $query = Programme::with(['compagnie', 'vehicule'])
+            $query = Programme::with(['compagnie'])
                 ->where('compagnie_id', $hotesse->compagnie_id)
                 ->where('statut', 'actif');
 
@@ -280,15 +280,16 @@ class HotesseController extends Controller
                         ->where('statut', 'confirmee')
                         ->count();
 
+                    $vehicule = $p->getVehiculeForDate($searchDateRequested);
                     return [
                         'id' => $p->id,
                         'heure_depart' => $p->heure_depart,
                         'heure_arrive' => $p->heure_arrive,
                         'date_depart' => $p->date_depart,
-                        'vehicule' => $p->vehicule ? $p->vehicule->type_range : 'Standard',
-                        'vehicule_id' => $p->vehicule_id,
+                        'vehicule' => $vehicule ? $vehicule->type_range : 'Standard',
+                        'vehicule_id' => $vehicule ? $vehicule->id : null,
                         'reserved_count' => $reservedCount,
-                        'total_seats' => $p->vehicule ? $p->vehicule->nombre_place : 70
+                        'total_seats' => $vehicule ? $vehicule->nombre_place : 70
                     ];
                 });
 
@@ -345,7 +346,7 @@ class HotesseController extends Controller
             'heure_retour' => 'nullable|required_with:programme_retour_id',
         ]);
 
-        $programmeAller = Programme::with(['compagnie', 'vehicule'])->findOrFail($request->programme_id);
+        $programmeAller = Programme::with(['compagnie'])->findOrFail($request->programme_id);
         $nombrePassagers = $request->nombre_passagers;
         $isAllerRetour = $request->filled('programme_retour_id');
 
@@ -445,7 +446,7 @@ class HotesseController extends Controller
 
             // ========== RETOUR (si Aller-Retour) ==========
             if ($isAllerRetour) {
-                $programmeRetour = Programme::with(['compagnie', 'vehicule'])->findOrFail($request->programme_retour_id);
+                $programmeRetour = Programme::with(['compagnie'])->findOrFail($request->programme_retour_id);
                 
                 // Assigner automatiquement les places pour le retour
                 $seatsRetour = $this->assignSeatsAutomatically($programmeRetour->id, $request->date_retour, $nombrePassagers);
@@ -552,6 +553,10 @@ class HotesseController extends Controller
      */
     private function assignSeatsAutomatically($programmeId, $dateVoyage, $count)
     {
+        $programme = Programme::findOrFail($programmeId);
+        $vehicule = $programme->getVehiculeForDate($dateVoyage);
+        $totalSeats = $vehicule ? $vehicule->nombre_place : 70;
+
         // Récupérer les places déjà réservées pour ce programme et cette date
         $reservedSeats = Reservation::where('programme_id', $programmeId)
             ->where('date_voyage', $dateVoyage)
@@ -562,7 +567,7 @@ class HotesseController extends Controller
         $nextSeat = 1;
 
         // Trouver les prochaines places disponibles
-        while (count($assignedSeats) < $count && $nextSeat <= 70) {
+        while (count($assignedSeats) < $count && $nextSeat <= $totalSeats) {
             if (!in_array($nextSeat, $reservedSeats)) {
                 $assignedSeats[] = $nextSeat;
             }

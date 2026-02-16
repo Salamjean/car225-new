@@ -36,10 +36,10 @@
                         <option value="">-- Sélectionnez un départ --</option>
                         @foreach($programmes as $programme)
                             <option value="{{ $programme->id }}" 
-                                data-vehicle-id="{{ $programme->vehicule_id }}"
+                                data-vehicle-id="{{ $programme->vehicule->id ?? 0 }}"
                                 data-trajet="{{ $programme->point_depart }} → {{ $programme->point_arrive }}"
                                 data-date="{{ \Carbon\Carbon::now()->format('d/m/Y') }}"
-                                data-heure="{{ \Carbon\Carbon::parse($programme->heure_depart)->format('H:i') }}"
+                                data-heure="{{ $programme->heure_depart }}"
                                 data-price="{{ $programme->montant_billet }}">
                                 {{ \Carbon\Carbon::parse($programme->heure_depart)->format('H:i') }} 
                                 | {{ $programme->point_depart }} → {{ $programme->point_arrive }} 
@@ -267,7 +267,8 @@
         }
 
         const selectedOption = this.options[this.selectedIndex];
-        const vehicleId = selectedOption.getAttribute('data-vehicle-id');
+        const vehicleId = selectedOption.getAttribute('data-vehicle-id') || 0;
+        const heureDepart = selectedOption.getAttribute('data-heure');
         currentPrice = parseFloat(selectedOption.getAttribute('data-price')) || 0;
         
         wrapper.style.maxHeight = '1200px'; 
@@ -277,7 +278,7 @@
         if (pollingInterval) clearInterval(pollingInterval);
         
         const dateQuery = '{{ now()->toDateString() }}';
-        fetchData(vehicleId, dateQuery, programId);
+        fetchData(vehicleId, dateQuery, programId, false, heureDepart);
 
         // --- Laravel Reverb (Echo) Listener ---
         if (window.Echo) {
@@ -291,7 +292,7 @@
         }
 
         pollingInterval = setInterval(() => {
-            fetchData(vehicleId, dateQuery, programId, true);
+            fetchData(vehicleId, dateQuery, programId, true, heureDepart);
         }, 1500); // 1.5s backup instead of 10s
     });
 
@@ -322,8 +323,11 @@
         updateUI();
     }
 
-    function fetchData(vehicleId, date, programId, isPolling = false) {
-        fetch(`{{ url("/caisse/api/vehicle") }}/${vehicleId}?date=${date}&program_id=${programId}`)
+    function fetchData(vehicleId, date, programId, isPolling = false, heureDepart = null) {
+        let url = `{{ url("/caisse/api/vehicle") }}/${vehicleId}?date=${date}&program_id=${programId}`;
+        if (heureDepart) url += `&heure_depart=${heureDepart}`;
+        
+        fetch(url)
             .then(res => res.json())
             .then(data => {
                 if(data.success) {

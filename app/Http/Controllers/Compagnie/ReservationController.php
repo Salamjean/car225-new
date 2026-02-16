@@ -51,7 +51,7 @@ class ReservationController extends Controller
             ->whereHas('programme', function($q) use ($compagnie) {
                 $q->where('compagnie_id', $compagnie->id);
             })
-            ->with(['programme', 'programme.itineraire', 'user', 'paiement', 'programme.vehicule']);
+            ->with(['programme', 'programme.itineraire', 'user', 'paiement']);
 
         // --- FILTRES ---
         
@@ -142,7 +142,7 @@ class ReservationController extends Controller
             'date_voyage' => 'required|date',
         ]);
 
-        $programme = \App\Models\Programme::with('vehicule')->findOrFail($request->programme_id);
+        $programme = \App\Models\Programme::findOrFail($request->programme_id);
         
         // Vérifier que le programme appartient à la compagnie connectée
         if ($programme->compagnie_id !== Auth::guard('compagnie')->id()) {
@@ -156,9 +156,11 @@ class ReservationController extends Controller
             ->map(fn($seat) => (int)$seat) // S'assurer que ce sont des entiers
             ->toArray();
 
+        $vehicule = $programme->getVehiculeForDate($request->date_voyage);
+
         return response()->json([
-            'vehicle_name' => $programme->vehicule ? $programme->vehicule->immatriculation . ' (' . $programme->vehicule->marque . ')' : 'Véhicule non assigné',
-            'total_seats' => $programme->vehicule ? $programme->vehicule->nombre_place : 70, // Par défaut 70 si pas de véhicule
+            'vehicle_name' => $vehicule ? $vehicule->immatriculation . ' (' . $vehicule->marque . ')' : 'Véhicule non assigné',
+            'total_seats' => $vehicule ? $vehicule->nombre_place : 70, // Par défaut 70 si pas de véhicule
             'occupied' => $occupiedSeats,
         ]);
     }

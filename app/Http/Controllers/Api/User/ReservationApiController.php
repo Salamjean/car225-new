@@ -47,7 +47,7 @@ class ReservationApiController extends Controller
         try {
             $user = Auth::user();
 
-            $query = Reservation::with(['programme', 'programme.compagnie', 'programme.vehicule'])
+            $query = Reservation::with(['programme', 'programme.compagnie'])
                 ->where('user_id', $user->id)
                 ->where('statut', '!=', 'en_attente')
                 ->orderBy('created_at', 'desc')
@@ -120,7 +120,7 @@ class ReservationApiController extends Controller
                 ], 403);
             }
 
-            $reservation->load(['programme', 'programme.compagnie', 'programme.vehicule', 'user']);
+            $reservation->load(['programme', 'programme.compagnie', 'user']);
 
             return response()->json([
                 'success' => true,
@@ -219,7 +219,7 @@ class ReservationApiController extends Controller
                         $fcmService->sendNotification(
                             $user->fcm_token, 
                             'Annulation effectuée ❌', 
-                            "Votre réservation {$reservation->reference} a été annulée.",
+                            "Votre réservation {$reservation->reference} (" . optional($reservation->programme)->point_depart . " → " . optional($reservation->programme)->point_arrive . ") a été annulée.",
                             ['type' => 'cancellation', 'reservation_id' => $reservation->id]
                         );
                 }
@@ -403,7 +403,7 @@ class ReservationApiController extends Controller
             }
 
             // Charger les relations nécessaires
-            $reservation->load(['programme', 'programme.compagnie', 'programme.vehicule', 'user']);
+            $reservation->load(['programme', 'programme.compagnie', 'user']);
 
             // Déterminer si la réservation actuelle est "aller" ou "retour"
             $isRetourTicket = str_contains($reservation->reference, 'RET');
@@ -453,7 +453,7 @@ class ReservationApiController extends Controller
 
             // Ajouter le billet aller
             if ($allerReservation) {
-                $allerReservation->load(['programme', 'programme.compagnie', 'programme.vehicule']);
+                $allerReservation->load(['programme', 'programme.compagnie']);
                 
                 $response['aller'] = [
                     'id' => $allerReservation->id,
@@ -477,11 +477,11 @@ class ReservationApiController extends Controller
                             'id' => $allerReservation->programme->compagnie->id,
                             'name' => $allerReservation->programme->compagnie->name,
                         ] : null,
-                        'vehicule' => $allerReservation->programme->vehicule ? [
-                            'id' => $allerReservation->programme->vehicule->id,
-                            'marque' => $allerReservation->programme->vehicule->marque,
-                            'modele' => $allerReservation->programme->vehicule->modele,
-                            'immatriculation' => $allerReservation->programme->vehicule->immatriculation,
+                        'vehicule' => $allerReservation->programme->getVehiculeForDate($allerReservation->date_voyage) ? [
+                            'id' => $allerReservation->programme->getVehiculeForDate($allerReservation->date_voyage)->id,
+                            'marque' => $allerReservation->programme->getVehiculeForDate($allerReservation->date_voyage)->marque,
+                            'modele' => $allerReservation->programme->getVehiculeForDate($allerReservation->date_voyage)->modele,
+                            'immatriculation' => $allerReservation->programme->getVehiculeForDate($allerReservation->date_voyage)->immatriculation,
                         ] : null,
                     ],
                     'qr_code' => $allerReservation->qr_code,
@@ -492,7 +492,7 @@ class ReservationApiController extends Controller
 
             // Ajouter le billet retour
             if ($retourReservation) {
-                $retourReservation->load(['programme', 'programme.compagnie', 'programme.vehicule']);
+                $retourReservation->load(['programme', 'programme.compagnie']);
                 
                 // Pour le retour, utiliser date_retour si disponible
                 $dateVoyageRetour = $retourReservation->date_retour ?? $retourReservation->date_voyage;
@@ -519,11 +519,11 @@ class ReservationApiController extends Controller
                             'id' => $retourReservation->programme->compagnie->id,
                             'name' => $retourReservation->programme->compagnie->name,
                         ] : null,
-                        'vehicule' => $retourReservation->programme->vehicule ? [
-                            'id' => $retourReservation->programme->vehicule->id,
-                            'marque' => $retourReservation->programme->vehicule->marque,
-                            'modele' => $retourReservation->programme->vehicule->modele,
-                            'immatriculation' => $retourReservation->programme->vehicule->immatriculation,
+                        'vehicule' => $retourReservation->programme->getVehiculeForDate($dateVoyageRetour) ? [
+                            'id' => $retourReservation->programme->getVehiculeForDate($dateVoyageRetour)->id,
+                            'marque' => $retourReservation->programme->getVehiculeForDate($dateVoyageRetour)->marque,
+                            'modele' => $retourReservation->programme->getVehiculeForDate($dateVoyageRetour)->modele,
+                            'immatriculation' => $retourReservation->programme->getVehiculeForDate($dateVoyageRetour)->immatriculation,
                         ] : null,
                     ],
                     'qr_code' => $retourReservation->qr_code,
@@ -559,7 +559,7 @@ class ReservationApiController extends Controller
             $today = now()->format('Y-m-d');
             
             // 1. Préparation de la requête
-            $query = Programme::with(['compagnie', 'vehicule', 'itineraire', 'chauffeur'])
+            $query = Programme::with(['compagnie', 'itineraire', 'gareDepart', 'gareArrivee'])
                 ->where('statut', 'actif')
                 ->where(function($q) use ($today) {
                     // Logique de date corrigée (inclut les programmes récurrents en cours)
@@ -598,17 +598,15 @@ class ReservationApiController extends Controller
                         'heure_arrive' => $p->heure_arrive,
                         'prix' => $p->montant_billet,
                         'duree' => $p->durer_parcours,
-                        'vehicule' => $p->vehicule ? [
-                            'id' => $p->vehicule->id,
-                            'modele' => $p->vehicule->modele,
-                            'immatriculation' => $p->vehicule->immatriculation,
-                            'nombre_place' => $p->vehicule->nombre_place,
-                            'type_range' => $p->vehicule->type_range,
+                        'gare_depart' => $p->gareDepart ? [
+                            'id' => $p->gareDepart->id,
+                            'nom' => $p->gareDepart->nom,
+                            'adresse' => $p->gareDepart->adresse,
                         ] : null,
-                        'chauffeur' => $p->chauffeur ? [
-                            'id' => $p->chauffeur->id,
-                            'nom' => $p->chauffeur->nom,
-                            'prenom' => $p->chauffeur->prenom,
+                        'gare_arrivee' => $p->gareArrivee ? [
+                            'id' => $p->gareArrivee->id,
+                            'nom' => $p->gareArrivee->nom,
+                            'adresse' => $p->gareArrivee->adresse,
                         ] : null,
                     ];
                 })->values();
@@ -641,7 +639,7 @@ class ReservationApiController extends Controller
         try {
             $today = now()->format('Y-m-d');
             
-            $query = Programme::with(['compagnie', 'vehicule'])
+            $query = Programme::with(['compagnie'])
                 ->where('date_depart', '>=', $today)
                 ->where('statut', 'actif')
                 ->where('is_aller_retour', false)
@@ -674,7 +672,7 @@ class ReservationApiController extends Controller
         try {
             $today = now()->format('Y-m-d');
             
-            $query = Programme::with(['compagnie', 'vehicule', 'programmeRetour'])
+            $query = Programme::with(['compagnie', 'programmeRetour'])
                 ->where('date_depart', '>=', $today)
                 ->where('statut', 'actif')
                 ->where('is_aller_retour', true)
@@ -720,7 +718,7 @@ class ReservationApiController extends Controller
             $point_depart_normalized = $this->normalizeSearchTerm($point_depart);
             $point_arrive_normalized = $this->normalizeSearchTerm($point_arrive);
 
-            $query = Programme::with(['compagnie', 'vehicule', 'itineraire'])
+            $query = Programme::with(['compagnie', 'itineraire', 'gareDepart', 'gareArrivee'])
                 ->where('statut', 'actif')
                 ->where(function($q) use ($point_depart, $point_depart_normalized) {
                     $q->where('point_depart', 'like', "%{$point_depart}%")
@@ -781,10 +779,10 @@ class ReservationApiController extends Controller
                     'itineraire_id' => $first->itineraire_id,
                     'point_depart' => $first->point_depart,
                     'point_arrive' => $first->point_arrive,
+                    'gare_depart' => $first->gareDepart,
+                    'gare_arrivee' => $first->gareArrivee,
                     'montant_billet' => $first->montant_billet,
                     'durer_parcours' => $first->durer_parcours,
-                    'vehicule' => $first->vehicule,
-                    'vehicule_id' => $first->vehicule_id,
                     'statut' => 'actif',
                     'aller_horaires' => $allerHoraires,
                     'retour_horaires' => $retourHoraires,
@@ -861,8 +859,8 @@ class ReservationApiController extends Controller
 
             $formattedDate = date('Y-m-d', strtotime($dateVoyage));
             
-            // On charge le véhicule pour avoir le nombre total de places
-            $programme = Programme::with('vehicule')->find($programId);
+            // On charge le programme
+            $programme = Programme::find($programId);
 
             if (!$programme) {
                 return response()->json([
@@ -901,14 +899,16 @@ class ReservationApiController extends Controller
             // Nettoyage : conversion en entiers (int) et suppression des doublons
             $reservedSeats = array_values(array_unique(array_map('intval', $reservedSeats)));
 
+            $vehicule = $programme->getVehiculeForDate($formattedDate);
+
             return response()->json([
                 'success' => true,
                 'data' => $reservedSeats,
                 'details' => [
                     'programme_type' => $type,
-                    'total_places' => $programme->vehicule ? (int)$programme->vehicule->nombre_place : 0,
-                    'rangee_type' => $programme->vehicule ? $programme->vehicule->type_range : '2x2',
-                    'vehicule_modele' => $programme->vehicule ? $programme->vehicule->modele : null,
+                    'total_places' => $vehicule ? (int)$vehicule->nombre_place : 0,
+                    'rangee_type' => $vehicule ? $vehicule->type_range : '2x2',
+                    'vehicule_modele' => $vehicule ? $vehicule->modele : null,
                 ],
                 'date' => $formattedDate
             ]);
@@ -989,7 +989,7 @@ class ReservationApiController extends Controller
             ]);
 
             // CORRECTION ICI : on utilise 'chauffeur' car c'est le nom de la fonction dans le Modèle
-            $query = Programme::with(['compagnie', 'vehicule', 'chauffeur'])
+            $query = Programme::with(['compagnie'])
                 ->where('point_depart', $request->point_depart)
                 ->where('point_arrive', $request->point_arrive)
                 ->where('statut', 'actif');
@@ -2237,10 +2237,12 @@ class ReservationApiController extends Controller
                 if ($user->fcm_token) {
                     try {
                         $fcmService = app(\App\Services\FcmService::class);
+                        $dateVoyage = date('d/m/Y', strtotime($reservation->date_voyage));
+                        $heureDepart = date('H:i', strtotime($programme->heure_depart));
                         $fcmService->sendNotification(
                             $user->fcm_token, 
                             'Réservation confirmée ✅', 
-                            "Votre réservation {$reservation->reference} pour {$programme->point_depart} est confirmée.",
+                            "Billet {$reservation->reference}: {$programme->point_depart} → {$programme->point_arrive} le {$dateVoyage} à {$heureDepart}. Bon voyage!",
                             ['type' => 'confirmation', 'reservation_id' => $reservation->id]
                         );
                     } catch (\Exception $e) {
@@ -2282,7 +2284,9 @@ class ReservationApiController extends Controller
             }
 
             $totalReservedSeats = $query->count();
-            $totalPlaces = $programme->vehicule->nombre_place ?? 50;
+            $dateVoyage = $dateVoyage ?? date('Y-m-d');
+            $vehicule = $programme->getVehiculeForDate($dateVoyage);
+            $totalPlaces = $vehicule ? $vehicule->nombre_place : 50;
 
             if ($totalPlaces == 0) {
                 $totalPlaces = 50;

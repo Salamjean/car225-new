@@ -314,6 +314,15 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     @endif
 
+    @if($errors->any())
+        Swal.fire({
+            icon: 'error',
+            title: 'Erreur de validation',
+            html: '<ul style="text-align: left;">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>',
+            confirmButtonColor: '#e94f1b'
+        });
+    @endif
+
     // Gestion de l'upload d'image
     const profilePictureInput = document.getElementById('profile_picture');
     const imagePreview = document.getElementById('image-preview');
@@ -342,16 +351,62 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Validation en temps réel de l'email
     const emailInput = document.querySelector('input[name="email"]');
-    emailInput.addEventListener('blur', function(e) {
-        const email = e.target.value;
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (emailInput) {
+        emailInput.addEventListener('blur', function(e) {
+            const email = e.target.value;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            
+            if (email && !emailRegex.test(email)) {
+                e.target.classList.add('border-red-300');
+            } else {
+                e.target.classList.remove('border-red-300');
+            }
+        });
+    }
+
+    // Comparaison des contacts
+    const contactInput = document.querySelector('input[name="contact"]');
+    const urgenceInput = document.querySelector('input[name="cas_urgence"]');
+    
+    if (contactInput && urgenceInput) {
+        const urgenceIcon = urgenceInput.parentElement.querySelector('svg');
         
-        if (email && !emailRegex.test(email)) {
-            e.target.classList.add('border-red-300');
-        } else {
-            e.target.classList.remove('border-red-300');
+        function checkContacts() {
+            const contact = contactInput.value.replace(/\D/g, '');
+            const urgence = urgenceInput.value.replace(/\D/g, '');
+            
+            if (contact && urgence && contact === urgence) {
+                urgenceInput.classList.add('border-yellow-400', 'bg-yellow-50/30');
+                urgenceInput.classList.remove('border-gray-200');
+                if (urgenceIcon) {
+                    urgenceIcon.classList.remove('text-gray-400');
+                    urgenceIcon.classList.add('text-yellow-500');
+                }
+                
+                let warning = document.getElementById('contact-warning');
+                if (!warning) {
+                    warning = document.createElement('p');
+                    warning.id = 'contact-warning';
+                    warning.className = 'text-yellow-600 text-xs mt-1 font-medium animate-pulse';
+                    warning.innerText = "Le contact d'urgence doit être différent du contact principal";
+                    urgenceInput.closest('.space-y-2').appendChild(warning);
+                }
+            } else {
+                urgenceInput.classList.remove('border-yellow-400', 'bg-yellow-50/30');
+                urgenceInput.classList.add('border-gray-200');
+                if (urgenceIcon) {
+                    urgenceIcon.classList.add('text-gray-400');
+                    urgenceIcon.classList.remove('text-yellow-500');
+                }
+                
+                const warning = document.getElementById('contact-warning');
+                if (warning) warning.remove();
+            }
         }
-    });
+        
+        contactInput.addEventListener('input', checkContacts);
+        urgenceInput.addEventListener('input', checkContacts);
+    }
 });
 </script>
 

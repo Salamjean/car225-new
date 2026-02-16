@@ -37,7 +37,7 @@
                                 </label>
                                 <input type="text" name="immatriculation" value="{{ old('immatriculation') }}" required
                                     class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white font-mono"
-                                    placeholder="Ex: AB 123 CD">
+                                    placeholder="Entrer l'immatriculation">
                                 @error('immatriculation')
                                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                 @enderror
@@ -92,7 +92,7 @@
                                     <span class="text-red-500 ml-1">*</span>
                                 </label>
                                 <input type="number" name="nombre_place" id="nombre_place"
-                                    value="{{ old('nombre_place') }}" min="4" max="30" required
+                                    value="{{ old('nombre_place') }}" required
                                     class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
                                     placeholder="Ex: 16">
                                 @error('nombre_place')
@@ -303,25 +303,25 @@
             }
 
             // Formatage automatique de l'immatriculation
-            const immatriculationInput = document.querySelector('input[name="immatriculation"]');
-            immatriculationInput.addEventListener('input', function(e) {
-                let value = e.target.value.toUpperCase().replace(/[^A-Z0-9\s]/g, '');
+            // const immatriculationInput = document.querySelector('input[name="immatriculation"]');
+            // immatriculationInput.addEventListener('input', function(e) {
+            //     let value = e.target.value.toUpperCase().replace(/[^A-Z0-9\s]/g, '');
 
-                // Format CI: XX 123 XX
-                if (value.length > 2 && value[2] !== ' ') {
-                    value = value.substring(0, 2) + ' ' + value.substring(2);
-                }
-                if (value.length > 6 && value[6] !== ' ') {
-                    value = value.substring(0, 6) + ' ' + value.substring(6);
-                }
+            //     // Format CI: XX 123 XX
+            //     if (value.length > 2 && value[2] !== ' ') {
+            //         value = value.substring(0, 2) + ' ' + value.substring(2);
+            //     }
+            //     if (value.length > 6 && value[6] !== ' ') {
+            //         value = value.substring(0, 6) + ' ' + value.substring(6);
+            //     }
 
-                e.target.value = value;
-            });
+            //     e.target.value = value;
+            // });
 
-            // Initialisation si des valeurs existent déjà (en cas d'erreur de validation)
-            if (typeRangeSelect.value) {
-                updateVisualisation();
-            }
+            // // Initialisation si des valeurs existent déjà (en cas d'erreur de validation)
+            // if (typeRangeSelect.value) {
+            //     updateVisualisation();
+            // }
         });
 
         // SweetAlert pour les messages de session

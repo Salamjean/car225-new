@@ -36,7 +36,7 @@
                                 <div class="flex gap-3">
                                     <div class="w-2 h-2 rounded-full mt-1.5 shrink-0 {{ $notification->read_at ? 'bg-gray-300' : 'bg-[#e94f1b]' }}"></div>
                                     <div class="space-y-1">
-                                        <p class="text-xs font-black text-gray-900 leading-tight">{{ $notification->data['title'] ?? 'Notification' }}</p>
+                                        <p class="text-xs font-black text-gray-900 leading-tight">{{ $notification->data['title'] ?? '' }}</p>
                                         <p class="text-[11px] font-medium text-gray-600 leading-snug">{{ $notification->data['message'] ?? '' }}</p>
                                         <p class="text-[9px] font-bold text-gray-400 pt-1 uppercase">{{ $notification->created_at->diffForHumans() }}</p>
                                     </div>
@@ -165,7 +165,7 @@
                     const icon = iconType === 'error' ? 'error' : (iconType === 'warning' ? 'warning' : (iconType === 'success' ? 'success' : 'info'));
                     
                     await Swal.fire({
-                        title: notif.data.title || 'Notification',
+                        title: notif.data.title || '',
                         text: notif.data.message || '',
                         icon: icon,
                         confirmButtonText: 'Fermer',
@@ -218,7 +218,7 @@
 
                     // 2. Show SweetAlert
                     Swal.fire({
-                        title: notification.title || 'Notification',
+                        title: notification.title || '',
                         text: notification.message || '',
                         icon: notification.type === 'error' ? 'error' : (notification.type === 'warning' ? 'warning' : (notification.type === 'success' ? 'success' : 'info')),
                         confirmButtonText: 'Fermer',

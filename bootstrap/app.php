@@ -26,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'agent' => \App\Http\Middleware\AgentMiddleware::class,
             'caisse' => \App\Http\Middleware\CaisseMiddleware::class,
             'hotesse' => \App\Http\Middleware\HotesseMiddleware::class,
+            'chauffeur' => \App\Http\Middleware\ChauffeurMiddleware::class,
         ]);
 
 

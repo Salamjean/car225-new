@@ -27,7 +27,7 @@
                 <div class="mdc-menu mdc-menu-surface" tabindex="-1">
                     <ul class="mdc-list" role="menu" aria-hidden="true" aria-orientation="vertical">
                         <li class="mdc-list-item" role="menuitem">
-                            <a href="#" class="d-flex align-items-center w-100 text-decoration-none text-dark">
+                            <a href="{{ route('compagnie.profile') }}" class="d-flex align-items-center w-100 text-decoration-none text-dark">
                                 <i class="mdi mdi-account mr-2" style="color: #193561; font-size: 1.5rem;"></i>
                                 <span>Mon Profil</span>
                             </a>
@@ -78,8 +78,7 @@
                         </li>
                         <li role="separator" class="mdc-list-divider"></li>
                         <li class="mdc-list-item" role="menuitem">
-                            <a href="#"
-                                class="d-flex align-items-center w-100 text-decoration-none text-dark py-2">
+                            <a href="{{ route('compagnie.profile') }}" class="d-flex align-items-center w-100 text-decoration-none text-dark py-2">
                                 <i class="mdi mdi-account mr-2" style="color: #193561; font-size: 1.5rem;"></i>
                                 <span>Mon Profil</span>
                             </a>

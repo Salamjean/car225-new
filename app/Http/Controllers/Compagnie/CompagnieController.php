@@ -51,16 +51,20 @@ class CompagnieController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name'      => 'required|string|max:255',
+            'name'      => 'required|string|unique:compagnies,name|max:255',
             'email'     => 'required|email|unique:compagnies,email',
-            'username'  => 'nullable|string|max:255|unique:compagnies,username',
             'commune'   => 'required|string|max:255',
             'adresse'   => 'required|string|max:255',
-            'contact'   => 'required|string|max:255',
+            'contact'   => 'required|string|unique:compagnies,contact|max:255',
             'prefix'    => 'required|string|max:10',
-            'sigle'     => 'nullable|string|max:50',
-            'slogan'    => 'nullable|string|max:255',
+            'sigle'     => 'required|string|max:50|unique:compagnies,sigle',
             'path_logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+        ], [
+            'name.unique' => 'Ce nom de compagnie est déjà utilisé.',
+            'email.unique' => 'Cette adresse email est déjà enregistrée.',
+            'contact.unique' => 'Ce numéro de contact est déjà utilisé.',
+            'sigle.required' => 'Le sigle de la compagnie est obligatoire.',
+            'sigle.unique' => 'Ce sigle est déjà utilisé.',
         ]);
 
         try {
@@ -76,13 +80,11 @@ class CompagnieController extends Controller
                 'name'      => $validated['name'],
                 'email'     => $validated['email'],
                 'password'  => Hash::make('default'),
-                'username'  => $validated['username'],
                 'commune'   => $validated['commune'],
                 'adresse'   => $validated['adresse'],
                 'contact'   => $validated['contact'],
                 'prefix'    => $validated['prefix'],
                 'sigle'     => $validated['sigle'],
-                'slogan'    => $validated['slogan'],
                 'path_logo' => $logoPath,
             ]);
 
@@ -136,14 +138,14 @@ class CompagnieController extends Controller
     {
         // Validation des données
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255|unique:compagnies,name,' . $compagnie->id,
             'email' => 'required|email|unique:compagnies,email,' . $compagnie->id,
             'username' => 'nullable|string|max:255|unique:compagnies,username,' . $compagnie->id,
             'commune' => 'required|string|max:255',
             'adresse' => 'required|string|max:255',
-            'contact' => 'required|string|max:255',
+            'contact' => 'required|string|unique:compagnies,contact,' . $compagnie->id,
             'prefix' => 'required|string|max:10',
-            'sigle' => 'nullable|string|max:50',
+            'sigle' => 'required|string|max:50|unique:compagnies,sigle,' . $compagnie->id,
             'slogan' => 'nullable|string|max:255',
         ]);
 

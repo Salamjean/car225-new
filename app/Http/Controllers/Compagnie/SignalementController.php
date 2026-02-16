@@ -22,7 +22,7 @@ class SignalementController extends Controller
         $signalements = Signalement::whereHas('programme', function ($q) use ($compagnieId) {
             $q->where('compagnie_id', $compagnieId);
         })
-            ->with(['programme.vehicule', 'user', 'programme'])
+            ->with(['user', 'programme'])
             ->orderBy('created_at', 'desc')
             ->paginate(15);
 
@@ -39,7 +39,7 @@ class SignalementController extends Controller
         $signalement = Signalement::whereHas('programme', function ($q) use ($compagnieId) {
             $q->where('compagnie_id', $compagnieId);
         })
-            ->with(['programme.vehicule', 'user', 'programme'])
+            ->with(['user', 'programme'])
             ->findOrFail($id);
 
         return view('compagnie.signalements.show', compact('signalement'));

@@ -27,10 +27,17 @@ class PasswordResetController extends Controller
     public function sendOtp(Request $request)
     {
         $request->validate([
-            'email' => 'required|email|exists:users,email'
-        ], [
-            'email.exists' => 'Aucun compte n\'existe avec cette adresse email.'
+            'email' => 'required|email'
         ]);
+
+        $email = $request->email;
+        $user = User::where('email', $email)->first();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Aucun compte n\'existe avec cette adresse email.'
+            ]);
+        }
 
         $email = $request->email;
         

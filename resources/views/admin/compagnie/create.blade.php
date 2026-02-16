@@ -16,215 +16,214 @@
         </div>
 
         <!-- Carte du formulaire -->
-        <div class="bg-white rounded-3xl shadow-xl overflow-hidden">
+        <div class="bg-white rounded-3xl shadow-xl overflow-hidden mb-12">
             <form action="{{ route('compagnie.store') }}" method="POST" enctype="multipart/form-data" class="p-8">
                 @csrf
 
+                @if($errors->any())
+                    <div class="mb-8 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-xl">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>
+                            <span class="font-bold text-red-800">Veuillez corriger les erreurs suivantes :</span>
+                        </div>
+                        <ul class="list-disc list-inside text-sm text-red-700">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
                 <!-- Section 1: Informations de base -->
                 <div class="mb-12">
-                    <div class="flex items-center mb-6">
+                    <div class="flex items-center mb-8">
                         <div class="w-2 h-8 bg-[#e94f1b] rounded-full mr-4"></div>
-                        <h2 class="text-2xl font-bold text-gray-900">Informations de base</h2>
+                        <h2 class="text-2xl font-bold text-gray-900 uppercase tracking-wide">Informations de base</h2>
                     </div>
 
-                    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <!-- Nom -->
-                        <div class="space-y-2">
-                            <label class="text-sm font-semibold text-gray-700">Nom de la compagnie</label>
-                             <span class="text-red-500 ml-1">*</span>
-                            <div class="relative">
-                                <input type="text" name="name" required
-                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
-                                    placeholder="Entrez le nom complet">
-                                <div class="absolute inset-y-0 right-0 flex items-center pr-3">
-                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                                    </svg>
+                        <div class="space-y-3">
+                            <label class="text-sm font-bold text-gray-700 flex items-center">
+                                Nom de la compagnie <span class="text-red-500 ml-1">*</span>
+                            </label>
+                            <div class="relative group">
+                                <input type="text" name="name" value="{{ old('name') }}" required
+                                    class="w-full px-5 py-4 border-2 border-gray-100 rounded-2xl focus:ring-0 focus:border-[#e94f1b] transition-all duration-300 bg-gray-50 focus:bg-white @error('name') border-red-300 @enderror"
+                                    placeholder="Ex: Transport Express">
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 group-focus-within:text-[#e94f1b]">
+                                    <i class="fas fa-building text-lg"></i>
                                 </div>
                             </div>
-                        </div>
-
-                         <!-- Username -->
-                        <div class="space-y-2">
-                            <label class="text-sm font-semibold text-gray-700">Nom d'utilisateur</label>
-                            <input type="text" name="username"
-                                class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
-                                placeholder="Nom d'utilisateur (optionnel)">
+                            @error('name') <p class="text-xs text-red-500 font-medium italic">{{ $message }}</p> @enderror
                         </div>
 
                         <!-- Sigle -->
-                        <div class="space-y-2">
-                            <label class="text-sm font-semibold text-gray-700">Sigle</label>
-                            <input type="text" name="sigle"
-                                class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
-                                placeholder="Sigle (optionnel)">
-                        </div>
-
-                        <!-- Slogan -->
-                        <div class="space-y-2">
-                            <label class="text-sm font-semibold text-gray-700">Slogan</label>
-                            <input type="text" name="slogan"
-                                class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
-                                placeholder="Slogan de la compagnie">
+                        <div class="space-y-3">
+                            <label class="text-sm font-bold text-gray-700 flex items-center">
+                                Sigle / Abréviation <span class="text-red-500 ml-1">*</span>
+                            </label>
+                            <div class="relative group">
+                                <input type="text" name="sigle" value="{{ old('sigle') }}" required
+                                    class="w-full px-5 py-4 border-2 border-gray-100 rounded-2xl focus:ring-0 focus:border-[#e94f1b] transition-all duration-300 bg-gray-50 focus:bg-white @error('sigle') border-red-300 @enderror"
+                                    placeholder="Ex: TE">
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 group-focus-within:text-[#e94f1b]">
+                                    <i class="fas fa-tag text-lg"></i>
+                                </div>
+                            </div>
+                            @error('sigle') <p class="text-xs text-red-500 font-medium italic">{{ $message }}</p> @enderror
                         </div>
                     </div>
                 </div>
 
                 <!-- Section 2: Contact et Localisation -->
                 <div class="mb-12">
-                    <div class="flex items-center mb-6">
+                    <div class="flex items-center mb-8">
                         <div class="w-2 h-8 bg-green-500 rounded-full mr-4"></div>
-                        <h2 class="text-2xl font-bold text-gray-900">Contact & Localisation</h2>
+                        <h2 class="text-2xl font-bold text-gray-900 uppercase tracking-wide">Contact & Localisation</h2>
                     </div>
 
-                    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                         <!-- Email -->
-                        <div class="space-y-2">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">
-                                <span>Email</span>
-                                <span class="text-red-500 ml-1">*</span>
+                        <div class="space-y-3">
+                            <label class="text-sm font-bold text-gray-700 flex items-center">
+                                Login / Email Professionnel <span class="text-red-500 ml-1">*</span>
                             </label>
-                            <div class="relative">
-                                <input type="email" name="email" required
-                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
-                                    placeholder="email@compagnie.com">
-                                <div class="absolute inset-y-0 right-0 flex items-center pr-3">
-                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                                    </svg>
+                            <div class="relative group">
+                                <input type="email" name="email" value="{{ old('email') }}" required
+                                    class="w-full px-5 py-4 border-2 border-gray-100 rounded-2xl focus:ring-0 focus:border-[#e94f1b] transition-all duration-300 bg-gray-50 focus:bg-white @error('email') border-red-300 @enderror"
+                                    placeholder="contact@compagnie.ci">
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 group-focus-within:text-[#e94f1b]">
+                                    <i class="fas fa-envelope text-lg"></i>
                                 </div>
                             </div>
+                            @error('email') <p class="text-xs text-red-500 font-medium italic">{{ $message }}</p> @enderror
                         </div>
 
-                        <!-- Contact avec Code Pays -->
-                        <div class="space-y-2">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">
-                                <span>Contact</span>
-                                <span class="text-red-500 ml-1">*</span>
+                        <!-- Contact -->
+                        <div class="space-y-3">
+                            <label class="text-sm font-bold text-gray-700 flex items-center">
+                                Numéro de Contact <span class="text-red-500 ml-1">*</span>
                             </label>
                             <div class="flex gap-3">
-                                <!-- Code Pays -->
                                 <div class="w-32">
                                     <select name="prefix" required
-                                        class="w-full px-3 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
-                                        <option value="+225">🇨🇮 +225</option>
-                                        <option value="+33">🇫🇷 +33</option>
-                                        <option value="+1">🇺🇸 +1</option>
-                                        <option value="+44">🇬🇧 +44</option>
-                                        <option value="+49">🇩🇪 +49</option>
-                                        <option value="+32">🇧🇪 +32</option>
-                                        <option value="+221">🇸🇳 +221</option>
-                                        <option value="+223">🇲🇱 +223</option>
-                                        <option value="+226">🇧🇫 +226</option>
-                                        <option value="+229">🇧🇯 +229</option>
+                                        class="w-full px-3 py-4 border-2 border-gray-100 rounded-2xl bg-gray-50 focus:border-[#e94f1b] transition-all duration-300">
+                                        <option value="+225" {{ old('prefix') == '+225' ? 'selected' : '' }}>🇨🇮 +225</option>
+                                        <option value="+221" {{ old('prefix') == '+221' ? 'selected' : '' }}>🇸🇳 +221</option>
+                                        <option value="+226" {{ old('prefix') == '+226' ? 'selected' : '' }}>🇧🇫 +226</option>
+                                        <option value="+223" {{ old('prefix') == '+223' ? 'selected' : '' }}>🇲🇱 +223</option>
+                                        <option value="+229" {{ old('prefix') == '+229' ? 'selected' : '' }}>🇧🇯 +229</option>
                                     </select>
                                 </div>
-                                <!-- Numéro de téléphone -->
-                                <div class="flex-1">
-                                    <input type="text" name="contact" required
-                                        class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
+                                <div class="flex-1 relative group">
+                                    <input type="text" name="contact" value="{{ old('contact') }}" required
+                                        class="w-full px-5 py-4 border-2 border-gray-100 rounded-2xl focus:ring-0 focus:border-[#e94f1b] transition-all duration-300 bg-gray-50 focus:bg-white @error('contact') border-red-300 @enderror"
                                         placeholder="07 00 00 00 00">
+                                    <div class="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 group-focus-within:text-[#e94f1b]">
+                                        <i class="fas fa-phone text-lg"></i>
+                                    </div>
                                 </div>
                             </div>
+                            @error('contact') <p class="text-xs text-red-500 font-medium italic">{{ $message }}</p> @enderror
                         </div>
+                    </div>
 
-                        <!-- Commune d'Abidjan -->
-                        <div class="space-y-2">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">
-                                <span>Commune</span>
-                                <span class="text-red-500 ml-1">*</span>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Commune -->
+                        <div class="space-y-3 text-sm">
+                            <label class="text-sm font-bold text-gray-700 flex items-center">
+                                Commune du Siège <span class="text-red-500 ml-1">*</span>
                             </label>
-                            <select name="commune" required
-                                class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
-                                <option value="">Sélectionnez une commune</option>
-                                <option value="Abobo">Abobo</option>
-                                <option value="Adjamé">Adjamé</option>
-                                <option value="Attécoubé">Attécoubé</option>
-                                <option value="Cocody">Cocody</option>
-                                <option value="Koumassi">Koumassi</option>
-                                <option value="Marcory">Marcory</option>
-                                <option value="Plateau">Plateau</option>
-                                <option value="Port-Bouët">Port-Bouët</option>
-                                <option value="Treichville">Treichville</option>
-                                <option value="Yopougon">Yopougon</option>
-                                <option value="Songon">Songon</option>
-                                <option value="Bingerville">Bingerville</option>
-                                <option value="Anyama">Anyama</option>
-                            </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                </svg>
+                            <div class="relative group ">
+                                <select name="commune" required
+                                    class="w-full px-5 py-4 border-2 border-gray-100 rounded-2xl focus:ring-0 focus:border-[#e94f1b] transition-all duration-300 bg-gray-50 focus:bg-white appearance-none @error('commune') border-red-300 @enderror">
+                                    <option value="">Choisir une commune...</option>
+                                    @php
+                                        $communes = ['Abobo', 'Adjamé', 'Attécoubé', 'Cocody', 'Koumassi', 'Marcory', 'Plateau', 'Port-Bouët', 'Treichville', 'Yopougon', 'Songon', 'Bingerville', 'Anyama'];
+                                    @endphp
+                                    @foreach($communes as $c)
+                                        <option value="{{ $c }}" {{ old('commune') == $c ? 'selected' : '' }}>{{ $c }}</option>
+                                    @endforeach
+                                </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-gray-400 group-focus-within:text-[#e94f1b]">
+                                    <i class="fas fa-chevron-down text-lg"></i>
+                                </div>
                             </div>
+                            @error('commune') <p class="text-xs text-red-500 font-medium italic">{{ $message }}</p> @enderror
                         </div>
 
                         <!-- Adresse -->
-                        <div class="space-y-2">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">
-                                <span>Adresse</span>
-                                <span class="text-red-500 ml-1">*</span>
+                        <div class="space-y-3">
+                            <label class="text-sm font-bold text-gray-700 flex items-center">
+                                Adresse Géographique <span class="text-red-500 ml-1">*</span>
                             </label>
-                            <input type="text" name="adresse" required
-                                class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
-                                placeholder="Adresse complète dans la commune">
+                            <div class="relative group">
+                                <input type="text" name="adresse" value="{{ old('adresse') }}" required
+                                    class="w-full px-5 py-4 border-2 border-gray-100 rounded-2xl focus:ring-0 focus:border-[#e94f1b] transition-all duration-300 bg-gray-50 focus:bg-white @error('adresse') border-red-300 @enderror"
+                                    placeholder="Ex: Rue 12, Face à la pharmacie...">
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 group-focus-within:text-[#e94f1b]">
+                                    <i class="fas fa-map-marker-alt text-lg"></i>
+                                </div>
+                            </div>
+                            @error('adresse') <p class="text-xs text-red-500 font-medium italic">{{ $message }}</p> @enderror
                         </div>
                     </div>
                 </div>
 
-                <!-- Section 4: Logo -->
+                <!-- Section Logo -->
                 <div class="mb-12">
-                    <div class="flex items-center mb-6">
-                        <div class="w-2 h-8 bg-green-500 rounded-full mr-4"></div>
-                        <h2 class="text-2xl font-bold text-gray-900">Logo de la compagnie</h2>
+                    <div class="flex items-center mb-8">
+                        <div class="w-2 h-8 bg-blue-500 rounded-full mr-4"></div>
+                        <h2 class="text-2xl font-bold text-gray-900 uppercase tracking-wide">Identité Visuelle (Logo)</h2>
                     </div>
 
                     <div class="flex flex-col items-center justify-center">
                         <div id="upload-area" 
-                            class="w-full max-w-2xl border-3 border-dashed border-gray-300 rounded-3xl p-12 text-center cursor-pointer transition-all duration-300 hover:border-[#e94f1b] hover:bg-green-50 group">
+                            class="w-full max-w-2xl border-4 border-dashed border-gray-200 rounded-[2rem] p-12 text-center cursor-pointer transition-all duration-500 hover:border-[#e94f1b] hover:bg-orange-50 group @error('path_logo') border-red-200 bg-red-50 @enderror">
                             <div id="upload-content">
-                                <div class="mx-auto w-16 h-16 bg-[#e94f1b] rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                    </svg>
+                                <div class="mx-auto w-20 h-20 bg-orange-100 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-[#e94f1b] transition-all duration-300 text-[#e94f1b] group-hover:text-white">
+                                    <i class="fas fa-cloud-upload-alt text-3xl"></i>
                                 </div>
-                                <h3 class="text-xl font-semibold text-gray-900 mb-2">Uploader le logo</h3>
-                                <p class="text-gray-500 mb-4">Glissez-déposez votre fichier ou cliquez pour parcourir</p>
-                                <button type="button" class="px-6 py-3 bg-[#e94f1b] text-white rounded-xl font-semibold hover:bg-[#e89116] transition-colors duration-200">
-                                    Choisir un fichier
+                                <h3 class="text-xl font-bold text-gray-900 mb-2">Uploader le logo</h3>
+                                <p class="text-gray-500 mb-6">Glissez votre image ici ou cliquez pour parcourir</p>
+                                <button type="button" class="px-8 py-3 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-bold hover:bg-[#e94f1b] hover:text-white hover:border-[#e94f1b] transition-all duration-300 shadow-sm">
+                                    Parcourir les fichiers
                                 </button>
-                                <p class="text-sm text-gray-400 mt-3">PNG, JPG, JPEG jusqu'à 2MB</p>
+                                <p class="text-xs text-gray-400 mt-4 uppercase tracking-widest font-bold">Format: PNG, JPG, JPEG (Max 2MB)</p>
                             </div>
                             <input type="file" id="path_logo" name="path_logo" class="hidden" accept="image/*">
                             
                             <!-- Aperçu -->
-                            <div id="image-preview" class="hidden mt-6">
-                                <img id="preview" class="mx-auto max-h-32 rounded-2xl shadow-lg" src="" alt="Aperçu du logo">
-                                <button type="button" id="remove-image" class="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200">
-                                    Supprimer l'image
-                                </button>
+                            <div id="image-preview" class="hidden mt-6 animate-fadeIn">
+                                <div class="relative inline-block mt-4">
+                                    <img id="preview" class="mx-auto max-h-48 rounded-2xl shadow-2xl border-4 border-white" src="" alt="Aperçu du logo">
+                                    <button type="button" id="remove-image" class="absolute -top-4 -right-4 w-10 h-10 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-all duration-200 flex items-center justify-center border-4 border-white">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <p class="mt-4 text-green-600 font-bold"><i class="fas fa-check-circle mr-1"></i> Fichier sélectionné avec succès</p>
                             </div>
                         </div>
+                        @error('path_logo') <p class="text-sm text-red-500 mt-2 font-bold">{{ $message }}</p> @enderror
                     </div>
                 </div>
 
                 <!-- Actions -->
-                <div class="flex flex-col sm:flex-row gap-4 justify-between items-center pt-8 border-t border-gray-200">
+                <div class="flex flex-col sm:flex-row gap-6 justify-between items-center pt-10 border-t-2 border-gray-50">
                     <a href="{{ route('compagnie.index') }}" 
-                       class="flex items-center px-8 py-4 text-gray-700 font-semibold rounded-xl border border-gray-300 hover:bg-gray-50 transition-all duration-200 group">
-                        <svg class="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                        </svg>
-                        Retour à la liste
+                       class="flex items-center px-10 py-5 text-gray-500 font-bold rounded-2xl border-2 border-gray-100 hover:bg-gray-100 transition-all duration-200 group">
+                        <i class="fas fa-arrow-left mr-3 group-hover:-translate-x-2 transition-transform duration-300"></i>
+                        ANNULER
                     </a>
                     
                     <button type="submit"
-                        class="flex items-center px-12 py-4 bg-[#e94f1b] text-white font-bold rounded-xl hover:bg-[#e89116] transform hover:-translate-y-1 transition-all duration-200 shadow-lg hover:shadow-xl">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                        </svg>
-                        Créer la compagnie
+                        class="w-full sm:w-auto flex items-center justify-center px-16 py-5 bg-[#e94f1b] text-white font-black rounded-2xl hover:bg-[#d84416] transform hover:-translate-y-2 transition-all duration-300 shadow-[0_10px_30px_rgba(233,79,27,0.3)] hover:shadow-[0_15px_40px_rgba(233,79,27,0.4)] uppercase tracking-widest">
+                        ENREGISTRER LA COMPAGNIE
                     </button>
                 </div>
+            </form>
+        </div>
             </form>
         </div>
     </div>
@@ -290,17 +289,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Gestion du code pays et du numéro
-    const countryCodeSelect = document.querySelector('select[name="country_code"]');
+    const prefixSelect = document.querySelector('select[name="prefix"]');
     const phoneInput = document.querySelector('input[name="contact"]');
 
-    // Format automatique du numéro pour la Côte d'Ivoire
+    // Format automatique du numéro pour la Côte d'Ivoire (+225)
     phoneInput.addEventListener('input', function(e) {
-        if (countryCodeSelect.value === '+225') {
+        if (prefixSelect.value === '+225') {
             let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 10) value = value.substring(0, 10);
+            
+            // Format: 07 01 02 03 04
             if (value.length > 0) {
-                value = value.match(/.{1,2}/g).join(' ');
+                const parts = value.match(/.{1,2}/g);
+                if (parts) e.target.value = parts.join(' ');
+            } else {
+                e.target.value = value;
             }
-            e.target.value = value;
         }
     });
 });

@@ -38,24 +38,19 @@ class AgentController extends Controller
 
             $compagnie = Auth::guard('compagnie')->user();
 
-            $existingAgent = Agent::where('email', $request->email)->first();
-            if ($existingAgent) {
-                return redirect()->back()->withErrors(['email' => 'Cet email est déjà utilisé.'])->withInput();
+            if ($request->contact === $request->cas_urgence) {
+                return redirect()->back()->withErrors(['cas_urgence' => 'Le contact d\'urgence doit être différent du contact principal.'])->withInput();
             }
 
             $agent = new Agent();
             $agent->name = $request->name;
             $agent->prenom = $request->prenom;
             $agent->email = $request->email;
-            $agent->contact = $request->contact;
-            $agent->cas_urgence = $request->cas_urgence;
+            $agent->contact = $this->formatPhoneNumber($request->contact);
+            $agent->cas_urgence = $this->formatPhoneNumber($request->cas_urgence);
             $agent->password = Hash::make('default');
 
             if ($request->hasFile('profile_picture')) {
-                $request->validate([
-                    'profile_picture' => 'image|mimes:jpeg,png,jpg,gif|max:2048'
-                ]);
-
                 $agent->profile_picture = $request->file('profile_picture')->store('profile_pictures', 'public');
             }
 
@@ -120,6 +115,13 @@ class AgentController extends Controller
                 $validated['profile_picture'] = $imagePath;
             }
 
+            if ($request->contact === $request->cas_urgence) {
+                return redirect()->back()->withErrors(['cas_urgence' => 'Le contact d\'urgence doit être différent du contact principal.'])->withInput();
+            }
+
+            $validated['contact'] = $this->formatPhoneNumber($validated['contact']);
+            $validated['cas_urgence'] = $this->formatPhoneNumber($validated['cas_urgence']);
+
             $agent->update($validated);
 
             return redirect()->route('compagnie.agents.index')
@@ -163,5 +165,19 @@ class AgentController extends Controller
                 'message' => 'Erreur lors du désarchivage'
             ], 500);
         }
+    }
+
+    private function formatPhoneNumber($number)
+    {
+        // Enlever tout ce qui n'est pas un chiffre
+        $number = preg_replace('/[^0-9]/', '', $number);
+
+        // Si le numéro commence déjà par 225, on ajoute juste le +
+        if (strpos($number, '225') === 0) {
+            return '+' . $number;
+        }
+
+        // Sinon on ajoute +225 au début
+        return '+225' . $number;
     }
 }
