@@ -105,15 +105,49 @@
                                 </div>
                                 <div>
                                     <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Programme #{{ $programme->id }}</p>
-                                    <div class="flex items-center gap-3">
+                                    <div class="flex items-center gap-3 mb-2">
                                         <span class="font-bold text-gray-900 text-lg">{{ $programme->gareDepart->nom_gare }}</span>
                                         <i class="fas fa-arrow-right text-blue-500"></i>
                                         <span class="font-bold text-gray-900 text-lg">{{ $programme->gareArrivee->nom_gare }}</span>
                                     </div>
-                                    <p class="text-sm text-gray-500 mt-1">
-                                        <i class="fas fa-clock mr-1"></i>
-                                        Arrivée prévue: {{ \Carbon\Carbon::parse($programme->heure_arrive)->format('H:i') }}
-                                    </p>
+                                    
+                                    <!-- Trip Route Details -->
+                                    <div class="flex items-center gap-4 text-sm">
+                                        <div class="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-lg">
+                                            <i class="fas fa-map-marker-alt text-blue-600"></i>
+                                            <span class="text-gray-700">
+                                                <span class="font-semibold">{{ $programme->point_depart }}</span>
+                                                <i class="fas fa-long-arrow-alt-right text-blue-500 mx-1"></i>
+                                                <span class="font-semibold">{{ $programme->point_arrive }}</span>
+                                            </span>
+                                        </div>
+                                        
+                                        @php
+                                            $depart = \Carbon\Carbon::parse($programme->heure_depart);
+                                            $arrivee = \Carbon\Carbon::parse($programme->heure_arrive);
+                                            $duree = $depart->diff($arrivee);
+                                            $heures = $duree->h;
+                                            $minutes = $duree->i;
+                                        @endphp
+                                        
+                                        <div class="flex items-center gap-2 bg-purple-50 px-3 py-1 rounded-lg">
+                                            <i class="fas fa-clock text-purple-600"></i>
+                                            <span class="text-gray-700">
+                                                <span class="font-semibold">Durée:</span> 
+                                                @if($heures > 0)
+                                                    {{ $heures }}h 
+                                                @endif
+                                                {{ $minutes }}min
+                                            </span>
+                                        </div>
+                                        
+                                        <div class="flex items-center gap-2 bg-orange-50 px-3 py-1 rounded-lg">
+                                            <i class="fas fa-arrow-down text-orange-600"></i>
+                                            <span class="text-gray-700">
+                                                <span class="font-semibold">Arrivée:</span> {{ \Carbon\Carbon::parse($programme->heure_arrive)->format('H:i') }}
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 

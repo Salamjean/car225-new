@@ -334,20 +334,20 @@ Route::prefix('agent')->group(function () {
     Route::post('/password/verify-otp', [AgentPasswordResetController::class, 'verifyOtp'])->name('agent.password.verifyOtp');
     Route::post('/password/reset', [AgentPasswordResetController::class, 'resetPassword'])->name('agent.password.reset');
 });
-Route::middleware('agent')->prefix('agent')->group(function () {
-    Route::get('/dashboard', [AgentDashboard::class, 'dashboard'])->name('agent.dashboard');
-    Route::get('/logout', [AgentDashboard::class, 'logout'])->name('agent.logout');
+Route::middleware('agent')->prefix('agent')->name('agent.')->group(function () {
+    Route::get('/dashboard', [AgentDashboard::class, 'dashboard'])->name('dashboard');
+    Route::get('/logout', [AgentDashboard::class, 'logout'])->name('logout');
 
     // Gestion des réservations
-    Route::prefix('reservations')->group(function () {
-        Route::get('/', [AgentReservationController::class, 'index'])->name('agent.reservations.index');
-        Route::get('/recherche', [AgentReservationController::class, 'recherchePage'])->name('agent.reservations.recherche');
-        Route::get('/historique', [AgentReservationController::class, 'historique'])->name('agent.reservations.historique');
-        Route::get('/programmes-for-scan', [AgentReservationController::class, 'getProgrammesForScan'])->name('agent.programmes.for-scan');
-        Route::post('/scan', [AgentReservationController::class, 'scan'])->name('agent.reservations.scan');
-        Route::post('/search', [AgentReservationController::class, 'search'])->name('agent.reservations.search');
-        Route::post('/search-by-reference', [AgentReservationController::class, 'searchByReference'])->name('agent.reservations.search-by-reference');
-        Route::post('/confirm', [AgentReservationController::class, 'confirm'])->name('agent.reservations.confirm');
+    Route::prefix('reservations')->name('reservations.')->group(function () {
+        Route::get('/', [AgentReservationController::class, 'index'])->name('index');
+        Route::get('/recherche', [AgentReservationController::class, 'recherchePage'])->name('recherche');
+        Route::get('/historique', [AgentReservationController::class, 'historique'])->name('historique');
+        Route::get('/programmes-for-scan', [AgentReservationController::class, 'getProgrammesForScan'])->name('programmes.for-scan');
+        Route::post('/scan', [AgentReservationController::class, 'scan'])->name('scan');
+        Route::post('/search', [AgentReservationController::class, 'search'])->name('search');
+        Route::post('/search-by-reference', [AgentReservationController::class, 'searchByReference'])->name('search-by-reference');
+        Route::post('/confirm', [AgentReservationController::class, 'confirm'])->name('confirm');
     });
 
     // Gestion des voyages
@@ -566,25 +566,24 @@ Route::match(['get', 'post'], '/payment/callback', function (Request $request) {
 })->name('payment.callback');
 
 // Routes Chauffeur
-Route::prefix('chauffeur')->group(function () {
-    Route::get('/login', [ChauffeurAuthenticate::class, 'login'])->name('chauffeur.login');
-    Route::post('/login', [ChauffeurAuthenticate::class, 'handleLogin'])->name('chauffeur.handleLogin');
-    Route::get('/logout', [ChauffeurAuthenticate::class, 'logout'])->name('chauffeur.logout');
-
+Route::prefix('chauffeur')->name('chauffeur.')->group(function () {
+    Route::get('/login', [ChauffeurAuthenticate::class, 'login'])->name('login');
+    Route::post('/login', [ChauffeurAuthenticate::class, 'handleLogin'])->name('login.submit');
+    Route::get('/logout', [ChauffeurAuthenticate::class, 'logout'])->name('logout');
+    
     // OTP Verification routes
-    Route::get('/verify-otp', [\App\Http\Controllers\Chauffeur\OtpVerificationController::class, 'showVerifyForm'])->name('chauffeur.verify-otp');
-    Route::post('/verify-otp', [\App\Http\Controllers\Chauffeur\OtpVerificationController::class, 'verify'])->name('chauffeur.verify-otp.submit');
-    Route::post('/verify-otp/resend', [\App\Http\Controllers\Chauffeur\OtpVerificationController::class, 'resend'])->name('chauffeur.verify-otp.resend');
-
-    // Password Reset Routes
-    Route::get('/password/forgot', [\App\Http\Controllers\Chauffeur\ChauffeurForgotPasswordController::class, 'showLinkRequestForm'])->name('chauffeur.password.request');
-    Route::post('/password/forgot', [\App\Http\Controllers\Chauffeur\ChauffeurForgotPasswordController::class, 'sendOtp'])->name('chauffeur.password.email');
-    Route::get('/password/reset', [\App\Http\Controllers\Chauffeur\ChauffeurForgotPasswordController::class, 'showResetForm'])->name('chauffeur.password.reset');
-    Route::post('/password/reset', [\App\Http\Controllers\Chauffeur\ChauffeurForgotPasswordController::class, 'resetPassword'])->name('chauffeur.password.update');
+    Route::get('/verify-otp', [\App\Http\Controllers\Chauffeur\OtpVerificationController::class, 'showVerifyForm'])->name('verify-otp');
+    Route::post('/verify-otp', [\App\Http\Controllers\Chauffeur\OtpVerificationController::class, 'verify'])->name('verify-otp.submit');
+    Route::post('/verify-otp/resend', [\App\Http\Controllers\Chauffeur\OtpVerificationController::class, 'resend'])->name('verify-otp.resend');
+    
+    Route::get('/password/forgot', [\App\Http\Controllers\Chauffeur\ChauffeurForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
+    Route::post('/password/forgot', [\App\Http\Controllers\Chauffeur\ChauffeurForgotPasswordController::class, 'sendOtp'])->name('password.email');
+    Route::get('/password/reset', [\App\Http\Controllers\Chauffeur\ChauffeurForgotPasswordController::class, 'showResetForm'])->name('password.reset');
+    Route::post('/password/reset', [\App\Http\Controllers\Chauffeur\ChauffeurForgotPasswordController::class, 'resetPassword'])->name('password.update');
 
     Route::middleware('chauffeur')->group(function () {
-        Route::get('/dashboard', [ChauffeurController::class, 'dashboard'])->name('chauffeur.dashboard');
-        Route::get('/voyages-history', [ChauffeurController::class, 'myVoyages'])->name('chauffeur.voyages.history');
+        Route::get('/dashboard', [ChauffeurController::class, 'dashboard'])->name('dashboard');
+        Route::get('/voyages-history', [ChauffeurController::class, 'myVoyages'])->name('voyages.history');
         
         // Voyage management routes
         Route::prefix('voyages')->name('voyages.')->group(function () {

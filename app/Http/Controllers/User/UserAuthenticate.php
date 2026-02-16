@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 
@@ -136,30 +137,51 @@ class UserAuthenticate extends Controller
     try {
         $googleUser = Socialite::driver('google')->user();
         
-        // On vérifie si l'utilisateur existe déjà par email
-        $user = User::where('email', $googleUser->email)->first();
-
-        if (!$user) {
-            // Création d'un nouvel utilisateur
-            $user = User::create([
-                'name' => $googleUser->user['family_name'] ?? $googleUser->name, // Nom de famille
-                'prenom' => $googleUser->user['given_name'] ?? '', // Prénom
-                'email' => $googleUser->email,
-                'google_id' => $googleUser->id,
-                'photo_profile_path' => $googleUser->avatar,
-                'email_verified_at' => now(), // On considère l'email validé car il vient de Google
-                // On génère un mot de passe aléatoire car il se connecte via Google
-                'password' => Hash::make(Str::random(24)), 
-                // On met un contact vide ou par défaut si Google ne le donne pas
-                'contact' => $googleUser->user['phone_number'] ?? null, 
-            ]);
-        } else {
-            // Mise à jour de l'utilisateur existant (optionnel)
-            $user->update([
-                'google_id' => $googleUser->id,
-                'photo_profile_path' => $googleUser->avatar, // Met à jour la photo si tu veux
+        // Vérifier si un utilisateur existe déjà avec cet email (même sans google_id)
+        $existingUserByEmail = User::where('email', $googleUser->email)->first();
+        
+        // Vérifier si l'utilisateur a déjà un compte Google connecté
+        $existingUserByGoogleId = User::where('google_id', $googleUser->id)->first();
+        
+        // Si un compte existe avec cet email mais n'a pas de google_id, c'est un compte classique
+        if ($existingUserByEmail && !$existingUserByEmail->google_id) {
+            return redirect()->route('login')->withErrors([
+                'email' => 'Un compte existe déjà avec cette adresse email. Veuillez vous connecter avec votre mot de passe ou un autre contact.'
             ]);
         }
+        
+        // Si l'utilisateur existe déjà avec Google, on le connecte
+        if ($existingUserByGoogleId) {
+            Auth::login($existingUserByGoogleId);
+            return redirect()->intended(route('user.dashboard'))->with('success', 'Bienvenue ' . $existingUserByGoogleId->prenom . ' !');
+        }
+        
+        // Sinon, on crée un nouveau compte
+        // Télécharger et sauvegarder l'image de profil Google
+        $photoProfilePath = null;
+        if ($googleUser->avatar) {
+            try {
+                $imageContent = file_get_contents($googleUser->avatar);
+                $imageName = 'google_profile_' . time() . '_' . Str::random(10) . '.jpg';
+                $imagePath = 'users/profiles/' . $imageName;
+                \Storage::disk('public')->put($imagePath, $imageContent);
+                $photoProfilePath = $imagePath;
+            } catch (\Exception $e) {
+                Log::warning('Impossible de télécharger l\'image de profil Google: ' . $e->getMessage());
+            }
+        }
+        
+        // Création d'un nouvel utilisateur
+        $user = User::create([
+            'name' => $googleUser->user['family_name'] ?? $googleUser->name,
+            'prenom' => $googleUser->user['given_name'] ?? '',
+            'email' => $googleUser->email,
+            'google_id' => $googleUser->id,
+            'photo_profile_path' => $photoProfilePath,
+            'email_verified_at' => now(),
+            'password' => Hash::make(Str::random(24)),
+            'contact' => $googleUser->user['phone_number'] ?? null,
+        ]);
 
         Auth::login($user);
 
@@ -167,7 +189,7 @@ class UserAuthenticate extends Controller
 
     } catch (\Exception $e) {
         Log::error('Erreur Google Login: ' . $e->getMessage());
-        return redirect()->route('login')->with('error', 'Erreur lors de la connexion avec Google. Détails : ' . $e->getMessage());
+        return redirect()->route('login')->with('error', 'Erreur lors de la connexion avec Google.');
     }
 }
 }

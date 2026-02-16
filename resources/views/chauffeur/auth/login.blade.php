@@ -51,7 +51,7 @@
                     </div>
                 @endif
 
-                <form action="{{ route('chauffeur.handleLogin') }}" method="POST" class="space-y-6">
+                <form action="{{ route('chauffeur.login.submit') }}" method="POST" class="space-y-6">
                     @csrf
 
                     <!-- Email -->

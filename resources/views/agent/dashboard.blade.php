@@ -29,7 +29,7 @@
         </div>
 
         <!-- Row 1: Main Stats -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-6">
             <!-- Scans Today Card -->
             <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-5 shadow-xl text-white transform hover:-translate-y-1 transition-all">
                 <div class="flex items-center justify-between mb-3">
@@ -72,20 +72,6 @@
                 <h3 class="text-3xl font-black mt-1">{{ $reservationsTerminees }}</h3>
                 <p class="mt-3 text-xs text-white/70 font-medium">
                     Passagers embarqués
-                </p>
-            </div>
-
-            <!-- Revenue Card -->
-            <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-5 shadow-xl text-white transform hover:-translate-y-1 transition-all">
-                <div class="flex items-center justify-between mb-3">
-                    <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                        <i class="fas fa-wallet text-xl"></i>
-                    </div>
-                </div>
-                <p class="text-sm font-bold text-white/80 uppercase tracking-wider">Revenus générés</p>
-                <h3 class="text-2xl font-black mt-1">{{ number_format($revenueAgent, 0, ',', ' ') }} <span class="text-lg">FCFA</span></h3>
-                <p class="mt-3 text-xs text-white/70 font-medium">
-                    Via vos scans
                 </p>
             </div>
         </div>
