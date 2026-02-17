@@ -622,5 +622,13 @@ Route::prefix('chauffeur')->name('chauffeur.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Chauffeur\ChauffeurMessageController::class, 'index'])->name('index');
             Route::get('/{id}', [\App\Http\Controllers\Chauffeur\ChauffeurMessageController::class, 'show'])->name('show');
         });
+
+        // Signalements for Chauffeur
+        Route::prefix('signalements')->name('signalements.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Chauffeur\ChauffeurSignalementController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Chauffeur\ChauffeurSignalementController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Chauffeur\ChauffeurSignalementController::class, 'store'])->name('store');
+            Route::get('/{signalement}', [\App\Http\Controllers\Chauffeur\ChauffeurSignalementController::class, 'show'])->name('show');
+        });
     });
 });

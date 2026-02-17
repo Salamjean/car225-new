@@ -662,7 +662,7 @@
                         <div class="grid grid-cols-2 gap-4 mb-3">
                             <div>
                                 <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Date Retour</label>
-                                <input type="date" id="mod-ret-date" class="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-orange-500">
+                                <input type="date" id="mod-ret-date" onkeydown="return false" class="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-orange-500" min="${new Date(new Date().getTime() + 86400000).toISOString().split('T')[0]}">
                             </div>
                             <div>
                                 <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Heure Retour</label>
@@ -706,7 +706,7 @@
                         <div class="grid grid-cols-2 gap-4 mb-3">
                             <div>
                                 <label class="text-[9px] font-bold text-gray-400 uppercase block mb-1">Date</label>
-                                <input type="date" id="mod-date" class="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-[#e94f1b]" min="${new Date().toISOString().split('T')[0]}">
+                                <input type="date" id="mod-date" onkeydown="return false" class="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-[#e94f1b]" min="${new Date(new Date().getTime() + 86400000).toISOString().split('T')[0]}">
                             </div>
                             <div>
                                 <label class="text-[9px] font-bold text-gray-400 uppercase block mb-1">Heure</label>
@@ -928,8 +928,36 @@
             if(modifState.isRoundTrip && $('#mod-ret-date').val()) loadTimes('retour', $('#mod-ret-date').val());
         });
 
-        $('#mod-date').change(function() { loadTimes('aller', $(this).val()); });
-        $('#mod-ret-date').change(function() { loadTimes('retour', $(this).val()); });
+        $('#mod-date').change(function() { 
+            const val = $(this).val();
+            const tomorrow = new Date(new Date().getTime() + 86400000).toISOString().split('T')[0];
+            
+            if(val < tomorrow) {
+                Swal.showValidationMessage('La modification est possible uniquement pour les jours futurs (à partir de demain).');
+                $(this).val(tomorrow);
+                return;
+            }
+
+            loadTimes('aller', val); 
+            // Update return min date to be >= aller date
+            if(modifState.isRoundTrip) {
+                $('#mod-ret-date').attr('min', val);
+                if($('#mod-ret-date').val() < val) {
+                    $('#mod-ret-date').val(val);
+                    loadTimes('retour', val);
+                }
+            }
+        });
+        $('#mod-ret-date').change(function() { 
+            const val = $(this).val();
+            const min = $(this).attr('min');
+            if(val < min) {
+                Swal.showValidationMessage('La date de retour ne peut pas être antérieure à la date de départ.');
+                $(this).val(min);
+                return;
+            }
+            loadTimes('retour', val); 
+        });
 
         $('#mod-time').change(function() {
             const progId = $(this).find(':selected').data('prog-id');

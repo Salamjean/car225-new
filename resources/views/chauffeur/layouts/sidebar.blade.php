@@ -66,6 +66,14 @@
                         Historique
                     </a>
                 </div>
+
+                <!-- Signalements -->
+                <div class="mdc-list-item mdc-drawer-item">
+                    <a class="mdc-drawer-link" href="{{ route('chauffeur.signalements.index') }}">
+                        <i class="fas fa-exclamation-triangle mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
+                        Signalements
+                    </a>
+                </div>
             </nav>
         </div>
     </div>

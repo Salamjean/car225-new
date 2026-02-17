@@ -392,7 +392,17 @@ class ReservationApiController extends Controller
             $request->validate([
                 'new_programme_id' => 'required|exists:programmes,id',
                 'new_return_programme_id' => 'nullable|exists:programmes,id',
+                'new_date_aller' => 'required|date',
             ]);
+
+            // Validation Date : Modification autorisée uniquement pour demain et après
+            $tomorrow = now()->addDay()->format('Y-m-d');
+            if ($request->new_date_aller < $tomorrow) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La modification est possible uniquement pour les jours futurs (à partir de demain).'
+                ], 422);
+            }
 
             $service = new \App\Services\ReservationService();
             $user = Auth::user();
@@ -471,6 +481,29 @@ class ReservationApiController extends Controller
                 'return_seat_number' => 'nullable',
                 'return_heure_depart' => 'nullable',
             ]);
+
+            // Validation Date : Modification autorisée uniquement pour demain et après
+            $tomorrow = now()->addDay()->format('Y-m-d');
+            if ($request->date_voyage < $tomorrow) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La modification est possible uniquement pour les jours futurs (à partir de demain).'
+                ], 422);
+            }
+
+            if ($request->filled('return_date_voyage') && $request->return_date_voyage < $tomorrow) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La date de retour doit être à partir de demain.'
+                ], 422);
+            }
+
+            if ($request->filled('return_date_voyage') && $request->return_date_voyage < $request->date_voyage) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La date de retour ne peut pas être antérieure à la date de départ.'
+                ], 422);
+            }
 
             // Validation A/R : Si l'aller est passé, on bloque
             if ($reservation->is_aller_retour) {
@@ -914,12 +947,35 @@ class ReservationApiController extends Controller
                 ->orderBy('date_depart', 'asc')
                 ->orderBy('heure_depart', 'asc');
 
+            if ($request->filled('compagnie_id')) {
+                $query->where('compagnie_id', $request->compagnie_id);
+            }
+
+            $programmes = $query->get();
+
+            // Filtrer les horaires passés pour aujourd'hui
+            $now = now();
+            $todayStr = $now->format('Y-m-d');
+            $currentTime = $now->format('H:i:s');
+
+            $programmes = $programmes->reject(function($p) use ($todayStr, $currentTime) {
+                return $p->date_depart == $todayStr && $p->heure_depart <= $currentTime;
+            })->values();
+
+            // Pagination manuelle comme le résultat est une collection
             $perPage = $request->get('per_page', 30);
-            $programmes = $query->paginate($perPage);
+            $page = $request->get('page', 1);
+            $paginated = new \Illuminate\Pagination\LengthAwarePaginator(
+                $programmes->forPage($page, $perPage),
+                $programmes->count(),
+                $perPage,
+                $page,
+                ['path' => $request->url(), 'query' => $request->query()]
+            );
 
             return response()->json([
                 'success' => true,
-                'data' => $programmes
+                'data' => $paginated
             ]);
         } catch (\Exception $e) {
             Log::error('Erreur programmes simples API: ' . $e->getMessage());
@@ -947,12 +1003,35 @@ class ReservationApiController extends Controller
                 ->orderBy('date_depart', 'asc')
                 ->orderBy('heure_depart', 'asc');
 
+            if ($request->filled('compagnie_id')) {
+                $query->where('compagnie_id', $request->compagnie_id);
+            }
+
+            $programmes = $query->get();
+
+            // Filtrer les horaires passés pour aujourd'hui
+            $now = now();
+            $todayStr = $now->format('Y-m-d');
+            $currentTime = $now->format('H:i:s');
+
+            $programmes = $programmes->reject(function($p) use ($todayStr, $currentTime) {
+                return $p->date_depart == $todayStr && $p->heure_depart <= $currentTime;
+            })->values();
+
+            // Pagination manuelle
             $perPage = $request->get('per_page', 30);
-            $programmes = $query->paginate($perPage);
+            $page = $request->get('page', 1);
+            $paginated = new \Illuminate\Pagination\LengthAwarePaginator(
+                $programmes->forPage($page, $perPage),
+                $programmes->count(),
+                $perPage,
+                $page,
+                ['path' => $request->url(), 'query' => $request->query()]
+            );
 
             return response()->json([
                 'success' => true,
-                'data' => $programmes
+                'data' => $paginated
             ]);
         } catch (\Exception $e) {
             Log::error('Erreur programmes aller-retour API: ' . $e->getMessage());
@@ -1008,7 +1087,18 @@ class ReservationApiController extends Controller
                 $query->where('compagnie_id', $request->compagnie_id);
             }
 
+            $now = now();
+            $isToday = $formattedDate === $now->format('Y-m-d');
+            $currentTime = $now->format('H:i:s');
+
             $programmes = $query->orderBy('heure_depart', 'asc')->get();
+
+            // Filtrer les horaires passés pour aujourd'hui
+            if ($isToday) {
+                $programmes = $programmes->filter(function($p) use ($currentTime) {
+                    return $p->heure_depart > $currentTime;
+                })->values();
+            }
 
             // Grouper par route
             $groupedRoutes = $programmes->groupBy(function($p) {
@@ -1271,7 +1361,19 @@ class ReservationApiController extends Controller
                       });
             }
 
+            $now = now();
+            $requestDate = $request->filled('date') ? date('Y-m-d', strtotime($request->date)) : $now->format('Y-m-d');
+            $isToday = $requestDate === $now->format('Y-m-d');
+            $currentTime = $now->format('H:i:s');
+
             $programmes = $query->orderBy('heure_depart')->get();
+
+            // Filtrer les horaires passés pour aujourd'hui
+            if ($isToday) {
+                $programmes = $programmes->filter(function($p) use ($currentTime) {
+                    return $p->heure_depart > $currentTime;
+                })->values();
+            }
 
             // Groupement par compagnie
             $programmesUniques = $programmes->groupBy('compagnie_id')->map(function ($group) {

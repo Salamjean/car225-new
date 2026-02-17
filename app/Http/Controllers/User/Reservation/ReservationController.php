@@ -349,17 +349,28 @@ class ReservationController extends Controller
     $first = $group->first();
             
             // Tous les horaires aller
-            $allerHoraires = $group->sortBy('heure_depart')->map(function($p) use ($reservationCounts, $formattedDate) {
-                $vehicule = $p->getVehiculeForDate($formattedDate);
-                return [
-                    'id' => $p->id,
-                    'heure_depart' => $p->heure_depart,
-                    'heure_arrive' => $p->heure_arrive,
-                    'reserved_count' => $reservationCounts[$p->id] ?? 0,
-                    'total_seats' => $vehicule ? $vehicule->nombre_place : 70,
-                    'vehicule_id' => $vehicule ? $vehicule->id : null,
-                ];
-            })->values();
+            $now = now();
+            $isToday = $formattedDate === $now->format('Y-m-d');
+            $currentTime = $now->format('H:i:s');
+
+            $allerHoraires = $group->sortBy('heure_depart')
+                ->filter(function($p) use ($isToday, $currentTime) {
+                    if ($isToday) {
+                        return $p->heure_depart > $currentTime;
+                    }
+                    return true;
+                })
+                ->map(function($p) use ($reservationCounts, $formattedDate) {
+                    $vehicule = $p->getVehiculeForDate($formattedDate);
+                    return [
+                        'id' => $p->id,
+                        'heure_depart' => $p->heure_depart,
+                        'heure_arrive' => $p->heure_arrive,
+                        'reserved_count' => $reservationCounts[$p->id] ?? 0,
+                        'total_seats' => $vehicule ? $vehicule->nombre_place : 70,
+                        'vehicule_id' => $vehicule ? $vehicule->id : null,
+                    ];
+                })->values();
             
             // Retours
             $retourProgrammes = Programme::where('compagnie_id', $first->compagnie_id)
@@ -2251,7 +2262,17 @@ public function apiRouteDates(Request $request)
             ->orderBy('heure_depart')
             ->get();
 
-        $schedules = $programmes->map(function ($programme) use ($requestedDate) {
+        $now = now();
+        $isToday = $requestedDate === $now->format('Y-m-d');
+        $currentTime = $now->format('H:i:s');
+
+        $schedules = $programmes->filter(function($p) use ($isToday, $currentTime) {
+            if ($isToday) {
+                // Ne garder que les voyages dont l'heure de départ n'est pas encore passée
+                return $p->heure_depart > $currentTime;
+            }
+            return true;
+        })->map(function ($programme) use ($requestedDate) {
             $vehicule = $programme->getVehiculeForDate($requestedDate);
             $capacite = $vehicule ? intval($vehicule->nombre_place) : 70;
             
@@ -2271,7 +2292,7 @@ public function apiRouteDates(Request $request)
                 'places_disponibles' => max(0, $capacite - $reservedCount),
                 'date_fin' => $programme->date_fin
             ];
-        });
+        })->values(); // Reset indexes after filter
 
         return response()->json([
             'success' => true,
@@ -2609,6 +2630,20 @@ public function apiRouteDates(Request $request)
      */
      public function calculateModificationDelta(Request $request, Reservation $reservation)
     {
+        $request->validate([
+            'new_programme_id' => 'required|exists:programmes,id',
+            'new_date_aller' => 'required|date',
+        ]);
+
+        // Validation Date : Modification autorisée uniquement pour demain et après
+        $tomorrow = now()->addDay()->format('Y-m-d');
+        if ($request->new_date_aller < $tomorrow) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La modification est possible uniquement pour les jours futurs (à partir de demain).'
+            ], 422);
+        }
+
         $service = new ReservationService();
         $user = Auth::user();
 
@@ -2667,6 +2702,22 @@ public function apiRouteDates(Request $request)
             'seat_number' => 'required',
             'heure_depart' => 'required'
         ]);
+
+        // Validation Date : Modification autorisée uniquement pour demain et après
+        $tomorrow = now()->addDay()->format('Y-m-d');
+        if ($request->date_voyage < $tomorrow) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La modification est possible uniquement pour les jours futurs (à partir de demain).'
+            ], 422);
+        }
+
+        if ($request->filled('return_date_voyage') && $request->return_date_voyage < $tomorrow) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La date de retour doit être à partir de demain.'
+            ], 422);
+        }
 
         $service = new ReservationService();
         

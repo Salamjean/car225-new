@@ -137,13 +137,19 @@
                                 </button>
                             </form>
                         @elseif($voyage->statut === 'en_cours')
-                            <form action="{{ route('chauffeur.voyages.complete', $voyage->id) }}" method="POST" onsubmit="return confirm('Confirmez-vous l\'arrivée à destination ?')">
-                                @csrf
-                                <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-3 hover:from-purple-700 hover:to-pink-700 transition-all shadow-md hover:shadow-lg">
-                                    <i class="fas fa-flag-checkered text-xl"></i>
-                                    Terminer le voyage
-                                </button>
-                            </form>
+                            <div class="flex flex-col md:flex-row gap-3">
+                                <form action="{{ route('chauffeur.voyages.complete', $voyage->id) }}" method="POST" onsubmit="return confirm('Confirmez-vous l\'arrivée à destination ?')" class="flex-1">
+                                    @csrf
+                                    <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-3 hover:from-purple-700 hover:to-pink-700 transition-all shadow-md hover:shadow-lg">
+                                        <i class="fas fa-flag-checkered text-xl"></i>
+                                        Terminer le voyage
+                                    </button>
+                                </form>
+                                <a href="{{ route('chauffeur.signalements.create', ['voyage_id' => $voyage->id]) }}" class="flex-1 bg-red-500 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-red-600 transition-all shadow-md hover:shadow-lg">
+                                    <i class="fas fa-exclamation-triangle text-xl"></i>
+                                    Signaler un problème
+                                </a>
+                            </div>
                         @else
                             <div class="bg-green-50 border border-green-200 p-4 rounded-xl text-center">
                                 <i class="fas fa-check-circle text-green-500 text-2xl mb-2"></i>
