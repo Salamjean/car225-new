@@ -29,4 +29,9 @@ class Agent extends Authenticatable
     {
         return $this->belongsTo(Compagnie::class, 'compagnie_id'); 
     }
+
+    public function messages()
+    {
+        return $this->morphMany(CompanyMessage::class, 'recipient');
+    }
 }

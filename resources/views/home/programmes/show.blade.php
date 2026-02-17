@@ -52,6 +52,7 @@
                                     <div class="w-2 h-2 bg-[#e94f1b] rounded-full"></div>
                                 </div>
                                 <h4 class="font-bold text-gray-900">{{ $programme->point_depart }}</h4>
+                                <div class="text-[10px] text-blue-600 font-bold uppercase mb-1">{{ $programme->gareDepart->nom_gare ?? 'Gare non définie' }}</div>
                                 <div class="text-sm text-gray-500">
                                     <i class="fas fa-clock mr-1"></i> {{ $programme->heure_depart }}
                                 </div>
@@ -62,6 +63,7 @@
                                     <div class="w-2 h-2 bg-green-500 rounded-full"></div>
                                 </div>
                                 <h4 class="font-bold text-gray-900">{{ $programme->point_arrive }}</h4>
+                                <div class="text-[10px] text-green-600 font-bold uppercase mb-1">{{ $programme->gareArrivee->nom_gare ?? 'Gare non définie' }}</div>
                                 <div class="text-sm text-gray-500">
                                     <i class="fas fa-clock mr-1"></i> {{ $programme->heure_arrive }}
                                 </div>

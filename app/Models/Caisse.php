@@ -27,6 +27,7 @@ class Caisse extends Authenticatable
         'compagnie_id',
         'archived_at',
         'tickets',
+        'fcm_token',
     ];
 
     /**
@@ -94,5 +95,10 @@ class Caisse extends Authenticatable
     public function deductTickets(int $quantity)
     {
         $this->decrement('tickets', $quantity);
+    }
+
+    public function messages()
+    {
+        return $this->morphMany(CompanyMessage::class, 'recipient');
     }
 }

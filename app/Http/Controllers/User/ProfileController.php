@@ -30,11 +30,13 @@ class ProfileController extends Controller
             'name' => 'required|string|max:255',
             'prenom' => 'nullable|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
-            'contact' => 'nullable|string|max:20',
+            'contact' => 'nullable|string|digits:10',
             'nom_urgence' => 'nullable|string|max:255',
             'prenom_urgence' => 'nullable|string|max:255',
-            'contact_urgence' => 'nullable|string|max:20|different:contact',
+            'contact_urgence' => 'nullable|string|digits:10|different:contact',
         ], [
+            'contact.digits' => 'Le contact doit comporter exactement 10 chiffres.',
+            'contact_urgence.digits' => 'Le contact d\'urgence doit comporter exactement 10 chiffres.',
             'contact_urgence.different' => 'Le contact d\'urgence doit être différent de votre contact principal.',
         ]);
 

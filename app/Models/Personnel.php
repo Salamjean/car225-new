@@ -27,6 +27,7 @@ class Personnel extends Authenticatable
         'profile_image',
         'compagnie_id',
         'password',
+        'fcm_token',
     ];
 
     /**
@@ -45,5 +46,10 @@ class Personnel extends Authenticatable
         }
 
         return asset('storage/' . $this->profile_image);
+    }
+
+    public function messages()
+    {
+        return $this->morphMany(CompanyMessage::class, 'recipient');
     }
 }

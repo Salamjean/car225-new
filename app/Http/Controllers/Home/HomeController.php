@@ -38,7 +38,7 @@ class HomeController extends Controller
 
         Log::info('====== DEBUT RECHERCHE PROGRAMME ======');
 
-        $query = Programme::with(['compagnie', 'itineraire'])
+        $query = Programme::with(['compagnie', 'itineraire', 'gareDepart', 'gareArrivee'])
             ->where(function($q) use ($point_depart) {
                 $q->where('point_depart', 'like', "%{$point_depart}%");
                 if (strpos($point_depart, ',') !== false) {
@@ -81,7 +81,7 @@ class HomeController extends Controller
 
         // On récupère les programmes valides AUJOURD'HUI
         // C'est-à-dire : Commencés avant ou aujourd'hui ET finissant aujourd'hui ou après
-        $programmes = Programme::with(['compagnie', 'itineraire'])
+        $programmes = Programme::with(['compagnie', 'itineraire', 'gareDepart', 'gareArrivee'])
             ->whereRaw('DATE(date_depart) <= ?', [$today])
             ->whereRaw('DATE(date_fin) >= ?', [$today])
             ->where('statut', 'actif')
@@ -96,7 +96,7 @@ class HomeController extends Controller
      */
    public function show(Programme $programme)
     {
-        $programme->load(['compagnie', 'itineraire', 'chauffeur', 'convoyeur']);
+        $programme->load(['compagnie', 'itineraire', 'chauffeur', 'convoyeur', 'gareDepart', 'gareArrivee']);
         return view('home.programmes.show', compact('programme'));
     }
 
@@ -107,58 +107,73 @@ class HomeController extends Controller
      public function getVehicleDetails($id, Request $request)
     {
         try {
+            $dateVoyage = $request->get('date') ? date('Y-m-d', strtotime($request->get('date'))) : date('Y-m-d');
+            $programmeId = $request->get('programme_id');
+            $vehicule = null;
+
+             // CORRECTION : On vérifie explicitement si l'ID est valide (> 0)
+        if ($id && $id !== '0' && $id !== 'null' && intval($id) > 0) {
             $vehicule = Vehicule::find($id);
+        }
+
+            // 2. Si pas d'ID ou véhicule non trouvé, chercher via le programme
+            if (!$vehicule && $programmeId && $programmeId !== 'null') {
+                $programme = Programme::find($programmeId);
+                if ($programme) {
+                    $vehicule = $programme->getVehiculeForDate($dateVoyage);
+                    
+                    // Fallback sur le premier véhicule de la compagnie
+                    if (!$vehicule) {
+                        $vehicule = Vehicule::where('compagnie_id', $programme->compagnie_id)
+                            ->where('is_active', true)
+                            ->first();
+                    }
+                }
+            }
 
             if (!$vehicule) {
-                return response()->json(['success' => false, 'error' => 'Véhicule non trouvé'], 404);
+                // FALLBACK: Si aucun véhicule n'est trouvé, on utilise un modèle standard de 70 places
+                // pour permettre l'affichage du plan des sièges (demande utilisateur).
+                $vehicule = (object)[
+                    'id' => 0,
+                    'marque' => 'Bus',
+                    'modele' => 'Standard',
+                    'immatriculation' => 'N/A',
+                    'nombre_place' => 70,
+                    'type_range' => '2x3',
+                    'is_default' => true
+                ];
+                Log::info('Véhicule par défaut utilisé pour le popup car aucun véhicule assigné.');
             }
 
             $reservedSeats = [];
-            $dateVoyage = $request->get('date') ? date('Y-m-d', strtotime($request->get('date'))) : date('Y-m-d');
             
-            // On récupère l'ID du programme spécifique s'il est envoyé (pour être plus précis)
-            $programmeId = $request->get('programme_id');
-
             if ($dateVoyage) {
                 $query = Reservation::query();
-
-                // 1. Filtrer par date
+                // On compte les places réservées pour ce programme à cette date
                 $query->where('date_voyage', $dateVoyage);
-
-                // 2. Filtrer par statut (AJOUT DE 'terminee')
-                // Les statuts qui bloquent une place sont : confirmee, en_attente, terminee
                 $query->whereIn('statut', ['confirmee', 'en_attente', 'terminee']);
 
-                // 3. Filtrage intelligent du programme
-                if ($programmeId && $programmeId != 'null') {
-                    // Si on sait exactement quel programme on regarde, on ne prend que ses réservations
+                if ($programmeId && $programmeId !== 'null') {
                     $query->where('programme_id', $programmeId);
-                } else {
-                    // Sinon (fallback), on cherche toutes les réservations liées à ce véhicule pour ce jour-là
-                    // Attention: cela peut mélanger les places si le bus fait 2 voyages/jour sans programme_id
+                } elseif (isset($vehicule->id) && $vehicule->id > 0) {
                     $programmeIds = Programme::where('vehicule_id', $vehicule->id)
                         ->whereRaw('DATE(date_depart) <= ?', [$dateVoyage])
                         ->whereRaw('DATE(date_fin) >= ?', [$dateVoyage])
-                        ->where('statut', 'actif')
                         ->pluck('id');
-                    
                     $query->whereIn('programme_id', $programmeIds);
                 }
 
                 $reservedSeats = $query->pluck('seat_number')->toArray();
-                
-                // S'assurer que ce sont des entiers uniques
                 $reservedSeats = array_values(array_unique(array_map('intval', $reservedSeats)));
             }
 
-            $response = [
+            return response()->json([
                 'success' => true,
                 'vehicule' => $vehicule,
                 'reservedSeats' => $reservedSeats,
                 'date' => $dateVoyage
-            ];
-
-            return response()->json($response);
+            ]);
 
         } catch (\Exception $e) {
             Log::error('Erreur getVehicleDetails:', ['error' => $e->getMessage()]);

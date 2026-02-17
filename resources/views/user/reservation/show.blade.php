@@ -79,7 +79,12 @@
                         <div class="space-y-1">
                             <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Type</p>
                             <p class="text-sm font-bold text-gray-900 uppercase">
-                                @if(str_contains($reservation->reference, '-RET-'))
+                                @php
+                                    $ref = strtoupper($reservation->reference);
+                                    $isRetour = str_contains($ref, '-RET');
+                                @endphp
+
+                                @if($isRetour)
                                     Billet Retour
                                 @elseif($reservation->is_aller_retour)
                                     Billet Aller

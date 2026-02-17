@@ -98,4 +98,9 @@ class Compagnie extends Authenticatable
             'motif' => $motif
         ]);
     }
+
+    public function sentMessages()
+    {
+        return $this->hasMany(CompanyMessage::class);
+    }
 }

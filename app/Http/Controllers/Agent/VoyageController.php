@@ -45,9 +45,10 @@ class VoyageController extends Controller
             ->orderBy('name')
             ->get();
 
-        // Get active vehicles
+        // Get available vehicles
         $vehicules = Vehicule::where('compagnie_id', $agent->compagnie_id)
             ->where('is_active', true)
+            ->where('statut', 'disponible')
             ->orderBy('immatriculation')
             ->get();
 
@@ -102,10 +103,13 @@ class VoyageController extends Controller
             return back()->with('error', 'Ce chauffeur n\'est pas disponible.');
         }
 
-        // Verify vehicle belongs to agent's company
+        // Verify vehicle belongs to agent's company and is available
         $vehicule = Vehicule::findOrFail($validated['vehicule_id']);
         if ($vehicule->compagnie_id !== $agent->compagnie_id) {
             return back()->with('error', 'Ce véhicule n\'appartient pas à votre compagnie.');
+        }
+        if ($vehicule->statut !== 'disponible') {
+            return back()->with('error', 'Ce véhicule n\'est pas disponible.');
         }
 
         // Check if voyage already exists for this programme and date
@@ -137,8 +141,9 @@ class VoyageController extends Controller
             'statut' => 'en_attente',
         ]);
 
-        // Update driver status to indisponible
+        // Update driver and vehicle status to indisponible
         $chauffeur->update(['statut' => 'indisponible']);
+        $vehicule->update(['statut' => 'indisponible']);
 
         return back()->with('success', 'Le voyage a été assigné avec succès au chauffeur ' . $chauffeur->prenom . ' ' . $chauffeur->name . '.');
     }
@@ -160,9 +165,12 @@ class VoyageController extends Controller
             return back()->with('error', 'Impossible d\'annuler un voyage déjà démarré ou terminé.');
         }
 
-        // Update driver status back to disponible
+        // Update driver and vehicle status back to disponible
         if ($voyage->chauffeur) {
             $voyage->chauffeur->update(['statut' => 'disponible']);
+        }
+        if ($voyage->vehicule) {
+            $voyage->vehicule->update(['statut' => 'disponible']);
         }
 
         $voyage->delete();

@@ -202,7 +202,12 @@
                             </div>
                             <div>
                                 <p class="text-sm font-semibold text-gray-900">{{ \Carbon\Carbon::parse($reservation->heure_depart ?? $reservation->programme->heure_depart)->format('H:i') }}</p>
-                                @if(str_contains($reservation->reference, '-RET-'))
+                                @php
+                                    $ref = strtoupper($reservation->reference);
+                                    $isRetour = str_contains($ref, '-RET');
+                                @endphp
+
+                                @if($isRetour)
                                     <span class="inline-flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
                                         <i class="fas fa-undo-alt text-[8px]"></i> Retour
                                     </span>
@@ -268,6 +273,23 @@
                                     $dateVoyage = \Carbon\Carbon::parse($reservation->date_voyage)->format('Y-m-d');
                                     $departureDateTime = \Carbon\Carbon::parse("{$dateVoyage} {$heureDepart}");
                                     $canAct = $departureDateTime->diffInMinutes(now(), false) < -15;
+
+                                    // Si c'est un retour, on bloque aussi si l'aller est déjà passé/fait
+                                    if ($canAct && $reservation->is_aller_retour && str_contains(strtoupper($reservation->reference), '-RET')) {
+                                        $aller = $reservations->where('payment_transaction_id', $reservation->payment_transaction_id)
+                                                              ->where('is_aller_retour', true)
+                                                              ->filter(function($r) use ($reservation) {
+                                                                  return !str_contains(strtoupper($r->reference), '-RET') && $r->id !== $reservation->id;
+                                                              })->first();
+                                        if ($aller) {
+                                            $aHeure = $aller->heure_depart ?? $aller->programme->heure_depart ?? '00:00';
+                                            $aDate = \Carbon\Carbon::parse($aller->date_voyage)->format('Y-m-d');
+                                            $aDeparture = \Carbon\Carbon::parse("{$aDate} {$aHeure}");
+                                            if ($aDeparture->isPast() || $aller->statut === 'terminee') {
+                                                $canAct = false;
+                                            }
+                                        }
+                                    }
                                 @endphp
                                 
                                 <button type="button" class="modify-btn w-8 h-8 rounded-lg flex items-center justify-center transition-all {{ $canAct ? 'bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white' : 'bg-gray-100 text-gray-400 cursor-not-allowed' }}"
@@ -634,7 +656,7 @@
                 returnHtml = `
                     <div class="mt-4 pt-4 border-t border-gray-100">
                         <div class="flex items-center gap-2 mb-3">
-                            <span class="px-2 py-1 bg-orange-100 text-orange-600 text-[10px] font-black rounded uppercase">Retour</span>
+                            <span class="px-2 py-1 bg-orange-100 text-orange-600 text-[10px] font-black rounded uppercase">Voyage Retour</span>
                             <p class="text-xs font-bold text-gray-700">Informations de retour</p>
                         </div>
                         <div class="grid grid-cols-2 gap-4 mb-3">
@@ -674,7 +696,7 @@
 
                     <div class="bg-gray-50 p-3 rounded-xl border border-gray-100">
                         <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Trajet</label>
-                        <select id="mod-route" class="w-full p-2 bg-white border border-gray-200 rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-[#e94f1b]">
+                        <select id="mod-route" ${modifState.isRoundTrip ? 'disabled style="background-color: #f3f4f6; cursor: not-allowed;"' : ''} class="w-full p-2 bg-white border border-gray-200 rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-[#e94f1b]">
                             ${routeOptions}
                         </select>
                     </div>
@@ -728,21 +750,35 @@
                 didOpen: async () => {
                     initEvents();
                     
-                    // --- PRE-REMPLISSAGE ET CHARGEMENT ---
-                    
-                    // 1. ALLER
-                    if(modifState.current.date) {
-                        $('#mod-date').val(modifState.current.date);
-                        await preloadAllerData();
-                    }
+                    // On attend un court instant pour s'assurer que le DOM est injecté
+                    setTimeout(async () => {
+                        // --- PRE-REMPLISSAGE ET CHARGEMENT ---
+                        
+                        // 1. ALLER
+                        if(modifState.current.date) {
+                            $('#mod-date').val(modifState.current.date);
+                            await preloadAllerData();
+                        }
 
-                    // 2. RETOUR
-                    if(modifState.isRoundTrip && modifState.current.retDate) {
-                        $('#mod-ret-date').val(modifState.current.retDate);
-                        await preloadRetourData();
-                    }
+                        // 2. RETOUR
+                        if(modifState.isRoundTrip && modifState.current.retDate) {
+                            $('#mod-ret-date').val(modifState.current.retDate);
+                            await preloadRetourData();
+                        }
+                    }, 50);
                 },
                 preConfirm: handleModificationSubmit
+            }).then((result) => {
+                if (result.isConfirmed && result.value && result.value.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '<span class="text-lg font-black uppercase tracking-tight text-green-600">Modification réussie !</span>',
+                        text: result.value.message || 'Votre réservation a été mise à jour.',
+                        confirmButtonText: 'Excellent',
+                        confirmButtonColor: '#22c55e',
+                        customClass: { popup: 'rounded-[32px]', confirmButton: 'rounded-xl px-8 py-3 font-black uppercase tracking-widest text-xs' }
+                    }).then(() => window.location.reload());
+                }
             });
 
         } catch (error) {
@@ -793,8 +829,13 @@
         $(selector).html('<option value="">Chargement...</option>').prop('disabled', true);
 
         try {
-            // Utilisation de l'endpoint interne correct
-            const res = await $.get(`/user/booking/api/route-schedules?point_depart=${depart}&point_arrive=${arrive}&compagnie_id=${compagnie}&date=${date}`);
+            // Utilisation de l'objet pour les paramètres pour gérer l'encodage (espaces, virgules, etc.)
+            const res = await $.get('/user/booking/api/route-schedules', {
+                point_depart: depart,
+                point_arrive: arrive,
+                compagnie_id: compagnie,
+                date: date
+            });
             
             if(res.success && res.schedules.length > 0) {
                 let opts = '<option value="">-- Choisir Heure --</option>';
@@ -809,6 +850,22 @@
                     opts += `<option value="${schTime}" ${isSelected} data-prog-id="${sch.id}" data-prix="${sch.montant_billet}">${schDisplay}</option>`;
                 });
                 $(selector).html(opts).prop('disabled', false);
+                
+                // Force le value si selected est présent
+                if (preSelectedTime) {
+                   const preTime = preSelectedTime.substring(0, 5).padStart(5, '0');
+                   $(selector).find('option').each(function() {
+                       const optVal = $(this).val();
+                       if (optVal && optVal.includes(':')) {
+                           const parts = optVal.split(':');
+                           const hhmm = parts[0].padStart(2, '0') + ':' + parts[1].padStart(2, '0');
+                           if (hhmm === preTime) {
+                               $(selector).val(optVal);
+                               return false;
+                           }
+                       }
+                   });
+                }
             } else {
                 $(selector).html('<option value="">Aucun départ</option>');
             }
@@ -824,8 +881,11 @@
         $(container).html('<div class="flex justify-center p-2"><div class="animate-spin w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full"></div></div>');
 
         try {
-            // Note: time doit être envoyé au format attendu par ton API (peut-être ajouter :00 si besoin)
-            const res = await $.get(`/user/booking/programmes/${progId}/seats?date=${date}&heure=${time}`);
+            // Utilisation de l'objet pour les paramètres
+            const res = await $.get(`/user/booking/programmes/${progId}/seats`, {
+                date: date,
+                heure: time
+            });
             
             if(res.success) {
                 let html = '<div class="grid grid-cols-7 gap-2">';
@@ -977,6 +1037,10 @@
 
         try {
             const result = await $.post(`/user/booking/reservations/${modifState.resId}/modify`, payload);
+            if (!result.success) {
+                Swal.showValidationMessage(result.message || 'Une erreur est survenue lors de la modification.');
+                return false;
+            }
             return result;
         } catch (error) {
             Swal.showValidationMessage(error.responseJSON?.message || 'Erreur technique');

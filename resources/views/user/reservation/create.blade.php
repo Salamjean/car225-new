@@ -9,19 +9,19 @@
                     <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Rechercher un voyage</h2>
 
                   <form action="{{ route('reservation.create') }}" method="GET" id="search-form">
-                        <!-- Modification ici : passage Ã  lg:grid-cols-12 pour une ligne parfaite -->
+                        <!-- Modification ici : passage à lg:grid-cols-12 pour une ligne parfaite -->
                         <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-end">
                             
-                            <!-- Point de dÃ©part (Prend 3 colonnes sur 12) -->
+                            <!-- Point de départ (Prend 3 colonnes sur 12) -->
                             <div class="relative lg:col-span-3">
                                 <label for="point_depart" class="block text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-map-marker-alt text-[#e94f1b] mr-2"></i>Point de dÃ©part
+                                    <i class="fas fa-map-marker-alt text-[#e94f1b] mr-2"></i>Point de départ
                                 </label>
                                 <div class="relative">
                                     <input type="text" id="point_depart" name="point_depart"
                                         value="{{ $searchParams['point_depart'] ?? '' }}"
                                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 pl-12"
-                                        placeholder="Ville ou gare de dÃ©part" required>
+                                        placeholder="Ville ou gare de départ" required>
                                 </div>
                             </div>
 
@@ -29,25 +29,25 @@
                             <div class="lg:col-span-1 flex items-end justify-center pb-2">
                                 <button type="button" onclick="swapLocations()" 
                                     class="w-10 h-10 bg-[#e94f1b] text-white rounded-full hover:bg-orange-600 transition-all duration-300 transform hover:scale-110 shadow-lg flex items-center justify-center"
-                                    title="Inverser dÃ©part/arrivÃ©e">
+                                    title="Inverser départ/arrivée">
                                     <i class="fas fa-exchange-alt"></i>
                                 </button>
                             </div>
 
-                            <!-- Point d'arrivÃ©e (Prend 3 colonnes sur 12) -->
+                            <!-- Point d'arrivée (Prend 3 colonnes sur 12) -->
                             <div class="relative lg:col-span-3">
                                 <label for="point_arrive" class="block text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-flag text-green-500 mr-2"></i>Point d'arrivÃ©e
+                                    <i class="fas fa-flag text-green-500 mr-2"></i>Point d'arrivée
                                 </label>
                                 <div class="relative">
                                     <input type="text" id="point_arrive" name="point_arrive"
                                         value="{{ $searchParams['point_arrive'] ?? '' }}"
                                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 pl-12"
-                                        placeholder="Ville ou gare d'arrivÃ©e" required>
+                                        placeholder="Ville ou gare d'arrivée" required>
                                 </div>
                             </div>
 
-                            <!-- Date de dÃ©part (Prend 2 colonnes sur 12) -->
+                            <!-- Date de départ (Prend 2 colonnes sur 12) -->
                             <div class="relative lg:col-span-2">
                                 <label for="date_depart" class="block text-sm font-medium text-gray-700 mb-2">
                                     <i class="fas fa-calendar text-blue-500 mr-2"></i>Date
@@ -166,10 +166,10 @@
                                             </div>
                                         </div>
 
-                                        <!-- Horaires & Occupation (Liste dÃ©filante ou grille) -->
+                                        <!-- Horaires & Occupation (Liste défilante ou grille) -->
                                         <div class="flex-1">
                                             <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-                                                <i class="fas fa-clock text-[#e94f1b]"></i> Horaires & DisponibilitÃ©
+                                                <i class="fas fa-clock text-[#e94f1b]"></i> Horaires & Disponibilité
                                             </p>
                                             <div class="flex flex-wrap gap-2">
                                                 @foreach($route->aller_horaires as $horaire)
@@ -195,7 +195,7 @@
                                         <!-- Prix & Action -->
                                         <div class="lg:text-right flex lg:flex-col items-center lg:items-end justify-between lg:justify-center gap-4 border-t lg:border-t-0 lg:border-l border-gray-100 pt-4 lg:pt-0 lg:pl-6 min-w-[200px]">
                                             <div>
-                                                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Prix Ã  partir de</p>
+                                                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Prix à partir de</p>
                                                 <p class="text-2xl font-black text-[#e94f1b]">
                                                     {{ number_format($route->montant_billet, 0, ',', ' ') }} <small class="text-xs">FCFA</small>
                                                 </p>
@@ -223,7 +223,7 @@
                                                 data-date="{{ $searchParams['date_depart'] }}"
                                                 onclick="handleReservationClick(this)"
                                                 class="bg-gradient-to-r from-[#e94f1b] to-orange-600 text-white px-8 py-3 rounded-xl font-black text-sm hover:shadow-lg hover:shadow-orange-200 transition-all duration-300 transform active:scale-95 flex items-center gap-2">
-                                                <span>RÃ‰SERVER</span>
+                                                <span>RÉSERVER</span>
                                                 <i class="fas fa-chevron-right text-[10px]"></i>
                                             </button>
                                         </div>
@@ -246,11 +246,11 @@
         </div>
     </div>
     
-    <!-- Modal SÃ©lection Gare -->
+    <!-- Modal Sélection Gare -->
     <div id="gareSelectionModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-900">SÃ©lectionnez votre gare</h2>
+                <h2 class="text-2xl font-bold text-gray-900">Sélectionnez votre gare</h2>
                 <button onclick="closeGareSelectionModal()" class="text-gray-500 hover:text-gray-700">
                     <i class="fas fa-times text-2xl"></i>
                 </button>
@@ -324,14 +324,14 @@
         </div>
     </div>
     
-    <!-- Modal pour la rÃ©servation -->
+    <!-- Modal pour la réservation -->
     <div id="reservationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 overflow-y-auto">
         <div class="min-h-screen flex items-center justify-center p-4">
             <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden" style="max-height: 95vh;">
-                <!-- En-tÃªte -->
+                <!-- En-tête -->
                 <div class="bg-gradient-to-r from-[#e94f1b] to-orange-500 p-6 text-white">
                     <div class="flex justify-between items-center">
-                        <h2 class="text-2xl font-bold">RÃ©servation de places</h2>
+                        <h2 class="text-2xl font-bold">Réservation de places</h2>
                         <button onclick="closeReservationModal()" class="text-white hover:text-gray-200 text-2xl">
                             <i class="fas fa-times"></i>
                         </button>
@@ -341,9 +341,9 @@
 
                 <!-- Contenu -->
                 <div class="p-6" style="max-height: calc(95vh - 120px); overflow-y: auto;">
-                    <!-- Ã‰tape 1: Nombre de places -->
+                    <!-- Étape 1: Nombre de places -->
                     <div id="step1" class="mb-8">
-                        <h3 class="text-xl font-bold text-gray-900 mb-4">Combien de places souhaitez-vous rÃ©server ?
+                        <h3 class="text-xl font-bold text-gray-900 mb-4">Combien de places souhaitez-vous réserver ?
                         </h3>
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                             @for ($i = 1; $i <= 8; $i++)
@@ -366,13 +366,13 @@
                         </div>
                     </div>
 
-                    <!-- Ã‰tape 2: SÃ©lection des places -->
+                    <!-- Étape 2: Sélection des places -->
                     <div id="step2" class="hidden">
                         <div class="flex justify-between items-center mb-6">
-                            <h3 class="text-xl font-bold text-gray-900">SÃ©lectionnez vos places</h3>
+                            <h3 class="text-xl font-bold text-gray-900">Sélectionnez vos places</h3>
                             <div class="flex items-center gap-4">
                                 <span id="selectedSeatsCount" class="text-lg font-bold text-[#e94f1b]">0 place
-                                    sÃ©lectionnÃ©e</span>
+                                    sélectionnée</span>
                                 <button onclick="backToStep1()"
                                     class="text-gray-600 hover:text-gray-800 flex items-center gap-2">
                                     <i class="fas fa-arrow-left"></i>
@@ -394,15 +394,15 @@
                             </div>
                             <div class="flex items-center gap-2">
                                 <div class="w-8 h-8 bg-[#e94f1b] rounded"></div>
-                                <span class="text-sm">Place sÃ©lectionnÃ©e</span>
+                                <span class="text-sm">Place sélectionnée</span>
                             </div>
                             <div class="flex items-center gap-2">
                                 <div class="w-8 h-8 bg-red-500 rounded"></div>
-                                <span class="text-sm">Place rÃ©servÃ©e</span>
+                                <span class="text-sm">Place réservée</span>
                             </div>
                             <div class="flex items-center gap-2">
                                 <div class="w-8 h-8 bg-blue-500 rounded"></div>
-                                <span class="text-sm">Place cÃ´tÃ© gauche</span>
+                                <span class="text-sm">Place côté gauche</span>
                             </div>
                         </div>
 
@@ -421,12 +421,12 @@
                             </button>
                         </div>
                     </div>
-<!-- Ã‰tape 2.5: SÃ©lection des places RETOUR (si Aller-Retour) -->
+<!-- Étape 2.5: Sélection des places RETOUR (si Aller-Retour) -->
 <div id="step2_5" class="hidden">
     <div class="flex justify-between items-center mb-6">
-        <h3 class="text-xl font-bold text-gray-900">SÃ©lectionnez vos places RETOUR</h3>
+        <h3 class="text-xl font-bold text-gray-900">Sélectionnez vos places RETOUR</h3>
         <div class="flex items-center gap-4">
-            <span id="selectedSeatsCountRetour" class="text-lg font-bold text-blue-600">0 place sÃ©lectionnÃ©e</span>
+            <span id="selectedSeatsCountRetour" class="text-lg font-bold text-blue-600">0 place sélectionnée</span>
             <button onclick="backToStep2()"
                 class="text-gray-600 hover:text-gray-800 flex items-center gap-2">
                 <i class="fas fa-arrow-left"></i>
@@ -588,20 +588,19 @@ var currentRetourProgramId = null;
 
 
         window.currentUser = @json(Auth::user()); // Injecter l'utilisateur connectÃ©
-     // DÃ©finition explicite sur window pour s'assurer que le HTML peut voir la fonction
         window.handleReservationClick = function(button) {
-            console.log("Bouton rÃ©server cliquÃ©"); // Debug
+            console.log("Bouton réserver cliqué"); // Debug
             try {
                 const routeDataJson = button.getAttribute('data-route');
                 const dateDepartInitial = button.getAttribute('data-date');
                 
                 if (!routeDataJson) {
-                    console.error("Pas de donnÃ©es data-route trouvÃ©es");
+                    console.error("Pas de données data-route trouvées");
                     return;
                 }
 
                 const routeData = JSON.parse(routeDataJson);
-                console.log('DonnÃ©es route:', routeData);
+                console.log('Données route:', routeData);
                 
                 // Toujours demander le type de voyage en premier
                 showRouteTripTypeModal(routeData, dateDepartInitial);
@@ -660,8 +659,8 @@ var currentRetourProgramId = null;
 
         // Ã‰TAPE 1: Choix Type de Voyage (Aller Simple / Aller-Retour)
         function showRouteTripTypeModal(routeData, dateDepart) {
-    // Conversion sÃ©curisÃ©e du prix en nombre
-    // On convertit d'abord en string, on enlÃ¨ve tout sauf chiffres et points, puis on parse
+    // Conversion sécurisée du prix en nombre
+    // On convertit d'abord en string, on enlève tout sauf chiffres et points, puis on parse
     let priceString = String(routeData.montant_billet || '0');
     let priceRaw = priceString.replace(/[^\d.]/g, '');
     const priceSimple = parseFloat(priceRaw) || 0;
@@ -672,7 +671,7 @@ var currentRetourProgramId = null;
         html: `
             <div class="text-left space-y-4">
                 <div class="bg-orange-50 p-4 rounded-lg border border-orange-200">
-                    <p class="font-bold text-gray-800">${routeData.point_depart} â†’ ${routeData.point_arrive}</p>
+                    <p class="font-bold text-gray-800">${routeData.point_depart} <i class="fas fa-long-arrow-alt-right mx-1"></i> ${routeData.point_arrive}</p>
                     <p class="text-sm font-bold text-gray-800 mt-1">${routeData.compagnie}</p>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
@@ -685,7 +684,7 @@ var currentRetourProgramId = null;
                         <i class="fas fa-exchange-alt text-3xl ${routeData.has_retour ? 'text-[#e94f1b]' : 'text-gray-300'} mb-2"></i>
                         <p class="font-bold">Aller-Retour</p>
                         <p class="text-lg font-bold ${routeData.has_retour ? 'text-[#e94f1b]' : 'text-gray-400'}">${priceReturn.toLocaleString('fr-FR')} FCFA</p>
-                        ${!routeData.has_retour ? '<p class="text-[10px] text-red-500 font-bold">Non disponible</p>' : '<p class="text-xs text-gray-500">Prix estimÃ©</p>'}
+                        ${!routeData.has_retour ? '<p class="text-[10px] text-red-500 font-bold">Non disponible</p>' : '<p class="text-xs text-gray-500">Prix estimé</p>'}
                     </div>
                 </div>
             </div>
@@ -735,7 +734,7 @@ var currentRetourProgramId = null;
                 <div class="route-time-btn border-2 border-green-200 bg-green-50 rounded-lg p-4 cursor-pointer hover:border-green-500 hover:bg-green-100 transition-all text-center"
                      data-id="${h.id}" data-time="${h.heure_depart}">
                     <p class="font-bold text-xl text-green-700">${h.heure_depart}</p>
-                    <p class="text-sm text-gray-500">â†’ ${h.heure_arrive}</p>
+                  <p class="text-sm text-gray-500"><i class="fas fa-arrow-right mr-1"></i> ${h.heure_arrive}</p>
                 </div>
             `;
         });
@@ -749,14 +748,14 @@ var currentRetourProgramId = null;
         html: `
             <div class="text-left space-y-4">
                 <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                     <p class="font-bold text-gray-800">${routeData.point_depart} â†’ ${routeData.point_arrive}</p>
+                     <p class="font-bold text-gray-800">${routeData.point_depart} <i class="fas fa-long-arrow-alt-right mx-1"></i> ${routeData.point_arrive}</p>
                      <p class="text-sm text-gray-600">${dateFormatted}</p>
                      <p class="text-xs text-${isAllerRetour ? 'orange' : 'green'}-600 font-semibold mt-1">
                         <i class="fas fa-${isAllerRetour ? 'exchange-alt' : 'arrow-right'} mr-1"></i>
                         ${isAllerRetour ? 'Aller-Retour' : 'Aller Simple'}
                      </p>
                 </div>
-                <p class="font-medium text-gray-700">â†’ Choisissez l'heure de dÃ©part :</p>
+                <p class="font-medium text-gray-700">Choisissez l'heure de dÃ©part :</p>
                 ${timeSlotsHtml}
             </div>
         `,
@@ -802,8 +801,8 @@ var currentRetourProgramId = null;
             let currentYear = minDate.getFullYear();
             
             function updateCalendar() {
-                const monthNames = ['Janvier', 'FÃ©vrier', 'Mars', 'Avril', 'Mai', 'Juin', 
-                                   'Juillet', 'AoÃ»t', 'Septembre', 'Octobre', 'Novembre', 'DÃ©cembre'];
+                const monthNames = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+                                   'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
                 
                 const calendarHtml = generateMonthlyCalendar(currentMonth, currentYear, minDate, maxDate, 'purple');
                 
@@ -811,7 +810,7 @@ var currentRetourProgramId = null;
                     html: `
                         <div class="text-left space-y-4">
                             <div class="bg-purple-100 p-3 rounded-lg border border-purple-200">
-                                <p class="font-bold text-purple-900">Retour : ${routeData.point_arrive} â†’ ${routeData.point_depart}</p>
+                                <p class="font-bold text-purple-900">Retour : ${routeData.point_arrive} <i class="fas fa-long-arrow-alt-right mx-1"></i> ${routeData.point_depart}</p>
                                 <p class="text-sm text-gray-700">SÃ©lectionnez la date de votre retour</p>
                             </div>
                             <div class="bg-green-50 p-2 rounded border border-green-200 text-sm flex justify-between items-center">
@@ -822,7 +821,7 @@ var currentRetourProgramId = null;
                             <!-- Options rapides Retour -->
                             <div class="flex justify-center gap-4">
                                 <button id="btnReturnSameDay" class="flex-1 bg-purple-50 hover:bg-purple-100 text-purple-700 px-3 py-2 rounded-lg font-bold border-2 border-purple-200 transition-all text-sm">
-                                    MÃªme jour
+                                    Même jour
                                 </button>
                                 <button id="btnReturnNextDay" class="flex-1 bg-purple-50 hover:bg-purple-100 text-purple-700 px-3 py-2 rounded-lg font-bold border-2 border-purple-200 transition-all text-sm">
                                     Lendemain
@@ -876,7 +875,7 @@ var currentRetourProgramId = null;
                         loadReturnSchedulesForDate(routeData, nextDayStr);
                     });
                 }
-                // Navigation mois prÃ©cÃ©dent
+                // Navigation mois précédent
                 const prevBtn = document.getElementById('prevMonthReturn');
                 if (prevBtn) {
                     prevBtn.addEventListener('click', () => {
@@ -907,7 +906,7 @@ var currentRetourProgramId = null;
                         } else {
                             currentMonth++;
                         }
-                        // Ne pas aller aprÃ¨s le mois de maxDate
+                        // Ne pas aller après le mois de maxDate
                         const checkDate = new Date(currentYear, currentMonth, 1);
                         if (checkDate <= new Date(maxDate.getFullYear(), maxDate.getMonth(), 1)) {
                             updateCalendar();
@@ -997,26 +996,81 @@ var currentRetourProgramId = null;
         }
 
         // Ã‰TAPE 3: Choix de l'heure de retour (si Aller-Retour)
-  function showRouteReturnTimes(routeData, dateDepart) {
-    // MODIFICATION MAJEURE : On ne filtre plus rien.
+ function showRouteReturnTimes(routeData, returnDate) { // Note: le 2ème paramètre est la date de retour
     const validReturnSchedules = routeData.retour_horaires || [];
+    
+    // --- CORRECTION DEBUT : Logique de filtrage des heures ---
+    
+    // 1. Récupérer la date de départ initiale
+    // window.currentDateDepart ou window.outboundDate contient la date aller
+    const dateDepartStr = window.currentDateDepart || window.outboundDate; 
+    
+    // On compare les dates (format string YYYY-MM-DD)
+    const isSameDay = (dateDepartStr === returnDate);
+
+    // 2. Convertir l'heure de départ choisie en minutes
+    let departureTimeMinutes = 0;
+    if (window.selectedDepartureTime) {
+        const [depH, depM] = window.selectedDepartureTime.split(':').map(Number);
+        departureTimeMinutes = (depH * 60) + depM;
+    }
+
+    // 3. Estimer la durée du trajet
+    let durationMinutes = 0;
+    if (routeData.durer_parcours) {
+        // Essai de parsing si format "05:00" ou "5h30"
+        const match = String(routeData.durer_parcours).match(/(\d+)/g);
+        if (match && match.length >= 2) {
+            durationMinutes = (parseInt(match[0]) * 60) + parseInt(match[1]);
+        } else if (match && match.length === 1) {
+             durationMinutes = parseInt(match[0]) * 60; // Juste des heures
+        } else {
+            durationMinutes = 240; // 4h par défaut si inconnu
+        }
+    }
+    
+    // Heure minimum acceptable = Départ + Durée + 60min de battement
+    const minReturnMinutes = departureTimeMinutes + durationMinutes + 60; 
+
+    // --- CORRECTION FIN ---
+
+    // Filtrer les horaires pour l'affichage
+    const availableSchedules = validReturnSchedules.filter(h => {
+        if (!isSameDay) return true; // Si pas le même jour, on affiche tout
+
+        const [retH, retM] = h.heure_depart.split(':').map(Number);
+        const returnMinutes = (retH * 60) + retM;
+
+        // On ne garde que ceux qui sont APRES l'arrivée estimée
+        return returnMinutes > minReturnMinutes;
+    });
 
     // Construire la grille retour
     let timeSlotsHtml = '';
-    if (validReturnSchedules.length > 0) {
+    
+    if (availableSchedules.length > 0) {
         timeSlotsHtml = '<div class="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto p-2">';
-        validReturnSchedules.forEach(h => {
+        availableSchedules.forEach(h => {
             timeSlotsHtml += `
                 <div class="route-return-btn border-2 border-blue-200 bg-blue-50 rounded-lg p-4 cursor-pointer hover:border-blue-500 hover:bg-blue-100 transition-all text-center"
                      data-id="${h.id}" data-time="${h.heure_depart}">
                     <p class="font-bold text-xl text-blue-700">${h.heure_depart}</p>
-                    <p class="text-sm text-gray-500">â†’ ${h.heure_arrive}</p>
+                    <p class="text-sm text-gray-500">→ ${h.heure_arrive}</p>
                 </div>
             `;
         });
         timeSlotsHtml += '</div>';
     } else {
-        timeSlotsHtml = '<div class="text-center text-orange-500 mb-4"><p>Aucun horaire retour disponible pour cette date.</p></div>';
+        if (isSameDay && validReturnSchedules.length > 0) {
+             timeSlotsHtml = `
+                <div class="text-center text-orange-500 mb-4 bg-orange-50 p-3 rounded border border-orange-200">
+                    <p class="font-bold">Aucun retour possible ce jour.</p>
+                    <p class="text-sm">Départ à ${window.selectedDepartureTime}. Le bus n'arrivera pas à temps pour reprendre un retour aujourd'hui.</p>
+                    <button class="mt-2 bg-white border border-orange-300 px-3 py-1 rounded text-sm hover:bg-orange-100" onclick="showReturnDateSelection(window.currentRouteData, '${dateDepartStr}')">Choisir le lendemain</button>
+                </div>`;
+        } else {
+            timeSlotsHtml = '<div class="text-center text-orange-500 mb-4"><p>Aucun horaire retour disponible.</p></div>';
+        }
     }
 
     Swal.fire({
@@ -1024,13 +1078,13 @@ var currentRetourProgramId = null;
         html: `
             <div class="text-left space-y-4">
                 <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                     <p class="font-bold text-gray-800">Retour : ${routeData.point_arrive} â†’ ${routeData.point_depart}</p>
-                     <p class="text-sm text-gray-600">Date : ${new Date(dateDepart).toLocaleDateString('fr-FR')}</p>
+                     <p class="font-bold text-gray-800">Retour : ${routeData.point_arrive} → ${routeData.point_depart}</p>
+                     <p class="text-sm text-gray-600">Date : ${new Date(returnDate).toLocaleDateString('fr-FR')}</p>
                 </div>
                  <div class="bg-green-50 p-2 rounded border border-green-200 text-sm mb-2">
-                    <span class="font-bold text-green-700">DÃ©part choisi :</span> ${window.selectedDepartureTime}
+                    <span class="font-bold text-green-700">Départ choisi :</span> ${window.selectedDepartureTime}
                 </div>
-                <p class="font-medium text-gray-700">â†’ Choisissez l'heure de retour :</p>
+                <p class="font-medium text-gray-700"><i class="fas fa-hand-point-right mr-1"></i> Choisissez l'heure de retour :</p>
                 ${timeSlotsHtml}
             </div>
         `,
@@ -1047,18 +1101,18 @@ var currentRetourProgramId = null;
                     window.selectedReturnTime = time;
                     window.selectedRetourProgramId = progId;
                     
-                    // Trouver les dÃ©tails du programme retour dans routeData si nÃ©cessaire
                     const returnProg = routeData.retour_horaires.find(p => p.id == progId);
                     window.selectedReturnProgram = returnProg; 
 
                     Swal.close();
-                    startReservationFromRoute(window.selectedAllerProgramId, dateDepart, true);
+                    startReservationFromRoute(window.selectedAllerProgramId, dateDepartStr, true);
                 });
             });
         }
     }).then((result) => {
         if (result.dismiss === Swal.DismissReason.cancel) {
-            showRouteDepartureTimes(routeData, dateDepart, true);
+            // IMPORTANT: Si on annule, on retourne au choix de la DATE de retour
+            showReturnDateSelection(routeData, dateDepartStr);
         }
     });
 }
@@ -1068,13 +1122,13 @@ var currentRetourProgramId = null;
             window.userWantsAllerRetour = isAllerRetour;
             window.userChoseAllerRetour = isAllerRetour;
             
-            // CORRECTION: Si on vient du flux "Grouped Routes", on s'assure d'utiliser la date de dÃ©part initiale
+            // CORRECTION: Si on vient du flux "Grouped Routes", on s'assure d'utiliser la date de départ initiale
             if (window.currentDateDepart && isAllerRetour) {
                  console.log('DEBUG: Using Date Depart from global scope:', window.currentDateDepart);
                  dateVoyage = window.currentDateDepart;
             }
 
-            // Ouvrir directement le modal de sÃ©lection des places (Step 1)
+            // Ouvrir directement le modal de sélection des places (Step 1)
             openReservationModal(programId, dateVoyage);
         }
         
@@ -1083,9 +1137,9 @@ var currentRetourProgramId = null;
  // --- NOUVELLE FONCTION PRINCIPALE D'INITIATION ---
         // C'est elle qui est appelÃ©e par le bouton "RÃ©server"
      async function initiateReservationProcess(programId, searchDateFormatted, searchedTime = null) {
-        console.log("Initiation rÃ©servation pour ID:", programId, "Date:", searchDateFormatted, "Heure cherchÃ©e:", searchedTime);
+        console.log("Initiation réservation pour ID:", programId, "Date:", searchDateFormatted, "Heure cherchée:", searchedTime);
         
-        // 1. RÃ©initialisation des variables globales
+        // 1. Réinitialisation des variables globales
         userWantsAllerRetour = false;
         window.userChoseAllerRetour = false;
         window.selectedReturnProgram = null;
@@ -1107,13 +1161,13 @@ var currentRetourProgramId = null;
             const response = await fetch(`/user/booking/program/${programId}`);
             const data = await response.json();
             
-            if (!data.success) throw new Error("Impossible de charger les dÃ©tails du programme");
+            if (!data.success) throw new Error("Impossible de charger les détails du programme");
             
             const program = data.programme;
             window.outboundProgram = program;
             currentSelectedProgram = program;
             
-            // VÃ©rifier la disponibilitÃ© du retour via l'API
+            // Vérifier la disponibilité du retour via l'API
             const paramsRetour = new URLSearchParams({
                 original_arrive: program.point_arrive,
                 original_depart: program.point_depart,
@@ -1204,7 +1258,7 @@ async function showDepartureSchedulesModal(program, departureDate, isAllerRetour
         timeSlotsHtml += '</div>';
         
         Swal.fire({
-            title: '<i class="fas fa-clock text-[#e94f1b]"></i> Heure de dÃ©part',
+            title: '<i class="fas fa-clock text-[#e94f1b]"></i> Heure de départ',
             html: `
                 <div class="text-left space-y-4">
                     <div class="bg-blue-50 p-3 rounded-lg">
@@ -1331,7 +1385,7 @@ async function showDepartureSchedulesModal(program, departureDate, isAllerRetour
                         <p class="text-xs text-gray-400"><i class="fas fa-info-circle mr-1"></i>RÃ©servation minimum 4h Ã  l'avance â€¢ Service 6h-22h</p>
                         ${timeSlotsHtml}
                         <div id="selectedTimeDisplay" class="hidden bg-green-50 p-3 rounded-lg text-center">
-                            <span class="font-bold text-green-800">DÃ©part sÃ©lectionnÃ©: <span id="selectedTimeValue"></span></span>
+                            <span class="font-bold text-green-800">Départ sélectionné: <span id="selectedTimeValue"></span></span>
                         </div>
                     </div>
                 `,
@@ -1404,7 +1458,7 @@ async function showDepartureSchedulesModal(program, departureDate, isAllerRetour
                                 <i class="fas fa-exchange-alt text-3xl text-[#e94f1b] mb-2"></i>
                                 <p class="font-bold">Aller-Retour</p>
                                 <p class="text-lg font-bold text-[#e94f1b]">${priceReturn.toLocaleString('fr-FR')} FCFA</p>
-                                <p class="text-xs text-gray-500">Prix estimÃ©</p>
+                                <p class="text-xs text-gray-500">Prix estimé</p>
                             </div>
                         </div>
                     </div>
@@ -1788,7 +1842,7 @@ async function showDepartureSchedulesModal(program, departureDate, isAllerRetour
 
             // Reset UI
             document.getElementById('reservationProgramInfo').innerHTML = '<div class="text-center p-4"><i class="fas fa-spinner fa-spin text-2xl text-[#e94f1b]"></i><p>Chargement...</p></div>';
-            document.getElementById('selectedSeatsCount').textContent = '0 place sÃ©lectionnÃ©e';
+            document.getElementById('selectedSeatsCount').textContent = '0 place sélectionnée';
             document.getElementById('seatSelectionArea').innerHTML = '';
             document.getElementById('step2').classList.add('hidden');
             document.getElementById('step3').classList.add('hidden');
@@ -1808,12 +1862,16 @@ async function showDepartureSchedulesModal(program, departureDate, isAllerRetour
                         const program = data.programme;
                          currentSelectedProgram = program; 
                         // DÃ©terminer la date de voyage finale
-                        let dateVoyage = searchDate;
-                        if (!dateVoyage) {
-                            dateVoyage = program.date_depart.split('T')[0];
-                        }
-                        window.currentReservationDate = dateVoyage;
+                       let dateVoyage = searchDate || window.selectedDepartureDate || window.outboundDate;
 
+if (!dateVoyage) {
+    // Fallback ultime : si aucune date n'est trouvée, on prend la date du programme
+    dateVoyage = program.date_depart.split('T')[0];
+}
+
+// FORCE la mise à jour des variables globales pour la confirmation
+window.currentReservationDate = dateVoyage;
+window.outboundDate = dateVoyage; 
                         const dateDisplay = new Date(dateVoyage).toLocaleDateString('fr-FR');
                         
                         // Prix et badge
@@ -1828,12 +1886,12 @@ async function showDepartureSchedulesModal(program, departureDate, isAllerRetour
 
                         document.getElementById('reservationProgramInfo').innerHTML = `
                             <div class="flex flex-wrap gap-4">
-                                <span><i class="fas fa-map-marker-alt"></i> ${program.point_depart} â†’ ${program.point_arrive}</span>
+                                <span><i class="fas fa-map-marker-alt"></i>${program.point_depart} <i class="fas fa-long-arrow-alt-right mx-1"></i> ${program.point_arrive}</span>
                                 <span><i class="fas fa-calendar"></i> ${dateDisplay}</span>
-                                <span class="bg-green-100 text-green-800 px-2 py-1 rounded"><i class="fas fa-clock"></i> DÃ©part: ${window.selectedDepartureTime || program.heure_depart}</span>
+                                <span class="bg-green-100 text-green-800 px-2 py-1 rounded"><i class="fas fa-clock"></i> Départ: ${window.selectedDepartureTime || program.heure_depart}</span>
                                 <span><i class="fas fa-money-bill-wave"></i> ${prixAffiche.toLocaleString('fr-FR')} FCFA</span>
                                 ${allerRetourBadge}
-                                ${window.selectedReturnTime ? `<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm"><i class="fas fa-undo"></i> Retour: ${selectedReturnDate ? new Date(selectedReturnDate).toLocaleDateString('fr-FR') + ' Ã  ' : ''}${window.selectedReturnTime}</span>` : ''}
+                                ${window.selectedReturnTime ? `<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm"><i class="fas fa-undo"></i> Retour: ${selectedReturnDate ? new Date(selectedReturnDate).toLocaleDateString('fr-FR') + ' à ' : ''}${window.selectedReturnTime}</span>` : ''}
                             </div>
                         `;
 
@@ -1867,7 +1925,7 @@ async function showDepartureSchedulesModal(program, departureDate, isAllerRetour
         function selectNumberOfPlaces(number, element) {
             selectedNumberOfPlaces = number;
 
-            // Activer le bouton sÃ©lectionnÃ©
+            // Activer le bouton sélectionné
             document.querySelectorAll('.place-count-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
@@ -1904,7 +1962,7 @@ async function showDepartureSchedulesModal(program, departureDate, isAllerRetour
                 </div>
             `;
             
-            // DÃ©tection automatique du choix basÃ© sur la recherche
+            // Détection automatique du choix basé sur la recherche
             const searchType = new URLSearchParams(window.location.search).get('is_aller_retour');
             if (searchType === '1') {
                 userWantsAllerRetour = true;
@@ -1915,7 +1973,7 @@ async function showDepartureSchedulesModal(program, departureDate, isAllerRetour
             }
             
             updateAllerRetourPriceDisplay(program);
-            onAllerRetourChoiceChange(); // Mettre Ã  jour l'affichage dynamique (dates, etc)
+            onAllerRetourChoiceChange(); // Mettre à jour l'affichage dynamique (dates, etc)
             modal.classList.remove('hidden');
         }
 function onAllerRetourChoiceChange() {
@@ -2145,7 +2203,7 @@ function onAllerRetourChoiceChange() {
             const nombreRanger = Math.ceil(totalPlaces / placesParRanger);
             let html = `
                                                                                 <div style="background: white; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
-                                                                                    <!-- En-tÃªte -->
+                                                                                    <!-- En-tête -->
                                                                                     <div style="display: grid; grid-template-columns: 100px 1fr 80px 1fr; gap: 10px; padding: 15px; background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
                                                                                         <div style="text-align: center; font-weight: 600; color: #4b5563;">RangÃ©e</div>
                                                                                         <div style="text-align: center; font-weight: 600; color: #4b5563;">CÃ´tÃ© gauche</div>
@@ -2167,10 +2225,10 @@ function onAllerRetourChoiceChange() {
 
                 html += `
                                                                                     <div style="display: grid; grid-template-columns: 100px 1fr 80px 1fr; gap: 10px; padding: 20px; align-items: center; ${ranger < nombreRanger ? 'border-bottom: 1px solid #e5e7eb;' : ''}">
-                                                                                        <!-- NumÃ©ro de rangÃ©e -->
-                                                                                        <div style="text-align: center; font-weight: 600; color: #6b7280;">RangÃ©e ${ranger}</div>
+                                                                                        <!-- Numéro de rangée -->
+                                                                                        <div style="text-align: center; font-weight: 600; color: #6b7280;">Rangée ${ranger}</div>
 
-                                                                                        <!-- Places cÃ´tÃ© gauche -->
+                                                                                        <!-- Places côté gauche -->
                                                                                         <div style="display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;">
                                                                                 `;
 
@@ -2216,15 +2274,15 @@ function onAllerRetourChoiceChange() {
                                                                                     </div>
                                                                                 </div>
 
-                                                                                <!-- LÃ©gende -->
+                                                                                <!-- Légende -->
                                                                                 <div style="display: flex; justify-content: center; gap: 20px; margin-top: 20px; padding: 15px; background: #f9fafb; border-radius: 8px;">
                                                                                     <div style="display: flex; align-items: center; gap: 8px;">
                                                                                         <div style="width: 20px; height: 20px; background: linear-gradient(135deg, #e94f1b, #e89116); border-radius: 4px;"></div>
-                                                                                        <span style="color: #4b5563; font-size: 0.9rem;">CÃ´tÃ© gauche (conducteur)</span>
+                                                                                        <span style="color: #4b5563; font-size: 0.9rem;">Côté gauche (conducteur)</span>
                                                                                     </div>
                                                                                     <div style="display: flex; align-items: center; gap: 8px;">
                                                                                         <div style="width: 20px; height: 20px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 4px;"></div>
-                                                                                        <span style="color: #4b5563; font-size: 0.9rem;">CÃ´tÃ© droit</span>
+                                                                                        <span style="color: #4b5563; font-size: 0.9rem;">Côté droit</span>
                                                                                     </div>
                                                                                 </div>
                                                                             `;
@@ -2260,7 +2318,7 @@ function onAllerRetourChoiceChange() {
             // Afficher le loader
             Swal.fire({
                 title: 'Chargement...',
-                text: 'RÃ©cupÃ©ration des informations',
+                text: 'Récupération des informations',
                 allowOutsideClick: false,
                 didOpen: () => {
                     Swal.showLoading();
@@ -2415,7 +2473,7 @@ function onAllerRetourChoiceChange() {
             const totalPlaces = parseInt(vehicleDetails.capacite_total || vehicleDetails.nombre_place || 70);
             const nombreRanger = Math.ceil(totalPlaces / placesParRanger);
             
-            // Construire le nom du vÃ©hicule de maniÃ¨re sÃ©curisÃ©e
+            // Construire le nom du véhicule de manière sécurisée
             const vehicleName = vehicleDetails.marque + ' ' + (vehicleDetails.modele || '');
             const vehicleImmat = vehicleDetails.immatriculation || '';
             const vehicleTitle = vehicleImmat ? `${vehicleName.trim()} - ${vehicleImmat}` : vehicleName.trim();
@@ -2430,7 +2488,7 @@ function onAllerRetourChoiceChange() {
                                                                                     <!-- Option assignation automatique -->
                                                                                     <div class="flex justify-center gap-4 mb-6">
                                                                                         <button type="button" onclick="toggleSelectionMode('manual')" id="btnManualSelect" class="px-4 py-2 rounded-lg font-semibold transition bg-[#e94f1b] text-white">
-                                                                                            <i class="fas fa-hand-pointer mr-2"></i>SÃ©lection manuelle
+                                                                                            <i class="fas fa-hand-pointer mr-2"></i>Sélection manuelle
                                                                                         </button>
                                                                                         <button type="button" onclick="autoAssignSeats()" id="btnAutoAssign" class="px-4 py-2 rounded-lg font-semibold transition bg-blue-500 text-white hover:bg-blue-600">
                                                                                             <i class="fas fa-random mr-2"></i>Assignation automatique
@@ -2477,9 +2535,9 @@ function onAllerRetourChoiceChange() {
                             isSelected ? 'bg-[#e94f1b] text-white shadow-lg transform scale-110' :
                                 'bg-blue-500 text-white hover:bg-blue-600 hover:shadow-md cursor-pointer'}"
                                                                                              ${!isReserved ? `onclick="toggleSeat(${seatNumber})"` : ''}
-                                                                                             title="Place ${seatNumber}${isReserved ? ' (RÃ©servÃ©e)' : ''}">
+                                                                                             title="Place ${seatNumber}${isReserved ? ' (Réservée)' : ''}">
                                                                                             <span class="text-lg">${seatNumber}</span>
-                                                                                            <span class="text-xs">${isReserved ? 'âœ—' : (isSelected ? 'âœ“' : '')}</span>
+                                                                                            <span class="text-xs">${isReserved ? '✘' : (isSelected ? '✓' : '')}</span>
                                                                                         </div>
                                                                                     `;
                 }
@@ -2510,9 +2568,9 @@ function onAllerRetourChoiceChange() {
                             isSelected ? 'bg-[#e94f1b] text-white shadow-lg transform scale-110' :
                                 'bg-green-500 text-white hover:bg-green-600 hover:shadow-md cursor-pointer'}"
                                                                                              ${!isReserved ? `onclick="toggleSeat(${seatNumber})"` : ''}
-                                                                                             title="Place ${seatNumber}${isReserved ? ' (RÃ©servÃ©e)' : ''}">
+                                                                                             title="Place ${seatNumber}${isReserved ? ' (Réservée)' : ''}">
                                                                                             <span class="text-lg">${seatNumber}</span>
-                                                                                            <span class="text-xs">${isReserved ? 'âœ—' : (isSelected ? 'âœ“' : '')}</span>
+                                                                                            <span class="text-xs">${isReserved ? '✘' : (isSelected ? '✓' : '')}</span>
                                                                                         </div>
                                                                                     `;
                 }
@@ -2533,8 +2591,8 @@ function onAllerRetourChoiceChange() {
                                                                                     <div class="mt-6 p-4 bg-blue-50 rounded-lg">
                                                                                         <p class="text-sm text-gray-700">
                                                                                             <i class="fas fa-info-circle text-blue-500 mr-2"></i>
-                                                                                            SÃ©lectionnez ${selectedNumberOfPlaces} place${selectedNumberOfPlaces > 1 ? 's' : ''} en cliquant sur les places disponibles.
-                                                                                            Les places en rouge sont dÃ©jÃ  rÃ©servÃ©es.
+                                                                                            Sélectionnez ${selectedNumberOfPlaces} place${selectedNumberOfPlaces > 1 ? 's' : ''} en cliquant sur les places disponibles.
+                                                                                            Les places en rouge sont déjà réservées.
                                                                                         </p>
                                                                                     </div>
                                                                                 </div>
@@ -2682,7 +2740,7 @@ function onAllerRetourChoiceChange() {
             const nextBtn = document.getElementById('showPassengerInfoBtn');
 
             countElement.textContent =
-                `${count} place${count > 1 ? 's' : ''} sÃ©lectionnÃ©e${count > 1 ? 's' : ''} / ${selectedNumberOfPlaces} demandÃ©e${selectedNumberOfPlaces > 1 ? 's' : ''}`;
+                `${count} place${count > 1 ? 's' : ''} sélectionnée${count > 1 ? 's' : ''} / ${selectedNumberOfPlaces} demandée${selectedNumberOfPlaces > 1 ? 's' : ''}`;
 
             // Mettre Ã  jour le style du compteur
             countElement.classList.remove('text-[#e94f1b]', 'text-red-500', 'text-green-500');
@@ -2840,7 +2898,7 @@ async function loadRetourSeatsSelection() {
         // 4. Afficher les infos du retour
         const dateRetourFormatted = new Date(dateRetour).toLocaleDateString('fr-FR');
         document.getElementById('returnProgramInfo').innerHTML = `
-            <span><i class="fas fa-map-marker-alt"></i> ${programRetour.point_depart} â†’ ${programRetour.point_arrive}</span>
+            <span><i class="fas fa-map-marker-alt"></i> ${programRetour.point_depart} → ${programRetour.point_arrive}</span>
             <span class="mx-2">|</span>
             <span><i class="fas fa-calendar"></i> ${dateRetourFormatted}</span>
             <span class="mx-2">|</span>
@@ -2897,7 +2955,7 @@ function generateSeatSelectionViewRetour() {
             <!-- Option assignation automatique -->
             <div class="flex justify-center gap-4 mb-6">
                 <button type="button" onclick="toggleSelectionModeRetour('manual')" id="btnManualSelectRetour" class="px-4 py-2 rounded-lg font-semibold transition bg-blue-600 text-white">
-                    <i class="fas fa-hand-pointer mr-2"></i>SÃ©lection manuelle
+                    <i class="fas fa-hand-pointer mr-2"></i>Sélection manuelle
                 </button>
                 <button type="button" onclick="autoAssignSeatsRetour()" id="btnAutoAssignRetour" class="px-4 py-2 rounded-lg font-semibold transition bg-green-500 text-white hover:bg-green-600">
                     <i class="fas fa-random mr-2"></i>Assignation automatique
@@ -2975,9 +3033,9 @@ function generateSeatSelectionViewRetour() {
                     isSelected ? 'bg-blue-600 text-white shadow-lg transform scale-110' :
                         'bg-green-500 text-white hover:bg-green-600 hover:shadow-md cursor-pointer'}"
                      ${!isReserved ? `onclick="toggleSeatRetour(${seatNumber})"` : ''}
-                     title="Place ${seatNumber}${isReserved ? ' (RÃ©servÃ©e)' : ''}">
+                     title="Place ${seatNumber}${isReserved ? ' (Réservée)' : ''}">
                     <span class="text-lg">${seatNumber}</span>
-                    <span class="text-xs">${isReserved ? 'âœ—' : (isSelected ? 'âœ“' : '')}</span>
+                    <span class="text-xs">${isReserved ? '✘' : (isSelected ? '✓' : '')}</span>
                 </div>
             `;
         }
@@ -2999,7 +3057,7 @@ function generateSeatSelectionViewRetour() {
                 <p class="text-sm text-gray-700">
                     <i class="fas fa-info-circle text-blue-500 mr-2"></i>
                     SÃ©lectionnez ${selectedNumberOfPlaces} place${selectedNumberOfPlaces > 1 ? 's' : ''} pour le retour.
-                    Les places en rouge sont dÃ©jÃ  rÃ©servÃ©es.
+                    Les places en rouge sont déjà réservées.
                 </p>
             </div>
         </div>
@@ -3016,7 +3074,7 @@ function toggleSeatRetour(seatNumber) {
             Swal.fire({
                 icon: 'warning',
                 title: 'Limite atteinte',
-                text: `Vous ne pouvez sÃ©lectionner que ${selectedNumberOfPlaces} place(s). DÃ©sÃ©lectionnez d'abord une place si vous voulez en choisir une autre.`,
+                text: `Vous ne pouvez sélectionner que ${selectedNumberOfPlaces} place(s). Désélectionnez d'abord une place si vous voulez en choisir une autre.`,
                 confirmButtonColor: '#3b82f6',
             });
             return;
@@ -3046,7 +3104,7 @@ function toggleSeatRetour(seatNumber) {
 
         const checkmark = seatElement.querySelector('.text-xs');
         if (checkmark) {
-            checkmark.textContent = isSelected ? 'âœ“' : '';
+            checkmark.textContent = isSelected ? '✓' : '';
         }
     }
 
@@ -3059,7 +3117,7 @@ function updateSelectedSeatsCountRetour() {
     const nextBtn = document.getElementById('showPassengerInfoBtnRetour');
 
     countElement.textContent =
-        `${count} place${count > 1 ? 's' : ''} sÃ©lectionnÃ©e${count > 1 ? 's' : ''} / ${selectedNumberOfPlaces} demandÃ©e${selectedNumberOfPlaces > 1 ? 's' : ''}`;
+        `${count} place${count > 1 ? 's' : ''} sélectionnée${count > 1 ? 's' : ''} / ${selectedNumberOfPlaces} demandée${selectedNumberOfPlaces > 1 ? 's' : ''}`;
 
     countElement.classList.remove('text-blue-600', 'text-red-500', 'text-green-500');
     if (count === 0) {
@@ -3115,7 +3173,7 @@ function autoAssignSeatsRetour() {
             const isLeftSide = seat <= typeRangeConfig[vehicleDetailsRetour.type_range].placesGauche;
             seatElement.classList.add('bg-blue-600', 'text-white', 'shadow-lg', 'transform', 'scale-110');
             seatElement.classList.remove(isLeftSide ? 'bg-blue-500' : 'bg-green-500');
-            seatElement.querySelector('.text-xs').textContent = 'âœ“';
+            seatElement.querySelector('.text-xs').textContent = '✓';
         }
     });
     
@@ -3170,10 +3228,10 @@ function proceedToPassengerInfoFromRetour() {
                 formArea.insertAdjacentHTML('beforeend', toggleHtml);
                 // AJOUTER CECI POUR ACTIVER LE PASSAGE A L'ETAPE 3
               document.getElementById('step2').classList.add('hidden');
-    // On cache AUSSI l'Ã©tape Retour (C'est Ã§a qui manque)
+    // On cache AUSSI l'étape Retour (C'est ça qui manque)
     document.getElementById('step2_5').classList.add('hidden');
     
-    // On affiche l'Ã©tape 3
+    // On affiche l'étape 3
     document.getElementById('step3').classList.remove('hidden');
     document.getElementById('confirmReservationBtn').disabled = false;
             }
@@ -3191,7 +3249,7 @@ function proceedToPassengerInfoFromRetour() {
                 const passengerHtml = `
                     <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 transition-all hover:shadow-md" id="passenger_card_${seat}">
                         <h4 class="font-bold text-[#e94f1b] mb-4 flex items-center gap-2">
-                            <i class="fas fa-user"></i> Passager pour la place nÂ°${seat}
+                            <i class="fas fa-user"></i> Passager pour la place n°${seat}
                             ${isMainPassenger ? '<span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded ml-2">Principal</span>' : ''}
                         </h4>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -3203,18 +3261,19 @@ function proceedToPassengerInfoFromRetour() {
                                     placeholder="Nom du passager">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">PrÃ©nom</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
                                 <input type="text" name="passenger_${seat}_prenom" required
                                     value="${defaultPrenom}"
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all"
-                                    placeholder="PrÃ©nom du passager">
+                                    placeholder="Prénom du passager">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">TÃ©lÃ©phone</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
                                 <input type="tel" name="passenger_${seat}_telephone" required
                                     value="${defaultTel}"
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all"
-                                    placeholder="Ex: 0700000000">
+                                    placeholder="Ex: 0700000000"  maxlength="10" minlength="10" pattern="[0-9]{10}"
+                                    oninput="this.value = this.value.replace(/[^0-9]/g, '').substring(0, 10)">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
@@ -3224,10 +3283,11 @@ function proceedToPassengerInfoFromRetour() {
                                     placeholder="email@exemple.com">
                             </div>
                             <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Contact d'urgence (Nom & TÃ©l)</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Contact d'urgence (Nom & Tél)</label>
                                 <input type="text" name="passenger_${seat}_urgence" required
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all"
-                                    placeholder="Ex: Jean Dupont - 0500000000">
+                                    placeholder="Ex: Jean Dupont - 0500000000"  maxlength="10" minlength="10" pattern="[0-9]{10}"
+                                    oninput="this.value = this.value.replace(/[^0-9]/g, '').substring(0, 10)">
                             </div>
                         </div>
                     </div>
@@ -3628,17 +3688,17 @@ function proceedToPassengerInfoFromRetour() {
             }).join('') + `</div>`;
         }
 
-        // Nouvelle fonction: dÃ¨s qu'on sÃ©lectionne une ligne, demander la date de dÃ©part
+        // Nouvelle fonction: dès qu'on sélectionne une ligne, demander la date de départ
         function selectRouteAndLaunchFlow(route) {
-            // Cacher la liste inline pour faire place Ã  la suite ou la laisser ? 
+            // Cacher la liste inline pour faire place à la suite ou la laisser ? 
             // UX: On peut la laisser visible ou la cacher. Cachons-la pour focus.
             // document.getElementById('inlineProgramsList').classList.add('hidden');
             
-            // Afficher sÃ©lecteur de date de dÃ©part
+            // Afficher sélecteur de date de départ
             showDepartureDateSelection(route);
         }
 
-        // GÃ©nÃ©rateur de calendrier mensuel
+        // Générateur de calendrier mensuel
         function generateMonthlyCalendar(currentMonth, currentYear, minDate, maxDate, colorScheme = 'orange') {
             const firstDay = new Date(currentYear, currentMonth, 1);
             const lastDay = new Date(currentYear, currentMonth + 1, 0);
@@ -3671,7 +3731,7 @@ function proceedToPassengerInfoFromRetour() {
             
             let html = '<div class="calendar-grid">';
             
-            // En-tÃªte avec jours de la semaine
+            // En-tête avec jours de la semaine
             html += '<div class="grid grid-cols-7 gap-1 mb-2">';
             const dayNames = ['Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa', 'Di'];
             dayNames.forEach(day => {
@@ -3718,7 +3778,7 @@ function proceedToPassengerInfoFromRetour() {
             const today = new Date();
             today.setHours(0, 0, 0, 0);
             
-            // Calculer demain pour le dÃ©but des rÃ©servations possibles
+            // Calculer demain pour le début des réservations possibles
             const tomorrow = new Date(today);
             tomorrow.setDate(tomorrow.getDate() + 1);
             
@@ -3729,8 +3789,8 @@ function proceedToPassengerInfoFromRetour() {
             let currentYear = tomorrow.getFullYear();
             
             function updateCalendar() {
-                const monthNames = ['Janvier', 'FÃ©vrier', 'Mars', 'Avril', 'Mai', 'Juin', 
-                                   'Juillet', 'AoÃ»t', 'Septembre', 'Octobre', 'Novembre', 'DÃ©cembre'];
+                const monthNames = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+                                   'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
                 
                 // Utiliser tomorrow comme minDate
                 const calendarHtml = generateMonthlyCalendar(currentMonth, currentYear, tomorrow, maxDate, 'orange');
@@ -3739,15 +3799,15 @@ function proceedToPassengerInfoFromRetour() {
                     html: `
                         <div class="text-left space-y-4">
                             <div class="bg-orange-50 p-3 rounded-lg border border-orange-200">
-                                <p class="font-bold text-gray-800">${route.point_depart} â†’ ${route.point_arrive}</p>
-                                <p class="text-sm text-gray-600">SÃ©lectionnez votre date de dÃ©part</p>
+                                <p class="font-bold text-gray-800">${route.point_depart} → ${route.point_arrive}</p>
+                                <p class="text-sm text-gray-600">Sélectionnez votre date de départ</p>
                             </div>
                             
                             <!-- Option rapide Demain -->
                             <div class="flex justify-center">
                                 <button id="btnSelectTomorrow" class="flex items-center gap-2 bg-orange-100 text-orange-700 px-4 py-2 rounded-lg font-bold hover:bg-orange-200 transition-colors border border-orange-300">
                                     <i class="fas fa-magic"></i>
-                                    <span>SÃ©lectionner demain (${tomorrow.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })})</span>
+                                    <span>Sélectionner demain (${tomorrow.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })})</span>
                                 </button>
                             </div>
 
@@ -3784,7 +3844,7 @@ function proceedToPassengerInfoFromRetour() {
                         loadSchedulesAndLaunchFlow(route, tomorrowStr);
                     });
                 }
-                // Navigation mois prÃ©cÃ©dent
+                // Navigation mois précédent
                 const prevBtn = document.getElementById('prevMonth');
                 if (prevBtn) {
                     prevBtn.addEventListener('click', () => {
@@ -3816,7 +3876,7 @@ function proceedToPassengerInfoFromRetour() {
                         } else {
                             currentMonth++;
                         }
-                        // Ne pas aller aprÃ¨s le mois de maxDate
+                        // Ne pas aller après le mois de maxDate
                         const checkDate = new Date(currentYear, currentMonth, 1);
                         if (checkDate <= new Date(maxDate.getFullYear(), maxDate.getMonth(), 1)) {
                             updateCalendar();
@@ -3840,7 +3900,7 @@ function proceedToPassengerInfoFromRetour() {
             
             // Ouvrir le modal initial
             Swal.fire({
-                title: '<i class="fas fa-calendar-day text-orange-600"></i> Date de dÃ©part',
+                title: '<i class="fas fa-calendar-day text-orange-600"></i> Date de départ',
                 html: '', // Sera rempli par updateCalendar()
                 showCancelButton: true,
                 showConfirmButton: false,
@@ -3859,16 +3919,20 @@ function proceedToPassengerInfoFromRetour() {
 
         // Charger les horaires et lancer le flux unifiÃ©
         async function loadSchedulesAndLaunchFlow(route, selectedDate) {
+              // --- AJOUT IMPORTANT ---
+    window.selectedDepartureDate = selectedDate; // Sauvegarder la date choisie explicitement
+    window.outboundDate = selectedDate;
+   
             // Afficher un loader
             Swal.fire({
-                title: 'Chargement des disponibilitÃ©s...',
-                text: `${route.point_depart} â†’ ${route.point_arrive}`,
+                title: 'Chargement des disponibilités...',
+                text: `${route.point_depart} → ${route.point_arrive}`,
                 allowOutsideClick: false,
                 didOpen: () => { Swal.showLoading(); }
             });
             
             try {
-                // 1. Charger les horaires ALLER pour la date sÃ©lectionnÃ©e
+                // 1. Charger les horaires ALLER pour la date sélectionnée
                 const paramsAller = new URLSearchParams({
                     point_depart: route.point_depart,
                     point_arrive: route.point_arrive,
@@ -3878,7 +3942,7 @@ function proceedToPassengerInfoFromRetour() {
                 const responseAller = await fetch('{{ route("api.route-schedules") }}?' + paramsAller);
                 const dataAller = await responseAller.json();
                 
-                // 2. Charger les horaires RETOUR pour vÃ©rifier la disponibilitÃ©
+                // 2. Charger les horaires RETOUR pour vérifier la disponibilité
                 const paramsRetour = new URLSearchParams({
                     original_arrive: route.point_arrive,
                     original_depart: route.point_depart,
@@ -3891,16 +3955,16 @@ function proceedToPassengerInfoFromRetour() {
                 
                 // 3. Construire l'objet routeData pour le modal unifiÃ©
                 const routeData = {
-                    ...route, // Inclut date_fin si prÃ©sent dans route
+                    ...route, // Inclut date_fin si présent dans route
                     aller_horaires: dataAller.success ? dataAller.schedules : [],
                     has_retour: (dataRetour.success && dataRetour.return_trips && dataRetour.return_trips.length > 0),
                     retour_horaires: (dataRetour.success ? dataRetour.return_trips : []),
                     compagnie: route.compagnie?.name || 'Compagnie',
                     montant_billet: dataAller.schedules && dataAller.schedules.length > 0 ? dataAller.schedules[0].montant_billet : (route.prix_min || 0),
-                    date_fin: route.date_fin || dataAller.schedules?.[0]?.date_fin || null // S'assurer que date_fin est prÃ©sent
+                    date_fin: route.date_fin || dataAller.schedules?.[0]?.date_fin || null // S'assurer que date_fin est présent
                 };
                 
-                // 4. Lancer la sÃ©lection de l'heure (DÃ©part)
+                // 4. Lancer la sélection de l'heure (Départ)
                 if (typeof window.showRouteDepartureTimes === 'function') {
                     window.showRouteDepartureTimes(routeData, selectedDate, window.userWantsAllerRetour);
                 } else {
@@ -3908,7 +3972,7 @@ function proceedToPassengerInfoFromRetour() {
                     Swal.fire({
                         icon: 'error',
                         title: 'Erreur technique',
-                        text: 'Impossible de charger le systÃ¨me de rÃ©servation.'
+                        text: 'Impossible de charger le système de réservation.'
                     });
                 }
                 
@@ -3918,7 +3982,7 @@ function proceedToPassengerInfoFromRetour() {
                 Swal.fire({
                     icon: 'error',
                     title: 'Erreur',
-                    text: 'Impossible de charger les horaires. Veuillez rÃ©essayer.'
+                    text: 'Impossible de charger les horaires. Veuillez réessayer.'
                 }).then(() => {
                     // Retour Ã  la sÃ©lection de date
                     showDepartureDateSelection(route);
@@ -3959,7 +4023,7 @@ function proceedToPassengerInfoFromRetour() {
                             <div class="flex items-center gap-4">
                                 <div class="text-center">
                                     <p class="text-2xl font-bold text-[#e94f1b]">${prog.heure_depart}</p>
-                                    <p class="text-xs text-gray-500">DÃ©part</p>
+                                    <p class="text-xs text-gray-500">Départ</p>
                                 </div>
                                 <div class="flex items-center gap-2 text-gray-400">
                                     <div class="w-8 h-0.5 bg-gray-300"></div>
@@ -3968,7 +4032,7 @@ function proceedToPassengerInfoFromRetour() {
                                 </div>
                                 <div class="text-center">
                                     <p class="text-2xl font-bold text-gray-700">${prog.heure_arrive}</p>
-                                    <p class="text-xs text-gray-500">ArrivÃ©e</p>
+                                    <p class="text-xs text-gray-500">Arrivée</p>
                                 </div>
                             </div>
                             <div class="flex items-center gap-4">
@@ -3979,7 +4043,7 @@ function proceedToPassengerInfoFromRetour() {
                                 <button onclick="toggleProgramsList(); initiateReservationProcess(${prog.id}, '${selectedDate}')" 
                                         class="bg-[#e94f1b] text-white px-5 py-2.5 rounded-lg font-bold hover:bg-orange-600 transition-colors flex items-center gap-2">
                                     <i class="fas fa-ticket-alt"></i>
-                                    <span>RÃ©server</span>
+                                    <span>Réserver</span>
                                 </button>
                             </div>
                         </div>
@@ -3996,7 +4060,7 @@ function proceedToPassengerInfoFromRetour() {
 
 
         // ============================================
-        // FONCTION 14: Gestion modale sÃ©lection date
+        // FONCTION 14: Gestion modale sélection date
         // ============================================
          function openDateSelectionModal(program) {
             currentSelectedProgram = program;
@@ -4013,7 +4077,7 @@ function proceedToPassengerInfoFromRetour() {
             const daysMap = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
             const dates = [];
             let current = new Date();
-             current.setDate(current.getDate() + 1); // Commencer Ã  demain
+             current.setDate(current.getDate() + 1); // Commencer à demain
             let count = 0;
             
             while(count < 10 && dates.length < 10) {
@@ -4031,7 +4095,7 @@ function proceedToPassengerInfoFromRetour() {
                      }
                  }
                  current.setDate(current.getDate() + 1);
-                 if(count > 100) break; // SÃ©curitÃ©
+                 if(count > 100) break; // Sécurité
             }
             
             select.innerHTML = '<option value="">Choisir une date...</option>';
@@ -4055,12 +4119,13 @@ function proceedToPassengerInfoFromRetour() {
         }
 
         // Fonction pour afficher les dÃ©tails (places disponibles)
+         // Fonction pour afficher les détails (places disponibles)
         async function openDetailsModal(btn) {
             const route = JSON.parse(btn.dataset.route);
             const dateDepart = btn.dataset.date;
             
             Swal.fire({
-                title: 'Chargement des dÃ©tails...',
+                title: 'Chargement des détails...',
                 didOpen: () => { Swal.showLoading(); }
             });
 
@@ -4087,7 +4152,7 @@ function proceedToPassengerInfoFromRetour() {
 
                 // Section Retour (si applicable)
                 if (route.has_retour) {
-                    html += `<h3 class="font-bold text-lg text-blue-600 mt-6 mb-3 uppercase border-b pb-2">Retour (AperÃ§u)</h3>`;
+                    html += `<h3 class="font-bold text-lg text-blue-600 mt-6 mb-3 uppercase border-b pb-2">Retour (Aperçu)</h3>`;
                     
                     const paramsRetour = new URLSearchParams({
                         point_depart: route.point_arrive,
@@ -4100,14 +4165,14 @@ function proceedToPassengerInfoFromRetour() {
                     if (dataRetour.success && dataRetour.schedules.length > 0) {
                         html += buildSchedulesTable(dataRetour.schedules, dateDepart);
                     } else {
-                         html += `<p class="text-gray-500 italic">Aucun horaire retour trouvÃ© pour cette date.</p>`;
+                         html += `<p class="text-gray-500 italic">Aucun horaire retour trouvé pour cette date.</p>`;
                     }
                 }
 
                 html += `</div>`;
 
                 Swal.fire({
-                    title: `DÃ©tails du voyage`,
+                    title: `Détails du voyage`,
                     html: html,
                     width: '800px',
                     showConfirmButton: false,
@@ -4129,9 +4194,9 @@ function proceedToPassengerInfoFromRetour() {
                     <table class="w-full text-sm text-left text-gray-500">
                         <thead class="text-xs text-gray-700 uppercase bg-gray-50">
                             <tr>
-                                <th class="px-4 py-2">DÃ©part</th>
-                                <th class="px-4 py-2">ArrivÃ©e</th>
-                                <th class="px-4 py-2">VÃ©hicule</th>
+                                <th class="px-4 py-2">Départ</th>
+                                <th class="px-4 py-2">Arrivée</th>
+                                <th class="px-4 py-2">Véhicule</th>
                                 <th class="px-4 py-2 text-center">Places</th>
                                 <th class="px-4 py-2 text-center">Statut</th>
                                 <th class="px-4 py-2 text-center">Voir</th>
@@ -4175,7 +4240,7 @@ function proceedToPassengerInfoFromRetour() {
     <div id="allerRetourConfirmModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-[75] flex items-center justify-center">
         <div class="relative w-[450px] mx-auto p-6 border shadow-2xl rounded-2xl bg-white">
             <div class="flex flex-col gap-4">
-                <!-- En-tÃªte -->
+                <!-- En-tête -->
                 <div class="text-center border-b pb-4">
                     <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3"><i class="fas fa-bus text-[#e94f1b] text-2xl"></i></div>
                     <h3 class="text-xl font-bold text-gray-900">Ce programme propose un aller-retour</h3>
@@ -4184,7 +4249,7 @@ function proceedToPassengerInfoFromRetour() {
                 
                 <!-- Infos du trajet -->
                 <div id="allerRetourTripInfo" class="py-2">
-                    <!-- Contenu injectÃ© par JS -->
+                    <!-- Contenu injecté par JS -->
                 </div>
                 
                 <!-- Choix du type de voyage -->
@@ -4194,8 +4259,8 @@ function proceedToPassengerInfoFromRetour() {
                     </label>
                     <div class="relative">
                         <select id="allerRetourChoice" onchange="onAllerRetourChoiceChange()" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#e94f1b] appearance-none bg-white font-medium text-gray-700">
-                            <option value="aller_simple">ðŸšŒ Aller Simple</option>
-                            <option value="aller_retour">ðŸ”„ Aller-Retour</option>
+                            <option value="aller_simple">🚌 Aller Simple</option>
+                            <option value="aller_retour">🔄 Aller-Retour</option>
                         </select>
                         <div class="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
                             <i class="fas fa-chevron-down text-gray-400"></i>
@@ -4205,10 +4270,10 @@ function proceedToPassengerInfoFromRetour() {
                 
                 <!-- Affichage du prix dynamique -->
                 <div id="allerRetourPriceDisplay" class="text-center">
-                    <!-- Contenu injectÃ© par JS -->
+                    <!-- Contenu injecté par JS -->
                 </div>
                 
-                <!-- SÃ©lection date retour (pour rÃ©currents + aller-retour) -->
+                <!-- Sélection date retour (pour récurrents + aller-retour) -->
                 <div id="returnDateSection" class="hidden py-2 border-t">
                     <label for="returnDateSelect" class="block text-sm font-medium text-gray-700 mb-2">
                         <i class="fas fa-plane-arrival text-blue-500 me-1"></i> Date de retour
@@ -4232,14 +4297,14 @@ function proceedToPassengerInfoFromRetour() {
             <div class="flex flex-col gap-4">
                 <div class="border-b pb-4">
                     <h3 class="text-xl font-bold text-gray-900">Choisir une date de voyage</h3>
-                    <p class="text-sm text-gray-500 mt-1">Ce programme est rÃ©current.</p>
+                    <p class="text-sm text-gray-500 mt-1">Ce programme est récurrent.</p>
                 </div>
                 
                 <div class="py-4">
-                    <label for="recurrenceDateSelect" class="block text-sm font-medium text-gray-700 mb-2">SÃ©lectionnez une date parmi les prochains jours disponibles :</label>
+                    <label for="recurrenceDateSelect" class="block text-sm font-medium text-gray-700 mb-2">Sélectionnez une date parmi les prochains jours disponibles :</label>
                     <div class="relative">
                         <select id="recurrenceDateSelect" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent appearance-none bg-white">
-                            <!-- Options gÃ©nÃ©rÃ©es par JS -->
+                            <!-- Options générées par JS -->
                         </select>
                         <div class="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
                             <i class="fas fa-chevron-down text-gray-400"></i>
@@ -4389,7 +4454,7 @@ function proceedToPassengerInfoFromRetour() {
 
     function selectGareAndContinue(gareId) {
         window.selectedGareDepartId = gareId;
-        // On suppose que la gare d'rivée est unique ou déduite du trajet
+        // On suppose que la gare d'arrivée est unique ou déduite du trajet
         if (window.currentRouteData.gare_arrivee) {
             window.selectedGareArriveeId = window.currentRouteData.gare_arrivee.id;
         }

@@ -243,6 +243,274 @@ class ReservationApiController extends Controller
     }
 
     /**
+     * GET /api/user/reservations/{reservation}/modification-data
+     * Récupérer les données nécessaires pour la modification
+     */
+    public function getModificationData(Reservation $reservation)
+    {
+        try {
+            if ($reservation->user_id !== Auth::id()) {
+                return response()->json(['success' => false, 'message' => 'Non autorisé'], 403);
+            }
+
+            if ($reservation->statut !== 'confirmee') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Seules les réservations confirmées peuvent être modifiées. (Statut: ' . $reservation->statut . ')'
+                ], 400);
+            }
+
+            $service = new \App\Services\ReservationService();
+            $refundData = $service->calculateRefundPercentage($reservation);
+
+            if (!$refundData['can_cancel']) {
+                return response()->json([
+                    'success' => false,
+                    'can_modify' => false,
+                    'message' => 'Modification impossible moins de 15 minutes avant le départ.'
+                ], 400);
+            }
+
+            // 1. Identification Aller vs Retour
+            $isRetourLeg = str_contains(strtoupper($reservation->reference), '-RET');
+            $pairedReservation = $service->findPairedReservation($reservation);
+
+            $mainRes = $isRetourLeg ? ($pairedReservation ?? $reservation) : $reservation;
+            $retourRes = $isRetourLeg ? $reservation : $pairedReservation;
+
+            // Validation A/R : Si l'aller est passé, on bloque tout
+            if ($reservation->is_aller_retour) {
+                $allerHeure = $mainRes->heure_depart ?? optional($mainRes->programme)->heure_depart ?? '00:00';
+                $allerDateTime = \Carbon\Carbon::parse(\Carbon\Carbon::parse($mainRes->date_voyage)->format('Y-m-d') . ' ' . $allerHeure);
+
+                if ($allerDateTime->isPast() || $mainRes->statut === 'terminee') {
+                    return response()->json([
+                        'success' => false,
+                        'can_modify' => false,
+                        'message' => 'Modification impossible : le voyage aller est déjà passé ou effectué.'
+                    ], 400);
+                }
+            }
+
+            // 2. Calcul du prix total et de la valeur résiduelle
+            $totalOldPrice = (float) $mainRes->montant;
+            if ($retourRes) {
+                $totalOldPrice += (float) $retourRes->montant;
+            }
+
+            $isRoundTrip = (bool) $reservation->is_aller_retour;
+            $ticketCount = ($pairedReservation || $isRoundTrip) ? 2 : 1;
+            $totalPenalty = ($refundData['penalty'] ?? 0) * $ticketCount;
+
+            if ($refundData['percentage'] !== null) {
+                $residualValue = round($totalOldPrice * $refundData['percentage'] / 100);
+            } else {
+                $residualValue = max(0, $totalOldPrice - $totalPenalty);
+            }
+
+            // 3. Détails du retour
+            $returnDetails = null;
+            if ($isRoundTrip && $retourRes) {
+                $returnDetails = [
+                    'id' => $retourRes->id,
+                    'prog_id' => $retourRes->programme_id,
+                    'date' => \Carbon\Carbon::parse($retourRes->date_voyage)->format('Y-m-d'),
+                    'time' => $retourRes->heure_depart,
+                    'seat' => $retourRes->seat_number,
+                    'montant' => (float) $retourRes->montant,
+                ];
+            }
+
+            // 4. Routes disponibles
+            $today = now()->format('Y-m-d');
+            $routes = Programme::where('statut', 'actif')
+                ->where(function ($query) use ($today) {
+                    $query->where('date_depart', '>=', $today)
+                          ->orWhere(function ($q) use ($today) {
+                              $q->where('date_depart', '<=', $today)
+                                ->where(function ($q2) use ($today) {
+                                    $q2->whereNull('date_fin')
+                                       ->orWhere('date_fin', '>=', $today);
+                                });
+                          });
+                })
+                ->get()
+                ->map(function ($prog) {
+                    return [
+                        'id' => $prog->id,
+                        'unique_key' => trim($prog->point_depart) . '|' . trim($prog->point_arrive) . '|' . $prog->compagnie_id,
+                        'name' => trim($prog->point_depart) . ' ➝ ' . trim($prog->point_arrive),
+                        'compagnie' => optional($prog->compagnie)->name ?? 'Compagnie',
+                        'prix' => (int) str_replace(' ', '', $prog->montant_billet ?? $prog->prix ?? 0),
+                        'depart' => trim($prog->point_depart),
+                        'arrive' => trim($prog->point_arrive),
+                        'compagnie_id' => $prog->compagnie_id,
+                    ];
+                })
+                ->unique('unique_key')
+                ->values();
+
+            $currentProgramme = $mainRes->programme;
+            $currentRouteKey = trim($currentProgramme->point_depart) . '|' . trim($currentProgramme->point_arrive) . '|' . $currentProgramme->compagnie_id;
+
+            return response()->json([
+                'success' => true,
+                'can_modify' => true,
+                'reservation' => $mainRes->load('programme.compagnie'),
+                'formatted_date_aller' => \Carbon\Carbon::parse($mainRes->date_voyage)->format('Y-m-d'),
+                'current_route_key' => $currentRouteKey,
+                'is_aller_retour' => $isRoundTrip,
+                'return_details' => $returnDetails,
+                'residual_value' => $residualValue,
+                'total_old_price' => $totalOldPrice,
+                'penalty_info' => $refundData['time_remaining'],
+                'available_routes' => $routes,
+                'user_solde' => (float) Auth::user()->solde,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Erreur modification data API: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la récupération des données de modification',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * GET /api/user/reservations/{reservation}/modification-delta
+     * Calcul du delta de prix en temps réel
+     * Query params: new_programme_id (required), new_return_programme_id (optional)
+     */
+    public function calculateModificationDelta(Request $request, Reservation $reservation)
+    {
+        try {
+            if ($reservation->user_id !== Auth::id()) {
+                return response()->json(['success' => false, 'message' => 'Non autorisé'], 403);
+            }
+
+            $request->validate([
+                'new_programme_id' => 'required|exists:programmes,id',
+                'new_return_programme_id' => 'nullable|exists:programmes,id',
+            ]);
+
+            $service = new \App\Services\ReservationService();
+            $user = Auth::user();
+
+            $refundData = $service->calculateRefundPercentage($reservation);
+            $pairedReservation = $service->findPairedReservation($reservation);
+
+            $totalOldPrice = (float) $reservation->montant;
+            $ticketCount = 1;
+            if ($pairedReservation) {
+                $totalOldPrice += (float) $pairedReservation->montant;
+                $ticketCount = 2;
+            }
+
+            $totalPenalty = ($refundData['penalty'] ?? 0) * $ticketCount;
+
+            if ($refundData['percentage'] !== null) {
+                $residualValue = round($totalOldPrice * $refundData['percentage'] / 100);
+            } else {
+                $residualValue = max(0, $totalOldPrice - $totalPenalty);
+            }
+
+            $newProgramme = Programme::findOrFail($request->new_programme_id);
+            $newTotal = (float) str_replace(' ', '', $newProgramme->montant_billet ?? $newProgramme->prix ?? 0);
+
+            if ($request->filled('new_return_programme_id')) {
+                $newReturnProgramme = Programme::findOrFail($request->new_return_programme_id);
+                $newTotal += (float) str_replace(' ', '', $newReturnProgramme->montant_billet ?? $newReturnProgramme->prix ?? 0);
+            }
+
+            $delta = $newTotal - $residualValue;
+
+            $action = 'neutral';
+            if ($delta > 0) $action = 'pay';
+            if ($delta < 0) $action = 'refund';
+
+            return response()->json([
+                'success' => true,
+                'old_value' => $totalOldPrice,
+                'residual_value' => $residualValue,
+                'new_total' => $newTotal,
+                'delta' => abs($delta),
+                'action' => $action,
+                'can_afford' => ($action === 'pay' ? ((float) $user->solde >= $delta) : true),
+                'user_solde' => (float) $user->solde,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Erreur modification delta API: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors du calcul du delta',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * PUT /api/user/reservations/{reservation}/modify
+     * Exécuter la modification de la réservation
+     */
+    public function processModification(Request $request, Reservation $reservation)
+    {
+        try {
+            if ($reservation->user_id !== Auth::id()) {
+                return response()->json(['success' => false, 'message' => 'Non autorisé'], 403);
+            }
+
+            $request->validate([
+                'programme_id' => 'required|exists:programmes,id',
+                'date_voyage' => 'required|date',
+                'seat_number' => 'required',
+                'heure_depart' => 'required',
+                // Champs retour (optionnels)
+                'return_programme_id' => 'nullable|exists:programmes,id',
+                'return_date_voyage' => 'nullable|date',
+                'return_seat_number' => 'nullable',
+                'return_heure_depart' => 'nullable',
+            ]);
+
+            // Validation A/R : Si l'aller est passé, on bloque
+            if ($reservation->is_aller_retour) {
+                $service = new \App\Services\ReservationService();
+                $isRetourLeg = str_contains(strtoupper($reservation->reference), '-RET');
+                $pairedReservation = $service->findPairedReservation($reservation);
+                $mainRes = $isRetourLeg ? ($pairedReservation ?? $reservation) : $reservation;
+
+                $allerHeure = $mainRes->heure_depart ?? optional($mainRes->programme)->heure_depart ?? '00:00';
+                $allerDateTime = \Carbon\Carbon::parse(\Carbon\Carbon::parse($mainRes->date_voyage)->format('Y-m-d') . ' ' . $allerHeure);
+
+                if ($allerDateTime->isPast() || $mainRes->statut === 'terminee') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Modification impossible : le voyage aller est déjà passé ou effectué.'
+                    ], 400);
+                }
+            }
+
+            $service = new \App\Services\ReservationService();
+            $result = $service->modifyReservation($reservation, $request->all());
+
+            return response()->json($result, $result['success'] ? 200 : 422);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Données invalides',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Erreur modification API: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la modification',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * GET /api/user/reservations/{reservation}/ticket
      * Télécharger le billet PDF
      */

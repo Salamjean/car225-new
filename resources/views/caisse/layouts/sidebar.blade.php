@@ -34,6 +34,23 @@
                     </a>
                 </div>
 
+                <!-- Messages -->
+                <div class="mdc-list-item mdc-drawer-item">
+                    <a class="mdc-drawer-link" href="{{ route('caisse.messages.index') }}">
+                        <i class="fas fa-envelope mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
+                        Messages
+                        @php
+                            $unreadMessagesCount = \App\Models\CompanyMessage::where('recipient_type', 'App\Models\Caisse')
+                                ->where('recipient_id', Auth::guard('caisse')->id())
+                                ->where('is_read', false)
+                                ->count();
+                        @endphp
+                        @if($unreadMessagesCount > 0)
+                            <span class="badge bg-danger rounded-pill ms-auto text-white" style="font-size: 0.7rem;">{{ $unreadMessagesCount }}</span>
+                        @endif
+                    </a>
+                </div>
+
                 <!-- Vente Rapide (New) -->
                 <div class="mdc-list-item mdc-drawer-item">
                     <a class="mdc-drawer-link" href="{{ route('caisse.vente') }}">

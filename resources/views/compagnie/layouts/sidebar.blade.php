@@ -27,6 +27,14 @@
                         Tableau de bord
                     </a>
                 </div>
+                  <!-- Onglet Messages -->
+                <div class="mdc-list-item mdc-drawer-item">
+                    <a class="mdc-drawer-link" href="{{ route('compagnie.messages.index') }}">
+                        <i class="fas fa-envelope mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
+                        Messages
+                    </a>
+                </div>
+
                 <div class="mdc-list-item mdc-drawer-item">
                     <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel"
                         data-target="ui-sub-reservations">
@@ -235,6 +243,7 @@
                     </a>
                 </div> -->
 
+              
                 <!-- Onglet Signalements -->
                 <div class="mdc-list-item mdc-drawer-item">
                     <a class="mdc-drawer-link" href="{{ route('compagnie.signalements.index') }}">

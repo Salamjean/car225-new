@@ -15,8 +15,53 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 
+use App\Models\CompanyMessage;
+use App\Notifications\NewInternalMessageNotification;
+use App\Services\FcmService;
+
 class AgentController extends Controller
 {
+    public function sendMessage(Request $request)
+    {
+        $request->validate([
+            'agent_id' => 'required|exists:agents,id',
+            'subject' => 'required|string|max:255',
+            'message' => 'required|string',
+        ]);
+
+        $compagnie = Auth::guard('compagnie')->user();
+
+        // Check if agent belongs to this company
+        $agent = Agent::where('id', $request->agent_id)
+            ->where('compagnie_id', $compagnie->id)
+            ->firstOrFail();
+
+        $message = CompanyMessage::create([
+            'compagnie_id' => $compagnie->id,
+            'recipient_id' => $agent->id,
+            'recipient_type' => Agent::class,
+            'subject' => $request->subject,
+            'message' => $request->message,
+            'is_read' => false,
+        ]);
+
+        // --- NOTIFICATIONS SYSTEM ---
+        try {
+            $agent->notify(new NewInternalMessageNotification($message));
+
+            if (!empty($agent->fcm_token)) {
+                $fcmService = app(FcmService::class);
+                $fcmService->sendNotification($agent->fcm_token, 'Nouveau Message direction 📩', "Sujet : {$message->subject}", [
+                    'type' => 'internal_message',
+                    'message_id' => $message->id,
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error("Erreur d'envoi de notification agent: " . $e->getMessage());
+        }
+
+        return back()->with('success', 'Message envoyé avec succès à ' . $agent->name);
+    }
     public function index()
     {
         $compagnie = Auth::guard('compagnie')->user();

@@ -237,7 +237,14 @@
                                             </div>
                                         </div>
                                         
-                                        <!-- Boutons d'action visibles -->
+                                        <button type="button" class="btn-action-modern btn-send-message"
+                                                data-toggle="modal" 
+                                                data-target="#messageModal"
+                                                data-agent-id="{{ $agent->id }}"
+                                                data-agent-name="{{ $agent->name }} {{ $agent->prenom }}"
+                                                title="Envoyer un message">
+                                            <i class="fas fa-comment-dots"></i>
+                                        </button>
                                         <button type="button" class="btn-action-modern btn-send-email" 
                                                 data-email="{{ $agent->email }}"
                                                 title="Envoyer un email">
@@ -255,6 +262,63 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Modal d'envoi de message -->
+                <div class="modal fade" id="messageModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content modern-modal">
+                            <form action="{{ route('compagnie.agents.send-message') }}" method="POST">
+                                @csrf
+                                <div class="modal-header">
+                                    <h5 class="modal-title">
+                                        <i class="fas fa-comment-alt text-primary me-2"></i>
+                                        Nouveau message pour <span id="modalAgentName" class="fw-bold"></span>
+                                    </h5>
+                                    <button type="button" class="btn-close-modal" data-dismiss="modal">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <input type="hidden" name="agent_id" id="modalAgentId">
+                                    
+                                    <div class="mb-3">
+                                        <label for="messageSubject" class="form-label">Sujet</label>
+                                        <input type="text" class="form-control" id="messageSubject" name="subject" required placeholder="Ex: Info importante">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="messageContent" class="form-label">Message</label>
+                                        <textarea class="form-control" id="messageContent" name="message" rows="4" required placeholder="Votre message..."></textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn-modal-secondary" data-dismiss="modal">
+                                        Annuler
+                                    </button>
+                                    <button type="submit" class="btn-modal-primary">
+                                        <i class="fas fa-paper-plane me-2"></i>
+                                        Envoyer
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        // Bootstrap 4 uses jQuery events usually, but let's try standard JS first or jQuery if needed
+                        $('#messageModal').on('show.bs.modal', function (event) {
+                            var button = $(event.relatedTarget); // Button that triggered the modal
+                            var agentId = button.data('agent-id'); // Extract info from data-* attributes
+                            var agentName = button.data('agent-name');
+                            
+                            var modal = $(this);
+                            modal.find('#modalAgentId').val(agentId);
+                            modal.find('#modalAgentName').text(agentName);
+                        });
+                    });
+                </script>
 
                 <!-- Pagination -->
                 @if($agents->hasPages())

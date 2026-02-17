@@ -94,6 +94,11 @@ class VoyageController extends Controller
         // Update driver status to disponible
         $chauffeur->update(['statut' => 'disponible']);
 
+        // Update vehicle status to disponible
+        if ($voyage->vehicule) {
+            $voyage->vehicule->update(['statut' => 'disponible']);
+        }
+
         return back()->with('success', 'Voyage terminé avec succès. Vous êtes maintenant disponible pour de nouveaux voyages.');
     }
 }

@@ -142,6 +142,7 @@ Route::middleware('compagnie')->prefix('company')->group(function () {
         Route::get('/AgentAdd', [AgentController::class, 'create'])->name('compagnie.agents.create');
         Route::post('/store', [AgentController::class, 'store'])->name('compagnie.agents.store');
         Route::delete('/{agent}', [AgentController::class, 'destroy'])->name('compagnie.agents.destroy');
+        Route::post('/send-message', [AgentController::class, 'sendMessage'])->name('compagnie.agents.send-message');
     });
 
     //Les routes pour la gestion des itineraires 
@@ -233,6 +234,15 @@ Route::middleware('compagnie')->prefix('company')->group(function () {
     Route::get('/profile', [CompagnieDashboard::class, 'profile'])->name('compagnie.profile');
     Route::post('/profile/update', [CompagnieDashboard::class, 'updateProfile'])->name('compagnie.profile.update');
     Route::post('/profile/password', [CompagnieDashboard::class, 'updatePassword'])->name('compagnie.profile.password');
+
+    // Routes de messagerie
+    Route::prefix('messages')->name('compagnie.messages.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Compagnie\CompanyMessageController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Compagnie\CompanyMessageController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Compagnie\CompanyMessageController::class, 'store'])->name('store');
+        Route::get('/recipients', [\App\Http\Controllers\Compagnie\CompanyMessageController::class, 'getRecipients'])->name('recipients');
+        Route::get('/{message}', [\App\Http\Controllers\Compagnie\CompanyMessageController::class, 'show'])->name('show');
+    });
 });
 
 //Les routes de gestion des @caissières
@@ -277,6 +287,12 @@ Route::middleware('caisse')->prefix('caisse')->group(function () {
     // Sales history and printing
     Route::get('/ventes', [App\Http\Controllers\Caisse\CaisseController::class, 'ventes'])->name('caisse.ventes');
     Route::get('/ticket/{reservation}/imprimer', [App\Http\Controllers\Caisse\CaisseController::class, 'imprimerTicket'])->name('caisse.ticket.imprimer');
+
+    // Inbox for Caisse
+    Route::prefix('messages')->name('caisse.messages.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Caisse\CaisseMessageController::class, 'index'])->name('index');
+        Route::get('/{id}', [\App\Http\Controllers\Caisse\CaisseMessageController::class, 'show'])->name('show');
+    });
 });
 
 //Les routes de gestion des @hotesses
@@ -357,6 +373,13 @@ Route::middleware('agent')->prefix('agent')->name('agent.')->group(function () {
         Route::post('/', [AgentVoyageController::class, 'store'])->name('store');
         Route::delete('/{voyage}', [AgentVoyageController::class, 'destroy'])->name('destroy');
     });
+
+    // Gestion des messages
+    Route::prefix('messages')->name('messages.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Agent\AgentMessageController::class, 'index'])->name('index');
+        Route::get('/{id}', [\App\Http\Controllers\Agent\AgentMessageController::class, 'show'])->name('show');
+        Route::patch('/{id}/read', [\App\Http\Controllers\Agent\AgentMessageController::class, 'markAsRead'])->name('read');
+    });
 });
 
 
@@ -406,7 +429,7 @@ Route::middleware('auth')->prefix('user')->group(function () {
         Route::delete('/reservations/{reservation}', [ReservationController::class, 'cancel'])->name('reservations.cancel');
         Route::get('/reservations/{reservation}/refund-preview', [ReservationController::class, 'getRefundPreview'])->name('reservations.refund-preview');
         Route::post('/reservations/{reservation}/cancel', [ReservationController::class, 'cancelReservation'])->name('reservations.cancel-refund');
-        Route::post('/reservations/{reservation}/modify', [ReservationController::class, 'modifyReservation'])->name('reservations.modify');
+        Route::post('/reservations/{reservation}/modify', [ReservationController::class, 'processModification'])->name('reservations.modify');
         Route::get('/api/programmes', [ReservationController::class, 'apiProgrammes'])->name('api.programmes');
         Route::get('/api/grouped-routes', [ReservationController::class, 'apiGroupedRoutes'])->name('api.grouped-routes');
         Route::get('/api/route-dates', [ReservationController::class, 'apiRouteDates'])->name('api.route-dates');
@@ -592,6 +615,12 @@ Route::prefix('chauffeur')->name('chauffeur.')->group(function () {
             Route::post('/{voyage}/confirm', [ChauffeurVoyageController::class, 'confirm'])->name('confirm');
             Route::post('/{voyage}/start', [ChauffeurVoyageController::class, 'start'])->name('start');
             Route::post('/{voyage}/complete', [ChauffeurVoyageController::class, 'complete'])->name('complete');
+        });
+
+        // Inbox for Chauffeur
+        Route::prefix('messages')->name('messages.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Chauffeur\ChauffeurMessageController::class, 'index'])->name('index');
+            Route::get('/{id}', [\App\Http\Controllers\Chauffeur\ChauffeurMessageController::class, 'show'])->name('show');
         });
     });
 });
