@@ -364,6 +364,7 @@ Route::middleware('agent')->prefix('agent')->name('agent.')->group(function () {
         Route::post('/search', [AgentReservationController::class, 'search'])->name('search');
         Route::post('/search-by-reference', [AgentReservationController::class, 'searchByReference'])->name('search-by-reference');
         Route::post('/confirm', [AgentReservationController::class, 'confirm'])->name('confirm');
+        Route::post('/assign-voyage-manual', [AgentReservationController::class, 'assignVoyageManual'])->name('assign-voyage-manual');
     });
 
     // Gestion des voyages

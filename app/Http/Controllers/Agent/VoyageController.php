@@ -121,13 +121,24 @@ class VoyageController extends Controller
             return back()->with('error', 'Un voyage est déjà assigné pour ce programme à cette date.');
         }
 
-        // Check if driver is already assigned to another voyage on this date
+        // Check if driver is already assigned to another active voyage on this date
         $chauffeurBusy = Voyage::where('personnel_id', $chauffeur->id)
             ->whereDate('date_voyage', $validated['date_voyage'])
+            ->where('statut', '!=', 'terminé')
             ->exists();
 
         if ($chauffeurBusy) {
-            return back()->with('error', 'Ce chauffeur est déjà assigné à un autre voyage pour cette date.');
+            return back()->with('error', 'Ce chauffeur est déjà assigné à un voyage en cours ou à venir pour cette date.');
+        }
+
+        // Check if vehicle is already assigned to another active voyage on this date
+        $vehiculeBusy = Voyage::where('vehicule_id', $vehicule->id)
+            ->whereDate('date_voyage', $validated['date_voyage'])
+            ->where('statut', '!=', 'terminé')
+            ->exists();
+
+        if ($vehiculeBusy) {
+            return back()->with('error', 'Ce véhicule est déjà assigné à un voyage en cours ou à venir pour cette date.');
         }
 
         // Create voyage

@@ -254,6 +254,41 @@
                             <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-green-100">
                                 <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Confirmé
                             </span>
+                        @elseif($reservation->statut == 'terminee')
+                            @php
+                                $voyage = $reservation->mission;
+                                $voyageStatut = $voyage ? $voyage->statut : null;
+                            @endphp
+                            
+                            @if($voyageStatut === 'en_cours')
+                                <div class="flex flex-col items-center">
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-blue-100 mb-1">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span> En voyage
+                                    </span>
+                                    @if($voyage && $voyage->statut === 'en_cours')
+                                        @php
+                                            $dateV = \Carbon\Carbon::parse($reservation->date_voyage)->format('Y-m-d');
+                                            $arrTime = \Carbon\Carbon::parse($dateV . ' ' . $reservation->programme->heure_arrive);
+                                            // Handle cross-day arrival
+                                            if (\Carbon\Carbon::parse($reservation->programme->heure_arrive)->lt(\Carbon\Carbon::parse($reservation->programme->heure_depart))) {
+                                                $arrTime->addDay();
+                                            }
+                                        @endphp
+                                        <span class="text-[10px] font-mono font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded shadow-sm timer-display" 
+                                              data-arrival="{{ $arrTime->toIso8601String() }}">
+                                            --:--:--
+                                        </span>
+                                    @endif
+                                </div>
+                            @elseif($voyageStatut === 'terminé')
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-green-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Arrivé
+                                </span>
+                            @else
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-purple-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span> Enregistré
+                                </span>
+                            @endif
                         @elseif($reservation->statut == 'en_attente')
                             <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-yellow-50 text-yellow-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-yellow-100">
                                 <span class="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse"></span> En attente
@@ -308,6 +343,22 @@
                                     title="Annuler" {{ !$canAct ? 'disabled' : '' }}>
                                     <i class="fas fa-trash-alt text-xs"></i>
                                 </button>
+
+                                <a href="{{ route('reservations.download', $reservation) }}" class="w-8 h-8 bg-gray-900 text-white rounded-lg flex items-center justify-center hover:scale-110 transition-transform shadow-lg shadow-gray-900/20" title="Télécharger">
+                                    <i class="fas fa-download text-xs"></i>
+                                </a>
+
+                            @elseif($reservation->statut == 'terminee')
+                                @php
+                                    $voyage = $reservation->mission;
+                                    $showSignalement = $voyage && $voyage->statut === 'en_cours';
+                                @endphp
+
+                                @if($showSignalement && \Carbon\Carbon::parse($reservation->date_voyage)->isToday())
+                                    <a href="{{ route('signalement.create', ['reservation_id' => $reservation->id]) }}" class="w-8 h-8 bg-red-600 text-white rounded-lg flex items-center justify-center hover:scale-110 transition-transform shadow-lg shadow-red-900/20" title="Signaler un problème">
+                                        <i class="fas fa-exclamation-triangle text-xs"></i>
+                                    </a>
+                                @endif
 
                                 <a href="{{ route('reservations.download', $reservation) }}" class="w-8 h-8 bg-gray-900 text-white rounded-lg flex items-center justify-center hover:scale-110 transition-transform shadow-lg shadow-gray-900/20" title="Télécharger">
                                     <i class="fas fa-download text-xs"></i>
@@ -989,6 +1040,7 @@
 
         let data = {
             new_programme_id: progIdAller,
+            new_date_aller: $('#mod-date').val(),
             _token: $('meta[name="csrf-token"]').attr('content')
         };
 
@@ -997,6 +1049,7 @@
             const seatRetour = $('#mod-ret-seat-input').val();
             if(!progIdRetour || !seatRetour) return;
             data.new_return_programme_id = progIdRetour;
+            data.new_return_date = $('#mod-ret-date').val();
         }
 
         $('#delta-box').removeClass('hidden').addClass('opacity-50');
@@ -1075,7 +1128,34 @@
             return false;
         }
     }
-});
+        // Countdown Timer Logic
+        function updateTimers() {
+            const timers = document.querySelectorAll('.timer-display[data-arrival]');
+            timers.forEach(timer => {
+                const arrivalTime = new Date(timer.dataset.arrival).getTime();
+                const now = new Date().getTime();
+                const distance = arrivalTime - now;
+                
+                if (distance < 0) {
+                    timer.innerHTML = "Arrivée imminente";
+                    timer.classList.remove('text-blue-500', 'bg-blue-50');
+                    timer.classList.add('text-emerald-500', 'bg-emerald-50');
+                    return;
+                }
+                
+                const hours = Math.floor(distance / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                
+                timer.innerHTML = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            });
+        }
+
+        if (document.querySelectorAll('.timer-display[data-arrival]').length > 0) {
+            updateTimers();
+            setInterval(updateTimers, 1000);
+        }
+    });
 </script>
 @endpush
 

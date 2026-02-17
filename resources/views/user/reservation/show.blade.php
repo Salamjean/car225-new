@@ -145,12 +145,42 @@
                     </div>
                     <h4 class="text-xl font-black text-gray-900 uppercase tracking-tight mb-2">En Attente</h4>
                     <p class="text-gray-500 font-medium text-sm mb-6">Le paiement est en cours de validation.</p>
-                @else
+                @elseif($reservation->statut == 'terminee')
+                    @php
+                        $voyage = $reservation->mission;
+                        $voyageStatut = $voyage ? $voyage->statut : null;
+                    @endphp
+                    @if($voyageStatut === 'en_cours')
+                        <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 mx-auto mb-6">
+                            <i class="fas fa-bus text-4xl"></i>
+                        </div>
+                        <h4 class="text-xl font-black text-gray-900 uppercase tracking-tight mb-2">En Voyage</h4>
+                        <p class="text-gray-500 font-medium text-sm mb-6">Bon voyage ! Vous êtes en route vers votre destination.</p>
+                    @elseif($voyageStatut === 'terminé')
+                        <div class="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center text-green-600 mx-auto mb-6">
+                            <i class="fas fa-flag-checkered text-4xl"></i>
+                        </div>
+                        <h4 class="text-xl font-black text-gray-900 uppercase tracking-tight mb-2">Voyage Terminé</h4>
+                        <p class="text-gray-500 font-medium text-sm mb-6">Vous êtes arrivé à destination. Merci d'avoir voyagé avec nous !</p>
+                    @else
+                        <div class="w-20 h-20 bg-purple-50 rounded-full flex items-center justify-center text-purple-600 mx-auto mb-6">
+                            <i class="fas fa-user-check text-4xl"></i>
+                        </div>
+                        <h4 class="text-xl font-black text-gray-900 uppercase tracking-tight mb-2">Enregistré</h4>
+                        <p class="text-gray-500 font-medium text-sm mb-6">Votre embarquement a été validé. En attente du départ.</p>
+                    @endif
+                @elseif($reservation->statut == 'annulee')
                     <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center text-red-600 mx-auto mb-6">
                         <i class="fas fa-times-circle text-4xl"></i>
                     </div>
                     <h4 class="text-xl font-black text-gray-900 uppercase tracking-tight mb-2">Réservation Annulée</h4>
                     <p class="text-gray-500 font-medium text-sm mb-6">Ce billet n'est plus valide.</p>
+                @else
+                    <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center text-red-600 mx-auto mb-6">
+                        <i class="fas fa-times-circle text-4xl"></i>
+                    </div>
+                    <h4 class="text-xl font-black text-gray-900 uppercase tracking-tight mb-2">Statut inconnu</h4>
+                    <p class="text-gray-500 font-medium text-sm mb-6">Une erreur est survenue lors de la récupération du statut.</p>
                 @endif
 
                 <div class="pt-6 border-t border-gray-50 space-y-4">

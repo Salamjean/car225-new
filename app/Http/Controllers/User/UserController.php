@@ -44,7 +44,17 @@ class UserController extends Controller
             ->take(1)
             ->get();
 
-        // 3. Données pour le graphique (6 derniers mois)
+        // 3. Voyage en cours (pour le minuteur)
+        $currentTrip = Reservation::where('user_id', $user->id)
+            ->whereIn('statut', ['confirmee', 'terminee'])
+            ->whereHas('programme.voyages', function($q) {
+                $q->where('statut', 'en_cours')
+                  ->whereColumn('voyages.date_voyage', 'reservations.date_voyage');
+            })
+            ->with(['programme.gareDepart', 'programme.gareArrivee', 'programme.compagnie'])
+            ->first();
+
+        // 4. Données pour le graphique (6 derniers mois)
         $chartData = [];
         for ($i = 5; $i >= 0; $i--) {
             $month = now()->subMonths($i);
@@ -66,6 +76,7 @@ class UserController extends Controller
             'totalSignalements',
             'recentReservations',
             'recentSignalements',
+            'currentTrip',
             'chartData'
         ));
     }

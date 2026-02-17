@@ -18,11 +18,13 @@ class ChauffeurController extends Controller
         
         $todayVoyages = Voyage::where('personnel_id', $chauffeur->id)
             ->whereDate('date_voyage', Carbon::today())
+            ->where('statut', '!=', 'terminé') // On ne cache que les terminés
             ->with(['programme', 'vehicule', 'gareDepart', 'gareArrivee'])
             ->get();
 
         $upcomingVoyages = Voyage::where('personnel_id', $chauffeur->id)
             ->whereDate('date_voyage', '>', Carbon::today())
+            ->where('statut', '!=', 'terminé')
             ->with(['programme', 'vehicule', 'gareDepart', 'gareArrivee'])
             ->orderBy('date_voyage', 'asc')
             ->get();

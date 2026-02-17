@@ -47,7 +47,7 @@ class ReservationApiController extends Controller
         try {
             $user = Auth::user();
 
-            $query = Reservation::with(['programme', 'programme.compagnie'])
+            $query = Reservation::with(['programme', 'programme.compagnie', 'programme.voyages'])
                 ->where('user_id', $user->id)
                 ->where('statut', '!=', 'en_attente')
                 ->orderBy('created_at', 'desc')
@@ -81,6 +81,34 @@ class ReservationApiController extends Controller
             // Pagination
             $perPage = $request->get('per_page', 10);
             $reservations = $query->paginate($perPage);
+
+            // Transformation des données pour inclure le statut virtuel (En voyage / Arrivé)
+            $reservations->getCollection()->transform(function ($reservation) {
+                // Par défaut, le display_statut = statut DB
+                $reservation->display_statut = $reservation->statut;
+                $reservation->temps_restant = null;
+
+                if ($reservation->statut === 'terminee') {
+                    $voyage = $reservation->mission;
+                    
+                    if ($voyage) {
+                        if ($voyage->statut === 'en_cours') {
+                            $reservation->display_statut = 'en_voyage';
+                            // On ajoute le temps restant si disponible
+                            $reservation->temps_restant = $voyage->temps_restant;
+                        } elseif ($voyage->statut === 'termine') {
+                            $reservation->display_statut = 'arrive';
+                        } else {
+                            $reservation->display_statut = 'enregistre';
+                        }
+                    } else {
+                         // Fallback si pas de voyage trouvé (rare)
+                         $reservation->display_statut = 'enregistre';
+                    }
+                }
+                
+                return $reservation;
+            });
 
             // Statistiques
             $stats = [
@@ -120,7 +148,27 @@ class ReservationApiController extends Controller
                 ], 403);
             }
 
-            $reservation->load(['programme', 'programme.compagnie', 'user']);
+            $reservation->load(['programme', 'programme.compagnie', 'programme.voyages', 'user']);
+
+            // Logique de statut virtuel pour le détail
+            $reservation->display_statut = $reservation->statut;
+            $reservation->temps_restant = null;
+
+            if ($reservation->statut === 'terminee') {
+                $voyage = $reservation->mission;
+                if ($voyage) {
+                    if ($voyage->statut === 'en_cours') {
+                        $reservation->display_statut = 'en_voyage';
+                        $reservation->temps_restant = $voyage->temps_restant;
+                    } elseif ($voyage->statut === 'termine') {
+                        $reservation->display_statut = 'arrive';
+                    } else {
+                        $reservation->display_statut = 'enregistre';
+                    }
+                } else {
+                    $reservation->display_statut = 'enregistre';
+                }
+            }
 
             return response()->json([
                 'success' => true,
@@ -356,7 +404,7 @@ class ReservationApiController extends Controller
             return response()->json([
                 'success' => true,
                 'can_modify' => true,
-                'reservation' => $mainRes->load('programme.compagnie'),
+                'reservation' => $mainRes->load(['programme.compagnie', 'programme.voyages']),
                 'formatted_date_aller' => \Carbon\Carbon::parse($mainRes->date_voyage)->format('Y-m-d'),
                 'current_route_key' => $currentRouteKey,
                 'is_aller_retour' => $isRoundTrip,
@@ -558,7 +606,7 @@ class ReservationApiController extends Controller
                 ], 403);
             }
 
-            $reservation->load(['programme', 'programme.compagnie', 'user']);
+            $reservation->load(['programme', 'programme.compagnie', 'programme.voyages', 'user']);
 
             // Récupérer le type de billet (aller par défaut)
             $type = $request->query('type', 'aller');
@@ -704,7 +752,7 @@ class ReservationApiController extends Controller
             }
 
             // Charger les relations nécessaires
-            $reservation->load(['programme', 'programme.compagnie', 'user']);
+            $reservation->load(['programme', 'programme.compagnie', 'programme.voyages', 'user']);
 
             // Déterminer si la réservation actuelle est "aller" ou "retour"
             $isRetourTicket = str_contains($reservation->reference, 'RET');
@@ -754,7 +802,7 @@ class ReservationApiController extends Controller
 
             // Ajouter le billet aller
             if ($allerReservation) {
-                $allerReservation->load(['programme', 'programme.compagnie']);
+                $allerReservation->load(['programme', 'programme.compagnie', 'programme.voyages']);
                 
                 $response['aller'] = [
                     'id' => $allerReservation->id,
@@ -793,7 +841,7 @@ class ReservationApiController extends Controller
 
             // Ajouter le billet retour
             if ($retourReservation) {
-                $retourReservation->load(['programme', 'programme.compagnie']);
+                $retourReservation->load(['programme', 'programme.compagnie', 'programme.voyages']);
                 
                 // Pour le retour, utiliser date_retour si disponible
                 $dateVoyageRetour = $retourReservation->date_retour ?? $retourReservation->date_voyage;
@@ -1346,24 +1394,51 @@ class ReservationApiController extends Controller
                 'date' => 'nullable|date'
             ]);
 
-            // CORRECTION ICI : on utilise 'chauffeur' car c'est le nom de la fonction dans le Modèle
+            $point_depart = $request->point_depart;
+            $point_arrive = $request->point_arrive;
+            $point_depart_normalized = $this->normalizeSearchTerm($point_depart);
+            $point_arrive_normalized = $this->normalizeSearchTerm($point_arrive);
+
             $query = Programme::with(['compagnie'])
-                ->where('point_depart', $request->point_depart)
-                ->where('point_arrive', $request->point_arrive)
                 ->where('statut', 'actif');
+
+            // Logique de recherche flexible (identique au Web)
+            $query->where(function($q) use ($point_depart, $point_depart_normalized) {
+                $q->where('point_depart', 'like', "%{$point_depart}%")
+                  ->orWhereRaw('LOWER(point_depart) LIKE ?', ['%' . strtolower($point_depart) . '%'])
+                  ->orWhereRaw('LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(point_depart, "é", "e"), "è", "e"), "ê", "e"), "ô", "o"), "à", "a")) LIKE ?', ['%' . $point_depart_normalized . '%']);
+                
+                if (strpos($point_depart, ',') !== false) {
+                    $ville = trim(explode(',', $point_depart)[0]);
+                    $q->orWhere('point_depart', 'like', "{$ville}%");
+                }
+            });
+
+            $query->where(function($q) use ($point_arrive, $point_arrive_normalized) {
+                $q->where('point_arrive', 'like', "%{$point_arrive}%")
+                  ->orWhereRaw('LOWER(point_arrive) LIKE ?', ['%' . strtolower($point_arrive) . '%'])
+                  ->orWhereRaw('LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(point_arrive, "é", "e"), "è", "e"), "ê", "e"), "ô", "o"), "à", "a")) LIKE ?', ['%' . $point_arrive_normalized . '%']);
+
+                if (strpos($point_arrive, ',') !== false) {
+                    $ville = trim(explode(',', $point_arrive)[0]);
+                    $q->orWhere('point_arrive', 'like', "{$ville}%");
+                }
+            });
 
             if ($request->filled('date')) {
                 $formattedDate = date('Y-m-d', strtotime($request->date));
-                $query->whereDate('date_depart', '<=', $formattedDate)
-                      ->where(function($q) use ($formattedDate) {
-                          $q->whereDate('date_fin', '>=', $formattedDate)
-                            ->orWhereNull('date_fin');
-                      });
+            } else {
+                $formattedDate = now()->format('Y-m-d');
             }
 
+            $query->whereDate('date_depart', '<=', $formattedDate)
+                  ->where(function($q) use ($formattedDate) {
+                      $q->whereDate('date_fin', '>=', $formattedDate)
+                        ->orWhereNull('date_fin');
+                  });
+
             $now = now();
-            $requestDate = $request->filled('date') ? date('Y-m-d', strtotime($request->date)) : $now->format('Y-m-d');
-            $isToday = $requestDate === $now->format('Y-m-d');
+            $isToday = $formattedDate === $now->format('Y-m-d');
             $currentTime = $now->format('H:i:s');
 
             $programmes = $query->orderBy('heure_depart')->get();

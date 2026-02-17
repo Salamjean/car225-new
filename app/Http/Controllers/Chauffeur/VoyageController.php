@@ -22,7 +22,7 @@ class VoyageController extends Controller
             ->whereDate('date_voyage', $date)
             ->with(['programme.gareDepart', 'programme.gareArrivee', 'vehicule'])
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->paginate(3);
 
         return view('chauffeur.programmes.index', compact('voyages', 'date'));
     }

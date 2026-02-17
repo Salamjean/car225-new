@@ -11,6 +11,65 @@
                 <!-- Main Content Left (8 cols) -->
                 <div class="lg:col-span-8 space-y-8">
                     
+                    @if($currentTrip)
+                    <!-- Ongoing Voyage Card (Floating Style) -->
+                    <div class="bg-gradient-to-br from-green-600 via-emerald-600 to-teal-700 rounded-[32px] p-8 shadow-2xl shadow-green-200 text-white relative overflow-hidden group">
+                        <div class="absolute -right-10 -top-10 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-700"></div>
+                        
+                        <div class="relative z-10">
+                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-4">
+                                        <span class="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-black uppercase tracking-widest border border-white/30">Voyage en cours</span>
+                                        <span class="flex h-2 w-2 rounded-full bg-white animate-pulse"></span>
+                                    </div>
+                                    
+                                    <h2 class="text-3xl font-black mb-1 leading-tight">
+                                        {{ $currentTrip->programme->point_depart }} 
+                                        <i class="fas fa-arrow-right text-white/50 mx-2 text-xl"></i> 
+                                        {{ $currentTrip->programme->point_arrive }}
+                                    </h2>
+                                    <p class="text-white/70 text-sm font-bold uppercase tracking-wider mb-6">
+                                        {{ $currentTrip->programme->gareDepart->nom_gare }} &rarr; {{ $currentTrip->programme->gareArrivee->nom_gare }}
+                                    </p>
+                                    
+                                    <div class="grid grid-cols-2 gap-8">
+                                        <div>
+                                            <p class="text-white/50 text-[10px] font-black uppercase tracking-widest mb-1">Arrivée prévue</p>
+                                            <p class="text-xl font-black">{{ \Carbon\Carbon::parse($currentTrip->programme->heure_arrive)->format('H:i') }}</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-white/50 text-[10px] font-black uppercase tracking-widest mb-1">Siège n°</p>
+                                            <p class="text-xl font-black">{{ $currentTrip->seat_number }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 text-center min-w-[200px]">
+                                    <p class="text-white/70 text-[10px] font-black uppercase tracking-widest mb-3">Temps restant estimé</p>
+                                    
+                                    @php
+                                        $dateVoyage = \Carbon\Carbon::parse($currentTrip->date_voyage)->format('Y-m-d');
+                                        $arrivalDateTime = \Carbon\Carbon::parse($dateVoyage . ' ' . $currentTrip->programme->heure_arrive);
+                                        if (\Carbon\Carbon::parse($currentTrip->programme->heure_arrive)->lt(\Carbon\Carbon::parse($currentTrip->programme->heure_depart))) {
+                                            $arrivalDateTime->addDay();
+                                        }
+                                    @endphp
+                                    
+                                    <div class="text-3xl font-black tracking-tighter mb-1 font-mono" 
+                                         id="user-timer-{{ $currentTrip->id }}" 
+                                         data-arrival="{{ $arrivalDateTime->toIso8601String() }}">
+                                        --:--:--
+                                    </div>
+                                    <div class="w-full h-1.5 bg-white/20 rounded-full mt-4 overflow-hidden">
+                                        <div class="h-full bg-white rounded-full animate-pulse shadow-[0_0_10px_rgba(255,255,255,0.5)]" style="width: 65%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+                    
                     <!-- Stats Grid -->
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
                         <!-- Total Reservations Card -->
@@ -266,6 +325,32 @@
                     }
                 }
             });
+            // Countdown Timer Logic
+            function updateTimers() {
+                const timers = document.querySelectorAll('[data-arrival]');
+                
+                timers.forEach(timer => {
+                    const arrivalTime = new Date(timer.dataset.arrival).getTime();
+                    const now = new Date().getTime();
+                    const distance = arrivalTime - now;
+                    
+                    if (distance < 0) {
+                        timer.innerHTML = "Arrivé";
+                        return;
+                    }
+                    
+                    const hours = Math.floor(distance / (1000 * 60 * 60));
+                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                    
+                    timer.innerHTML = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                });
+            }
+
+            if (document.querySelectorAll('[data-arrival]').length > 0) {
+                updateTimers();
+                setInterval(updateTimers, 1000);
+            }
         });
     </script>
     @endpush

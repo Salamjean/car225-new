@@ -236,33 +236,36 @@
             <div class="modal-body pt-4">
                 <p class="text-muted pl-2 mb-4">Pour quel véhicule effectuez-vous le contrôle ?</p>
                 
-                <div id="programmesList" style="max-height: 400px; overflow-y: auto;">
+                <div id="programmesList" style="max-height: 300px; overflow-y: auto;" class="mb-3">
                     @if(isset($programmesDuJour) && $programmesDuJour->count() > 0)
                         @foreach($programmesDuJour as $prog)
+                            @php
+                                $v = $prog->vehicule; // Utilise l'accessor getVehiculeAttribute (pour aujourd'hui)
+                            @endphp
                             <div class="programme-item p-3 mb-3 cursor-pointer" 
                                  data-programme-id="{{ $prog->id }}"
-                                 data-vehicule-id="{{ $prog->vehicule_id }}"
-                                 data-vehicule-immat="{{ $prog->vehicule->immatriculation ?? 'N/A' }}"
+                                 data-vehicule-id="{{ $v->id ?? '' }}"
+                                 data-vehicule-immat="{{ $v->immatriculation ?? '' }}"
                                  onclick="selectProgramme(this)">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
+                                 <div class="d-flex justify-content-between align-items-center">
+                                    <div class="flex-grow-1">
                                         <div class="font-weight-bold text-dark mb-1" style="font-size: 1.1rem;">
-                                            {{ $prog->point_depart }} <i class="material-icons text-muted mx-1" style="font-size: 14px;">arrow_forward</i> {{ $prog->point_arrive }}
+                                            {{ $prog->gareDepart->nom ?? $prog->point_depart }} <i class="material-icons text-muted mx-1" style="font-size: 14px;">arrow_forward</i> {{ $prog->gareArrivee->nom ?? $prog->point_arrive }}
                                         </div>
                                         <div class="text-muted small">
                                             <i class="material-icons mr-1" style="font-size: 14px; vertical-align: text-bottom;">schedule</i>
                                             Départ : <strong>{{ $prog->heure_depart }}</strong>
                                         </div>
                                     </div>
-                                    <div class="text-right">
-                                        @if($prog->vehicule)
-                                            <div class="badge-immat mb-1">{{ $prog->vehicule->immatriculation }}</div>
-                                            <div class="small text-muted">{{ $prog->vehicule->marque }}</div>
+                                    <div class="text-right ml-2" style="min-width: 100px;">
+                                        @if($v)
+                                            <div class="badge-immat mb-1">{{ $v->immatriculation }}</div>
+                                            <div class="small text-muted text-truncate">{{ $v->marque }}</div>
                                         @else
-                                            <span class="badge badge-warning">Sans véhicule</span>
+                                            <span class="badge badge-warning">Sans bus assigné</span>
                                         @endif
                                     </div>
-                                </div>
+                                 </div>
                             </div>
                         @endforeach
                     @else
@@ -271,6 +274,38 @@
                             <p class="text-muted">Aucun programme prévu aujourd'hui.</p>
                         </div>
                     @endif
+                </div>
+
+                <!-- Zone Sélection Manuelle (Bus + Chauffeur) si pas de mission créée -->
+                <div id="manualAssignmentSelect" style="display: none;" class="mt-3 p-3 border rounded-lg bg-light animate__animated animate__fadeIn">
+                    <p class="text-muted small mb-3">
+                        <i class="material-icons text-primary" style="font-size: 16px; vertical-align: middle;">info</i> 
+                        Ce trajet n'a pas encore de mission. Veuillez assigner un bus et un chauffeur pour aujourd'hui.
+                    </p>
+                    
+                    <div class="form-group mb-2">
+                        <label class="font-weight-bold small text-muted text-uppercase mb-1">Bus utilisé :</label>
+                        <select id="vehicleIdSelect" class="form-control select2">
+                            <option value="">-- Choisir le véhicule --</option>
+                            @foreach($vehicules as $vehicule)
+                                <option value="{{ $vehicule->id }}" data-immat="{{ $vehicule->immatriculation }}">
+                                    {{ $vehicule->immatriculation }} ({{ $vehicule->marque }} - {{ $vehicule->nombre_place }} pl.)
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-0">
+                        <label class="font-weight-bold small text-muted text-uppercase mb-1">Chauffeur assigné :</label>
+                        <select id="chauffeurIdSelect" class="form-control select2">
+                            <option value="">-- Choisir le chauffeur --</option>
+                            @foreach($chauffeurs as $chauffeur)
+                                <option value="{{ $chauffeur->id }}">
+                                    {{ $chauffeur->prenom }} {{ $chauffeur->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer border-0">
@@ -348,6 +383,8 @@
         var selectedVehiculeId = null;
         var selectedProgrammeId = null;
         var selectedVehiculeImmat = null;
+        var selectedChauffeurId = null; // AJOUT
+        var isManualAssignment = false; // AJOUT pour savoir si on doit appeler l'API
         var currentReference = null;
 
         $(document).ready(function() {
@@ -361,15 +398,52 @@
 
             // Continuer vers le scan après sélection
             $('#continueToScanBtn').click(function() {
-                if (!selectedVehiculeId) {
-                    alert('Veuillez sélectionner un programme/véhicule');
+                if (!selectedVehiculeId || (isManualAssignment && !selectedChauffeurId)) {
+                    alert('Veuillez sélectionner un bus et un chauffeur.');
                     return;
                 }
-                $('#vehicleSelectModal').modal('hide');
-                setTimeout(function() {
-                    $('#selectedVehicleText').text(selectedVehiculeImmat);
-                    $('#qrScannerModal').modal('show');
-                }, 300);
+
+                var btn = $(this);
+                
+                // Si c'est une assignation manuelle (pas de mission de base), on l'enregistre en base
+                if (isManualAssignment) {
+                    btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm mr-2"></span>Assignation...');
+                    
+                    $.ajax({
+                        url: '{{ route("agent.reservations.assign-voyage-manual") }}',
+                        method: 'POST',
+                        data: {
+                            _token: '{{ csrf_token() }}',
+                            programme_id: selectedProgrammeId,
+                            vehicule_id: selectedVehiculeId,
+                            personnel_id: selectedChauffeurId
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                proceedToScan();
+                            } else {
+                                alert('Erreur: ' + response.message);
+                                btn.prop('disabled', false).html('Valider et Scanner <i class="material-icons ml-2" style="font-size: 16px; vertical-align: middle;">arrow_forward</i>');
+                            }
+                        },
+                        error: function(xhr) {
+                            alert('Erreur lors de l\'assignation du chauffeur.');
+                            btn.prop('disabled', false).html('Valider et Scanner <i class="material-icons ml-2" style="font-size: 16px; vertical-align: middle;">arrow_forward</i>');
+                        }
+                    });
+                } else {
+                    proceedToScan();
+                }
+
+                function proceedToScan() {
+                    $('#vehicleSelectModal').modal('hide');
+                    btn.prop('disabled', false).html('Valider et Scanner <i class="material-icons ml-2" style="font-size: 16px; vertical-align: middle;">arrow_forward</i>');
+                    
+                    setTimeout(function() {
+                        $('#selectedVehicleText').text(selectedVehiculeImmat);
+                        $('#qrScannerModal').modal('show');
+                    }, 300);
+                }
             });
 
             // --- Logique Caméra ---
@@ -575,7 +649,35 @@
             selectedProgrammeId = $el.data('programme-id');
             selectedVehiculeImmat = $el.data('vehicule-immat');
             
-            $('#continueToScanBtn').prop('disabled', false).removeClass('btn-secondary').addClass('btn-primary');
+            // Si pas de véhicule assigné au programme, on affiche le sélecteur manuel
+            if (!selectedVehiculeId || selectedVehiculeId === '') {
+                isManualAssignment = true;
+                $('#manualAssignmentSelect').slideDown();
+                // On réinitialise les sélections manuelles
+                $('#vehicleIdSelect').val('').trigger('change');
+                $('#chauffeurIdSelect').val('').trigger('change');
+                selectedChauffeurId = null;
+                $('#continueToScanBtn').prop('disabled', true).addClass('btn-secondary').removeClass('btn-primary');
+            } else {
+                isManualAssignment = false;
+                $('#manualAssignmentSelect').slideUp();
+                $('#continueToScanBtn').prop('disabled', false).removeClass('btn-secondary').addClass('btn-primary');
+            }
         }
+
+        // Ecouter les changements de sélection manuelle
+        $(document).on('change', '#vehicleIdSelect, #chauffeurIdSelect', function() {
+            if (!isManualAssignment) return;
+
+            selectedVehiculeId = $('#vehicleIdSelect').val();
+            selectedVehiculeImmat = $('#vehicleIdSelect').find(':selected').data('immat');
+            selectedChauffeurId = $('#chauffeurIdSelect').val();
+            
+            if (selectedVehiculeId && selectedChauffeurId) {
+                $('#continueToScanBtn').prop('disabled', false).removeClass('btn-secondary').addClass('btn-primary');
+            } else {
+                $('#continueToScanBtn').prop('disabled', true).addClass('btn-secondary').removeClass('btn-primary');
+            }
+        });
     </script>
 @endpush

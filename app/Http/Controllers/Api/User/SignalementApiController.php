@@ -30,7 +30,7 @@ class SignalementApiController extends Controller
             $reservations = Reservation::with(['programme.compagnie'])
                 ->where('user_id', $user->id)
                 ->whereDate('date_voyage', $today)
-                ->where('statut', 'confirmee')
+                ->whereIn('statut', ['confirmee', 'terminee'])
                 ->get();
 
             return response()->json([
@@ -66,21 +66,35 @@ class SignalementApiController extends Controller
             $signalement = new Signalement();
             $signalement->user_id = Auth::id();
             $signalement->programme_id = $validated['programme_id'];
-
-            if (!empty($validated['vehicule_id'])) {
-                $signalement->vehicule_id = $validated['vehicule_id'];
-            } else {
-                $programme = Programme::find($validated['programme_id']);
-                if ($programme) {
-                    $signalement->vehicule_id = $programme->vehicule_id;
-                }
-            }
-
             $signalement->type = $validated['type'];
             $signalement->description = $validated['description'];
             $signalement->latitude = $validated['latitude'] ?? null;
             $signalement->longitude = $validated['longitude'] ?? null;
             $signalement->statut = 'nouveau';
+
+            // --- RECHERCHE DU VOYAGE RÉEL (Source de vérité) ---
+            $today = now()->format('Y-m-d');
+            $voyage = \App\Models\Voyage::where('programme_id', $validated['programme_id'])
+                ->whereDate('date_voyage', $today)
+                ->first();
+
+            if ($voyage) {
+                $signalement->voyage_id = $voyage->id;
+                $signalement->personnel_id = $voyage->personnel_id;
+                $signalement->compagnie_id = $voyage->compagnie_id;
+                $signalement->vehicule_id = $voyage->vehicule_id;
+            } else {
+                if (!empty($validated['vehicule_id'])) {
+                    $signalement->vehicule_id = $validated['vehicule_id'];
+                }
+                $programme = Programme::find($validated['programme_id']);
+                if ($programme) {
+                    $signalement->compagnie_id = $programme->compagnie_id;
+                    if (!$signalement->vehicule_id) {
+                        $signalement->vehicule_id = $programme->vehicule_id;
+                    }
+                }
+            }
 
             if ($request->hasFile('photo')) {
                 $path = $request->file('photo')->store('signalements', 'public');

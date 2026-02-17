@@ -42,7 +42,7 @@ class ReservationController extends Controller
         $user = Auth::user();
 
         // Récupérer les réservations avec les relations nécessaires
-        $query = Reservation::with(['programme', 'programme.compagnie', 'programme.gareDepart', 'programme.gareArrivee'])
+        $query = Reservation::with(['programme', 'programme.compagnie', 'programme.gareDepart', 'programme.gareArrivee', 'programme.voyages'])
             ->where('user_id', $user->id)
             ->where('statut', '!=', 'en_attente')
             ->orderBy('created_at', 'desc')
@@ -94,7 +94,7 @@ class ReservationController extends Controller
             abort(403);
         }
 
-        $reservation->load(['programme', 'programme.compagnie',]);
+        $reservation->load(['programme', 'programme.compagnie', 'programme.voyages']);
 
         return view('user.reservation.show', compact('reservation'));
     }

@@ -63,14 +63,40 @@
                                 <div>
                                     <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Programme #{{ $voyage->programme->id }}</p>
                                     <div class="flex items-center gap-3">
-                                        <span class="font-bold text-gray-900 text-lg">{{ $voyage->programme->gareDepart->nom_gare }}</span>
+                                        <div class="flex flex-col">
+                                            <span class="font-bold text-gray-900 text-lg leading-tight">{{ $voyage->programme->point_depart }}</span>
+                                            <span class="text-xs text-green-600 font-bold uppercase tracking-wider">{{ $voyage->programme->gareDepart->nom_gare }}</span>
+                                        </div>
                                         <i class="fas fa-arrow-right text-green-500"></i>
-                                        <span class="font-bold text-gray-900 text-lg">{{ $voyage->programme->gareArrivee->nom_gare }}</span>
+                                        <div class="flex flex-col">
+                                            <span class="font-bold text-gray-900 text-lg leading-tight">{{ $voyage->programme->point_arrive }}</span>
+                                            <span class="text-xs text-green-600 font-bold uppercase tracking-wider">{{ $voyage->programme->gareArrivee->nom_gare }}</span>
+                                        </div>
                                     </div>
-                                    <p class="text-sm text-gray-500 mt-1">
-                                        <i class="fas fa-clock mr-1"></i>
-                                        Arrivée prévue: {{ \Carbon\Carbon::parse($voyage->programme->heure_arrive)->format('H:i') }}
-                                    </p>
+                                    <div class="flex flex-col gap-1 mt-1">
+                                        <p class="text-sm text-gray-500">
+                                            <i class="fas fa-clock mr-1"></i>
+                                            Arrivée prévue: {{ \Carbon\Carbon::parse($voyage->programme->heure_arrive)->format('H:i') }}
+                                        </p>
+                                        @if($voyage->statut === 'en_cours')
+                                            @php
+                                                $dateVoyage = \Carbon\Carbon::parse($voyage->date_voyage)->format('Y-m-d');
+                                                $heureArrive = $voyage->programme->heure_arrive;
+                                                $arrivalDateTime = \Carbon\Carbon::parse($dateVoyage . ' ' . $heureArrive);
+                                                
+                                                // Handle midnight crossing if arrival time is earlier than departure time
+                                                if (\Carbon\Carbon::parse($voyage->programme->heure_arrive)->lt(\Carbon\Carbon::parse($voyage->programme->heure_depart))) {
+                                                    $arrivalDateTime->addDay();
+                                                }
+                                            @endphp
+                                            <p class="text-sm font-bold text-blue-600 flex items-center gap-2" 
+                                               id="timer-{{ $voyage->id }}" 
+                                               data-arrival="{{ $arrivalDateTime->toIso8601String() }}">
+                                                <i class="fas fa-hourglass-half animate-spin-slow"></i>
+                                                <span class="countdown-text">Temps restant: --:--:--</span>
+                                            </p>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
 
@@ -112,6 +138,22 @@
                                 <p class="text-xs font-bold text-gray-500 uppercase mb-2">Date du voyage</p>
                                 <p class="font-bold text-gray-900">{{ \Carbon\Carbon::parse($voyage->date_voyage)->format('d/m/Y') }}</p>
                                 <p class="text-sm text-gray-500">{{ \Carbon\Carbon::parse($voyage->date_voyage)->locale('fr')->isoFormat('dddd') }}</p>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-xl flex items-center justify-between col-span-1 md:col-span-1">
+                                <div>
+                                    <p class="text-xs font-bold text-gray-500 uppercase mb-2">Occupation</p>
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center text-green-600">
+                                            <i class="fas fa-users text-lg"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-bold text-gray-900 text-lg">{{ $voyage->occupancy }} / {{ $voyage->vehicule->nombre_place }}</p>
+                                            <div class="w-24 h-1.5 bg-gray-200 rounded-full mt-1 overflow-hidden">
+                                                <div class="h-full bg-green-500" style="width: {{ ($voyage->occupancy / ($voyage->vehicule->nombre_place ?: 1)) * 100 }}%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             <div class="bg-gray-50 p-4 rounded-xl">
                                 <p class="text-xs font-bold text-gray-500 uppercase mb-2">Tarif</p>
@@ -168,9 +210,17 @@
                 </div>
             @endforelse
         </div>
+
+        <!-- Pagination -->
+        <div class="mt-8">
+            {{ $voyages->appends(['date' => $date])->links() }}
+        </div>
     </div>
 </div>
 
+@endsection
+
+@section('styles')
 <style>
 @keyframes fade-in {
     from {
@@ -186,5 +236,56 @@
 .animate-fade-in {
     animation: fade-in 0.3s ease-out;
 }
+
+@keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+    animation: spin-slow 3s linear infinite;
+}
 </style>
+@endsection
+
+@section('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function updateTimers() {
+        const timers = document.querySelectorAll('[data-arrival]');
+        
+        timers.forEach(timer => {
+            const arrivalTime = new Date(timer.dataset.arrival).getTime();
+            const now = new Date().getTime();
+            const distance = arrivalTime - now;
+            
+            const textElement = timer.querySelector('.countdown-text');
+            
+            if (distance < 0) {
+                if (textElement) {
+                    textElement.innerHTML = "Arrivé à destination";
+                }
+                timer.classList.remove('text-blue-600');
+                timer.classList.add('text-green-600');
+                return;
+            }
+            
+            const hours = Math.floor(distance / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            
+            if (textElement) {
+                textElement.innerHTML = `Temps restant: ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            } else {
+                // For cases like dashboard where data-arrival is on the text element itself
+                timer.innerHTML = `Temps restant: ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+        });
+    }
+
+    // Update every second
+    updateTimers();
+    setInterval(updateTimers, 1000);
+});
+</script>
 @endsection

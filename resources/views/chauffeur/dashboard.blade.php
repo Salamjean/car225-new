@@ -42,12 +42,36 @@
                                     {{ \Carbon\Carbon::parse($voyage->programme->heure_depart)->format('H:i') }}
                                 </div>
                                 <div class="flex-1">
-                                    <div class="flex items-center gap-3">
-                                        <span class="font-bold text-gray-900">{{ $voyage->gareDepart->nom_gare }}</span>
-                                        <i class="fas fa-long-arrow-alt-right text-orange-300"></i>
-                                        <span class="font-bold text-gray-900">{{ $voyage->gareArrivee->nom_gare }}</span>
+                                    <div class="flex flex-col">
+                                        <div class="flex items-center gap-3">
+                                            <div class="flex flex-col">
+                                                <span class="font-bold text-gray-900">{{ $voyage->programme->point_depart }}</span>
+                                                <span class="text-[10px] text-green-600 font-bold uppercase">{{ $voyage->gareDepart->nom_gare }}</span>
+                                            </div>
+                                            <i class="fas fa-long-arrow-alt-right text-orange-300"></i>
+                                            <div class="flex flex-col">
+                                                <span class="font-bold text-gray-900">{{ $voyage->programme->point_arrive }}</span>
+                                                <span class="text-[10px] text-green-600 font-bold uppercase">{{ $voyage->gareArrivee->nom_gare }}</span>
+                                            </div>
+                                        </div>
+                                        @if($voyage->statut === 'en_cours')
+                                            @php
+                                                $dateVoyage = \Carbon\Carbon::parse($voyage->date_voyage)->format('Y-m-d');
+                                                $arrivalDateTime = \Carbon\Carbon::parse($dateVoyage . ' ' . $voyage->programme->heure_arrive);
+                                                if (\Carbon\Carbon::parse($voyage->programme->heure_arrive)->lt(\Carbon\Carbon::parse($voyage->programme->heure_depart))) {
+                                                    $arrivalDateTime->addDay();
+                                                }
+                                            @endphp
+                                            <div class="mt-2 flex items-center gap-2 text-blue-600">
+                                                <i class="fas fa-hourglass-half text-[10px] animate-spin-slow"></i>
+                                                <span class="text-xs font-black tracking-tighter countdown-text" 
+                                                      data-arrival="{{ $arrivalDateTime->toIso8601String() }}">
+                                                    Temps restant: --:--:--
+                                                </span>
+                                            </div>
+                                        @endif
                                     </div>
-                                    <p class="text-sm text-gray-500 mt-1">
+                                    <p class="text-sm text-gray-500 mt-2">
                                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
                                             <i class="fas fa-bus mr-1"></i> {{ $voyage->vehicule->immatriculation }}
                                         </span>
@@ -138,4 +162,49 @@
         </a>
     </div>
 </div>
+@endsection
+
+@section('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function updateTimers() {
+        const timers = document.querySelectorAll('[data-arrival]');
+        
+        timers.forEach(timer => {
+            const arrivalTime = new Date(timer.dataset.arrival).getTime();
+            const now = new Date().getTime();
+            const distance = arrivalTime - now;
+            
+            if (distance < 0) {
+                timer.innerHTML = "Arrivé à destination";
+                return;
+            }
+            
+            const hours = Math.floor(distance / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            
+            timer.innerHTML = `Temps restant: ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        });
+    }
+
+    if (document.querySelectorAll('[data-arrival]').length > 0) {
+        updateTimers();
+        setInterval(updateTimers, 1000);
+    }
+});
+</script>
+@endsection
+
+@section('styles')
+<style>
+@keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+    animation: spin-slow 3s linear infinite;
+}
+</style>
 @endsection
