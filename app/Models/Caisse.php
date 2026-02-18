@@ -25,6 +25,7 @@ class Caisse extends Authenticatable
         'password',
         'profile_picture',
         'compagnie_id',
+        'gare_id',
         'archived_at',
         'tickets',
         'fcm_token',
@@ -55,6 +56,11 @@ class Caisse extends Authenticatable
     public function compagnie()
     {
         return $this->belongsTo(Compagnie::class);
+    }
+
+    public function gare()
+    {
+        return $this->belongsTo(Gare::class);
     }
 
     /**

@@ -1,6 +1,28 @@
-@extends('agent.layouts.template')
+@extends('gare-espace.layouts.template')
 
 @section('title', 'Programmer les Voyages')
+
+@section('styles')
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+<style>
+    .ts-wrapper .ts-control {
+        border-radius: 0.75rem !important;
+        padding: 0.75rem 1rem !important;
+        border-color: #e5e7eb !important;
+        background-color: #f9fafb !important;
+        font-size: 0.875rem !important;
+    }
+    .ts-wrapper.focus .ts-control {
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.5) !important;
+        border-color: transparent !important;
+    }
+    .ts-dropdown {
+        border-radius: 0.75rem !important;
+        margin-top: 5px !important;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+    }
+</style>
+@endsection
 
 @section('content')
 <div class="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8 px-4">
@@ -31,7 +53,7 @@
 
         <!-- Date Selector -->
         <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 mb-8">
-            <form action="{{ route('agent.voyages.index') }}" method="GET" class="flex items-end gap-4">
+            <form action="{{ route('gare-espace.voyages.index') }}" method="GET" class="flex items-end gap-4">
                 <div class="flex-1">
                     <label class="block text-sm font-bold text-gray-700 uppercase mb-2">Date du voyage</label>
                     <div class="relative">
@@ -106,12 +128,11 @@
                                 <div>
                                     <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Programme #{{ $programme->id }}</p>
                                     <div class="flex items-center gap-3 mb-2">
-                                        <span class="font-bold text-gray-900 text-lg">{{ $programme->gareDepart->nom_gare }}</span>
+                                        <span class="font-bold text-gray-900 text-lg">{{ $programme->gareDepart?->nom_gare ?? 'Gare inconnue' }}</span>
                                         <i class="fas fa-arrow-right text-blue-500"></i>
-                                        <span class="font-bold text-gray-900 text-lg">{{ $programme->gareArrivee->nom_gare }}</span>
+                                        <span class="font-bold text-gray-900 text-lg">{{ $programme->gareArrivee?->nom_gare ?? 'Gare inconnue' }}</span>
                                     </div>
                                     
-                                    <!-- Trip Route Details -->
                                     <div class="flex items-center gap-4 text-sm">
                                         <div class="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-lg">
                                             <i class="fas fa-map-marker-alt text-blue-600"></i>
@@ -168,17 +189,16 @@
                     <!-- Assignment Form or Details -->
                     <div class="p-6">
                         @if($voyageAssigne)
-                            <!-- Show assigned voyage details -->
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                                 <div class="bg-gray-50 p-4 rounded-xl">
                                     <p class="text-xs font-bold text-gray-500 uppercase mb-2">Chauffeur assigné</p>
-                                    <p class="font-bold text-gray-900">{{ $voyageAssigne->chauffeur->prenom }} {{ $voyageAssigne->chauffeur->name }}</p>
-                                    <p class="text-sm text-gray-500">{{ $voyageAssigne->chauffeur->contact }}</p>
+                                    <p class="font-bold text-gray-900">{{ $voyageAssigne->chauffeur?->prenom ?? 'N/A' }} {{ $voyageAssigne->chauffeur?->name ?? '' }}</p>
+                                    <p class="text-sm text-gray-500">{{ $voyageAssigne->chauffeur?->contact ?? '' }}</p>
                                 </div>
                                 <div class="bg-gray-50 p-4 rounded-xl">
                                     <p class="text-xs font-bold text-gray-500 uppercase mb-2">Véhicule assigné</p>
-                                    <p class="font-bold text-gray-900">{{ $voyageAssigne->vehicule->immatriculation }}</p>
-                                    <p class="text-sm text-gray-500">{{ $voyageAssigne->vehicule->marque }} {{ $voyageAssigne->vehicule->modele }}</p>
+                                    <p class="font-bold text-gray-900">{{ $voyageAssigne->vehicule?->immatriculation ?? 'N/A' }}</p>
+                                    <p class="text-sm text-gray-500">{{ $voyageAssigne->vehicule?->marque ?? '' }} {{ $voyageAssigne->vehicule?->modele ?? '' }}</p>
                                 </div>
                                 <div class="bg-gray-50 p-4 rounded-xl">
                                     <p class="text-xs font-bold text-gray-500 uppercase mb-2">Statut du voyage</p>
@@ -203,7 +223,7 @@
                             </div>
 
                             @if(!in_array($voyageAssigne->statut, ['en_cours', 'terminé']))
-                                <form action="{{ route('agent.voyages.destroy', $voyageAssigne->id) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir annuler cette assignation ?')">
+                                <form action="{{ route('gare-espace.voyages.destroy', $voyageAssigne->id) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir annuler cette assignation ?')">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="w-full bg-red-500 text-white py-3 rounded-xl font-bold hover:bg-red-600 transition-colors flex items-center justify-center gap-2">
@@ -213,8 +233,7 @@
                                 </form>
                             @endif
                         @else
-                            <!-- Assignment form -->
-                            <form action="{{ route('agent.voyages.store') }}" method="POST" class="space-y-4">
+                            <form action="{{ route('gare-espace.voyages.store') }}" method="POST" class="space-y-4">
                                 @csrf
                                 <input type="hidden" name="programme_id" value="{{ $programme->id }}">
                                 <input type="hidden" name="date_voyage" value="{{ $date }}">
@@ -224,7 +243,7 @@
                                         <label class="block text-sm font-bold text-gray-700 uppercase mb-2">
                                             <i class="fas fa-user-tie mr-1"></i> Chauffeur
                                         </label>
-                                        <select name="personnel_id" required class="block w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 focus:bg-white">
+                                        <select name="personnel_id" required class="tom-select block w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 focus:bg-white">
                                             <option value="">-- Sélectionner un chauffeur --</option>
                                             @foreach($chauffeurs as $chauffeur)
                                                 <option value="{{ $chauffeur->id }}">
@@ -238,7 +257,7 @@
                                         <label class="block text-sm font-bold text-gray-700 uppercase mb-2">
                                             <i class="fas fa-bus mr-1"></i> Véhicule
                                         </label>
-                                        <select name="vehicule_id" required class="block w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 focus:bg-white">
+                                        <select name="vehicule_id" required class="tom-select block w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 focus:bg-white">
                                             <option value="">-- Sélectionner un véhicule --</option>
                                             @foreach($vehicules as $vehicule)
                                                 <option value="{{ $vehicule->id }}">
@@ -274,4 +293,22 @@
         </div>
     </div>
 </div>
+@section('scripts')
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.tom-select').forEach((el) => {
+            new TomSelect(el, {
+                create: false,
+                sortField: {
+                    field: "text",
+                    direction: "asc"
+                },
+                placeholder: el.options[0].text,
+                allowEmptyOption: true,
+            });
+        });
+    });
+</script>
+@endsection
 @endsection

@@ -51,6 +51,11 @@ class Compagnie extends Authenticatable
         'statut' => 'string',
     ];
 
+    public function gares()
+    {
+        return $this->hasMany(Gare::class);
+    }
+
     public function agents()
     {
         return $this->hasMany(Agent::class);

@@ -592,7 +592,7 @@ class ReservationService
         
         // Re-calculate status
         $totalReservedSeats = $statutDate->nbre_siege_occupe;
-        $totalPlaces = optional(optional($reservation->programme)->vehicule)->nombre_place ?? 50;
+        $totalPlaces = optional(optional($reservation->programme)->vehicule)->nombre_place ?? 70;
         $percentage = ($totalReservedSeats / max($totalPlaces, 1)) * 100;
 
         $status = $percentage >= 100 ? 'rempli' : ($percentage >= 80 ? 'presque_complet' : 'vide');

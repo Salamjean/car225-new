@@ -184,6 +184,8 @@ Route::middleware('compagnie')->prefix('company')->group(function () {
         Route::get('/index', [App\Http\Controllers\Compagnie\CaisseController::class, 'index'])->name('compagnie.caisse.index');
         Route::get('/create', [App\Http\Controllers\Compagnie\CaisseController::class, 'create'])->name('compagnie.caisse.create');
         Route::post('/store', [App\Http\Controllers\Compagnie\CaisseController::class, 'store'])->name('compagnie.caisse.store');
+        Route::get('/{caisse}/edit', [App\Http\Controllers\Compagnie\CaisseController::class, 'edit'])->name('compagnie.caisse.edit');
+        Route::put('/{caisse}', [App\Http\Controllers\Compagnie\CaisseController::class, 'update'])->name('compagnie.caisse.update');
         Route::post('/{caisse}/recharge', [App\Http\Controllers\Compagnie\CaisseController::class, 'recharge'])->name('compagnie.caisse.recharge');
         Route::post('/{caisse}/toggle-archive', [App\Http\Controllers\Compagnie\CaisseController::class, 'toggleArchive'])->name('compagnie.caisse.toggle-archive');
         Route::delete('/{caisse}', [App\Http\Controllers\Compagnie\CaisseController::class, 'destroy'])->name('compagnie.caisse.destroy');
@@ -364,16 +366,16 @@ Route::middleware('agent')->prefix('agent')->name('agent.')->group(function () {
         Route::post('/search', [AgentReservationController::class, 'search'])->name('search');
         Route::post('/search-by-reference', [AgentReservationController::class, 'searchByReference'])->name('search-by-reference');
         Route::post('/confirm', [AgentReservationController::class, 'confirm'])->name('confirm');
-        Route::post('/assign-voyage-manual', [AgentReservationController::class, 'assignVoyageManual'])->name('assign-voyage-manual');
+        // Route::post('/assign-voyage-manual', [AgentReservationController::class, 'assignVoyageManual'])->name('assign-voyage-manual');
     });
 
-    // Gestion des voyages
+    /* Gestion des voyages supprimée
     Route::prefix('voyages')->name('voyages.')->group(function () {
         Route::get('/', [AgentVoyageController::class, 'index'])->name('index');
         Route::get('/history', [AgentVoyageController::class, 'history'])->name('history');
         Route::post('/', [AgentVoyageController::class, 'store'])->name('store');
         Route::delete('/{voyage}', [AgentVoyageController::class, 'destroy'])->name('destroy');
-    });
+    }); */
 
     // Gestion des messages
     Route::prefix('messages')->name('messages.')->group(function () {
@@ -555,6 +557,61 @@ Route::get('/validate-compagny-account/{email}', [CompagnieAuthenticate::class, 
 Route::post('/validate-compagny-account/{email}', [CompagnieAuthenticate::class, 'submitDefineAccess'])->name('compagnie.validate');
 Route::get('/validate-agent-account/{email}', [AuthenticateAgent::class, 'defineAccess']);
 Route::post('/validate-agent-account/{email}', [AuthenticateAgent::class, 'submitDefineAccess'])->name('agent.validate');
+
+// ==========================================
+// Routes Espace Gare
+// ==========================================
+Route::prefix('gare-espace')->name('gare-espace.')->group(function () {
+    // Auth routes (publiques)
+    Route::get('/login', [App\Http\Controllers\GareEspace\AuthenticateGare::class, 'login'])->name('login');
+    Route::post('/login', [App\Http\Controllers\GareEspace\AuthenticateGare::class, 'handleLogin'])->name('handleLogin');
+    Route::get('/verify-otp', [App\Http\Controllers\GareEspace\AuthenticateGare::class, 'verifyOtp'])->name('verifyOtp');
+    Route::post('/verify-otp', [App\Http\Controllers\GareEspace\AuthenticateGare::class, 'handleVerifyOtp'])->name('handleVerifyOtp');
+    Route::get('/define-access/{email}', [App\Http\Controllers\GareEspace\AuthenticateGare::class, 'defineAccess'])->name('defineAccess');
+    Route::post('/define-access/{email}', [App\Http\Controllers\GareEspace\AuthenticateGare::class, 'submitDefineAccess'])->name('validate');
+
+    // Routes protégées (gare middleware)
+    Route::middleware('gare')->group(function () {
+        Route::get('/dashboard', [App\Http\Controllers\GareEspace\GareDashboardController::class, 'index'])->name('dashboard');
+        Route::post('/logout', [App\Http\Controllers\GareEspace\AuthenticateGare::class, 'logout'])->name('logout');
+
+        // Voyages
+        Route::prefix('voyages')->name('voyages.')->group(function () {
+            Route::get('/', [App\Http\Controllers\GareEspace\GareVoyageController::class, 'index'])->name('index');
+            Route::get('/history', [App\Http\Controllers\GareEspace\GareVoyageController::class, 'history'])->name('history');
+            Route::post('/', [App\Http\Controllers\GareEspace\GareVoyageController::class, 'store'])->name('store');
+            Route::delete('/{voyage}', [App\Http\Controllers\GareEspace\GareVoyageController::class, 'destroy'])->name('destroy');
+        });
+
+        // Personnel (CRUD)
+        Route::prefix('personnel')->name('personnel.')->group(function () {
+            Route::get('/', [App\Http\Controllers\GareEspace\GarePersonnelController::class, 'index'])->name('index');
+            Route::get('/create', [App\Http\Controllers\GareEspace\GarePersonnelController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\GareEspace\GarePersonnelController::class, 'store'])->name('store');
+        });
+
+        // Véhicules (CRUD)
+        Route::prefix('vehicules')->name('vehicules.')->group(function () {
+            Route::get('/', [App\Http\Controllers\GareEspace\GareVehiculeController::class, 'index'])->name('index');
+            Route::get('/create', [App\Http\Controllers\GareEspace\GareVehiculeController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\GareEspace\GareVehiculeController::class, 'store'])->name('store');
+        });
+
+        // Caisse (CRUD)
+        Route::prefix('caisse')->name('caisse.')->group(function () {
+            Route::get('/', [App\Http\Controllers\GareEspace\GareCaisseController::class, 'index'])->name('index');
+            Route::get('/create', [App\Http\Controllers\GareEspace\GareCaisseController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\GareEspace\GareCaisseController::class, 'store'])->name('store');
+        });
+
+        // Itinéraires (CRUD)
+        Route::prefix('itineraire')->name('itineraire.')->group(function () {
+            Route::get('/', [App\Http\Controllers\GareEspace\GareItineraireController::class, 'index'])->name('index');
+            Route::get('/create', [App\Http\Controllers\GareEspace\GareItineraireController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\GareEspace\GareItineraireController::class, 'store'])->name('store');
+        });
+    });
+});
 
 // On change Route::get en Route::match(['get', 'post'])
 Route::match(['get', 'post'], '/payment/callback', function (Request $request) {

@@ -51,19 +51,7 @@ class ReservationController extends Controller
         $enCours = $reservations->whereNotIn('statut', ['terminee', 'annulee']);
         $terminees = $reservations->where('statut', 'terminee');
 
-        // Récupération des véhicules et chauffeurs pour sélection manuelle si pas de Voyage créé
-        $vehicules = Vehicule::where('compagnie_id', $agent->compagnie_id)
-            ->where('is_active', true)
-            ->orderBy('immatriculation')
-            ->get();
-
-        $chauffeurs = \App\Models\Personnel::where('compagnie_id', $agent->compagnie_id)
-            ->where('type_personnel', 'Chauffeur')
-            ->where('statut', 'disponible')
-            ->orderBy('name')
-            ->get();
-
-        return view('agent.reservations.reservation', compact('enCours', 'terminees', 'programmesDuJour', 'vehicules', 'chauffeurs'));
+        return view('agent.reservations.reservation', compact('enCours', 'terminees', 'programmesDuJour'));
     }
 
     /**
@@ -220,67 +208,7 @@ class ReservationController extends Controller
         return response()->json(['success' => true, 'programmes' => $data]);
     }
 
-    /**
-     * Assigner manuellement un voyage (véhicule + chauffeur) lors du scan
-     */
-    public function assignVoyageManual(Request $request)
-    {
-        $agent = Auth::guard('agent')->user();
-        $validated = $request->validate([
-            'programme_id' => 'required|exists:programmes,id',
-            'vehicule_id' => 'required|exists:vehicules,id',
-            'personnel_id' => 'required|exists:personnels,id',
-        ]);
-
-        $today = Carbon::today()->toDateString();
-        $programme = Programme::findOrFail($validated['programme_id']);
-
-        // Vérification si un voyage existe déjà
-        $voyage = \App\Models\Voyage::where('programme_id', $programme->id)
-            ->whereDate('date_voyage', $today)
-            ->first();
-
-        if ($voyage) {
-            // Si le voyage existe déjà, on vérifie si on doit juste le mettre à jour
-            // Mais normalement on ne devrait pas arriver ici si selectProgramme a détecté le voyage
-            return response()->json([
-                'success' => true,
-                'message' => 'Un voyage était déjà assigné.',
-                'voyage_id' => $voyage->id
-            ]);
-        }
-
-        // Création du voyage (Mission)
-        try {
-            $chauffeur = \App\Models\Personnel::findOrFail($validated['personnel_id']);
-            $vehicule = Vehicule::findOrFail($validated['vehicule_id']);
-
-            $newVoyage = \App\Models\Voyage::create([
-                'programme_id' => $programme->id,
-                'date_voyage' => $today,
-                'vehicule_id' => $vehicule->id,
-                'personnel_id' => $chauffeur->id,
-                'gare_depart_id' => $programme->gare_depart_id,
-                'gare_arrivee_id' => $programme->gare_arrivee_id,
-                'statut' => 'en_attente',
-            ]);
-
-            // Mettre à jour les statuts comme dans le VoyageController
-            $chauffeur->update(['statut' => 'indisponible']);
-            $vehicule->update(['statut' => 'indisponible']);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Voyage et chauffeur assignés avec succès.',
-                'voyage_id' => $newVoyage->id
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de l\'assignation : ' . $e->getMessage()
-            ], 500);
-        }
-    }
+    /* Méthode assignVoyageManual supprimée car l'assignation se fait désormais dans l'espace gare */
     public function search(Request $request)
     {
         $request->validate([

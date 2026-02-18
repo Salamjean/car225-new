@@ -14,10 +14,16 @@ class Itineraire extends Model
         'point_arrive',
         'durer_parcours',
         'compagnie_id',
+        'gare_id',
     ];
 
     public function compagnie()
     {
         return $this->belongsTo(Compagnie::class); 
+    }
+
+    public function gare()
+    {
+        return $this->belongsTo(Gare::class);
     }
 }

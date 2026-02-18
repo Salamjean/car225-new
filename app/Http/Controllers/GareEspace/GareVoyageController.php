@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Agent;
+namespace App\Http\Controllers\GareEspace;
 
 use App\Http\Controllers\Controller;
 use App\Models\Programme;
@@ -11,18 +11,23 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
-class VoyageController extends Controller
+class GareVoyageController extends Controller
 {
     /**
      * Display voyage assignment page
      */
     public function index(Request $request)
     {
-        $agent = Auth::guard('agent')->user();
+        $gare = Auth::guard('gare')->user();
+        $compagnieId = $gare->compagnie_id;
         $date = $request->input('date', Carbon::today()->toDateString());
 
-        // Get programmes from agent's company
-        $programmesQuery = Programme::where('compagnie_id', $agent->compagnie_id)
+        // Get programmes from gare's company that concern this specific gare
+        $programmesQuery = Programme::where('compagnie_id', $compagnieId)
+            ->where(function($query) use ($gare) {
+                $query->where('gare_depart_id', $gare->id)
+                      ->orWhere('gare_arrivee_id', $gare->id);
+            })
             ->where('statut', 'actif')
             ->whereDate('date_depart', '<=', $date)
             ->whereDate('date_fin', '>=', $date)
@@ -38,21 +43,21 @@ class VoyageController extends Controller
         $totalProgrammesCount = $programmesQuery->count();
         $programmes = $programmesQuery->paginate(5);
 
-        // Get available drivers (disponible status only)
-        $chauffeurs = Personnel::where('compagnie_id', $agent->compagnie_id)
+        // Get available drivers
+        $chauffeurs = Personnel::where('compagnie_id', $compagnieId)
             ->where('type_personnel', 'Chauffeur')
             ->where('statut', 'disponible')
             ->orderBy('name')
             ->get();
 
         // Get available vehicles
-        $vehicules = Vehicule::where('compagnie_id', $agent->compagnie_id)
+        $vehicules = Vehicule::where('compagnie_id', $compagnieId)
             ->where('is_active', true)
             ->where('statut', 'disponible')
             ->orderBy('immatriculation')
             ->get();
 
-        return view('agent.voyages.index', compact('programmes', 'chauffeurs', 'vehicules', 'date', 'totalProgrammesCount'));
+        return view('gare-espace.voyages.index', compact('programmes', 'chauffeurs', 'vehicules', 'date', 'totalProgrammesCount'));
     }
 
     /**
@@ -60,10 +65,15 @@ class VoyageController extends Controller
      */
     public function history(Request $request)
     {
-        $agent = Auth::guard('agent')->user();
+        $gare = Auth::guard('gare')->user();
+        $compagnieId = $gare->compagnie_id;
         
-        $voyages = Voyage::whereHas('programme', function($query) use ($agent) {
-                $query->where('compagnie_id', $agent->compagnie_id);
+        $voyages = Voyage::whereHas('programme', function($query) use ($compagnieId) {
+                $query->where('compagnie_id', $compagnieId);
+            })
+            ->where(function($query) use ($gare) {
+                $query->where('gare_depart_id', $gare->id)
+                      ->orWhere('gare_arrivee_id', $gare->id);
             })
             ->where('statut', 'terminé')
             ->with(['programme.gareDepart', 'programme.gareArrivee', 'chauffeur', 'vehicule'])
@@ -71,7 +81,7 @@ class VoyageController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
-        return view('agent.voyages.history', compact('voyages'));
+        return view('gare-espace.voyages.history', compact('voyages'));
     }
 
     /**
@@ -79,7 +89,8 @@ class VoyageController extends Controller
      */
     public function store(Request $request)
     {
-        $agent = Auth::guard('agent')->user();
+        $gare = Auth::guard('gare')->user();
+        $compagnieId = $gare->compagnie_id;
 
         $validated = $request->validate([
             'programme_id' => 'required|exists:programmes,id',
@@ -88,31 +99,31 @@ class VoyageController extends Controller
             'date_voyage' => 'required|date|after_or_equal:today',
         ]);
 
-        // Verify programme belongs to agent's company
+        // Verify programme belongs to gare's company
         $programme = Programme::findOrFail($validated['programme_id']);
-        if ($programme->compagnie_id !== $agent->compagnie_id) {
+        if ($programme->compagnie_id !== $compagnieId) {
             return back()->with('error', 'Ce programme n\'appartient pas à votre compagnie.');
         }
 
-        // Verify driver belongs to agent's company and is available
+        // Verify driver belongs to gare's company and is available
         $chauffeur = Personnel::findOrFail($validated['personnel_id']);
-        if ($chauffeur->compagnie_id !== $agent->compagnie_id) {
+        if ($chauffeur->compagnie_id !== $compagnieId) {
             return back()->with('error', 'Ce chauffeur n\'appartient pas à votre compagnie.');
         }
         if ($chauffeur->statut !== 'disponible') {
             return back()->with('error', 'Ce chauffeur n\'est pas disponible.');
         }
 
-        // Verify vehicle belongs to agent's company and is available
+        // Verify vehicle belongs to gare's company and is available
         $vehicule = Vehicule::findOrFail($validated['vehicule_id']);
-        if ($vehicule->compagnie_id !== $agent->compagnie_id) {
+        if ($vehicule->compagnie_id !== $compagnieId) {
             return back()->with('error', 'Ce véhicule n\'appartient pas à votre compagnie.');
         }
         if ($vehicule->statut !== 'disponible') {
             return back()->with('error', 'Ce véhicule n\'est pas disponible.');
         }
 
-        // Check if voyage already exists for this programme and date
+        // Check if voyage already exists
         $exists = Voyage::where('programme_id', $programme->id)
             ->whereDate('date_voyage', $validated['date_voyage'])
             ->exists();
@@ -121,24 +132,24 @@ class VoyageController extends Controller
             return back()->with('error', 'Un voyage est déjà assigné pour ce programme à cette date.');
         }
 
-        // Check if driver is already assigned to another active voyage on this date
+        // Check driver availability
         $chauffeurBusy = Voyage::where('personnel_id', $chauffeur->id)
             ->whereDate('date_voyage', $validated['date_voyage'])
             ->where('statut', '!=', 'terminé')
             ->exists();
 
         if ($chauffeurBusy) {
-            return back()->with('error', 'Ce chauffeur est déjà assigné à un voyage en cours ou à venir pour cette date.');
+            return back()->with('error', 'Ce chauffeur est déjà assigné à un voyage pour cette date.');
         }
 
-        // Check if vehicle is already assigned to another active voyage on this date
+        // Check vehicle availability
         $vehiculeBusy = Voyage::where('vehicule_id', $vehicule->id)
             ->whereDate('date_voyage', $validated['date_voyage'])
             ->where('statut', '!=', 'terminé')
             ->exists();
 
         if ($vehiculeBusy) {
-            return back()->with('error', 'Ce véhicule est déjà assigné à un voyage en cours ou à venir pour cette date.');
+            return back()->with('error', 'Ce véhicule est déjà assigné à un voyage pour cette date.');
         }
 
         // Create voyage
@@ -152,9 +163,31 @@ class VoyageController extends Controller
             'statut' => 'en_attente',
         ]);
 
-        // Update driver and vehicle status to indisponible
+        // Update driver and vehicle status
         $chauffeur->update(['statut' => 'indisponible']);
         $vehicule->update(['statut' => 'indisponible']);
+
+        // Send Notifications
+        try {
+            $chauffeur->notify(new \App\Notifications\VoyageAssignedNotification($voyage));
+
+            if ($chauffeur->fcm_token) {
+                $fcmService = app(\App\Services\FcmService::class);
+                $heureDepart = Carbon::parse($programme->heure_depart)->format('H:i');
+                $title = "Nouveau Voyage Assigné 🚍";
+                $body = "Trajet : {$programme->point_depart} ➝ {$programme->point_arrive}\n" .
+                        "Départ : {$heureDepart}\n" .
+                        "Date : " . Carbon::parse($validated['date_voyage'])->format('d/m/Y') . "\n" .
+                        "Véhicule : {$vehicule->immatriculation} ({$vehicule->marque})";
+                
+                $fcmService->sendNotification(
+                    $chauffeur->fcm_token, $title, $body,
+                    ['type' => 'voyage_assigned', 'voyage_id' => $voyage->id, 'programme_id' => $programme->id]
+                );
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Erreur notification voyage (GareEspace/VoyageController): " . $e->getMessage());
+        }
 
         return back()->with('success', 'Le voyage a été assigné avec succès au chauffeur ' . $chauffeur->prenom . ' ' . $chauffeur->name . '.');
     }
@@ -164,19 +197,16 @@ class VoyageController extends Controller
      */
     public function destroy(Voyage $voyage)
     {
-        $agent = Auth::guard('agent')->user();
+        $gare = Auth::guard('gare')->user();
 
-        // Verify voyage belongs to agent's company
-        if ($voyage->programme->compagnie_id !== $agent->compagnie_id) {
+        if ($voyage->programme->compagnie_id !== $gare->compagnie_id) {
             return back()->with('error', 'Ce voyage n\'appartient pas à votre compagnie.');
         }
 
-        // Only allow cancellation if voyage is not started
         if (in_array($voyage->statut, ['en_cours', 'terminé'])) {
             return back()->with('error', 'Impossible d\'annuler un voyage déjà démarré ou terminé.');
         }
 
-        // Update driver and vehicle status back to disponible
         if ($voyage->chauffeur) {
             $voyage->chauffeur->update(['statut' => 'disponible']);
         }

@@ -22,7 +22,8 @@ class VehiculeController extends Controller
     }
 
     public function create(){
-        return view('compagnie.vehicule.create');
+        $gares = \App\Models\Gare::where('compagnie_id', Auth::guard('compagnie')->user()->id)->get();
+        return view('compagnie.vehicule.create', compact('gares'));
     }
 
     /**
@@ -36,6 +37,7 @@ class VehiculeController extends Controller
             'numero_serie' => 'nullable|string|max:255',
             'type_range' => 'required|string|in:2x2,2x3,2x4',
             'nombre_place' => 'required|integer|min:15',
+            'gare_id' => 'required|exists:gares,id',
         ], [
             'immatriculation.required' => 'L\'immatriculation est obligatoire.',
             'immatriculation.unique' => 'Cette immatriculation est déjà utilisée.',
@@ -55,6 +57,7 @@ class VehiculeController extends Controller
                 'type_range' => $request->type_range,
                 'nombre_place' => $request->nombre_place,
                 'compagnie_id' => Auth::guard('compagnie')->user()->id,
+                'gare_id' => $request->gare_id,
             ]);
 
             // Redirection avec message de succès
@@ -121,6 +124,52 @@ class VehiculeController extends Controller
         } catch (\Exception $e) {
             return redirect()->route('vehicule.index')
                             ->with('error', 'Erreur lors de la désactivation du véhicule.');
+        }
+    }
+
+    public function edit($id)
+    {
+        $vehicule = Vehicule::where('compagnie_id', Auth::guard('compagnie')->user()->id)->findOrFail($id);
+        $gares = \App\Models\Gare::where('compagnie_id', Auth::guard('compagnie')->user()->id)->get();
+        return view('compagnie.vehicule.edit', compact('vehicule', 'gares'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $vehicule = Vehicule::where('compagnie_id', Auth::guard('compagnie')->user()->id)->findOrFail($id);
+
+        $request->validate([
+            'immatriculation' => 'required|string|min:5|unique:vehicules,immatriculation,' . $vehicule->id,
+            'numero_serie' => 'nullable|string|max:255',
+            'type_range' => 'required|string|in:2x2,2x3,2x4',
+            'nombre_place' => 'required|integer|min:15',
+            'gare_id' => 'required|exists:gares,id',
+        ]);
+
+        try {
+            $vehicule->update([
+                'immatriculation' => strtoupper($request->immatriculation),
+                'numero_serie' => $request->numero_serie,
+                'type_range' => $request->type_range,
+                'nombre_place' => $request->nombre_place,
+                'gare_id' => $request->gare_id,
+            ]);
+
+            return redirect()->route('vehicule.index')->with('success', 'Véhicule mis à jour avec succès !');
+        } catch (\Exception $e) {
+            return back()->withInput()->with('error', 'Erreur lors de la mise à jour : ' . $e->getMessage());
+        }
+    }
+
+    public function destroy($id)
+    {
+        try {
+            $vehicule = Vehicule::where('compagnie_id', Auth::guard('compagnie')->user()->id)
+                            ->findOrFail($id);
+            $vehicule->delete();
+            return redirect()->route('vehicule.index')->with('success', 'Véhicule supprimé avec succès!');
+        } catch (\Exception $e) {
+            return redirect()->route('vehicule.index')->with('error', 'Erreur lors de la suppression.');
         }
     }
 }

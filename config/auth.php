@@ -71,6 +71,10 @@ return [
             'driver' => 'session',
             'provider' => 'personnels',
         ],
+        'gare' => [
+            'driver' => 'session',
+            'provider' => 'gares',
+        ],
     ],
 
     /*
@@ -125,6 +129,10 @@ return [
         'personnels' => [
             'driver' => 'eloquent',
             'model' => App\Models\Personnel::class,
+        ],
+        'gares' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Gare::class,
         ],
 
         // 'users' => [

@@ -276,37 +276,7 @@
                     @endif
                 </div>
 
-                <!-- Zone Sélection Manuelle (Bus + Chauffeur) si pas de mission créée -->
-                <div id="manualAssignmentSelect" style="display: none;" class="mt-3 p-3 border rounded-lg bg-light animate__animated animate__fadeIn">
-                    <p class="text-muted small mb-3">
-                        <i class="material-icons text-primary" style="font-size: 16px; vertical-align: middle;">info</i> 
-                        Ce trajet n'a pas encore de mission. Veuillez assigner un bus et un chauffeur pour aujourd'hui.
-                    </p>
-                    
-                    <div class="form-group mb-2">
-                        <label class="font-weight-bold small text-muted text-uppercase mb-1">Bus utilisé :</label>
-                        <select id="vehicleIdSelect" class="form-control select2">
-                            <option value="">-- Choisir le véhicule --</option>
-                            @foreach($vehicules as $vehicule)
-                                <option value="{{ $vehicule->id }}" data-immat="{{ $vehicule->immatriculation }}">
-                                    {{ $vehicule->immatriculation }} ({{ $vehicule->marque }} - {{ $vehicule->nombre_place }} pl.)
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="form-group mb-0">
-                        <label class="font-weight-bold small text-muted text-uppercase mb-1">Chauffeur assigné :</label>
-                        <select id="chauffeurIdSelect" class="form-control select2">
-                            <option value="">-- Choisir le chauffeur --</option>
-                            @foreach($chauffeurs as $chauffeur)
-                                <option value="{{ $chauffeur->id }}">
-                                    {{ $chauffeur->prenom }} {{ $chauffeur->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
+                {{-- Zone Sélection Manuelle supprimée --}}
             </div>
             <div class="modal-footer border-0">
                 <button type="button" class="btn btn-light" data-dismiss="modal">Annuler</button>
@@ -383,8 +353,6 @@
         var selectedVehiculeId = null;
         var selectedProgrammeId = null;
         var selectedVehiculeImmat = null;
-        var selectedChauffeurId = null; // AJOUT
-        var isManualAssignment = false; // AJOUT pour savoir si on doit appeler l'API
         var currentReference = null;
 
         $(document).ready(function() {
@@ -407,33 +375,8 @@
                 
                 // Si c'est une assignation manuelle (pas de mission de base), on l'enregistre en base
                 if (isManualAssignment) {
-                    btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm mr-2"></span>Assignation...');
-                    
-                    $.ajax({
-                        url: '{{ route("agent.reservations.assign-voyage-manual") }}',
-                        method: 'POST',
-                        data: {
-                            _token: '{{ csrf_token() }}',
-                            programme_id: selectedProgrammeId,
-                            vehicule_id: selectedVehiculeId,
-                            personnel_id: selectedChauffeurId
-                        },
-                        success: function(response) {
-                            if (response.success) {
-                                proceedToScan();
-                            } else {
-                                alert('Erreur: ' + response.message);
-                                btn.prop('disabled', false).html('Valider et Scanner <i class="material-icons ml-2" style="font-size: 16px; vertical-align: middle;">arrow_forward</i>');
-                            }
-                        },
-                        error: function(xhr) {
-                            alert('Erreur lors de l\'assignation du chauffeur.');
-                            btn.prop('disabled', false).html('Valider et Scanner <i class="material-icons ml-2" style="font-size: 16px; vertical-align: middle;">arrow_forward</i>');
-                        }
-                    });
-                } else {
-                    proceedToScan();
-                }
+                // Logique d'assignation manuelle supprimée
+                proceedToScan();
 
                 function proceedToScan() {
                     $('#vehicleSelectModal').modal('hide');
@@ -639,7 +582,7 @@
             });
         });
 
-        // Fonction sélection programme (externe au document.ready pour portée globale du onclick HTML)
+        // Fonction sélection programme simplified
         function selectProgramme(element) {
             var $el = $(element);
             $('.programme-item').removeClass('selected');
@@ -649,35 +592,16 @@
             selectedProgrammeId = $el.data('programme-id');
             selectedVehiculeImmat = $el.data('vehicule-immat');
             
-            // Si pas de véhicule assigné au programme, on affiche le sélecteur manuel
+            // Si pas de véhicule assigné, on désactive le bouton
             if (!selectedVehiculeId || selectedVehiculeId === '') {
-                isManualAssignment = true;
-                $('#manualAssignmentSelect').slideDown();
-                // On réinitialise les sélections manuelles
-                $('#vehicleIdSelect').val('').trigger('change');
-                $('#chauffeurIdSelect').val('').trigger('change');
-                selectedChauffeurId = null;
-                $('#continueToScanBtn').prop('disabled', true).addClass('btn-secondary').removeClass('btn-primary');
+                $('#continueToScanBtn').prop('disabled', true).addClass('btn-secondary').removeClass('btn-primary')
+                    .html('Voyage non assigné <i class="material-icons ml-2" style="font-size: 16px; vertical-align: middle;">warning</i>');
             } else {
-                isManualAssignment = false;
-                $('#manualAssignmentSelect').slideUp();
-                $('#continueToScanBtn').prop('disabled', false).removeClass('btn-secondary').addClass('btn-primary');
+                $('#continueToScanBtn').prop('disabled', false).removeClass('btn-secondary').addClass('btn-primary')
+                    .html('Valider et Scanner <i class="material-icons ml-2" style="font-size: 16px; vertical-align: middle;">arrow_forward</i>');
             }
         }
 
-        // Ecouter les changements de sélection manuelle
-        $(document).on('change', '#vehicleIdSelect, #chauffeurIdSelect', function() {
-            if (!isManualAssignment) return;
-
-            selectedVehiculeId = $('#vehicleIdSelect').val();
-            selectedVehiculeImmat = $('#vehicleIdSelect').find(':selected').data('immat');
-            selectedChauffeurId = $('#chauffeurIdSelect').val();
-            
-            if (selectedVehiculeId && selectedChauffeurId) {
-                $('#continueToScanBtn').prop('disabled', false).removeClass('btn-secondary').addClass('btn-primary');
-            } else {
-                $('#continueToScanBtn').prop('disabled', true).addClass('btn-secondary').removeClass('btn-primary');
-            }
-        });
+        // Event listeners pour sélection manuelle supprimés
     </script>
 @endpush

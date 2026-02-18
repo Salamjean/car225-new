@@ -43,8 +43,9 @@ class ReservationController extends Controller
 
         // Récupérer les réservations avec les relations nécessaires
         $query = Reservation::with(['programme', 'programme.compagnie', 'programme.gareDepart', 'programme.gareArrivee', 'programme.voyages'])
-            ->where('user_id', $user->id)
-            ->where('statut', '!=', 'en_attente')
+         ->whereHas('programme') // Exclure les réservations dont le programme a été supprimé
+         ->where('user_id', $user->id)
+         ->where('statut', '!=', 'en_attente')
             ->orderBy('created_at', 'desc')
             ->orderBy('payment_transaction_id', 'desc')
             ->orderBy('seat_number', 'asc');

@@ -26,6 +26,7 @@ class Personnel extends Authenticatable
         'statut',
         'profile_image',
         'compagnie_id',
+        'gare_id',
         'password',
         'fcm_token',
     ];
@@ -36,6 +37,11 @@ class Personnel extends Authenticatable
     public function compagnie()
     {
         return $this->belongsTo(Compagnie::class);
+    }
+
+    public function gare()
+    {
+        return $this->belongsTo(Gare::class);
     }
 
     // Dans app/Models/Personnel.php
