@@ -301,8 +301,8 @@ class ReservationController extends Controller
         $heure_depart = $request->heure_depart ?? null;
         $formattedDate = date('Y-m-d', strtotime($date_depart_recherche));
 
-        // Initialiser la requête
-        $query = Programme::with(['compagnie', 'itineraire', 'gareDepart', 'gareArrivee'])
+        // Initialiser la requête avec les relations nécessaires pour éviter le N+1
+        $query = Programme::with(['compagnie', 'itineraire', 'gareDepart', 'gareArrivee', 'voyages.vehicule', 'compagnie.vehicules'])
             ->where('statut', 'actif');
 
         // Appliquer les filtres de recherche si présents
@@ -343,11 +343,11 @@ class ReservationController extends Controller
             ->groupBy('programme_id')
             ->pluck('count', 'programme_id');
 
-        // Grouper par route unique (compagnie + itinéraire)
+        // Grouper par trajet unique (compagnie + direction)
         $groupedRoutes = $allProgrammes->groupBy(function($p) {
-    return $p->compagnie_id . '|' . $p->itineraire_id;
-})->map(function($group) use ($reservationCounts, $formattedDate) {
-    $first = $group->first();
+            return $p->compagnie_id . '|' . trim($p->point_depart) . '|' . trim($p->point_arrive);
+        })->map(function($group) use ($reservationCounts, $formattedDate) {
+            $first = $group->first();
             
             // Tous les horaires aller
             $now = now();
@@ -362,20 +362,18 @@ class ReservationController extends Controller
                     return true;
                 })
                 ->map(function($p) use ($reservationCounts, $formattedDate) {
-                    $vehicule = $p->getVehiculeForDate($formattedDate);
                     return [
                         'id' => $p->id,
                         'heure_depart' => $p->heure_depart,
                         'heure_arrive' => $p->heure_arrive,
                         'reserved_count' => $reservationCounts[$p->id] ?? 0,
-                        'total_seats' => $vehicule ? $vehicule->nombre_place : 70,
-                        'vehicule_id' => $vehicule ? $vehicule->id : null,
+                        'total_seats' => $p->getTotalSeats($formattedDate),
+                        'vehicule_id' => ($v = $p->getVehiculeForDate($formattedDate)) ? $v->id : null,
                     ];
                 })->values();
             
-            // Retours
+            // Retours : On cherche tous les programmes qui font le trajet inverse pour cette compagnie
             $retourProgrammes = Programme::where('compagnie_id', $first->compagnie_id)
-                ->where('itineraire_id', $first->itineraire_id)
                 ->where('point_depart', $first->point_arrive)
                 ->where('point_arrive', $first->point_depart)
                 ->where('statut', 'actif')
@@ -2274,8 +2272,7 @@ public function apiRouteDates(Request $request)
             }
             return true;
         })->map(function ($programme) use ($requestedDate) {
-            $vehicule = $programme->getVehiculeForDate($requestedDate);
-            $capacite = $vehicule ? intval($vehicule->nombre_place) : 70;
+            $capacite = $programme->getTotalSeats($requestedDate);
             
             $reservedCount = Reservation::where('programme_id', $programme->id)
                 ->where('date_voyage', $requestedDate)
@@ -2287,8 +2284,8 @@ public function apiRouteDates(Request $request)
                 'heure_depart' => $programme->heure_depart,
                 'heure_arrive' => $programme->heure_arrive,
                 'montant_billet' => (int) str_replace(' ', '', $programme->montant_billet), // Nettoyage prix
-                'vehicule' => $programme->vehicule ? $programme->vehicule->immatriculation : 'N/A',
-                'vehicule_id' => $programme->vehicule_id,
+                'vehicule' => ($v = $programme->getVehiculeForDate($requestedDate)) ? $v->immatriculation : 'N/A',
+                'vehicule_id' => $v ? $v->id : null,
                 'places_totales' => $capacite,
                 'places_disponibles' => max(0, $capacite - $reservedCount),
                 'date_fin' => $programme->date_fin

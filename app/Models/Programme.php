@@ -91,7 +91,14 @@ class Programme extends Model
     public function getVehiculeForDate($date)
     {
         $voyage = $this->voyages()->whereDate('date_voyage', $date)->first();
-        return $voyage ? $voyage->vehicule : null;
+        if ($voyage && $voyage->vehicule) {
+            return $voyage->vehicule;
+        }
+
+        // Repli sur le premier véhicule actif de la compagnie
+        return Vehicule::where('compagnie_id', $this->compagnie_id)
+            ->where('is_active', true)
+            ->first();
     }
 
     // ========================================
@@ -118,12 +125,20 @@ class Programme extends Model
     }
 
     /**
+     * Obtenir le nombre total de places pour ce programme à une date donnée
+     */
+    public function getTotalSeats($date = null)
+    {
+        $vehicule = $this->getVehiculeForDate($date ?? date('Y-m-d'));
+        return $vehicule ? (int)$vehicule->nombre_place : 70; // 70 reste le fallback ultime si aucun véhicule n'existe
+    }
+
+    /**
      * Nombre de places disponibles pour une date donnée
      */
     public function getPlacesDisponiblesForDate($date)
     {
-        $vehicule = $this->getVehiculeForDate($date);
-        $totalPlaces = $vehicule ? $vehicule->nombre_place : 70; // Fallback to 70
+        $totalPlaces = $this->getTotalSeats($date);
         return max(0, $totalPlaces - $this->getPlacesReserveesForDate($date));
     }
 
@@ -133,6 +148,14 @@ class Programme extends Model
     public function getPlacesDisponiblesAttribute()
     {
         return $this->getPlacesDisponiblesForDate(date('Y-m-d'));
+    }
+
+    /**
+     * Nombre de places totales - Aujourd'hui (compatibilité)
+     */
+    public function getNombrePlaceAttribute()
+    {
+        return $this->getTotalSeats(date('Y-m-d'));
     }
 
     /**
@@ -212,6 +235,14 @@ class Programme extends Model
     public function getTrajetCompletAttribute()
     {
         return $this->point_depart . ' → ' . $this->point_arrive;
+    }
+
+    /**
+     * Prix (alias de montant_billet pour compatibilité)
+     */
+    public function getPrixAttribute()
+    {
+        return $this->montant_billet;
     }
 
     /**

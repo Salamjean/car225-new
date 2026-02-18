@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\AgentRequest;
 use App\Models\Agent;
 use App\Models\ResetCodePasswordAgent;
+use App\Models\Gare;
 use App\Notifications\SendEmailToAgentAfterRegistrationNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -66,6 +67,7 @@ class AgentController extends Controller
     {
         $compagnie = Auth::guard('compagnie')->user();
         $agents = Agent::where('compagnie_id', $compagnie->id)
+            ->with('gare')
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
@@ -73,7 +75,9 @@ class AgentController extends Controller
     }
     public function create()
     {
-        return view('compagnie.agent.create');
+        $compagnie = Auth::guard('compagnie')->user();
+        $gares = Gare::where('compagnie_id', $compagnie->id)->get();
+        return view('compagnie.agent.create', compact('gares'));
     }
 
     public function store(AgentRequest $request)
@@ -101,6 +105,7 @@ class AgentController extends Controller
 
             $agent->commune = $request->commune;
             $agent->compagnie_id = $compagnie->id;
+            $agent->gare_id = $request->gare_id;
 
             $agent->save();
 
@@ -133,7 +138,9 @@ class AgentController extends Controller
 
     public function edit(Agent $agent)
     {
-        return view('compagnie.agent.edit', compact('agent'));
+        $compagnie = Auth::guard('compagnie')->user();
+        $gares = Gare::where('compagnie_id', $compagnie->id)->get();
+        return view('compagnie.agent.edit', compact('agent', 'gares'));
     }
 
     public function update(Request $request, Agent $agent)
@@ -146,6 +153,7 @@ class AgentController extends Controller
                 'contact' => 'required|string|max:20',
                 'cas_urgence' => 'required|string|max:20',
                 'commune' => 'required|string|max:255',
+                'gare_id' => 'required|exists:gares,id',
                 'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
             ]);
 

@@ -195,6 +195,7 @@
                                     <div class="form-group-modern">
                                         <label for="commune" class="form-label-modern">
                                             <span class="label-text">Commune</span>
+                                            <span class="label-required">*</span>
                                         </label>
                                         <div class="input-group-modern">
                                             <span class="input-icon">
@@ -205,10 +206,43 @@
                                                    id="commune" 
                                                    name="commune" 
                                                    value="{{ old('commune') }}" 
-                                                   placeholder="Entrez la commune">
+                                                   placeholder="Entrez la commune"
+                                                   required>
                                             <div class="input-hint" data-hint="Localité de résidence"></div>
                                         </div>
                                         @error('commune')
+                                            <div class="invalid-feedback-modern">
+                                                <i class="fas fa-exclamation-circle me-1"></i>{{ $message }}
+                                            </div>
+                                        @enderror
+                                    </div>
+                                </div>
+
+                                <!-- Colonne: Gare -->
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="form-group-modern">
+                                        <label for="gare_id" class="form-label-modern">
+                                            <span class="label-text">Gare d'attache</span>
+                                            <span class="label-required">*</span>
+                                        </label>
+                                        <div class="input-group-modern">
+                                            <span class="input-icon">
+                                                <i class="fas fa-building"></i>
+                                            </span>
+                                            <select class="form-control-modern @error('gare_id') is-invalid @enderror" 
+                                                    id="gare_id" 
+                                                    name="gare_id" 
+                                                    required>
+                                                <option value="" disabled {{ old('gare_id') ? '' : 'selected' }}>Choisir une gare</option>
+                                                @foreach($gares as $gare)
+                                                    <option value="{{ $gare->id }}" {{ old('gare_id') == $gare->id ? 'selected' : '' }}>
+                                                        {{ $gare->nom_gare }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            <div class="input-hint" data-hint="Gare à laquelle l'agent est rattaché"></div>
+                                        </div>
+                                        @error('gare_id')
                                             <div class="invalid-feedback-modern">
                                                 <i class="fas fa-exclamation-circle me-1"></i>{{ $message }}
                                             </div>

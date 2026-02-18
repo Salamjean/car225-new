@@ -26,18 +26,14 @@ class GareDashboardController extends Controller
 
         // Today voyages concerning this gare
         $today = Carbon::today()->toDateString();
-        $voyagesAujourdhui = Voyage::where(function($q) use ($gare) {
-                $q->where('gare_depart_id', $gare->id)
-                  ->orWhere('gare_arrivee_id', $gare->id);
-            })
+        $voyagesAujourdhui = Voyage::where('gare_depart_id', $gare->id)
             ->whereDate('date_voyage', $today)
             ->with(['programme.gareDepart', 'programme.gareArrivee', 'chauffeur', 'vehicule'])
             ->get();
 
         $programmesActifs = Programme::where('compagnie_id', $compagnieId)
             ->where(function($query) use ($gare) {
-                $query->where('gare_depart_id', $gare->id)
-                      ->orWhere('gare_arrivee_id', $gare->id);
+                $query->where('gare_depart_id', $gare->id);
             })
             ->where('statut', 'actif')
             ->whereDate('date_depart', '<=', $today)

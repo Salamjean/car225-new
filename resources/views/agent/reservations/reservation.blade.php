@@ -366,27 +366,20 @@
 
             // Continuer vers le scan après sélection
             $('#continueToScanBtn').click(function() {
-                if (!selectedVehiculeId || (isManualAssignment && !selectedChauffeurId)) {
-                    alert('Veuillez sélectionner un bus et un chauffeur.');
+                if (!selectedVehiculeId) {
+                    alert('Veuillez sélectionner un voyage.');
                     return;
                 }
 
                 var btn = $(this);
                 
-                // Si c'est une assignation manuelle (pas de mission de base), on l'enregistre en base
-                if (isManualAssignment) {
-                // Logique d'assignation manuelle supprimée
-                proceedToScan();
-
-                function proceedToScan() {
-                    $('#vehicleSelectModal').modal('hide');
-                    btn.prop('disabled', false).html('Valider et Scanner <i class="material-icons ml-2" style="font-size: 16px; vertical-align: middle;">arrow_forward</i>');
-                    
-                    setTimeout(function() {
-                        $('#selectedVehicleText').text(selectedVehiculeImmat);
-                        $('#qrScannerModal').modal('show');
-                    }, 300);
-                }
+                $('#vehicleSelectModal').modal('hide');
+                btn.prop('disabled', false).html('Valider et Scanner <i class="material-icons ml-2" style="font-size: 16px; vertical-align: middle;">arrow_forward</i>');
+                
+                setTimeout(function() {
+                    $('#selectedVehicleText').text(selectedVehiculeImmat);
+                    $('#qrScannerModal').modal('show');
+                }, 300);
             });
 
             // --- Logique Caméra ---

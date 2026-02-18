@@ -25,8 +25,7 @@ class GareVoyageController extends Controller
         // Get programmes from gare's company that concern this specific gare
         $programmesQuery = Programme::where('compagnie_id', $compagnieId)
             ->where(function($query) use ($gare) {
-                $query->where('gare_depart_id', $gare->id)
-                      ->orWhere('gare_arrivee_id', $gare->id);
+                $query->where('gare_depart_id', $gare->id);
             })
             ->where('statut', 'actif')
             ->whereDate('date_depart', '<=', $date)
@@ -71,10 +70,7 @@ class GareVoyageController extends Controller
         $voyages = Voyage::whereHas('programme', function($query) use ($compagnieId) {
                 $query->where('compagnie_id', $compagnieId);
             })
-            ->where(function($query) use ($gare) {
-                $query->where('gare_depart_id', $gare->id)
-                      ->orWhere('gare_arrivee_id', $gare->id);
-            })
+            ->where('gare_depart_id', $gare->id)
             ->where('statut', 'terminé')
             ->with(['programme.gareDepart', 'programme.gareArrivee', 'chauffeur', 'vehicule'])
             ->orderBy('date_voyage', 'desc')

@@ -20,6 +20,7 @@ class Agent extends Authenticatable
         'commune', 
         'cas_urgence', 
         'compagnie_id',
+        'gare_id',
         'archived_at',
         'fcm_token',
         'nom_device',
@@ -28,6 +29,11 @@ class Agent extends Authenticatable
     public function compagnie()
     {
         return $this->belongsTo(Compagnie::class, 'compagnie_id'); 
+    }
+
+    public function gare()
+    {
+        return $this->belongsTo(Gare::class, 'gare_id');
     }
 
     public function messages()

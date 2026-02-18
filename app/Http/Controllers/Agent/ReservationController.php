@@ -22,6 +22,7 @@ class ReservationController extends Controller
 
         // Retour à la logique de Programmes pour plus d'automatisme
         $programmesDuJour = Programme::where('compagnie_id', $agent->compagnie_id)
+            ->where('gare_depart_id', $agent->gare_id)
             ->where('statut', 'actif')
             ->where(function ($query) use ($today) {
                 $query->whereDate('date_depart', $today)
@@ -65,6 +66,7 @@ class ReservationController extends Controller
 
         // Retour à la logique de Programmes
         $programmesDuJour = Programme::where('compagnie_id', $agent->compagnie_id)
+            ->where('gare_depart_id', $agent->gare_id)
             ->where('statut', 'actif')
             ->where(function ($query) use ($today) {
                 $query->whereDate('date_depart', $today)
@@ -178,6 +180,7 @@ class ReservationController extends Controller
         $currentTime = Carbon::now()->format('H:i');
 
         $programmes = Programme::where('compagnie_id', $agent->compagnie_id)
+            ->where('gare_depart_id', $agent->gare_id)
             ->where('statut', 'actif')
             ->where(function ($query) use ($today) {
                 $query->whereDate('date_depart', $today)

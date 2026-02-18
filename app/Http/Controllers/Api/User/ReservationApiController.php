@@ -1148,9 +1148,9 @@ class ReservationApiController extends Controller
                 })->values();
             }
 
-            // Grouper par route
+            // Grouper par route (compagnie + direction)
             $groupedRoutes = $programmes->groupBy(function($p) {
-                return $p->compagnie_id . '|' . $p->itineraire_id;
+                return $p->compagnie_id . '|' . trim($p->point_depart) . '|' . trim($p->point_arrive);
             })->map(function($group) {
                 $first = $group->first();
                 
@@ -1163,7 +1163,6 @@ class ReservationApiController extends Controller
                 })->values();
                 
                 $retourProgrammes = Programme::where('compagnie_id', $first->compagnie_id)
-                    ->where('itineraire_id', $first->itineraire_id)
                     ->where('point_depart', $first->point_arrive)
                     ->where('point_arrive', $first->point_depart)
                     ->where('statut', 'actif')

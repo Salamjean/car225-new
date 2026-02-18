@@ -108,4 +108,9 @@ class Compagnie extends Authenticatable
     {
         return $this->hasMany(CompanyMessage::class);
     }
+
+    public function vehicules()
+    {
+        return $this->hasMany(Vehicule::class);
+    }
 }

@@ -671,8 +671,13 @@ var currentRetourProgramId = null;
         html: `
             <div class="text-left space-y-4">
                 <div class="bg-orange-50 p-4 rounded-lg border border-orange-200">
-                    <p class="font-bold text-gray-800">${routeData.point_depart} <i class="fas fa-long-arrow-alt-right mx-1"></i> ${routeData.point_arrive}</p>
-                    <p class="text-sm font-bold text-gray-800 mt-1">${routeData.compagnie}</p>
+                    <p class="font-bold text-gray-900">${routeData.point_depart} <i class="fas fa-long-arrow-alt-right mx-1"></i> ${routeData.point_arrive}</p>
+                    <div class="flex items-center gap-2 text-sm text-gray-600 mt-1">
+                        <span class="flex items-center gap-1"><i class="fas fa-map-marker-alt text-xs text-[#e94f1b]"></i> ${routeData.gare_depart?.nom_gare || 'Ville'}</span>
+                        <i class="fas fa-arrow-right text-[10px] text-gray-400"></i>
+                        <span class="flex items-center gap-1"><i class="fas fa-flag text-xs text-green-500"></i> ${routeData.gare_arrivee?.nom_gare || 'Ville'}</span>
+                    </div>
+                    <p class="text-sm font-bold text-gray-800 mt-2">${routeData.compagnie}</p>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div class="border-2 border-gray-200 rounded-lg p-4 text-center hover:border-[#e94f1b] hover:bg-orange-50 transition-all cursor-pointer" id="btnRouteSimple">
@@ -749,6 +754,11 @@ var currentRetourProgramId = null;
             <div class="text-left space-y-4">
                 <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
                      <p class="font-bold text-gray-800">${routeData.point_depart} <i class="fas fa-long-arrow-alt-right mx-1"></i> ${routeData.point_arrive}</p>
+                     <div class="flex items-center gap-2 text-[10px] text-gray-500 mt-1 mb-1">
+                        <span><i class="fas fa-map-marker-alt"></i> ${routeData.gare_depart?.nom_gare || 'Ville'}</span>
+                        <span>→</span>
+                        <span><i class="fas fa-flag"></i> ${routeData.gare_arrivee?.nom_gare || 'Ville'}</span>
+                     </div>
                      <p class="text-sm text-gray-600">${dateFormatted}</p>
                      <p class="text-xs text-${isAllerRetour ? 'orange' : 'green'}-600 font-semibold mt-1">
                         <i class="fas fa-${isAllerRetour ? 'exchange-alt' : 'arrow-right'} mr-1"></i>
@@ -1183,6 +1193,8 @@ var currentRetourProgramId = null;
                 compagnie_id: program.compagnie_id,
                 point_depart: program.point_depart,
                 point_arrive: program.point_arrive,
+                gare_depart: program.gare_depart,
+                gare_arrivee: program.gare_arrivee,
                 montant_billet: program.montant_billet,
                 durer_parcours: program.durer_parcours,
                 has_retour: (dataRetour.success && dataRetour.return_trips && dataRetour.return_trips.length > 0),
@@ -1263,6 +1275,11 @@ async function showDepartureSchedulesModal(program, departureDate, isAllerRetour
                 <div class="text-left space-y-4">
                     <div class="bg-blue-50 p-3 rounded-lg">
                         <p class="font-bold text-gray-800">${program.point_depart} â†’ ${program.point_arrive}</p>
+                        <div class="flex items-center gap-2 text-[10px] text-gray-500 mt-1 mb-1">
+                            <span><i class="fas fa-map-marker-alt"></i> ${program.gare_depart?.nom_gare || 'Ville'}</span>
+                            <span>→</span>
+                            <span><i class="fas fa-flag"></i> ${program.gare_arrivee?.nom_gare || 'Ville'}</span>
+                        </div>
                         <p class="text-sm text-gray-600"><i class="fas fa-calendar mr-2"></i>${dateFormatted}</p>
                         <p class="text-xs text-${isAllerRetour ? 'orange' : 'green'}-600 font-semibold mt-1">
                             <i class="fas fa-${isAllerRetour ? 'exchange-alt' : 'arrow-right'} mr-1"></i>
@@ -1378,6 +1395,11 @@ async function showDepartureSchedulesModal(program, departureDate, isAllerRetour
                     <div class="text-left space-y-4">
                         <div class="bg-blue-50 p-4 rounded-lg">
                             <p class="font-bold text-gray-800">${program.point_depart} â†’ ${program.point_arrive}</p>
+                            <div class="flex items-center gap-2 text-[10px] text-gray-500 mt-1 mb-1">
+                                <span><i class="fas fa-map-marker-alt"></i> ${program.gare_depart?.nom_gare || 'Ville'}</span>
+                                <span>→</span>
+                                <span><i class="fas fa-flag"></i> ${program.gare_arrivee?.nom_gare || 'Ville'}</span>
+                            </div>
                             <p class="text-sm text-gray-600"><i class="fas fa-calendar mr-2"></i>${dateFormatted}</p>
                             <p class="text-sm text-gray-500 mt-1"><i class="fas fa-hourglass-half mr-2"></i>DurÃ©e: ${program.durer_parcours || '~1h30'}</p>
                         </div>
@@ -1445,6 +1467,11 @@ async function showDepartureSchedulesModal(program, departureDate, isAllerRetour
                     <div class="text-left space-y-4">
                         <div class="bg-blue-50 p-4 rounded-lg">
                             <p class="font-bold text-gray-800">${program.point_depart} â†’ ${program.point_arrive}</p>
+                            <div class="flex items-center gap-2 text-xs text-gray-600 mt-1 mb-2">
+                                <span class="flex items-center gap-1"><i class="fas fa-map-marker-alt text-[10px] text-[#e94f1b]"></i> ${program.gare_depart?.nom_gare || 'Ville'}</span>
+                                <i class="fas fa-arrow-right text-[8px] text-gray-400"></i>
+                                <span class="flex items-center gap-1"><i class="fas fa-flag text-[10px] text-green-500"></i> ${program.gare_arrivee?.nom_gare || 'Ville'}</span>
+                            </div>
                             <p class="text-sm text-gray-600"><i class="fas fa-calendar mr-2"></i>${dateFormatted}</p>
                             <p class="text-sm text-green-600 font-semibold"><i class="fas fa-clock mr-2"></i>DÃ©part Ã  ${window.selectedDepartureTime}</p>
                         </div>
@@ -1750,6 +1777,11 @@ async function showDepartureSchedulesModal(program, departureDate, isAllerRetour
                     <div class="bg-green-50 p-3 rounded-lg mb-4 text-sm">
                         <p class="font-bold text-green-800"><i class="fas fa-check-circle mr-2"></i>Aller confirmÃ©</p>
                         <p class="text-green-700">${outboundProgram.point_depart} â†’ ${outboundProgram.point_arrive}</p>
+                        <div class="flex items-center gap-2 text-[10px] text-green-600 mt-1 mb-1">
+                            <span><i class="fas fa-map-marker-alt"></i> ${outboundProgram.gare_depart?.nom_gare || 'Ville'}</span>
+                            <span>→</span>
+                            <span><i class="fas fa-flag"></i> ${outboundProgram.gare_arrivee?.nom_gare || 'Ville'}</span>
+                        </div>
                         <p class="text-green-600 text-xs">${dateFormatted} â€¢ DÃ©part: ${window.selectedDepartureTime || outboundProgram.heure_depart}</p>
                     </div>
                     <div class="bg-blue-50 p-3 rounded-lg mb-4">
@@ -1955,8 +1987,12 @@ window.outboundDate = dateVoyage;
             // UI Info
             document.getElementById('allerRetourTripInfo').innerHTML = `
                 <div class="text-center">
-                    <div class="text-lg font-bold text-gray-800 mb-2">
+                    <div class="text-lg font-bold text-gray-800 mb-1">
                         ${program.point_depart} <i class="fas fa-arrow-right text-gray-400 mx-2"></i> ${program.point_arrive}
+                    </div>
+                    <div class="flex items-center justify-center gap-4 text-xs text-gray-500 mb-3">
+                        <span class="flex items-center gap-1"><i class="fas fa-map-marker-alt text-[#e94f1b]"></i> ${program.gare_depart?.nom_gare || 'Ville'}</span>
+                        <span class="flex items-center gap-1"><i class="fas fa-flag text-green-500"></i> ${program.gare_arrivee?.nom_gare || 'Ville'}</span>
                     </div>
                     <div class="text-sm text-gray-500 mb-3">${program.compagnie?.name || 'Compagnie'}</div>
                 </div>

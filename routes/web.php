@@ -141,6 +141,8 @@ Route::middleware('compagnie')->prefix('company')->group(function () {
         Route::get('/Plist', [AgentController::class, 'index'])->name('compagnie.agents.index');
         Route::get('/AgentAdd', [AgentController::class, 'create'])->name('compagnie.agents.create');
         Route::post('/store', [AgentController::class, 'store'])->name('compagnie.agents.store');
+        Route::get('/{agent}/edit', [AgentController::class, 'edit'])->name('compagnie.agents.edit');
+        Route::put('/{agent}', [AgentController::class, 'update'])->name('compagnie.agents.update');
         Route::delete('/{agent}', [AgentController::class, 'destroy'])->name('compagnie.agents.destroy');
         Route::post('/send-message', [AgentController::class, 'sendMessage'])->name('compagnie.agents.send-message');
     });

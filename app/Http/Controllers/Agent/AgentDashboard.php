@@ -41,7 +41,7 @@ class AgentDashboard extends Controller
 
         $programmesDuJour = Programme::where('compagnie_id', $compagnieId)
             ->whereDate('date_depart', $today)
-            ->with('vehicule')
+            ->with(['voyages.vehicule', 'compagnie.vehicules'])
             ->orderBy('heure_depart')
             ->get();
 
