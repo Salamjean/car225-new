@@ -1,19 +1,10 @@
-@extends('caisse.layouts.template')
+@extends('compagnie.layouts.template')
 
 @section('styles')
 <style>
-    .message-container {
-        max-width: 900px;
-        margin: 0 auto;
-    }
-    
-    .back-btn {
-        transition: all 0.2s ease;
-    }
-    .back-btn:hover {
-        transform: translateX(-3px);
-        color: #e94f1b;
-    }
+    .message-container { max-width: 900px; margin: 0 auto; }
+    .back-btn { transition: all 0.2s ease; }
+    .back-btn:hover { transform: translateX(-3px); color: #e94f1b; }
     
     .detail-card {
         background: white;
@@ -24,74 +15,57 @@
     }
     
     .meta-section {
-        background: radial-gradient(circle at top right, #fff7ed 0%, #fff 40%);
+        background: radial-gradient(circle at top right, #f0fdfa 0%, #fff 40%);
         border-bottom: 1px solid #f1f5f9;
     }
     
     .sender-avatar {
-        width: 64px;
-        height: 64px;
+        width: 64px; height: 64px;
         background: white;
-        border: 1px solid #fed7aa;
-        color: #e94f1b;
+        border: 1px solid #99f6e4;
+        color: #0d9488;
         border-radius: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        display: flex; align-items: center; justify-content: center;
         font-size: 1.75rem;
-        box-shadow: 0 10px 15px -3px rgba(234, 88, 12, 0.1);
+        box-shadow: 0 10px 15px -3px rgba(13, 148, 136, 0.1);
     }
     
     .message-body {
-        font-size: 1.125rem;
-        line-height: 1.8;
-        color: #334155;
-        white-space: pre-wrap;
+        font-size: 1.125rem; line-height: 1.8;
+        color: #334155; white-space: pre-wrap;
     }
     
     .status-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem 1rem;
-        border-radius: 9999px;
-        font-size: 0.75rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.5rem 1rem; border-radius: 9999px;
+        font-size: 0.75rem; font-weight: 800;
+        text-transform: uppercase; letter-spacing: 0.05em;
     }
-    
-    .status-badge.read {
-        background: #f0fdf4;
-        color: #166534;
-        border: 1px solid #dcfce7;
-    }
+    .status-badge.read { background: #f0fdf4; color: #166534; border: 1px solid #dcfce7; }
 </style>
 @endsection
 
 @section('content')
 <div class="container-fluid px-4 py-8">
     <div class="message-container">
-        <!-- Navigation -->
         <div class="mb-8">
-            <a href="{{ route('caisse.messages.index') }}" class="back-btn inline-flex items-center text-slate-500 font-bold hover:no-underline gap-2">
+            <a href="{{ route('compagnie.messages.index') }}" class="back-btn inline-flex items-center text-slate-500 font-bold hover:no-underline gap-2">
                 <i class="fas fa-arrow-left"></i>
                 <span>Retour à la liste</span>
             </a>
         </div>
 
         <div class="detail-card">
-            <!-- Header / Meta -->
             <div class="meta-section p-8 md:p-10">
                 <div class="flex flex-col md:flex-row md:items-start justify-between gap-6">
                     <div class="flex items-start gap-6">
                         <div class="sender-avatar flex-shrink-0">
-                            <i class="fas {{ $message->sender_icon ?? 'fa-building' }}"></i>
+                            <i class="fas {{ $message->sender_icon ?? 'fa-warehouse' }}"></i>
                         </div>
                         <div>
                             <div class="flex items-center gap-3 mb-2">
-                                <span class="px-2.5 py-0.5 rounded-md bg-orange-100 text-[#e94f1b] text-[10px] font-black uppercase tracking-widest">
-                                    {{ $message->sender_type_label ?? 'Direction' }}
+                                <span class="px-2.5 py-0.5 rounded-md bg-teal-100 text-teal-700 text-[10px] font-black uppercase tracking-widest">
+                                    {{ $message->sender_type_label ?? 'Gare' }}
                                 </span>
                                 <span class="text-slate-400 text-xs font-bold">
                                     {{ $message->created_at->isoFormat('LLLL') }}
@@ -101,7 +75,7 @@
                                 {{ $message->subject }}
                             </h1>
                             <p class="text-slate-500 font-medium text-sm">
-                                De: <span class="text-slate-900">{{ $message->sender_name ?? 'La Direction' }}</span>
+                                De: <span class="text-slate-900">{{ $message->sender_name ?? 'La Gare' }}</span>
                             </p>
                         </div>
                     </div>
@@ -121,17 +95,13 @@
                 </div>
             </div>
 
-            <!-- Content -->
             <div class="p-8 md:p-12 bg-white relative">
-                <!-- Decorative quote -->
                 <i class="fas fa-quote-left absolute top-8 left-8 text-slate-100 text-6xl -z-0"></i>
-                
                 <div class="message-body relative z-10 pl-6 border-l-4 border-slate-100 ml-2">
                     {{ $message->message }}
                 </div>
             </div>
 
-            <!-- Footer -->
             <div class="bg-slate-50 px-8 py-4 border-t border-slate-100 flex justify-between items-center">
                 <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ID: #{{ str_pad($message->id, 5, '0', STR_PAD_LEFT) }}</span>
                 <button class="text-slate-400 hover:text-[#e94f1b] transition-colors" title="Imprimer">

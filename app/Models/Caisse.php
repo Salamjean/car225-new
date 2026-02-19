@@ -107,4 +107,9 @@ class Caisse extends Authenticatable
     {
         return $this->morphMany(CompanyMessage::class, 'recipient');
     }
+
+    public function receivedGareMessages()
+    {
+        return $this->morphMany(GareMessage::class, 'recipient');
+    }
 }

@@ -2475,6 +2475,7 @@ public function apiRouteDates(Request $request)
         'residual_value' => $residualValue,
         'penalty_info' => $refundData['time_remaining'],
         'available_routes' => $routes,
+        'total_old_price' => $totalOldPrice,
         'user_solde' => (float) Auth::user()->solde
     ]);
 }
@@ -2642,12 +2643,13 @@ public function apiRouteDates(Request $request)
             'new_date_aller' => 'required|date',
         ]);
 
-        // Validation Date : Modification autorisée uniquement pour demain et après
-        $tomorrow = now()->addDay()->format('Y-m-d');
-        if ($request->new_date_aller < $tomorrow) {
+        $service = new ReservationService();
+        $refundData = $service->calculateRefundPercentage($reservation);
+        
+        if (!$refundData['can_cancel']) {
             return response()->json([
                 'success' => false,
-                'message' => 'La modification est possible uniquement pour les jours futurs (à partir de demain).'
+                'message' => 'La modification est impossible moins de 15 minutes avant le départ.'
             ], 422);
         }
 
@@ -2694,8 +2696,10 @@ public function apiRouteDates(Request $request)
             'success' => true,
             'old_value' => $totalOldPrice,
             'residual_value' => $residualValue,
+            'penalty_amount' => $totalPenalty,
             'new_total' => $newTotal,
             'delta' => abs($delta),
+            'real_delta' => $delta,
             'action' => $action,
             'can_afford' => ($action === 'pay' ? ((float)$user->solde >= $delta) : true)
         ]);
@@ -2710,20 +2714,41 @@ public function apiRouteDates(Request $request)
             'heure_depart' => 'required'
         ]);
 
-        // Validation Date : Modification autorisée uniquement pour demain et après
-        $tomorrow = now()->addDay()->format('Y-m-d');
-        if ($request->date_voyage < $tomorrow) {
+        $service = new ReservationService();
+        $refundData = $service->calculateRefundPercentage($reservation);
+        
+        if (!$refundData['can_cancel']) {
             return response()->json([
                 'success' => false,
-                'message' => 'La modification est possible uniquement pour les jours futurs (à partir de demain).'
+                'message' => 'La modification est impossible moins de 15 minutes avant le départ.'
             ], 422);
         }
 
-        if ($request->filled('return_date_voyage') && $request->return_date_voyage < $tomorrow) {
+        // Vérifier si des modifications ont été réellement apportées
+        $isAllerIdentical = ($request->programme_id == $reservation->programme_id && 
+                            $request->date_voyage == $reservation->date_voyage && 
+                            $request->seat_number == $reservation->seat_number);
+        
+        if ($isAllerIdentical && !$reservation->is_aller_retour) {
             return response()->json([
-                'success' => false,
-                'message' => 'La date de retour doit être à partir de demain.'
-            ], 422);
+                'success' => true,
+                'message' => 'Aucune modification apportée.',
+                'no_change' => true
+            ]);
+        }
+
+        if ($isAllerIdentical && $reservation->is_aller_retour) {
+             $paired = $service->findPairedReservation($reservation);
+             if ($paired && 
+                 $request->return_programme_id == $paired->programme_id && 
+                 $request->return_date_voyage == $paired->date_voyage && 
+                 $request->return_seat_number == $paired->seat_number) {
+                 return response()->json([
+                     'success' => true,
+                     'message' => 'Aucune modification apportée.',
+                     'no_change' => true
+                 ]);
+             }
         }
 
         $service = new ReservationService();

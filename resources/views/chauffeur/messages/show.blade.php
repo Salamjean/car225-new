@@ -46,11 +46,11 @@
                 <div class="px-8 py-6 bg-slate-50/50">
                     <div class="flex items-center">
                         <div class="w-12 h-12 bg-orange-500 text-white rounded-xl flex items-center justify-center mr-4 shadow-lg shadow-orange-200">
-                            <i class="fas fa-building text-xl"></i>
+                            <i class="fas {{ $message->sender_icon ?? 'fa-building' }} text-xl"></i>
                         </div>
                         <div>
                             <span class="block text-[10px] font-black text-orange-500 uppercase tracking-widest">Expéditeur :</span>
-                            <h4 class="text-lg font-bold text-slate-900">{{ $message->compagnie->name ?? 'La Direction' }}</h4>
+                            <h4 class="text-lg font-bold text-slate-900">{{ $message->sender_name ?? 'La Direction' }}</h4>
                         </div>
                     </div>
                 </div>

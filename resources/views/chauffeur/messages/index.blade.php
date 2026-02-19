@@ -36,14 +36,14 @@
 
     <div class="grid gap-4">
         @forelse($messages as $message)
-            <a href="{{ route('chauffeur.messages.show', $message->id) }}" class="message-card bg-white p-5 shadow-sm block hover:no-underline">
+            <a href="{{ route('chauffeur.messages.show', ['id' => $message->id, 'source' => $message->source]) }}" class="message-card bg-white p-5 shadow-sm block hover:no-underline">
                 <div class="flex items-start justify-between">
                     <div class="flex items-center">
                         <div class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 mr-4">
-                            <i class="fas fa-building text-xl"></i>
+                            <i class="fas {{ $message->sender_icon ?? 'fa-building' }} text-xl"></i>
                         </div>
                         <div>
-                            <h4 class="text-lg font-bold text-slate-900">{{ $message->compagnie->name ?? 'Direction' }}</h4>
+                            <h4 class="text-lg font-bold text-slate-900">{{ $message->sender_name ?? 'Direction' }}</h4>
                             <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">
                                 {{ $message->created_at->translatedFormat('d M Y, H:i') }}
                             </span>

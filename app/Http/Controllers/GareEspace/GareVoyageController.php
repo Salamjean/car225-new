@@ -33,8 +33,15 @@ class GareVoyageController extends Controller
             ->whereDoesntHave('voyages', function ($query) use ($date) {
                 $query->whereDate('date_voyage', $date)
                       ->where('statut', 'terminé');
-            })
-            ->with(['gareDepart', 'gareArrivee', 'voyages' => function ($query) use ($date) {
+            });
+
+        // NOUVEAU: Si la date sélectionnée est aujourd'hui, masquer les programmes passés
+        if (Carbon::parse($date)->isToday()) {
+            $currentTime = Carbon::now()->format('H:i:s');
+            $programmesQuery->whereTime('heure_depart', '>', $currentTime);
+        }
+
+        $programmesQuery->with(['gareDepart', 'gareArrivee', 'voyages' => function ($query) use ($date) {
                 $query->whereDate('date_voyage', $date);
             }])
             ->orderBy('heure_depart');
@@ -42,15 +49,17 @@ class GareVoyageController extends Controller
         $totalProgrammesCount = $programmesQuery->count();
         $programmes = $programmesQuery->paginate(5);
 
-        // Get available drivers
+        // Get available drivers (rattachés à la gare connectée)
         $chauffeurs = Personnel::where('compagnie_id', $compagnieId)
+            ->where('gare_id', $gare->id) // Restreindre à la gare connectée
             ->where('type_personnel', 'Chauffeur')
             ->where('statut', 'disponible')
             ->orderBy('name')
             ->get();
 
-        // Get available vehicles
+        // Get available vehicles (rattachés à la gare connectée)
         $vehicules = Vehicule::where('compagnie_id', $compagnieId)
+            ->where('gare_id', $gare->id) // Restreindre à la gare connectée
             ->where('is_active', true)
             ->where('statut', 'disponible')
             ->orderBy('immatriculation')

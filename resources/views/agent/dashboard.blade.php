@@ -12,6 +12,9 @@
                 </h1>
                 <p class="text-gray-500 mt-1">
                     Agent de <span class="font-semibold text-red-600">{{ $agent->compagnie->name ?? 'Compagnie' }}</span>
+                    @if($agent->gare)
+                        | <span class="font-semibold text-blue-600">{{ $agent->gare->nom_gare }}</span>
+                    @endif
                 </p>
             </div>
             <div class="flex items-center gap-3">
@@ -37,67 +40,67 @@
                         <i class="fas fa-qrcode text-xl"></i>
                     </div>
                     <span class="px-2 py-1 bg-white/20 rounded-lg text-xs font-bold">
-                        Aujourd'hui
+                        Moi aujourd'hui
                     </span>
                 </div>
-                <p class="text-sm font-bold text-white/80 uppercase tracking-wider">Scans effectués</p>
+                <p class="text-sm font-bold text-white/80 uppercase tracking-wider">Mes scans effectués</p>
                 <h3 class="text-3xl font-black mt-1">{{ $scansToday }}</h3>
                 <p class="mt-3 text-xs text-white/70 font-medium">
-                    Total: {{ $totalScans }} scans
+                    Total: {{ $totalScans }} scans effectués par moi
                 </p>
             </div>
 
-            <!-- Reservations En Cours Card -->
-            <div class="bg-gradient-to-br from-yellow-500 to-orange-500 rounded-2xl p-5 shadow-xl text-white transform hover:-translate-y-1 transition-all">
+            <!-- Passagers Embarqués Today Card (Station Scope) -->
+            <div class="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-5 shadow-xl text-white transform hover:-translate-y-1 transition-all">
                 <div class="flex items-center justify-between mb-3">
                     <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                        <i class="fas fa-clock text-xl"></i>
+                        <i class="fas fa-users text-xl"></i>
                     </div>
+                    <span class="px-2 py-1 bg-white/20 rounded-lg text-xs font-bold uppercase tracking-tighter">
+                        Gare aujourd'hui
+                    </span>
                 </div>
-                <p class="text-sm font-bold text-white/80 uppercase tracking-wider">En attente</p>
-                <h3 class="text-3xl font-black mt-1">{{ $reservationsEnCours }}</h3>
-                <p class="mt-3 text-xs text-white/70 font-medium">
-                    Réservations à scanner
+                <p class="text-sm font-bold text-white/80 uppercase tracking-wider">Passagers embarqués</p>
+                <h3 class="text-3xl font-black mt-1">{{ $passagersEmbarquesToday }}</h3>
+                <p class="mt-3 text-xs text-white/70 font-medium tracking-tight">
+                    Confirmés au départ de cette gare
                 </p>
             </div>
 
-            <!-- Reservations Terminées Card -->
-            <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-5 shadow-xl text-white transform hover:-translate-y-1 transition-all">
+            <!-- Total Terminées Card -->
+            <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-5 shadow-xl text-white transform hover:-translate-y-1 transition-all">
                 <div class="flex items-center justify-between mb-3">
                     <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
                         <i class="fas fa-check-circle text-xl"></i>
                     </div>
                 </div>
-                <p class="text-sm font-bold text-white/80 uppercase tracking-wider">Terminées</p>
+                <p class="text-sm font-bold text-white/80 uppercase tracking-wider">Voyages terminés</p>
                 <h3 class="text-3xl font-black mt-1">{{ $reservationsTerminees }}</h3>
                 <p class="mt-3 text-xs text-white/70 font-medium">
-                    Passagers embarqués
+                    Historique total cumulé pour la gare
                 </p>
             </div>
         </div>
 
         <!-- Row 2: Secondary Stats -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
-            <div class="bg-white rounded-xl p-4 shadow-md border border-gray-100 text-center">
-                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-                    <i class="fas fa-route text-blue-600"></i>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
+            <div class="bg-white rounded-xl p-4 shadow-md border border-gray-100 flex items-center gap-4">
+                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-route text-blue-600 text-xl"></i>
                 </div>
-                <p class="text-2xl font-black text-gray-900">{{ $programmesToday }}</p>
-                <p class="text-xs text-gray-500 font-medium">Programmes aujourd'hui</p>
+                <div class="text-left">
+                    <p class="text-2xl font-black text-gray-900 leading-none">{{ $programmesToday }}</p>
+                    <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">Programmes aujourd'hui</p>
+                </div>
             </div>
-            <div class="bg-white rounded-xl p-4 shadow-md border border-gray-100 text-center">
-                <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-                    <i class="fas fa-bus text-emerald-600"></i>
+            <div class="bg-white rounded-xl p-4 shadow-md border border-gray-100 flex items-center gap-4">
+                <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-building text-orange-600 text-xl"></i>
                 </div>
-                <p class="text-2xl font-black text-gray-900">{{ $vehiculesActifs }}</p>
-                <p class="text-xs text-gray-500 font-medium">Véhicules actifs</p>
-            </div>
-            <div class="bg-white rounded-xl p-4 shadow-md border border-gray-100 text-center">
-                <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-                    <i class="fas fa-building text-orange-600"></i>
+                <div class="text-left">
+                    <p class="text-2xl font-black text-gray-900 leading-none">{{ $agent->gare->nom_gare ?? $agent->compagnie->name }}</p>
+                    <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">Ma Gare de travail</p>
                 </div>
-                <p class="text-2xl font-black text-gray-900">{{ $agent->compagnie->name ?? '-' }}</p>
-                <p class="text-xs text-gray-500 font-medium">Votre compagnie</p>
             </div>
         </div>
 

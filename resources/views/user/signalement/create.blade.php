@@ -436,7 +436,7 @@
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
-                        occupancyDisplay.textContent = `${data.count} passagers`;
+                        occupancyDisplay.textContent = `${data.count} / ${data.total_capacity} passagers à bord`;
                         currentPassengers = data.passengers;
                     } else {
                         occupancyDisplay.textContent = 'Erreur';

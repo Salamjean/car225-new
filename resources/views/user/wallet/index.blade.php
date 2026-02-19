@@ -73,6 +73,11 @@
                             {{ number_format($user->solde, 0, ',', ' ') }} <span class="text-xl font-bold text-[#e94f1b]">FCFA</span>
                         </h2>
 
+                        <!-- Bouton Retirer -->
+                        <button onclick="openWithdrawModal()" class="w-full py-3 bg-[#e94f1b] text-white rounded-xl shadow-lg hover:bg-orange-700 transition-all font-bold flex items-center justify-center gap-2">
+                            <i class="fas fa-money-bill-wave"></i>
+                            Retirer votre argent
+                        </button>
                     </div>
                 </div>
             </div>
@@ -142,12 +147,113 @@
     </div>
 </div>
 
+<!-- MODAL DE RETRAIT -->
+<div id="withdrawModal" class="fixed inset-0 z-50 hidden">
+    <!-- Overlay -->
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeWithdrawModal()"></div>
+    
+    <!-- Contenu du modal -->
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md relative overflow-hidden transform transition-all" id="withdrawModalContent">
+            <!-- Header du modal -->
+            <div class="bg-gradient-to-r from-[#e94f1b] to-orange-600 px-8 py-6 text-white">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-money-bill-wave text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-black">Retirer de l'argent</h3>
+                            <p class="text-white/80 text-sm">Vers votre mobile money</p>
+                        </div>
+                    </div>
+                    <button onclick="closeWithdrawModal()" class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center hover:bg-white/30 transition-all">
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Solde disponible -->
+            <div class="px-8 pt-6">
+                <div class="bg-gray-50 rounded-xl p-4 border border-gray-100 flex items-center justify-between">
+                    <span class="text-sm text-gray-500 font-bold">Solde disponible</span>
+                    <span class="text-lg font-black text-gray-900">{{ number_format($user->solde, 0, ',', ' ') }} FCFA</span>
+                </div>
+            </div>
+            
+            <!-- Formulaire -->
+            <form id="withdrawForm" class="px-8 py-6 space-y-5">
+                @csrf
+                <div>
+                    <label for="withdraw_amount" class="block text-sm font-bold text-gray-700 mb-2">Montant à retirer (FCFA)</label>
+                    <div class="relative">
+                        <input type="number" id="withdraw_amount" name="amount" min="100" step="100" placeholder="Ex: 5000" required
+                            class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-[#e94f1b] focus:bg-white transition-all font-bold text-lg">
+                        <div class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 font-bold">FCFA</div>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="withdraw_network" class="block text-sm font-bold text-gray-700 mb-2">Méthode de paiement</label>
+                    <select id="withdraw_network" name="network" required
+                        class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-[#e94f1b] focus:bg-white transition-all font-bold text-lg">
+                        <option value="" disabled selected>Choisir un réseau</option>
+                        <option value="Orange">🟠 Orange Money</option>
+                        <option value="MTN">🟡 MTN Mobile Money</option>
+                        <option value="Wave">🔵 Wave</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="withdraw_phone" class="block text-sm font-bold text-gray-700 mb-2">Numéro de téléphone</label>
+                    <input type="tel" id="withdraw_phone" name="phone" placeholder="Ex: 0707070707" required
+                        class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-[#e94f1b] focus:bg-white transition-all font-bold text-lg">
+                </div>
+
+                <button type="submit" id="btnWithdraw" class="w-full py-4 bg-[#e94f1b] text-white rounded-xl shadow-lg hover:bg-orange-700 transition-all font-bold text-lg flex items-center justify-center gap-2">
+                    <span id="btnWithdrawText">Confirmer le retrait</span>
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+
+                <div class="flex items-center gap-3 text-xs text-gray-400 font-medium">
+                    <i class="fas fa-shield-alt"></i>
+                    <p>Transfert sécurisé via CinetPay. Vous recevrez l'argent instantanément.</p>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 {{-- Script CinetPay --}}
 <script src="https://cdn.cinetpay.com/seamless/main.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-    // Variable globale pour stocker l'ID
+    // ============ MODAL RETRAIT ============
+    function openWithdrawModal() {
+        const modal = document.getElementById('withdrawModal');
+        const content = document.getElementById('withdrawModalContent');
+        modal.classList.remove('hidden');
+        // Animation d'entrée
+        setTimeout(() => {
+            content.classList.add('scale-100', 'opacity-100');
+            content.classList.remove('scale-95', 'opacity-0');
+        }, 10);
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeWithdrawModal() {
+        const modal = document.getElementById('withdrawModal');
+        const content = document.getElementById('withdrawModalContent');
+        content.classList.add('scale-95', 'opacity-0');
+        content.classList.remove('scale-100', 'opacity-100');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }, 200);
+    }
+
+    // ============ RECHARGE ============
     window.lastTransactionId = null;
 
     document.getElementById('rechargeForm').addEventListener('submit', async function(e) {
@@ -158,13 +264,11 @@
         const amount = document.getElementById('amount').value;
         const csrfToken = document.querySelector('input[name="_token"]').value;
 
-        // Loading state
         btn.disabled = true;
         btnText.innerText = 'Initialisation...';
         btn.classList.add('opacity-75');
 
         try {
-            // 1. Initialiser le paiement côté serveur
             const response = await fetch("{{ route('user.wallet.recharge') }}", {
                 method: 'POST',
                 headers: {
@@ -178,20 +282,15 @@
 
             if (!response.ok) throw new Error(data.message || 'Erreur lors de l\'initialisation');
 
-            // Stocker l'ID immédiatement
             window.lastTransactionId = data.checkout_data.transaction_id;
 
-            // 2. Ouvrir le popup CinetPay
             CinetPay.setConfig(data.cinetpay_config);
             CinetPay.getCheckout(data.checkout_data);
 
-            // --- C'EST ICI LA CORRECTION IMPORTANTE ---
             CinetPay.waitResponse(function(data) {
                 console.log('CinetPay Response:', data);
                 
                 if (data.status === "ACCEPTED") {
-                    // Le paiement est bon, on lance la vérification TOUT DE SUITE
-                    // On n'attend pas la fermeture du modal
                     Swal.fire({
                         title: 'Paiement en cours de validation',
                         text: 'Veuillez patienter...',
@@ -201,8 +300,6 @@
                             Swal.showLoading();
                         }
                     });
-                    
-                    // Appel de la vérification serveur
                     checkStatus(window.lastTransactionId);
                 } 
                 else if (data.status === "REFUSED") {
@@ -217,7 +314,6 @@
                 resetBtn();
             });
 
-            // On garde onClose comme sécurité au cas où l'utilisateur ferme la fenêtre sans payer
             CinetPay.onClose(function(data) {
                 console.log('Modal fermé');
                 resetBtn();
@@ -252,10 +348,9 @@
                     icon: 'success',
                     timer: 3000
                 }).then(() => {
-                    window.location.reload(); // Rechargement de la page
+                    window.location.reload();
                 });
             } else if (result.status === 'pending') {
-                 // Si c'est encore en attente, on peut réessayer ou informer l'utilisateur
                  Swal.fire('En attente', 'Votre paiement est en cours de traitement par l\'opérateur. Votre solde sera mis à jour automatiquement.', 'info')
                  .then(() => window.location.reload());
             } else {
@@ -275,5 +370,64 @@
         btnText.innerText = 'Recharger maintenant';
         btn.classList.remove('opacity-75');
     }
+
+    // ============ RETRAIT ============
+    document.getElementById('withdrawForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const btn = document.getElementById('btnWithdraw');
+        const btnText = document.getElementById('btnWithdrawText');
+        const amount = document.getElementById('withdraw_amount').value;
+        const phone = document.getElementById('withdraw_phone').value;
+        const network = document.getElementById('withdraw_network').value;
+        const csrfToken = document.querySelector('input[name="_token"]').value;
+
+        if(!amount || !phone || !network) {
+            Swal.fire('Erreur', 'Veuillez remplir tous les champs', 'warning');
+            return;
+        }
+
+        btn.disabled = true;
+        btnText.innerText = 'Traitement en cours...';
+        btn.classList.add('opacity-75');
+
+        try {
+            const response = await fetch("{{ route('user.wallet.withdraw') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify({ 
+                    amount: amount,
+                    phone: phone,
+                    network: network
+                })
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                closeWithdrawModal();
+                Swal.fire({
+                    title: 'Succès !',
+                    text: result.message,
+                    icon: 'success',
+                    timer: 3000
+                }).then(() => {
+                    window.location.reload();
+                });
+            } else {
+                throw new Error(result.message || 'Erreur lors du retrait');
+            }
+        } catch (error) {
+            console.error(error);
+            Swal.fire('Erreur', error.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btnText.innerText = 'Confirmer le retrait';
+            btn.classList.remove('opacity-75');
+        }
+    });
 </script>
 @endsection

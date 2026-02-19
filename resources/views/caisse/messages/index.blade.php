@@ -131,18 +131,18 @@
     <!-- Messages Grid -->
     <div class="flex flex-col gap-3">
         @forelse($messages as $message)
-            <a href="{{ route('caisse.messages.show', $message->id) }}" class="msg-card p-5 group hover:no-underline block">
+            <a href="{{ route('caisse.messages.show', ['id' => $message->id, 'source' => $message->source]) }}" class="msg-card p-5 group hover:no-underline block {{ !$message->is_read ? 'unread' : '' }}">
                 <div class="flex items-start gap-5">
                     <!-- Icon -->
                     <div class="sender-icon flex-shrink-0 group-hover:scale-110">
-                        <i class="fas fa-building"></i>
+                        <i class="fas {{ $message->sender_icon ?? 'fa-building' }}"></i>
                     </div>
                     
                     <!-- Content -->
                     <div class="flex-grow min-w-0 pt-1">
                         <div class="flex items-center justify-between mb-1">
                             <h3 class="text-lg font-bold text-slate-800 truncate group-hover:text-[#e94f1b] transition-colors">
-                                {{ $message->compagnie->name ?? 'La Direction' }}
+                                {{ $message->sender_name ?? 'La Direction' }}
                             </h3>
                             <span class="text-xs font-bold text-slate-400 whitespace-nowrap bg-slate-50 px-2 py-1 rounded-lg">
                                 {{ $message->created_at->diffForHumans() }}

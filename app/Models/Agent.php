@@ -26,6 +26,16 @@ class Agent extends Authenticatable
         'nom_device',
     ];
 
+    protected $casts = [
+        'password' => 'hashed',
+        'archived_at' => 'datetime',
+    ];
+
+    public function getIsActiveAttribute()
+    {
+        return $this->archived_at === null;
+    }
+
     public function compagnie()
     {
         return $this->belongsTo(Compagnie::class, 'compagnie_id'); 
@@ -39,5 +49,10 @@ class Agent extends Authenticatable
     public function messages()
     {
         return $this->morphMany(CompanyMessage::class, 'recipient');
+    }
+
+    public function receivedGareMessages()
+    {
+        return $this->morphMany(GareMessage::class, 'recipient');
     }
 }

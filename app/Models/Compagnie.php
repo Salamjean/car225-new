@@ -109,6 +109,11 @@ class Compagnie extends Authenticatable
         return $this->hasMany(CompanyMessage::class);
     }
 
+    public function receivedGareMessages()
+    {
+        return $this->morphMany(GareMessage::class, 'recipient');
+    }
+
     public function vehicules()
     {
         return $this->hasMany(Vehicule::class);

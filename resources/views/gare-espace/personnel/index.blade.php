@@ -116,3 +116,26 @@
     </div>
 </div>
 @endsection
+
+@section('scripts')
+    <script>
+        @if(session('success'))
+            Swal.fire({
+                icon: 'success',
+                title: 'Succès!',
+                text: "{{ session('success') }}",
+                confirmButtonColor: '#e94f1b',
+                timer: 3000
+            });
+        @endif
+
+        @if(session('error'))
+            Swal.fire({
+                icon: 'error',
+                title: 'Erreur',
+                text: "{{ session('error') }}",
+                confirmButtonColor: '#e94f1b'
+            });
+        @endif
+    </script>
+@endsection

@@ -245,6 +245,7 @@ Route::middleware('compagnie')->prefix('company')->group(function () {
         Route::get('/create', [\App\Http\Controllers\Compagnie\CompanyMessageController::class, 'create'])->name('create');
         Route::post('/', [\App\Http\Controllers\Compagnie\CompanyMessageController::class, 'store'])->name('store');
         Route::get('/recipients', [\App\Http\Controllers\Compagnie\CompanyMessageController::class, 'getRecipients'])->name('recipients');
+        Route::get('/received/{id}', [\App\Http\Controllers\Compagnie\CompanyMessageController::class, 'showReceived'])->name('show-received');
         Route::get('/{message}', [\App\Http\Controllers\Compagnie\CompanyMessageController::class, 'show'])->name('show');
     });
 });
@@ -410,6 +411,7 @@ Route::middleware('auth')->prefix('user')->group(function () {
     // Wallet Routes
     Route::get('/compte', [WalletController::class, 'index'])->name('user.wallet.index');
     Route::post('/compte/recharge', [WalletController::class, 'recharge'])->name('user.wallet.recharge');
+    Route::post('/compte/retrait', [WalletController::class, 'withdraw'])->name('user.wallet.withdraw');
     Route::post('/compte/verify', [WalletController::class, 'verifyRecharge'])->name('user.wallet.verify');
 
     // Profile Routes
@@ -473,6 +475,7 @@ Route::middleware('auth')->prefix('user')->group(function () {
 Route::prefix('user')->group(function () {
     Route::post('/payment/notify', [App\Http\Controllers\PaymentController::class, 'notify'])->name('payment.notify');
     Route::post('/compte/notify', [App\Http\Controllers\User\WalletController::class, 'notify'])->name('cinetpay.notify');
+    Route::match(['get', 'post'], '/payment/notify/transfer', [App\Http\Controllers\User\WalletController::class, 'notifyTransfer'])->name('wallet.notify.transfer');
     Route::get('/payment/return', [App\Http\Controllers\PaymentController::class, 'return'])->name('payment.return');
 });
 
@@ -606,11 +609,27 @@ Route::prefix('gare-espace')->name('gare-espace.')->group(function () {
             Route::post('/', [App\Http\Controllers\GareEspace\GareCaisseController::class, 'store'])->name('store');
         });
 
+        // Agents (CRUD)
+        Route::prefix('agents')->name('agents.')->group(function () {
+            Route::get('/', [App\Http\Controllers\GareEspace\GareAgentController::class, 'index'])->name('index');
+            Route::get('/create', [App\Http\Controllers\GareEspace\GareAgentController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\GareEspace\GareAgentController::class, 'store'])->name('store');
+        });
+
         // Itinéraires (CRUD)
         Route::prefix('itineraire')->name('itineraire.')->group(function () {
             Route::get('/', [App\Http\Controllers\GareEspace\GareItineraireController::class, 'index'])->name('index');
             Route::get('/create', [App\Http\Controllers\GareEspace\GareItineraireController::class, 'create'])->name('create');
             Route::post('/', [App\Http\Controllers\GareEspace\GareItineraireController::class, 'store'])->name('store');
+        });
+
+        // Messages (Boîte de réception)
+        Route::prefix('messages')->name('messages.')->group(function () {
+            Route::get('/', [App\Http\Controllers\GareEspace\GareMessageController::class, 'index'])->name('index');
+            Route::get('/create', [App\Http\Controllers\GareEspace\GareMessageController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\GareEspace\GareMessageController::class, 'store'])->name('store');
+            Route::get('/recipients', [App\Http\Controllers\GareEspace\GareMessageController::class, 'getRecipients'])->name('recipients');
+            Route::get('/{id}', [App\Http\Controllers\GareEspace\GareMessageController::class, 'show'])->name('show');
         });
     });
 });

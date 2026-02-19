@@ -86,12 +86,12 @@
                 <div class="flex flex-col md:flex-row md:items-start justify-between gap-6">
                     <div class="flex items-start gap-6">
                         <div class="sender-avatar flex-shrink-0">
-                            <i class="fas fa-building"></i>
+                            <i class="fas {{ $message->sender_icon ?? 'fa-building' }}"></i>
                         </div>
                         <div>
                             <div class="flex items-center gap-3 mb-2">
                                 <span class="px-2.5 py-0.5 rounded-md bg-orange-100 text-[#e94f1b] text-[10px] font-black uppercase tracking-widest">
-                                    Direction
+                                    {{ $message->sender_type_label ?? 'Direction' }}
                                 </span>
                                 <span class="text-slate-400 text-xs font-bold">
                                     {{ $message->created_at->isoFormat('LLLL') }}
@@ -101,7 +101,7 @@
                                 {{ $message->subject }}
                             </h1>
                             <p class="text-slate-500 font-medium text-sm">
-                                De: <span class="text-slate-900">{{ $message->compagnie->name ?? 'La Direction' }}</span>
+                                De: <span class="text-slate-900">{{ $message->sender_name ?? 'La Direction' }}</span>
                             </p>
                         </div>
                     </div>

@@ -109,6 +109,7 @@
                                     <option value="" selected disabled>Choisir un profil...</option>
                                     <option value="agent">👨‍💼 Agents</option>
                                     <option value="caisse">💰 Caisse</option>
+                                    <option value="gare">⛪ Gares</option>
                                     <option value="personnel">🚛 Chauffeurs / Personnel</option>
                                 </select>
                             </div>
@@ -172,7 +173,10 @@
                     data.forEach(recipient => {
                         const option = document.createElement('option');
                         option.value = recipient.id;
-                        let label = `${recipient.name} ${recipient.prenom}`;
+                        let label = recipient.name;
+                        if (recipient.prenom) {
+                            label += ` ${recipient.prenom}`;
+                        }
                         if (recipient.type_personnel) {
                             label += ` [${recipient.type_personnel}]`;
                         }

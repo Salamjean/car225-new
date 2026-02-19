@@ -32,6 +32,12 @@
                     <a class="mdc-drawer-link" href="{{ route('compagnie.messages.index') }}">
                         <i class="fas fa-envelope mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
                         Messages
+                        @php
+                            $unreadGareMessages = Auth::guard('compagnie')->user()->receivedGareMessages()->where('is_read', false)->count();
+                        @endphp
+                        @if($unreadGareMessages > 0)
+                            <span class="badge badge-pill badge-danger ml-2">{{ $unreadGareMessages }}</span>
+                        @endif
                     </a>
                 </div>
 

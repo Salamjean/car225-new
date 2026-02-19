@@ -93,9 +93,34 @@ class GarePersonnelController extends Controller
             if ($validatedData['type_personnel'] === 'Chauffeur') {
                 $otp = OtpVerification::createOtp($personnel->email, 'chauffeur');
                 try {
+                    \Illuminate\Support\Facades\Log::info('STARTING Chauffeur Creation Email Process', [
+                        'chauffeur_email' => $personnel->email,
+                        'gare_id' => $gare->id,
+                        'otp_code' => $otp->otp
+                    ]);
+
                     Mail::to($personnel->email)->send(new ChauffeurOtpMail($otp->otp, $personnel->name . ' ' . $personnel->prenom, $personnel->email));
+
+                    \Illuminate\Support\Facades\Log::info('SUCCESS: Chauffeur Creation Email Sent', [
+                        'email' => $personnel->email
+                    ]);
                 } catch (\Exception $e) {
-                    // Log error but continue
+                    \Illuminate\Support\Facades\Log::error('CRITICAL FAILURE: Chauffeur Creation Email Failed', [
+                        'error_message' => $e->getMessage(),
+                        'error_trace' => $e->getTraceAsString(),
+                        'chauffeur_email' => $personnel->email
+                    ]);
+                    
+                    // Delete the personnel to avoid inconsistency
+                    $personnel->delete();
+                    if (isset($profileImagePath) && Storage::disk('public')->exists($profileImagePath)) {
+                        Storage::disk('public')->delete($profileImagePath);
+                    }
+
+                    return redirect()
+                        ->back()
+                        ->withInput()
+                        ->with('error', 'Erreur lors de l\'envoi de l\'email OTP: ' . $e->getMessage() . '. Le chauffeur n\'a pas été créé.');
                 }
             }
 

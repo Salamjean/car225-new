@@ -76,12 +76,20 @@ class SignalementController extends Controller
         $today = now()->format('Y-m-d');
         $reservations = \App\Models\Reservation::where('programme_id', $programmeId)
             ->whereDate('date_voyage', $today)
-            ->whereIn('statut', ['confirmee', 'terminee'])
+            ->where('statut', 'terminee')
             ->get(['id', 'passager_nom', 'passager_prenom', 'seat_number', 'passager_telephone']);
+
+        if ($reservations->isNotEmpty()) {
+            $prog = \App\Models\Programme::find($programmeId);
+            $total = $prog ? $prog->getTotalSeats($today) : 50;
+        } else {
+            $total = 50;
+        }
 
         return response()->json([
             'success' => true,
             'count' => $reservations->count(),
+            'total_capacity' => $total,
             'passengers' => $reservations
         ]);
     }

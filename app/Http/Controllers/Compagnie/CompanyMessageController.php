@@ -8,6 +8,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Agent;
 use App\Models\Caisse;
 use App\Models\CompanyMessage;
+use App\Models\Gare;
+use App\Models\GareMessage;
 use App\Models\Personnel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -34,17 +36,44 @@ class CompanyMessageController extends Controller
         }
 
         $messages = $query->paginate(10);
-        return view('compagnie.messages.index', compact('messages'));
+
+        // Messages reçus des gares
+        $receivedMessages = GareMessage::where('recipient_type', 'App\Models\Compagnie')
+            ->where('recipient_id', $compagnie->id)
+            ->with('gare')
+            ->latest()
+            ->paginate(10, ['*'], 'received_page');
+
+        return view('compagnie.messages.index', compact('messages', 'receivedMessages'));
     }
 
     public function show(CompanyMessage $message)
     {
-        // Ensure the message belongs to the authenticated company
         if ($message->compagnie_id !== Auth::guard('compagnie')->id()) {
             abort(403);
         }
         
         return view('compagnie.messages.show', compact('message'));
+    }
+
+    public function showReceived($id)
+    {
+        $compagnie = Auth::guard('compagnie')->user();
+        $message = GareMessage::where('recipient_type', 'App\Models\Compagnie')
+            ->where('recipient_id', $compagnie->id)
+            ->with('gare')
+            ->findOrFail($id);
+
+        if (!$message->is_read) {
+            $message->update(['is_read' => true]);
+        }
+
+        $message->sender_name = $message->gare->nom_gare ?? 'La Gare';
+        $message->sender_type_label = 'Gare';
+        $message->sender_icon = 'fa-warehouse';
+        $message->source = 'gare';
+
+        return view('compagnie.messages.show-received', compact('message'));
     }
 
     public function create()
@@ -55,7 +84,7 @@ class CompanyMessageController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'recipient_type' => 'required|in:agent,caisse,personnel',
+            'recipient_type' => 'required|in:agent,caisse,personnel,gare',
             'recipient_id' => 'required',
             'subject' => 'required|string|max:255',
             'message' => 'required|string',
@@ -74,9 +103,11 @@ class CompanyMessageController extends Controller
             case 'personnel':
                 $modelClass = Personnel::class;
                 break;
+            case 'gare':
+                $modelClass = Gare::class;
+                break;
         }
 
-        // Verify recipient belongs to company
         $recipient = $modelClass::where('id', $request->recipient_id)
             ->where('compagnie_id', $compagnie->id)
             ->firstOrFail();
@@ -91,12 +122,9 @@ class CompanyMessageController extends Controller
         $message->recipient()->associate($recipient);
         $message->save();
 
-        // --- NOTIFICATIONS SYSTEM ---
         try {
-            // 1. Laravel Notification (Mail + Database)
             $recipient->notify(new NewInternalMessageNotification($message));
 
-            // 2. Push Notification (FCM)
             if (!empty($recipient->fcm_token)) {
                 $fcmService = app(FcmService::class);
                 $title = 'Nouveau Message direction 📩';
@@ -129,6 +157,9 @@ class CompanyMessageController extends Controller
                 break;
             case 'personnel':
                 $recipients = Personnel::where('compagnie_id', $compagnie->id)->get(['id', 'name', 'prenom', 'type_personnel']);
+                break;
+            case 'gare':
+                $recipients = Gare::where('compagnie_id', $compagnie->id)->get(['id', 'nom_gare as name']);
                 break;
         }
 

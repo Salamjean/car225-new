@@ -32,9 +32,14 @@
                         <i class="fas fa-inbox mdc-list-item__start-detail mdc-drawer-item-icon"
                             aria-hidden="true"></i>
                         Boîte de réception
-                        @if(Auth::guard('agent')->user()->messages()->where('is_read', false)->count() > 0)
+                        @php
+                            $unreadCompany = Auth::guard('agent')->user()->messages()->where('is_read', false)->count();
+                            $unreadGare = Auth::guard('agent')->user()->receivedGareMessages()->where('is_read', false)->count();
+                            $totalUnread = $unreadCompany + $unreadGare;
+                        @endphp
+                        @if($totalUnread > 0)
                             <span class="badge badge-pill badge-danger float-right" style="margin-left: 10px;">
-                                {{ Auth::guard('agent')->user()->messages()->where('is_read', false)->count() }}
+                                {{ $totalUnread }}
                             </span>
                         @endif
                     </a>

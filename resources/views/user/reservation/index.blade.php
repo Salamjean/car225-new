@@ -713,7 +713,7 @@
                         <div class="grid grid-cols-2 gap-4 mb-3">
                             <div>
                                 <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Date Retour</label>
-                                <input type="date" id="mod-ret-date" onkeydown="return false" class="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-orange-500" min="${new Date(new Date().getTime() + 86400000).toISOString().split('T')[0]}">
+                                <input type="date" id="mod-ret-date" onkeydown="return false" class="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-orange-500" min="${new Date().toISOString().split('T')[0]}">
                             </div>
                             <div>
                                 <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Heure Retour</label>
@@ -735,14 +735,22 @@
 
             const modalHtml = `
                 <div class="text-left font-outfit space-y-5">
-                    <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100 flex justify-between items-center">
-                        <div>
-                            <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest">Valeur Actuelle</p>
-                            <p class="text-xl font-black text-blue-600">${Number(response.residual_value).toLocaleString()} FCFA</p>
+                    <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100">
+                        <div class="flex justify-between items-center mb-2">
+                            <div>
+                                <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest leading-none mb-1">Ancien Billet</p>
+                                <p class="text-sm font-black text-gray-700 leading-none">${Number(response.total_old_price).toLocaleString()} FCFA</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[10px] font-black text-red-400 uppercase tracking-widest leading-none mb-1">Moins Pénalité</p>
+                                <p class="text-sm font-black text-red-500 leading-none">- ${Number(response.total_old_price - response.residual_value).toLocaleString()} FCFA</p>
+                            </div>
                         </div>
-                        <div class="text-right">
-                            <p class="text-[10px] text-gray-400">Pénalité: ${response.penalty_info}</p>
+                        <div class="pt-2 border-t border-blue-200/50 flex justify-between items-center">
+                            <span class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Valeur à deduire</span>
+                            <span class="text-lg font-black text-blue-700">${Number(response.residual_value).toLocaleString()} FCFA</span>
                         </div>
+                        <p class="text-[9px] text-blue-400 mt-1 font-medium"><i class="fas fa-info-circle mr-1"></i> ${response.penalty_info}</p>
                     </div>
 
                     <div class="bg-gray-50 p-3 rounded-xl border border-gray-100">
@@ -757,7 +765,7 @@
                         <div class="grid grid-cols-2 gap-4 mb-3">
                             <div>
                                 <label class="text-[9px] font-bold text-gray-400 uppercase block mb-1">Date</label>
-                                <input type="date" id="mod-date" onkeydown="return false" class="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-[#e94f1b]" min="${new Date(new Date().getTime() + 86400000).toISOString().split('T')[0]}">
+                                <input type="date" id="mod-date" onkeydown="return false" class="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-[#e94f1b]" min="${new Date().toISOString().split('T')[0]}">
                             </div>
                             <div>
                                 <label class="text-[9px] font-bold text-gray-400 uppercase block mb-1">Heure</label>
@@ -777,12 +785,22 @@
 
                     ${returnHtml}
 
-                    <div id="delta-box" class="hidden bg-gray-900 text-white p-4 rounded-2xl mt-4">
-                        <div class="flex justify-between items-center">
-                            <span id="delta-label" class="text-xs font-medium text-gray-400 uppercase">Total à payer</span>
-                            <span id="delta-amount" class="text-xl font-black text-white">0 FCFA</span>
+                    <div id="delta-box" class="hidden bg-gray-900 text-white p-5 rounded-[24px] mt-6 shadow-xl shadow-gray-200">
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center opacity-60">
+                                <span class="text-[10px] font-black uppercase tracking-widest">Nouveau prix total</span>
+                                <span id="new-total-display" class="text-sm font-black">0 FCFA</span>
+                            </div>
+                            <div class="flex justify-between items-center opacity-60">
+                                <span class="text-[10px] font-black uppercase tracking-widest">Avoir (Après pénalité)</span>
+                                <span id="residual-display" class="text-sm font-black">0 FCFA</span>
+                            </div>
+                            <div class="pt-3 border-t border-white/10 flex justify-between items-center">
+                                <span id="delta-label" class="text-xs font-black uppercase tracking-widest text-[#e94f1b]">Total à payer</span>
+                                <span id="delta-amount" class="text-2xl font-black text-white">0 FCFA</span>
+                            </div>
                         </div>
-                        <p id="wallet-error" class="text-[10px] text-red-400 mt-1 hidden">Solde insuffisant</p>
+                        <p id="wallet-error" class="text-[10px] font-bold text-red-400 mt-2 bg-red-400/10 p-2 rounded-lg text-center hidden"><i class="fas fa-exclamation-triangle mr-1"></i> Solde insuffisant sur votre portefeuille</p>
                     </div>
                 </div>
             `;
@@ -981,11 +999,11 @@
 
         $('#mod-date').change(function() { 
             const val = $(this).val();
-            const tomorrow = new Date(new Date().getTime() + 86400000).toISOString().split('T')[0];
+            const today = new Date().toISOString().split('T')[0];
             
-            if(val < tomorrow) {
-                Swal.showValidationMessage('La modification est possible uniquement pour les jours futurs (à partir de demain).');
-                $(this).val(tomorrow);
+            if(val < today) {
+                Swal.showValidationMessage('La modification n\'est pas possible pour une date passée.');
+                $(this).val(today);
                 return;
             }
 
@@ -1035,34 +1053,72 @@
     async function calculateTotal() {
         const progIdAller = $('#mod-time option:selected').data('prog-id');
         const seatAller = $('#mod-seat-input').val();
+        const dateAller = $('#mod-date').val();
+        const timeAller = $('#mod-time').val();
         
         if(!progIdAller || !seatAller) return;
 
+        // Détection de modification
+        let changed = (
+            progIdAller != modifState.current.progId || 
+            dateAller != modifState.current.date || 
+            seatAller != modifState.current.seat
+        );
+
+        if(modifState.isRoundTrip) {
+            const progIdRet = $('#mod-ret-time option:selected').data('prog-id');
+            const seatRet = $('#mod-ret-seat-input').val();
+            const dateRet = $('#mod-ret-date').val();
+            if(!progIdRet || !seatRet) return;
+            
+            if(!changed) {
+                changed = (
+                    progIdRet != modifState.current.retProgId || 
+                    dateRet != modifState.current.retDate || 
+                    seatRet != modifState.current.retSeat
+                );
+            }
+        }
+
+        if(!changed) {
+            $('#delta-box').removeClass('hidden').addClass('bg-gray-100 text-gray-400 opacity-100');
+            $('#delta-box').find('.opacity-60, .border-t').addClass('hidden');
+            $('#delta-label').text('Aucune modification détectée').removeClass('text-[#e94f1b]').addClass('text-gray-400');
+            $('#delta-amount').text('0 FCFA').removeClass('text-red-400 text-green-400').addClass('text-gray-400');
+            $('#wallet-error').addClass('hidden');
+            Swal.getConfirmButton().disabled = false;
+            return;
+        }
+
+        // Si modification détectée, restaurer le style sombre du delta-box
+        $('#delta-box').removeClass('bg-gray-100 text-gray-400').addClass('bg-gray-900 text-white').removeClass('hidden').addClass('opacity-50');
+        $('#delta-box').find('.opacity-60, .border-t').removeClass('hidden');
+        $('#delta-label').removeClass('text-gray-400').addClass('text-[#e94f1b]');
+        $('#delta-amount').removeClass('text-gray-400');
+
         let data = {
             new_programme_id: progIdAller,
-            new_date_aller: $('#mod-date').val(),
+            new_date_aller: dateAller,
             _token: $('meta[name="csrf-token"]').attr('content')
         };
 
         if(modifState.isRoundTrip) {
             const progIdRetour = $('#mod-ret-time option:selected').data('prog-id');
-            const seatRetour = $('#mod-ret-seat-input').val();
-            if(!progIdRetour || !seatRetour) return;
             data.new_return_programme_id = progIdRetour;
             data.new_return_date = $('#mod-ret-date').val();
         }
-
-        $('#delta-box').removeClass('hidden').addClass('opacity-50');
 
         try {
             const res = await $.post(`/user/booking/reservations/${modifState.resId}/calculate-delta`, data);
             
             $('#delta-box').removeClass('opacity-50');
+            $('#new-total-display').text(Number(res.new_total).toLocaleString() + ' FCFA');
+            $('#residual-display').text(Number(res.residual_value).toLocaleString() + ' FCFA');
             $('#delta-amount').text(Number(res.delta).toLocaleString() + ' FCFA');
             
             const btn = Swal.getConfirmButton();
             if(res.action === 'pay') {
-                $('#delta-label').text('Reste à payer');
+                $('#delta-label').text(res.real_delta > 0 ? 'Reste à payer' : 'Total à payer');
                 $('#delta-amount').removeClass('text-green-400').addClass('text-red-400');
                 if(!res.can_afford) {
                     $('#wallet-error').removeClass('hidden');
@@ -1071,9 +1127,14 @@
                     $('#wallet-error').addClass('hidden');
                     btn.disabled = false;
                 }
-            } else {
-                $('#delta-label').text(res.action === 'refund' ? 'Crédit à rembourser' : 'Aucune différence');
+            } else if(res.action === 'refund') {
+                $('#delta-label').text('Crédit à rembourser');
                 $('#delta-amount').removeClass('text-red-400').addClass('text-green-400');
+                $('#wallet-error').addClass('hidden');
+                btn.disabled = false;
+            } else {
+                $('#delta-label').text('Aucune différence');
+                $('#delta-amount').removeClass('text-red-400 text-green-400').addClass('text-white');
                 $('#wallet-error').addClass('hidden');
                 btn.disabled = false;
             }
@@ -1090,6 +1151,13 @@
             Swal.showValidationMessage('Veuillez sélectionner le voyage aller complet');
             return false;
         }
+
+        // Check if anything changed
+        let changed = (
+            progIdAller != modifState.current.progId || 
+            dateAller != modifState.current.date || 
+            seatAller != modifState.current.seat
+        );
 
         let payload = {
             programme_id: progIdAller,
@@ -1110,10 +1178,22 @@
                 return false;
             }
 
+            if(!changed) {
+                changed = (
+                    progIdRetour != modifState.current.retProgId || 
+                    dateRetour != modifState.current.retDate || 
+                    seatRetour != modifState.current.retSeat
+                );
+            }
+
             payload.return_programme_id = progIdRetour;
             payload.return_date_voyage = dateRetour;
             payload.return_heure_depart = heureRetour;
             payload.return_seat_number = seatRetour;
+        }
+
+        if(!changed) {
+            return { success: true, message: 'Aucune modification apportée.', no_change: true };
         }
 
         try {

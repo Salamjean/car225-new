@@ -40,13 +40,12 @@
                         <i class="fas fa-envelope mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
                         Messages
                         @php
-                            $unreadMessagesCount = \App\Models\CompanyMessage::where('recipient_type', 'App\Models\Personnel')
-                                ->where('recipient_id', Auth::guard('chauffeur')->id())
-                                ->where('is_read', false)
-                                ->count();
+                            $unreadCompany = Auth::guard('chauffeur')->user()->messages()->where('is_read', false)->count();
+                            $unreadGare = Auth::guard('chauffeur')->user()->receivedGareMessages()->where('is_read', false)->count();
+                            $totalUnread = $unreadCompany + $unreadGare;
                         @endphp
-                        @if($unreadMessagesCount > 0)
-                            <span class="badge bg-danger rounded-pill ms-auto text-white" style="font-size: 0.7rem;">{{ $unreadMessagesCount }}</span>
+                        @if($totalUnread > 0)
+                            <span class="badge bg-danger rounded-pill ms-auto text-white" style="font-size: 0.7rem;">{{ $totalUnread }}</span>
                         @endif
                     </a>
                 </div>

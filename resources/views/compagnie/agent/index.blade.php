@@ -16,7 +16,7 @@
             </div>
             <div class="stat-info">
                 <span class="stat-label">Total Agents</span>
-                <h3 class="stat-number">{{ $agents->total() }}</h3>
+                <h3 class="stat-number">{{ $totalAgents }}</h3>
             </div>
         </div>
         <div class="stat-item">
@@ -25,7 +25,7 @@
             </div>
             <div class="stat-info">
                 <span class="stat-label">Actifs</span>
-                <h3 class="stat-number">{{ $agents->where('is_active', true)->count() }}</h3>
+                <h3 class="stat-number">{{ $activeAgents }}</h3>
             </div>
         </div>
         <div class="stat-item">
@@ -34,7 +34,7 @@
             </div>
             <div class="stat-info">
                 <span class="stat-label">Nouveaux (7j)</span>
-                <h3 class="stat-number">{{ $agents->where('created_at', '>=', now()->subDays(7))->count() }}</h3>
+                <h3 class="stat-number">{{ $newAgents }}</h3>
             </div>
         </div>
         <div class="stat-item d-none d-xl-flex">

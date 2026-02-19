@@ -78,10 +78,32 @@
             <span class="font-medium text-sm">Caissières</span>
         </a>
 
+        <!-- Agents -->
+        <a href="{{ route('gare-espace.agents.index') }}" 
+           class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('gare-espace.agents.*') ? 'bg-orange-500/20 text-orange-400 shadow-lg' : 'text-gray-300 hover:bg-gray-700/50 hover:text-white' }}">
+            <i class="fas fa-user-tie w-5 text-center"></i>
+            <span class="font-medium text-sm">Agents</span>
+        </a>
+
         <!-- Séparateur -->
         <div class="py-2">
             <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Autres</p>
         </div>
+
+        <!-- Boîte de réception -->
+        <a href="{{ route('gare-espace.messages.index') }}" 
+           class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('gare-espace.messages.*') ? 'bg-orange-500/20 text-orange-400 shadow-lg' : 'text-gray-300 hover:bg-gray-700/50 hover:text-white' }}">
+            <i class="fas fa-envelope w-5 text-center"></i>
+            <span class="font-medium text-sm flex-1">Boîte de réception</span>
+            @php
+                $unreadFromCompany = Auth::guard('gare')->user()->messages()->where('is_read', false)->count();
+            @endphp
+            @if($unreadFromCompany > 0)
+                <span class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg animate-pulse">
+                    {{ $unreadFromCompany }}
+                </span>
+            @endif
+        </a>
 
         <!-- Historique Voyages -->
         <a href="{{ route('gare-espace.voyages.history') }}" 

@@ -102,9 +102,11 @@ class HotesseController extends Controller
 
         // Send email with OTP
         try {
-            \Illuminate\Support\Facades\Log::info('Attempting to send Hotesse OTP', [
-                'email' => $hotesse->email,
-                'compagnie' => $compagnie->name
+            \Illuminate\Support\Facades\Log::info('STARTING Hotesse Creation Email Process', [
+                'hotesse_email' => $hotesse->email,
+                'compagnie_id' => $compagnie->id,
+                'compagnie_name' => $compagnie->name,
+                'otp_code' => $otpCode
             ]);
 
             Mail::to($hotesse->email)->send(
@@ -119,18 +121,25 @@ class HotesseController extends Controller
                 )
             );
 
+            \Illuminate\Support\Facades\Log::info('SUCCESS: Hotesse Creation Email Sent', [
+                'email' => $hotesse->email
+            ]);
+
             return redirect()->route('admin.hotesse.index')
                 ->with('success', 'Hotesse créée avec succès. Un email avec le code OTP a été envoyé à ' . $hotesse->email);
         } catch (\Exception $e) {
             // Log the error
-            \Illuminate\Support\Facades\Log::error('Hotesse Creation Error: ' . $e->getMessage());
-            \Illuminate\Support\Facades\Log::error($e->getTraceAsString());
+            \Illuminate\Support\Facades\Log::error('CRITICAL FAILURE: Hotesse Creation Email Failed', [
+                'error_message' => $e->getMessage(),
+                'error_trace' => $e->getTraceAsString(),
+                'hotesse_email' => $hotesse->email
+            ]);
 
             // If email fails, delete the hotesse and show error
             // Should verify if we really want to delete it or just warn user
             // For now, mirroring Caisse/OTP flow, deletion is safer to avoid bad state
             $hotesse->delete();
-            return back()->withInput()->with('error', 'Erreur lors de l\'envoi de l\'email: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Erreur critique lors de l\'envoi de l\'email: ' . $e->getMessage() . '. L\'utilisateur a été supprimé.');
         }
     }
 

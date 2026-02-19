@@ -71,7 +71,16 @@ class AgentController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
-        return view('compagnie.agent.index', compact('agents'));
+        // Company-wide stats
+        $totalAgents = Agent::where('compagnie_id', $compagnieId = $compagnie->id)->count();
+        $activeAgents = Agent::where('compagnie_id', $compagnieId)
+            ->whereNull('archived_at')
+            ->count();
+        $newAgents = Agent::where('compagnie_id', $compagnieId)
+            ->where('created_at', '>=', now()->subDays(7))
+            ->count();
+
+        return view('compagnie.agent.index', compact('agents', 'totalAgents', 'activeAgents', 'newAgents'));
     }
     public function create()
     {

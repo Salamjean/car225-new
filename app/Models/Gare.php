@@ -55,4 +55,14 @@ class Gare extends Authenticatable
     {
         return $this->hasMany(Itineraire::class, 'gare_id');
     }
+
+    public function agents()
+    {
+        return $this->hasMany(Agent::class, 'gare_id');
+    }
+
+    public function messages()
+    {
+        return $this->morphMany(CompanyMessage::class, 'recipient');
+    }
 }
