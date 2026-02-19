@@ -39,22 +39,24 @@
     </div>
 
     <!-- Navigation Tabs -->
-    <div class="mb-6">
-        <div class="flex bg-white p-1 rounded-2xl border border-slate-100 shadow-sm transition-all overflow-hidden">
-            <button class="flex-1 py-3 px-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 tab-btn active" 
+    <div class="mb-6 relative z-10">
+        <div class="flex bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm transition-all">
+            <button class="flex-1 py-3.5 px-6 rounded-xl font-bold transition-all flex items-center justify-center gap-3 tab-btn" 
                     id="received-trigger" onclick="switchTab('received')">
-                <i class="fas fa-inbox text-lg"></i>
-                <span>Messages Reçus (Direction)</span>
-                @php $unreadCount = $receivedMessages->where('is_read', false)->count(); @endphp
-                @if($unreadCount > 0)
-                    <span class="flex items-center justify-center bg-red-500 text-white text-[10px] w-5 h-5 rounded-full ml-1 shadow-sm">
-                        {{ $unreadCount }}
-                    </span>
-                @endif
+                <i class="fas fa-inbox text-xl"></i>
+                <div class="flex items-center gap-2">
+                    <span>Messages Reçus (Direction)</span>
+                    @php $unreadCount = $receivedMessages->where('is_read', false)->count(); @endphp
+                    @if($unreadCount > 0)
+                        <span class="flex items-center justify-center bg-red-500 text-white text-[11px] min-w-[22px] h-[22px] px-1.5 rounded-full shadow-md animate-pulse">
+                            {{ $unreadCount }}
+                        </span>
+                    @endif
+                </div>
             </button>
-            <button class="flex-1 py-3 px-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 text-slate-500 hover:bg-slate-50 tab-btn" 
+            <button class="flex-1 py-3.5 px-6 rounded-xl font-bold transition-all flex items-center justify-center gap-3 text-slate-500 hover:bg-slate-50 tab-btn" 
                     id="sent-trigger" onclick="switchTab('sent')">
-                <i class="fas fa-paper-plane text-lg"></i>
+                <i class="fas fa-paper-plane text-xl"></i>
                 <span>Messages Envoyés</span>
             </button>
         </div>
@@ -94,7 +96,7 @@
                             </a>
                         @endforeach
                     </div>
-                    <div class="p-4">{{ $receivedMessages->links() }}</div>
+                    <div class="p-4">{{ $receivedMessages->appends(request()->query())->links() }}</div>
                 @endif
             </div>
         </div>
@@ -426,24 +428,34 @@ function switchTab(tabId) {
         const trigger = document.getElementById(`${id}-trigger`);
         
         if (id === tabId) {
-            panel.classList.remove('hidden');
-            trigger.classList.add('active', 'bg-primary');
-            trigger.classList.remove('text-slate-500', 'hover:bg-slate-50');
-            trigger.style.background = '#e94f1b';
-            trigger.style.color = 'white';
+            if(panel) panel.classList.remove('hidden');
+            if(trigger) {
+                trigger.classList.add('active');
+                trigger.style.background = '#e94f1b';
+                trigger.style.color = 'white';
+            }
         } else {
-            panel.classList.add('hidden');
-            trigger.classList.remove('active');
-            trigger.classList.add('text-slate-500', 'hover:bg-slate-50');
-            trigger.style.background = 'transparent';
-            trigger.style.color = '#64748b';
+            if(panel) panel.classList.add('hidden');
+            if(trigger) {
+                trigger.classList.remove('active');
+                trigger.style.background = 'transparent';
+                trigger.style.color = '#64748b';
+            }
         }
     });
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Force initial state
-    switchTab('received');
+    // Déterminer l'onglet par défaut selon le filtre
+    const urlParams = new URLSearchParams(window.location.search);
+    const type = urlParams.get('type');
+    
+    // Si on filtre par agent/caisse/chauffeur, on va dans "Envoyés" par défaut
+    if (['agent', 'caisse', 'personnel'].includes(type)) {
+        switchTab('sent');
+    } else {
+        switchTab('received');
+    }
 
     @if(session('success'))
         Swal.fire({

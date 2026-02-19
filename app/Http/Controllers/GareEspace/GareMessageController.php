@@ -45,10 +45,19 @@ class GareMessageController extends Controller
         $sentMessages = $sentQuery->paginate(10, ['*'], 'sent_page');
 
         // Messages reçus de la direction (compagnie)
-        $receivedMessages = CompanyMessage::where('recipient_type', 'App\Models\Gare')
-            ->where('recipient_id', $gare->id)
-            ->with('compagnie')
-            ->latest()
+        // On utilise une requête directe pour éviter les soucis de polymorphisme (App\Models\Gare vs Gare)
+        // On veut TOUJOURS avoir ces messages disponibles, car ils sont affichés dans un onglet séparé
+        $receivedQuery = CompanyMessage::where(function($q) use ($gare) {
+                $q->where('recipient_id', $gare->id)
+                  ->whereIn('recipient_type', ['App\Models\Gare', 'Gare']);
+            })
+            ->with('compagnie');
+
+        // Si l'utilisateur demande explicitement un filtrage 'compagnie', on s'assure que *seuls* ces messages sont comptés/paginés comme principaux
+        // Mais ici, l'architecture sépare "envoyés" et "reçus" dans deux variables distinctes.
+        // Donc on laisse $receivedQuery intact pour qu'il contienne toujours les messages de la direction.
+
+        $receivedMessages = $receivedQuery->latest()
             ->paginate(10, ['*'], 'received_page');
         
         return view('gare-espace.messages.index', compact('sentMessages', 'receivedMessages'));
@@ -140,10 +149,12 @@ class GareMessageController extends Controller
         $type = request()->query('type', 'sent');
 
         if ($type === 'received') {
-            $message = CompanyMessage::where('recipient_type', 'App\Models\Gare')
+            // Requête robuste pour récupérer le message reçu de la direction
+            $message = CompanyMessage::where('id', $id)
                 ->where('recipient_id', $gare->id)
+                ->whereIn('recipient_type', ['App\Models\Gare', 'Gare'])
                 ->with('compagnie')
-                ->findOrFail($id);
+                ->firstOrFail();
             
             if (!$message->is_read) {
                 $message->update(['is_read' => true]);

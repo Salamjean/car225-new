@@ -257,12 +257,26 @@
                     @forelse($messages as $message)
                         @php
                             $recipient = $message->recipient;
-                            $initials = $recipient ? strtoupper(substr($recipient->name, 0, 1) . substr($recipient->prenom, 0, 1)) : '??';
+                            $recipientName = 'Indéfini';
+                            $initials = '??';
+                            
+                            if ($recipient) {
+                                if ($message->recipient_type === 'App\Models\Gare') {
+                                    $recipientName = $recipient->nom_gare;
+                                    $initials = strtoupper(substr($recipient->nom_gare, 0, 2));
+                                } else {
+                                    $recipientName = ($recipient->name ?? '') . ' ' . ($recipient->prenom ?? '');
+                                    $initials = strtoupper(substr($recipient->name ?? '', 0, 1) . substr($recipient->prenom ?? '', 0, 1));
+                                }
+                            }
+
                             $typeConfig = [
-                                'App\\Models\\Agent' => ['icon' => 'fa-user-tie', 'color' => 'text-blue-600', 'bg' => 'bg-blue-100'],
-                                'App\\Models\\Caisse' => ['icon' => 'fa-cash-register', 'color' => 'text-emerald-600', 'bg' => 'bg-emerald-100'],
-                                'App\\Models\\Personnel' => ['icon' => 'fa-steering-wheel', 'color' => 'text-purple-600', 'bg' => 'bg-purple-100'],
-                            ][$message->recipient_type] ?? ['icon' => 'fa-user', 'color' => 'text-slate-400', 'bg' => 'bg-slate-100'];
+                                'App\\Models\\Agent' => ['icon' => 'fa-user-tie', 'color' => 'text-blue-600', 'bg' => 'bg-blue-100', 'label' => 'Agent'],
+                                'App\\Models\\Caisse' => ['icon' => 'fa-cash-register', 'color' => 'text-emerald-600', 'bg' => 'bg-emerald-100', 'label' => 'Caisse'],
+                                'App\\Models\\Personnel' => ['icon' => 'fa-steering-wheel', 'color' => 'text-purple-600', 'bg' => 'bg-purple-100', 'label' => 'Chauffeur'],
+                                'App\\Models\\Gare' => ['icon' => 'fa-warehouse', 'color' => 'text-orange-600', 'bg' => 'bg-orange-100', 'label' => 'Gare'],
+                                'App\\Models\\User' => ['icon' => 'fa-user-shield', 'color' => 'text-indigo-600', 'bg' => 'bg-indigo-100', 'label' => 'Admin/User'],
+                            ][$message->recipient_type] ?? ['icon' => 'fa-user', 'color' => 'text-slate-400', 'bg' => 'bg-slate-100', 'label' => 'Inconnu'];
                         @endphp
 
                         <a href="{{ route('compagnie.messages.show', $message->id) }}" class="list-group-item list-group-item-action message-item p-4 bg-transparent border-0 hover:no-underline">
@@ -274,17 +288,17 @@
                                         </div>
                                     </div>
                                     <div class="ml-4 lg:hidden block">
-                                        <h4 class="text-lg font-bold text-slate-900 leading-tight">{{ $recipient->name ?? 'Indéfini' }} {{ $recipient->prenom ?? '' }}</h4>
-                                        <span class="text-sm font-semibold {{ $typeConfig['color'] }} uppercase tracking-wider">{{ str_replace('App\\Models\\', '', $message->recipient_type) }}</span>
+                                        <h4 class="text-lg font-bold text-slate-900 leading-tight">{{ $recipientName }}</h4>
+                                        <span class="text-sm font-semibold {{ $typeConfig['color'] }} uppercase tracking-wider">{{ $typeConfig['label'] }}</span>
                                     </div>
                                 </div>
 
                                 <div class="flex-grow lg:px-4">
                                     <div class="hidden lg:flex items-center mb-1 gap-2">
-                                        <h4 class="text-lg font-bold text-slate-900 leading-tight">{{ $recipient->name ?? 'Indéfini' }} {{ $recipient->prenom ?? '' }}</h4>
+                                        <h4 class="text-lg font-bold text-slate-900 leading-tight">{{ $recipientName }}</h4>
                                         <span class="mx-1 text-slate-300">&middot;</span>
                                         <span class="text-xs font-bold px-2 py-0.5 rounded-md {{ $typeConfig['bg'] }} {{ $typeConfig['color'] }} uppercase">
-                                            {{ str_replace('App\\Models\\', '', $message->recipient_type) }}
+                                            {{ $typeConfig['label'] }}
                                         </span>
                                     </div>
                                     <h5 class="text-md font-bold text-slate-700 mb-1 truncate">{{ $message->subject }}</h5>
