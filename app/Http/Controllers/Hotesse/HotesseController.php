@@ -358,7 +358,7 @@ class HotesseController extends Controller
         $montantTotal = $montantAller + $montantRetour;
 
         // VÉRIFICATION DU SOLDE DE LA COMPAGNIE
-        if ($programmeAller->compagnie->tickets < $montantTotal) {
+        if (\App\Models\Setting::isTicketSystemEnabled() && $programmeAller->compagnie->tickets < $montantTotal) {
             return response()->json([
                 'success' => false,
                 'message' => 'Solde de la compagnie insuffisant pour effectuer cette vente. Veuillez contacter l\'administrateur.'

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdminDashboard;
 use App\Http\Controllers\Admin\AuthenticateAdmin;
 use App\Http\Controllers\Admin\Itineraire\AdminItineraireController;
+use App\Http\Controllers\Admin\SettingController as AdminSettingController;
 use App\Http\Controllers\Agent\AgentController;
 use App\Http\Controllers\Agent\AgentDashboard;
 use App\Http\Controllers\Agent\AuthenticateAgent;
@@ -80,6 +81,8 @@ Route::middleware('admin')->prefix('admin')->group(function () {
         Route::get('/index', [CompagnieController::class, 'index'])->name('compagnie.index');
         Route::get('/create', [CompagnieController::class, 'create'])->name('compagnie.create');
         Route::post('/create', [CompagnieController::class, 'store'])->name('compagnie.store');
+        Route::get('/recharge', [CompagnieController::class, 'rechargeIndex'])->name('compagnie.recharge.index');
+        Route::post('/recharge/{compagnie}', [CompagnieController::class, 'processRecharge'])->name('compagnie.recharge.process');
         Route::get('/{compagnie}', [CompagnieController::class, 'show'])->name('compagnie.show');
         Route::get('/{compagnie}/edit', [CompagnieController::class, 'edit'])->name('compagnie.edit');
         Route::put('/{compagnie}', [CompagnieController::class, 'update'])->name('compagnie.update');
@@ -116,6 +119,12 @@ Route::middleware('admin')->prefix('admin')->group(function () {
         Route::get('/{supportRequest}', [App\Http\Controllers\Admin\SupportController::class, 'show'])->name('admin.support.show');
         Route::post('/{supportRequest}/repondre', [App\Http\Controllers\Admin\SupportController::class, 'repondre'])->name('admin.support.repondre');
         Route::patch('/{supportRequest}/statut', [App\Http\Controllers\Admin\SupportController::class, 'changeStatut'])->name('admin.support.statut');
+    });
+
+    // Gestion des Paramètres
+    Route::prefix('settings')->group(function () {
+        Route::get('/', [AdminSettingController::class, 'index'])->name('admin.settings.index');
+        Route::post('/update', [AdminSettingController::class, 'update'])->name('admin.settings.update');
     });
 });
 

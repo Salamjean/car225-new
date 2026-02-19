@@ -185,7 +185,8 @@
                                 <div class="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center">
                                     <i class="fas fa-building text-[8px] text-gray-500"></i>
                                 </div>
-                                <span class="text-[11px] font-medium text-gray-500 uppercase tracking-wide">{{ $reservation->programme->compagnie->name }}</span>
+                                <span class="text-[11px] font-bold text-gray-900 tracking-wide">{{ $reservation->programme->compagnie->sigle ?? '' }}</span>
+                                <span class="text-[10px] font-light text-gray-500 tracking-wide ml-1">{{ $reservation->programme->compagnie->name }}</span>
                             </div>
                         </div>
                     </td>

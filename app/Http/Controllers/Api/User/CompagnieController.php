@@ -136,6 +136,7 @@ class CompagnieController extends Controller
                 'data' => [
                     'compagnie_id' => $compagnie->id,
                     'compagnie_name' => $compagnie->name,
+                    'compagnie_sigle' => $compagnie->sigle,
                     'total_programmes' => $programmes->count(),
                     'programmes' => $programmes
                 ]
@@ -192,7 +193,7 @@ class CompagnieController extends Controller
         $data = [
             'id' => $compagnie->id,
             'name' => $compagnie->name,
-            'sigle' => $initials,
+            'sigle' => $compagnie->sigle ?: $initials,
             'slogan' => $compagnie->slogan ?? 'Transport de qualité',
             'logo_url' => $logoUrl,
             'rating' => $rating['score'],

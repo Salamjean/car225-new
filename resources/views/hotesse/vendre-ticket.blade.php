@@ -106,7 +106,8 @@
                                     </div>
                                     <div>
                                         <h3 class="font-black text-gray-900 text-xl tracking-tight">
-                                            {{ $route->compagnie->name ?? 'Compagnie' }}
+                                            <span class="font-bold">{{ $route->compagnie->sigle ?? '' }}</span>
+                                            <span class="font-light text-gray-500 ml-1">{{ $route->compagnie->name ?? 'Compagnie' }}</span>
                                         </h3>
                                         <div class="flex items-center gap-2 text-sm text-gray-500 mt-1 font-medium">
                                             <span>{{ $route->point_depart }}</span>

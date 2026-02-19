@@ -49,6 +49,13 @@
                   Ajouter
                 </a>
               </div>
+              @if(\App\Models\Setting::isTicketSystemEnabled())
+              <div class="mdc-list-item mdc-drawer-item">
+                <a class="mdc-drawer-link" href="{{route('compagnie.recharge.index')}}">
+                   Recharger
+                </a>
+              </div>
+              @endif
               <div class="mdc-list-item mdc-drawer-item">
                 <a class="mdc-drawer-link" href="{{route('compagnie.index')}}">
                   Liste
@@ -120,6 +127,12 @@
           <a class="mdc-drawer-link" href="{{route('admin.support.index')}}">
             <i class="fas fa-headset mdc-list-item__start-detail mdc-drawer-item-icon"></i>
             Support Client
+          </a>
+        </div>
+        <div class="mdc-list-item mdc-drawer-item">
+          <a class="mdc-drawer-link" href="{{route('admin.settings.index')}}">
+            <i class="fas fa-cog mdc-list-item__start-detail mdc-drawer-item-icon"></i>
+            Paramètres
           </a>
         </div>
     </div>

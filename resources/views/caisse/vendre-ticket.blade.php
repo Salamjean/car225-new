@@ -1,5 +1,51 @@
 @extends('caisse.layouts.template')
 
+@section('styles')
+<style>
+    /* Select2 custom styling to match the design */
+    .select2-container--default .select2-selection--single {
+        height: 50px !important;
+        border: 1px solid #d1d5db !important;
+        border-radius: 0.75rem !important;
+        padding: 8px 12px !important;
+        font-size: 0.875rem;
+        display: flex !important;
+        align-items: center !important;
+    }
+    .select2-container--default .select2-selection--single:focus,
+    .select2-container--default.select2-container--open .select2-selection--single {
+        border-color: #e94e1a !important;
+        box-shadow: 0 0 0 2px rgba(233, 78, 26, 0.2) !important;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 50px !important;
+        right: 8px !important;
+    }
+    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        background-color: #e94e1a !important;
+    }
+    .select2-dropdown {
+        border-radius: 0.75rem !important;
+        border: 1px solid #e5e7eb !important;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+        overflow: hidden;
+    }
+    .select2-search--dropdown .select2-search__field {
+        border-radius: 0.5rem !important;
+        border: 1px solid #d1d5db !important;
+        padding: 8px 12px !important;
+    }
+    .select2-search--dropdown .select2-search__field:focus {
+        border-color: #e94e1a !important;
+        outline: none !important;
+    }
+    .select2-results__option {
+        padding: 10px 14px !important;
+        font-size: 0.875rem;
+    }
+    .select2-container { width: 100% !important; }
+</style>
+@endsection
 @section('content')
 <div class="min-h-screen bg-gradient-to-br from-gray-50 to-orange-50 py-8 px-4">
     <div class="mx-auto" style="width: 90%">
@@ -487,4 +533,23 @@
         });
     @endif
 </script>
+
+@section('scripts')
+<script>
+    $(document).ready(function() {
+        $('#programme_id').select2({
+            placeholder: '🔍 Tapez pour rechercher un programme...',
+            allowClear: true,
+            language: {
+                noResults: function() { return 'Aucun programme trouvé'; },
+                searching: function() { return 'Recherche...'; }
+            }
+        });
+        // Relay Select2 change to native change event for existing JS listeners
+        $('#programme_id').on('select2:select select2:clear', function() {
+            this.dispatchEvent(new Event('change'));
+        });
+    });
+</script>
+@endsection
 @endsection

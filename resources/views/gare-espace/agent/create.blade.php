@@ -116,7 +116,7 @@
                                         <label>Numéro de téléphone <span class="required">*</span></label>
                                         <div class="input-with-icon">
                                             <i class="fas fa-phone-alt"></i>
-                                            <input type="text" name="contact" value="{{ old('contact') }}" required placeholder="Ex: 07 00 00 00 00" maxlength="10">
+                                            <input type="text" name="contact" value="{{ old('contact') }}" required placeholder="Ex: 0700000000" maxlength="10" minlength="10" pattern="[0-9]{10}">
                                         </div>
                                         @error('contact') <span class="error-msg">{{ $message }}</span> @enderror
                                     </div>
@@ -138,7 +138,7 @@
                                         <label>Contact d'urgence <span class="required">*</span></label>
                                         <div class="input-with-icon">
                                             <i class="fas fa-ambulance"></i>
-                                            <input type="text" name="cas_urgence" value="{{ old('cas_urgence') }}" required placeholder="Ex: 05 00 00 00 00" maxlength="15">
+                                            <input type="text" name="cas_urgence" value="{{ old('cas_urgence') }}" required placeholder="Ex: 0500000000" maxlength="10" minlength="10" pattern="[0-9]{10}">
                                         </div>
                                         <small class="form-hint">Important pour la sécurité de l'agent en déplacement.</small>
                                         @error('cas_urgence') <span class="error-msg">{{ $message }}</span> @enderror

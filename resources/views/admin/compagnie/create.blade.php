@@ -119,7 +119,7 @@
                                 <div class="flex-1 relative group">
                                     <input type="text" name="contact" value="{{ old('contact') }}" required
                                         class="w-full px-5 py-4 border-2 border-gray-100 rounded-2xl focus:ring-0 focus:border-[#e94f1b] transition-all duration-300 bg-gray-50 focus:bg-white @error('contact') border-red-300 @enderror"
-                                        placeholder="07 00 00 00 00">
+                                        placeholder="0700000000">
                                     <div class="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 group-focus-within:text-[#e94f1b]">
                                         <i class="fas fa-phone text-lg"></i>
                                     </div>
@@ -292,21 +292,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const prefixSelect = document.querySelector('select[name="prefix"]');
     const phoneInput = document.querySelector('input[name="contact"]');
 
-    // Format automatique du numéro pour la Côte d'Ivoire (+225)
-    phoneInput.addEventListener('input', function(e) {
-        if (prefixSelect.value === '+225') {
-            let value = e.target.value.replace(/\D/g, '');
-            if (value.length > 10) value = value.substring(0, 10);
-            
-            // Format: 07 01 02 03 04
-            if (value.length > 0) {
-                const parts = value.match(/.{1,2}/g);
-                if (parts) e.target.value = parts.join(' ');
-            } else {
-                e.target.value = value;
-            }
-        }
-    });
+   phoneInput.addEventListener('input', function(e) {
+    if (prefixSelect.value === '+225') {
+        // 1. On ne garde que les chiffres
+        let value = e.target.value.replace(/\D/g, '');
+        
+        // 2. On limite à 10 chiffres maximum
+        if (value.length > 10) value = value.substring(0, 10);
+        
+        // 3. On réinjecte la valeur brute (sans le .join(' '))
+        e.target.value = value;
+    }
+});
 });
 </script>
 

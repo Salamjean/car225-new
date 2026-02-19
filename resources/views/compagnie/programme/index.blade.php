@@ -190,6 +190,9 @@ function manageSchedules(routeData) {
     window.currentGareDepartId = routeData.gare_depart.id;
     window.currentGareArriveeId = routeData.gare_arrivee.id;
 
+    // Stocker la durée du parcours pour le calcul automatique
+    window.currentDureeMinutes = parseDuration(routeData.durer_parcours);
+
     // 2. Générer le HTML de la liste EXISTANTE (Lecture seule + boutons edit/delete)
     const generateExistingList = (list, type) => {
         if (!list || list.length === 0) return `<p class="text-xs text-gray-400 italic mb-2">Aucun horaire existant.</p>`;
@@ -223,6 +226,8 @@ function manageSchedules(routeData) {
                     <span class="font-bold text-gray-800">${routeData.gare_arrivee.nom_gare}</span>
                 </div>
                 <div class="text-sm text-gray-600">
+                    <i class="fas fa-clock mr-1"></i> ${routeData.durer_parcours || 'N/A'}
+                    <span class="mx-1">|</span>
                     <i class="fas fa-money-bill-wave mr-1"></i> ${Number(routeData.montant_billet).toLocaleString()} FCFA
                 </div>
             </div>
@@ -233,6 +238,7 @@ function manageSchedules(routeData) {
                 <input type="hidden" name="montant_billet" value="${routeData.montant_billet}">
                 <input type="hidden" name="gare_depart_id" value="${routeData.gare_depart.id}">
                 <input type="hidden" name="gare_arrivee_id" value="${routeData.gare_arrivee.id}">
+                <input type="hidden" name="capacity" value="${routeData.aller && routeData.aller.length > 0 ? (routeData.aller[0].capacity || 50) : 50}">
                 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <!-- COLONNE ALLER -->
@@ -306,12 +312,34 @@ function manageSchedules(routeData) {
     });
 }
 
+// Parser la durée du parcours (ex: "4 heures 56 min", "2h30", "1 heure 30 minutes")
+function parseDuration(durationStr) {
+    if (!durationStr) return 90; // Fallback 1h30
+    let hours = 0, minutes = 0;
+    const hMatch = durationStr.match(/(\d+)\s*h/i);
+    if (hMatch) hours = parseInt(hMatch[1]);
+    const mMatch = durationStr.match(/(\d+)\s*m/i);
+    if (mMatch) minutes = parseInt(mMatch[1]);
+    return (hours * 60) + minutes || 90;
+}
+
+// Calculer l'heure d'arrivée à partir de l'heure de départ + durée
+function calculateArrivalTime(departureTime, durationMinutes) {
+    const [h, m] = departureTime.split(':').map(Number);
+    const totalMinutes = h * 60 + m + durationMinutes;
+    const arrH = Math.floor(totalMinutes / 60) % 24;
+    const arrM = totalMinutes % 60;
+    return `${String(arrH).padStart(2, '0')}:${String(arrM).padStart(2, '0')}`;
+}
+
 // Fonction utilitaire pour ajouter une ligne de formulaire
 window.addNewRow = function(type) {
     const container = document.getElementById(`new-${type}-container`);
     const index = Date.now(); // ID unique pour l'index du tableau
     const borderColor = type === 'aller' ? 'border-green-400' : 'border-blue-400';
     const bgColor = type === 'aller' ? 'bg-green-100' : 'bg-blue-100';
+    const inputDepartId = `depart_${type}_${index}`;
+    const inputArriveeId = `arrivee_${type}_${index}`;
 
     const rowHtml = `
         <div class="schedule-row bg-white p-2 rounded shadow-md border-l-4 ${borderColor} relative animate-slide-down">
@@ -322,13 +350,14 @@ window.addNewRow = function(type) {
             <div class="grid grid-cols-2 gap-2 mb-2">
                 <div>
                     <label class="text-[10px] uppercase text-gray-500 font-bold">Départ</label>
-                    <input type="time" name="${type}_horaires[${index}][heure_depart]" required
-                        class="w-full text-sm border-gray-300 rounded focus:ring-1 focus:ring-orange-500 p-1">
+                    <input type="time" id="${inputDepartId}" name="${type}_horaires[${index}][heure_depart]" required
+                        class="w-full text-sm border-gray-300 rounded focus:ring-1 focus:ring-orange-500 p-1"
+                        onchange="autoCalcArrivee('${inputDepartId}', '${inputArriveeId}')">
                 </div>
                 <div>
-                    <label class="text-[10px] uppercase text-gray-500 font-bold">Arrivée</label>
-                    <input type="time" name="${type}_horaires[${index}][heure_arrive]" required
-                        class="w-full text-sm border-gray-300 rounded focus:ring-1 focus:ring-orange-500 p-1">
+                    <label class="text-[10px] uppercase text-gray-500 font-bold">Arrivée <span class="text-green-500">(auto)</span></label>
+                    <input type="time" id="${inputArriveeId}" name="${type}_horaires[${index}][heure_arrive]" required
+                        class="w-full text-sm border-gray-300 rounded focus:ring-1 focus:ring-orange-500 p-1 bg-gray-50">
                 </div>
             </div>
             
@@ -340,6 +369,15 @@ window.addNewRow = function(type) {
     
     container.insertAdjacentHTML('beforeend', rowHtml);
 };
+
+// Auto-calcul de l'heure d'arrivée quand on change l'heure de départ
+function autoCalcArrivee(departId, arriveeId) {
+    const departInput = document.getElementById(departId);
+    const arriveeInput = document.getElementById(arriveeId);
+    if (departInput.value && window.currentDureeMinutes) {
+        arriveeInput.value = calculateArrivalTime(departInput.value, window.currentDureeMinutes);
+    }
+}
 
 // Fonction de suppression (inchangée)
 function deleteSchedule(programId) {

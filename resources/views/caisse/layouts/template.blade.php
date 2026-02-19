@@ -18,6 +18,8 @@
   <link rel="stylesheet" href="{{asset('assetsPoster/assets/vendors/jvectormap/jquery-jvectormap.css')}}">
   <link rel="stylesheet" href="{{asset('assetsPoster/assets/css/demo/style.css')}}">
   <link rel="shortcut icon" href="{{asset('assetsPoster/assets/images/Car225_favicon.png')}}" />
+  <!-- Select2 for searchable selects -->
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
   @vite(['resources/js/app.js'])
   @yield('styles')
 </head>
@@ -53,7 +55,10 @@
   <!-- endinject -->
   <!-- Custom js for this page-->
   <script src="{{asset('assetsPoster/assets/js/dashboard.js')}}"></script>
+  <!-- Select2 JS -->
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
   <!-- End custom js for this page-->
+  @yield('scripts')
 </body>
 
 </html>

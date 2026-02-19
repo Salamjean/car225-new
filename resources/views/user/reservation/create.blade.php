@@ -1,211 +1,355 @@
 ﻿@extends('user.layouts.template')
 @section('content')
-    <div class="min-h-screen bg-gradient-to-br from-white to-blue-50 py-4 sm:py-6 lg:py-8">
-        <div class="w-full px-3 sm:px-4 lg:px-6">
 
-            <!-- Formulaire de recherche -->
-            <div class="mb-6 sm:mb-8">
-                <div class="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
-                    <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Rechercher un voyage</h2>
+@push('styles')
+<style>
+    /* Hero Search */
+    .hero-search {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        position: relative;
+        overflow: hidden;
+    }
+    .hero-search::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 500px;
+        height: 500px;
+        background: radial-gradient(circle, rgba(233,79,27,0.15) 0%, transparent 70%);
+        border-radius: 50%;
+    }
+    .hero-search::after {
+        content: '';
+        position: absolute;
+        bottom: -30%;
+        left: -10%;
+        width: 400px;
+        height: 400px;
+        background: radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 70%);
+        border-radius: 50%;
+    }
+    .glass-input {
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.15);
+        backdrop-filter: blur(10px);
+        color: #fff;
+        transition: all 0.3s ease;
+    }
+    .glass-input::placeholder { color: rgba(255,255,255,0.5); }
+    .glass-input:focus {
+        background: rgba(255,255,255,0.15);
+        border-color: #e94f1b;
+        box-shadow: 0 0 0 3px rgba(233,79,27,0.2);
+        outline: none;
+    }
+    /* Route Card */
+    .route-card {
+        border-left: 4px solid #e94f1b;
+        transition: all 0.35s cubic-bezier(.4,0,.2,1);
+    }
+    .route-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.08), 0 0 0 1px rgba(233,79,27,0.1);
+        border-left-width: 6px;
+    }
+    /* Timeline */
+    .timeline-line {
+        background: repeating-linear-gradient(90deg, #d1d5db 0, #d1d5db 6px, transparent 6px, transparent 12px);
+        height: 2px;
+    }
+    /* Schedule chip */
+    .schedule-chip {
+        transition: all 0.2s ease;
+        position: relative;
+    }
+    .schedule-chip:hover {
+        transform: scale(1.08);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .schedule-chip::before {
+        content: '';
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        position: absolute;
+        top: -3px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: currentColor;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+    .schedule-chip:hover::before { opacity: 1; }
+    /* Swap button rotation */
+    .swap-btn { transition: all 0.4s cubic-bezier(.4,0,.2,1); }
+    .swap-btn:hover { transform: rotate(180deg) scale(1.1); }
+    .swap-btn:active { transform: rotate(180deg) scale(0.95); }
+    /* Price pulse */
+    @keyframes pricePulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.03)} }
+    .route-card:hover .price-value { animation: pricePulse 0.5s ease; }
+</style>
+@endpush
 
-                  <form action="{{ route('reservation.create') }}" method="GET" id="search-form">
-                        <!-- Modification ici : passage à lg:grid-cols-12 pour une ligne parfaite -->
-                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-end">
-                            
-                            <!-- Point de départ (Prend 3 colonnes sur 12) -->
-                            <div class="relative lg:col-span-3">
-                                <label for="point_depart" class="block text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-map-marker-alt text-[#e94f1b] mr-2"></i>Point de départ
-                                </label>
-                                <div class="relative">
-                                    <input type="text" id="point_depart" name="point_depart"
-                                        value="{{ $searchParams['point_depart'] ?? '' }}"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 pl-12"
-                                        placeholder="Ville ou gare de départ" required>
-                                </div>
-                            </div>
+    <div class="min-h-screen bg-[#f5f6fa]">
 
-                            <!-- Bouton d'inversion (Prend 1 colonne sur 12, centrÃ©) -->
-                            <div class="lg:col-span-1 flex items-end justify-center pb-2">
-                                <button type="button" onclick="swapLocations()" 
-                                    class="w-10 h-10 bg-[#e94f1b] text-white rounded-full hover:bg-orange-600 transition-all duration-300 transform hover:scale-110 shadow-lg flex items-center justify-center"
-                                    title="Inverser départ/arrivée">
-                                    <i class="fas fa-exchange-alt"></i>
-                                </button>
-                            </div>
-
-                            <!-- Point d'arrivée (Prend 3 colonnes sur 12) -->
-                            <div class="relative lg:col-span-3">
-                                <label for="point_arrive" class="block text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-flag text-green-500 mr-2"></i>Point d'arrivée
-                                </label>
-                                <div class="relative">
-                                    <input type="text" id="point_arrive" name="point_arrive"
-                                        value="{{ $searchParams['point_arrive'] ?? '' }}"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 pl-12"
-                                        placeholder="Ville ou gare d'arrivée" required>
-                                </div>
-                            </div>
-
-                            <!-- Date de départ (Prend 2 colonnes sur 12) -->
-                            <div class="relative lg:col-span-2">
-                                <label for="date_depart" class="block text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-calendar text-blue-500 mr-2"></i>Date
-                                </label>
-                                <div class="relative">
-                                    <input type="date" id="date_depart" name="date_depart"
-                                        value="{{ $searchParams['date_depart'] ?? date('Y-m-d', strtotime('+1 day')) }}"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 pl-12"
-                                        min="{{ date('Y-m-d', strtotime('+1 day')) }}" required>
-                                </div>
-                            </div>
-
-                            <!-- Bouton Rechercher (Prend 3 colonnes sur 12) -->
-                            <div class="lg:col-span-3">
-                                <button type="submit"
-                                    class="w-full bg-[#e94f1b] text-white px-4 py-3.5 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 shadow-lg flex items-center justify-center gap-2">
-                                    <i class="fas fa-search"></i>
-                                    <span>Rechercher</span>
-                                </button>
-                            </div>
-                        </div>
-                    </form>
+        {{-- ============================================ --}}
+        {{-- HERO SEARCH BAR --}}
+        {{-- ============================================ --}}
+        <div class="hero-search rounded-b-3xl sm:rounded-b-[2.5rem] shadow-2xl px-4 sm:px-6 lg:px-8 pt-6 pb-10 sm:pt-8 sm:pb-14 relative z-10">
+            <div class="relative z-20 max-w-6xl mx-auto">
+                {{-- Title --}}
+                <div class="mb-6 sm:mb-8 text-center sm:text-left">
+                    <h1 class="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight">
+                        Où allez-vous <span class="text-[#e94f1b]">?</span>
+                    </h1>
+                    <p class="text-blue-200/70 text-sm sm:text-base mt-1 font-medium">Trouvez le meilleur trajet au meilleur prix</p>
                 </div>
 
+                {{-- Search Form --}}
+                <form action="{{ route('reservation.create') }}" method="GET" id="search-form">
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-end">
 
+                        {{-- Départ --}}
+                        <div class="lg:col-span-3">
+                            <label class="block text-xs font-bold text-blue-200/80 uppercase tracking-widest mb-2">
+                                <i class="fas fa-map-marker-alt text-[#e94f1b] mr-1"></i> Départ
+                            </label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <i class="fas fa-map-marker-alt text-[#e94f1b]/60"></i>
+                                </span>
+                                <input type="text" id="point_depart" name="point_depart"
+                                    value="{{ $searchParams['point_depart'] ?? '' }}"
+                                    class="glass-input w-full pl-11 pr-4 py-3.5 rounded-xl font-semibold text-sm"
+                                    placeholder="Ville ou gare de départ" required>
+                            </div>
+                        </div>
+
+                        {{-- Swap --}}
+                        <div class="lg:col-span-1 flex items-end justify-center pb-1">
+                            <button type="button" onclick="swapLocations()"
+                                class="swap-btn w-11 h-11 bg-[#e94f1b] text-white rounded-full shadow-lg shadow-orange-500/30 flex items-center justify-center"
+                                title="Inverser départ/arrivée">
+                                <i class="fas fa-exchange-alt text-sm"></i>
+                            </button>
+                        </div>
+
+                        {{-- Arrivée --}}
+                        <div class="lg:col-span-3">
+                            <label class="block text-xs font-bold text-blue-200/80 uppercase tracking-widest mb-2">
+                                <i class="fas fa-flag text-emerald-400 mr-1"></i> Arrivée
+                            </label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <i class="fas fa-flag text-emerald-400/60"></i>
+                                </span>
+                                <input type="text" id="point_arrive" name="point_arrive"
+                                    value="{{ $searchParams['point_arrive'] ?? '' }}"
+                                    class="glass-input w-full pl-11 pr-4 py-3.5 rounded-xl font-semibold text-sm"
+                                    placeholder="Ville ou gare d'arrivée" required>
+                            </div>
+                        </div>
+
+                        {{-- Date --}}
+                        <div class="lg:col-span-2">
+                            <label class="block text-xs font-bold text-blue-200/80 uppercase tracking-widest mb-2">
+                                <i class="fas fa-calendar-alt text-blue-400 mr-1"></i> Date
+                            </label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <i class="fas fa-calendar-alt text-blue-400/60"></i>
+                                </span>
+                                <input type="date" id="date_depart" name="date_depart"
+                                    value="{{ $searchParams['date_depart'] ?? date('Y-m-d', strtotime('+1 day')) }}"
+                                    class="glass-input w-full pl-11 pr-4 py-3.5 rounded-xl font-semibold text-sm"
+                                    min="{{ date('Y-m-d', strtotime('+1 day')) }}" required>
+                            </div>
+                        </div>
+
+                        {{-- Rechercher --}}
+                        <div class="lg:col-span-3">
+                            <button type="submit"
+                                class="w-full bg-[#e94f1b] hover:bg-[#d4430f] text-white px-6 py-3.5 rounded-xl font-black text-sm uppercase tracking-wider shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300 flex items-center justify-center gap-2.5 active:scale-[0.97]">
+                                <i class="fas fa-search"></i>
+                                <span>Rechercher</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
             </div>
-             <!-- Alerte si l'heure recherchÃ©e n'existe pas -->
+        </div>
+
+        <div class="max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 -mt-4 sm:-mt-6 relative z-20">
+
+            {{-- ============================================ --}}
+            {{-- ALERTE HEURE NON DISPONIBLE --}}
+            {{-- ============================================ --}}
             @if (isset($timeMismatch) && $timeMismatch && isset($availableTimesMessage))
-                <div class="mb-6 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-xl">
+                <div class="mb-6 bg-amber-50 border border-amber-200 p-4 rounded-2xl shadow-sm">
                     <div class="flex items-start gap-3">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-exclamation-triangle text-yellow-500 text-xl mt-1"></i>
+                        <div class="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-exclamation-triangle text-amber-500"></i>
                         </div>
                         <div>
-                            <h4 class="font-bold text-yellow-800 mb-1">Heure non disponible</h4>
-                            <p class="text-yellow-700">{{ $availableTimesMessage }}</p>
-                            <p class="text-sm text-yellow-600 mt-2">Nous affichons quand mÃªme les programmes disponibles pour cette route.</p>
+                            <h4 class="font-bold text-amber-800 text-sm">Heure non disponible</h4>
+                            <p class="text-amber-700 text-sm mt-1">{{ $availableTimesMessage }}</p>
+                            <p class="text-xs text-amber-500 mt-1">Nous affichons quand même les programmes disponibles pour cette route.</p>
                         </div>
                     </div>
                 </div>
             @endif
-             <!-- RÃ©sultats de recherche - Routes groupÃ©es -->
+
+            {{-- ============================================ --}}
+            {{-- RÉSULTATS --}}
+            {{-- ============================================ --}}
             @if (isset($groupedRoutes) && $groupedRoutes->count() > 0)
                 <div class="mb-6 sm:mb-8">
-                    <div class="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100 mb-6">
-                        <div class="flex justify-between items-center">
-                            <h2 class="text-xl sm:text-2xl font-bold text-gray-900">Voyages disponibles</h2>
-                            <span class="bg-[#e94f1b] text-white px-4 py-2 rounded-xl font-bold text-lg">
-                                {{ $groupedRoutes->count() }} trajet(s) disponible(s)
-                            </span>
-                        </div>
 
-                        <!-- Filtres ou Date actuelle -->
-                        <div class="mt-4 flex flex-wrap gap-2">
-                            @if(isset($searchParams['point_depart']) && $searchParams['point_depart'])
-                                <div class="flex items-center gap-2 bg-orange-50 px-3 py-1 rounded-full">
-                                    <i class="fas fa-map-marker-alt text-[#e94f1b]"></i>
-                                    <span class="font-semibold">{{ $searchParams['point_depart'] }}</span>
+                    {{-- Results Header --}}
+                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm p-4 sm:p-5 border border-gray-100/80 mb-5">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-[#e94f1b]/10 rounded-xl flex items-center justify-center">
+                                    <i class="fas fa-route text-[#e94f1b]"></i>
                                 </div>
-                                <i class="fas fa-arrow-right text-[#e94f1b] my-auto"></i>
-                                <div class="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-full">
-                                    <i class="fas fa-flag text-green-500"></i>
-                                    <span class="font-semibold">{{ $searchParams['point_arrive'] }}</span>
+                                <div>
+                                    <h2 class="text-lg sm:text-xl font-black text-gray-900">Voyages disponibles</h2>
+                                    <div class="flex flex-wrap items-center gap-2 mt-1">
+                                        @if(isset($searchParams['point_depart']) && $searchParams['point_depart'])
+                                            <span class="text-xs font-bold text-gray-700 bg-gray-100 px-2.5 py-1 rounded-lg">
+                                                <i class="fas fa-map-marker-alt text-[#e94f1b] mr-1"></i>{{ $searchParams['point_depart'] }}
+                                            </span>
+                                            <i class="fas fa-arrow-right text-[#e94f1b] text-[10px]"></i>
+                                            <span class="text-xs font-bold text-gray-700 bg-gray-100 px-2.5 py-1 rounded-lg">
+                                                <i class="fas fa-flag text-emerald-500 mr-1"></i>{{ $searchParams['point_arrive'] }}
+                                            </span>
+                                        @else
+                                            <span class="text-xs font-bold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-lg">
+                                                <i class="fas fa-globe mr-1"></i>Toutes les destinations
+                                            </span>
+                                        @endif
+                                        <span class="text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg">
+                                            <i class="fas fa-calendar-alt mr-1"></i>{{ date('d/m/Y', strtotime($searchParams['date_depart'])) }}
+                                        </span>
+                                    </div>
                                 </div>
-                            @else
-                                <div class="flex items-center gap-2 bg-purple-50 px-3 py-1 rounded-full">
-                                    <i class="fas fa-globe text-purple-600"></i>
-                                    <span class="font-semibold text-purple-700">Toutes les destinations</span>
-                                </div>
-                            @endif
-                            
-                            <div class="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full">
-                                <i class="fas fa-calendar text-blue-500"></i>
-                                <span class="font-bold text-blue-700">{{ date('d/m/Y', strtotime($searchParams['date_depart'])) }}</span>
+                            </div>
+                            <div class="flex-shrink-0">
+                                <span class="bg-[#e94f1b] text-white px-4 py-2 rounded-xl font-black text-sm shadow-lg shadow-orange-500/20">
+                                    {{ $groupedRoutes->count() }} trajet{{ $groupedRoutes->count() > 1 ? 's' : '' }}
+                                </span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Liste des routes -->
+                    {{-- Route Cards --}}
                     <div class="space-y-4">
                         @foreach ($groupedRoutes as $route)
-                            <div class="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
-                                <div class="p-5">
-                                    <div class="flex flex-col lg:flex-row lg:items-center gap-6">
-                                        <!-- Compagnie & Trajet -->
-                                        <div class="flex items-center gap-4 min-w-[280px]">
-                                            <div class="w-16 h-16 bg-gradient-to-br from-[#e94f1b] to-orange-400 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-inner">
-                                                <i class="fas fa-bus text-white text-2xl"></i>
+                            <div class="route-card bg-white rounded-2xl shadow-md border border-gray-100/80 overflow-hidden">
+                                <div class="p-5 sm:p-6">
+                                    <div class="flex flex-col lg:flex-row lg:items-stretch gap-5 lg:gap-6">
+
+                                        {{-- LEFT: Company & Route --}}
+                                        <div class="flex-1 min-w-0">
+                                            {{-- Company --}}
+                                            <div class="flex items-center gap-3 mb-4">
+                                                <div class="w-12 h-12 bg-gradient-to-br from-[#e94f1b] to-orange-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md shadow-orange-500/20">
+                                                    <i class="fas fa-bus text-white text-lg"></i>
+                                                </div>
+                                                <div class="min-w-0">
+                                                    <h3 class="text-base sm:text-lg font-black text-gray-900 tracking-tight truncate">
+                                                        <span class="text-[#e94f1b]">{{ $route->compagnie->sigle ?? '' }}</span>
+                                                        <span class="font-medium text-gray-500 ml-1">{{ $route->compagnie->name ?? 'Compagnie' }}</span>
+                                                    </h3>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <h3 class="font-black text-gray-900 text-xl tracking-tight">
-                                                    {{ $route->compagnie->name ?? 'Compagnie' }}
-                                                </h3>
-                                                <div class="flex items-center gap-2 text-sm text-gray-500 mt-1 font-medium">
-                                                    <div class="flex flex-col">
-                                                        <span class="font-semibold text-gray-700">{{ $route->point_depart }}</span>
-                                                        @if($route->gare_depart)
-                                                            <span class="text-xs text-gray-400">
-                                                                <i class="fas fa-building mr-1"></i>{{ $route->gare_depart->nom_gare }}
-                                                            </span>
-                                                        @endif
-                                                    </div>
-                                                    <i class="fas fa-long-arrow-alt-right text-[#e94f1b] mx-2"></i>
-                                                    <div class="flex flex-col">
-                                                        <span class="font-semibold text-gray-700">{{ $route->point_arrive }}</span>
-                                                        @if($route->gare_arrivee)
-                                                            <span class="text-xs text-gray-400">
-                                                                <i class="fas fa-building mr-1"></i>{{ $route->gare_arrivee->nom_gare }}
-                                                            </span>
-                                                        @endif
+
+                                            {{-- Route Timeline --}}
+                                            <div class="flex items-center gap-3 sm:gap-4">
+                                                {{-- Departure --}}
+                                                <div class="text-center sm:text-left flex-shrink-0">
+                                                    <p class="font-black text-gray-900 text-sm sm:text-base leading-tight">{{ $route->point_depart }}</p>
+                                                    @if($route->gare_depart)
+                                                        <p class="text-[10px] text-gray-400 font-semibold mt-0.5 flex items-center gap-1">
+                                                            <i class="fas fa-building"></i>{{ $route->gare_depart->nom_gare }}
+                                                        </p>
+                                                    @endif
+                                                </div>
+
+                                                {{-- Timeline line --}}
+                                                <div class="flex-1 flex flex-col items-center gap-1 min-w-[80px]">
+                                                    <span class="text-[10px] font-black text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full whitespace-nowrap">
+                                                        <i class="fas fa-clock mr-0.5"></i>{{ $route->durer_parcours }}
+                                                    </span>
+                                                    <div class="w-full relative flex items-center">
+                                                        <div class="w-2 h-2 rounded-full bg-[#e94f1b] flex-shrink-0 z-10"></div>
+                                                        <div class="timeline-line flex-1"></div>
+                                                        <div class="absolute left-1/2 -translate-x-1/2 bg-white px-1">
+                                                            <i class="fas fa-bus text-[#e94f1b] text-[10px]"></i>
+                                                        </div>
+                                                        <div class="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0 z-10"></div>
                                                     </div>
                                                 </div>
-                                                <div class="mt-2 text-xs font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full inline-block">
-                                                    <i class="fas fa-hourglass-half mr-1"></i>{{ $route->durer_parcours }}
+
+                                                {{-- Arrival --}}
+                                                <div class="text-center sm:text-right flex-shrink-0">
+                                                    <p class="font-black text-gray-900 text-sm sm:text-base leading-tight">{{ $route->point_arrive }}</p>
+                                                    @if($route->gare_arrivee)
+                                                        <p class="text-[10px] text-gray-400 font-semibold mt-0.5 flex items-center gap-1 justify-end">
+                                                            <i class="fas fa-building"></i>{{ $route->gare_arrivee->nom_gare }}
+                                                        </p>
+                                                    @endif
+                                                </div>
+                                            </div>
+
+                                            {{-- Schedules --}}
+                                            <div class="mt-4">
+                                                <p class="text-[9px] font-black text-gray-400 uppercase tracking-[0.15em] mb-2 flex items-center gap-1.5">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                                    Horaires & Disponibilité
+                                                </p>
+                                                <div class="flex flex-wrap gap-2">
+                                                    @foreach($route->aller_horaires as $horaire)
+                                                        @php
+                                                            $occupancyRate = ($horaire['reserved_count'] / $horaire['total_seats']) * 100;
+                                                            $isFull = $horaire['reserved_count'] >= $horaire['total_seats'];
+                                                            $isAlmost = $occupancyRate > 80;
+                                                            $chipBg = $isFull ? 'bg-red-50 border-red-200 text-red-600' : ($isAlmost ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700');
+                                                            $dotColor = $isFull ? 'bg-red-400' : ($isAlmost ? 'bg-amber-400' : 'bg-emerald-400');
+                                                        @endphp
+                                                        <div onclick="showVehicleDetails('{{ $horaire['vehicule_id'] ?? 0 }}', '{{ $horaire['id'] }}', '{{ $searchParams['date_depart'] }}', '{{ substr($horaire['heure_depart'], 0, 5) }}')"
+                                                             class="schedule-chip flex items-center gap-2 px-3 py-2 rounded-xl border {{ $chipBg }} cursor-pointer group shadow-sm"
+                                                             title="Cliquez pour voir les places disponibles">
+                                                            <span class="w-1.5 h-1.5 rounded-full {{ $dotColor }}"></span>
+                                                            <span class="font-black text-sm">{{ substr($horaire['heure_depart'], 0, 5) }}</span>
+                                                            <div class="w-px h-3 bg-current opacity-15"></div>
+                                                            <div class="flex items-center gap-1 text-[10px] font-bold opacity-80">
+                                                                <i class="fas fa-couch"></i>
+                                                                <span>{{ $horaire['reserved_count'] }}/{{ $horaire['total_seats'] }}</span>
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <!-- Horaires & Occupation (Liste défilante ou grille) -->
-                                        <div class="flex-1">
-                                            <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-                                                <i class="fas fa-clock text-[#e94f1b]"></i> Horaires & Disponibilité
-                                            </p>
-                                            <div class="flex flex-wrap gap-2">
-                                                @foreach($route->aller_horaires as $horaire)
-                                                    @php
-                                                        $occupancyRate = ($horaire['reserved_count'] / $horaire['total_seats']) * 100;
-                                                        $statusClass = $horaire['reserved_count'] >= $horaire['total_seats'] ? 'bg-red-50 border-red-200 text-red-700' : 
-                                                                      ($occupancyRate > 80 ? 'bg-orange-50 border-orange-200 text-orange-700' : 'bg-green-50 border-green-200 text-green-700');
-                                                    @endphp
-                                                    <div onclick="showVehicleDetails('{{ $horaire['vehicule_id'] ?? 0 }}', '{{ $horaire['id'] }}', '{{ $searchParams['date_depart'] }}', '{{ substr($horaire['heure_depart'], 0, 5) }}')"
-                                                         class="flex items-center gap-2 px-3 py-1.5 rounded-xl border {{ $statusClass }} transition-all hover:scale-110 active:scale-95 shadow-sm cursor-pointer group hover:shadow-md" 
-                                                         title="Cliquez pour voir les places disponibles">
-                                                         <span class="font-black text-sm">{{ substr($horaire['heure_depart'], 0, 5) }}</span>
-                                                         <div class="w-px h-3 bg-current opacity-20"></div>
-                                                         <div class="flex items-center gap-1">
-                                                             <i class="fas fa-couch text-[10px] group-hover:text-[#e94f1b]"></i>
-                                                             <span class="text-[10px] font-black">{{ $horaire['reserved_count'] }}/{{ $horaire['total_seats'] }}</span>
-                                                         </div>
-                                                     </div>
-                                                @endforeach
-                                            </div>
-                                        </div>
-
-                                        <!-- Prix & Action -->
-                                        <div class="lg:text-right flex lg:flex-col items-center lg:items-end justify-between lg:justify-center gap-4 border-t lg:border-t-0 lg:border-l border-gray-100 pt-4 lg:pt-0 lg:pl-6 min-w-[200px]">
-                                            <div>
-                                                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Prix à partir de</p>
-                                                <p class="text-2xl font-black text-[#e94f1b]">
-                                                    {{ number_format($route->montant_billet, 0, ',', ' ') }} <small class="text-xs">FCFA</small>
+                                        {{-- RIGHT: Price & Book --}}
+                                        <div class="flex lg:flex-col items-center lg:items-end justify-between lg:justify-center gap-4 border-t lg:border-t-0 lg:border-l border-gray-100 pt-4 lg:pt-0 lg:pl-6 lg:min-w-[180px]">
+                                            <div class="text-right">
+                                                <p class="text-[9px] text-gray-400 font-black uppercase tracking-widest">Prix à partir de</p>
+                                                <p class="price-value text-2xl sm:text-3xl font-black text-[#e94f1b] leading-tight mt-0.5">
+                                                    {{ number_format($route->montant_billet, 0, ',', ' ') }}
+                                                    <span class="text-xs font-bold text-gray-400">FCFA</span>
                                                 </p>
                                             </div>
-                                            
+
                                             @php
                                                 $routeData = [
                                                     'id' => $route->id,
                                                     'compagnie_id' => $route->compagnie_id ?? null,
                                                     'compagnie' => $route->compagnie->name ?? 'Compagnie',
+                                                    'sigle' => $route->compagnie->sigle ?? '',
                                                     'point_depart' => $route->point_depart,
                                                     'point_arrive' => $route->point_arrive,
                                                     'gare_depart' => $route->gare_depart,
@@ -219,11 +363,11 @@
                                                     'capacity' => $route->capacity ?? 50,
                                                 ];
                                             @endphp
-                                            <button type="button" 
+                                            <button type="button"
                                                 data-route="{{ json_encode($routeData, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) }}"
                                                 data-date="{{ $searchParams['date_depart'] }}"
                                                 onclick="handleReservationClick(this)"
-                                                class="bg-gradient-to-r from-[#e94f1b] to-orange-600 text-white px-8 py-3 rounded-xl font-black text-sm hover:shadow-lg hover:shadow-orange-200 transition-all duration-300 transform active:scale-95 flex items-center gap-2">
+                                                class="bg-gradient-to-r from-[#e94f1b] to-orange-500 text-white px-6 sm:px-8 py-3 rounded-xl font-black text-sm shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:from-[#d4430f] hover:to-orange-600 transition-all duration-300 active:scale-95 flex items-center gap-2 whitespace-nowrap">
                                                 <span>RÉSERVER</span>
                                                 <i class="fas fa-chevron-right text-[10px]"></i>
                                             </button>
@@ -234,14 +378,23 @@
                         @endforeach
                     </div>
                 </div>
+
             @elseif(isset($groupedRoutes))
-                <!-- Aucun rÃ©sultat -->
-                <div class="bg-white rounded-xl shadow-lg p-8 text-center">
-                    <div class="w-20 h-20 bg-gradient-to-br from-orange-100 to-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-route text-3xl text-[#e94f1b]"></i>
+                {{-- Empty State --}}
+                <div class="bg-white rounded-2xl shadow-md p-10 sm:p-14 text-center border border-gray-100/80 mt-6">
+                    <div class="w-24 h-24 bg-gradient-to-br from-orange-100 to-blue-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+                        <i class="fas fa-route text-4xl text-[#e94f1b]"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">Aucun programme trouvÃ©</h3>
-                    <p class="text-gray-600 mb-6">Essayez d'ajuster vos critÃ¨res de recherche.</p>
+                    <h3 class="text-2xl font-black text-gray-900 mb-2">Aucun trajet trouvé</h3>
+                    <p class="text-gray-500 font-medium max-w-md mx-auto mb-8">Nous n'avons trouvé aucun programme pour cette recherche. Essayez de modifier vos critères.</p>
+                    <div class="flex flex-wrap justify-center gap-3">
+                        <button onclick="document.getElementById('date_depart').focus()" class="px-5 py-2.5 bg-blue-50 text-blue-700 rounded-xl font-bold text-sm hover:bg-blue-100 transition-colors flex items-center gap-2">
+                            <i class="fas fa-calendar-alt"></i> Changer la date
+                        </button>
+                        <button onclick="document.getElementById('point_depart').focus()" class="px-5 py-2.5 bg-orange-50 text-[#e94f1b] rounded-xl font-bold text-sm hover:bg-orange-100 transition-colors flex items-center gap-2">
+                            <i class="fas fa-map-marker-alt"></i> Modifier le trajet
+                        </button>
+                    </div>
                 </div>
             @endif
         </div>
@@ -678,7 +831,10 @@ var currentRetourProgramId = null;
                         <i class="fas fa-arrow-right text-[10px] text-gray-400"></i>
                         <span class="flex items-center gap-1"><i class="fas fa-flag text-xs text-green-500"></i> ${routeData.gare_arrivee?.nom_gare || 'Ville'}</span>
                     </div>
-                    <p class="text-sm font-bold text-gray-800 mt-2">${routeData.compagnie}</p>
+                        <p class="text-sm font-bold text-gray-800 mt-2">
+                            <span class="font-bold">${routeData.sigle || ''}</span>
+                            <span class="font-light text-gray-600">${routeData.compagnie}</span>
+                        </p>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div class="border-2 border-gray-200 rounded-lg p-4 text-center hover:border-[#e94f1b] hover:bg-orange-50 transition-all cursor-pointer" id="btnRouteSimple">
@@ -1919,7 +2075,10 @@ window.outboundDate = dateVoyage;
 
                         document.getElementById('reservationProgramInfo').innerHTML = `
                             <div class="flex flex-wrap gap-4">
-                                <span><i class="fas fa-map-marker-alt"></i>${program.point_depart} <i class="fas fa-long-arrow-alt-right mx-1"></i> ${program.point_arrive}</span>
+                                <span class="bg-red-50 text-red-700 px-2 py-1 rounded font-bold">
+                                    <i class="fas fa-building"></i>
+                                    ${program.compagnie?.sigle || ''} ${program.compagnie?.name || ''}
+                                </span>
                                 <span><i class="fas fa-calendar"></i> ${dateDisplay}</span>
                                 <span class="bg-green-100 text-green-800 px-2 py-1 rounded"><i class="fas fa-clock"></i> Départ: ${window.selectedDepartureTime || program.heure_depart}</span>
                                 <span><i class="fas fa-money-bill-wave"></i> ${prixAffiche.toLocaleString('fr-FR')} FCFA</span>

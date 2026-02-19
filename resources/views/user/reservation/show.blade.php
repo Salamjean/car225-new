@@ -204,7 +204,10 @@
                         <i class="fas fa-bus text-2xl text-[#e94f1b]"></i>
                     @endif
                 </div>
-                <h5 class="text-lg font-black text-gray-900 uppercase tracking-tight">{{ $reservation->programme->compagnie->name }}</h5>
+                <h5 class="text-lg font-black text-gray-900 uppercase tracking-tight">
+                    <span class="font-bold">{{ $reservation->programme->compagnie->sigle ?? '' }}</span>
+                    <span class="font-light text-gray-500 ml-1">{{ $reservation->programme->compagnie->name }}</span>
+                </h5>
                 <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6">Transport Routier</p>
                 
                 <div class="space-y-3 text-left bg-gray-50 p-4 rounded-2xl">

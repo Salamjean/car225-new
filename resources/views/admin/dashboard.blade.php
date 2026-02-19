@@ -138,6 +138,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
             <!-- Revenue Chart -->
             <!-- Revenue Tickets Card (New) -->
+            @if(\App\Models\Setting::isTicketSystemEnabled())
             <div class="lg:col-span-2 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl shadow-xl overflow-hidden relative mb-8">
                 <div class="absolute right-0 top-0 h-full w-1/3 bg-white/10 transform skew-x-12"></div>
                 <div class="absolute right-10 top-10 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
@@ -158,6 +159,7 @@
                     </div>
                 </div>
             </div>
+            @endif
 
             <div class="lg:col-span-2 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
                 <div class="px-8 py-6 border-b border-gray-50 flex items-center justify-between bg-gradient-to-r from-green-50 to-white">

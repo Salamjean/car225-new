@@ -825,6 +825,7 @@ class ReservationApiController extends Controller
                         'compagnie' => $allerReservation->programme->compagnie ? [
                             'id' => $allerReservation->programme->compagnie->id,
                             'name' => $allerReservation->programme->compagnie->name,
+                            'sigle' => $allerReservation->programme->compagnie->sigle,
                         ] : null,
                         'vehicule' => $allerReservation->programme->getVehiculeForDate($allerReservation->date_voyage) ? [
                             'id' => $allerReservation->programme->getVehiculeForDate($allerReservation->date_voyage)->id,
@@ -867,6 +868,7 @@ class ReservationApiController extends Controller
                         'compagnie' => $retourReservation->programme->compagnie ? [
                             'id' => $retourReservation->programme->compagnie->id,
                             'name' => $retourReservation->programme->compagnie->name,
+                            'sigle' => $retourReservation->programme->compagnie->sigle,
                         ] : null,
                         'vehicule' => $retourReservation->programme->getVehiculeForDate($dateVoyageRetour) ? [
                             'id' => $retourReservation->programme->getVehiculeForDate($dateVoyageRetour)->id,
@@ -1621,7 +1623,7 @@ class ReservationApiController extends Controller
             }
 
             // VÉRIFICATION DU SOLDE DE LA COMPAGNIE
-            if ($programme->compagnie->tickets < $montantTotalPrevu) {
+            if (\App\Models\Setting::isTicketSystemEnabled() && $programme->compagnie->tickets < $montantTotalPrevu) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Désolé, cette compagnie n\'a plus assez de crédit pour accepter de nouvelles réservations.'

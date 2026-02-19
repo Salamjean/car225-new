@@ -848,7 +848,7 @@ $dateAller = $request->date_voyage;
             }
 
             // VÉRIFICATION DU SOLDE DE LA COMPAGNIE
-            if ($programme->compagnie->tickets < $montantTotal) {
+            if (\App\Models\Setting::isTicketSystemEnabled() && $programme->compagnie->tickets < $montantTotal) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Désolé, cette compagnie n\'a plus assez de crédit pour accepter de nouvelles réservations.'

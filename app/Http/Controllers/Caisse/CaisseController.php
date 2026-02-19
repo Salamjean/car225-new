@@ -181,7 +181,7 @@ class CaisseController extends Controller
         $heureActuelle = $now->format('H:i');   // Ex: 14:30
         
         // 2. Récupérer les programmes
-        $programmes = Programme::with(['compagnie', 'voyages.vehicule'])
+        $query = Programme::with(['compagnie', 'voyages.vehicule'])
             ->where('compagnie_id', $caisse->compagnie_id)
             ->where('statut', 'actif') // On s'assure qu'il est actif
             
@@ -192,14 +192,18 @@ class CaisseController extends Controller
             ->whereDate('date_depart', '<=', $dateAujourdhui)
             
             // LOGIQUE HEURE : On ne veut que les départs FUTURS pour la journée d'aujourd'hui
-            ->where('heure_depart', '>', $heureActuelle)
+            ->where('heure_depart', '>', $heureActuelle);
             
-            // On trie par heure de départ la plus proche
-            ->orderBy('heure_depart', 'asc')
-            ->get();
+        // 3. Filtrer par gare de départ si la caisse est rattachée à une gare
+        if ($caisse->gare_id) {
+            $query->where('gare_depart_id', $caisse->gare_id);
+        }
+        
+        $programmes = $query->orderBy('heure_depart', 'asc')->get();
             
         Log::info('Caisse VendreTicket Filtré:', [
             'heure_actuelle' => $heureActuelle,
+            'gare_id' => $caisse->gare_id,
             'programmes_trouves' => $programmes->count()
         ]);
         
@@ -228,7 +232,7 @@ class CaisseController extends Controller
         $montantTotal = $programme->montant_billet * $request->nombre_tickets;
 
         // VÉRIFICATION DU SOLDE DE LA COMPAGNIE
-        if ($programme->compagnie->tickets < $montantTotal) {
+        if (\App\Models\Setting::isTicketSystemEnabled() && $programme->compagnie->tickets < $montantTotal) {
             return back()->withErrors(['error' => 'Solde de la compagnie insuffisant pour effectuer cette vente. Veuillez recharger votre compte.']);
         }
 
@@ -344,14 +348,19 @@ class CaisseController extends Controller
         $dateAujourdhui = $now->toDateString();
         $heureActuelle = $now->format('H:i');
         
-        $programmes = Programme::with(['compagnie', 'voyages.vehicule'])
+        $query = Programme::with(['compagnie', 'voyages.vehicule'])
             ->where('compagnie_id', $caisse->compagnie_id)
             ->where('statut', 'actif')
             ->whereDate('date_fin', '>=', $dateAujourdhui)
             ->whereDate('date_depart', '<=', $dateAujourdhui)
-            ->where('heure_depart', '>', $heureActuelle)
-            ->orderBy('heure_depart', 'asc')
-            ->get();
+            ->where('heure_depart', '>', $heureActuelle);
+        
+        // Filtrer par gare de départ si la caisse est rattachée à une gare
+        if ($caisse->gare_id) {
+            $query->where('gare_depart_id', $caisse->gare_id);
+        }
+        
+        $programmes = $query->orderBy('heure_depart', 'asc')->get();
             
         return view('caisse.vente', compact('caisse', 'programmes'));
     }
@@ -371,7 +380,7 @@ class CaisseController extends Controller
         
         $montantTotal = $programme->montant_billet * $nombreTickets;
 
-        if ($programme->compagnie->tickets < $montantTotal) {
+        if (\App\Models\Setting::isTicketSystemEnabled() && $programme->compagnie->tickets < $montantTotal) {
             return back()->withErrors(['error' => 'Solde de la compagnie insuffisant pour effectuer cette vente.']);
         }
 
