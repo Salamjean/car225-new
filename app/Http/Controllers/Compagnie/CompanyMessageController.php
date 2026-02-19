@@ -38,13 +38,16 @@ class CompanyMessageController extends Controller
         $messages = $query->paginate(10);
 
         // Messages reçus des gares
-        $receivedMessages = GareMessage::where('recipient_type', 'App\Models\Compagnie')
-            ->where('recipient_id', $compagnie->id)
-            ->with('gare')
+        $receivedQuery = GareMessage::where('recipient_type', 'App\Models\Compagnie')
+            ->where('recipient_id', $compagnie->id);
+            
+        $unreadReceivedCount = (clone $receivedQuery)->where('is_read', false)->count();
+
+        $receivedMessages = $receivedQuery->with('gare')
             ->latest()
             ->paginate(10, ['*'], 'received_page');
 
-        return view('compagnie.messages.index', compact('messages', 'receivedMessages'));
+        return view('compagnie.messages.index', compact('messages', 'receivedMessages', 'unreadReceivedCount'));
     }
 
     public function show(CompanyMessage $message)

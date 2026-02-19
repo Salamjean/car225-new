@@ -1,4 +1,4 @@
-<aside class="mdc-drawer mdc-drawer--dismissible mdc-drawer--open" style="background-color: red">
+<aside class="mdc-drawer mdc-drawer--dismissible mdc-drawer--open">
     <div class="mdc-drawer__header" style="padding: 20px 0;">
         <a href="{{ route('compagnie.dashboard') }}"
             class="brand-logo d-flex justify-content-center align-items-center">
@@ -29,14 +29,18 @@
                 </div>
                   <!-- Onglet Messages -->
                 <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-drawer-link" href="{{ route('compagnie.messages.index') }}">
-                        <i class="fas fa-envelope mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
-                        Messages
+                    <a class="mdc-drawer-link d-flex align-items-center justify-content-between w-100" href="{{ route('compagnie.messages.index') }}">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-envelope mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
+                            Messages
+                        </div>
                         @php
                             $unreadGareMessages = Auth::guard('compagnie')->user()->receivedGareMessages()->where('is_read', false)->count();
                         @endphp
                         @if($unreadGareMessages > 0)
-                            <span class="badge badge-pill badge-danger ml-2">{{ $unreadGareMessages }}</span>
+                            <span class="badge badge-pill badge-danger" style="background: #e94f1b; font-weight: bold; padding: 4px 8px;">
+                                {{ $unreadGareMessages }}
+                            </span>
                         @endif
                     </a>
                 </div>
@@ -252,10 +256,22 @@
               
                 <!-- Onglet Signalements -->
                 <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-drawer-link" href="{{ route('compagnie.signalements.index') }}">
-                        <i class="fas fa-exclamation-triangle mdc-list-item__start-detail mdc-drawer-item-icon text-danger"
-                            aria-hidden="true" style="color:red"></i>
-                        Signalements
+                    <a class="mdc-drawer-link d-flex align-items-center justify-content-between w-100" href="{{ route('compagnie.signalements.index') }}">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-exclamation-triangle mdc-list-item__start-detail mdc-drawer-item-icon text-danger"
+                                aria-hidden="true" style="color:red"></i>
+                            Signalements
+                        </div>
+                        @php
+                            $newSignalements = \App\Models\Signalement::where('compagnie_id', Auth::guard('compagnie')->id())
+                                ->where('statut', 'nouveau')
+                                ->count();
+                        @endphp
+                        @if($newSignalements > 0)
+                            <span class="badge badge-pill badge-danger" style="background: #ef4444; font-weight: bold; padding: 4px 8px;">
+                                {{ $newSignalements }}
+                            </span>
+                        @endif
                     </a>
                 </div>
                 <!-- <div class="mdc-list-item mdc-drawer-item">

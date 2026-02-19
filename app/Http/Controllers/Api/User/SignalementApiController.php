@@ -27,17 +27,62 @@ class SignalementApiController extends Controller
             $user = Auth::user();
             $today = now()->format('Y-m-d');
 
-            $reservations = Reservation::with(['programme.compagnie'])
-                ->where('user_id', $user->id)
-                ->whereDate('date_voyage', $today)
-                ->whereIn('statut', ['confirmee', 'terminee'])
-                ->get();
+            // Récupérer les réservations avec toutes les relations nécessaires
+            // Note: 'voyage' est défini dans le modèle Reservation avec une contrainte de date
+            $reservations = Reservation::with([
+                'programme.compagnie',
+                'voyage.vehicule',
+                'voyage.chauffeur'
+            ])
+            ->where('user_id', $user->id)
+            ->whereDate('date_voyage', $today)
+            ->whereIn('statut', ['confirmee', 'terminee'])
+            ->get();
+
+            // Enrichir les données pour le mobile (identique à ReservationApiController)
+            $reservations->map(function($res) {
+                // Par défaut, le display_statut = statut DB
+                $res->display_statut = $res->statut;
+                $res->temps_restant = null;
+                $res->is_ongoing = false;
+                $res->can_report = false; // Par défaut, on ne peut pas signaler
+
+                if ($res->statut === 'terminee') {
+                    $voyage = $res->mission;
+                    
+                    if ($voyage) {
+                        if ($voyage->statut === 'en_cours') {
+                            $res->display_statut = 'en_voyage';
+                            $res->is_ongoing = true;
+                            $res->can_report = true; // SEULEMENT LORSQU'IL EST EN VOYAGE
+                            
+                            $res->temps_restant = $voyage->temps_restant;
+                            $res->occupancy = $voyage->occupancy;
+                        } elseif ($voyage->statut === 'termine' || $voyage->statut === 'terminé') {
+                            $res->display_statut = 'arrive';
+                            $res->can_report = false; // INTERDIT SI ARRIVÉ
+                        } else {
+                            $res->display_statut = 'enregistre';
+                        }
+                    } else {
+                         // Fallback si pas de voyage trouvé (rare)
+                         $res->display_statut = 'enregistre';
+                    }
+                } elseif ($res->statut === 'confirmee') {
+                    $res->display_statut = 'confirmee';
+                    $res->can_report = false; // Doit être scanné d'abord (en voyage)
+                }
+
+                return $res;
+            });
 
             return response()->json([
                 'success' => true,
-                'reservations' => $reservations
+                'reservations' => $reservations,
+                'en_voyage' => $reservations->contains('is_ongoing', true)
             ]);
         } catch (\Exception $e) {
+            Log::error('Erreur API getActiveReservations: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de la récupération des réservations: ' . $e->getMessage()
@@ -72,29 +117,42 @@ class SignalementApiController extends Controller
             $signalement->longitude = $validated['longitude'] ?? null;
             $signalement->statut = 'nouveau';
 
-            // --- RECHERCHE DU VOYAGE RÉEL (Source de vérité) ---
+            // --- RECHERCHE ET VÉRIFICATION DU VOYAGE RÉEL ---
             $today = now()->format('Y-m-d');
             $voyage = \App\Models\Voyage::where('programme_id', $validated['programme_id'])
                 ->whereDate('date_voyage', $today)
                 ->first();
 
-            if ($voyage) {
-                $signalement->voyage_id = $voyage->id;
-                $signalement->personnel_id = $voyage->personnel_id;
-                $signalement->compagnie_id = $voyage->compagnie_id;
-                $signalement->vehicule_id = $voyage->vehicule_id;
-            } else {
-                if (!empty($validated['vehicule_id'])) {
-                    $signalement->vehicule_id = $validated['vehicule_id'];
-                }
-                $programme = Programme::find($validated['programme_id']);
-                if ($programme) {
-                    $signalement->compagnie_id = $programme->compagnie_id;
-                    if (!$signalement->vehicule_id) {
-                        $signalement->vehicule_id = $programme->vehicule_id;
-                    }
-                }
+            // Vérifier si l'utilisateur a une réservation scannée pour ce voyage
+            $reservation = Reservation::where('user_id', Auth::id())
+                ->where('programme_id', $validated['programme_id'])
+                ->whereDate('date_voyage', $today)
+                ->where('statut', 'terminee')
+                ->first();
+
+            if (!$reservation) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Vous devez être scanné à bord du bus pour effectuer un signalement.'
+                ], 403);
             }
+
+            if (!$voyage || $voyage->statut !== 'en_cours') {
+                $statusMsg = ($voyage && ($voyage->statut === 'termine' || $voyage->statut === 'terminé')) 
+                    ? 'Le voyage est déjà terminé.' 
+                    : 'Le voyage n\'a pas encore commencé.';
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Signalement impossible. ' . $statusMsg
+                ], 403);
+            }
+
+            $signalement->voyage_id = $voyage->id;
+            $signalement->personnel_id = $voyage->personnel_id;
+            $signalement->compagnie_id = $voyage->compagnie_id;
+            $signalement->vehicule_id = $voyage->vehicule_id;
+            $signalement->reservation_id = $reservation->id; // Optionnel mais utile
 
             if ($request->hasFile('photo')) {
                 $path = $request->file('photo')->store('signalements', 'public');

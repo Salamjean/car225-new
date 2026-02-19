@@ -39,29 +39,68 @@
     </div>
 
     <!-- Navigation Tabs -->
-    <div class="mb-4">
-        <ul class="nav nav-pills bg-white p-2 rounded-xl border border-slate-100 shadow-sm" id="messageTabs" role="tablist">
-            <li class="nav-item flex-1" role="presentation">
-                <button class="nav-link active w-full py-3 rounded-lg font-bold transition-all" id="sent-tab" data-bs-toggle="pill" data-bs-target="#sent" type="button" role="tab">
-                    <i class="fas fa-paper-plane mr-2"></i> Messages Envoyés
-                </button>
-            </li>
-            <li class="nav-item flex-1" role="presentation">
-                <button class="nav-link w-full py-3 rounded-lg font-bold transition-all" id="received-tab" data-bs-toggle="pill" data-bs-target="#received" type="button" role="tab">
-                    <i class="fas fa-inbox mr-2"></i> Reçus (Direction)
-                    @php $unreadCount = $receivedMessages->where('is_read', false)->count(); @endphp
-                    @if($unreadCount > 0)
-                        <span class="badge bg-red-500 text-white ml-2">{{ $unreadCount }}</span>
-                    @endif
-                </button>
-            </li>
-        </ul>
+    <div class="mb-6">
+        <div class="flex bg-white p-1 rounded-2xl border border-slate-100 shadow-sm transition-all overflow-hidden">
+            <button class="flex-1 py-3 px-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 tab-btn active" 
+                    id="received-trigger" onclick="switchTab('received')">
+                <i class="fas fa-inbox text-lg"></i>
+                <span>Messages Reçus (Direction)</span>
+                @php $unreadCount = $receivedMessages->where('is_read', false)->count(); @endphp
+                @if($unreadCount > 0)
+                    <span class="flex items-center justify-center bg-red-500 text-white text-[10px] w-5 h-5 rounded-full ml-1 shadow-sm">
+                        {{ $unreadCount }}
+                    </span>
+                @endif
+            </button>
+            <button class="flex-1 py-3 px-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 text-slate-500 hover:bg-slate-50 tab-btn" 
+                    id="sent-trigger" onclick="switchTab('sent')">
+                <i class="fas fa-paper-plane text-lg"></i>
+                <span>Messages Envoyés</span>
+            </button>
+        </div>
     </div>
 
-    <div class="tab-content" id="messageTabsContent">
+    <div class="tab-content" id="message-panels">
+        <!-- Received Messages Tab (Default) -->
+        <div class="tab-panel animate__animated animate__fadeIn" id="received-panel">
+            <div class="msg-card animate__animated animate__fadeInUp">
+                @if($receivedMessages->isEmpty())
+                    <div class="empty-state">
+                        <div class="empty-icon"><i class="fas fa-inbox"></i></div>
+                        <h3>Aucun message reçu</h3>
+                        <p>Vous n'avez reçu aucun message de la direction.</p>
+                    </div>
+                @else
+                    <div class="msg-list">
+                        @foreach($receivedMessages as $msg)
+                            <a href="{{ route('gare-espace.messages.show', ['id' => $msg->id, 'type' => 'received']) }}" class="msg-item {{ !$msg->is_read ? 'unread' : '' }}">
+                                <div class="msg-item-left">
+                                    <div class="msg-avatar bg-slate-800">
+                                        <i class="fas fa-building"></i>
+                                    </div>
+                                    <div class="msg-content">
+                                        <div class="msg-recipient">
+                                            {{ $msg->compagnie->name ?? 'La Direction' }}
+                                            <span class="msg-badge">Compagnie</span>
+                                        </div>
+                                        <p class="msg-subject">{{ $msg->subject }}</p>
+                                        <p class="msg-preview text-slate-400">{{ Str::limit($msg->message, 80) }}</p>
+                                    </div>
+                                </div>
+                                <div class="msg-item-right">
+                                    <span class="msg-date">{{ $msg->created_at->diffForHumans() }}</span>
+                                    <i class="fas fa-chevron-right msg-arrow"></i>
+                                </div>
+                            </a>
+                        @endforeach
+                    </div>
+                    <div class="p-4">{{ $receivedMessages->links() }}</div>
+                @endif
+            </div>
+        </div>
+
         <!-- Sent Messages Tab -->
-        <div class="tab-pane fade show active" id="sent" role="tabpanel">
-            <!-- Messages List -->
+        <div class="tab-panel hidden animate__animated animate__fadeIn" id="sent-panel">
             <div class="msg-card animate__animated animate__fadeInUp">
                 @if($sentMessages->isEmpty())
                     <div class="empty-state">
@@ -106,44 +145,6 @@
                         @endforeach
                     </div>
                     <div class="p-4">{{ $sentMessages->links() }}</div>
-                @endif
-            </div>
-        </div>
-
-        <!-- Received Messages Tab -->
-        <div class="tab-pane fade" id="received" role="tabpanel">
-            <div class="msg-card animate__animated animate__fadeInUp">
-                @if($receivedMessages->isEmpty())
-                    <div class="empty-state">
-                        <div class="empty-icon"><i class="fas fa-inbox"></i></div>
-                        <h3>Aucun message reçu</h3>
-                        <p>Vous n'avez reçu aucun message de la direction.</p>
-                    </div>
-                @else
-                    <div class="msg-list">
-                        @foreach($receivedMessages as $msg)
-                            <a href="{{ route('gare-espace.messages.show', ['id' => $msg->id, 'type' => 'received']) }}" class="msg-item {{ !$msg->is_read ? 'unread' : '' }}">
-                                <div class="msg-item-left">
-                                    <div class="msg-avatar bg-slate-800">
-                                        <i class="fas fa-building"></i>
-                                    </div>
-                                    <div class="msg-content">
-                                        <div class="msg-recipient">
-                                            {{ $msg->compagnie->name ?? 'La Direction' }}
-                                            <span class="msg-badge">Compagnie</span>
-                                        </div>
-                                        <p class="msg-subject">{{ $msg->subject }}</p>
-                                        <p class="msg-preview text-slate-400">{{ Str::limit($msg->message, 80) }}</p>
-                                    </div>
-                                </div>
-                                <div class="msg-item-right">
-                                    <span class="msg-date">{{ $msg->created_at->diffForHumans() }}</span>
-                                    <i class="fas fa-chevron-right msg-arrow"></i>
-                                </div>
-                            </a>
-                        @endforeach
-                    </div>
-                    <div class="p-4">{{ $receivedMessages->links() }}</div>
                 @endif
             </div>
         </div>
@@ -403,10 +404,47 @@
     .msg-item { padding: 1rem; }
     .msg-item-right { display: none; }
 }
+.tab-btn.active {
+    background: var(--primary);
+    color: white !important;
+}
+
+.tab-btn:not(.active) {
+    color: var(--text-muted);
+}
 </style>
 
+@endsection
+
+@section('scripts')
 <script>
+function switchTab(tabId) {
+    const panels = ['received', 'sent'];
+    
+    panels.forEach(id => {
+        const panel = document.getElementById(`${id}-panel`);
+        const trigger = document.getElementById(`${id}-trigger`);
+        
+        if (id === tabId) {
+            panel.classList.remove('hidden');
+            trigger.classList.add('active', 'bg-primary');
+            trigger.classList.remove('text-slate-500', 'hover:bg-slate-50');
+            trigger.style.background = '#e94f1b';
+            trigger.style.color = 'white';
+        } else {
+            panel.classList.add('hidden');
+            trigger.classList.remove('active');
+            trigger.classList.add('text-slate-500', 'hover:bg-slate-50');
+            trigger.style.background = 'transparent';
+            trigger.style.color = '#64748b';
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Force initial state
+    switchTab('received');
+
     @if(session('success'))
         Swal.fire({
             icon: 'success',

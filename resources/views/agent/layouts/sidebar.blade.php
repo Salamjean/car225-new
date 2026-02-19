@@ -1,4 +1,4 @@
-<aside class="mdc-drawer mdc-drawer--dismissible mdc-drawer--open" style="background-color: red">
+<aside class="mdc-drawer mdc-drawer--dismissible mdc-drawer--open">
     <div class="mdc-drawer__header" style="padding: 20px 0;">
         <a href="{{ route('agent.dashboard') }}" class="brand-logo d-flex justify-content-center align-items-center">
             @if (Auth::guard('agent')->user()->profile_picture)
@@ -28,17 +28,18 @@
                 </div>
                 <!-- Onglet Boîte de réception -->
                 <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-drawer-link" href="{{ route('agent.messages.index') }}">
-                        <i class="fas fa-inbox mdc-list-item__start-detail mdc-drawer-item-icon"
-                            aria-hidden="true"></i>
-                        Boîte de réception
+                    <a class="mdc-drawer-link d-flex align-items-center justify-content-between w-100" href="{{ route('agent.messages.index') }}">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-inbox mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
+                            Boîte de réception
+                        </div>
                         @php
                             $unreadCompany = Auth::guard('agent')->user()->messages()->where('is_read', false)->count();
                             $unreadGare = Auth::guard('agent')->user()->receivedGareMessages()->where('is_read', false)->count();
                             $totalUnread = $unreadCompany + $unreadGare;
                         @endphp
                         @if($totalUnread > 0)
-                            <span class="badge badge-pill badge-danger float-right" style="margin-left: 10px;">
+                            <span class="badge badge-pill badge-danger" style="background: #e94f1b; font-weight: bold; padding: 4px 8px;">
                                 {{ $totalUnread }}
                             </span>
                         @endif

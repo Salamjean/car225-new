@@ -36,16 +36,18 @@
 
                 <!-- Messages -->
                 <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-drawer-link" href="{{ route('chauffeur.messages.index') }}">
-                        <i class="fas fa-envelope mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
-                        Messages
+                    <a class="mdc-drawer-link d-flex align-items-center justify-content-between w-100" href="{{ route('chauffeur.messages.index') }}">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-envelope mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
+                            Messages
+                        </div>
                         @php
                             $unreadCompany = Auth::guard('chauffeur')->user()->messages()->where('is_read', false)->count();
                             $unreadGare = Auth::guard('chauffeur')->user()->receivedGareMessages()->where('is_read', false)->count();
                             $totalUnread = $unreadCompany + $unreadGare;
                         @endphp
                         @if($totalUnread > 0)
-                            <span class="badge bg-danger rounded-pill ms-auto text-white" style="font-size: 0.7rem;">{{ $totalUnread }}</span>
+                            <span class="badge badge-pill badge-danger" style="background: #e94f1b; font-weight: bold; padding: 4px 8px; color: white;">{{ $totalUnread }}</span>
                         @endif
                     </a>
                 </div>

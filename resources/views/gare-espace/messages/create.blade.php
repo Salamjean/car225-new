@@ -243,53 +243,58 @@
 }
 </style>
 
+@endsection
+
+@section('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const typeSelect = document.getElementById('recipient_type');
     const recipientSelect = document.getElementById('recipient_id');
     const loadingIndicator = document.getElementById('loading-recipients');
 
-    typeSelect.addEventListener('change', function() {
-        const type = this.value;
+    if (typeSelect) {
+        typeSelect.addEventListener('change', function() {
+            const type = this.value;
 
-        recipientSelect.innerHTML = '<option value="" selected disabled>Chargement...</option>';
-        recipientSelect.disabled = true;
-        loadingIndicator.style.display = 'block';
+            recipientSelect.innerHTML = '<option value="" selected disabled>Chargement...</option>';
+            recipientSelect.disabled = true;
+            loadingIndicator.style.display = 'block';
 
-        fetch(`{{ route('gare-espace.messages.recipients') }}?type=${type}`)
-            .then(response => response.json())
-            .then(data => {
-                recipientSelect.innerHTML = '<option value="" selected disabled>Sélectionner le destinataire...</option>';
+            fetch(`{{ route('gare-espace.messages.recipients') }}?type=${type}`)
+                .then(response => response.json())
+                .then(data => {
+                    recipientSelect.innerHTML = '<option value="" selected disabled>Sélectionner le destinataire...</option>';
 
-                if(data.length === 0) {
-                    recipientSelect.innerHTML = '<option disabled>Aucun destinataire trouvé</option>';
-                }
-
-                data.forEach(recipient => {
-                    const option = document.createElement('option');
-                    option.value = recipient.id;
-                    let label = `${recipient.name} ${recipient.prenom || ''}`.trim();
-                    if (recipient.type_personnel) {
-                        label += ` [${recipient.type_personnel}]`;
+                    if(data.length === 0) {
+                        recipientSelect.innerHTML = '<option disabled>Aucun destinataire trouvé</option>';
                     }
-                    option.textContent = label;
-                    recipientSelect.appendChild(option);
+
+                    data.forEach(recipient => {
+                        const option = document.createElement('option');
+                        option.value = recipient.id;
+                        let label = `${recipient.name} ${recipient.prenom || ''}`.trim();
+                        if (recipient.type_personnel) {
+                            label += ` [${recipient.type_personnel}]`;
+                        }
+                        option.textContent = label;
+                        recipientSelect.appendChild(option);
+                    });
+
+                    recipientSelect.disabled = false;
+                    loadingIndicator.style.display = 'none';
+
+                    // Auto-select compagnie (only one recipient)
+                    if (type === 'compagnie' && data.length === 1) {
+                        recipientSelect.value = data[0].id;
+                        recipientSelect.disabled = true;
+                    }
+                })
+                .catch(error => {
+                    recipientSelect.innerHTML = '<option disabled>Erreur réseau</option>';
+                    loadingIndicator.style.display = 'none';
                 });
-
-                recipientSelect.disabled = false;
-                loadingIndicator.style.display = 'none';
-
-                // Auto-select compagnie (only one recipient)
-                if (type === 'compagnie' && data.length === 1) {
-                    recipientSelect.value = data[0].id;
-                    recipientSelect.disabled = true;
-                }
-            })
-            .catch(error => {
-                recipientSelect.innerHTML = '<option disabled>Erreur réseau</option>';
-                loadingIndicator.style.display = 'none';
-            });
-    });
+        });
+    }
 
     @if(session('success'))
         Swal.fire({

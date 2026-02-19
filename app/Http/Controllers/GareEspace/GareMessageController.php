@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Agent;
 use App\Models\Caisse;
 use App\Models\Compagnie;
+use App\Models\CompanyMessage;
 use App\Models\GareMessage;
 use App\Models\Personnel;
 use App\Notifications\NewInternalMessageNotification;
@@ -105,12 +106,13 @@ class GareMessageController extends Controller
 
         $message = new GareMessage([
             'gare_id' => $gare->id,
+            'recipient_type' => get_class($recipient),
+            'recipient_id' => $recipient->id,
             'subject' => $request->subject,
             'message' => $request->message,
             'is_read' => false,
         ]);
 
-        $message->recipient()->associate($recipient);
         $message->save();
 
         // Push notification if available

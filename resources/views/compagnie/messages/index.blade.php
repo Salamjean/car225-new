@@ -133,21 +133,100 @@
 
     <!-- Main Tabs -->
     <div class="flex gap-2 mb-0">
-        <button class="main-tab-btn active" onclick="switchMainTab('sent', this)" id="tab-sent">
+        <button class="main-tab-btn active" onclick="switchMainTab('received', this)" id="tab-received">
+            <i class="fas fa-inbox mr-2"></i> Messages Reçus des Gares
+            <span class="badge-count {{ $unreadReceivedCount > 0 ? 'bg-red-500 text-white' : 'bg-slate-100 text-slate-600' }}">
+                {{ $unreadReceivedCount > 0 ? $unreadReceivedCount : $receivedMessages->total() }}
+            </span>
+        </button>
+        <button class="main-tab-btn" onclick="switchMainTab('sent', this)" id="tab-sent">
             <i class="fas fa-paper-plane mr-2"></i> Messages Envoyés
             <span class="badge-count bg-slate-100 text-slate-600">{{ $messages->total() }}</span>
         </button>
-        <button class="main-tab-btn" onclick="switchMainTab('received', this)" id="tab-received">
-            <i class="fas fa-inbox mr-2"></i> Reçus des Gares
-            <span class="badge-count {{ $receivedMessages->where('is_read', false)->count() > 0 ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-600' }}">
-                {{ $receivedMessages->total() }}
-            </span>
-        </button>
+    </div>
+
+    <!-- RECEIVED MESSAGES FROM GARES (DEFAULT) -->
+    <div id="panel-received">
+        <div class="glass-card bg-white min-h-[500px] flex flex-col" style="border-top-left-radius: 0;">
+            <div class="p-4 border-b border-slate-100 bg-slate-50/30">
+                <div class="flex items-center gap-3 px-2">
+                    <i class="fas fa-warehouse text-orange-500 text-xl"></i>
+                    <span class="font-bold text-slate-700">Messages reçus de vos gares</span>
+                </div>
+            </div>
+
+            <div class="flex-grow py-4">
+                <div class="space-y-1">
+                    @forelse($receivedMessages as $gareMsg)
+                        <a href="{{ route('compagnie.messages.show-received', $gareMsg->id) }}" class="list-group-item list-group-item-action message-item p-4 bg-transparent border-0 hover:no-underline">
+                            <div class="flex flex-col lg:flex-row lg:items-center gap-4">
+                                <div class="flex items-center flex-shrink-0">
+                                    <div class="avatar-glow text-orange-600">
+                                        <div class="w-14 h-14 rounded-2xl bg-orange-100 flex items-center justify-center font-bold text-lg shadow-inner">
+                                            <i class="fas fa-warehouse"></i>
+                                        </div>
+                                    </div>
+                                    <div class="ml-4 lg:hidden block">
+                                        <h4 class="text-lg font-bold text-slate-900 leading-tight">{{ $gareMsg->gare->nom_gare ?? 'Gare' }}</h4>
+                                        <span class="text-sm font-semibold text-orange-600 uppercase tracking-wider">Gare</span>
+                                    </div>
+                                </div>
+
+                                <div class="flex-grow lg:px-4">
+                                    <div class="hidden lg:flex items-center mb-1 gap-2">
+                                        <h4 class="text-lg font-bold text-slate-900 leading-tight">{{ $gareMsg->gare->nom_gare ?? 'Gare' }}</h4>
+                                        <span class="mx-1 text-slate-300">&middot;</span>
+                                        <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-orange-100 text-orange-600 uppercase">Gare</span>
+                                    </div>
+                                    <h5 class="text-md font-bold text-slate-700 mb-1 {{ !$gareMsg->is_read ? 'text-slate-900' : '' }} truncate">{{ $gareMsg->subject }}</h5>
+                                    <p class="text-slate-500 text-sm line-clamp-1 italic">{{ $gareMsg->message }}</p>
+                                </div>
+
+                                <div class="flex items-center lg:flex-col lg:items-end justify-between lg:justify-center gap-2 flex-shrink-0 min-w-[120px]">
+                                    <span class="text-xs font-bold text-slate-400 lg:order-1">
+                                        {{ $gareMsg->created_at->translatedFormat('d M, H:i') }}
+                                    </span>
+                                    <div class="lg:order-2">
+                                        @if($gareMsg->is_read)
+                                            <div class="flex items-center text-emerald-500 bg-emerald-50 px-3 py-1 rounded-full text-xs font-extrabold border border-emerald-100">
+                                                <i class="fas fa-check-double mr-1.5"></i> LU
+                                            </div>
+                                        @else
+                                            <div class="flex items-center text-orange-500 bg-orange-50 px-3 py-1 rounded-full text-xs font-extrabold border border-orange-100 animate-pulse">
+                                                <i class="fas fa-envelope mr-1.5"></i> NOUVEAU
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <div class="hidden lg:flex items-center justify-center w-10 h-10 rounded-full bg-slate-50 text-slate-300 p-0">
+                                    <i class="fas fa-chevron-right"></i>
+                                </div>
+                            </div>
+                        </a>
+                    @empty
+                        <div class="flex flex-col items-center justify-center py-20 px-4 text-center">
+                            <div class="w-32 h-32 bg-slate-50 rounded-full flex items-center justify-center mb-6">
+                                <i class="fas fa-warehouse text-5xl text-slate-200"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold text-slate-800">Aucun message reçu</h3>
+                            <p class="text-slate-500 max-w-sm mt-2">Aucun message de vos gares pour le moment.</p>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+
+            @if($receivedMessages->hasPages())
+            <div class="border-t border-slate-100 p-6 flex justify-center pagination-wrapper">
+                {{ $receivedMessages->appends(request()->query())->links() }}
+            </div>
+            @endif
+        </div>
     </div>
 
     <!-- SENT MESSAGES PANEL -->
-    <div id="panel-sent">
-        <div class="glass-card bg-white min-h-[500px] flex flex-col" style="border-top-left-radius: 0;">
+    <div id="panel-sent" style="display: none;">
+        <div class="glass-card bg-white min-h-[500px] flex flex-col" style="border-top-right-radius: 0;">
             <div class="p-4 border-b border-slate-100 bg-slate-50/30">
                 <ul class="nav nav-pill-custom gap-2 overflow-x-auto print:hidden">
                     <li class="nav-item">
@@ -174,15 +253,6 @@
             </div>
 
             <div class="flex-grow py-4">
-                @if(session('success'))
-                    <div class="mx-6 mb-6 p-4 bg-emerald-50 border-l-4 border-emerald-500 rounded-xl flex items-center shadow-sm">
-                        <div class="bg-emerald-500 text-white p-2 rounded-lg mr-3 shadow-md shadow-emerald-200">
-                            <i class="fas fa-check"></i>
-                        </div>
-                        <span class="text-emerald-800 font-semibold">{{ session('success') }}</span>
-                    </div>
-                @endif
-
                 <div class="space-y-1">
                     @forelse($messages as $message)
                         @php
@@ -261,85 +331,6 @@
             @if($messages->hasPages())
             <div class="border-t border-slate-100 p-6 flex justify-center pagination-wrapper">
                 {{ $messages->appends(request()->query())->links() }}
-            </div>
-            @endif
-        </div>
-    </div>
-
-    <!-- RECEIVED MESSAGES FROM GARES -->
-    <div id="panel-received" style="display: none;">
-        <div class="glass-card bg-white min-h-[500px] flex flex-col" style="border-top-right-radius: 0;">
-            <div class="p-4 border-b border-slate-100 bg-slate-50/30">
-                <div class="flex items-center gap-3 px-2">
-                    <i class="fas fa-warehouse text-orange-500"></i>
-                    <span class="font-bold text-slate-700">Messages reçus de vos gares</span>
-                </div>
-            </div>
-
-            <div class="flex-grow py-4">
-                <div class="space-y-1">
-                    @forelse($receivedMessages as $gareMsg)
-                        <a href="{{ route('compagnie.messages.show-received', $gareMsg->id) }}" class="list-group-item list-group-item-action message-item p-4 bg-transparent border-0 hover:no-underline">
-                            <div class="flex flex-col lg:flex-row lg:items-center gap-4">
-                                <div class="flex items-center flex-shrink-0">
-                                    <div class="avatar-glow text-teal-600">
-                                        <div class="w-14 h-14 rounded-2xl bg-teal-100 flex items-center justify-center font-bold text-lg shadow-inner">
-                                            <i class="fas fa-warehouse"></i>
-                                        </div>
-                                    </div>
-                                    <div class="ml-4 lg:hidden block">
-                                        <h4 class="text-lg font-bold text-slate-900 leading-tight">{{ $gareMsg->gare->nom_gare ?? 'Gare' }}</h4>
-                                        <span class="text-sm font-semibold text-teal-600 uppercase tracking-wider">Gare</span>
-                                    </div>
-                                </div>
-
-                                <div class="flex-grow lg:px-4">
-                                    <div class="hidden lg:flex items-center mb-1 gap-2">
-                                        <h4 class="text-lg font-bold text-slate-900 leading-tight">{{ $gareMsg->gare->nom_gare ?? 'Gare' }}</h4>
-                                        <span class="mx-1 text-slate-300">&middot;</span>
-                                        <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-teal-100 text-teal-600 uppercase">Gare</span>
-                                    </div>
-                                    <h5 class="text-md font-bold text-slate-700 mb-1 truncate">{{ $gareMsg->subject }}</h5>
-                                    <p class="text-slate-500 text-sm line-clamp-1 italic">{{ $gareMsg->message }}</p>
-                                </div>
-
-                                <div class="flex items-center lg:flex-col lg:items-end justify-between lg:justify-center gap-2 flex-shrink-0 min-w-[120px]">
-                                    <span class="text-xs font-bold text-slate-400 lg:order-1">
-                                        {{ $gareMsg->created_at->translatedFormat('d M, H:i') }}
-                                    </span>
-                                    <div class="lg:order-2">
-                                        @if($gareMsg->is_read)
-                                            <div class="flex items-center text-emerald-500 bg-emerald-50 px-3 py-1 rounded-full text-xs font-extrabold border border-emerald-100">
-                                                <i class="fas fa-check-double mr-1.5"></i> LU
-                                            </div>
-                                        @else
-                                            <div class="flex items-center text-orange-500 bg-orange-50 px-3 py-1 rounded-full text-xs font-extrabold border border-orange-100 animate-pulse">
-                                                <i class="fas fa-envelope mr-1.5"></i> NOUVEAU
-                                            </div>
-                                        @endif
-                                    </div>
-                                </div>
-
-                                <div class="hidden lg:flex items-center justify-center w-10 h-10 rounded-full bg-slate-50 text-slate-300 p-0">
-                                    <i class="fas fa-chevron-right"></i>
-                                </div>
-                            </div>
-                        </a>
-                    @empty
-                        <div class="flex flex-col items-center justify-center py-20 px-4 text-center">
-                            <div class="w-32 h-32 bg-slate-50 rounded-full flex items-center justify-center mb-6">
-                                <i class="fas fa-warehouse text-5xl text-slate-200"></i>
-                            </div>
-                            <h3 class="text-2xl font-bold text-slate-800">Aucun message reçu</h3>
-                            <p class="text-slate-500 max-w-sm mt-2">Aucun message de vos gares pour le moment.</p>
-                        </div>
-                    @endforelse
-                </div>
-            </div>
-
-            @if($receivedMessages->hasPages())
-            <div class="border-t border-slate-100 p-6 flex justify-center pagination-wrapper">
-                {{ $receivedMessages->appends(request()->query())->links() }}
             </div>
             @endif
         </div>

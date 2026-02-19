@@ -22,6 +22,7 @@ class Signalement extends Model
         'longitude',
         'statut',
         'vehicule_id',
+        'reservation_id',
         'photo_path',
     ];
 
@@ -33,6 +34,11 @@ class Signalement extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function reservation()
+    {
+        return $this->belongsTo(Reservation::class);
     }
 
     public function programme()

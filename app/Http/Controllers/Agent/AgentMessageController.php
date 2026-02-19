@@ -65,22 +65,26 @@ class AgentMessageController extends Controller
             $message = GareMessage::where('recipient_id', $agent->id)
                 ->where('recipient_type', 'App\Models\Agent')
                 ->findOrFail($id);
+        } else {
+            $message = CompanyMessage::where('recipient_id', $agent->id)
+                ->where('recipient_type', 'App\Models\Agent')
+                ->findOrFail($id);
+        }
+
+        if (!$message->is_read) {
+            $message->update(['is_read' => true]);
+        }
+
+        if ($source === 'gare') {
             $message->sender_name = $message->gare->nom_gare ?? 'La Gare';
             $message->sender_type_label = 'Gare';
             $message->sender_icon = 'fa-warehouse';
             $message->source = 'gare';
         } else {
-            $message = CompanyMessage::where('recipient_id', $agent->id)
-                ->where('recipient_type', 'App\Models\Agent')
-                ->findOrFail($id);
             $message->sender_name = $message->compagnie->name ?? 'La Direction';
             $message->sender_type_label = 'Compagnie';
             $message->sender_icon = 'fa-building';
             $message->source = 'company';
-        }
-
-        if (!$message->is_read) {
-            $message->update(['is_read' => true]);
         }
 
         return view('agent.messages.show', compact('message'));
