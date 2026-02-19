@@ -368,6 +368,7 @@ class ReservationController extends Controller
                         'heure_arrive' => $p->heure_arrive,
                         'reserved_count' => $reservationCounts[$p->id] ?? 0,
                         'total_seats' => $p->getTotalSeats($formattedDate),
+                        'capacity' => $p->capacity,
                         'vehicule_id' => ($v = $p->getVehiculeForDate($formattedDate)) ? $v->id : null,
                     ];
                 })->values();
@@ -385,6 +386,7 @@ class ReservationController extends Controller
                     'id' => $p->id,
                     'heure_depart' => $p->heure_depart,
                     'heure_arrive' => $p->heure_arrive,
+                    'capacity' => $p->capacity,
                     'vehicule_id' => $p->vehicule_id,
                 ];
             })->values();
@@ -460,9 +462,21 @@ class ReservationController extends Controller
             return response()->json(['error' => 'Programme non trouvé'], 404);
         }
 
-        // TENTATIVE 1 : Véhicule via getVehiculeForDate (si relation Voyage existe)
-        $vehicule = $programme->getVehiculeForDate($dateVoyage);
+        // ✅ Priorité à la capacité du programme
+        $programmeCapacity = $programme->getTotalSeats($dateVoyage);
 
+        // ✅ TENTATIVE 0 : Utiliser l'ID fourni s'il est valide (> 0)
+        $vehicule = null;
+        if ($id > 0) {
+            $vehicule = \App\Models\Vehicule::find($id);
+        }
+
+        // TENTATIVE 1 : Si non trouvé ou ID=0, chercher via getVehiculeForDate
+        if (!$vehicule) {
+            $vehicule = $programme->getVehiculeForDate($dateVoyage);
+        }
+
+        // TENTATIVE 2 : Fallback sur le premier véhicule de la compagnie
         if (!$vehicule && $programme->compagnie_id) {
             $vehicule = \App\Models\Vehicule::where('compagnie_id', $programme->compagnie_id)
                 ->where('is_active', true)
@@ -477,10 +491,23 @@ class ReservationController extends Controller
                 'immatriculation' => 'N/A',
                 'numero_serie' => 'N/A',
                 'type_range' => '2x3',
-                'nombre_place' => 70,
+                'nombre_place' => $programmeCapacity > 0 ? $programmeCapacity : 70,
                 'marque' => 'Bus',
                 'modele' => 'Standard'
             ];
+        } else {
+            // Pour ne pas modifier le véhicule en base lors des ajustements de capacité
+            $vehicule = clone $vehicule;
+        }
+
+        // ✅ Priorité absolue à la capacité du programme SI elle est définie
+        if ($programmeCapacity > 0) {
+            $vehicule->nombre_place = $programmeCapacity;
+        }
+
+        // Sécurité : évite d'avoir 0 places
+        if ((int)$vehicule->nombre_place <= 0) {
+            $vehicule->nombre_place = 70;
         }
 
         // Générer le HTML pour la visualisation
@@ -520,6 +547,7 @@ class ReservationController extends Controller
             'success' => true,
             'html' => $visualizationHTML,
             'vehicule' => $vehicule,
+            'programme_capacity' => $programme->capacity,
             'date' => $dateVoyage,
             'heure_depart' => $heureDepart,
             'reserved_seats' => $reservedSeats
@@ -2016,27 +2044,8 @@ $dateAller = $request->date_voyage;
         ' . $dateInfo . '
         
         <div style="margin-bottom: 20px;">
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px;">
-                <div style="background: #f8f9fa; padding: 12px; border-radius: 8px;">
-                    <strong style="color: #6b7280; font-size: 0.9rem;">Immatriculation</strong>
-                    <div style="font-weight: bold; font-size: 1.1rem;">' . $vehicule->immatriculation . '</div>
-                </div>
-                <div style="background: #f8f9fa; padding: 12px; border-radius: 8px;">
-                    <strong style="color: #6b7280; font-size: 0.9rem;">Numéro de série</strong>
-                    <div style="font-weight: bold; font-size: 1.1rem;">' . ($vehicule->numero_serie ?? 'N/A') . '</div>
-                </div>
-            </div>
-            
             <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
-                    <div style="text-align: center;">
-                        <div style="color: #6b7280; font-size: 0.9rem;">Type de rangée</div>
-                        <div style="color: #fea219; font-weight: bold; font-size: 1.2rem;">' . $vehicule->type_range . '</div>
-                    </div>
-                    <div style="text-align: center;">
-                        <div style="color: #6b7280; font-size: 0.9rem;">Rangées</div>
-                        <div style="color: #10b981; font-weight: bold; font-size: 1.2rem;">' . $nombreRanger . '</div>
-                    </div>
+                <div style="display: grid; grid-template-columns: repeat(1, 1fr); gap: 15px;">
                     <div style="text-align: center;">
                         <div style="color: #6b7280; font-size: 0.9rem;">Total places</div>
                         <div style="color: #3b82f6; font-weight: bold; font-size: 1.2rem;">' . $totalPlaces . '</div>

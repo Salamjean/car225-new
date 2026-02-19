@@ -29,6 +29,7 @@ class Programme extends Model
         'heure_arrive',
         'montant_billet',
         'statut',
+        'capacity', // AJOUTÉ
     ];
 
     protected $casts = [
@@ -129,8 +130,13 @@ class Programme extends Model
      */
     public function getTotalSeats($date = null)
     {
+        // On donne la priorité à la capacité définie sur le programme
+        if ($this->capacity) {
+            return (int) $this->capacity;
+        }
+
         $vehicule = $this->getVehiculeForDate($date ?? date('Y-m-d'));
-        return $vehicule ? (int)$vehicule->nombre_place : 70; // 70 reste le fallback ultime si aucun véhicule n'existe
+        return $vehicule ? (int)$vehicule->nombre_place : 50; // Fallback par défaut ajusté à 50
     }
 
     /**
@@ -167,22 +173,31 @@ class Programme extends Model
     }
 
     /**
-     * Pourcentage d'occupation
+     * Pourcentage d'occupation pour une date donnée
      */
-    public function getPourcentageOccupationAttribute()
+    public function getPourcentageOccupationForDate($date)
     {
-        if (!$this->vehicule || $this->vehicule->nombre_place == 0) {
+        $totalSeats = $this->getTotalSeats($date);
+        if ($totalSeats <= 0) {
             return 0;
         }
-        return round(($this->places_reservees / $this->vehicule->nombre_place) * 100);
+        return round(($this->getPlacesReserveesForDate($date) / $totalSeats) * 100);
     }
 
     /**
-     * Statut des places (calculé dynamiquement)
+     * Pourcentage d'occupation - Aujourd'hui (compatibilité)
      */
-    public function getStatutPlacesAttribute()
+    public function getPourcentageOccupationAttribute()
     {
-        $pourcentage = $this->pourcentage_occupation;
+        return $this->getPourcentageOccupationForDate(date('Y-m-d'));
+    }
+
+    /**
+     * Statut des places pour une date donnée
+     */
+    public function getStatutPlacesForDate($date)
+    {
+        $pourcentage = $this->getPourcentageOccupationForDate($date);
         
         if ($pourcentage >= 100) {
             return 'complet';
@@ -191,6 +206,14 @@ class Programme extends Model
         } else {
             return 'disponible';
         }
+    }
+
+    /**
+     * Statut des places - Aujourd'hui (compatibilité)
+     */
+    public function getStatutPlacesAttribute()
+    {
+        return $this->getStatutPlacesForDate(date('Y-m-d'));
     }
 
     /**

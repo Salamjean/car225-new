@@ -96,7 +96,7 @@ class ReservationApiController extends Controller
                             $reservation->display_statut = 'en_voyage';
                             // On ajoute le temps restant si disponible
                             $reservation->temps_restant = $voyage->temps_restant;
-                        } elseif ($voyage->statut === 'termine') {
+                        } elseif ($voyage->statut === 'termine' || $voyage->statut === 'terminé') {
                             $reservation->display_statut = 'arrive';
                         } else {
                             $reservation->display_statut = 'enregistre';
@@ -160,7 +160,7 @@ class ReservationApiController extends Controller
                     if ($voyage->statut === 'en_cours') {
                         $reservation->display_statut = 'en_voyage';
                         $reservation->temps_restant = $voyage->temps_restant;
-                    } elseif ($voyage->statut === 'termine') {
+                    } elseif ($voyage->statut === 'termine' || $voyage->statut === 'terminé') {
                         $reservation->display_statut = 'arrive';
                     } else {
                         $reservation->display_statut = 'enregistre';
@@ -1148,17 +1148,28 @@ class ReservationApiController extends Controller
                 })->values();
             }
 
+            $programIds = $programmes->pluck('id');
+            $reservationCounts = Reservation::whereIn('programme_id', $programIds)
+                ->where('date_voyage', $formattedDate)
+                ->whereIn('statut', ['confirmee', 'en_attente', 'terminee'])
+                ->select('programme_id', DB::raw('count(*) as count'))
+                ->groupBy('programme_id')
+                ->pluck('count', 'programme_id');
+
             // Grouper par route (compagnie + direction)
             $groupedRoutes = $programmes->groupBy(function($p) {
                 return $p->compagnie_id . '|' . trim($p->point_depart) . '|' . trim($p->point_arrive);
-            })->map(function($group) {
+            })->map(function($group) use ($reservationCounts, $formattedDate) {
                 $first = $group->first();
                 
-                $allerHoraires = $group->sortBy('heure_depart')->map(function($p) {
+                $allerHoraires = $group->sortBy('heure_depart')->map(function($p) use ($reservationCounts, $formattedDate) {
                     return [
                         'id' => $p->id,
                         'heure_depart' => $p->heure_depart,
                         'heure_arrive' => $p->heure_arrive,
+                        'reserved_count' => $reservationCounts[$p->id] ?? 0,
+                        'total_seats' => $p->getTotalSeats($formattedDate),
+                        'vehicule_id' => ($v = $p->getVehiculeForDate($formattedDate)) ? $v->id : null,
                     ];
                 })->values();
                 
@@ -1174,6 +1185,7 @@ class ReservationApiController extends Controller
                         'id' => $p->id,
                         'heure_depart' => $p->heure_depart,
                         'heure_arrive' => $p->heure_arrive,
+                        'vehicule_id' => $p->vehicule_id,
                     ];
                 })->values();
                 
@@ -1186,7 +1198,7 @@ class ReservationApiController extends Controller
                     'point_arrive' => $first->point_arrive,
                     'gare_depart' => $first->gareDepart,
                     'gare_arrivee' => $first->gareArrivee,
-                    'montant_billet' => $first->montant_billet,
+                    'montant_billet' => (int) str_replace(' ', '', $first->montant_billet),
                     'durer_parcours' => $first->durer_parcours,
                     'statut' => 'actif',
                     'aller_horaires' => $allerHoraires,
@@ -1263,6 +1275,7 @@ class ReservationApiController extends Controller
             }
 
             $formattedDate = date('Y-m-d', strtotime($dateVoyage));
+            $heureDepart = $request->get('heure_depart'); // AJOUTÉ
             
             // On charge le programme
             $programme = Programme::find($programId);
@@ -1280,9 +1293,7 @@ class ReservationApiController extends Controller
 
             // --- LOGIQUE DE RÉCUPÉRATION DES PLACES ---
             
-            // On considère une place comme occupée si elle n'est PAS annulée.
-            // C'est plus sûr pour voir toutes les places prises.
-            $reservedSeats = Reservation::where('programme_id', $programId)
+            $query = Reservation::where('programme_id', $programId)
                 ->whereDate('date_voyage', $formattedDate)
                 ->where(function($q) {
                     // 1. Les réservations confirmées / payées
@@ -1294,9 +1305,13 @@ class ReservationApiController extends Controller
                           $sub->where('statut', 'en_attente')
                               ->where('created_at', '>=', now()->subMinutes(30)); 
                       });
-                })
-                ->pluck('seat_number')
-                ->toArray();
+                });
+
+            if ($heureDepart) {
+                $query->where('heure_depart', $heureDepart);
+            }
+
+            $reservedSeats = $query->pluck('seat_number')->toArray();
 
             // Log pour le débogage (Regardez storage/logs/laravel.log)
             Log::info("Places réservées trouvées pour Programme #{$programId} le {$formattedDate} : " . implode(', ', $reservedSeats));
@@ -1509,12 +1524,13 @@ class ReservationApiController extends Controller
         try {
             $request->validate([
                 'programme_id' => 'required|exists:programmes,id',
+                'programme_retour_id' => 'nullable|exists:programmes,id', // AJOUTÉ
                 'seats' => 'required|array',
                 'nombre_places' => 'required|integer|min:1',
                 'date_voyage' => 'required|date',
                 'date_retour' => 'nullable|date|after_or_equal:date_voyage',
-                'heure_depart' => 'nullable|string', // AJOUTÉ
-                'heure_depart_retour' => 'nullable|string', // AJOUTÉ
+                'heure_depart' => 'nullable|string',
+                'heure_depart_retour' => 'nullable|string',
                 'passagers' => 'required|array',
                 'passagers.*.nom' => 'required|string',
                 'passagers.*.prenom' => 'required|string',
@@ -1522,9 +1538,9 @@ class ReservationApiController extends Controller
                 'passagers.*.telephone' => 'required|string',
                 'passagers.*.urgence' => 'required|string',
                 'passagers.*.seat_number' => 'required|integer',
-                'passagers.*.return_seat_number' => 'nullable|integer', // AJOUTÉ
-                'seats_retour' => 'nullable|array', // AJOUTÉ
-                'seats_retour.*' => 'nullable|integer', // AJOUTÉ
+                'passagers.*.return_seat_number' => 'nullable|integer',
+                'seats_retour' => 'nullable|array',
+                'seats_retour.*' => 'nullable|integer',
                 'payment_method' => 'required|in:wallet,cinetpay'
             ]);
 
@@ -1569,6 +1585,32 @@ class ReservationApiController extends Controller
                     'success' => false,
                     'message' => 'Les réservations doivent être effectuées au moins 4 heures avant le départ'
                 ], 422);
+            }
+
+            // --- VALIDATION HEURE RETOUR (Même jour) ---
+            if ($isAllerRetour && $dateRetour && $dateVoyage == $dateRetour) {
+                $heureAller = $request->heure_depart ?? $programme->heure_depart;
+                $heureRetour = $request->heure_depart_retour;
+
+                if ($heureAller && $heureRetour) {
+                    $timeAller = strtotime($heureAller);
+                    $timeRetour = strtotime($heureRetour);
+                    $dureeMinimaleSeconds = 2 * 3600; // 2 heures de battement
+
+                    if ($timeRetour <= $timeAller) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => "L'heure de retour ($heureRetour) ne peut pas être antérieure ou égale à l'heure de départ ($heureAller) le même jour."
+                        ], 422);
+                    }
+                    
+                    if ($timeRetour < ($timeAller + $dureeMinimaleSeconds)) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => "L'heure de retour est trop proche de l'heure de départ. Il faut compter le temps de trajet."
+                        ], 422);
+                    }
+                }
             }
 
             // Calcul du montant total prévisionnel
@@ -1633,16 +1675,21 @@ class ReservationApiController extends Controller
             $returnProgram = null;
             $reservedSeatsRetour = [];
             if ($isAllerRetour && $dateRetour) {
-                $returnProgramQuery = Programme::where('compagnie_id', $programme->compagnie_id)
-                    ->where('point_depart', $programme->point_arrive)
-                    ->where('point_arrive', $programme->point_depart)
-                    ->where('statut', 'actif');
+                // Priorité à l'ID de programme retour s'il est fourni
+                if ($request->filled('programme_retour_id')) {
+                    $returnProgram = Programme::find($request->programme_retour_id);
+                } else {
+                    $returnProgramQuery = Programme::where('compagnie_id', $programme->compagnie_id)
+                        ->where('point_depart', $programme->point_arrive)
+                        ->where('point_arrive', $programme->point_depart)
+                        ->where('statut', 'actif');
 
-                if ($request->filled('heure_depart_retour')) {
-                    $returnProgramQuery->where('heure_depart', $request->heure_depart_retour);
+                    if ($request->filled('heure_depart_retour')) {
+                        $returnProgramQuery->where('heure_depart', $request->heure_depart_retour);
+                    }
+
+                    $returnProgram = $returnProgramQuery->first();
                 }
-
-                $returnProgram = $returnProgramQuery->first();
 
                 if ($returnProgram) {
                     $reservedSeatsRetour = Reservation::where('programme_id', $returnProgram->id)
@@ -1786,8 +1833,8 @@ class ReservationApiController extends Controller
                     if ($isAllerRetour && $dateRetour) {
                         $reservationData['date_retour'] = $dateRetour;
                         $reservationData['statut_retour'] = 'confirmee';
-                        if ($programme->programme_retour_id) {
-                            $reservationData['programme_retour_id'] = $programme->programme_retour_id;
+                        if ($returnProgram) {
+                            $reservationData['programme_retour_id'] = $returnProgram->id;
                         }
                     }
 
@@ -1955,8 +2002,8 @@ class ReservationApiController extends Controller
                     if ($isAllerRetour && $dateRetour) {
                         $reservationData['date_retour'] = $dateRetour;
                         $reservationData['statut_retour'] = 'en_attente';
-                        if ($programme->programme_retour_id) {
-                            $reservationData['programme_retour_id'] = $programme->programme_retour_id;
+                        if ($returnProgram) {
+                            $reservationData['programme_retour_id'] = $returnProgram->id;
                         }
                     }
 

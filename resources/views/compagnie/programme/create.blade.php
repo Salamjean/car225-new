@@ -755,22 +755,46 @@
                         </div>
                     </div>
 
-                    <!-- Section 3: Tarification -->
+                    <!-- Section 3: Capacité et Tarification -->
                     <div class="tarif-section">
-                        <div class="text-center mb-4">
-                            <span class="section-badge bg-amber-200 text-amber-800">
-                                <i class="fas fa-coins"></i>
-                                Étape 3
-                            </span>
-                            <h2 class="text-lg font-bold text-gray-800 mt-2">Tarif du billet</h2>
-                            <p class="text-sm text-amber-700">Prix identique pour l'aller et le retour</p>
-                        </div>
-                        <div class="tarif-input-wrapper">
-                            <span class="icon">💰</span>
-                            <input type="number" name="montant_billet" id="montant_billet" 
-                                   class="tarif-input"
-                                   min="0" step="100" value="{{ old('montant_billet', $existingMontantBillet) }}" placeholder="0" required>
-                            <span class="currency">FCFA</span>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                            <!-- Capacité -->
+                            <div>
+                                <div class="text-center mb-4">
+                                    <span class="section-badge bg-blue-200 text-blue-800">
+                                        <i class="fas fa-users"></i>
+                                        Étape 3
+                                    </span>
+                                    <h2 class="text-lg font-bold text-gray-800 mt-2">Capacité du car</h2>
+                                    <p class="text-sm text-blue-700">Nombre de places par défaut</p>
+                                </div>
+                                <div class="tarif-input-wrapper">
+                                    <span class="icon">💺</span>
+                                    <input type="number" name="capacity" id="capacity" 
+                                           class="tarif-input"
+                                           min="1" max="100" value="{{ old('capacity', 64) }}" placeholder="64" required>
+                                    <span class="currency">Places</span>
+                                </div>
+                            </div>
+
+                            <!-- Prix -->
+                            <div>
+                                <div class="text-center mb-4">
+                                    <span class="section-badge bg-amber-200 text-amber-800">
+                                        <i class="fas fa-coins"></i>
+                                        Étape 4
+                                    </span>
+                                    <h2 class="text-lg font-bold text-gray-800 mt-2">Tarif du billet</h2>
+                                    <p class="text-sm text-amber-700">Prix identique Aller/Retour</p>
+                                </div>
+                                <div class="tarif-input-wrapper">
+                                    <span class="icon">💰</span>
+                                    <input type="number" name="montant_billet" id="montant_billet" 
+                                           class="tarif-input"
+                                           min="0" step="100" value="{{ old('montant_billet', $existingMontantBillet) }}" placeholder="0" required>
+                                    <span class="currency">FCFA</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

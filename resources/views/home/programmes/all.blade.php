@@ -117,12 +117,15 @@
                                                 </div>
                                                 <div class="text-xs">
                                                     @php
-                                                        $statusTexts = ['disponible' => 'Places disponibles', 'presque_complet' => 'Presque complet', 'complet' => 'Complet'];
-                                                        $statusKey = $programme->statut_places;
+                                                        $statusTexts = ['disponible' => 'Disponible', 'presque_complet' => 'Presque complet', 'complet' => 'Complet'];
+                                                        $totalSeats = $programme->getTotalSeats($searchDateParam);
+                                                        $reservedSeatsCount = $programme->getPlacesReserveesForDate($searchDateParam);
+                                                        $statusKey = $programme->getStatutPlacesForDate($searchDateParam);
                                                     @endphp
-                                                    <span class="{{ $statusKey == 'complet' ? 'text-red-600' : ($statusKey == 'presque_complet' ? 'text-yellow-600' : 'text-green-600') }} font-semibold">
-                                                        {{ $statusTexts[$statusKey] ?? 'Statut inconnu' }}
+                                                    <span class="{{ $statusKey == 'complet' ? 'text-red-600' : ($statusKey == 'presque_complet' ? 'text-yellow-600' : 'text-green-600') }} font-bold">
+                                                        {{ $reservedSeatsCount }}/{{ $totalSeats }}
                                                     </span>
+                                                    <span class="text-[10px] text-gray-500 ml-1">({{ $statusTexts[$statusKey] ?? '' }})</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -207,12 +210,19 @@
                                         <!-- Statut -->
                                         <div class="col-span-2 flex justify-center">
                                             @php
-                                                $statusKey = $programme->statut_places;
+                                                $totalSeats = $programme->getTotalSeats($searchDateParam);
+                                                $reservedSeatsCount = $programme->getPlacesReserveesForDate($searchDateParam);
+                                                $statusKey = $programme->getStatutPlacesForDate($searchDateParam);
                                             @endphp
-                                            <div class="flex items-center gap-2">
-                                                <div class="w-3 h-3 rounded-full {{ $statusKey == 'disponible' ? 'bg-green-500' : ($statusKey == 'presque_complet' ? 'bg-yellow-500' : 'bg-red-500') }}"></div>
-                                                <span class="font-semibold {{ $statusKey == 'disponible' ? 'text-green-600' : ($statusKey == 'presque_complet' ? 'text-yellow-600' : 'text-red-600') }}">
-                                                    {{ $statusTexts[$statusKey] ?? 'Statut inconnu' }}
+                                            <div class="flex flex-col items-center">
+                                                <div class="flex items-center gap-2">
+                                                    <div class="w-3 h-3 rounded-full {{ $statusKey == 'disponible' ? 'bg-green-500' : ($statusKey == 'presque_complet' ? 'bg-yellow-500' : 'bg-red-500') }}"></div>
+                                                    <span class="font-bold {{ $statusKey == 'disponible' ? 'text-green-600' : ($statusKey == 'presque_complet' ? 'text-yellow-600' : 'text-red-600') }}">
+                                                        {{ $reservedSeatsCount }} / {{ $totalSeats }}
+                                                    </span>
+                                                </div>
+                                                <span class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
+                                                    {{ $statusTexts[$statusKey] ?? '' }}
                                                 </span>
                                             </div>
                                         </div>

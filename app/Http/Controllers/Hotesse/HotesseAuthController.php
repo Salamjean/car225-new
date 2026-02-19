@@ -190,6 +190,11 @@ class HotesseAuthController extends Controller
         $this->otpService->storeOtp($hotesse->email, $otpCode);
 
         // Send email
+        \Illuminate\Support\Facades\Log::info('Attempting to resend Hotesse OTP', [
+            'email' => $hotesse->email,
+            'compagnie' => $hotesse->compagnie->name ?? 'N/A'
+        ]);
+
         \Mail::to($hotesse->email)->send(new HotesseCreatedMail(
             [
                 'prenom' => $hotesse->prenom,

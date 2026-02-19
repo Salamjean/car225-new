@@ -275,21 +275,19 @@ class HotesseController extends Controller
                     }
                     return true;
                 })->values()->map(function($p) use ($searchDateRequested) {
-                    $reservedCount = Reservation::where('programme_id', $p->id)
-                        ->where('date_voyage', $searchDateRequested)
-                        ->where('statut', 'confirmee')
-                        ->count();
-
+                    $reservedCount = $p->getPlacesReserveesForDate($searchDateRequested);
+                    $totalSeats = $p->getTotalSeats($searchDateRequested);
                     $vehicule = $p->getVehiculeForDate($searchDateRequested);
+
                     return [
                         'id' => $p->id,
                         'heure_depart' => $p->heure_depart,
                         'heure_arrive' => $p->heure_arrive,
                         'date_depart' => $p->date_depart,
                         'vehicule' => $vehicule ? $vehicule->type_range : 'Standard',
-                        'vehicule_id' => $vehicule ? $vehicule->id : null,
+                        'vehicule_id' => $vehicule ? $vehicule->id : 0,
                         'reserved_count' => $reservedCount,
-                        'total_seats' => $vehicule ? $vehicule->nombre_place : 70
+                        'total_seats' => $totalSeats
                     ];
                 });
 

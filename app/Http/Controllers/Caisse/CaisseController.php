@@ -243,20 +243,29 @@ class CaisseController extends Controller
 
             $reservations = [];
 
-            // Récupérer les sièges déjà réservés pour ce programme ET pour cette date spécifique
+            // Récupérer les sièges déjà réservés pour ce programme ET pour cette date spécifique et CETTE heure
             $reservedSeats = Reservation::where('programme_id', $programme->id)
-                ->whereDate('date_voyage', $dateVoyageEffective) // Ajout crucial : filtre par date du jour
+                ->whereDate('date_voyage', $dateVoyageEffective)
+                ->where('heure_depart', $programme->heure_depart)
                 ->pluck('seat_number')
                 ->toArray();
 
+            $totalSeats = $programme->getTotalSeats($dateVoyageEffective);
             $nextSeat = 1;
-            while (in_array($nextSeat, $reservedSeats)) {
+            while (in_array($nextSeat, $reservedSeats) && $nextSeat <= $totalSeats) {
                 $nextSeat++;
             }
 
             foreach ($request->passenger_details as $index => $passenger) {
-                while (in_array($nextSeat, $reservedSeats)) {
+                if ($nextSeat > $totalSeats) {
+                    throw new \Exception("Désolé, plus de places disponibles (capacité: {$totalSeats}).");
+                }
+                while (in_array($nextSeat, $reservedSeats) && $nextSeat <= $totalSeats) {
                     $nextSeat++;
+                }
+                
+                if ($nextSeat > $totalSeats) {
+                    throw new \Exception("Désolé, la capacité maximale de {$totalSeats} places est atteinte.");
                 }
 
                 $reference = Reservation::generateReference($nextSeat, $caisse->compagnie->sigle ?? 'RES');
@@ -428,6 +437,7 @@ class CaisseController extends Controller
         try {
             $allReserved = \App\Models\Reservation::where('programme_id', $programme->id)
                 ->whereDate('date_voyage', $dateVoyageEffective)
+                ->where('heure_depart', $programme->heure_depart)
                 ->where('statut', 'confirmee')
                 ->pluck('seat_number')
                 ->toArray();

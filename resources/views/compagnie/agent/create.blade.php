@@ -1,1539 +1,662 @@
 @extends('compagnie.layouts.template')
+
 @section('content')
-<div class="container-fluid">
-    <!-- En-tête de page -->
-    <div class="row page-header-modern">
-        <div class="col-12">
-            <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between p-4">
-                <div class="d-flex align-items-center mb-3 mb-md-0">
-                    <div class="header-icon-wrapper me-3">
-                        <i class="fas fa-user-plus"></i>
-                    </div>
-                    <div>
-                        <h1 class="page-title mb-1">Ajouter un nouvel agent</h1>
-                        <p class="page-subtitle text-muted mb-0">Créez un compte agent pour votre compagnie</p>
-                    </div>
-                </div>
-                
-                <nav aria-label="breadcrumb" class="modern-breadcrumb">
-                    <ol class="breadcrumb mb-0">
-                        <li class="breadcrumb-item">
-                            <a href="{{ route('compagnie.dashboard') }}" class="breadcrumb-link">
-                                <i class="fas fa-home me-1"></i>Tableau de bord
-                            </a>
-                        </li>
-                        <li class="breadcrumb-item">
-                            <a href="{{ route('compagnie.agents.index') }}" class="breadcrumb-link">
-                                <i class="fas fa-users me-1"></i>Agents
-                            </a>
-                        </li>
-                        <li class="breadcrumb-item active" aria-current="page">
-                            <i class="fas fa-plus-circle me-1"></i>Nouvel agent
-                        </li>
-                    </ol>
-                </nav>
-            </div>
+<!-- Import Google Fonts & Animate.css -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
+<div class="content-wrapper-modern">
+    <!-- Header Actions -->
+    <div class="action-header animate__animated animate__fadeIn">
+        <div class="header-left">
+            <h1 class="main-title">Nouvel Agent</h1>
+            <p class="main-subtitle">Créez un profil complet pour votre futur collaborateur</p>
+        </div>
+        <div class="header-right">
+            <a href="{{ route('compagnie.agents.index') }}" class="btn btn-filter">
+                <i class="fas fa-arrow-left"></i>
+                <span>Retour à la liste</span>
+            </a>
         </div>
     </div>
 
-    <!-- Formulaire principal -->
     <div class="row justify-content-center">
-        <div class="col-xxl-9 col-xl-10 col-lg-11">
-            <div class="modern-card">
-                <!-- En-tête de la carte -->
-                <div class="card-header-modern">
-                    <div class="d-flex align-items-center">
-                        <div class="step-indicator me-4">
-                            <span class="step-number">1</span>
-                            <div class="step-line"></div>
-                            <span class="step-number">2</span>
-                            <div class="step-line"></div>
-                            <span class="step-number step-active">3</span>
+        <div class="col-xxl-10">
+            <div class="main-card-modern animate__animated animate__fadeInUp">
+                <!-- Inner Header with Step Indicators -->
+                <div class="card-header-inner">
+                    <div class="step-indicator">
+                        <div class="step active">
+                            <span class="step-num">1</span>
+                            <span class="step-text">Profil & Identité</span>
                         </div>
-                        <div class="header-content">
-                            <h2 class="card-title mb-2">Informations de l'agent</h2>
-                            <p class="card-subtitle mb-0">Complétez les informations requises pour créer un nouveau compte</p>
+                        <div class="step-line"></div>
+                        <div class="step">
+                            <span class="step-num">2</span>
+                            <span class="step-text">Accès & Sécurité</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Corps de la carte -->
-                <div class="card-body-modern">
-                    <form method="POST" action="{{ route('compagnie.agents.store') }}" enctype="multipart/form-data" id="agentForm" class="modern-form">
-                        @csrf
+                <form method="POST" action="{{ route('compagnie.agents.store') }}" enctype="multipart/form-data" class="premium-form p-4 p-md-5" id="createAgentForm">
+                    @csrf
 
-                        <!-- Section 1: Informations de base -->
-                        <div class="form-section-modern mb-5">
-                            <div class="section-header-modern mb-4">
-                                <div class="section-icon">
-                                    <i class="fas fa-id-card"></i>
+                    <div class="row g-4">
+                        <!-- Profil Side -->
+                        <div class="col-lg-4">
+                            <div class="profile-upload-section">
+                                <label class="section-label">Photo d'identité</label>
+                                <div class="avatar-preview-wrapper shadow-sm">
+                                    <div class="avatar-current" id="imagePreviewContainer">
+                                        <div id="avatarPlaceholder" class="avatar-placeholder-big">
+                                            <i class="fas fa-user-plus"></i>
+                                        </div>
+                                        <img id="imagePreview" src="#" alt="Aperçu" style="display: none;">
+                                    </div>
+                                    <label for="profile_picture" class="btn-change-avatar">
+                                        <i class="fas fa-camera"></i>
+                                        <input type="file" id="profile_picture" name="profile_picture" class="d-none" accept="image/*">
+                                    </label>
                                 </div>
-                                <div>
-                                    <h3 class="section-title mb-2">Informations personnelles</h3>
-                                    <p class="section-subtitle">Renseignez les informations d'identité de l'agent</p>
+                                <div class="upload-guidelines">
+                                    <p class="upload-hint"><i class="fas fa-info-circle me-1"></i> Formats acceptés : JPG, PNG (Max. 2Mo)</p>
+                                    <ul class="mini-checklist">
+                                        <li><i class="fas fa-check"></i> Fond neutre</li>
+                                        <li><i class="fas fa-check"></i> Visage centré</li>
+                                    </ul>
                                 </div>
-                                <span class="section-badge">Obligatoire</span>
                             </div>
-                            
+                        </div>
+
+                        <!-- Form Side -->
+                        <div class="col-lg-8">
+                            <div class="form-section-header mb-4">
+                                <h4 class="section-inner-title">Coordonnées de l'agent</h4>
+                                <div class="title-accent"></div>
+                            </div>
+
                             <div class="row g-4">
-                                <!-- Colonne 1: Nom -->
-                                <div class="col-md-6 col-lg-4">
+                                <div class="col-md-6">
                                     <div class="form-group-modern">
-                                        <label for="name" class="form-label-modern">
-                                            <span class="label-text">Nom</span>
-                                            <span class="label-required">*</span>
-                                        </label>
-                                        <div class="input-group-modern">
-                                            <span class="input-icon">
-                                                <i class="fas fa-user"></i>
-                                            </span>
-                                            <input type="text" 
-                                                   class="form-control-modern @error('name') is-invalid @enderror" 
-                                                   id="name" 
-                                                   name="name" 
-                                                   value="{{ old('name') }}" 
-                                                   placeholder="Entrez le nom"
-                                                   required>
-                                            <div class="input-hint" data-hint="Le nom de famille de l'agent"></div>
+                                        <label>Nom de famille <span class="required">*</span></label>
+                                        <div class="input-with-icon">
+                                            <i class="fas fa-user"></i>
+                                            <input type="text" name="name" value="{{ old('name') }}" required placeholder="Ex: Bakayoko">
                                         </div>
-                                        @error('name')
-                                            <div class="invalid-feedback-modern">
-                                                <i class="fas fa-exclamation-circle me-1"></i>{{ $message }}
-                                            </div>
-                                        @enderror
-                                    </div>
-                                </div>
-                                
-                                <!-- Colonne 2: Prénom -->
-                                <div class="col-md-6 col-lg-4">
-                                    <div class="form-group-modern">
-                                        <label for="prenom" class="form-label-modern">
-                                            <span class="label-text">Prénom</span>
-                                            <span class="label-required">*</span>
-                                        </label>
-                                        <div class="input-group-modern">
-                                            <span class="input-icon">
-                                                <i class="fas fa-user"></i>
-                                            </span>
-                                            <input type="text" 
-                                                   class="form-control-modern @error('prenom') is-invalid @enderror" 
-                                                   id="prenom" 
-                                                   name="prenom" 
-                                                   value="{{ old('prenom') }}" 
-                                                   placeholder="Entrez le prénom"
-                                                   required>
-                                            <div class="input-hint" data-hint="Le prénom de l'agent"></div>
-                                        </div>
-                                        @error('prenom')
-                                            <div class="invalid-feedback-modern">
-                                                <i class="fas fa-exclamation-circle me-1"></i>{{ $message }}
-                                            </div>
-                                        @enderror
-                                    </div>
-                                </div>
-                                
-                                <!-- Colonne 3: Email -->
-                                <div class="col-md-6 col-lg-4">
-                                    <div class="form-group-modern">
-                                        <label for="email" class="form-label-modern">
-                                            <span class="label-text">Email</span>
-                                            <span class="label-required">*</span>
-                                        </label>
-                                        <div class="input-group-modern">
-                                            <span class="input-icon">
-                                                <i class="fas fa-envelope"></i>
-                                            </span>
-                                            <input type="email" 
-                                                   class="form-control-modern @error('email') is-invalid @enderror" 
-                                                   id="email" 
-                                                   name="email" 
-                                                   value="{{ old('email') }}" 
-                                                   placeholder="exemple@email.com"
-                                                   required>
-                                            <div class="input-hint" data-hint="L'adresse email de connexion"></div>
-                                        </div>
-                                        @error('email')
-                                            <div class="invalid-feedback-modern">
-                                                <i class="fas fa-exclamation-circle me-1"></i>{{ $message }}
-                                            </div>
-                                        @enderror
+                                        @error('name') <span class="error-msg">{{ $message }}</span> @enderror
                                     </div>
                                 </div>
 
-                                <!-- Colonne 4: Contact -->
-                                <div class="col-md-6 col-lg-4">
+                                <div class="col-md-6">
                                     <div class="form-group-modern">
-                                        <label for="contact" class="form-label-modern">
-                                            <span class="label-text">Téléphone</span>
-                                            <span class="label-required">*</span>
-                                        </label>
-                                        <div class="input-group-modern">
-                                            <span class="input-icon">
-                                                <i class="fas fa-phone"></i>
-                                            </span>
-                                            <input type="text" 
-                                                   class="form-control-modern @error('contact') is-invalid @enderror" 
-                                                   id="contact" 
-                                                   name="contact" 
-                                                   value="{{ old('contact') }}" 
-                                                   maxlength="10"
-                                                   oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"
-                                                   placeholder="0700000000"
-                                                   required>
-                                            <div class="input-hint" data-hint="Numéro de téléphone principal"></div>
+                                        <label>Prénom(s) <span class="required">*</span></label>
+                                        <div class="input-with-icon">
+                                            <i class="fas fa-user-tag"></i>
+                                            <input type="text" name="prenom" value="{{ old('prenom') }}" required placeholder="Ex: Jean-Marc">
                                         </div>
-                                        @error('contact')
-                                            <div class="invalid-feedback-modern">
-                                                <i class="fas fa-exclamation-circle me-1"></i>{{ $message }}
-                                            </div>
-                                        @enderror
-                                    </div>
-                                </div>
-                                
-                                <!-- Colonne 5: Commune -->
-                                <div class="col-md-6 col-lg-4">
-                                    <div class="form-group-modern">
-                                        <label for="commune" class="form-label-modern">
-                                            <span class="label-text">Commune</span>
-                                            <span class="label-required">*</span>
-                                        </label>
-                                        <div class="input-group-modern">
-                                            <span class="input-icon">
-                                                <i class="fas fa-map-marker-alt"></i>
-                                            </span>
-                                            <input type="text" 
-                                                   class="form-control-modern @error('commune') is-invalid @enderror" 
-                                                   id="commune" 
-                                                   name="commune" 
-                                                   value="{{ old('commune') }}" 
-                                                   placeholder="Entrez la commune"
-                                                   required>
-                                            <div class="input-hint" data-hint="Localité de résidence"></div>
-                                        </div>
-                                        @error('commune')
-                                            <div class="invalid-feedback-modern">
-                                                <i class="fas fa-exclamation-circle me-1"></i>{{ $message }}
-                                            </div>
-                                        @enderror
+                                        @error('prenom') <span class="error-msg">{{ $message }}</span> @enderror
                                     </div>
                                 </div>
 
-                                <!-- Colonne: Gare -->
-                                <div class="col-md-6 col-lg-4">
+                                <div class="col-md-6">
                                     <div class="form-group-modern">
-                                        <label for="gare_id" class="form-label-modern">
-                                            <span class="label-text">Gare d'attache</span>
-                                            <span class="label-required">*</span>
-                                        </label>
-                                        <div class="input-group-modern">
-                                            <span class="input-icon">
-                                                <i class="fas fa-building"></i>
-                                            </span>
-                                            <select class="form-control-modern @error('gare_id') is-invalid @enderror" 
-                                                    id="gare_id" 
-                                                    name="gare_id" 
-                                                    required>
-                                                <option value="" disabled {{ old('gare_id') ? '' : 'selected' }}>Choisir une gare</option>
+                                        <label>Adresse Email <span class="required">*</span></label>
+                                        <div class="input-with-icon">
+                                            <i class="fas fa-envelope"></i>
+                                            <input type="email" name="email" value="{{ old('email') }}" required placeholder="agent@compagnie.com">
+                                        </div>
+                                        @error('email') <span class="error-msg">{{ $message }}</span> @enderror
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="form-group-modern">
+                                        <label>Numéro de téléphone <span class="required">*</span></label>
+                                        <div class="input-with-icon">
+                                            <i class="fas fa-phone-alt"></i>
+                                            <input type="text" name="contact" value="{{ old('contact') }}" required placeholder="Ex: 07 00 00 00 00" maxlength="10">
+                                        </div>
+                                        @error('contact') <span class="error-msg">{{ $message }}</span> @enderror
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="form-group-modern">
+                                        <label>Gare d'affectation <span class="required">*</span></label>
+                                        <div class="input-with-icon">
+                                            <i class="fas fa-building"></i>
+                                            <select name="gare_id" required>
+                                                <option value="">Sélectionner une gare</option>
                                                 @foreach($gares as $gare)
                                                     <option value="{{ $gare->id }}" {{ old('gare_id') == $gare->id ? 'selected' : '' }}>
                                                         {{ $gare->nom_gare }}
                                                     </option>
                                                 @endforeach
                                             </select>
-                                            <div class="input-hint" data-hint="Gare à laquelle l'agent est rattaché"></div>
                                         </div>
-                                        @error('gare_id')
-                                            <div class="invalid-feedback-modern">
-                                                <i class="fas fa-exclamation-circle me-1"></i>{{ $message }}
-                                            </div>
-                                        @enderror
+                                        @error('gare_id') <span class="error-msg">{{ $message }}</span> @enderror
                                     </div>
                                 </div>
-                                
-                                <!-- Colonne 6: Contact urgence -->
-                                <div class="col-md-6 col-lg-4">
+
+                                <div class="col-md-6">
                                     <div class="form-group-modern">
-                                        <label for="cas_urgence" class="form-label-modern">
-                                            <span class="label-text">Contact d'urgence</span>
-                                        </label>
-                                        <div class="input-group-modern">
-                                            <span class="input-icon">
-                                                <i class="fas fa-phone-alt"></i>
-                                            </span>
-                                            <input type="text" 
-                                                   class="form-control-modern @error('cas_urgence') is-invalid @enderror" 
-                                                   id="cas_urgence" 
-                                                   name="cas_urgence" 
-                                                   value="{{ old('cas_urgence') }}" 
-                                                   maxlength="10"
-                                                   oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"
-                                                   placeholder="Ex: 0100000000">
-                                            <div class="input-hint" data-hint="Contact en cas d'urgence"></div>
+                                        <label>Commune de résidence <span class="required">*</span></label>
+                                        <div class="input-with-icon">
+                                            <i class="fas fa-map-marker-alt"></i>
+                                            <input type="text" name="commune" value="{{ old('commune') }}" required placeholder="Ex: Cocody">
                                         </div>
-                                        @error('cas_urgence')
-                                            <div class="invalid-feedback-modern">
-                                                <i class="fas fa-exclamation-circle me-1"></i>{{ $message }}
-                                            </div>
-                                        @enderror
+                                        @error('commune') <span class="error-msg">{{ $message }}</span> @enderror
                                     </div>
                                 </div>
-                            </div>
-                        </div>
 
-                        <!-- Section 2: Photo de profil -->
-                        <div class="form-section-modern mb-5">
-                            <div class="section-header-modern mb-4">
-                                <div class="section-icon">
-                                    <i class="fas fa-camera"></i>
-                                </div>
-                                <div>
-                                    <h3 class="section-title mb-2">Photo de profil</h3>
-                                    <p class="section-subtitle">Ajoutez une photo pour identifier facilement l'agent</p>
-                                </div>
-                                <span class="section-badge optional">Optionnel</span>
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-lg-8">
-                                    <div class="file-upload-modern">
-                                        <div class="upload-area-modern @error('profile_picture') upload-error @enderror" id="uploadArea">
-                                            <div class="upload-icon">
-                                                <i class="fas fa-cloud-upload-alt"></i>
-                                            </div>
-                                            <div class="upload-content">
-                                                <h4 class="upload-title">Glissez-déposez votre fichier ici</h4>
-                                                <p class="upload-subtitle">ou</p>
-                                                <button type="button" class="btn-upload-modern" onclick="document.getElementById('profile_picture').click()">
-                                                    <i class="fas fa-folder-open me-2"></i>
-                                                    Parcourir les fichiers
-                                                </button>
-                                                <p class="upload-info mt-3">
-                                                    <i class="fas fa-info-circle me-1"></i>
-                                                    Formats supportés : JPEG, PNG, JPG, GIF • Taille max : 2MB
-                                                </p>
-                                            </div>
-                                            <input type="file" 
-                                                   class="d-none" 
-                                                   id="profile_picture" 
-                                                   name="profile_picture" 
-                                                   accept="image/jpeg,image/png,image/jpg,image/gif">
+                                <div class="col-12">
+                                    <div class="form-group-modern">
+                                        <label>Contact d'urgence</label>
+                                        <div class="input-with-icon">
+                                            <i class="fas fa-ambulance"></i>
+                                            <input type="text" name="cas_urgence" value="{{ old('cas_urgence') }}" placeholder="Nom et numéro du proche (Ex: Marie 0101010101)">
                                         </div>
-                                        
-                                        <!-- Aperçu de l'image -->
-                                        <div class="image-preview-modern mt-4" id="imagePreviewContainer" style="display: none;">
-                                            <div class="preview-header">
-                                                <h5 class="preview-title mb-0">
-                                                    <i class="fas fa-image me-2"></i>
-                                                    Aperçu de l'image
-                                                </h5>
-                                                <button type="button" class="btn-remove-modern" onclick="removeImage()">
-                                                    <i class="fas fa-times me-1"></i>
-                                                    Supprimer
-                                                </button>
-                                            </div>
-                                            <div class="preview-body">
-                                                <img id="imagePreview" src="#" alt="Aperçu de l'image" class="preview-image">
-                                            </div>
-                                        </div>
-                                        
-                                        @error('profile_picture')
-                                            <div class="invalid-feedback-modern mt-2">
-                                                <i class="fas fa-exclamation-circle me-1"></i>{{ $message }}
-                                            </div>
-                                        @enderror
-                                    </div>
-                                </div>
-                                
-                                <div class="col-lg-4">
-                                    <div class="upload-guidelines">
-                                        <h5 class="guidelines-title">
-                                            <i class="fas fa-lightbulb me-2"></i>
-                                            Recommandations
-                                        </h5>
-                                        <ul class="guidelines-list">
-                                            <li>
-                                                <i class="fas fa-check-circle text-success me-2"></i>
-                                                Photo récente et claire
-                                            </li>
-                                            <li>
-                                                <i class="fas fa-check-circle text-success me-2"></i>
-                                                Visage bien visible
-                                            </li>
-                                            <li>
-                                                <i class="fas fa-check-circle text-success me-2"></i>
-                                                Fond neutre de préférence
-                                            </li>
-                                            <li>
-                                                <i class="fas fa-check-circle text-success me-2"></i>
-                                                Format carré recommandé
-                                            </li>
-                                        </ul>
+                                        <small class="form-hint">Important pour la sécurité de l'agent en déplacement.</small>
+                                        @error('cas_urgence') <span class="error-msg">{{ $message }}</span> @enderror
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- Section 3: Informations de la compagnie -->
-                        <div class="company-info-modern mb-5">
-                            <div class="company-header">
-                                <h4 class="company-title mb-0">
-                                    <i class="fas fa-building me-2"></i>
-                                    Informations de la compagnie
-                                </h4>
-                                <span class="company-badge">Lecture seule</span>
-                            </div>
-                            <div class="company-body">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="info-item-modern">
-                                            <div class="info-icon">
-                                                <i class="fas fa-building"></i>
-                                            </div>
-                                            <div class="info-content">
-                                                <label class="info-label">Compagnie</label>
-                                                <p class="info-value">{{ Auth::guard('compagnie')->user()->name ?? 'Non disponible' }}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="info-item-modern">
-                                            <div class="info-icon">
-                                                <i class="fas fa-envelope"></i>
-                                            </div>
-                                            <div class="info-content">
-                                                <label class="info-label">Email compagnie</label>
-                                                <p class="info-value">{{ Auth::guard('compagnie')->user()->email ?? 'Non disponible' }}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="company-notice mt-4">
-                                    <div class="notice-icon">
-                                        <i class="fas fa-info-circle"></i>
-                                    </div>
-                                    <div class="notice-content">
-                                        <h6 class="notice-title mb-1">Information importante</h6>
-                                        <p class="notice-text mb-0">
-                                            L'agent sera automatiquement associé à cette compagnie. 
-                                            Un email d'activation lui sera envoyé pour définir son mot de passe.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Boutons d'action -->
-                        <div class="form-actions-modern">
-                            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center">
-                                <a href="{{ route('compagnie.agents.index') }}" class="btn-back-modern mb-3 mb-sm-0">
-                                    <i class="fas fa-arrow-left me-2"></i>
-                                    Retour aux agents
-                                </a>
-                                <div class="d-flex flex-wrap gap-3">
-                                    <button type="reset" class="btn-reset-modern">
-                                        <i class="fas fa-redo me-2"></i>
-                                        Réinitialiser
+                            <!-- Form Footer Actions -->
+                            <div class="form-footer-actions mt-5 pt-4 border-top">
+                                <div class="d-flex justify-content-end gap-3 align-items-center">
+                                    <button type="reset" class="btn btn-reset-premium">
+                                        <i class="fas fa-redo"></i> Réinitialiser
                                     </button>
-                                    <button type="submit" class="btn-submit-modern">
-                                        <span class="submit-text">
-                                            <i class="fas fa-user-plus me-2"></i>
-                                            Créer l'agent
-                                        </span>
-                                        <span class="submit-loader">
-                                            <i class="fas fa-spinner fa-spin me-2"></i>
-                                            Création...
-                                        </span>
+                                    <button type="submit" class="btn btn-primary-modern">
+                                        <i class="fas fa-user-plus"></i>
+                                        <span>Créer le profil agent</span>
                                     </button>
                                 </div>
                             </div>
                         </div>
-                    </form>
-                </div>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Inclure SweetAlert2 -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 <style>
-    /* Variables de design */
-    :root {
-        --primary-gradient: linear-gradient(135deg, #e94f1b 0%, #e94f1b 100%);
-        --primary-hover: linear-gradient(135deg, #e94f1b 0%, #e94f1b 100%);
-        --secondary-color: #0a8c5f;
-        --secondary-light: rgba(10, 140, 95, 0.1);
-        --success-color: #28a745;
-        --danger-color: #dc3545;
-        --warning-color: #e94f1b;
-        --light-bg: #f8f9fa;
-        --border-color: #e9ecef;
-        --border-hover: #dee2e6;
-        --text-primary: #2c3e50;
-        --text-secondary: #6c757d;
-        --text-light: #adb5bd;
-        --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
-        --shadow-md: 0 4px 20px rgba(0,0,0,0.08);
-        --shadow-lg: 0 8px 30px rgba(0,0,0,0.12);
-        --radius-sm: 8px;
-        --radius-md: 12px;
-        --radius-lg: 16px;
-        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    /* En-tête de page moderne */
-    .page-header-modern {
-        background: white;
-        border-radius: var(--radius-md);
-        margin-bottom: 2rem;
-        box-shadow: var(--shadow-sm);
-        border: 1px solid var(--border-color);
-    }
-
-    .header-icon-wrapper {
-        width: 56px;
-        height: 56px;
-        background: var(--primary-gradient);
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 1.5rem;
-        box-shadow: 0 4px 15px rgba(254, 162, 25, 0.25);
-    }
-
-    .page-title {
-        color: var(--text-primary);
-        font-weight: 700;
-        font-size: 1.75rem;
-    }
-
-    .page-subtitle {
-        color: var(--text-secondary);
-        font-size: 0.95rem;
-    }
-
-    /* Breadcrumb moderne */
-    .modern-breadcrumb .breadcrumb {
-        background: var(--light-bg);
-        border-radius: 20px;
-        padding: 0.75rem 1.25rem;
-        margin: 0;
-    }
-
-    .breadcrumb-link {
-        color: var(--text-secondary);
-        text-decoration: none;
-        font-weight: 500;
-        font-size: 0.9rem;
-        transition: var(--transition);
-        display: flex;
-        align-items: center;
-    }
-
-    .breadcrumb-link:hover {
-        color: var(--primary-color);
-    }
-
-    .breadcrumb-item.active .breadcrumb-link {
-        color: var(--primary-color);
-        font-weight: 600;
-    }
-
-    /* Carte moderne */
-    .modern-card {
-        background: white;
-        border-radius: var(--radius-lg);
-        overflow: hidden;
-        box-shadow: var(--shadow-md);
-        border: 1px solid var(--border-color);
-    }
-
-    .card-header-modern {
-        background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
-        padding: 2rem 2rem 1.5rem;
-        border-bottom: 1px solid var(--border-color);
-    }
-
-    .card-title {
-        color: var(--text-primary);
-        font-weight: 700;
-        font-size: 1.5rem;
-    }
-
-    .card-subtitle {
-        color: var(--text-secondary);
-        font-size: 0.95rem;
-    }
-
-    /* Indicateur d'étapes */
-    .step-indicator {
-        display: flex;
-        align-items: center;
-        padding: 0.5rem 1rem;
-        background: var(--light-bg);
-        border-radius: 30px;
-    }
-
-    .step-number {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background: white;
-        border: 2px solid var(--border-color);
-        color: var(--text-secondary);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 600;
-        font-size: 0.875rem;
-    }
-
-    .step-active {
-        background: var(--primary-gradient);
-        border-color: transparent;
-        color: white;
-        box-shadow: 0 4px 8px rgba(254, 162, 25, 0.3);
-    }
-
-    .step-line {
-        width: 40px;
-        height: 2px;
-        background: var(--border-color);
-        margin: 0 0.5rem;
-    }
-
-    /* Corps de carte */
-    .card-body-modern {
-        padding: 2.5rem;
-    }
-
-    @media (max-width: 768px) {
-        .card-body-modern {
-            padding: 1.5rem;
-        }
-    }
-
-    /* Section de formulaire moderne */
-    .form-section-modern {
-        background: white;
-        border-radius: var(--radius-md);
-        padding: 2rem;
-        border: 1px solid var(--border-color);
-        transition: var(--transition);
-    }
-
-    .form-section-modern:hover {
-        border-color: var(--border-hover);
-        box-shadow: var(--shadow-sm);
-    }
-
-    .section-header-modern {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        margin-bottom: 2rem;
-        padding-bottom: 1.5rem;
-        border-bottom: 2px solid var(--light-bg);
-    }
-
-    .section-icon {
-        width: 48px;
-        height: 48px;
-        background: var(--secondary-light);
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--secondary-color);
-        font-size: 1.25rem;
-    }
-
-    .section-title {
-        color: var(--text-primary);
-        font-weight: 600;
-        font-size: 1.25rem;
-        margin: 0;
-    }
-
-    .section-subtitle {
-        color: var(--text-secondary);
-        font-size: 0.9rem;
-        margin: 0;
-    }
-
-    .section-badge {
-        margin-left: auto;
-        padding: 0.25rem 0.75rem;
-        background: var(--secondary-light);
-        color: var(--secondary-color);
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .section-badge.optional {
-        background: rgba(108, 117, 125, 0.1);
-        color: var(--text-secondary);
-    }
-
-    /* Groupes de formulaires modernes */
-    .form-group-modern {
-        margin-bottom: 1.5rem;
-    }
-
-    .form-label-modern {
-        display: flex;
-        align-items: center;
-        margin-bottom: 0.5rem;
-        font-weight: 600;
-        color: var(--text-primary);
-        font-size: 0.95rem;
-    }
-
-    .label-text {
-        margin-right: 0.25rem;
-    }
-
-    .label-required {
-        color: var(--danger-color);
-        font-size: 1.2rem;
-        line-height: 1;
-    }
-
-    .input-group-modern {
-        position: relative;
-    }
-
-    .input-icon {
-        position: absolute;
-        left: 1rem;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--text-secondary);
-        z-index: 2;
-    }
-
-    .form-control-modern {
-        width: 100%;
-        padding: 0.875rem 1rem 0.875rem 3rem;
-        border: 2px solid var(--border-color);
-        border-radius: var(--radius-sm);
-        background: white;
-        color: var(--text-primary);
-        font-size: 0.95rem;
-        transition: var(--transition);
-        line-height: 1.5;
-    }
-
-    .form-control-modern:focus {
-        outline: none;
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 3px rgba(254, 162, 25, 0.15);
-    }
-
-    .form-control-modern.is-invalid {
-        border-color: var(--danger-color);
-    }
-
-    .form-control-modern.is-invalid:focus {
-        box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15);
-    }
-
-    .input-hint {
-        position: absolute;
-        right: 1rem;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--text-light);
-        font-size: 0.8rem;
-        opacity: 0;
-        transition: var(--transition);
-        pointer-events: none;
-    }
-
-    .input-group-modern:hover .input-hint {
-        opacity: 1;
-    }
-
-    .invalid-feedback-modern {
-        display: flex;
-        align-items: center;
-        color: var(--danger-color);
-        font-size: 0.875rem;
-        margin-top: 0.5rem;
-    }
-
-    /* Zone de téléchargement moderne */
-    .file-upload-modern {
-        position: relative;
-    }
-
-    .upload-area-modern {
-        border: 3px dashed var(--border-color);
-        border-radius: var(--radius-md);
-        padding: 3rem 2rem;
-        text-align: center;
-        background: var(--light-bg);
-        cursor: pointer;
-        transition: var(--transition);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .upload-area-modern:hover {
-        border-color: var(--primary-color);
-        background: rgba(254, 162, 25, 0.02);
-    }
-
-    .upload-area-modern.upload-error {
-        border-color: var(--danger-color);
-        background: rgba(220, 53, 69, 0.02);
-    }
-
-    .upload-icon {
-        font-size: 3rem;
-        color: var(--text-light);
-        margin-bottom: 1.5rem;
-        transition: var(--transition);
-    }
-
-    .upload-area-modern:hover .upload-icon {
-        color: var(--primary-color);
-        transform: translateY(-5px);
-    }
-
-    .upload-title {
-        color: var(--text-primary);
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-        font-size: 1.25rem;
-    }
-
-    .upload-subtitle {
-        color: var(--text-secondary);
-        margin: 0.5rem 0;
-        font-size: 0.95rem;
-    }
-
-    .btn-upload-modern {
-        background: white;
-        border: 2px solid var(--primary-color);
-        color: var(--primary-color);
-        padding: 0.75rem 1.5rem;
-        border-radius: var(--radius-sm);
-        font-weight: 600;
-        font-size: 0.95rem;
-        cursor: pointer;
-        transition: var(--transition);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .btn-upload-modern:hover {
-        background: var(--primary-color);
-        color: white;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(254, 162, 25, 0.3);
-    }
-
-    .upload-info {
-        color: var(--text-secondary);
-        font-size: 0.85rem;
-        margin-top: 1rem;
-    }
-
-    /* Aperçu d'image moderne */
-    .image-preview-modern {
-        background: white;
-        border-radius: var(--radius-md);
-        overflow: hidden;
-        border: 1px solid var(--border-color);
-        box-shadow: var(--shadow-sm);
-    }
-
-    .preview-header {
-        background: var(--light-bg);
-        padding: 1rem 1.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        border-bottom: 1px solid var(--border-color);
-    }
-
-    .preview-title {
-        color: var(--text-primary);
-        font-weight: 600;
-        font-size: 1rem;
-        margin: 0;
-        display: flex;
-        align-items: center;
-    }
-
-    .btn-remove-modern {
-        background: var(--danger-color);
-        color: white;
-        border: none;
-        padding: 0.5rem 1rem;
-        border-radius: var(--radius-sm);
-        font-size: 0.875rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: var(--transition);
-        display: flex;
-        align-items: center;
-    }
-
-    .btn-remove-modern:hover {
-        background: #bb2d3b;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
-    }
-
-    .preview-body {
-        padding: 2rem;
-        text-align: center;
-    }
-
-    .preview-image {
-        max-width: 200px;
-        max-height: 200px;
-        object-fit: cover;
-        border-radius: var(--radius-sm);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    }
-
-    /* Lignes directrices */
-    .upload-guidelines {
-        background: var(--secondary-light);
-        border-radius: var(--radius-md);
-        padding: 1.5rem;
-        height: 100%;
-    }
-
-    .guidelines-title {
-        color: var(--secondary-color);
-        font-weight: 600;
-        margin-bottom: 1rem;
-        display: flex;
-        align-items: center;
-    }
-
-    .guidelines-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-
-    .guidelines-list li {
-        padding: 0.5rem 0;
-        color: var(--text-secondary);
-        font-size: 0.9rem;
-        display: flex;
-        align-items: center;
-    }
-
-    /* Informations sur l'entreprise */
-    .company-info-modern {
-        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-        border-radius: var(--radius-md);
-        overflow: hidden;
-        border: 1px solid var(--border-color);
-    }
-
-    .company-header {
-        background: var(--secondary-color);
-        color: white;
-        padding: 1rem 1.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    .company-title {
-        font-weight: 600;
-        font-size: 1.1rem;
-        margin: 0;
-        display: flex;
-        align-items: center;
-    }
-
-    .company-badge {
-        background: rgba(255, 255, 255, 0.2);
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 500;
-    }
-
-    .company-body {
-        padding: 1.5rem;
-    }
-
-    .info-item-modern {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        margin-bottom: 1rem;
-    }
-
-    .info-icon {
-        width: 40px;
-        height: 40px;
-        background: var(--secondary-light);
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--secondary-color);
-    }
-
-    .info-label {
-        display: block;
-        color: var(--text-secondary);
-        font-size: 0.85rem;
-        font-weight: 500;
-        margin-bottom: 0.25rem;
-    }
-
-    .info-value {
-        color: var(--text-primary);
-        font-weight: 600;
-        font-size: 1rem;
-        margin: 0;
-    }
-
-    .company-notice {
-        background: rgba(13, 110, 253, 0.05);
-        border: 1px solid rgba(13, 110, 253, 0.1);
-        border-radius: var(--radius-sm);
-        padding: 1rem;
-        display: flex;
-        align-items: flex-start;
-        gap: 1rem;
-    }
-
-    .notice-icon {
-        color: #0d6efd;
-        font-size: 1.25rem;
-        margin-top: 0.25rem;
-    }
-
-    .notice-title {
-        color: var(--text-primary);
-        font-weight: 600;
-        font-size: 0.95rem;
-        margin: 0;
-    }
-
-    .notice-text {
-        color: var(--text-secondary);
-        font-size: 0.9rem;
-        margin: 0;
-        line-height: 1.5;
-    }
-
-    /* Actions de formulaire */
-    .form-actions-modern {
-        padding-top: 2rem;
-        margin-top: 2rem;
-        border-top: 1px solid var(--border-color);
-    }
-
-    .btn-back-modern {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.75rem 1.5rem;
-        background: var(--light-bg);
-        border: 1px solid var(--border-color);
-        color: var(--text-secondary);
-        text-decoration: none;
-        border-radius: var(--radius-sm);
-        font-weight: 500;
-        font-size: 0.95rem;
-        transition: var(--transition);
-    }
-
-    .btn-back-modern:hover {
-        background: white;
-        border-color: var(--primary-color);
-        color: var(--primary-color);
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-sm);
-    }
-
-    .btn-reset-modern {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.875rem 1.75rem;
-        background: white;
-        border: 2px solid var(--border-color);
-        color: var(--text-secondary);
-        border-radius: var(--radius-sm);
-        font-weight: 600;
-        font-size: 0.95rem;
-        cursor: pointer;
-        transition: var(--transition);
-    }
-
-    .btn-reset-modern:hover {
-        border-color: var(--danger-color);
-        color: var(--danger-color);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(108, 117, 125, 0.15);
-    }
-
-    .btn-submit-modern {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.875rem 2rem;
-        background: var(--primary-gradient);
-        border: none;
-        color: white;
-        border-radius: var(--radius-sm);
-        font-weight: 600;
-        font-size: 0.95rem;
-        cursor: pointer;
-        transition: var(--transition);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .btn-submit-modern:hover {
-        background: var(--primary-hover);
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(254, 162, 25, 0.4);
-    }
-
-    .btn-submit-modern:disabled {
-        opacity: 0.7;
-        cursor: not-allowed;
-        transform: none !important;
-        box-shadow: none !important;
-    }
-
-    .submit-loader {
-        display: none;
-    }
-
-    .btn-submit-modern.loading .submit-text {
-        display: none;
-    }
-
-    .btn-submit-modern.loading .submit-loader {
-        display: flex;
-        align-items: center;
-    }
-
-    /* Animations */
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    .modern-card {
-        animation: fadeIn 0.5s ease-out;
-    }
-
-    .form-section-modern {
-        animation: fadeIn 0.6s ease-out 0.1s both;
-    }
-
-    /* Responsive */
-    @media (max-width: 992px) {
-        .section-header-modern {
-            flex-wrap: wrap;
-        }
-        
-        .section-badge {
-            margin-left: 0;
-            margin-top: 0.5rem;
-            width: 100%;
-        }
-    }
-
-    @media (max-width: 768px) {
-        .card-body-modern {
-            padding: 1.5rem;
-        }
-        
-        .form-section-modern {
-            padding: 1.5rem;
-        }
-        
-        .section-header-modern {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 0.75rem;
-        }
-        
-        .section-icon {
-            align-self: flex-start;
-        }
-        
-        .step-indicator {
-            display: none;
-        }
-    }
-
-    @media (max-width: 576px) {
-        .page-title {
-            font-size: 1.5rem;
-        }
-        
-        .card-body-modern {
-            padding: 1rem;
-        }
-        
-        .form-section-modern {
-            padding: 1.25rem;
-        }
-        
-        .form-actions-modern {
-            flex-direction: column;
-            gap: 1rem;
-        }
-        
-        .btn-reset-modern,
-        .btn-submit-modern {
-            width: 100%;
-            justify-content: center;
-        }
-    }
+/* CSS Variables & Design System */
+:root {
+    --primary: #e94f1b;
+    --primary-light: #ff6b3d;
+    --primary-dark: #c13e13;
+    --secondary-green: #10b981;
+    --gray-bg: #f8fafc;
+    --card-bg: #ffffff;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --border-color: #e2e8f0;
+    --font-family: 'Plus Jakarta Sans', sans-serif;
+    --radius-xl: 1.5rem;
+}
+
+body {
+    background-color: var(--gray-bg);
+}
+
+.content-wrapper-modern {
+    padding: 2rem;
+    font-family: var(--font-family);
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Header */
+.action-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2.5rem;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.main-title {
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: var(--text-main);
+    letter-spacing: -0.02em;
+    margin-bottom: 0.25rem;
+}
+
+.main-subtitle {
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.btn-filter {
+    background: white;
+    border: 1px solid var(--border-color);
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+    text-decoration: none !important;
+}
+
+.btn-filter:hover {
+    background: #f1f5f9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+/* Main Card */
+.main-card-modern {
+    background: white;
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.card-header-inner {
+    padding: 1.5rem 3rem;
+    background: #f8fafc;
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Step Indicator */
+.step-indicator {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.step {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--text-muted);
+    opacity: 0.6;
+}
+
+.step.active {
+    color: var(--primary);
+    opacity: 1;
+    font-weight: 700;
+}
+
+.step-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    transition: all 0.3s;
+}
+
+.active .step-num {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 4px 10px rgba(233, 79, 27, 0.2);
+}
+
+.step-text {
+    font-size: 0.9rem;
+}
+
+.step-line {
+    flex-grow: 0;
+    width: 40px;
+    height: 2px;
+    background: #e2e8f0;
+}
+
+/* Profile Section */
+.profile-upload-section {
+    text-align: center;
+    padding: 1rem;
+}
+
+.section-label {
+    display: block;
+    font-weight: 700;
+    font-size: 0.875rem;
+    color: var(--text-main);
+    margin-bottom: 1.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.avatar-preview-wrapper {
+    position: relative;
+    width: 180px;
+    height: 180px;
+    margin: 0 auto 1.5rem;
+}
+
+.avatar-current {
+    width: 100%;
+    height: 100%;
+    border-radius: 2rem;
+    overflow: hidden;
+    background: #f1f5f9;
+    border: 4px solid white;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+}
+
+.avatar-current img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder-big {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3.5rem;
+}
+
+.btn-change-avatar {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    width: 44px;
+    height: 44px;
+    background: var(--primary);
+    border-radius: 1rem;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(233, 79, 27, 0.3);
+    transition: all 0.2s;
+}
+
+.btn-change-avatar:hover {
+    transform: scale(1.1) rotate(5deg);
+    background: var(--primary-dark);
+}
+
+.upload-guidelines {
+    padding: 1rem;
+    background: #fcfdfe;
+    border-radius: 1rem;
+    border: 1px solid #f1f5f9;
+}
+
+.upload-hint {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+}
+
+.mini-checklist {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.mini-checklist li {
+    font-size: 0.75rem;
+    color: #10b981;
+    font-weight: 600;
+}
+
+.mini-checklist i {
+    font-size: 0.6rem;
+    margin-right: 0.25rem;
+}
+
+/* Form Styles */
+.form-section-header {
+    position: relative;
+    padding-bottom: 0.75rem;
+}
+
+.section-inner-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.title-accent {
+    width: 40px;
+    height: 4px;
+    background: var(--primary);
+    border-radius: 2px;
+    margin-top: 0.5rem;
+}
+
+.form-group-modern {
+    margin-bottom: 0.5rem;
+}
+
+.form-group-modern label {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text-main);
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.required {
+    color: var(--primary);
+}
+
+.input-with-icon {
+    position: relative;
+}
+
+.input-with-icon i {
+    position: absolute;
+    left: 1.25rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    transition: color 0.2s;
+}
+
+.input-with-icon input, 
+.input-with-icon select {
+    width: 100%;
+    padding: 0.85rem 1.25rem 0.85rem 3rem;
+    border-radius: 1rem;
+    border: 1.5px solid var(--border-color);
+    background: #fdfdfd;
+    font-weight: 600;
+    color: var(--text-main);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.input-with-icon select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1.25rem center;
+    background-size: 1rem;
+}
+
+.input-with-icon input:focus, 
+.input-with-icon select:focus {
+    border-color: var(--primary);
+    background: white;
+    box-shadow: 0 0 0 4px rgba(233, 79, 27, 0.1);
+    outline: none;
+}
+
+.input-with-icon input:focus + i,
+.input-with-icon select:focus + i {
+    color: var(--primary);
+}
+
+.form-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    display: block;
+    margin-top: 0.4rem;
+}
+
+.error-msg {
+    color: #ef4444;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-top: 0.4rem;
+    display: block;
+}
+
+/* Footer Actions */
+.btn-primary-modern {
+    background: var(--primary);
+    color: white;
+    padding: 0.85rem 2.25rem;
+    border-radius: 1rem;
+    font-weight: 700;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(233, 79, 27, 0.2);
+}
+
+.btn-primary-modern:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    color: white;
+    box-shadow: 0 6px 18px rgba(233, 79, 27, 0.3);
+}
+
+.btn-reset-premium {
+    background: #f1f5f9;
+    color: #475569;
+    padding: 0.85rem 1.5rem;
+    border-radius: 1rem;
+    border: none;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+}
+
+.btn-reset-premium:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+.btn-link-modern {
+    text-decoration: none !important;
+    font-weight: 700;
+    color: var(--text-muted);
+    transition: color 0.2s;
+}
+
+.btn-link-modern:hover {
+    color: var(--primary);
+}
+
+/* Responsive Fixes */
+@media (max-width: 992px) {
+    .content-wrapper-modern { padding: 1.25rem; }
+    .action-header { margin-bottom: 1.5rem; }
+    .card-header-inner { padding: 1.25rem; }
+    .main-title { font-size: 1.75rem; }
+}
+
+@media (max-width: 576px) {
+    .step-text { display: none; }
+    .btn-primary-modern { width: 100%; justify-content: center; }
+    .form-footer-actions .d-flex { flex-direction: column-reverse; }
+    .btn-reset-premium { width: 100%; justify-content: center; }
+}
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialiser SweetAlert2 avec un thème personnalisé
-    const Toast = Swal.mixin({
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 3000,
-        timerProgressBar: true,
-        didOpen: (toast) => {
-            toast.addEventListener('mouseenter', Swal.stopTimer)
-            toast.addEventListener('mouseleave', Swal.resumeTimer)
-        }
-    });
-
-    // Afficher les messages de session
-    @if(session('success'))
-        Toast.fire({
-            icon: 'success',
-            title: '{{ session('success') }}',
-            background: 'var(--light-bg)',
-            color: 'var(--text-primary)',
-            iconColor: 'var(--secondary-color)'
-        });
-    @endif
-
-    @if(session('error'))
-        Swal.fire({
-            icon: 'error',
-            title: 'Erreur',
-            text: '{{ session('error') }}',
-            confirmButtonColor: '#e94f1b',
-            background: 'var(--light-bg)',
-            color: 'var(--text-primary)'
-        });
-    @endif
-
-    // Gestion du téléchargement d'image
-    const uploadArea = document.getElementById('uploadArea');
-    const profilePictureInput = document.getElementById('profile_picture');
+    // Real-time Image Preview
+    const profileInput = document.getElementById('profile_picture');
     const imagePreview = document.getElementById('imagePreview');
-    const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+    const placeholder = document.getElementById('avatarPlaceholder');
 
-    // Click sur la zone de téléchargement
-    uploadArea.addEventListener('click', function() {
-        profilePictureInput.click();
-    });
-
-    // Glisser-déposer amélioré
-    ['dragenter', 'dragover'].forEach(eventName => {
-        uploadArea.addEventListener(eventName, highlight, false);
-    });
-
-    ['dragleave', 'drop'].forEach(eventName => {
-        uploadArea.addEventListener(eventName, unhighlight, false);
-    });
-
-    function highlight(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        uploadArea.style.borderColor = '#e94f1b';
-        uploadArea.style.background = 'rgba(254, 162, 25, 0.05)';
-        uploadArea.style.transform = 'scale(1.02)';
-    }
-
-    function unhighlight(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        uploadArea.style.borderColor = '#e9ecef';
-        uploadArea.style.background = 'var(--light-bg)';
-        uploadArea.style.transform = 'scale(1)';
-    }
-
-    // Gérer le drop de fichier
-    uploadArea.addEventListener('drop', function(e) {
-        e.preventDefault();
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            profilePictureInput.files = files;
-            handleFile(files[0]);
-        }
-    });
-
-    // Gérer le changement de fichier
-    profilePictureInput.addEventListener('change', function() {
-        if (this.files.length > 0) {
-            handleFile(this.files[0]);
-        }
-    });
-
-    function handleFile(file) {
-        // Validation du type de fichier
-        const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
-        if (!validTypes.includes(file.type)) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Format invalide',
-                text: 'Veuillez sélectionner une image au format JPEG, PNG, JPG ou GIF.',
-                confirmButtonColor: '#e94f1b',
-                background: 'var(--light-bg)'
-            });
-            return;
-        }
-
-        // Validation de la taille
-        if (file.size > 2 * 1024 * 1024) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Fichier trop volumineux',
-                text: 'La taille maximale autorisée est de 2MB.',
-                confirmButtonColor: '#e94f1b',
-                background: 'var(--light-bg)'
-            });
-            return;
-        }
-
-        // Afficher l'aperçu
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            imagePreview.src = e.target.result;
-            imagePreviewContainer.style.display = 'block';
-            
-            // Animation d'apparition
-            imagePreviewContainer.style.animation = 'fadeIn 0.5s ease-out';
-            
-            // Message de succès
-            Toast.fire({
-                icon: 'success',
-                title: 'Image téléchargée avec succès',
-                background: 'var(--light-bg)'
-            });
-        }
-        reader.readAsDataURL(file);
-    }
-
-    // Supprimer l'image
-    window.removeImage = function() {
-        Swal.fire({
-            title: 'Supprimer l\'image ?',
-            text: 'Cette action est irréversible.',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#e94f1b',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Oui, supprimer',
-            cancelButtonText: 'Annuler',
-            background: 'var(--light-bg)'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                profilePictureInput.value = '';
-                imagePreviewContainer.style.display = 'none';
-                
-                Toast.fire({
-                    icon: 'success',
-                    title: 'Image supprimée',
-                    background: 'var(--light-bg)'
+    profileInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            // Validation simple
+            if (file.size > 2 * 1024 * 1024) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Fichier trop volumineux',
+                    text: 'La taille maximale est de 2 Mo.',
+                    confirmButtonColor: '#e94f1b'
                 });
+                this.value = '';
+                return;
             }
-        });
-    }
 
-    // Validation des contacts (principal vs urgence)
-    const contactInput = document.getElementById('contact');
-    const urgencyInput = document.getElementById('cas_urgence');
-
-    function checkContactEquality() {
-        if (contactInput.value && urgencyInput.value && contactInput.value.trim() === urgencyInput.value.trim()) {
-            urgencyInput.classList.add('is-invalid');
-            let feedback = urgencyInput.closest('.form-group-modern').querySelector('.invalid-feedback-modern');
-            if (!feedback) {
-                feedback = document.createElement('div');
-                feedback.className = 'invalid-feedback-modern';
-                feedback.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i>Le contact d\'urgence doit être différent du contact principal.';
-                urgencyInput.closest('.input-group-modern').after(feedback);
-            } else {
-                feedback.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i>Le contact d\'urgence doit être différent du contact principal.';
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.src = e.target.result;
+                imagePreview.style.display = 'block';
+                if (placeholder) placeholder.style.display = 'none';
+                
+                // Add a small animation
+                imagePreview.classList.add('animate__animated', 'animate__fadeIn');
             }
-            return false;
-        } else {
-            urgencyInput.classList.remove('is-invalid');
-            const feedback = urgencyInput.closest('.form-group-modern').querySelector('.invalid-feedback-modern');
-            // On ne supprime que si c'est notre message d'erreur personnalisé
-            if (feedback && feedback.innerText.includes('différent du contact principal')) {
-                feedback.remove();
-            }
-            return true;
+            reader.readAsDataURL(file);
         }
-    }
-
-    contactInput.addEventListener('input', checkContactEquality);
-    urgencyInput.addEventListener('input', checkContactEquality);
-
-    // Validation du formulaire
-    const form = document.getElementById('agentForm');
-    const submitBtn = form.querySelector('.btn-submit-modern');
-    
-    // Validation en temps réel
-    const inputs = form.querySelectorAll('input[required]');
-    inputs.forEach(input => {
-        input.addEventListener('blur', function() {
-            validateField(this);
-        });
-        
-        input.addEventListener('input', function() {
-            if (this.classList.contains('is-invalid')) {
-                validateField(this);
-            }
-        });
     });
 
-    function validateField(field) {
-        if (!field.value.trim()) {
-            field.classList.add('is-invalid');
-            return false;
-        } else {
-            field.classList.remove('is-invalid');
-            return true;
-        }
-    }
-
-    // Soumission du formulaire
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        // Validation
-        let isValid = true;
-
-        // Reset check
-        if (!checkContactEquality()) {
-            isValid = false;
-        }
-
-        const requiredFields = form.querySelectorAll('input[required]');
-        requiredFields.forEach(field => {
-            if (!validateField(field)) {
-                isValid = false;
-                if (!form.querySelector('.is-invalid:first-of-type')) {
-                    field.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    field.focus();
-                }
-            }
-        });
-
-        if (!isValid) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Champs manquants ou invalides',
-                html: 'Veuillez vérifier les informations saisies.<br>Les contacts doivent être différents et les champs marqués d\'un <span style="color: var(--danger-color)">*</span> sont requis.',
-                confirmButtonColor: '#e94f1b',
-                background: 'var(--light-bg)'
-            });
-            return;
-        }
-
-        // Afficher l'indicateur de chargement
-        submitBtn.classList.add('loading');
-        submitBtn.disabled = true;
-
-        // Soumettre le formulaire après un court délai pour l'animation
+    // Form Reset Logic
+    const createForm = document.getElementById('createAgentForm');
+    createForm.addEventListener('reset', function() {
         setTimeout(() => {
-            form.submit();
-        }, 500);
+            imagePreview.src = '#';
+            imagePreview.style.display = 'none';
+            if (placeholder) placeholder.style.display = 'flex';
+        }, 10);
     });
 
-    // Gestion des erreurs de validation Laravel (si présentes)
+    // Success Message Handling
+    @if(session('success'))
+        Swal.fire({
+            icon: 'success',
+            title: 'Agent créé !',
+            text: '{{ session('success') }}',
+            timer: 3000,
+            showConfirmButton: false,
+            toast: true,
+            position: 'top-end'
+        });
+    @endif
+
+    // Error Message Handling
     @if($errors->any())
         Swal.fire({
             icon: 'error',
-            title: 'Oups...',
-            html: '<ul style="text-align: left;">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>',
-            confirmButtonColor: '#e94f1b',
-            background: 'var(--light-bg)',
-            color: 'var(--text-primary)'
-        });
+            title: 'Erreur de saisie',
+            text: 'Veuillez vérifier les informations du formulaire.',
+            confirmButtonColor: '#e94f1b'
         });
     @endif
-
-    // Réinitialisation du formulaire
-    const resetBtn = form.querySelector('.btn-reset-modern');
-    resetBtn.addEventListener('click', function() {
-        Swal.fire({
-            title: 'Réinitialiser le formulaire ?',
-            text: 'Toutes les données saisies seront perdues.',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#e94f1b',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Oui, réinitialiser',
-            cancelButtonText: 'Annuler',
-            background: 'var(--light-bg)'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                form.reset();
-                imagePreviewContainer.style.display = 'none';
-                submitBtn.classList.remove('loading');
-                submitBtn.disabled = false;
-                
-                // Supprimer les messages d'erreur
-                form.querySelectorAll('.is-invalid').forEach(el => {
-                    el.classList.remove('is-invalid');
-                });
-                
-                Toast.fire({
-                    icon: 'success',
-                    title: 'Formulaire réinitialisé',
-                    background: 'var(--light-bg)'
-                });
-            }
-        });
-    });
-
-    // Afficher les info-bulles
-    const hints = form.querySelectorAll('.input-hint');
-    hints.forEach(hint => {
-        const input = hint.closest('.input-group-modern').querySelector('input');
-        
-        input.addEventListener('focus', function() {
-            hint.style.opacity = '1';
-        });
-        
-        input.addEventListener('blur', function() {
-            if (!this.value) {
-                hint.style.opacity = '0';
-            }
-        });
-    });
 });
 </script>
 @endsection

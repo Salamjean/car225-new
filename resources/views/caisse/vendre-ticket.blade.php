@@ -29,6 +29,17 @@
         class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
         <option value="">-- Sélectionnez un départ --</option>
         @foreach($programmes as $programme)
+            @php
+                $today = \Carbon\Carbon::now()->toDateString();
+                $reserved = $programme->getPlacesReserveesForDate($today);
+                $total = $programme->getTotalSeats($today);
+                $status = $programme->getStatutPlacesForDate($today);
+                $statusLabel = [
+                    'complet' => 'Complet',
+                    'presque_complet' => 'Presque complet',
+                    'disponible' => 'Disponible'
+                ][$status] ?? 'Disponible';
+            @endphp
             <option value="{{ $programme->id }}" 
                 data-vehicle-id="{{ $programme->vehicule->id ?? 0 }}"
                 data-trajet="{{ $programme->point_depart }} → {{ $programme->point_arrive }}"
@@ -40,11 +51,9 @@
                 {{-- 2. Le trajet --}}
                 | {{ $programme->point_depart }} → {{ $programme->point_arrive }} 
                 
-                {{-- 3. La date (On affiche explicitement la date d'aujourd'hui) --}}
-                | {{ \Carbon\Carbon::now()->format('d/m/Y') }} 
+                | {{ $reserved }} / {{ $total }} places
+                | {{ $statusLabel }}
                 
-                {{-- 4. Infos véhicule et prix --}}
-                | {{ $programme->vehicule->immatriculation ?? 'Bus' }}
                 | {{ number_format($programme->montant_billet, 0, ',', ' ') }} FCFA
             </option>
         @endforeach
@@ -121,7 +130,6 @@
                                         <div class="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
                                         LIVE
                                     </div>
-                                    <span id="vehicle-info" class="text-xs font-bold text-gray-500 bg-white px-2 py-1 rounded border border-gray-200"></span>
                                 </div>
                             </h3>
 
@@ -230,7 +238,6 @@
             .then(res => res.json())
             .then(data => {
                 if(data.success) {
-                    info.textContent = `${data.vehicule.marque || 'Bus'} - ${data.vehicule.immatriculation}`;
                     
                     // Update Trip Info
                     if(tripInfoDiv) {
@@ -245,9 +252,21 @@
                         const percentage = totalSeats > 0 ? Math.round((occupiedCount / totalSeats) * 100) : 0;
                         
                         if(infoOccupied) {
+                            let statusLabel = 'Disponible';
+                            let statusClass = 'text-green-600';
+                            if (percentage >= 100) {
+                                statusLabel = 'Complet';
+                                statusClass = 'text-red-600';
+                            } else if (percentage >= 80) {
+                                statusLabel = 'Presque complet';
+                                statusClass = 'text-orange-600';
+                            }
+                            
                             infoOccupied.innerHTML = `
-                                <span class="mr-1">${occupiedCount} / ${totalSeats}</span>
-                                <span class="text-xs font-normal text-gray-500">(${percentage}%)</span>
+                                <div class="flex flex-col items-end">
+                                    <span class="text-sm font-bold text-gray-900">${occupiedCount} / ${totalSeats} places</span>
+                                    <span class="text-[10px] font-black uppercase ${statusClass}">${statusLabel}</span>
+                                </div>
                             `;
                         }
                     }
@@ -265,9 +284,21 @@
                                 // Update infoOccupied too
                                 if(infoOccupied) {
                                     const percentage = totalSeats > 0 ? Math.round((e.reservedSeats.length / totalSeats) * 100) : 0;
+                                    let statusLabel = 'Disponible';
+                                    let statusClass = 'text-green-600';
+                                    if (percentage >= 100) {
+                                        statusLabel = 'Complet';
+                                        statusClass = 'text-red-600';
+                                    } else if (percentage >= 80) {
+                                        statusLabel = 'Presque complet';
+                                        statusClass = 'text-orange-600';
+                                    }
+
                                     infoOccupied.innerHTML = `
-                                        <span class="mr-1">${e.reservedSeats.length} / ${totalSeats}</span>
-                                        <span class="text-xs font-normal text-gray-500">(${percentage}%)</span>
+                                        <div class="flex flex-col items-end">
+                                            <span class="text-sm font-bold text-gray-900">${e.reservedSeats.length} / ${totalSeats} places</span>
+                                            <span class="text-[10px] font-black uppercase ${statusClass}">${statusLabel}</span>
+                                        </div>
                                     `;
                                 }
                             });

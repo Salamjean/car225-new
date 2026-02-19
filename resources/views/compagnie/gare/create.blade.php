@@ -94,7 +94,7 @@
                                 <option value="">Sélectionnez une ville</option>
                                 @php
                                     $villes = [
-                                        'Abidjan', 'Abengourou', 'Adzopé', 'Agboville', 'Anyama', 'Bondoukou', 'Bongouanou', 'Bouaflé', 'Bouaké', 
+                                        'Abidjan','Alepé', 'Abengourou', 'Adzopé', 'Agboville', 'Anyama', 'Bondoukou', 'Bongouanou', 'Bouaflé', 'Bouaké', 
                                         'Boundiali', 'Bouna', 'Dabou', 'Daloa', 'Divo', 'Duékoué', 'Ferkessédougou', 'Gagnoa', 
                                         'Grand-Bassam', 'Guiglo', 'Issia', 'Katiola', 'Korhogo', 'Man', 'Odienné', 'Oumé', 
                                         'San-Pédro', 'Séguéla', 'Sinfra', 'Soubré', 'Tanda', 'Touba', 'Toumodi', 'Vavoua', 

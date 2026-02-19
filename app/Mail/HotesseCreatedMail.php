@@ -7,6 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Queue\SerializesModels;
 
 class HotesseCreatedMail extends Mailable
@@ -33,7 +34,8 @@ class HotesseCreatedMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Bienvenue - Votre compte hotesse a été créé',
+            from: new Address(config('mail.from.address'), config('mail.from.name')),
+            subject: 'Bienvenue - Votre compte hôtesse a été créé',
         );
     }
 
@@ -44,6 +46,11 @@ class HotesseCreatedMail extends Mailable
     {
         return new Content(
             view: 'emails.hotesse-created',
+            with: [
+                'hotesseData' => $this->hotesseData,
+                'otpCode' => $this->otpCode,
+                'compagnieName' => $this->compagnieName,
+            ],
         );
     }
 

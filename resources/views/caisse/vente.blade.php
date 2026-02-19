@@ -35,6 +35,17 @@
                         class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
                         <option value="">-- Sélectionnez un départ --</option>
                         @foreach($programmes as $programme)
+                            @php
+                                $today = \Carbon\Carbon::now()->toDateString();
+                                $reserved = $programme->getPlacesReserveesForDate($today);
+                                $total = $programme->getTotalSeats($today);
+                                $status = $programme->getStatutPlacesForDate($today);
+                                $statusLabel = [
+                                    'complet' => 'Complet',
+                                    'presque_complet' => 'Presque complet',
+                                    'disponible' => 'Disponible'
+                                ][$status] ?? 'Disponible';
+                            @endphp
                             <option value="{{ $programme->id }}" 
                                 data-vehicle-id="{{ $programme->vehicule->id ?? 0 }}"
                                 data-trajet="{{ $programme->point_depart }} → {{ $programme->point_arrive }}"
@@ -43,8 +54,8 @@
                                 data-price="{{ $programme->montant_billet }}">
                                 {{ \Carbon\Carbon::parse($programme->heure_depart)->format('H:i') }} 
                                 | {{ $programme->point_depart }} → {{ $programme->point_arrive }} 
-                                | {{ \Carbon\Carbon::now()->format('d/m/Y') }} 
-                                | {{ $programme->vehicule->immatriculation ?? 'Bus' }}
+                                | {{ $reserved }} / {{ $total }} places
+                                | {{ $statusLabel }}
                                 | {{ number_format($programme->montant_billet, 0, ',', ' ') }} FCFA
                             </option>
                         @endforeach
@@ -84,7 +95,7 @@
                                 <div class="flex justify-between items-center mb-6">
                                     <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
                                         <i class="fas fa-bus text-[#e94e1a]"></i>
-                                        <span>Disposition du bus</span>
+                                        <span>Plan des places</span>
                                     </h3>
                                     <div class="flex items-center gap-4">
                                         <div id="live-indicator" class="hidden flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-[10px] font-bold animate-pulse">
@@ -92,7 +103,6 @@
                                             LIVE
                                         </div>
                                         <span id="available-count" class="px-3 py-1 bg-green-50 text-green-700 rounded-full text-xs font-bold">0 places libres</span>
-                                        <span id="vehicle-info" class="text-xs font-bold text-gray-500 bg-gray-50 px-3 py-1 rounded border border-gray-200"></span>
                                     </div>
                                 </div>
 
@@ -332,7 +342,6 @@
             .then(data => {
                 if(data.success) {
                     if (!isPolling) {
-                        info.textContent = `${data.vehicule.marque || 'Bus'} - ${data.vehicule.immatriculation}`;
                         generateSeatMap(data.vehicule, data.reserved_seats || []);
                     } else {
                         updateOccupiedSeats(data.reserved_seats || []);
@@ -384,8 +393,21 @@
 
         // Update available count
         const total = document.querySelectorAll('.seat-item').length;
-        const free = total - newReservedSeats.length;
-        availableSpan.textContent = `${free} places libres`;
+        const reservedCount = newReservedSeats.length;
+        const percentage = total > 0 ? Math.round((reservedCount / total) * 100) : 0;
+        
+        let statusLabel = 'Disponible';
+        let statusClass = 'bg-green-50 text-green-700';
+        if (percentage >= 100) {
+            statusLabel = 'Complet';
+            statusClass = 'bg-red-50 text-red-700';
+        } else if (percentage >= 80) {
+            statusLabel = 'Presque complet';
+            statusClass = 'bg-orange-50 text-orange-700';
+        }
+
+        availableSpan.className = `px-3 py-1 rounded-full text-[10px] font-black uppercase ${statusClass}`;
+        availableSpan.textContent = `${reservedCount} / ${total} - ${statusLabel}`;
         
         // Update availableSeats array for the +/- logic
         availableSeats = [];

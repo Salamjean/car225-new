@@ -54,6 +54,12 @@
                     <label for="montant_billet" class="block text-sm font-medium text-gray-700">Montant (FCFA)</label>
                     <input type="number" name="montant_billet" id="montant_billet" value="{{ $programme->montant_billet }}" class="mt-1 w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                 </div>
+
+                <!-- Capacité -->
+                <div>
+                    <label for="capacity" class="block text-sm font-medium text-gray-700">Capacité (Places)</label>
+                    <input type="number" name="capacity" id="capacity" value="{{ $programme->capacity ?? 64 }}" class="mt-1 w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                </div>
             </div>
 
             <div class="flex justify-end gap-4">

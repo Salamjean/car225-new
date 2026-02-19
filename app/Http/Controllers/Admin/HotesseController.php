@@ -102,6 +102,11 @@ class HotesseController extends Controller
 
         // Send email with OTP
         try {
+            \Illuminate\Support\Facades\Log::info('Attempting to send Hotesse OTP', [
+                'email' => $hotesse->email,
+                'compagnie' => $compagnie->name
+            ]);
+
             Mail::to($hotesse->email)->send(
                 new HotesseCreatedMail(
                     [

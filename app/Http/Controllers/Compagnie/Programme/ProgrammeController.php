@@ -127,6 +127,7 @@ class ProgrammeController extends Controller
 
         $validated = $request->validate([
             'montant_billet' => 'required|numeric|min:0',
+            'capacity' => 'required|integer|min:1',
             'date_fin' => 'required|date|after_or_equal:date_depart',
             'statut' => 'required|in:actif,annule',
         ]);
@@ -257,6 +258,7 @@ class ProgrammeController extends Controller
             'gare_depart_id' => 'required|exists:gares,id',
             'gare_arrivee_id' => 'required|exists:gares,id|different:gare_depart_id',
             'montant_billet' => 'required|numeric|min:0',
+            'capacity' => 'required|integer|min:1',
             'aller_horaires' => 'required|array|min:1',
             'aller_horaires.*.heure_depart' => 'required|date_format:H:i',
             'aller_horaires.*.heure_arrive' => 'required|date_format:H:i',
@@ -310,6 +312,7 @@ class ProgrammeController extends Controller
                         'date_fin' => $dateFin,
                         'heure_depart' => $horaire['heure_depart'],
                         'heure_arrive' => $horaire['heure_arrive'],
+                        'capacity' => $validated['capacity'],
                         'statut' => 'actif',
                     ]);
                     $createdAller++;
@@ -341,6 +344,7 @@ class ProgrammeController extends Controller
                             'date_fin' => $dateFin,
                             'heure_depart' => $horaire['heure_depart'],
                             'heure_arrive' => $horaire['heure_arrive'],
+                            'capacity' => $validated['capacity'],
                             'statut' => 'actif',
                         ]);
                         $createdRetour++;

@@ -119,6 +119,12 @@ class GareVoyageController extends Controller
             return back()->with('error', 'Ce véhicule n\'est pas disponible.');
         }
 
+        // Verify vehicle capacity matches programme capacity
+        $requiredCapacity = $programme->getTotalSeats();
+        if ((int)$vehicule->nombre_place !== (int)$requiredCapacity) {
+            return back()->with('error', "La capacité du véhicule ({$vehicule->nombre_place} places) ne correspond pas à la capacité requise par le programme ({$requiredCapacity} places).");
+        }
+
         // Check if voyage already exists
         $exists = Voyage::where('programme_id', $programme->id)
             ->whereDate('date_voyage', $validated['date_voyage'])

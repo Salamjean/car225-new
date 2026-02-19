@@ -85,21 +85,26 @@ class GareController extends Controller
 
             // Send OTP email
             $otp = OtpVerification::createOtp($gare->email, 'gare');
-            try {
-                Mail::to($gare->email)->send(new GareOtpMail(
-                    $otp->otp,
-                    $gare->responsable_nom . ' ' . $gare->responsable_prenom,
-                    $gare->email
-                ));
-            } catch (\Exception $e) {
-                // Log error but continue
-                \Illuminate\Support\Facades\Log::error('Failed to send OTP email to gare: ' . $e->getMessage());
-            }
+
+            \Illuminate\Support\Facades\Log::info('Attempting to send Gare OTP', [
+                'email' => $gare->email,
+                'mailer' => config('mail.default'),
+                'from' => config('mail.from')
+            ]);
+
+            Mail::to($gare->email)->send(new GareOtpMail(
+                $otp->otp,
+                $gare->responsable_nom . ' ' . $gare->responsable_prenom,
+                $gare->email
+            ));
 
             return redirect()
                 ->route('gare.index')
                 ->with('success', 'Gare créée avec succès ! Un email avec le code OTP a été envoyé au responsable.');
         } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Gare Creation Error: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error($e->getTraceAsString());
+
             if (isset($profileImagePath) && Storage::disk('public')->exists($profileImagePath)) {
                 Storage::disk('public')->delete($profileImagePath);
             }

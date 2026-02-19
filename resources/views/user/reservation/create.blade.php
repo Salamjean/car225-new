@@ -216,6 +216,7 @@
                                                     'retour_horaires' => $route->retour_horaires,
                                                     'has_retour' => $route->has_retour,
                                                     'date_fin' => $route->date_fin ?? null,
+                                                    'capacity' => $route->capacity ?? 50,
                                                 ];
                                             @endphp
                                             <button type="button" 
@@ -2206,7 +2207,7 @@ function onAllerRetourChoiceChange() {
         }
 
         Swal.fire({
-            title: `<strong>${data.vehicule.marque} ${data.vehicule.modele}</strong>`,
+            title: `<strong>Places disponibles</strong>`,
             html: data.html,
             width: 850,
             padding: '20px',
@@ -2456,7 +2457,7 @@ function onAllerRetourChoiceChange() {
                 Swal.close();
 
                 // GÃ©nÃ©rer la vue de sÃ©lection des places
-                generateSeatSelectionView();
+                generateSeatSelectionView(program);
 
                 // Changer d'Ã©tape
                 document.getElementById('step1').classList.add('hidden');
@@ -2488,7 +2489,7 @@ function onAllerRetourChoiceChange() {
         // ============================================
         // FONCTION 7: GÃ©nÃ©rer la vue de sÃ©lection des places
         // ============================================
-        function generateSeatSelectionView() {
+        function generateSeatSelectionView(program) {
             if (!vehicleDetails) {
                 document.getElementById('seatSelectionArea').innerHTML =
                     '<p class="text-center text-red-500">Impossible de charger les informations du vÃ©hicule.</p>';
@@ -2506,20 +2507,18 @@ function onAllerRetourChoiceChange() {
             const placesDroite = config.placesDroite;
             const placesParRanger = placesGauche + placesDroite;
             // Utiliser capacite_total ou nombre_place selon ce qui est disponible
-            const totalPlaces = parseInt(vehicleDetails.capacite_total || vehicleDetails.nombre_place || 70);
+            const totalPlaces = parseInt(program.capacity || vehicleDetails.capacite_total || vehicleDetails.nombre_place || 70);
             const nombreRanger = Math.ceil(totalPlaces / placesParRanger);
             
-            // Construire le nom du véhicule de manière sécurisée
-            const vehicleName = vehicleDetails.marque + ' ' + (vehicleDetails.modele || '');
-            const vehicleImmat = vehicleDetails.immatriculation || '';
-            const vehicleTitle = vehicleImmat ? `${vehicleName.trim()} - ${vehicleImmat}` : vehicleName.trim();
+            // On ne montre plus les dÃ©tails du vÃ©hicule selon la demande utilisateur
+            const programTitle = (program.compagnie?.name || 'Compagnie') + ' - ' + program.point_depart + ' → ' + program.point_arrive;
 
             let html = `
-                                                                                <div class="bg-gray-50 p-6 rounded-xl mb-6">
-                                                                                    <div class="text-center mb-4">
-                                                                                        <h4 class="font-bold text-lg mb-2">${vehicleTitle}</h4>
-                                                                                        <p class="text-gray-600">Type: ${vehicleDetails.type_range} | Total places: ${totalPlaces}</p>
-                                                                                    </div>
+                <div class="bg-gray-50 p-6 rounded-xl mb-6">
+                    <div class="text-center mb-4">
+                        <h4 class="font-bold text-lg mb-2">${programTitle}</h4>
+                        <p class="text-gray-600">Sélectionnez vos places | Total places: ${totalPlaces}</p>
+                    </div>
                                                                                     
                                                                                     <!-- Option assignation automatique -->
                                                                                     <div class="flex justify-center gap-4 mb-6">
@@ -2942,7 +2941,7 @@ async function loadRetourSeatsSelection() {
         `;
 
         // 5. GÃ©nÃ©rer la vue de sÃ©lection des places retour
-        generateSeatSelectionViewRetour();
+        generateSeatSelectionViewRetour(programRetour);
 
         // 6. Masquer step2, afficher step2_5
         document.getElementById('step2').classList.add('hidden');
@@ -2957,7 +2956,7 @@ async function loadRetourSeatsSelection() {
         });
     }
 }
-function generateSeatSelectionViewRetour() {
+function generateSeatSelectionViewRetour(program) {
     if (!vehicleDetailsRetour) {
         document.getElementById('seatSelectionAreaRetour').innerHTML =
             '<p class="text-center text-red-500">Impossible de charger les informations du vÃ©hicule.</p>';
@@ -2974,18 +2973,18 @@ function generateSeatSelectionViewRetour() {
     const placesGauche = config.placesGauche;
     const placesDroite = config.placesDroite;
     const placesParRanger = placesGauche + placesDroite;
-    const totalPlaces = parseInt(vehicleDetailsRetour.capacite_total || vehicleDetailsRetour.nombre_place || 70);
+    // Utiliser capacite_total ou nombre_place selon ce qui est disponible
+    const totalPlaces = parseInt(program.capacity || vehicleDetailsRetour.capacite_total || vehicleDetailsRetour.nombre_place || 70);
     const nombreRanger = Math.ceil(totalPlaces / placesParRanger);
     
-    const vehicleName = vehicleDetailsRetour.marque + ' ' + (vehicleDetailsRetour.modele || '');
-    const vehicleImmat = vehicleDetailsRetour.immatriculation || '';
-    const vehicleTitle = vehicleImmat ? `${vehicleName.trim()} - ${vehicleImmat}` : vehicleName.trim();
+    // On ne montre plus les dÃ©tails du vÃ©hicule
+    const programTitle = (program.compagnie?.name || 'Compagnie') + ' - ' + program.point_depart + ' → ' + program.point_arrive;
 
     let html = `
         <div class="bg-gray-50 p-6 rounded-xl mb-6">
             <div class="text-center mb-4">
-                <h4 class="font-bold text-lg mb-2">${vehicleTitle}</h4>
-                <p class="text-gray-600">Type: ${vehicleDetailsRetour.type_range} | Total places: ${totalPlaces}</p>
+                <h4 class="font-bold text-lg mb-2">${programTitle} (Retour)</h4>
+                <p class="text-gray-600">Sélectionnez vos places | Total places: ${totalPlaces}</p>
             </div>
             
             <!-- Option assignation automatique -->

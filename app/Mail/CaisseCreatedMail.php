@@ -6,6 +6,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Queue\SerializesModels;
 
 class CaisseCreatedMail extends Mailable
@@ -32,6 +33,7 @@ class CaisseCreatedMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
+            from: new Address(config('mail.from.address'), config('mail.from.name')),
             subject: 'Bienvenue - Votre compte caissière a été créé',
         );
     }
@@ -43,6 +45,11 @@ class CaisseCreatedMail extends Mailable
     {
         return new Content(
             view: 'emails.caisse-created',
+            with: [
+                'caisseData' => $this->caisseData,
+                'otpCode' => $this->otpCode,
+                'compagnieName' => $this->compagnieName,
+            ],
         );
     }
 

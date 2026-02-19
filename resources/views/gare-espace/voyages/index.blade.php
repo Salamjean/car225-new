@@ -162,10 +162,10 @@
                                             </span>
                                         </div>
                                         
-                                        <div class="flex items-center gap-2 bg-orange-50 px-3 py-1 rounded-lg">
-                                            <i class="fas fa-arrow-down text-orange-600"></i>
+                                        <div class="flex items-center gap-2 bg-blue-100 px-3 py-1 rounded-lg">
+                                            <i class="fas fa-users text-blue-700"></i>
                                             <span class="text-gray-700">
-                                                <span class="font-semibold">Arrivée:</span> {{ \Carbon\Carbon::parse($programme->heure_arrive)->format('H:i') }}
+                                                <span class="font-semibold">Capacité requise:</span> {{ $programme->getTotalSeats() }} places
                                             </span>
                                         </div>
                                     </div>
@@ -237,6 +237,7 @@
                                 @csrf
                                 <input type="hidden" name="programme_id" value="{{ $programme->id }}">
                                 <input type="hidden" name="date_voyage" value="{{ $date }}">
+                                <input type="hidden" class="required-capacity" value="{{ $programme->getTotalSeats() }}">
 
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
@@ -257,10 +258,10 @@
                                         <label class="block text-sm font-bold text-gray-700 uppercase mb-2">
                                             <i class="fas fa-bus mr-1"></i> Véhicule
                                         </label>
-                                        <select name="vehicule_id" required class="tom-select block w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 focus:bg-white">
+                                        <select name="vehicule_id" required class="tom-select vehicule-select block w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 focus:bg-white">
                                             <option value="">-- Sélectionner un véhicule --</option>
                                             @foreach($vehicules as $vehicule)
-                                                <option value="{{ $vehicule->id }}">
+                                                <option value="{{ $vehicule->id }}" data-capacity="{{ $vehicule->nombre_place }}">
                                                     {{ $vehicule->immatriculation }} - {{ $vehicule->marque }} {{ $vehicule->modele }} ({{ $vehicule->nombre_place }} places)
                                                 </option>
                                             @endforeach
@@ -306,6 +307,61 @@
                 },
                 placeholder: el.options[0].text,
                 allowEmptyOption: true,
+            });
+        });
+
+        // Validation de la capacité lors de la soumission
+        const forms = document.querySelectorAll('form[action="{{ route("gare-espace.voyages.store") }}"]');
+        forms.forEach(form => {
+            const vehiculeSelect = form.querySelector('.vehicule-select');
+            const requiredCapacity = parseInt(form.querySelector('.required-capacity').value || 64);
+
+            // Validation lors du changement de sélection (facultatif mais proactif)
+            if (vehiculeSelect.tomselect) {
+                vehiculeSelect.tomselect.on('change', function(value) {
+                    const option = vehiculeSelect.options[vehiculeSelect.selectedIndex];
+                    const control = vehiculeSelect.tomselect.control;
+                    
+                    if (option && option.dataset.capacity) {
+                        const vehicleCapacity = parseInt(option.dataset.capacity);
+                        if (vehicleCapacity !== requiredCapacity) {
+                            control.style.borderColor = '#ef4444'; // Red border
+                            control.style.backgroundColor = '#fef2f2';
+                        } else {
+                            control.style.borderColor = '#10b981'; // Green border
+                            control.style.backgroundColor = '#f0fdf4';
+                        }
+                    } else {
+                        control.style.borderColor = '';
+                        control.style.backgroundColor = '';
+                    }
+                });
+            }
+
+            // Validation lors de la soumission
+            form.addEventListener('submit', function(e) {
+                const selectedOption = vehiculeSelect.options[vehiculeSelect.selectedIndex];
+                
+                if (selectedOption && selectedOption.dataset.capacity) {
+                    const vehicleCapacity = parseInt(selectedOption.dataset.capacity);
+                    
+                    if (vehicleCapacity !== requiredCapacity) {
+                        e.preventDefault();
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Capacité non correspondante',
+                            html: `
+                                <div class="text-left py-2">
+                                    <p class="mb-3">Ce programme requiert un véhicule de <strong>${requiredCapacity} places</strong>.</p>
+                                    <p class="text-red-600 font-bold">Le véhicule sélectionné possède ${vehicleCapacity} places.</p>
+                                    <p class="mt-4 text-sm text-gray-600 italic">Veuillez choisir un véhicule dont la capacité correspond exactement à celle du programme.</p>
+                                </div>
+                            `,
+                            confirmButtonColor: '#3b82f6',
+                            confirmButtonText: 'Compris'
+                        });
+                    }
+                }
             });
         });
     });
