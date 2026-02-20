@@ -495,6 +495,46 @@ class ReservationService
             if(isset($resRetour)) $this->occupySeat($resRetour);
 
             DB::commit();
+
+            // Envoi de la notification de modification
+            try {
+                // S'assurer que les relations nécessaires sont chargées
+                $newReservation->load('programme.compagnie');
+                if (isset($resRetour)) $resRetour->load('programme.compagnie');
+
+                $userToNotify = User::findOrFail($newReservation->user_id);
+                $qrAller = $newReservation->qr_code;
+                $qrRetour = isset($resRetour) ? $resRetour->qr_code : null;
+                $progRetour = isset($resRetour) ? $resRetour->programme : null;
+
+                $userToNotify->notify(new \App\Notifications\ReservationModifiedNotification(
+                    $newReservation,
+                    $newReservation->programme,
+                    $qrAller,
+                    $newReservation->passager_nom . ' ' . $newReservation->passager_prenom,
+                    $newReservation->seat_number,
+                    $newReservation->is_aller_retour ? 'ALLER-RETOUR' : 'ALLER SIMPLE',
+                    $qrRetour,
+                    $progRetour
+                ));
+
+                // Notification Push FCM
+                if (!empty($userToNotify->fcm_token)) {
+                    $fcmService = app(\App\Services\FcmService::class);
+                    $dateVoyage = date('d/m/Y', strtotime($newReservation->date_voyage));
+                    $heureDepart = date('H:i', strtotime($newReservation->programme->heure_depart));
+                    
+                    $fcmService->sendNotification(
+                        $userToNotify->fcm_token, 
+                        'Réservation modifiée ✏️', 
+                        "Billet {$newReservation->reference}: {$newReservation->programme->point_depart} → {$newReservation->programme->point_arrive} le {$dateVoyage} à {$heureDepart}.",
+                        ['type' => 'modification', 'reservation_id' => $newReservation->id]
+                    );
+                }
+            } catch (\Exception $e) {
+                Log::error("Erreur notification de modification: " . $e->getMessage());
+            }
+
             return ['success' => true, 'message' => 'Modification réussie.', 'new_reservation' => $newReservation];
         } catch (\Exception $e) {
             DB::rollBack();

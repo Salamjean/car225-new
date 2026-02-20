@@ -259,17 +259,19 @@ class ReservationApiController extends Controller
 
             // Notification pour annulation (même sans remboursement)
             try {
-                $user = Auth::user();
-                $user->notify(new \App\Notifications\ReservationCancelledNotification($reservation, 0, 0));
-                
-                if ($user->fcm_token) {
-                    $fcmService = app(\App\Services\FcmService::class);
+                $user = $reservation->user ?? Auth::user();
+                if ($user) {
+                    $user->notify(new \App\Notifications\ReservationCancelledNotification($reservation, 0, 0));
+                    
+                    if ($user->fcm_token) {
+                        $fcmService = app(\App\Services\FcmService::class);
                         $fcmService->sendNotification(
                             $user->fcm_token, 
                             'Annulation effectuée ❌', 
                             "Votre réservation {$reservation->reference} (" . optional($reservation->programme)->point_depart . " → " . optional($reservation->programme)->point_arrive . ") a été annulée.",
                             ['type' => 'cancellation', 'reservation_id' => $reservation->id]
                         );
+                    }
                 }
             } catch (\Exception $e) {
                 Log::error("Notification error (cancel API): " . $e->getMessage());
@@ -2703,7 +2705,7 @@ class ReservationApiController extends Controller
     private function sendReservationEmail(Reservation $reservation, Programme $programme, string $qrCodeBase64, string $recipientEmail = null, string $recipientName = null, int $seatNumber = null, string $ticketType = null, string $qrCodeRetourBase64 = null, Programme $programmeRetour = null): void
     {
         try {
-            $user = Auth::user();
+            $user = $reservation->user ?? Auth::user();
             $email = $recipientEmail ?: ($user ? $user->email : null);
             $name = $recipientName ?: ($user ? $user->name : 'Client');
 

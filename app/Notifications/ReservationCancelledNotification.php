@@ -9,7 +9,7 @@ use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 
-class ReservationCancelledNotification extends Notification implements ShouldBroadcastNow
+class ReservationCancelledNotification extends Notification
 {
     use Queueable;
 

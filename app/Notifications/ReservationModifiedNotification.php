@@ -13,7 +13,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 
-class ReservationConfirmeeNotification extends Notification
+class ReservationModifiedNotification extends Notification
 {
     use Queueable;
 
@@ -58,9 +58,9 @@ class ReservationConfirmeeNotification extends Notification
         return new BroadcastMessage([
             'reservation_id' => $this->reservation->id,
             'reference' => $this->reservation->reference,
-            'title' => 'Réservation confirmée ✅',
-            'message' => "Votre réservation {$this->reservation->reference} est confirmée.",
-            'type' => 'confirmation',
+            'title' => 'Réservation modifiée ✏️',
+            'message' => "Votre réservation a été modifiée avec succès. Nouvelle référence: {$this->reservation->reference}.",
+            'type' => 'modification',
             'count' => $notifiable->unreadNotifications()->count() + 1,
         ]);
     }
@@ -70,11 +70,9 @@ class ReservationConfirmeeNotification extends Notification
      */
     public function toMail($notifiable): MailMessage
     {
-        // Récupérer l'utilisateur
         $user = $this->reservation->user ?? $notifiable;
         $displayName = $this->recipientName ?: ($user->name ?? 'Client');
 
-        // Données pour l'email
         $emailData = [
             'user' => $user,
             'displayName' => $displayName,
@@ -88,24 +86,20 @@ class ReservationConfirmeeNotification extends Notification
             'seatNumber' => $this->seatNumber,
         ];
 
-        // Générer le PDF Aller (ou Aller Simple)
         $pdfAller = $this->generateTicketPDF($this->programme, $this->qrCodeBase64, $this->ticketType ?: ($this->reservation->is_aller_retour ? 'ALLER' : 'ALLER SIMPLE'));
 
-        // Envoyer l'email
         $mail = (new MailMessage)
-            ->subject('CAR 225 : Confirmation de votre réservation N°' . $this->reservation->reference)
+            ->subject('CAR 225 : Modification de votre réservation N°' . $this->reservation->reference)
             ->from('contact@maelysimo.com', 'CAR 225')
-            ->view('emails.reservation_confirmee', $emailData);
+            ->view('emails.reservation_modified', $emailData);
 
-        // Attacher le PDF Aller
-        $mail->attachData($pdfAller, 'Billet_ALLER_' . $this->reservation->reference . '.pdf', [
+        $mail->attachData($pdfAller, 'Billet_MODIFIE_ALLER_' . $this->reservation->reference . '.pdf', [
             'mime' => 'application/pdf',
         ]);
 
-        // Si c'est un aller-retour avec ticket retour, attacher le PDF Retour
         if ($this->qrCodeRetourBase64) {
             $pdfRetour = $this->generateTicketPDF($this->programmeRetour ?: $this->programme, $this->qrCodeRetourBase64, 'RETOUR');
-            $mail->attachData($pdfRetour, 'Billet_RETOUR_' . $this->reservation->reference . '.pdf', [
+            $mail->attachData($pdfRetour, 'Billet_MODIFIE_RETOUR_' . $this->reservation->reference . '.pdf', [
                 'mime' => 'application/pdf',
             ]);
         }
@@ -155,16 +149,14 @@ class ReservationConfirmeeNotification extends Notification
     public function toArray($notifiable): array
     {
         return [
-            'title' => 'Réservation confirmée ✅',
-            'message' => "Votre réservation {$this->reservation->reference} pour {$this->programme->point_depart} est confirmée.",
+            'title' => 'Réservation modifiée ✏️',
+            'message' => "Votre réservation a été modifiée. Nouvelle référence: {$this->reservation->reference}.",
             'reservation_id' => $this->reservation->id,
             'reference' => $this->reservation->reference,
             'programme' => $this->programme->point_depart . ' → ' . $this->programme->point_arrive,
             'date_voyage' => $this->reservation->date_voyage,
-            'montant' => $this->reservation->montant,
-            'status' => 'confirmed',
-            'type' => 'confirmation',
-            'is_aller_retour' => $this->programme->is_aller_retour,
+            'status' => 'modified',
+            'type' => 'modification',
         ];
     }
 }

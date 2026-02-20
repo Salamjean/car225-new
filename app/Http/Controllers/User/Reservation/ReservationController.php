@@ -1535,7 +1535,7 @@ $dateAller = $request->date_voyage;
     {
         try {
             // Correction pour le contexte Webhook (Auth::user() peut être null)
-            $user = Auth::user();
+            $user = $reservation->user ?? Auth::user();
             $email = $recipientEmail ?: ($user ? $user->email : null);
             $name = $recipientName ?: ($user ? $user->name : 'Client');
 

@@ -12,8 +12,8 @@
                 <div class="lg:col-span-8 space-y-8">
                     
                     @if($currentTrip)
-                    <!-- Ongoing Voyage Card (Floating Style) -->
-                    <div class="bg-gradient-to-br from-green-600 via-emerald-600 to-teal-700 rounded-[32px] p-8 shadow-2xl shadow-green-200 text-white relative overflow-hidden group">
+                    <!-- Ongoing Voyage Card (Steel UI Style) -->
+                    <div class="bg-gradient-to-br from-teal-700 via-emerald-800 to-green-900 rounded-[32px] p-8 shadow-[inset_0_2px_1px_rgba(255,255,255,0.3),_0_20px_40px_rgba(20,83,45,0.5)] border-t border-l border-white/20 text-white relative overflow-hidden group">
                         <div class="absolute -right-10 -top-10 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-700"></div>
                         
                         <div class="relative z-10">
@@ -73,8 +73,9 @@
                     <!-- Stats Grid -->
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
                         <!-- Total Reservations Card -->
-                        <div class="bg-white rounded-[32px] p-7 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300">
-                            <div class="flex items-center gap-3 mb-6">
+                        <div class="bg-gradient-to-br from-white via-[#fcfcfd] to-[#f4f5f7] rounded-[32px] p-7 shadow-[inset_0_1px_1px_rgba(255,255,255,1),_0_10px_30px_rgba(0,0,0,0.03)] border border-gray-100 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,1),_0_15px_40px_rgba(0,0,0,0.06)] transition-all duration-300 relative overflow-hidden group">
+                            <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/80 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
+                            <div class="flex items-center gap-3 mb-6 relative z-10">
                                 <div class="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600">
                                     <i class="fas fa-history text-sm"></i>
                                 </div>
@@ -88,8 +89,9 @@
                         </div>
 
                         <!-- Active Trips Card -->
-                        <div class="bg-white rounded-[32px] p-7 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300">
-                            <div class="flex items-center gap-3 mb-6">
+                        <div class="bg-gradient-to-br from-white via-[#fcfcfd] to-[#f4f5f7] rounded-[32px] p-7 shadow-[inset_0_1px_1px_rgba(255,255,255,1),_0_10px_30px_rgba(0,0,0,0.03)] border border-gray-100 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,1),_0_15px_40px_rgba(0,0,0,0.06)] transition-all duration-300 relative overflow-hidden group">
+                            <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/80 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
+                            <div class="flex items-center gap-3 mb-6 relative z-10">
                                 <div class="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center text-green-600">
                                     <i class="fas fa-bus-alt text-sm"></i>
                                 </div>
@@ -103,8 +105,9 @@
                         </div>
 
                         <!-- Total Spent Card -->
-                        <div class="bg-white rounded-[32px] p-7 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300">
-                            <div class="flex items-center gap-3 mb-6">
+                        <div class="bg-gradient-to-br from-white via-[#fcfcfd] to-[#f4f5f7] rounded-[32px] p-7 shadow-[inset_0_1px_1px_rgba(255,255,255,1),_0_10px_30px_rgba(0,0,0,0.03)] border border-gray-100 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,1),_0_15px_40px_rgba(0,0,0,0.06)] transition-all duration-300 relative overflow-hidden group">
+                            <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/80 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
+                            <div class="flex items-center gap-3 mb-6 relative z-10">
                                 <div class="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
                                     <i class="fas fa-chart-line text-sm"></i>
                                 </div>
@@ -119,7 +122,7 @@
                     </div>
 
                     <!-- Chart Section -->
-                    <div class="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm">
+                    <div class="bg-gradient-to-br from-white via-[#fcfcfd] to-[#f4f5f7] rounded-[32px] p-8 shadow-[inset_0_1px_1px_rgba(255,255,255,1),_0_10px_30px_rgba(0,0,0,0.03)] border border-gray-100">
                         <div class="flex items-center justify-between mb-8">
                             <div>
                                 <h3 class="text-lg font-bold text-gray-900 tracking-tight">Analyse de vos voyages</h3>
@@ -142,8 +145,9 @@
                         </div>
                         <div class="grid grid-cols-1 gap-4">
                             @forelse($recentReservations as $res)
-                                <div class="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:shadow-md transition-all group">
-                                    <div class="flex items-center gap-4">
+                                <div class="bg-white p-5 rounded-3xl shadow-[inset_0_1px_1px_rgba(255,255,255,1),_0_4px_15px_rgba(0,0,0,0.02)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,1),_0_10px_25px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 transition-all duration-300 group border border-gray-50 hover:border-orange-100 relative overflow-hidden">
+                                    <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/80 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
+                                    <div class="flex items-center gap-4 relative z-10">
                                         <div class="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center border border-gray-100 group-hover:bg-[#e94f1b]/5 transition-colors">
                                             @if($res->programme->compagnie->path_logo)
                                                 <img src="{{ asset('storage/' . $res->programme->compagnie->path_logo) }}" class="w-8 h-8 object-contain" alt="Logo">
@@ -182,9 +186,13 @@
                 <!-- Sidebar Right (4 cols) -->
                 <div class="lg:col-span-4 space-y-8">
                     
-                    <!-- Balance Card (Now in Sidebar) -->
-                    <div class="bg-gradient-to-br from-[#e94f1b] to-[#ff7a4d] rounded-[32px] p-7 shadow-2xl shadow-[#e94f1b]/20 text-white relative overflow-hidden group">
-                        <div class="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all"></div>
+                    <!-- Balance Card (Magnetic Card Orange) -->
+                    <div class="bg-gradient-to-br from-[#ff8b5a] via-[#e94f1b] to-[#d33a0b] rounded-[32px] p-7 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5),_0_20px_40px_rgba(233,79,27,0.3)] border border-[#ff8b5a]/50 text-white relative overflow-hidden group">
+                        <div class="absolute -right-6 -top-6 w-32 h-32 bg-white/20 rounded-full blur-2xl group-hover:bg-white/30 transition-all"></div>
+                        <div class="absolute -left-10 bottom-0 w-40 h-40 bg-[#c62900]/20 rounded-full blur-3xl"></div>
+                        <!-- Micro texture for magnetic card feel -->
+                        <div class="absolute inset-0 opacity-[0.02] pointer-events-none" style="background-image: radial-gradient(circle at center, #fff 1px, transparent 1px); background-size: 4px 4px;"></div>
+
                         <div class="relative z-10">
                             <div class="flex items-center gap-3 mb-6">
                                 <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-md">
@@ -208,7 +216,8 @@
                     </div>
 
                     <!-- Wallets / Shortcuts Section -->
-                    <div class="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm">
+                    <div class="bg-gradient-to-br from-white via-[#fcfcfd] to-[#f4f5f7] rounded-[32px] p-8 shadow-[inset_0_1px_1px_rgba(255,255,255,1),_0_10px_30px_rgba(0,0,0,0.03)] border border-gray-100 group relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-orange-50 rounded-full blur-3xl -z-10 group-hover:scale-110 transition-transform duration-500"></div>
                         <div class="flex items-center justify-between mb-6">
                             <h4 class="text-sm font-bold text-gray-900 tracking-tight uppercase">Mes Raccourcis</h4>
                             <button class="text-gray-400 hover:text-[#e94f1b] transition-colors"><i class="fas fa-ellipsis-h"></i></button>
