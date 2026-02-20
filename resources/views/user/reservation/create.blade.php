@@ -400,28 +400,25 @@
         </div>
     </div>
     
-    <!-- Modal Sélection Gare -->
-    <div id="gareSelectionModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+    <!-- Modal Sélection Gare (conservé) -->
+    <div id="gareSelectionModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4 modal-overlay">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 transform transition-all">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-2xl font-bold text-gray-900">Sélectionnez votre gare</h2>
-                <button onclick="closeGareSelectionModal()" class="text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-times text-2xl"></i>
+                <button onclick="closeGareSelectionModal()" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
+                    <i class="fas fa-times text-gray-500"></i>
                 </button>
             </div>
-            
             <div class="mb-6">
                 <p class="text-sm text-gray-600 mb-4">De quelle gare souhaitez-vous partir ?</p>
-                <div id="gareOptions" class="space-y-3">
-                    <!-- Options gÃ©nÃ©rÃ©es par JavaScript -->
-                </div>
+                <div id="gareOptions" class="space-y-3"></div>
             </div>
         </div>
     </div>
     
-    <!-- Modal Type de Voyage -->
-    <div id="tripTypeModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+    <!-- Modal Type de Voyage (conservé, amélioré visuellement) -->
+    <div id="tripTypeModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4 modal-overlay">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 transform transition-all">
             <div class="flex justify-between items-center mb-4">
                 <div>
                     <h2 class="text-xl font-bold text-gray-900 flex items-center gap-2">
@@ -430,13 +427,11 @@
                     </h2>
                     <p id="tripRouteInfo" class="text-sm text-gray-600 mt-2"></p>
                 </div>
-                <button onclick="closeTripTypeModal()" class="text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-times text-2xl"></i>
+                <button onclick="closeTripTypeModal()" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
+                    <i class="fas fa-times text-gray-500"></i>
                 </button>
             </div>
-            
             <div class="grid grid-cols-1 gap-4 mt-6">
-                <!-- Aller Simple -->
                 <button onclick="selectTripType('simple')" 
                     class="p-6 border-2 border-gray-200 rounded-xl hover:border-[#e94f1b] hover:bg-orange-50 transition-all duration-300 text-left group">
                     <div class="flex items-center justify-between">
@@ -451,8 +446,6 @@
                         </div>
                     </div>
                 </button>
-                
-                <!-- Aller-Retour -->
                 <button onclick="selectTripType('round')" id="roundTripBtn"
                     class="p-6 border-2 border-gray-200 rounded-xl hover:border-[#e94f1b] hover:bg-orange-50 transition-all duration-300 text-left group disabled:opacity-50 disabled:cursor-not-allowed">
                     <div class="flex items-center justify-between">
@@ -469,7 +462,6 @@
                     </div>
                 </button>
             </div>
-            
             <div class="mt-6 flex justify-end">
                 <button onclick="closeTripTypeModal()" class="px-6 py-2 bg-gray-100 rounded-lg font-bold hover:bg-gray-200 transition-colors">
                     Annuler
@@ -478,194 +470,280 @@
         </div>
     </div>
     
-    <!-- Modal pour la réservation -->
-    <div id="reservationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 overflow-y-auto">
+    <!-- ============================================= -->
+    <!-- MODAL UNIFIÉ DE RÉSERVATION (REDESIGNED)      -->
+    <!-- ============================================= -->
+    <div id="reservationModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-50 overflow-y-auto modal-overlay">
         <div class="min-h-screen flex items-center justify-center p-4">
-            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden" style="max-height: 95vh;">
-                <!-- En-tête -->
-                <div class="bg-gradient-to-r from-[#e94f1b] to-orange-500 p-6 text-white">
-                    <div class="flex justify-between items-center">
-                        <h2 class="text-2xl font-bold">Réservation de places</h2>
-                        <button onclick="closeReservationModal()" class="text-white hover:text-gray-200 text-2xl">
-                            <i class="fas fa-times"></i>
-                        </button>
+            <div class="bg-white rounded-3xl shadow-2xl w-full max-w-5xl overflow-hidden reservation-modal-content" style="max-height: 95vh;">
+                
+                <!-- ===== HEADER PREMIUM ===== -->
+                <div class="relative overflow-hidden">
+                    <!-- Gradient Background -->
+                    <div class="bg-gradient-to-r from-[#e94f1b] via-orange-500 to-amber-500 px-6 py-5">
+                        <!-- Decorative circles -->
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+                        <div class="absolute bottom-0 left-10 w-20 h-20 bg-white/5 rounded-full translate-y-1/2"></div>
+                        
+                        <div class="relative flex justify-between items-start">
+                            <div>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <div class="w-8 h-8 bg-white/20 backdrop-blur rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-ticket-alt text-white text-sm"></i>
+                                    </div>
+                                    <h2 class="text-xl font-black text-white tracking-tight">Réservation</h2>
+                                </div>
+                                <div id="reservationProgramInfo" class="text-white/90 text-sm font-medium"></div>
+                            </div>
+                            <button onclick="closeReservationModal()" class="w-9 h-9 rounded-xl bg-white/20 backdrop-blur hover:bg-white/30 flex items-center justify-center transition-all">
+                                <i class="fas fa-times text-white"></i>
+                            </button>
+                        </div>
+
+                        <!-- ===== STEPPER ===== -->
+                        <div class="mt-5 flex items-center justify-between" id="reservationStepper">
+                            <div class="stepper-item active" data-step="1">
+                                <div class="stepper-circle">
+                                    <span class="stepper-number">1</span>
+                                    <i class="fas fa-check stepper-check"></i>
+                                </div>
+                                <span class="stepper-label">Places</span>
+                            </div>
+                            <div class="stepper-line" id="stepperLine1"></div>
+                            <div class="stepper-item" data-step="2">
+                                <div class="stepper-circle">
+                                    <span class="stepper-number">2</span>
+                                    <i class="fas fa-check stepper-check"></i>
+                                </div>
+                                <span class="stepper-label">Sièges</span>
+                            </div>
+                            <div class="stepper-line" id="stepperLine2"></div>
+                            <div class="stepper-item" data-step="3">
+                                <div class="stepper-circle">
+                                    <span class="stepper-number">3</span>
+                                    <i class="fas fa-check stepper-check"></i>
+                                </div>
+                                <span class="stepper-label">Passagers</span>
+                            </div>
+                            <div class="stepper-line" id="stepperLine3"></div>
+                            <div class="stepper-item" data-step="4">
+                                <div class="stepper-circle">
+                                    <span class="stepper-number">4</span>
+                                    <i class="fas fa-check stepper-check"></i>
+                                </div>
+                                <span class="stepper-label">Paiement</span>
+                            </div>
+                        </div>
                     </div>
-                    <div id="reservationProgramInfo" class="mt-2 text-lg"></div>
                 </div>
 
-                <!-- Contenu -->
-                <div class="p-6" style="max-height: calc(95vh - 120px); overflow-y: auto;">
-                    <!-- Étape 1: Nombre de places -->
-                    <div id="step1" class="mb-8">
-                        <h3 class="text-xl font-bold text-gray-900 mb-4">Combien de places souhaitez-vous réserver ?
-                        </h3>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <!-- ===== CONTENU DES ÉTAPES ===== -->
+                <div class="p-6 md:p-8" style="max-height: calc(95vh - 180px); overflow-y: auto;">
+                    
+                    <!-- ═══ Étape 1: Nombre de places ═══ -->
+                    <div id="step1" class="step-content active-step">
+                        <div class="text-center mb-6">
+                            <div class="inline-flex items-center gap-2 bg-orange-50 text-[#e94f1b] px-4 py-2 rounded-full text-sm font-bold mb-3">
+                                <i class="fas fa-users"></i>
+                                <span>Étape 1 sur 4</span>
+                            </div>
+                            <h3 class="text-2xl font-black text-gray-900">Combien de places ?</h3>
+                            <p class="text-gray-500 mt-1">Sélectionnez le nombre de passagers</p>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8 max-w-2xl mx-auto">
                             @for ($i = 1; $i <= 8; $i++)
                                 <button onclick="selectNumberOfPlaces({{ $i }}, this)"
-                                    class="place-count-btn p-4 border-2 border-gray-200 rounded-xl hover:border-[#e94f1b] hover:bg-orange-50 transition-all duration-300 text-center">
-                                    <div class="text-2xl font-bold text-gray-800">{{ $i }}</div>
-                                    <div class="text-sm text-gray-600">place{{ $i > 1 ? 's' : '' }}</div>
+                                    class="place-count-btn group relative p-5 border-2 border-gray-200 rounded-2xl hover:border-[#e94f1b] hover:bg-orange-50 transition-all duration-300 text-center">
+                                    <div class="text-3xl font-black text-gray-800 group-hover:text-[#e94f1b] transition-colors">{{ $i }}</div>
+                                    <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mt-1">place{{ $i > 1 ? 's' : '' }}</div>
+                                    <div class="absolute inset-0 border-2 border-[#e94f1b] rounded-2xl opacity-0 scale-105 transition-all duration-300 pointer-events-none"></div>
                                 </button>
                             @endfor
                         </div>
 
-                        <!-- Bouton suivant -->
                         <div class="flex justify-end">
                             <button id="nextStepBtn" onclick="showSeatSelection()"
-                                class="bg-[#e94f1b] text-white px-6 py-3 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                class="bg-gradient-to-r from-[#e94f1b] to-orange-500 text-white px-8 py-3.5 rounded-2xl font-bold hover:shadow-lg hover:shadow-orange-500/25 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none flex items-center gap-3 text-sm"
                                 disabled>
-                                <span>Suivant</span>
+                                <span>Choisir les sièges</span>
                                 <i class="fas fa-arrow-right"></i>
                             </button>
                         </div>
                     </div>
 
-                    <!-- Étape 2: Sélection des places -->
-                    <div id="step2" class="hidden">
-                        <div class="flex justify-between items-center mb-6">
-                            <h3 class="text-xl font-bold text-gray-900">Sélectionnez vos places</h3>
-                            <div class="flex items-center gap-4">
-                                <span id="selectedSeatsCount" class="text-lg font-bold text-[#e94f1b]">0 place
-                                    sélectionnée</span>
+                    <!-- ═══ Étape 2: Sélection des sièges ALLER ═══ -->
+                    <div id="step2" class="step-content hidden">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                            <div>
+                                <div class="inline-flex items-center gap-2 bg-orange-50 text-[#e94f1b] px-3 py-1.5 rounded-full text-xs font-bold mb-2">
+                                    <i class="fas fa-couch"></i>
+                                    <span>Étape 2 — Sièges Aller</span>
+                                </div>
+                                <h3 class="text-xl font-black text-gray-900">Choisissez vos places</h3>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span id="selectedSeatsCount" class="px-4 py-2 bg-[#e94f1b]/10 text-[#e94f1b] rounded-xl font-bold text-sm">
+                                    0 place sélectionnée
+                                </span>
                                 <button onclick="backToStep1()"
-                                    class="text-gray-600 hover:text-gray-800 flex items-center gap-2">
-                                    <i class="fas fa-arrow-left"></i>
+                                    class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-600 font-medium text-sm transition-colors flex items-center gap-2">
+                                    <i class="fas fa-arrow-left text-xs"></i>
                                     <span>Retour</span>
                                 </button>
                             </div>
                         </div>
 
-                        <!-- Visualisation des places -->
-                        <div id="seatSelectionArea" class="mb-8">
-                            <!-- Les places seront gÃ©nÃ©rÃ©es dynamiquement -->
+                        <!-- Plan des sièges -->
+                        <div id="seatSelectionArea" class="mb-6"></div>
+
+                        <!-- Légende améliorée -->
+                        <div class="flex flex-wrap items-center gap-x-6 gap-y-2 mb-6 p-4 bg-gray-50 rounded-2xl">
+                            <div class="flex items-center gap-2">
+                                <div class="w-7 h-7 bg-emerald-500 rounded-lg shadow-sm flex items-center justify-center">
+                                    <i class="fas fa-couch text-white text-[10px]"></i>
+                                </div>
+                                <span class="text-xs font-medium text-gray-600">Disponible</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="w-7 h-7 bg-[#e94f1b] rounded-lg shadow-sm flex items-center justify-center">
+                                    <i class="fas fa-check text-white text-[10px]"></i>
+                                </div>
+                                <span class="text-xs font-medium text-gray-600">Sélectionné</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="w-7 h-7 bg-red-400/80 rounded-lg shadow-sm flex items-center justify-center">
+                                    <i class="fas fa-times text-white text-[10px]"></i>
+                                </div>
+                                <span class="text-xs font-medium text-gray-600">Réservé</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="w-7 h-7 bg-sky-500 rounded-lg shadow-sm flex items-center justify-center">
+                                    <i class="fas fa-couch text-white text-[10px]"></i>
+                                </div>
+                                <span class="text-xs font-medium text-gray-600">Côté gauche</span>
+                            </div>
                         </div>
 
-                        <!-- LÃ©gende -->
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                            <div class="flex items-center gap-2">
-                                <div class="w-8 h-8 bg-green-500 rounded"></div>
-                                <span class="text-sm">Place disponible</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <div class="w-8 h-8 bg-[#e94f1b] rounded"></div>
-                                <span class="text-sm">Place sélectionnée</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <div class="w-8 h-8 bg-red-500 rounded"></div>
-                                <span class="text-sm">Place réservée</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <div class="w-8 h-8 bg-blue-500 rounded"></div>
-                                <span class="text-sm">Place côté gauche</span>
-                            </div>
-                        </div>
-
-                        <!-- Bouton de confirmation -->
+                        <!-- Actions -->
                         <div class="flex justify-between">
                             <button onclick="backToStep1()"
-                                class="bg-gray-200 text-gray-800 px-6 py-3 rounded-lg font-bold hover:bg-gray-300 transition-all duration-300 flex items-center gap-2">
-                                <i class="fas fa-arrow-left"></i>
+                                class="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-2xl font-bold transition-all flex items-center gap-2 text-sm">
+                                <i class="fas fa-arrow-left text-xs"></i>
                                 <span>Retour</span>
                             </button>
                             <button id="showPassengerInfoBtn" onclick="showPassengerInfo()"
-                                class="bg-[#e94f1b] text-white px-6 py-3 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                class="bg-gradient-to-r from-[#e94f1b] to-orange-500 text-white px-8 py-3 rounded-2xl font-bold hover:shadow-lg hover:shadow-orange-500/25 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-3 text-sm"
                                 disabled>
                                 <span>Informations passagers</span>
                                 <i class="fas fa-arrow-right"></i>
                             </button>
                         </div>
                     </div>
-<!-- Étape 2.5: Sélection des places RETOUR (si Aller-Retour) -->
-<div id="step2_5" class="hidden">
-    <div class="flex justify-between items-center mb-6">
-        <h3 class="text-xl font-bold text-gray-900">Sélectionnez vos places RETOUR</h3>
-        <div class="flex items-center gap-4">
-            <span id="selectedSeatsCountRetour" class="text-lg font-bold text-blue-600">0 place sélectionnée</span>
-            <button onclick="backToStep2()"
-                class="text-gray-600 hover:text-gray-800 flex items-center gap-2">
-                <i class="fas fa-arrow-left"></i>
-                <span>Retour</span>
-            </button>
-        </div>
-    </div>
 
-    <!-- Info programme retour -->
-    <div class="bg-blue-50 p-4 rounded-lg mb-6 border border-blue-200">
-        <div class="flex items-center gap-3">
-            <i class="fas fa-undo text-blue-600 text-2xl"></i>
-            <div>
-                <p class="font-bold text-blue-900">Voyage Retour</p>
-                <p id="returnProgramInfo" class="text-sm text-blue-700"></p>
-            </div>
-        </div>
-    </div>
+                    <!-- ═══ Étape 2.5: Sièges RETOUR (si Aller-Retour) ═══ -->
+                    <div id="step2_5" class="step-content hidden">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                            <div>
+                                <div class="inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-3 py-1.5 rounded-full text-xs font-bold mb-2">
+                                    <i class="fas fa-undo"></i>
+                                    <span>Étape 2 — Sièges Retour</span>
+                                </div>
+                                <h3 class="text-xl font-black text-gray-900">Places pour le retour</h3>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span id="selectedSeatsCountRetour" class="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl font-bold text-sm">0 place sélectionnée</span>
+                                <button onclick="backToStep2()"
+                                    class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-600 font-medium text-sm transition-colors flex items-center gap-2">
+                                    <i class="fas fa-arrow-left text-xs"></i>
+                                    <span>Retour</span>
+                                </button>
+                            </div>
+                        </div>
 
-    <!-- Visualisation des places RETOUR -->
-    <div id="seatSelectionAreaRetour" class="mb-8">
-        <!-- Les places seront gÃ©nÃ©rÃ©es dynamiquement -->
-    </div>
+                        <!-- Info retour -->
+                        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-2xl mb-6 border border-blue-100">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-undo text-white"></i>
+                                </div>
+                                <div>
+                                    <p class="font-bold text-blue-900 text-sm">Voyage Retour</p>
+                                    <p id="returnProgramInfo" class="text-xs text-blue-700"></p>
+                                </div>
+                            </div>
+                        </div>
 
-    <!-- LÃ©gende -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div class="flex items-center gap-2">
-            <div class="w-8 h-8 bg-green-500 rounded"></div>
-            <span class="text-sm">Place disponible</span>
-        </div>
-        <div class="flex items-center gap-2">
-            <div class="w-8 h-8 bg-blue-600 rounded"></div>
-            <span class="text-sm">Place sÃ©lectionnÃ©e</span>
-        </div>
-        <div class="flex items-center gap-2">
-            <div class="w-8 h-8 bg-red-500 rounded"></div>
-            <span class="text-sm">Place rÃ©servÃ©e</span>
-        </div>
-        <div class="flex items-center gap-2">
-            <div class="w-8 h-8 bg-blue-500 rounded"></div>
-            <span class="text-sm">Place cÃ´tÃ© gauche</span>
-        </div>
-    </div>
+                        <!-- Plan retour -->
+                        <div id="seatSelectionAreaRetour" class="mb-6"></div>
 
-    <!-- Boutons de navigation -->
-    <div class="flex justify-between">
-        <button onclick="backToStep2()"
-            class="bg-gray-200 text-gray-800 px-6 py-3 rounded-lg font-bold hover:bg-gray-300 transition-all duration-300 flex items-center gap-2">
-            <i class="fas fa-arrow-left"></i>
-            <span>Retour</span>
-        </button>
-        <button id="showPassengerInfoBtnRetour" onclick="proceedToPassengerInfoFromRetour()"
-            class="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            disabled>
-            <span>Informations passagers</span>
-            <i class="fas fa-arrow-right"></i>
-        </button>
-    </div>
-</div>
-                    <!-- Ã‰tape 3: Informations des passagers -->
-                    <div id="step3" class="hidden">
-                        <div class="flex justify-between items-center mb-6">
-                            <h3 class="text-xl font-bold text-gray-900">Informations des passagers</h3>
+                        <!-- Légende -->
+                        <div class="flex flex-wrap items-center gap-x-6 gap-y-2 mb-6 p-4 bg-gray-50 rounded-2xl">
+                            <div class="flex items-center gap-2">
+                                <div class="w-7 h-7 bg-emerald-500 rounded-lg shadow-sm"></div>
+                                <span class="text-xs font-medium text-gray-600">Disponible</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="w-7 h-7 bg-blue-600 rounded-lg shadow-sm"></div>
+                                <span class="text-xs font-medium text-gray-600">Sélectionné</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="w-7 h-7 bg-red-400/80 rounded-lg shadow-sm"></div>
+                                <span class="text-xs font-medium text-gray-600">Réservé</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="w-7 h-7 bg-sky-500 rounded-lg shadow-sm"></div>
+                                <span class="text-xs font-medium text-gray-600">Côté gauche</span>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="flex justify-between">
+                            <button onclick="backToStep2()"
+                                class="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-2xl font-bold transition-all flex items-center gap-2 text-sm">
+                                <i class="fas fa-arrow-left text-xs"></i>
+                                <span>Retour</span>
+                            </button>
+                            <button id="showPassengerInfoBtnRetour" onclick="proceedToPassengerInfoFromRetour()"
+                                class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-3 rounded-2xl font-bold hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-3 text-sm"
+                                disabled>
+                                <span>Informations passagers</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ═══ Étape 3: Informations passagers ═══ -->
+                    <div id="step3" class="step-content hidden">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                            <div>
+                                <div class="inline-flex items-center gap-2 bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-full text-xs font-bold mb-2">
+                                    <i class="fas fa-user-edit"></i>
+                                    <span>Étape 3 — Passagers</span>
+                                </div>
+                                <h3 class="text-xl font-black text-gray-900">Informations des passagers</h3>
+                            </div>
                             <button onclick="backFromPassengerInfo()"
-                                class="text-gray-600 hover:text-gray-800 flex items-center gap-2">
-                                <i class="fas fa-arrow-left"></i>
+                                class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-600 font-medium text-sm transition-colors flex items-center gap-2">
+                                <i class="fas fa-arrow-left text-xs"></i>
                                 <span>Retour aux places</span>
                             </button>
                         </div>
 
-                        <div id="passengersFormArea" class="space-y-6 mb-8">
-                            <!-- Les formulaires passagers seront gÃ©nÃ©rÃ©s dynamiquement -->
-                        </div>
+                        <div id="passengersFormArea" class="space-y-6 mb-8"></div>
 
-                        <!-- Bouton de confirmation finale -->
+                        <!-- Actions -->
                         <div class="flex justify-between">
                             <button onclick="backFromPassengerInfo()"
-                                class="bg-gray-200 text-gray-800 px-6 py-3 rounded-lg font-bold hover:bg-gray-300 transition-all duration-300 flex items-center gap-2">
-                                <i class="fas fa-arrow-left"></i>
+                                class="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-2xl font-bold transition-all flex items-center gap-2 text-sm">
+                                <i class="fas fa-arrow-left text-xs"></i>
                                 <span>Retour</span>
                             </button>
                             <button id="confirmReservationBtn" onclick="confirmReservation()"
-                                class="bg-green-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-600 transition-all duration-300 flex items-center gap-2">
-                                <i class="fas fa-check-circle"></i>
-                                <span>Confirmer la rÃ©servation</span>
+                                class="bg-gradient-to-r from-emerald-500 to-green-500 text-white px-8 py-3.5 rounded-2xl font-bold hover:shadow-lg hover:shadow-green-500/25 transition-all duration-300 flex items-center gap-3 text-sm">
+                                <i class="fas fa-shield-alt"></i>
+                                <span>Confirmer & Payer</span>
+                                <i class="fas fa-arrow-right text-xs"></i>
                             </button>
                         </div>
                     </div>
@@ -674,30 +752,212 @@
         </div>
     </div>
 
+    <!-- ============================================= -->
+    <!-- STYLES PREMIUM                                -->
+    <!-- ============================================= -->
     <style>
-        .place-count-btn.active {
-            border-color: #e94f1b;
-            background-color: #fff7ed;
-            box-shadow: 0 0 0 3px rgba(254, 162, 25, 0.2);
+        /* === Modal Animations === */
+        .modal-overlay {
+            animation: modalFadeIn 0.3s ease-out;
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .reservation-modal-content {
+            animation: modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes modalSlideUp {
+            from { opacity: 0; transform: translateY(30px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
 
+        /* === Step Content Transitions === */
+        .step-content {
+            animation: stepFadeIn 0.4s ease-out;
+        }
+        .step-content.hidden { display: none; }
+        @keyframes stepFadeIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* === Stepper === */
+        .stepper-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            min-width: 60px;
+        }
+        .stepper-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+        }
+        .stepper-number {
+            color: rgba(255,255,255,0.7);
+            font-weight: 800;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        .stepper-check {
+            display: none;
+            color: white;
+            font-size: 11px;
+        }
+        .stepper-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.5);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: all 0.3s;
+        }
+        .stepper-line {
+            flex: 1;
+            height: 2px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 1px;
+            margin: 0 4px;
+            margin-bottom: 22px;
+            position: relative;
+            overflow: hidden;
+        }
+        .stepper-line::after {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 0;
+            background: white;
+            border-radius: 1px;
+            transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .stepper-line.filled::after {
+            width: 100%;
+        }
+
+        /* Active step */
+        .stepper-item.active .stepper-circle {
+            background: white;
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.3);
+        }
+        .stepper-item.active .stepper-number {
+            color: #e94f1b;
+        }
+        .stepper-item.active .stepper-label {
+            color: white;
+        }
+
+        /* Completed step */
+        .stepper-item.completed .stepper-circle {
+            background: rgba(255,255,255,0.9);
+        }
+        .stepper-item.completed .stepper-number {
+            display: none;
+        }
+        .stepper-item.completed .stepper-check {
+            display: block;
+            color: #10b981;
+        }
+        .stepper-item.completed .stepper-label {
+            color: rgba(255,255,255,0.8);
+        }
+
+        /* === Place Count Button === */
+        .place-count-btn.active {
+            border-color: #e94f1b !important;
+            background: linear-gradient(135deg, #fff7ed, #ffedd5) !important;
+            box-shadow: 0 0 0 3px rgba(233, 79, 27, 0.15), 0 4px 12px rgba(233, 79, 27, 0.1) !important;
+        }
+        .place-count-btn.active > div:first-child {
+            color: #e94f1b !important;
+        }
+
+        /* === Seat styles === */
         .seat {
-            transition: all 0.3s ease;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
             cursor: pointer;
         }
-
         .seat:hover {
-            transform: scale(1.1);
+            transform: scale(1.12);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
-
         .seat.selected {
-            transform: scale(1.1);
-            box-shadow: 0 0 15px rgba(254, 162, 25, 0.5);
+            transform: scale(1.08);
+            box-shadow: 0 0 0 3px rgba(233, 79, 27, 0.3), 0 4px 12px rgba(233, 79, 27, 0.2);
         }
-
         .seat.reserved {
             cursor: not-allowed;
-            opacity: 0.5;
+            opacity: 0.45;
+        }
+        .seat.reserved:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* === Responsive === */
+        @media (max-width: 640px) {
+            .stepper-label { font-size: 8px; }
+            .stepper-circle { width: 26px; height: 26px; }
+            .stepper-number { font-size: 11px; }
+        }
+
+        /* === SweetAlert Premium Overrides === */
+        .swal2-popup.rounded-2xl {
+            border-radius: 1.5rem !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+        }
+        .swal2-popup {
+            font-family: inherit !important;
+        }
+        .swal2-title {
+            font-weight: 800 !important;
+            font-size: 1.3rem !important;
+        }
+        .swal2-confirm {
+            border-radius: 0.75rem !important;
+            font-weight: 700 !important;
+            padding: 0.65rem 1.5rem !important;
+            box-shadow: 0 4px 14px rgba(233, 79, 27, 0.3) !important;
+            transition: all 0.3s !important;
+        }
+        .swal2-cancel {
+            border-radius: 0.75rem !important;
+            font-weight: 600 !important;
+            padding: 0.65rem 1.5rem !important;
+        }
+        .swal2-confirm:hover {
+            transform: translateY(-1px) !important;
+            box-shadow: 0 6px 20px rgba(233, 79, 27, 0.4) !important;
+        }
+        div:where(.swal2-container) {
+            backdrop-filter: blur(4px);
+        }
+
+        /* === Passenger Card Styling === */
+        #passengersFormArea .bg-gray-50 {
+            border-radius: 1rem;
+            border: 1px solid #e5e7eb;
+            transition: all 0.3s;
+        }
+        #passengersFormArea .bg-gray-50:hover {
+            border-color: #e94f1b;
+            box-shadow: 0 4px 12px rgba(233, 79, 27, 0.08);
+        }
+        #passengersFormArea input {
+            border-radius: 0.75rem;
+        }
+        #passengersFormArea input:focus {
+            border-color: #e94f1b;
+            box-shadow: 0 0 0 3px rgba(233, 79, 27, 0.1);
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -2040,6 +2300,7 @@ async function showDepartureSchedulesModal(program, departureDate, isAllerRetour
             document.querySelectorAll('.place-count-btn').forEach(btn => btn.classList.remove('active'));
 
             document.getElementById('reservationModal').classList.remove('hidden');
+            updateStepper(1);
 
             // Fetch info programme
             fetch("{{ route('user.reservation.program', ':id') }}".replace(':id', programId))
@@ -2101,6 +2362,33 @@ window.outboundDate = dateVoyage;
 
         // Exposer globalement pour compatibilitÃ©
         window.openReservationModal = showReservationModal;
+
+        // ============================================
+        // STEPPER UPDATE FUNCTION
+        // ============================================
+        function updateStepper(currentStep) {
+            const items = document.querySelectorAll('#reservationStepper .stepper-item');
+            const lines = document.querySelectorAll('#reservationStepper .stepper-line');
+            
+            items.forEach((item, idx) => {
+                const step = idx + 1;
+                item.classList.remove('active', 'completed');
+                if (step < currentStep) {
+                    item.classList.add('completed');
+                } else if (step === currentStep) {
+                    item.classList.add('active');
+                }
+            });
+            
+            lines.forEach((line, idx) => {
+                const lineAfterStep = idx + 1;
+                if (lineAfterStep < currentStep) {
+                    line.classList.add('filled');
+                } else {
+                    line.classList.remove('filled');
+                }
+            });
+        }
 
 
 
@@ -2621,6 +2909,7 @@ function onAllerRetourChoiceChange() {
                 // Changer d'Ã©tape
                 document.getElementById('step1').classList.add('hidden');
                 document.getElementById('step2').classList.remove('hidden');
+                updateStepper(2);
 
 
             } catch (error) {
@@ -2975,7 +3264,9 @@ function onAllerRetourChoiceChange() {
         // ============================================
         function backToStep2() {
             document.getElementById('step3').classList.add('hidden');
+            document.getElementById('step2_5').classList.add('hidden');
             document.getElementById('step2').classList.remove('hidden');
+            updateStepper(2);
         }
 
         // ============================================
@@ -3105,6 +3396,7 @@ async function loadRetourSeatsSelection() {
         // 6. Masquer step2, afficher step2_5
         document.getElementById('step2').classList.add('hidden');
         document.getElementById('step2_5').classList.remove('hidden');
+        updateStepper(2);
 
     } catch (error) {
         Swal.fire({
@@ -3428,6 +3720,7 @@ function proceedToPassengerInfoFromRetour() {
     // On affiche l'étape 3
     document.getElementById('step3').classList.remove('hidden');
     document.getElementById('confirmReservationBtn').disabled = false;
+    updateStepper(3);
             }
 
             sortedSeats.forEach((seat, index) => {

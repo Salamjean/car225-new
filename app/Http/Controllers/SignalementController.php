@@ -44,6 +44,9 @@ class SignalementController extends Controller
         $enVoyage = !is_null($activeReservation);
 
         $selectedReservation = null;
+        $actualVehicule = null;
+        $actualVoyage = null;
+
         if ($preselectedReservationId) {
             $selectedReservation = $reservations->firstWhere('id', $preselectedReservationId);
             
