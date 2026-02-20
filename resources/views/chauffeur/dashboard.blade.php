@@ -37,7 +37,12 @@
                 @if($todayVoyages->count() > 0)
                     <div class="space-y-4">
                         @foreach($todayVoyages as $voyage)
-                            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col sm:flex-row sm:items-center gap-4 hover:shadow-md transition-shadow">
+                            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col sm:flex-row sm:items-center gap-4 hover:shadow-md transition-shadow"
+                                @if($voyage->statut === 'en_cours')
+                                    data-voyage-tracking="{{ $voyage->id }}"
+                                    data-tracking-url="{{ route('chauffeur.voyages.update-location', $voyage) }}"
+                                @endif
+                            >
                                 <div class="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center text-orange-600 font-bold text-xl border border-orange-100">
                                     {{ \Carbon\Carbon::parse($voyage->programme->heure_depart)->format('H:i') }}
                                 </div>
@@ -68,6 +73,11 @@
                                                       data-arrival="{{ $arrivalDateTime->toIso8601String() }}">
                                                     Temps restant: --:--:--
                                                 </span>
+                                            </div>
+                                            <!-- GPS Status Indicator -->
+                                            <div class="mt-1 flex items-center gap-1 hidden" id="gps-indicator-{{ $voyage->id }}">
+                                                <span style="width:7px;height:7px;background:#10b981;border-radius:50%;display:inline-block;animation:livePulse 1.5s infinite;"></span>
+                                                <span class="text-[10px] text-green-600 font-bold">Position GPS partagée</span>
                                             </div>
                                         @endif
                                     </div>
@@ -192,6 +202,77 @@ document.addEventListener('DOMContentLoaded', function() {
         updateTimers();
         setInterval(updateTimers, 1000);
     }
+
+    // ============================================
+    // GPS Location Sharing for active voyages
+    // ============================================
+    const activeVoyages = document.querySelectorAll('[data-voyage-tracking]');
+    let gpsIntervals = {};
+
+    function startGPSTracking(voyageId, url) {
+        if (!navigator.geolocation) {
+            console.warn('Geolocation non supportée');
+            return;
+        }
+
+        // Request permission and start tracking
+        navigator.geolocation.getCurrentPosition(
+            function(pos) {
+                // First successful position - mark as tracking
+                const indicator = document.getElementById('gps-indicator-' + voyageId);
+                if (indicator) {
+                    indicator.classList.remove('hidden');
+                }
+
+                // Send position immediately
+                sendPosition(voyageId, url, pos);
+
+                // Then poll every 5 seconds
+                gpsIntervals[voyageId] = setInterval(function() {
+                    navigator.geolocation.getCurrentPosition(
+                        function(p) { sendPosition(voyageId, url, p); },
+                        function(err) { console.warn('GPS error:', err.message); },
+                        { enableHighAccuracy: true, timeout: 4000, maximumAge: 2000 }
+                    );
+                }, 5000);
+            },
+            function(err) {
+                console.warn('GPS permission denied or error:', err.message);
+                const indicator = document.getElementById('gps-indicator-' + voyageId);
+                if (indicator) {
+                    indicator.innerHTML = '<i class="fas fa-exclamation-triangle text-yellow-500 mr-1"></i><span class="text-yellow-600 text-[10px]">GPS désactivé</span>';
+                    indicator.classList.remove('hidden');
+                }
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+    }
+
+    function sendPosition(voyageId, url, position) {
+        const data = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            speed: position.coords.speed ? (position.coords.speed * 3.6) : null, // m/s to km/h
+            heading: position.coords.heading
+        };
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(data)
+        }).catch(err => console.error('GPS send error:', err));
+    }
+
+    // Auto-start GPS for all active trips
+    activeVoyages.forEach(function(el) {
+        const voyageId = el.getAttribute('data-voyage-tracking');
+        const url = el.getAttribute('data-tracking-url');
+        startGPSTracking(voyageId, url);
+    });
 });
 </script>
 @endsection
@@ -205,6 +286,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .animate-spin-slow {
     animation: spin-slow 3s linear infinite;
+}
+
+@keyframes livePulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.3); }
 }
 </style>
 @endsection

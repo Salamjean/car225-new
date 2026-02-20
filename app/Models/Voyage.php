@@ -44,6 +44,11 @@ class Voyage extends Model
         return $this->belongsTo(Gare::class, 'gare_arrivee_id');
     }
 
+    public function latestLocation()
+    {
+        return $this->hasOne(DriverLocation::class)->latestOfMany();
+    }
+
     /**
      * Nombre de passagers scannés pour ce voyage spécifique
      */

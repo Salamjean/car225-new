@@ -27,6 +27,16 @@
                         Tableau de bord
                     </a>
                 </div>
+                      
+                <!-- Suivi GPS en temps réel -->
+                <div class="mdc-list-item mdc-drawer-item">
+                    <a class="mdc-drawer-link d-flex align-items-center" href="{{ route('compagnie.tracking.index') }}">
+                        <i class="fas fa-map-marked-alt mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true" style="color: #10b981;"></i>
+                        Voyages en cours
+                        <span class="ml-auto" style="width: 8px; height: 8px; background: #10b981; border-radius: 50; display: inline-block; animation: pulse 2s infinite;"></span>
+                    </a>
+                </div>
+               
                   <!-- Onglet Messages -->
                 <div class="mdc-list-item mdc-drawer-item">
                     <a class="mdc-drawer-link d-flex align-items-center justify-content-between w-100" href="{{ route('compagnie.messages.index') }}">
@@ -242,8 +252,6 @@
                         </nav>
                     </div>
                 </div>
-                
-               
                 
                 <!-- Onglet Profil -->
                 <!-- <div class="mdc-list-item mdc-drawer-item">

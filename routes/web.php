@@ -257,6 +257,12 @@ Route::middleware('compagnie')->prefix('company')->group(function () {
         Route::get('/received/{id}', [\App\Http\Controllers\Compagnie\CompanyMessageController::class, 'showReceived'])->name('show-received');
         Route::get('/{message}', [\App\Http\Controllers\Compagnie\CompanyMessageController::class, 'show'])->name('show');
     });
+
+    // Routes de suivi GPS en temps réel
+    Route::prefix('tracking')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Compagnie\TrackingController::class, 'index'])->name('compagnie.tracking.index');
+        Route::get('/locations', [\App\Http\Controllers\Compagnie\TrackingController::class, 'getActiveLocations'])->name('compagnie.tracking.locations');
+    });
 });
 
 //Les routes de gestion des @caissières
@@ -703,6 +709,7 @@ Route::prefix('chauffeur')->name('chauffeur.')->group(function () {
             Route::post('/{voyage}/confirm', [ChauffeurVoyageController::class, 'confirm'])->name('confirm');
             Route::post('/{voyage}/start', [ChauffeurVoyageController::class, 'start'])->name('start');
             Route::post('/{voyage}/complete', [ChauffeurVoyageController::class, 'complete'])->name('complete');
+            Route::post('/{voyage}/update-location', [ChauffeurVoyageController::class, 'updateLocation'])->name('update-location');
         });
 
         // Inbox for Chauffeur

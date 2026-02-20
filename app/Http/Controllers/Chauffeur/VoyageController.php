@@ -101,4 +101,39 @@ class VoyageController extends Controller
 
         return back()->with('success', 'Voyage terminé avec succès. Vous êtes maintenant disponible pour de nouveaux voyages.');
     }
+
+    /**
+     * Update driver GPS location for a voyage in progress
+     */
+    public function updateLocation(Request $request, Voyage $voyage)
+    {
+        $chauffeur = Auth::guard('chauffeur')->user();
+
+        if ($voyage->personnel_id !== $chauffeur->id) {
+            return response()->json(['success' => false, 'message' => 'Non autorisé'], 403);
+        }
+
+        if ($voyage->statut !== 'en_cours') {
+            return response()->json(['success' => false, 'message' => 'Le voyage n\'est pas en cours'], 422);
+        }
+
+        $request->validate([
+            'latitude' => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
+            'speed' => 'nullable|numeric|min:0',
+            'heading' => 'nullable|numeric|between:0,360',
+        ]);
+
+        \App\Models\DriverLocation::updateOrCreate(
+            ['voyage_id' => $voyage->id, 'personnel_id' => $chauffeur->id],
+            [
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude,
+                'speed' => $request->speed,
+                'heading' => $request->heading,
+            ]
+        );
+
+        return response()->json(['success' => true]);
+    }
 }
