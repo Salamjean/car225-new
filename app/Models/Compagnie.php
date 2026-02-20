@@ -51,6 +51,11 @@ class Compagnie extends Authenticatable
         'statut' => 'string',
     ];
 
+    public function gares()
+    {
+        return $this->hasMany(Gare::class);
+    }
+
     public function agents()
     {
         return $this->hasMany(Agent::class);
@@ -81,6 +86,11 @@ class Compagnie extends Authenticatable
      */
     public function deductTickets($amount, $motif)
     {
+        // Vérifier si le système de tickets est activé
+        if (!\App\Models\Setting::isTicketSystemEnabled()) {
+            return;
+        }
+
         // DEBUG: Trace balance deduction
         \Illuminate\Support\Facades\Log::info("DEDUCTION SOLDE APPELÉE", [
             'target_company_id' => $this->id,
@@ -97,5 +107,20 @@ class Compagnie extends Authenticatable
             'montant' => $amount,
             'motif' => $motif
         ]);
+    }
+
+    public function sentMessages()
+    {
+        return $this->hasMany(CompanyMessage::class);
+    }
+
+    public function receivedGareMessages()
+    {
+        return $this->morphMany(GareMessage::class, 'recipient');
+    }
+
+    public function vehicules()
+    {
+        return $this->hasMany(Vehicule::class);
     }
 }

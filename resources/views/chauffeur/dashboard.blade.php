@@ -37,17 +37,51 @@
                 @if($todayVoyages->count() > 0)
                     <div class="space-y-4">
                         @foreach($todayVoyages as $voyage)
-                            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col sm:flex-row sm:items-center gap-4 hover:shadow-md transition-shadow">
+                            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col sm:flex-row sm:items-center gap-4 hover:shadow-md transition-shadow"
+                                @if($voyage->statut === 'en_cours')
+                                    data-voyage-tracking="{{ $voyage->id }}"
+                                    data-tracking-url="{{ route('chauffeur.voyages.update-location', $voyage) }}"
+                                @endif
+                            >
                                 <div class="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center text-orange-600 font-bold text-xl border border-orange-100">
                                     {{ \Carbon\Carbon::parse($voyage->programme->heure_depart)->format('H:i') }}
                                 </div>
                                 <div class="flex-1">
-                                    <div class="flex items-center gap-3">
-                                        <span class="font-bold text-gray-900">{{ $voyage->gareDepart->nom_gare }}</span>
-                                        <i class="fas fa-long-arrow-alt-right text-orange-300"></i>
-                                        <span class="font-bold text-gray-900">{{ $voyage->gareArrivee->nom_gare }}</span>
+                                    <div class="flex flex-col">
+                                        <div class="flex items-center gap-3">
+                                            <div class="flex flex-col">
+                                                <span class="font-bold text-gray-900">{{ $voyage->programme->point_depart }}</span>
+                                                <span class="text-[10px] text-green-600 font-bold uppercase">{{ $voyage->gareDepart->nom_gare }}</span>
+                                            </div>
+                                            <i class="fas fa-long-arrow-alt-right text-orange-300"></i>
+                                            <div class="flex flex-col">
+                                                <span class="font-bold text-gray-900">{{ $voyage->programme->point_arrive }}</span>
+                                                <span class="text-[10px] text-green-600 font-bold uppercase">{{ $voyage->gareArrivee->nom_gare }}</span>
+                                            </div>
+                                        </div>
+                                        @if($voyage->statut === 'en_cours')
+                                            @php
+                                                $dateVoyage = \Carbon\Carbon::parse($voyage->date_voyage)->format('Y-m-d');
+                                                $arrivalDateTime = \Carbon\Carbon::parse($dateVoyage . ' ' . $voyage->programme->heure_arrive);
+                                                if (\Carbon\Carbon::parse($voyage->programme->heure_arrive)->lt(\Carbon\Carbon::parse($voyage->programme->heure_depart))) {
+                                                    $arrivalDateTime->addDay();
+                                                }
+                                            @endphp
+                                            <div class="mt-2 flex items-center gap-2 text-blue-600">
+                                                <i class="fas fa-hourglass-half text-[10px] animate-spin-slow"></i>
+                                                <span class="text-xs font-black tracking-tighter countdown-text" 
+                                                      data-arrival="{{ $arrivalDateTime->toIso8601String() }}">
+                                                    Temps restant: --:--:--
+                                                </span>
+                                            </div>
+                                            <!-- GPS Status Indicator -->
+                                            <div class="mt-1 flex items-center gap-1 hidden" id="gps-indicator-{{ $voyage->id }}">
+                                                <span style="width:7px;height:7px;background:#10b981;border-radius:50%;display:inline-block;animation:livePulse 1.5s infinite;"></span>
+                                                <span class="text-[10px] text-green-600 font-bold">Position GPS partagée</span>
+                                            </div>
+                                        @endif
                                     </div>
-                                    <p class="text-sm text-gray-500 mt-1">
+                                    <p class="text-sm text-gray-500 mt-2">
                                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
                                             <i class="fas fa-bus mr-1"></i> {{ $voyage->vehicule->immatriculation }}
                                         </span>
@@ -67,7 +101,7 @@
                             <i class="fas fa-road text-gray-300 text-2xl"></i>
                         </div>
                         <p class="text-gray-500 font-medium">Aucun voyage prévu aujourd'hui</p>
-                        <a href="{{ route('chauffeur.programmes') }}" class="text-orange-600 font-bold mt-2 inline-block hover:text-orange-700 transition">
+                        <a href="{{ route('chauffeur.voyages.index') }}" class="text-orange-600 font-bold mt-2 inline-block hover:text-orange-700 transition">
                             S'assigner un horaire &rarr;
                         </a>
                     </div>
@@ -120,7 +154,7 @@
         </div>
 
         <!-- Quick Action -->
-        <a href="{{ route('chauffeur.programmes') }}" class="block mt-8 group">
+        <a href="{{ route('chauffeur.voyages.index') }}" class="block mt-8 group">
             <div class="bg-white rounded-2xl p-6 shadow-md border border-orange-100 flex items-center justify-between group-hover:shadow-lg transition-all duration-300 transform group-hover:-translate-y-1">
                 <div class="flex items-center gap-4">
                     <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center group-hover:bg-orange-600 transition-colors duration-300">
@@ -138,4 +172,125 @@
         </a>
     </div>
 </div>
+@endsection
+
+@section('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function updateTimers() {
+        const timers = document.querySelectorAll('[data-arrival]');
+        
+        timers.forEach(timer => {
+            const arrivalTime = new Date(timer.dataset.arrival).getTime();
+            const now = new Date().getTime();
+            const distance = arrivalTime - now;
+            
+            if (distance < 0) {
+                timer.innerHTML = "Arrivé à destination";
+                return;
+            }
+            
+            const hours = Math.floor(distance / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            
+            timer.innerHTML = `Temps restant: ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        });
+    }
+
+    if (document.querySelectorAll('[data-arrival]').length > 0) {
+        updateTimers();
+        setInterval(updateTimers, 1000);
+    }
+
+    // ============================================
+    // GPS Location Sharing for active voyages
+    // ============================================
+    const activeVoyages = document.querySelectorAll('[data-voyage-tracking]');
+    let gpsIntervals = {};
+
+    function startGPSTracking(voyageId, url) {
+        if (!navigator.geolocation) {
+            console.warn('Geolocation non supportée');
+            return;
+        }
+
+        // Request permission and start tracking
+        navigator.geolocation.getCurrentPosition(
+            function(pos) {
+                // First successful position - mark as tracking
+                const indicator = document.getElementById('gps-indicator-' + voyageId);
+                if (indicator) {
+                    indicator.classList.remove('hidden');
+                }
+
+                // Send position immediately
+                sendPosition(voyageId, url, pos);
+
+                // Then poll every 5 seconds
+                gpsIntervals[voyageId] = setInterval(function() {
+                    navigator.geolocation.getCurrentPosition(
+                        function(p) { sendPosition(voyageId, url, p); },
+                        function(err) { console.warn('GPS error:', err.message); },
+                        { enableHighAccuracy: true, timeout: 4000, maximumAge: 2000 }
+                    );
+                }, 5000);
+            },
+            function(err) {
+                console.warn('GPS permission denied or error:', err.message);
+                const indicator = document.getElementById('gps-indicator-' + voyageId);
+                if (indicator) {
+                    indicator.innerHTML = '<i class="fas fa-exclamation-triangle text-yellow-500 mr-1"></i><span class="text-yellow-600 text-[10px]">GPS désactivé</span>';
+                    indicator.classList.remove('hidden');
+                }
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+    }
+
+    function sendPosition(voyageId, url, position) {
+        const data = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            speed: position.coords.speed ? (position.coords.speed * 3.6) : null, // m/s to km/h
+            heading: position.coords.heading
+        };
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(data)
+        }).catch(err => console.error('GPS send error:', err));
+    }
+
+    // Auto-start GPS for all active trips
+    activeVoyages.forEach(function(el) {
+        const voyageId = el.getAttribute('data-voyage-tracking');
+        const url = el.getAttribute('data-tracking-url');
+        startGPSTracking(voyageId, url);
+    });
+});
+</script>
+@endsection
+
+@section('styles')
+<style>
+@keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+    animation: spin-slow 3s linear infinite;
+}
+
+@keyframes livePulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.3); }
+}
+</style>
 @endsection

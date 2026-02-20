@@ -76,6 +76,7 @@
                                             <div class="flex items-center justify-between mb-2">
                                                 <div class="text-center">
                                                     <div class="font-bold text-gray-900">{{ $programme->point_depart }}</div>
+                                                    <div class="text-[10px] text-blue-600 font-bold uppercase">{{ $programme->gareDepart->nom_gare ?? 'Gare non définie' }}</div>
                                                 </div>
                                                 <div class="mx-2"><i class="fas fa-arrow-right text-[#e94e1a]"></i></div>
                                                 <div class="text-center">
@@ -116,12 +117,15 @@
                                                 </div>
                                                 <div class="text-xs">
                                                     @php
-                                                        $statusTexts = ['disponible' => 'Places disponibles', 'presque_complet' => 'Presque complet', 'complet' => 'Complet'];
-                                                        $statusKey = $programme->statut_places;
+                                                        $statusTexts = ['disponible' => 'Disponible', 'presque_complet' => 'Presque complet', 'complet' => 'Complet'];
+                                                        $totalSeats = $programme->getTotalSeats($searchDateParam);
+                                                        $reservedSeatsCount = $programme->getPlacesReserveesForDate($searchDateParam);
+                                                        $statusKey = $programme->getStatutPlacesForDate($searchDateParam);
                                                     @endphp
-                                                    <span class="{{ $statusKey == 'complet' ? 'text-red-600' : ($statusKey == 'presque_complet' ? 'text-yellow-600' : 'text-green-600') }} font-semibold">
-                                                        {{ $statusTexts[$statusKey] ?? 'Statut inconnu' }}
+                                                    <span class="{{ $statusKey == 'complet' ? 'text-red-600' : ($statusKey == 'presque_complet' ? 'text-yellow-600' : 'text-green-600') }} font-bold">
+                                                        {{ $reservedSeatsCount }}/{{ $totalSeats }}
                                                     </span>
+                                                    <span class="text-[10px] text-gray-500 ml-1">({{ $statusTexts[$statusKey] ?? '' }})</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -141,7 +145,7 @@
                                             
                                             <!-- BOUTON DETAILS MOBILE CORRIGÉ -->
                                             <a href="#"
-                                                onclick="showVehicleDetails({{ $programme->vehicule->id ?? 'null' }}, '{{ $searchDateParam }}', {{ $programme->id }}); return false;"
+                                                onclick="showVehicleDetails({{ optional($programme->getVehiculeForDate($searchDateParam))->id ?? 'null' }}, '{{ $searchDateParam }}', {{ $programme->id }}); return false;"
                                                 class="w-12 bg-white text-[#e94e1a] border border-[#e94e1a] text-center py-2 rounded-lg font-bold hover:bg-gray-50 transition-all duration-300 flex items-center justify-center vehicle-details-btn">
                                                 <i class="fas fa-info-circle"></i>
                                             </a>
@@ -165,10 +169,15 @@
                                                             <span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full font-semibold"><i class="fas fa-exchange-alt text-xs"></i> A/R</span>
                                                         @endif
                                                     </div>
-                                                    <div class="flex items-center gap-2 text-sm text-gray-600 justify-center">
-                                                        <div class="font-semibold text-gray-900">{{ $programme->point_depart }}</div>
-                                                        <i class="fas fa-arrow-right text-[#e94e1a] text-xs"></i>
-                                                        <div class="font-semibold text-gray-900">{{ $programme->point_arrive }}</div>
+                                                    <div class="flex flex-col items-center gap-1 text-sm text-gray-600 justify-center">
+                                                        <div class="flex items-center gap-2">
+                                                            <div class="font-semibold text-gray-900">{{ $programme->point_depart }}</div>
+                                                            <i class="fas fa-arrow-right text-[#e94e1a] text-xs"></i>
+                                                            <div class="font-semibold text-gray-900">{{ $programme->point_arrive }}</div>
+                                                        </div>
+                                                        <div class="text-[10px] text-blue-600 font-bold uppercase bg-blue-50 px-2 py-0.5 rounded shadow-sm">
+                                                            <i class="fas fa-map-marker-alt mr-1"></i>{{ $programme->gareDepart->nom_gare ?? 'Gare' }}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -201,12 +210,19 @@
                                         <!-- Statut -->
                                         <div class="col-span-2 flex justify-center">
                                             @php
-                                                $statusKey = $programme->statut_places;
+                                                $totalSeats = $programme->getTotalSeats($searchDateParam);
+                                                $reservedSeatsCount = $programme->getPlacesReserveesForDate($searchDateParam);
+                                                $statusKey = $programme->getStatutPlacesForDate($searchDateParam);
                                             @endphp
-                                            <div class="flex items-center gap-2">
-                                                <div class="w-3 h-3 rounded-full {{ $statusKey == 'disponible' ? 'bg-green-500' : ($statusKey == 'presque_complet' ? 'bg-yellow-500' : 'bg-red-500') }}"></div>
-                                                <span class="font-semibold {{ $statusKey == 'disponible' ? 'text-green-600' : ($statusKey == 'presque_complet' ? 'text-yellow-600' : 'text-red-600') }}">
-                                                    {{ $statusTexts[$statusKey] ?? 'Statut inconnu' }}
+                                            <div class="flex flex-col items-center">
+                                                <div class="flex items-center gap-2">
+                                                    <div class="w-3 h-3 rounded-full {{ $statusKey == 'disponible' ? 'bg-green-500' : ($statusKey == 'presque_complet' ? 'bg-yellow-500' : 'bg-red-500') }}"></div>
+                                                    <span class="font-bold {{ $statusKey == 'disponible' ? 'text-green-600' : ($statusKey == 'presque_complet' ? 'text-yellow-600' : 'text-red-600') }}">
+                                                        {{ $reservedSeatsCount }} / {{ $totalSeats }}
+                                                    </span>
+                                                </div>
+                                                <span class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
+                                                    {{ $statusTexts[$statusKey] ?? '' }}
                                                 </span>
                                             </div>
                                         </div>
@@ -216,7 +232,7 @@
                                             <div class="flex gap-2 justify-end">
                                                 <!-- BOUTON DETAILS DESKTOP CORRIGÉ (Ajout du programme ID en 3ème paramètre) -->
                                                 <button
-                                                    onclick="showVehicleDetails({{ $programme->vehicule->id ?? 'null' }}, '{{ $searchDateParam }}', {{ $programme->id }})"
+                                                    onclick="showVehicleDetails({{ optional($programme->getVehiculeForDate($searchDateParam))->id ?? 'null' }}, '{{ $searchDateParam }}', {{ $programme->id }})"
                                                     class="bg-white text-[#e94e1a] border border-[#e94e1a] px-3 py-2 rounded-lg font-bold hover:bg-gray-50 transition-all duration-300 flex items-center gap-2 vehicle-details-btn text-sm">
                                                     <i class="fas fa-info-circle"></i>
                                                     <span class="hidden lg:inline">Détails</span>
@@ -281,113 +297,142 @@
         };
 
         window.updateModalContent = async function(vehicleId, dateVoyage, programId) {
-            try {
-                Swal.showLoading();
-                // On passe le programme_id dans l'URL pour un filtrage précis
-                const url = `/vehicule/details/${vehicleId}?date=${encodeURIComponent(dateVoyage)}&programme_id=${programId}`;
-                const response = await fetch(url);
-                const data = await response.json();
+        try {
+            Swal.showLoading();
+            
+            // CORRECTION : Si vehicleId est null/undefined/0, on envoie '0' au backend
+            const safeVehicleId = (vehicleId && vehicleId !== 'null') ? vehicleId : 0;
+            
+            // On passe le programme_id dans l'URL pour un filtrage précis
+            const url = `/vehicule/details/${safeVehicleId}?date=${encodeURIComponent(dateVoyage)}&programme_id=${programId}`;
+            
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                throw new Error(`Erreur HTTP: ${response.status}`);
+            }
 
-                if (!data.success) throw new Error(data.error || 'Erreur');
+            const data = await response.json();
 
-                const vehicle = data.vehicule;
-                const reservedSeats = (data.reservedSeats || []).map(seat => parseInt(seat));
-                const formattedDate = new Date(dateVoyage).toLocaleDateString('fr-FR');
-                const vehicleTitle = `${vehicle.marque ?? ''} ${vehicle.modele ?? ''}`.trim() || 'Détails du véhicule';
+            if (!data.success) {
+                Swal.close();
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Attention',
+                    text: data.error || 'Impossible de récupérer les détails.',
+                    confirmButtonColor: '#e94e1a'
+                });
+                return;
+            }
 
-                const visualizationHTML = generatePlacesVisualization(vehicle, reservedSeats);
+            const vehicle = data.vehicule;
+            const reservedSeats = (data.reservedSeats || []).map(seat => parseInt(seat));
+            const formattedDate = new Date(dateVoyage).toLocaleDateString('fr-FR');
+            
+            // Gestion du titre si véhicule par défaut
+            let vehicleTitle = 'Détails du véhicule';
+            if(vehicle.marque && vehicle.marque !== 'Bus') {
+                 vehicleTitle = `${vehicle.marque} ${vehicle.modele ?? ''}`.trim();
+            }
 
-                Swal.update({
-                    // Ajout du bouton de fermeture manuel dans le header
-                    title: `
-                        <div class="relative w-full">
-                            <div class="text-xl font-bold text-[#e94e1a] pr-8">${vehicleTitle}</div>
-                            <button onclick="Swal.close()" class="custom-close-btn">&times;</button>
-                        </div>
-                    `,
-                    width: 700,
-                    padding: '0',
-                    // On remet le bouton de fermeture natif par sécurité
-                    showCloseButton: true,
-                    // On ajoute un bouton de confirmation qui sert de "Fermer"
-                    showConfirmButton: true,
-                    confirmButtonText: 'Fermer',
-                    confirmButtonColor: '#6b7280',
-                    customClass: {
-                        popup: 'vehicle-details-popup rounded-2xl overflow-hidden',
-                        content: 'p-0',
-                        header: 'bg-gray-50 border-b border-gray-100 py-3 relative',
-                        closeButton: 'focus:outline-none'
-                    },
-                    html: `
-                    <div class="text-left w-full">
-                        <div class="bg-blue-50 p-4 border-b border-blue-100">
-                            <div class="flex justify-between items-center flex-wrap gap-2">
-                                <div class="flex items-center gap-2">
-                                    <div class="p-1.5 bg-white rounded shadow-sm text-blue-600">
-                                        <i class="fas fa-calendar-alt"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs text-gray-500 font-medium">Date du voyage</p>
-                                        <p class="text-base font-bold text-gray-800 capitalize">${formattedDate}</p>
-                                    </div>
+            const visualizationHTML = generatePlacesVisualization(vehicle, reservedSeats);
+
+            Swal.update({
+                title: `
+                    <div class="relative w-full">
+                        <div class="text-xl font-bold text-[#e94e1a] pr-8">${vehicleTitle}</div>
+                        <button onclick="Swal.close()" class="custom-close-btn">&times;</button>
+                    </div>
+                `,
+                width: 700,
+                padding: '0',
+                showCloseButton: true,
+                showConfirmButton: true,
+                confirmButtonText: 'Fermer',
+                confirmButtonColor: '#6b7280',
+                customClass: {
+                    popup: 'vehicle-details-popup rounded-2xl overflow-hidden',
+                    content: 'p-0',
+                    header: 'bg-gray-50 border-b border-gray-100 py-3 relative',
+                    closeButton: 'focus:outline-none'
+                },
+                html: `
+                <div class="text-left w-full">
+                    <div class="bg-blue-50 p-4 border-b border-blue-100">
+                        <div class="flex justify-between items-center flex-wrap gap-2">
+                            <div class="flex items-center gap-2">
+                                <div class="p-1.5 bg-white rounded shadow-sm text-blue-600">
+                                    <i class="fas fa-calendar-alt"></i>
                                 </div>
-                                <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-gray-200">
-                                    <label for="modal-date-picker" class="text-xs font-semibold text-gray-600">Changer :</label>
-                                    <input type="date" id="modal-date-picker" value="${dateVoyage}" 
-                                        class="border-none focus:ring-0 text-gray-800 font-bold bg-transparent p-0 text-sm cursor-pointer"
-                                        onchange="window.updateModalContent(${vehicleId}, this.value, ${programId})"
-                                    >
+                                <div>
+                                    <p class="text-xs text-gray-500 font-medium">Date du voyage</p>
+                                    <p class="text-base font-bold text-gray-800 capitalize">${formattedDate}</p>
                                 </div>
                             </div>
+                            <!-- Sélecteur de date (optionnel, recharge le modal) -->
+                            <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-gray-200">
+                                <label for="modal-date-picker" class="text-xs font-semibold text-gray-600">Changer :</label>
+                                <input type="date" id="modal-date-picker" value="${dateVoyage}" 
+                                    class="border-none focus:ring-0 text-gray-800 font-bold bg-transparent p-0 text-sm cursor-pointer"
+                                    onchange="window.updateModalContent(${safeVehicleId}, this.value, ${programId})"
+                                >
+                            </div>
+                        </div>
+                        
+                        <div class="flex gap-4 mt-3 pt-3 border-t border-blue-100/50 text-sm">
+                            ${!vehicle.is_default && vehicle.immatriculation !== 'N/A' ? `
                             
-                            <div class="flex gap-4 mt-3 pt-3 border-t border-blue-100/50 text-sm">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-gray-500">Immat:</span>
-                                    <span class="font-bold text-gray-800">${vehicle.immatriculation || 'N/A'}</span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <span class="text-gray-500">Capacité:</span>
-                                    <span class="font-bold text-gray-800">
-                                        ${vehicle.nombre_place} places 
-                                        <span class="text-red-500 text-xs font-normal">(${reservedSeats.length} occupées)</span>
-                                    </span>
-                                </div>
+                            ` : ''}
+                            <div class="flex items-center gap-2">
+                                <span class="text-gray-500">Places :</span>
+                                <span class="font-bold text-gray-800">
+                                    ${vehicle.nombre_place} au total
+                                    <span class="bg-red-50 text-red-600 px-2 py-0.5 rounded ml-1 font-bold text-xs border border-red-100">${reservedSeats.length} réservées</span>
+                                </span>
                             </div>
-                        </div>
-
-                        <div class="p-4 bg-white min-h-[300px]">
-                            <h3 class="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                <span class="w-1 h-5 bg-[#e94e1a] rounded-full block"></span>
-                                Disposition
-                            </h3>
-                            ${visualizationHTML}
                         </div>
                     </div>
-                    `
-                });
-                Swal.hideLoading();
-            } catch (error) {
-                console.error(error);
-                Swal.fire({icon: 'error', title: 'Erreur', text: 'Impossible de charger les détails.', confirmButtonColor: '#e94e1a'});
-            }
-        };
 
-        async function showVehicleDetails(vehicleId, dateVoyage, programId) {
-            if (!vehicleId) return;
-            if (!dateVoyage) dateVoyage = new Date().toISOString().split('T')[0];
-            // Si programId est undefined ou null, on le passe comme 'null' string ou chaîne vide pour l'URL
-            const safeProgramId = programId ? programId : '';
-
-            Swal.fire({
-                title: 'Chargement...',
-                html: '<div class="flex flex-col items-center p-4"><div class="w-8 h-8 border-4 border-[#e94e1a] border-t-transparent rounded-full animate-spin mb-2"></div></div>',
-                allowOutsideClick: true, // Permet de fermer en cliquant à côté
-                showConfirmButton: false,
-                showCloseButton: true, // Bouton croix par défaut activé dès le début
-                didOpen: async () => { await window.updateModalContent(vehicleId, dateVoyage, safeProgramId); }
+                    <div class="p-4 bg-white min-h-[300px]">
+                        <h3 class="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
+                            <span class="w-1 h-5 bg-[#e94e1a] rounded-full block"></span>
+                            Disposition des sièges
+                        </h3>
+                        ${visualizationHTML}
+                    </div>
+                </div>
+                `
             });
+            Swal.hideLoading();
+        } catch (error) {
+            console.error(error);
+            Swal.fire({icon: 'error', title: 'Erreur', text: 'Une erreur technique est survenue.', confirmButtonColor: '#e94e1a'});
         }
+    };
+
+    async function showVehicleDetails(vehicleId, dateVoyage, programId) {
+        // --- CORRECTION MAJEURE ICI ---
+        // On supprime la ligne : if (!vehicleId) return; 
+        // On autorise l'ouverture même si l'ID est null (le backend gérera le fallback)
+        
+        if (!dateVoyage) dateVoyage = new Date().toISOString().split('T')[0];
+        
+        // On s'assure que programId n'est pas undefined
+        const safeProgramId = programId ? programId : '';
+        
+        // On s'assure que vehicleId n'est pas 'null' (string) ou undefined
+        const safeVehicleId = (vehicleId && vehicleId !== 'null') ? vehicleId : 0;
+
+        Swal.fire({
+            title: 'Chargement...',
+            html: '<div class="flex flex-col items-center p-4"><div class="w-8 h-8 border-4 border-[#e94e1a] border-t-transparent rounded-full animate-spin mb-2"></div></div>',
+            allowOutsideClick: true,
+            showConfirmButton: false,
+            showCloseButton: true,
+            didOpen: async () => { await window.updateModalContent(safeVehicleId, dateVoyage, safeProgramId); }
+        });
+    }
+
 
         function generatePlacesVisualization(vehicle, reservedSeats = []) {
     // 1. Récupération de la configuration

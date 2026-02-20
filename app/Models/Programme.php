@@ -29,6 +29,7 @@ class Programme extends Model
         'heure_arrive',
         'montant_billet',
         'statut',
+        'capacity', // AJOUTÉ
     ];
 
     protected $casts = [
@@ -91,7 +92,14 @@ class Programme extends Model
     public function getVehiculeForDate($date)
     {
         $voyage = $this->voyages()->whereDate('date_voyage', $date)->first();
-        return $voyage ? $voyage->vehicule : null;
+        if ($voyage && $voyage->vehicule) {
+            return $voyage->vehicule;
+        }
+
+        // Repli sur le premier véhicule actif de la compagnie
+        return Vehicule::where('compagnie_id', $this->compagnie_id)
+            ->where('is_active', true)
+            ->first();
     }
 
     // ========================================
@@ -118,12 +126,25 @@ class Programme extends Model
     }
 
     /**
+     * Obtenir le nombre total de places pour ce programme à une date donnée
+     */
+    public function getTotalSeats($date = null)
+    {
+        // On donne la priorité à la capacité définie sur le programme
+        if ($this->capacity) {
+            return (int) $this->capacity;
+        }
+
+        $vehicule = $this->getVehiculeForDate($date ?? date('Y-m-d'));
+        return $vehicule ? (int)$vehicule->nombre_place : 50; // Fallback par défaut ajusté à 50
+    }
+
+    /**
      * Nombre de places disponibles pour une date donnée
      */
     public function getPlacesDisponiblesForDate($date)
     {
-        $vehicule = $this->getVehiculeForDate($date);
-        $totalPlaces = $vehicule ? $vehicule->nombre_place : 70; // Fallback to 70
+        $totalPlaces = $this->getTotalSeats($date);
         return max(0, $totalPlaces - $this->getPlacesReserveesForDate($date));
     }
 
@@ -136,6 +157,14 @@ class Programme extends Model
     }
 
     /**
+     * Nombre de places totales - Aujourd'hui (compatibilité)
+     */
+    public function getNombrePlaceAttribute()
+    {
+        return $this->getTotalSeats(date('Y-m-d'));
+    }
+
+    /**
      * Véhicule - Aujourd'hui (compatibilité)
      */
     public function getVehiculeAttribute()
@@ -144,22 +173,31 @@ class Programme extends Model
     }
 
     /**
-     * Pourcentage d'occupation
+     * Pourcentage d'occupation pour une date donnée
      */
-    public function getPourcentageOccupationAttribute()
+    public function getPourcentageOccupationForDate($date)
     {
-        if (!$this->vehicule || $this->vehicule->nombre_place == 0) {
+        $totalSeats = $this->getTotalSeats($date);
+        if ($totalSeats <= 0) {
             return 0;
         }
-        return round(($this->places_reservees / $this->vehicule->nombre_place) * 100);
+        return round(($this->getPlacesReserveesForDate($date) / $totalSeats) * 100);
     }
 
     /**
-     * Statut des places (calculé dynamiquement)
+     * Pourcentage d'occupation - Aujourd'hui (compatibilité)
      */
-    public function getStatutPlacesAttribute()
+    public function getPourcentageOccupationAttribute()
     {
-        $pourcentage = $this->pourcentage_occupation;
+        return $this->getPourcentageOccupationForDate(date('Y-m-d'));
+    }
+
+    /**
+     * Statut des places pour une date donnée
+     */
+    public function getStatutPlacesForDate($date)
+    {
+        $pourcentage = $this->getPourcentageOccupationForDate($date);
         
         if ($pourcentage >= 100) {
             return 'complet';
@@ -168,6 +206,14 @@ class Programme extends Model
         } else {
             return 'disponible';
         }
+    }
+
+    /**
+     * Statut des places - Aujourd'hui (compatibilité)
+     */
+    public function getStatutPlacesAttribute()
+    {
+        return $this->getStatutPlacesForDate(date('Y-m-d'));
     }
 
     /**
@@ -212,6 +258,14 @@ class Programme extends Model
     public function getTrajetCompletAttribute()
     {
         return $this->point_depart . ' → ' . $this->point_arrive;
+    }
+
+    /**
+     * Prix (alias de montant_billet pour compatibilité)
+     */
+    public function getPrixAttribute()
+    {
+        return $this->montant_billet;
     }
 
     /**

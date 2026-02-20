@@ -9,11 +9,10 @@
                     <div class="block lg:hidden">
                         <div class="text-center mb-4">
                             <h1 class="text-xl sm:text-2xl font-bold text-gray-900 mb-3">
-                                Programmes Disponibles
+                                Résultats de recherche
                             </h1>
-                            <div
-                                class="bg-[#e94e1a] text-white px-4 py-2 rounded-xl font-bold text-lg shadow-md inline-block">
-                                {{ $totalResults }} programme(s)
+                            <div class="bg-[#e94e1a] text-white px-4 py-2 rounded-xl font-bold text-lg shadow-md inline-block">
+                                {{ $totalResults }} programme(s) trouvé(s)
                             </div>
                         </div>
 
@@ -39,7 +38,7 @@
                             <a href="{{ url('/') }}#search-form"
                                 class="bg-white text-[#e94e1a] border border-[#e94e1a] px-4 py-2 rounded-xl hover:bg-[#e94e1a] hover:text-white transition-all duration-300 font-semibold text-base flex items-center justify-center gap-2 mx-auto w-full max-w-xs">
                                 <i class="fas fa-search"></i>
-                                Nouvelle recherche
+                                Modifier la recherche
                             </a>
                         </div>
                     </div>
@@ -49,7 +48,7 @@
                         <div class="flex justify-between items-center gap-6">
                             <div class="flex-1">
                                 <h1 class="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
-                                    Programmes Disponibles
+                                    Résultats de recherche
                                 </h1>
                                 <div class="flex items-center gap-4 text-sm text-gray-600">
                                     <div class="flex items-center gap-2 bg-orange-50 px-3 py-1 rounded-full">
@@ -74,7 +73,7 @@
                                 <a href="{{ url('/') }}#search-form"
                                     class="bg-white text-[#e94e1a] border border-[#e94e1a] px-4 py-2 rounded-xl hover:bg-[#e94e1a] hover:text-white transition-all duration-300 font-semibold text-base flex items-center gap-2">
                                     <i class="fas fa-search"></i>
-                                    Nouvelle recherche
+                                    Modifier la recherche
                                 </a>
                             </div>
                         </div>
@@ -138,6 +137,7 @@
                                             <div class="flex items-center justify-between mb-2">
                                                 <div class="text-center">
                                                     <div class="font-bold text-gray-900">{{ $programme->point_depart }}</div>
+                                                    <div class="text-[10px] text-blue-600 font-bold uppercase">{{ $programme->gareDepart->nom_gare ?? 'Gare' }}</div>
                                                     <div class="text-xs text-gray-500">Départ</div>
                                                 </div>
                                                 <div class="mx-2"><i class="fas fa-arrow-right text-[#e94e1a]"></i></div>
@@ -171,12 +171,15 @@
                                                 </div>
                                                 <div class="text-xs">
                                                     @php
-                                                        $statusTexts = ['disponible' => 'Places disponibles', 'presque_complet' => 'Presque complet', 'complet' => 'Complet'];
-                                                        $statusKey = $programme->statut_places;
+                                                        $statusTexts = ['disponible' => 'Disponible', 'presque_complet' => 'Presque complet', 'complet' => 'Complet'];
+                                                        $totalSeats = $programme->getTotalSeats($searchParams['date_depart']);
+                                                        $reservedSeatsCount = $programme->getPlacesReserveesForDate($searchParams['date_depart']);
+                                                        $statusKey = $programme->getStatutPlacesForDate($searchParams['date_depart']);
                                                     @endphp
-                                                    <span class="{{ $statusKey == 'complet' ? 'text-red-600' : ($statusKey == 'presque_complet' ? 'text-yellow-600' : 'text-green-600') }} font-semibold">
-                                                        {{ $statusTexts[$statusKey] ?? 'Statut inconnu' }}
+                                                    <span class="{{ $statusKey == 'complet' ? 'text-red-600' : ($statusKey == 'presque_complet' ? 'text-yellow-600' : 'text-green-600') }} font-bold">
+                                                        {{ $reservedSeatsCount }}/{{ $totalSeats }}
                                                     </span>
+                                                    <span class="text-[10px] text-gray-500 ml-1">({{ $statusTexts[$statusKey] ?? '' }})</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -194,17 +197,17 @@
                                                 </button>
                                             @endif
                                             
-                                            <!-- Bouton détail mobile mis à jour -->
-                                            <a href="#"
-                                                onclick="showVehicleDetails({{ $programme->vehicule->id ?? 'null' }}, '{{ $searchParams['date_depart'] ?? date('Y-m-d') }}', {{ $programme->id }}); return false;"
+                                            <!-- BOUTON DÉTAILS MOBILE -->
+                                            <button 
+                                                onclick="showVehicleDetails({{ optional($programme->getVehiculeForDate($searchParams['date_depart']))->id ?? 'null' }}, '{{ $searchParams['date_depart'] }}', {{ $programme->id }})"
                                                 class="w-12 bg-white text-[#e94e1a] border border-[#e94e1a] text-center py-2 rounded-lg font-bold hover:bg-gray-50 transition-all duration-300 flex items-center justify-center vehicle-details-btn">
                                                 <i class="fas fa-info-circle"></i>
-                                            </a>
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- Version Desktop avec correction d'alignement -->
+                                <!-- Version Desktop -->
                                 <div class="hidden md:block">
                                     <div class="grid grid-cols-12 gap-4 p-6 items-center">
                                         <!-- Compagnie & Trajet -->
@@ -223,16 +226,21 @@
                                                             <span class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-semibold"><i class="fas fa-check-circle text-xs"></i> Vérifié</span>
                                                         @endif
                                                     </div>
-                                                    <div class="flex items-center gap-2 text-sm text-gray-600 justify-center">
-                                                        <div class="font-semibold text-gray-900">{{ $programme->point_depart }}</div>
-                                                        <i class="fas fa-arrow-right text-[#e94e1a] text-xs"></i>
-                                                        <div class="font-semibold text-gray-900">{{ $programme->point_arrive }}</div>
+                                                    <div class="flex flex-col items-center gap-1 text-sm text-gray-600 justify-center">
+                                                        <div class="flex items-center gap-2">
+                                                            <div class="font-semibold text-gray-900">{{ $programme->point_depart }}</div>
+                                                            <i class="fas fa-arrow-right text-[#e94e1a] text-xs"></i>
+                                                            <div class="font-semibold text-gray-900">{{ $programme->point_arrive }}</div>
+                                                        </div>
+                                                        <div class="text-[10px] text-blue-600 font-bold uppercase bg-blue-50 px-2 py-0.5 rounded shadow-sm">
+                                                            <i class="fas fa-map-marker-alt mr-1"></i>{{ $programme->gareDepart->nom_gare ?? 'Gare' }}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <!-- Date & Heure (Alignement corrigé) -->
+                                        <!-- Date & Heure -->
                                         <div class="col-span-2 flex flex-col justify-center items-center h-full">
                                             <div class="space-y-1 text-center">
                                                 <div class="flex items-center justify-center gap-2 text-sm">
@@ -242,7 +250,7 @@
                                             </div>
                                         </div>
 
-                                        <!-- Durée & Prix (Alignement corrigé) -->
+                                        <!-- Durée & Prix -->
                                         <div class="col-span-2 flex flex-col justify-center items-center h-full">
                                             <div class="space-y-1 text-center">
                                                 <div class="flex items-center justify-center gap-2">
@@ -256,15 +264,22 @@
                                             </div>
                                         </div>
 
-                                        <!-- Statut (Alignement corrigé) -->
+                                        <!-- Statut -->
                                         <div class="col-span-2 flex flex-col justify-center items-center h-full">
                                             @php
-                                                $statusKey = $programme->statut_places;
+                                                $totalSeats = $programme->getTotalSeats($searchParams['date_depart']);
+                                                $reservedSeatsCount = $programme->getPlacesReserveesForDate($searchParams['date_depart']);
+                                                $statusKey = $programme->getStatutPlacesForDate($searchParams['date_depart']);
                                             @endphp
-                                            <div class="flex items-center justify-center gap-2">
-                                                <div class="w-3 h-3 rounded-full {{ $statusKey == 'disponible' ? 'bg-green-500' : ($statusKey == 'presque_complet' ? 'bg-yellow-500' : 'bg-red-500') }}"></div>
-                                                <span class="font-semibold {{ $statusKey == 'disponible' ? 'text-green-700' : ($statusKey == 'presque_complet' ? 'text-yellow-700' : 'text-red-700') }}">
-                                                    {{ $statusTexts[$statusKey] ?? 'Statut inconnu' }}
+                                            <div class="flex flex-col items-center">
+                                                <div class="flex items-center justify-center gap-2">
+                                                    <div class="w-3 h-3 rounded-full {{ $statusKey == 'disponible' ? 'bg-green-500' : ($statusKey == 'presque_complet' ? 'bg-yellow-500' : 'bg-red-500') }}"></div>
+                                                    <span class="font-bold {{ $statusKey == 'disponible' ? 'text-green-700' : ($statusKey == 'presque_complet' ? 'text-yellow-700' : 'text-red-700') }}">
+                                                        {{ $reservedSeatsCount }} / {{ $totalSeats }}
+                                                    </span>
+                                                </div>
+                                                <span class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
+                                                    {{ $statusTexts[$statusKey] ?? '' }}
                                                 </span>
                                             </div>
                                         </div>
@@ -272,9 +287,9 @@
                                         <!-- Actions -->
                                         <div class="col-span-3 flex justify-end items-center h-full">
                                             <div class="flex gap-2">
-                                                <!-- Bouton Détails Desktop mis à jour avec program ID -->
+                                                <!-- BOUTON DÉTAILS DESKTOP -->
                                                 <button
-                                                    onclick="showVehicleDetails({{ $programme->vehicule->id ?? 'null' }}, '{{ $searchParams['date_depart'] ?? date('Y-m-d') }}', {{ $programme->id }})"
+                                                    onclick="showVehicleDetails({{ optional($programme->getVehiculeForDate($searchParams['date_depart']))->id ?? 'null' }}, '{{ $searchParams['date_depart'] }}', {{ $programme->id }})"
                                                     class="bg-white text-[#e94e1a] border border-[#e94e1a] px-3 py-2 rounded-lg font-bold hover:bg-gray-50 transition-all duration-300 flex items-center gap-2 vehicle-details-btn text-sm">
                                                     <i class="fas fa-info-circle"></i>
                                                     <span class="hidden lg:inline">Détails</span>
@@ -330,7 +345,7 @@
                         </p>
                         <div class="w-full flex flex-col sm:flex-row gap-3 justify-center">
                             <a href="{{ url('/') }}#search-form" class="bg-[#e94e1a] text-white px-4 sm:px-6 py-3 rounded-lg sm:rounded-xl font-bold hover:bg-orange-600 transition-all duration-300 transform hover:-translate-y-0.5 shadow-md flex items-center justify-center gap-2 text-sm sm:text-base">
-                                <i class="fas fa-search"></i> Nouvelle recherche
+                                <i class="fas fa-search"></i> Modifier la recherche
                             </a>
                         </div>
                     </div>
@@ -362,16 +377,31 @@
         window.updateModalContent = async function(vehicleId, dateVoyage, programId) {
             try {
                 Swal.showLoading();
-                const url = `/vehicule/details/${vehicleId}?date=${encodeURIComponent(dateVoyage)}&programme_id=${programId}`;
+                const safeVehicleId = (vehicleId && vehicleId !== 'null') ? vehicleId : 0;
+                const url = `/vehicule/details/${safeVehicleId}?date=${encodeURIComponent(dateVoyage)}&programme_id=${programId}`;
+                
                 const response = await fetch(url);
+                if (!response.ok) throw new Error(`Erreur HTTP: ${response.status}`);
                 const data = await response.json();
 
-                if (!data.success) throw new Error(data.error || 'Erreur');
+                if (!data.success) {
+                    Swal.close();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Attention',
+                        text: data.error || 'Impossible de récupérer les détails.',
+                        confirmButtonColor: '#e94e1a'
+                    });
+                    return;
+                }
 
                 const vehicle = data.vehicule;
                 const reservedSeats = (data.reservedSeats || []).map(seat => parseInt(seat));
                 const formattedDate = new Date(dateVoyage).toLocaleDateString('fr-FR');
-                const vehicleTitle = `${vehicle.marque ?? ''} ${vehicle.modele ?? ''}`.trim() || 'Détails du véhicule';
+                let vehicleTitle = 'Détails du véhicule';
+                if(vehicle.marque && vehicle.marque !== 'Bus') {
+                     vehicleTitle = `${vehicle.marque} ${vehicle.modele ?? ''}`.trim();
+                }
 
                 const visualizationHTML = generatePlacesVisualization(vehicle, reservedSeats);
 
@@ -411,21 +441,20 @@
                                     <label for="modal-date-picker" class="text-xs font-semibold text-gray-600">Changer :</label>
                                     <input type="date" id="modal-date-picker" value="${dateVoyage}" 
                                         class="border-none focus:ring-0 text-gray-800 font-bold bg-transparent p-0 text-sm cursor-pointer"
-                                        onchange="window.updateModalContent(${vehicleId}, this.value, ${programId})"
+                                        onchange="window.updateModalContent(${safeVehicleId}, this.value, ${programId})"
                                     >
                                 </div>
                             </div>
                             
                             <div class="flex gap-4 mt-3 pt-3 border-t border-blue-100/50 text-sm">
+                                ${!vehicle.is_default && vehicle.immatriculation !== 'N/A' ? `
+                               
+                                ` : ''}
                                 <div class="flex items-center gap-2">
-                                    <span class="text-gray-500">Immat:</span>
-                                    <span class="font-bold text-gray-800">${vehicle.immatriculation || 'N/A'}</span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <span class="text-gray-500">Capacité:</span>
+                                    <span class="text-gray-500">Places :</span>
                                     <span class="font-bold text-gray-800">
-                                        ${vehicle.nombre_place} places 
-                                        <span class="text-red-500 text-xs font-normal">(${reservedSeats.length} occupées)</span>
+                                        ${vehicle.nombre_place} au total
+                                        <span class="bg-red-50 text-red-600 px-2 py-0.5 rounded ml-1 font-bold text-xs border border-red-100">${reservedSeats.length} réservées</span>
                                     </span>
                                 </div>
                             </div>
@@ -449,9 +478,9 @@
         };
 
         async function showVehicleDetails(vehicleId, dateVoyage, programId) {
-            if (!vehicleId) return;
-            if (!dateVoyage) dateVoyage = new Date().toISOString().split('T')[0];
+            const safeVehicleId = (vehicleId && vehicleId !== 'null') ? vehicleId : 0;
             const safeProgramId = programId ? programId : '';
+            if (!dateVoyage) dateVoyage = new Date().toISOString().split('T')[0];
 
             Swal.fire({
                 title: 'Chargement...',
@@ -459,117 +488,101 @@
                 allowOutsideClick: true,
                 showConfirmButton: false,
                 showCloseButton: true,
-                didOpen: async () => { await window.updateModalContent(vehicleId, dateVoyage, safeProgramId); }
+                didOpen: async () => { await window.updateModalContent(safeVehicleId, dateVoyage, safeProgramId); }
             });
         }
 
        function generatePlacesVisualization(vehicle, reservedSeats = []) {
-    let config = typeRangeConfig[vehicle.type_range];
-    
-    // Fallback pour les configurations inconnues (par défaut 2x2)
-    if (!config) {
-        config = { placesGauche: 2, placesDroite: 2, description: "Configuration Standard" };
-        console.warn(`Configuration de véhicule inconnue: ${vehicle.type_range}. Utilisation du mode par défaut 2x2.`);
-    }
+            let config = typeRangeConfig[vehicle.type_range];
+            if (!config) {
+                config = { placesGauche: 2, placesDroite: 2, description: "Configuration Standard" };
+                console.warn(`Configuration de véhicule inconnue: ${vehicle.type_range}. Utilisation du mode par défaut 2x2.`);
+            }
 
-    const { placesGauche, placesDroite } = config;
-    const placesParRanger = placesGauche + placesDroite;
-    const totalPlaces = parseInt(vehicle.nombre_place);
-    const nombreRanger = Math.ceil(totalPlaces / placesParRanger);
+            const { placesGauche, placesDroite } = config;
+            const placesParRanger = placesGauche + placesDroite;
+            const totalPlaces = parseInt(vehicle.nombre_place);
+            const nombreRanger = Math.ceil(totalPlaces / placesParRanger);
 
-    let html = `
-    <div class="flex flex-col items-center w-full font-sans">
-        <!-- Conducteur (Style épuré) -->
-        <div class="w-full max-w-lg mb-3 flex justify-start px-4">
-            <div class="bg-gray-100 border border-gray-200 w-10 h-10 rounded-full flex items-center justify-center shadow-sm" title="Conducteur">
-                <i class="fas fa-steering-wheel text-gray-400"></i>
-            </div>
-        </div>
-
-        <div class="w-full max-w-lg border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
-            <!-- En-têtes -->
-            <div class="grid grid-cols-[60px_1fr_40px_1fr] bg-gray-50 border-b border-gray-100 py-3 px-2">
-                <div class="text-xs font-black text-gray-400 uppercase text-center">RANG</div>
-                <div class="text-xs font-black text-gray-400 uppercase text-center">GAUCHE</div>
-                <div class="text-xs font-black text-gray-400 uppercase text-center border-l border-r border-gray-200 mx-1">ALLÉE</div>
-                <div class="text-xs font-black text-gray-400 uppercase text-center">DROITE</div>
-            </div>
-            
-            <div class="max-h-[350px] overflow-y-auto scrollbar-thin p-3 space-y-2">
-    `;
-
-    let numeroPlace = 1;
-    for (let ranger = 1; ranger <= nombreRanger; ranger++) {
-        const placesRestantes = totalPlaces - (numeroPlace - 1);
-        const placesCetteRanger = Math.min(placesParRanger, placesRestantes);
-        const placesGaucheCetteRanger = Math.min(placesGauche, placesCetteRanger);
-        const placesDroiteCetteRanger = Math.min(placesDroite, placesCetteRanger - placesGaucheCetteRanger);
-
-        html += `
-            <div class="grid grid-cols-[60px_1fr_40px_1fr] items-center py-1 border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">
-                <!-- Rangée -->
-                <div class="text-center font-black text-gray-300 text-sm">R${ranger}</div>
-                
-                <!-- Gauche -->
-                <div class="flex justify-center gap-3 flex-wrap">
-        `;
-
-        // Gauche
-        for (let i = 0; i < placesGaucheCetteRanger; i++) {
-            const sn = numeroPlace + i;
-            const isRes = reservedSeats.includes(sn);
-            
-            // STYLE EXACT : Blanc bordure grise -> Blanc bordure orange (texte orange)
-            const styleClass = isRes 
-                ? 'bg-[#ef4444] text-white border-transparent cursor-not-allowed opacity-100' // Occupé
-                : 'bg-white text-gray-700 border-gray-300 hover:border-[#e94f1b] hover:text-[#e94f1b] cursor-pointer shadow-sm'; // Libre
-            
-            html += `<div class="w-9 h-9 border-2 rounded-lg flex items-center justify-center font-bold text-sm transition-all duration-200 ${styleClass}" title="Place ${sn}">
-                        ${sn}
-                     </div>`;
-        }
-
-        html += `</div>
-                <!-- Allée visuelle -->
-                <div class="flex justify-center h-full"><div class="w-px bg-gray-100 h-full"></div></div>
-                <!-- Droite -->
-                <div class="flex justify-center gap-3 flex-wrap">`;
-
-        // Droite
-        for (let i = 0; i < placesDroiteCetteRanger; i++) {
-            const sn = numeroPlace + placesGaucheCetteRanger + i;
-            const isRes = reservedSeats.includes(sn);
-            
-            // Même style ici
-            const styleClass = isRes 
-                ? 'bg-[#ef4444] text-white border-transparent cursor-not-allowed opacity-100' 
-                : 'bg-white text-gray-700 border-gray-300 hover:border-[#e94f1b] hover:text-[#e94f1b] cursor-pointer shadow-sm';
-
-             html += `<div class="w-9 h-9 border-2 rounded-lg flex items-center justify-center font-bold text-sm transition-all duration-200 ${styleClass}" title="Place ${sn}">
-                        ${sn}
-                     </div>`;
-        }
-
-        html += `</div></div>`;
-        numeroPlace += placesCetteRanger;
-    }
-
-    html += `</div>
-            <!-- Légende -->
-            <div class="border-t border-gray-100 bg-gray-50 p-3 flex justify-center gap-6 rounded-b-xl">
-                <div class="flex items-center gap-2">
-                    <div class="w-3 h-3 rounded-full bg-[#ef4444]"></div>
-                    <span class="text-xs font-bold text-gray-600">Occupé</span>
+            let html = `
+            <div class="flex flex-col items-center w-full font-sans">
+                <div class="w-full max-w-lg mb-3 flex justify-start px-4">
+                    <div class="bg-gray-100 border border-gray-200 w-10 h-10 rounded-full flex items-center justify-center shadow-sm" title="Conducteur">
+                        <i class="fas fa-steering-wheel text-gray-400"></i>
+                    </div>
                 </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-3 h-3 rounded-full bg-white border border-gray-300"></div>
-                    <span class="text-xs font-bold text-gray-600">Libre</span>
+
+                <div class="w-full max-w-lg border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
+                    <div class="grid grid-cols-[60px_1fr_40px_1fr] bg-gray-50 border-b border-gray-100 py-3 px-2">
+                        <div class="text-xs font-black text-gray-400 uppercase text-center">RANG</div>
+                        <div class="text-xs font-black text-gray-400 uppercase text-center">GAUCHE</div>
+                        <div class="text-xs font-black text-gray-400 uppercase text-center border-l border-r border-gray-200 mx-1">ALLÉE</div>
+                        <div class="text-xs font-black text-gray-400 uppercase text-center">DROITE</div>
+                    </div>
+                    
+                    <div class="max-h-[350px] overflow-y-auto scrollbar-thin p-3 space-y-2">
+            `;
+
+            let numeroPlace = 1;
+            for (let ranger = 1; ranger <= nombreRanger; ranger++) {
+                const placesRestantes = totalPlaces - (numeroPlace - 1);
+                const placesCetteRanger = Math.min(placesParRanger, placesRestantes);
+                const placesGaucheCetteRanger = Math.min(placesGauche, placesCetteRanger);
+                const placesDroiteCetteRanger = Math.min(placesDroite, placesCetteRanger - placesGaucheCetteRanger);
+
+                html += `
+                    <div class="grid grid-cols-[60px_1fr_40px_1fr] items-center py-1 border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">
+                        <div class="text-center font-black text-gray-300 text-sm">R${ranger}</div>
+                        <div class="flex justify-center gap-3 flex-wrap">
+                `;
+
+                for (let i = 0; i < placesGaucheCetteRanger; i++) {
+                    const sn = numeroPlace + i;
+                    const isRes = reservedSeats.includes(sn);
+                    const styleClass = isRes 
+                        ? 'bg-[#ef4444] text-white border-transparent cursor-not-allowed opacity-100' 
+                        : 'bg-white text-gray-700 border-gray-300 hover:border-[#e94f1b] hover:text-[#e94f1b] cursor-pointer shadow-sm';
+                    
+                    html += `<div class="w-9 h-9 border-2 rounded-lg flex items-center justify-center font-bold text-sm transition-all duration-200 ${styleClass}" title="Place ${sn}">
+                                ${sn}
+                             </div>`;
+                }
+
+                html += `</div>
+                        <div class="flex justify-center h-full"><div class="w-px bg-gray-100 h-full"></div></div>
+                        <div class="flex justify-center gap-3 flex-wrap">`;
+
+                for (let i = 0; i < placesDroiteCetteRanger; i++) {
+                    const sn = numeroPlace + placesGaucheCetteRanger + i;
+                    const isRes = reservedSeats.includes(sn);
+                    const styleClass = isRes 
+                        ? 'bg-[#ef4444] text-white border-transparent cursor-not-allowed opacity-100' 
+                        : 'bg-white text-gray-700 border-gray-300 hover:border-[#e94f1b] hover:text-[#e94f1b] cursor-pointer shadow-sm';
+
+                     html += `<div class="w-9 h-9 border-2 rounded-lg flex items-center justify-center font-bold text-sm transition-all duration-200 ${styleClass}" title="Place ${sn}">
+                                ${sn}
+                             </div>`;
+                }
+
+                html += `</div></div>`;
+                numeroPlace += placesCetteRanger;
+            }
+
+            html += `</div>
+                    <div class="border-t border-gray-100 bg-gray-50 p-3 flex justify-center gap-6 rounded-b-xl">
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded-full bg-[#ef4444]"></div>
+                            <span class="text-xs font-bold text-gray-600">Occupé</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded-full bg-white border border-gray-300"></div>
+                            <span class="text-xs font-bold text-gray-600">Libre</span>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
-    </div>`;
-    
-    return html;
-}
+            </div>`;
+            
+            return html;
+        }
     </script>
 @endsection

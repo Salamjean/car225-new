@@ -185,7 +185,8 @@
                                 <div class="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center">
                                     <i class="fas fa-building text-[8px] text-gray-500"></i>
                                 </div>
-                                <span class="text-[11px] font-medium text-gray-500 uppercase tracking-wide">{{ $reservation->programme->compagnie->name }}</span>
+                                <span class="text-[11px] font-bold text-gray-900 tracking-wide">{{ $reservation->programme->compagnie->sigle ?? '' }}</span>
+                                <span class="text-[10px] font-light text-gray-500 tracking-wide ml-1">{{ $reservation->programme->compagnie->name }}</span>
                             </div>
                         </div>
                     </td>
@@ -202,7 +203,12 @@
                             </div>
                             <div>
                                 <p class="text-sm font-semibold text-gray-900">{{ \Carbon\Carbon::parse($reservation->heure_depart ?? $reservation->programme->heure_depart)->format('H:i') }}</p>
-                                @if(str_contains($reservation->reference, '-RET-'))
+                                @php
+                                    $ref = strtoupper($reservation->reference);
+                                    $isRetour = str_contains($ref, '-RET');
+                                @endphp
+
+                                @if($isRetour)
                                     <span class="inline-flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
                                         <i class="fas fa-undo-alt text-[8px]"></i> Retour
                                     </span>
@@ -249,6 +255,41 @@
                             <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-green-100">
                                 <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Confirmé
                             </span>
+                        @elseif($reservation->statut == 'terminee')
+                            @php
+                                $voyage = $reservation->mission;
+                                $voyageStatut = $voyage ? $voyage->statut : null;
+                            @endphp
+                            
+                            @if($voyageStatut === 'en_cours')
+                                <div class="flex flex-col items-center">
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-blue-100 mb-1">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span> En voyage
+                                    </span>
+                                    @if($voyage && $voyage->statut === 'en_cours')
+                                        @php
+                                            $dateV = \Carbon\Carbon::parse($reservation->date_voyage)->format('Y-m-d');
+                                            $arrTime = \Carbon\Carbon::parse($dateV . ' ' . $reservation->programme->heure_arrive);
+                                            // Handle cross-day arrival
+                                            if (\Carbon\Carbon::parse($reservation->programme->heure_arrive)->lt(\Carbon\Carbon::parse($reservation->programme->heure_depart))) {
+                                                $arrTime->addDay();
+                                            }
+                                        @endphp
+                                        <span class="text-[10px] font-mono font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded shadow-sm timer-display" 
+                                              data-arrival="{{ $arrTime->toIso8601String() }}">
+                                            --:--:--
+                                        </span>
+                                    @endif
+                                </div>
+                            @elseif($voyageStatut === 'terminé')
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-green-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Arrivé
+                                </span>
+                            @else
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-purple-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span> Enregistré
+                                </span>
+                            @endif
                         @elseif($reservation->statut == 'en_attente')
                             <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-yellow-50 text-yellow-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-yellow-100">
                                 <span class="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse"></span> En attente
@@ -268,6 +309,23 @@
                                     $dateVoyage = \Carbon\Carbon::parse($reservation->date_voyage)->format('Y-m-d');
                                     $departureDateTime = \Carbon\Carbon::parse("{$dateVoyage} {$heureDepart}");
                                     $canAct = $departureDateTime->diffInMinutes(now(), false) < -15;
+
+                                    // Si c'est un retour, on bloque aussi si l'aller est déjà passé/fait
+                                    if ($canAct && $reservation->is_aller_retour && str_contains(strtoupper($reservation->reference), '-RET')) {
+                                        $aller = $reservations->where('payment_transaction_id', $reservation->payment_transaction_id)
+                                                              ->where('is_aller_retour', true)
+                                                              ->filter(function($r) use ($reservation) {
+                                                                  return !str_contains(strtoupper($r->reference), '-RET') && $r->id !== $reservation->id;
+                                                              })->first();
+                                        if ($aller) {
+                                            $aHeure = $aller->heure_depart ?? $aller->programme->heure_depart ?? '00:00';
+                                            $aDate = \Carbon\Carbon::parse($aller->date_voyage)->format('Y-m-d');
+                                            $aDeparture = \Carbon\Carbon::parse("{$aDate} {$aHeure}");
+                                            if ($aDeparture->isPast() || $aller->statut === 'terminee') {
+                                                $canAct = false;
+                                            }
+                                        }
+                                    }
                                 @endphp
                                 
                                 <button type="button" class="modify-btn w-8 h-8 rounded-lg flex items-center justify-center transition-all {{ $canAct ? 'bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white' : 'bg-gray-100 text-gray-400 cursor-not-allowed' }}"
@@ -286,6 +344,22 @@
                                     title="Annuler" {{ !$canAct ? 'disabled' : '' }}>
                                     <i class="fas fa-trash-alt text-xs"></i>
                                 </button>
+
+                                <a href="{{ route('reservations.download', $reservation) }}" class="w-8 h-8 bg-gray-900 text-white rounded-lg flex items-center justify-center hover:scale-110 transition-transform shadow-lg shadow-gray-900/20" title="Télécharger">
+                                    <i class="fas fa-download text-xs"></i>
+                                </a>
+
+                            @elseif($reservation->statut == 'terminee')
+                                @php
+                                    $voyage = $reservation->mission;
+                                    $showSignalement = $voyage && $voyage->statut === 'en_cours';
+                                @endphp
+
+                                @if($showSignalement && \Carbon\Carbon::parse($reservation->date_voyage)->isToday())
+                                    <a href="{{ route('signalement.create', ['reservation_id' => $reservation->id]) }}" class="w-8 h-8 bg-red-600 text-white rounded-lg flex items-center justify-center hover:scale-110 transition-transform shadow-lg shadow-red-900/20" title="Signaler un problème">
+                                        <i class="fas fa-exclamation-triangle text-xs"></i>
+                                    </a>
+                                @endif
 
                                 <a href="{{ route('reservations.download', $reservation) }}" class="w-8 h-8 bg-gray-900 text-white rounded-lg flex items-center justify-center hover:scale-110 transition-transform shadow-lg shadow-gray-900/20" title="Télécharger">
                                     <i class="fas fa-download text-xs"></i>
@@ -634,13 +708,13 @@
                 returnHtml = `
                     <div class="mt-4 pt-4 border-t border-gray-100">
                         <div class="flex items-center gap-2 mb-3">
-                            <span class="px-2 py-1 bg-orange-100 text-orange-600 text-[10px] font-black rounded uppercase">Retour</span>
+                            <span class="px-2 py-1 bg-orange-100 text-orange-600 text-[10px] font-black rounded uppercase">Voyage Retour</span>
                             <p class="text-xs font-bold text-gray-700">Informations de retour</p>
                         </div>
                         <div class="grid grid-cols-2 gap-4 mb-3">
                             <div>
                                 <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Date Retour</label>
-                                <input type="date" id="mod-ret-date" class="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-orange-500">
+                                <input type="date" id="mod-ret-date" onkeydown="return false" class="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-orange-500" min="${new Date().toISOString().split('T')[0]}">
                             </div>
                             <div>
                                 <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Heure Retour</label>
@@ -662,19 +736,27 @@
 
             const modalHtml = `
                 <div class="text-left font-outfit space-y-5">
-                    <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100 flex justify-between items-center">
-                        <div>
-                            <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest">Valeur Actuelle</p>
-                            <p class="text-xl font-black text-blue-600">${Number(response.residual_value).toLocaleString()} FCFA</p>
+                    <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100">
+                        <div class="flex justify-between items-center mb-2">
+                            <div>
+                                <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest leading-none mb-1">Ancien Billet</p>
+                                <p class="text-sm font-black text-gray-700 leading-none">${Number(response.total_old_price).toLocaleString()} FCFA</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[10px] font-black text-red-400 uppercase tracking-widest leading-none mb-1">Moins Pénalité</p>
+                                <p class="text-sm font-black text-red-500 leading-none">- ${Number(response.total_old_price - response.residual_value).toLocaleString()} FCFA</p>
+                            </div>
                         </div>
-                        <div class="text-right">
-                            <p class="text-[10px] text-gray-400">Pénalité: ${response.penalty_info}</p>
+                        <div class="pt-2 border-t border-blue-200/50 flex justify-between items-center">
+                            <span class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Valeur à deduire</span>
+                            <span class="text-lg font-black text-blue-700">${Number(response.residual_value).toLocaleString()} FCFA</span>
                         </div>
+                        <p class="text-[9px] text-blue-400 mt-1 font-medium"><i class="fas fa-info-circle mr-1"></i> ${response.penalty_info}</p>
                     </div>
 
                     <div class="bg-gray-50 p-3 rounded-xl border border-gray-100">
                         <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Trajet</label>
-                        <select id="mod-route" class="w-full p-2 bg-white border border-gray-200 rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-[#e94f1b]">
+                        <select id="mod-route" ${modifState.isRoundTrip ? 'disabled style="background-color: #f3f4f6; cursor: not-allowed;"' : ''} class="w-full p-2 bg-white border border-gray-200 rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-[#e94f1b]">
                             ${routeOptions}
                         </select>
                     </div>
@@ -684,7 +766,7 @@
                         <div class="grid grid-cols-2 gap-4 mb-3">
                             <div>
                                 <label class="text-[9px] font-bold text-gray-400 uppercase block mb-1">Date</label>
-                                <input type="date" id="mod-date" class="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-[#e94f1b]" min="${new Date().toISOString().split('T')[0]}">
+                                <input type="date" id="mod-date" onkeydown="return false" class="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-[#e94f1b]" min="${new Date().toISOString().split('T')[0]}">
                             </div>
                             <div>
                                 <label class="text-[9px] font-bold text-gray-400 uppercase block mb-1">Heure</label>
@@ -704,12 +786,22 @@
 
                     ${returnHtml}
 
-                    <div id="delta-box" class="hidden bg-gray-900 text-white p-4 rounded-2xl mt-4">
-                        <div class="flex justify-between items-center">
-                            <span id="delta-label" class="text-xs font-medium text-gray-400 uppercase">Total à payer</span>
-                            <span id="delta-amount" class="text-xl font-black text-white">0 FCFA</span>
+                    <div id="delta-box" class="hidden bg-gray-900 text-white p-5 rounded-[24px] mt-6 shadow-xl shadow-gray-200">
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center opacity-60">
+                                <span class="text-[10px] font-black uppercase tracking-widest">Nouveau prix total</span>
+                                <span id="new-total-display" class="text-sm font-black">0 FCFA</span>
+                            </div>
+                            <div class="flex justify-between items-center opacity-60">
+                                <span class="text-[10px] font-black uppercase tracking-widest">Avoir (Après pénalité)</span>
+                                <span id="residual-display" class="text-sm font-black">0 FCFA</span>
+                            </div>
+                            <div class="pt-3 border-t border-white/10 flex justify-between items-center">
+                                <span id="delta-label" class="text-xs font-black uppercase tracking-widest text-[#e94f1b]">Total à payer</span>
+                                <span id="delta-amount" class="text-2xl font-black text-white">0 FCFA</span>
+                            </div>
                         </div>
-                        <p id="wallet-error" class="text-[10px] text-red-400 mt-1 hidden">Solde insuffisant</p>
+                        <p id="wallet-error" class="text-[10px] font-bold text-red-400 mt-2 bg-red-400/10 p-2 rounded-lg text-center hidden"><i class="fas fa-exclamation-triangle mr-1"></i> Solde insuffisant sur votre portefeuille</p>
                     </div>
                 </div>
             `;
@@ -728,21 +820,35 @@
                 didOpen: async () => {
                     initEvents();
                     
-                    // --- PRE-REMPLISSAGE ET CHARGEMENT ---
-                    
-                    // 1. ALLER
-                    if(modifState.current.date) {
-                        $('#mod-date').val(modifState.current.date);
-                        await preloadAllerData();
-                    }
+                    // On attend un court instant pour s'assurer que le DOM est injecté
+                    setTimeout(async () => {
+                        // --- PRE-REMPLISSAGE ET CHARGEMENT ---
+                        
+                        // 1. ALLER
+                        if(modifState.current.date) {
+                            $('#mod-date').val(modifState.current.date);
+                            await preloadAllerData();
+                        }
 
-                    // 2. RETOUR
-                    if(modifState.isRoundTrip && modifState.current.retDate) {
-                        $('#mod-ret-date').val(modifState.current.retDate);
-                        await preloadRetourData();
-                    }
+                        // 2. RETOUR
+                        if(modifState.isRoundTrip && modifState.current.retDate) {
+                            $('#mod-ret-date').val(modifState.current.retDate);
+                            await preloadRetourData();
+                        }
+                    }, 50);
                 },
                 preConfirm: handleModificationSubmit
+            }).then((result) => {
+                if (result.isConfirmed && result.value && result.value.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '<span class="text-lg font-black uppercase tracking-tight text-green-600">Modification réussie !</span>',
+                        text: result.value.message || 'Votre réservation a été mise à jour.',
+                        confirmButtonText: 'Excellent',
+                        confirmButtonColor: '#22c55e',
+                        customClass: { popup: 'rounded-[32px]', confirmButton: 'rounded-xl px-8 py-3 font-black uppercase tracking-widest text-xs' }
+                    }).then(() => window.location.reload());
+                }
             });
 
         } catch (error) {
@@ -793,8 +899,13 @@
         $(selector).html('<option value="">Chargement...</option>').prop('disabled', true);
 
         try {
-            // Utilisation de l'endpoint interne correct
-            const res = await $.get(`/user/booking/api/route-schedules?point_depart=${depart}&point_arrive=${arrive}&compagnie_id=${compagnie}&date=${date}`);
+            // Utilisation de l'objet pour les paramètres pour gérer l'encodage (espaces, virgules, etc.)
+            const res = await $.get('/user/booking/api/route-schedules', {
+                point_depart: depart,
+                point_arrive: arrive,
+                compagnie_id: compagnie,
+                date: date
+            });
             
             if(res.success && res.schedules.length > 0) {
                 let opts = '<option value="">-- Choisir Heure --</option>';
@@ -809,6 +920,22 @@
                     opts += `<option value="${schTime}" ${isSelected} data-prog-id="${sch.id}" data-prix="${sch.montant_billet}">${schDisplay}</option>`;
                 });
                 $(selector).html(opts).prop('disabled', false);
+                
+                // Force le value si selected est présent
+                if (preSelectedTime) {
+                   const preTime = preSelectedTime.substring(0, 5).padStart(5, '0');
+                   $(selector).find('option').each(function() {
+                       const optVal = $(this).val();
+                       if (optVal && optVal.includes(':')) {
+                           const parts = optVal.split(':');
+                           const hhmm = parts[0].padStart(2, '0') + ':' + parts[1].padStart(2, '0');
+                           if (hhmm === preTime) {
+                               $(selector).val(optVal);
+                               return false;
+                           }
+                       }
+                   });
+                }
             } else {
                 $(selector).html('<option value="">Aucun départ</option>');
             }
@@ -824,8 +951,11 @@
         $(container).html('<div class="flex justify-center p-2"><div class="animate-spin w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full"></div></div>');
 
         try {
-            // Note: time doit être envoyé au format attendu par ton API (peut-être ajouter :00 si besoin)
-            const res = await $.get(`/user/booking/programmes/${progId}/seats?date=${date}&heure=${time}`);
+            // Utilisation de l'objet pour les paramètres
+            const res = await $.get(`/user/booking/programmes/${progId}/seats`, {
+                date: date,
+                heure: time
+            });
             
             if(res.success) {
                 let html = '<div class="grid grid-cols-7 gap-2">';
@@ -868,8 +998,36 @@
             if(modifState.isRoundTrip && $('#mod-ret-date').val()) loadTimes('retour', $('#mod-ret-date').val());
         });
 
-        $('#mod-date').change(function() { loadTimes('aller', $(this).val()); });
-        $('#mod-ret-date').change(function() { loadTimes('retour', $(this).val()); });
+        $('#mod-date').change(function() { 
+            const val = $(this).val();
+            const today = new Date().toISOString().split('T')[0];
+            
+            if(val < today) {
+                Swal.showValidationMessage('La modification n\'est pas possible pour une date passée.');
+                $(this).val(today);
+                return;
+            }
+
+            loadTimes('aller', val); 
+            // Update return min date to be >= aller date
+            if(modifState.isRoundTrip) {
+                $('#mod-ret-date').attr('min', val);
+                if($('#mod-ret-date').val() < val) {
+                    $('#mod-ret-date').val(val);
+                    loadTimes('retour', val);
+                }
+            }
+        });
+        $('#mod-ret-date').change(function() { 
+            const val = $(this).val();
+            const min = $(this).attr('min');
+            if(val < min) {
+                Swal.showValidationMessage('La date de retour ne peut pas être antérieure à la date de départ.');
+                $(this).val(min);
+                return;
+            }
+            loadTimes('retour', val); 
+        });
 
         $('#mod-time').change(function() {
             const progId = $(this).find(':selected').data('prog-id');
@@ -896,32 +1054,72 @@
     async function calculateTotal() {
         const progIdAller = $('#mod-time option:selected').data('prog-id');
         const seatAller = $('#mod-seat-input').val();
+        const dateAller = $('#mod-date').val();
+        const timeAller = $('#mod-time').val();
         
         if(!progIdAller || !seatAller) return;
 
+        // Détection de modification
+        let changed = (
+            progIdAller != modifState.current.progId || 
+            dateAller != modifState.current.date || 
+            seatAller != modifState.current.seat
+        );
+
+        if(modifState.isRoundTrip) {
+            const progIdRet = $('#mod-ret-time option:selected').data('prog-id');
+            const seatRet = $('#mod-ret-seat-input').val();
+            const dateRet = $('#mod-ret-date').val();
+            if(!progIdRet || !seatRet) return;
+            
+            if(!changed) {
+                changed = (
+                    progIdRet != modifState.current.retProgId || 
+                    dateRet != modifState.current.retDate || 
+                    seatRet != modifState.current.retSeat
+                );
+            }
+        }
+
+        if(!changed) {
+            $('#delta-box').removeClass('hidden').addClass('bg-gray-100 text-gray-400 opacity-100');
+            $('#delta-box').find('.opacity-60, .border-t').addClass('hidden');
+            $('#delta-label').text('Aucune modification détectée').removeClass('text-[#e94f1b]').addClass('text-gray-400');
+            $('#delta-amount').text('0 FCFA').removeClass('text-red-400 text-green-400').addClass('text-gray-400');
+            $('#wallet-error').addClass('hidden');
+            Swal.getConfirmButton().disabled = false;
+            return;
+        }
+
+        // Si modification détectée, restaurer le style sombre du delta-box
+        $('#delta-box').removeClass('bg-gray-100 text-gray-400').addClass('bg-gray-900 text-white').removeClass('hidden').addClass('opacity-50');
+        $('#delta-box').find('.opacity-60, .border-t').removeClass('hidden');
+        $('#delta-label').removeClass('text-gray-400').addClass('text-[#e94f1b]');
+        $('#delta-amount').removeClass('text-gray-400');
+
         let data = {
             new_programme_id: progIdAller,
+            new_date_aller: dateAller,
             _token: $('meta[name="csrf-token"]').attr('content')
         };
 
         if(modifState.isRoundTrip) {
             const progIdRetour = $('#mod-ret-time option:selected').data('prog-id');
-            const seatRetour = $('#mod-ret-seat-input').val();
-            if(!progIdRetour || !seatRetour) return;
             data.new_return_programme_id = progIdRetour;
+            data.new_return_date = $('#mod-ret-date').val();
         }
-
-        $('#delta-box').removeClass('hidden').addClass('opacity-50');
 
         try {
             const res = await $.post(`/user/booking/reservations/${modifState.resId}/calculate-delta`, data);
             
             $('#delta-box').removeClass('opacity-50');
+            $('#new-total-display').text(Number(res.new_total).toLocaleString() + ' FCFA');
+            $('#residual-display').text(Number(res.residual_value).toLocaleString() + ' FCFA');
             $('#delta-amount').text(Number(res.delta).toLocaleString() + ' FCFA');
             
             const btn = Swal.getConfirmButton();
             if(res.action === 'pay') {
-                $('#delta-label').text('Reste à payer');
+                $('#delta-label').text(res.real_delta > 0 ? 'Reste à payer' : 'Total à payer');
                 $('#delta-amount').removeClass('text-green-400').addClass('text-red-400');
                 if(!res.can_afford) {
                     $('#wallet-error').removeClass('hidden');
@@ -930,9 +1128,14 @@
                     $('#wallet-error').addClass('hidden');
                     btn.disabled = false;
                 }
-            } else {
-                $('#delta-label').text(res.action === 'refund' ? 'Crédit à rembourser' : 'Aucune différence');
+            } else if(res.action === 'refund') {
+                $('#delta-label').text('Crédit à rembourser');
                 $('#delta-amount').removeClass('text-red-400').addClass('text-green-400');
+                $('#wallet-error').addClass('hidden');
+                btn.disabled = false;
+            } else {
+                $('#delta-label').text('Aucune différence');
+                $('#delta-amount').removeClass('text-red-400 text-green-400').addClass('text-white');
                 $('#wallet-error').addClass('hidden');
                 btn.disabled = false;
             }
@@ -949,6 +1152,13 @@
             Swal.showValidationMessage('Veuillez sélectionner le voyage aller complet');
             return false;
         }
+
+        // Check if anything changed
+        let changed = (
+            progIdAller != modifState.current.progId || 
+            dateAller != modifState.current.date || 
+            seatAller != modifState.current.seat
+        );
 
         let payload = {
             programme_id: progIdAller,
@@ -969,21 +1179,64 @@
                 return false;
             }
 
+            if(!changed) {
+                changed = (
+                    progIdRetour != modifState.current.retProgId || 
+                    dateRetour != modifState.current.retDate || 
+                    seatRetour != modifState.current.retSeat
+                );
+            }
+
             payload.return_programme_id = progIdRetour;
             payload.return_date_voyage = dateRetour;
             payload.return_heure_depart = heureRetour;
             payload.return_seat_number = seatRetour;
         }
 
+        if(!changed) {
+            return { success: true, message: 'Aucune modification apportée.', no_change: true };
+        }
+
         try {
             const result = await $.post(`/user/booking/reservations/${modifState.resId}/modify`, payload);
+            if (!result.success) {
+                Swal.showValidationMessage(result.message || 'Une erreur est survenue lors de la modification.');
+                return false;
+            }
             return result;
         } catch (error) {
             Swal.showValidationMessage(error.responseJSON?.message || 'Erreur technique');
             return false;
         }
     }
-});
+        // Countdown Timer Logic
+        function updateTimers() {
+            const timers = document.querySelectorAll('.timer-display[data-arrival]');
+            timers.forEach(timer => {
+                const arrivalTime = new Date(timer.dataset.arrival).getTime();
+                const now = new Date().getTime();
+                const distance = arrivalTime - now;
+                
+                if (distance < 0) {
+                    timer.innerHTML = "Arrivée imminente";
+                    timer.classList.remove('text-blue-500', 'bg-blue-50');
+                    timer.classList.add('text-emerald-500', 'bg-emerald-50');
+                    return;
+                }
+                
+                const hours = Math.floor(distance / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                
+                timer.innerHTML = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            });
+        }
+
+        if (document.querySelectorAll('.timer-display[data-arrival]').length > 0) {
+            updateTimers();
+            setInterval(updateTimers, 1000);
+        }
+    });
 </script>
 @endpush
 

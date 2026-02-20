@@ -24,6 +24,7 @@
   <link rel="stylesheet" href="{{asset('assetsPoster/assets/css/demo/style.css')}}">
   <!-- End layout styles -->
    <link rel="shortcut icon" href="{{asset('assetsPoster/assets/images/Car225_favicon.png')}}" />
+   @yield('styles')
 </head>
 <body>
 <script src="{{asset('assetsPoster/assets/js/preloader.js')}}"></script>

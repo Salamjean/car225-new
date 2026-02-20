@@ -98,41 +98,52 @@
 
         /* Styles pour la liste des véhicules */
         .programme-item {
-            border: 2px solid #edf2f7;
-            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
             transition: all 0.2s;
             background: white;
+            cursor: pointer;
         }
         
         .programme-item:hover {
-            border-color: #cbd5e0;
-            background: #f8fafc;
+            border-color: #90cdf4;
+            box-shadow: 0 4px 12px rgba(49, 130, 206, 0.1);
         }
         
         .programme-item.selected {
-            border-color: #007bff;
-            background-color: #ebf8ff;
+            border-color: #3182ce !important;
+            background-color: white !important;
+            box-shadow: 0 4px 16px rgba(49, 130, 206, 0.2);
             position: relative;
         }
         
         .programme-item.selected::after {
             content: '✓';
             position: absolute;
-            top: 10px;
-            right: 10px;
-            color: #007bff;
+            top: 12px;
+            right: 14px;
+            background: #3182ce;
+            color: white;
             font-weight: bold;
-            font-size: 1.2rem;
+            font-size: 0.8rem;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
         }
 
         /* Badge véhicule */
         .badge-immat {
             background: #2d3748;
             color: white;
-            padding: 4px 8px;
+            padding: 4px 10px;
             border-radius: 6px;
             font-family: monospace;
             letter-spacing: 1px;
+            font-weight: 700;
         }
         
         /* Modal Passenger Info */
@@ -225,57 +236,111 @@
 
 <!-- Modal Sélection Véhicule -->
 <div class="modal fade" id="vehicleSelectModal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title font-weight-bold pl-2">Sélectionner le trajet</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 520px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+            <div class="modal-header border-0 pb-0" style="background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%); padding: 24px 28px 20px;">
+                <div>
+                    <h5 class="modal-title font-weight-bold text-white" style="font-size: 1.2rem;">
+                        <i class="material-icons mr-2" style="vertical-align: middle; font-size: 22px;">directions_bus</i>
+                        Sélectionner le trajet
+                    </h5>
+                    <p class="text-white-50 mb-0 mt-1" style="font-size: 0.82rem;">Pour quel voyage effectuez-vous le contrôle ?</p>
+                </div>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="opacity: 0.8;">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body pt-4">
-                <p class="text-muted pl-2 mb-4">Pour quel véhicule effectuez-vous le contrôle ?</p>
+            <div class="modal-body" style="padding: 20px 24px; background: #f8fafc;">
                 
-                <div id="programmesList" style="max-height: 400px; overflow-y: auto;">
+                <div id="programmesList" style="max-height: 350px; overflow-y: auto;" class="mb-2">
                     @if(isset($programmesDuJour) && $programmesDuJour->count() > 0)
                         @foreach($programmesDuJour as $prog)
-                            <div class="programme-item p-3 mb-3 cursor-pointer" 
+                            @php
+                                $v = $prog->vehicule;
+                            @endphp
+                            <div class="programme-item p-0 mb-3 cursor-pointer" 
                                  data-programme-id="{{ $prog->id }}"
-                                 data-vehicule-id="{{ $prog->vehicule_id }}"
-                                 data-vehicule-immat="{{ $prog->vehicule->immatriculation ?? 'N/A' }}"
-                                 onclick="selectProgramme(this)">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="font-weight-bold text-dark mb-1" style="font-size: 1.1rem;">
-                                            {{ $prog->point_depart }} <i class="material-icons text-muted mx-1" style="font-size: 14px;">arrow_forward</i> {{ $prog->point_arrive }}
-                                        </div>
-                                        <div class="text-muted small">
-                                            <i class="material-icons mr-1" style="font-size: 14px; vertical-align: text-bottom;">schedule</i>
-                                            Départ : <strong>{{ $prog->heure_depart }}</strong>
-                                        </div>
-                                    </div>
-                                    <div class="text-right">
-                                        @if($prog->vehicule)
-                                            <div class="badge-immat mb-1">{{ $prog->vehicule->immatriculation }}</div>
-                                            <div class="small text-muted">{{ $prog->vehicule->marque }}</div>
-                                        @else
-                                            <span class="badge badge-warning">Sans véhicule</span>
-                                        @endif
-                                    </div>
-                                </div>
+                                 data-vehicule-id="{{ $v->id ?? '' }}"
+                                 data-vehicule-immat="{{ $v->immatriculation ?? '' }}"
+                                 onclick="selectProgramme(this)"
+                                 style="border-radius: 16px; border: 2px solid #e2e8f0; background: white; transition: all 0.2s; overflow: hidden;">
+                                 
+                                 <!-- Route Header -->
+                                 <div style="padding: 16px 18px 12px;">
+                                     <div class="d-flex align-items-start justify-content-between">
+                                         <div class="flex-grow-1">
+                                             <!-- Route with gares -->
+                                             <div class="d-flex align-items-center" style="gap: 10px;">
+                                                 <div style="flex: 1;">
+                                                     <div style="font-weight: 800; font-size: 1rem; color: #1a202c;">
+                                                         {{ $prog->point_depart }}
+                                                     </div>
+                                                     @if($prog->gareDepart)
+                                                         <div style="font-size: 0.72rem; color: #10b981; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">
+                                                             <i class="material-icons" style="font-size: 11px; vertical-align: middle;">location_on</i>
+                                                             {{ $prog->gareDepart->nom_gare }}
+                                                         </div>
+                                                     @endif
+                                                 </div>
+                                                 <div style="display: flex; flex-direction: column; align-items: center; padding: 0 4px;">
+                                                     <div style="width: 28px; height: 28px; background: linear-gradient(135deg, #3182ce, #2b6cb0); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                                         <i class="material-icons text-white" style="font-size: 14px;">arrow_forward</i>
+                                                     </div>
+                                                 </div>
+                                                 <div style="flex: 1; text-align: right;">
+                                                     <div style="font-weight: 800; font-size: 1rem; color: #1a202c;">
+                                                         {{ $prog->point_arrive }}
+                                                     </div>
+                                                     @if($prog->gareArrivee)
+                                                         <div style="font-size: 0.72rem; color: #e53e3e; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">
+                                                             <i class="material-icons" style="font-size: 11px; vertical-align: middle;">flag</i>
+                                                             {{ $prog->gareArrivee->nom_gare }}
+                                                         </div>
+                                                     @endif
+                                                 </div>
+                                             </div>
+                                         </div>
+                                     </div>
+                                 </div>
+                                 
+                                 <!-- Footer info bar -->
+                                 <div style="background: #f7fafc; padding: 10px 18px; border-top: 1px solid #edf2f7; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                                     <div class="d-flex align-items-center" style="gap: 12px;">
+                                         <span style="font-size: 0.78rem; color: #718096; display: inline-flex; align-items: center; gap: 4px;">
+                                             <i class="material-icons" style="font-size: 15px; color: #3182ce;">schedule</i>
+                                             Départ : <strong style="color: #2d3748;">{{ $prog->heure_depart }}</strong>
+                                         </span>
+                                         @if($prog->heure_arrive)
+                                         <span style="font-size: 0.78rem; color: #718096; display: inline-flex; align-items: center; gap: 4px;">
+                                             <i class="material-icons" style="font-size: 15px; color: #e53e3e;">schedule</i>
+                                             Arrivée : <strong style="color: #2d3748;">{{ $prog->heure_arrive }}</strong>
+                                         </span>
+                                         @endif
+                                     </div>
+                                     <div>
+                                         @if($v)
+                                             <span class="badge-immat" style="font-size: 0.75rem;">{{ $v->immatriculation }}</span>
+                                         @else
+                                             <span style="background: #fefcbf; color: #d69e2e; padding: 3px 10px; border-radius: 6px; font-size: 0.72rem; font-weight: 700;">
+                                                 <i class="material-icons" style="font-size: 12px; vertical-align: middle;">warning</i> Non assigné
+                                             </span>
+                                         @endif
+                                     </div>
+                                 </div>
                             </div>
                         @endforeach
                     @else
                         <div class="text-center py-5">
                             <i class="material-icons text-muted mb-3" style="font-size: 48px;">event_busy</i>
-                            <p class="text-muted">Aucun programme prévu aujourd'hui.</p>
+                            <p class="text-muted font-weight-bold">Aucun programme prévu aujourd'hui.</p>
+                            <p class="text-muted small">Les voyages disponibles apparaîtront ici</p>
                         </div>
                     @endif
                 </div>
             </div>
-            <div class="modal-footer border-0">
-                <button type="button" class="btn btn-light" data-dismiss="modal">Annuler</button>
-                <button type="button" class="btn btn-primary px-4 rounded-pill shadow-sm" id="continueToScanBtn" disabled>
+            <div class="modal-footer border-0" style="padding: 16px 24px; background: white;">
+                <button type="button" class="btn btn-light px-4" data-dismiss="modal" style="border-radius: 10px;">Annuler</button>
+                <button type="button" class="btn btn-primary px-4 shadow-sm" id="continueToScanBtn" disabled style="border-radius: 10px; font-weight: 700;">
                     Valider et Scanner <i class="material-icons ml-2" style="font-size: 16px; vertical-align: middle;">arrow_forward</i>
                 </button>
             </div>
@@ -322,15 +387,15 @@
 <!-- Modal Confirmation Passager (Inclus depuis fichier externe ou refait ici pour le style) -->
 <!-- On suppose que tu as un fichier confirmation.blade.php, sinon voici la structure modale ID "confirmModal" -->
 <div class="modal fade" id="confirmModal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content border-0">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 480px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
             <div class="modal-body p-4" id="confirmModalBody">
                 <!-- Le contenu sera injecté par JS -->
             </div>
-            <div class="modal-footer border-0 justify-content-center bg-light">
-                <button type="button" class="btn btn-secondary rounded-pill px-4" id="cancelConfirmBtn">Refuser</button>
-                <button type="button" class="btn btn-success rounded-pill px-4 shadow" id="confirmEmbarquementBtn">
-                    <i class="material-icons mr-1">check_circle</i> Confirmer l'embarquement
+            <div class="modal-footer border-0 justify-content-center" style="background: #f8fafc; padding: 16px 24px;">
+                <button type="button" class="btn btn-light px-4" id="cancelConfirmBtn" style="border-radius: 10px; font-weight: 600;">Refuser</button>
+                <button type="button" class="btn btn-success px-4 shadow" id="confirmEmbarquementBtn" style="border-radius: 10px; font-weight: 700;">
+                    <i class="material-icons mr-1" style="font-size: 18px; vertical-align: middle;">check_circle</i> Confirmer l'embarquement
                 </button>
             </div>
         </div>
@@ -362,10 +427,15 @@
             // Continuer vers le scan après sélection
             $('#continueToScanBtn').click(function() {
                 if (!selectedVehiculeId) {
-                    alert('Veuillez sélectionner un programme/véhicule');
+                    alert('Veuillez sélectionner un voyage.');
                     return;
                 }
+
+                var btn = $(this);
+                
                 $('#vehicleSelectModal').modal('hide');
+                btn.prop('disabled', false).html('Valider et Scanner <i class="material-icons ml-2" style="font-size: 16px; vertical-align: middle;">arrow_forward</i>');
+                
                 setTimeout(function() {
                     $('#selectedVehicleText').text(selectedVehiculeImmat);
                     $('#qrScannerModal').modal('show');
@@ -485,37 +555,98 @@
             }
 
             function showConfirmModal(reservation) {
+                // Type badge color
+                var typeBadge = '';
+                if (reservation.type_scan === 'ALLER') {
+                    typeBadge = '<span style="background: linear-gradient(135deg, #3182ce, #2b6cb0); color: white; padding: 4px 14px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.5px;">ALLER</span>';
+                } else if (reservation.type_scan === 'RETOUR') {
+                    typeBadge = '<span style="background: linear-gradient(135deg, #d69e2e, #b7791f); color: white; padding: 4px 14px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.5px;">RETOUR</span>';
+                }
+
+                var arBadge = reservation.is_aller_retour
+                    ? '<span style="background: #ebf8ff; color: #2b6cb0; padding: 3px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 700;">Aller-Retour</span>'
+                    : '<span style="background: #f0fff4; color: #276749; padding: 3px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 700;">Aller Simple</span>';
+
                 var html = `
-                    <div class="passenger-info-card">
-                        <div class="passenger-avatar shadow-sm">
-                            <i class="material-icons" style="font-size: 40px;">person</i>
+                    <div style="text-align: center; padding: 8px 0;">
+                        <!-- Passenger Header -->
+                        <div style="width: 72px; height: 72px; background: linear-gradient(135deg, #3182ce, #2b6cb0); border-radius: 50%; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 20px rgba(49,130,206,0.3);">
+                            <i class="material-icons text-white" style="font-size: 36px;">person</i>
                         </div>
-                        <div class="text-muted small text-uppercase">Passager</div>
-                        <div class="passenger-name">${reservation.passager_nom_complet}</div>
-                        
-                        <div class="card bg-light border-0 rounded-lg p-3 mb-3">
-                            <table class="info-table">
-                                <tr>
-                                    <td>Référence</td>
-                                    <td><span class="badge badge-dark px-2 py-1">${reservation.reference}</span></td>
-                                </tr>
-                                <tr>
-                                    <td>Siège N°</td>
-                                    <td><span class="badge badge-primary px-3 py-1" style="font-size: 1.1em">${reservation.seat_number}</span></td>
-                                </tr>
-                                <tr>
-                                    <td>Destination</td>
-                                    <td>${reservation.trajet || 'N/A'}</td>
-                                </tr>
-                                <tr>
-                                    <td>Téléphone</td>
-                                    <td>${reservation.passager_telephone}</td>
-                                </tr>
-                            </table>
+                        <div style="font-size: 0.72rem; color: #a0aec0; text-transform: uppercase; font-weight: 600; letter-spacing: 1px;">Passager</div>
+                        <div style="font-size: 1.4rem; font-weight: 800; color: #1a202c; margin: 4px 0 16px;">${reservation.passager_nom_complet}</div>
+
+                        <!-- Route Visualization -->
+                        <div style="background: #f7fafc; border-radius: 16px; padding: 18px 20px; margin-bottom: 16px; border: 1px solid #e2e8f0;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                                <div style="flex: 1; text-align: center;">
+                                    <div style="font-weight: 800; font-size: 1rem; color: #1a202c;">${reservation.trajet.split(' → ')[0] || ''}</div>
+                                    ${reservation.gare_depart ? '<div style="font-size: 0.7rem; color: #10b981; font-weight: 700; text-transform: uppercase; margin-top: 2px;"><i class="material-icons" style="font-size:11px;vertical-align:middle;">location_on</i> ' + reservation.gare_depart + '</div>' : ''}
+                                    <div style="font-size: 0.78rem; color: #4a5568; margin-top: 4px; font-weight: 600;">
+                                        <i class="material-icons" style="font-size:14px;vertical-align:middle;color:#3182ce;">schedule</i> ${reservation.heure_depart}
+                                    </div>
+                                </div>
+                                <div style="display: flex; flex-direction: column; align-items: center; padding: 0 2px;">
+                                    <div style="width: 40px; height: 2px; background: linear-gradient(to right, #3182ce, #e53e3e); border-radius: 2px;"></div>
+                                    <div style="width: 30px; height: 30px; background: linear-gradient(135deg, #3182ce, #2b6cb0); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 4px 0;">
+                                        <i class="material-icons text-white" style="font-size: 14px;">directions_bus</i>
+                                    </div>
+                                    <div style="width: 40px; height: 2px; background: linear-gradient(to right, #3182ce, #e53e3e); border-radius: 2px;"></div>
+                                </div>
+                                <div style="flex: 1; text-align: center;">
+                                    <div style="font-weight: 800; font-size: 1rem; color: #1a202c;">${reservation.trajet.split(' → ')[1] || ''}</div>
+                                    ${reservation.gare_arrivee ? '<div style="font-size: 0.7rem; color: #e53e3e; font-weight: 700; text-transform: uppercase; margin-top: 2px;"><i class="material-icons" style="font-size:11px;vertical-align:middle;">flag</i> ' + reservation.gare_arrivee + '</div>' : ''}
+                                    <div style="font-size: 0.78rem; color: #4a5568; margin-top: 4px; font-weight: 600;">
+                                        <i class="material-icons" style="font-size:14px;vertical-align:middle;color:#e53e3e;">schedule</i> ${reservation.heure_arrivee || '--:--'}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        
-                        ${reservation.status === 'validated' ? 
-                            '<div class="alert alert-warning"><i class="material-icons" style="font-size:16px;vertical-align:text-bottom">warning</i> Ce billet a déjà été scanné.</div>' : ''}
+
+                        <!-- Info Cards Grid -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
+                            <!-- Seat -->
+                            <div style="background: #edf2f7; border-radius: 12px; padding: 14px; text-align: center;">
+                                <div style="font-size: 0.68rem; color: #a0aec0; text-transform: uppercase; font-weight: 600;">Siège</div>
+                                <div style="font-size: 1.6rem; font-weight: 900; color: #2d3748;">${reservation.seat_number}</div>
+                            </div>
+                            <!-- Reference -->
+                            <div style="background: #edf2f7; border-radius: 12px; padding: 14px; text-align: center;">
+                                <div style="font-size: 0.68rem; color: #a0aec0; text-transform: uppercase; font-weight: 600;">Référence</div>
+                                <div style="font-size: 0.85rem; font-weight: 800; color: #2d3748; font-family: monospace; letter-spacing: 1px; margin-top: 6px;">${reservation.reference}</div>
+                            </div>
+                            <!-- Price -->
+                            <div style="background: #f0fff4; border-radius: 12px; padding: 14px; text-align: center;">
+                                <div style="font-size: 0.68rem; color: #a0aec0; text-transform: uppercase; font-weight: 600;">Montant</div>
+                                <div style="font-size: 1.1rem; font-weight: 900; color: #276749;">${reservation.montant}</div>
+                            </div>
+                            <!-- Date -->
+                            <div style="background: #ebf8ff; border-radius: 12px; padding: 14px; text-align: center;">
+                                <div style="font-size: 0.68rem; color: #a0aec0; text-transform: uppercase; font-weight: 600;">Date</div>
+                                <div style="font-size: 1rem; font-weight: 800; color: #2b6cb0;">${reservation.date_voyage}</div>
+                            </div>
+                        </div>
+
+                        <!-- Contact Info -->
+                        <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; margin-bottom: 16px; text-align: left;">
+                            <div style="padding: 10px 16px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #f0f0f0;">
+                                <i class="material-icons" style="font-size: 18px; color: #3182ce;">phone</i>
+                                <div>
+                                    <div style="font-size: 0.68rem; color: #a0aec0;">Téléphone</div>
+                                    <div style="font-weight: 700; color: #2d3748; font-size: 0.9rem;">${reservation.passager_telephone}</div>
+                                </div>
+                            </div>
+                            ${reservation.passager_email ? '<div style="padding: 10px 16px; display: flex; align-items: center; gap: 10px;"><i class="material-icons" style="font-size: 18px; color: #3182ce;">email</i><div><div style="font-size: 0.68rem; color: #a0aec0;">Email</div><div style="font-weight: 700; color: #2d3748; font-size: 0.9rem;">' + reservation.passager_email + '</div></div></div>' : ''}
+                        </div>
+
+                        <!-- Badges -->
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
+                            ${typeBadge}
+                            ${arBadge}
+                        </div>
+
+                        ${reservation.statut === 'terminee' ? 
+                            '<div style="background: #fffbeb; border: 1px solid #fbbf24; border-radius: 12px; padding: 12px 16px; margin-top: 14px; display: flex; align-items: center; gap: 8px; justify-content: center;"><i class="material-icons" style="font-size:18px;color:#d97706;">warning</i><span style="color: #92400e; font-weight: 700; font-size: 0.85rem;">Ce billet a déjà été scanné</span></div>' : ''}
                     </div>
                 `;
                 $('#confirmModalBody').html(html);
@@ -565,7 +696,7 @@
             });
         });
 
-        // Fonction sélection programme (externe au document.ready pour portée globale du onclick HTML)
+        // Fonction sélection programme simplified
         function selectProgramme(element) {
             var $el = $(element);
             $('.programme-item').removeClass('selected');
@@ -575,7 +706,16 @@
             selectedProgrammeId = $el.data('programme-id');
             selectedVehiculeImmat = $el.data('vehicule-immat');
             
-            $('#continueToScanBtn').prop('disabled', false).removeClass('btn-secondary').addClass('btn-primary');
+            // Si pas de véhicule assigné, on désactive le bouton
+            if (!selectedVehiculeId || selectedVehiculeId === '') {
+                $('#continueToScanBtn').prop('disabled', true).addClass('btn-secondary').removeClass('btn-primary')
+                    .html('Voyage non assigné <i class="material-icons ml-2" style="font-size: 16px; vertical-align: middle;">warning</i>');
+            } else {
+                $('#continueToScanBtn').prop('disabled', false).removeClass('btn-secondary').addClass('btn-primary')
+                    .html('Valider et Scanner <i class="material-icons ml-2" style="font-size: 16px; vertical-align: middle;">arrow_forward</i>');
+            }
         }
+
+        // Event listeners pour sélection manuelle supprimés
     </script>
 @endpush

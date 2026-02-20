@@ -11,11 +11,71 @@
                 <!-- Main Content Left (8 cols) -->
                 <div class="lg:col-span-8 space-y-8">
                     
+                    @if($currentTrip)
+                    <!-- Ongoing Voyage Card (Steel UI Style) -->
+                    <div id="btn-open-tracking-modal" class="bg-gradient-to-br from-teal-700 via-emerald-800 to-green-900 rounded-[32px] p-8 shadow-[inset_0_2px_1px_rgba(255,255,255,0.3),_0_20px_40px_rgba(20,83,45,0.5)] border-t border-l border-white/20 text-white relative overflow-hidden group cursor-pointer hover:shadow-[0_20px_50px_rgba(20,83,45,0.7)] hover:-translate-y-1 transition-all duration-300">
+                        <div class="absolute -right-10 -top-10 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-700"></div>
+                        
+                        <div class="relative z-10">
+                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-4">
+                                        <span class="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-black uppercase tracking-widest border border-white/30">Voyage en cours</span>
+                                        <span class="flex h-2 w-2 rounded-full bg-white animate-pulse"></span>
+                                    </div>
+                                    
+                                    <h2 class="text-3xl font-black mb-1 leading-tight">
+                                        {{ $currentTrip->programme->point_depart }} 
+                                        <i class="fas fa-arrow-right text-white/50 mx-2 text-xl"></i> 
+                                        {{ $currentTrip->programme->point_arrive }}
+                                    </h2>
+                                    <p class="text-white/70 text-sm font-bold uppercase tracking-wider mb-6">
+                                        {{ $currentTrip->programme->gareDepart->nom_gare }} &rarr; {{ $currentTrip->programme->gareArrivee->nom_gare }}
+                                    </p>
+                                    
+                                    <div class="grid grid-cols-2 gap-8">
+                                        <div>
+                                            <p class="text-white/50 text-[10px] font-black uppercase tracking-widest mb-1">Arrivée prévue</p>
+                                            <p class="text-xl font-black">{{ \Carbon\Carbon::parse($currentTrip->programme->heure_arrive)->format('H:i') }}</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-white/50 text-[10px] font-black uppercase tracking-widest mb-1">Siège n°</p>
+                                            <p class="text-xl font-black">{{ $currentTrip->seat_number }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 text-center min-w-[200px]">
+                                    <p class="text-white/70 text-[10px] font-black uppercase tracking-widest mb-3">Temps restant estimé</p>
+                                    
+                                    @php
+                                        $dateVoyage = \Carbon\Carbon::parse($currentTrip->date_voyage)->format('Y-m-d');
+                                        $arrivalDateTime = \Carbon\Carbon::parse($dateVoyage . ' ' . $currentTrip->programme->heure_arrive);
+                                        if (\Carbon\Carbon::parse($currentTrip->programme->heure_arrive)->lt(\Carbon\Carbon::parse($currentTrip->programme->heure_depart))) {
+                                            $arrivalDateTime->addDay();
+                                        }
+                                    @endphp
+                                    
+                                    <div class="text-3xl font-black tracking-tighter mb-1 font-mono" 
+                                         id="user-timer-{{ $currentTrip->id }}" 
+                                         data-arrival="{{ $arrivalDateTime->toIso8601String() }}">
+                                        --:--:--
+                                    </div>
+                                    <div class="w-full h-1.5 bg-white/20 rounded-full mt-4 overflow-hidden">
+                                        <div class="h-full bg-white rounded-full animate-pulse shadow-[0_0_10px_rgba(255,255,255,0.5)]" style="width: 65%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+                    
                     <!-- Stats Grid -->
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
                         <!-- Total Reservations Card -->
-                        <div class="bg-white rounded-[32px] p-7 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300">
-                            <div class="flex items-center gap-3 mb-6">
+                        <div class="bg-gradient-to-br from-white via-[#fcfcfd] to-[#f4f5f7] rounded-[32px] p-7 shadow-[inset_0_1px_1px_rgba(255,255,255,1),_0_10px_30px_rgba(0,0,0,0.03)] border border-gray-100 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,1),_0_15px_40px_rgba(0,0,0,0.06)] transition-all duration-300 relative overflow-hidden group">
+                            <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/80 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
+                            <div class="flex items-center gap-3 mb-6 relative z-10">
                                 <div class="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600">
                                     <i class="fas fa-history text-sm"></i>
                                 </div>
@@ -29,8 +89,9 @@
                         </div>
 
                         <!-- Active Trips Card -->
-                        <div class="bg-white rounded-[32px] p-7 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300">
-                            <div class="flex items-center gap-3 mb-6">
+                        <div class="bg-gradient-to-br from-white via-[#fcfcfd] to-[#f4f5f7] rounded-[32px] p-7 shadow-[inset_0_1px_1px_rgba(255,255,255,1),_0_10px_30px_rgba(0,0,0,0.03)] border border-gray-100 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,1),_0_15px_40px_rgba(0,0,0,0.06)] transition-all duration-300 relative overflow-hidden group">
+                            <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/80 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
+                            <div class="flex items-center gap-3 mb-6 relative z-10">
                                 <div class="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center text-green-600">
                                     <i class="fas fa-bus-alt text-sm"></i>
                                 </div>
@@ -44,8 +105,9 @@
                         </div>
 
                         <!-- Total Spent Card -->
-                        <div class="bg-white rounded-[32px] p-7 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300">
-                            <div class="flex items-center gap-3 mb-6">
+                        <div class="bg-gradient-to-br from-white via-[#fcfcfd] to-[#f4f5f7] rounded-[32px] p-7 shadow-[inset_0_1px_1px_rgba(255,255,255,1),_0_10px_30px_rgba(0,0,0,0.03)] border border-gray-100 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,1),_0_15px_40px_rgba(0,0,0,0.06)] transition-all duration-300 relative overflow-hidden group">
+                            <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/80 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
+                            <div class="flex items-center gap-3 mb-6 relative z-10">
                                 <div class="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
                                     <i class="fas fa-chart-line text-sm"></i>
                                 </div>
@@ -60,7 +122,7 @@
                     </div>
 
                     <!-- Chart Section -->
-                    <div class="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm">
+                    <div class="bg-gradient-to-br from-white via-[#fcfcfd] to-[#f4f5f7] rounded-[32px] p-8 shadow-[inset_0_1px_1px_rgba(255,255,255,1),_0_10px_30px_rgba(0,0,0,0.03)] border border-gray-100">
                         <div class="flex items-center justify-between mb-8">
                             <div>
                                 <h3 class="text-lg font-bold text-gray-900 tracking-tight">Analyse de vos voyages</h3>
@@ -83,8 +145,9 @@
                         </div>
                         <div class="grid grid-cols-1 gap-4">
                             @forelse($recentReservations as $res)
-                                <div class="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:shadow-md transition-all group">
-                                    <div class="flex items-center gap-4">
+                                <div class="bg-white p-5 rounded-3xl shadow-[inset_0_1px_1px_rgba(255,255,255,1),_0_4px_15px_rgba(0,0,0,0.02)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,1),_0_10px_25px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 transition-all duration-300 group border border-gray-50 hover:border-orange-100 relative overflow-hidden">
+                                    <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/80 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
+                                    <div class="flex items-center gap-4 relative z-10">
                                         <div class="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center border border-gray-100 group-hover:bg-[#e94f1b]/5 transition-colors">
                                             @if($res->programme->compagnie->path_logo)
                                                 <img src="{{ asset('storage/' . $res->programme->compagnie->path_logo) }}" class="w-8 h-8 object-contain" alt="Logo">
@@ -123,9 +186,13 @@
                 <!-- Sidebar Right (4 cols) -->
                 <div class="lg:col-span-4 space-y-8">
                     
-                    <!-- Balance Card (Now in Sidebar) -->
-                    <div class="bg-gradient-to-br from-[#e94f1b] to-[#ff7a4d] rounded-[32px] p-7 shadow-2xl shadow-[#e94f1b]/20 text-white relative overflow-hidden group">
-                        <div class="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all"></div>
+                    <!-- Balance Card (Magnetic Card Orange) -->
+                    <div class="bg-gradient-to-br from-[#ff8b5a] via-[#e94f1b] to-[#d33a0b] rounded-[32px] p-7 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5),_0_20px_40px_rgba(233,79,27,0.3)] border border-[#ff8b5a]/50 text-white relative overflow-hidden group">
+                        <div class="absolute -right-6 -top-6 w-32 h-32 bg-white/20 rounded-full blur-2xl group-hover:bg-white/30 transition-all"></div>
+                        <div class="absolute -left-10 bottom-0 w-40 h-40 bg-[#c62900]/20 rounded-full blur-3xl"></div>
+                        <!-- Micro texture for magnetic card feel -->
+                        <div class="absolute inset-0 opacity-[0.02] pointer-events-none" style="background-image: radial-gradient(circle at center, #fff 1px, transparent 1px); background-size: 4px 4px;"></div>
+
                         <div class="relative z-10">
                             <div class="flex items-center gap-3 mb-6">
                                 <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-md">
@@ -149,7 +216,8 @@
                     </div>
 
                     <!-- Wallets / Shortcuts Section -->
-                    <div class="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm">
+                    <div class="bg-gradient-to-br from-white via-[#fcfcfd] to-[#f4f5f7] rounded-[32px] p-8 shadow-[inset_0_1px_1px_rgba(255,255,255,1),_0_10px_30px_rgba(0,0,0,0.03)] border border-gray-100 group relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-orange-50 rounded-full blur-3xl -z-10 group-hover:scale-110 transition-transform duration-500"></div>
                         <div class="flex items-center justify-between mb-6">
                             <h4 class="text-sm font-bold text-gray-900 tracking-tight uppercase">Mes Raccourcis</h4>
                             <button class="text-gray-400 hover:text-[#e94f1b] transition-colors"><i class="fas fa-ellipsis-h"></i></button>
@@ -187,6 +255,112 @@
 
                 </div>
             </div>
+
+    <!-- Tracking Modal -->
+    <div id="trackingModal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+        <!-- Backdrop, blur effect -->
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm tracking-modal-close transition-opacity duration-300 opacity-0" id="trackingModalBackdrop"></div>
+        
+        <!-- Modal Content -->
+        <div class="relative w-full max-w-4xl h-[85vh] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col mx-4 transform scale-95 opacity-0 transition-all duration-300" id="trackingModalContent">
+            
+            <!-- Header -->
+            <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-teal-50 to-white">
+                <h3 class="text-xl font-black tracking-tight text-gray-900"><i class="fas fa-satellite-dish text-teal-600 mr-2"></i> Suivi en temps réel</h3>
+                <button class="text-gray-400 hover:text-red-500 transition-colors tracking-modal-close p-2">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            
+            <!-- Info Bar -->
+            <div class="px-6 py-3 bg-gray-50 border-b border-gray-100 flex flex-wrap gap-4 text-xs font-bold text-gray-600 uppercase tracking-widest justify-between items-center">
+                <div id="tracking-itinerary" class="flex items-center gap-2">
+                    <i class="fas fa-map-marker-alt text-gray-400"></i>
+                    <span>--</span>
+                    <i class="fas fa-arrow-right text-[10px] text-gray-300"></i>
+                    <span>--</span>
+                </div>
+                <div id="tracking-status" class="text-teal-600 flex items-center gap-2">
+                    <span class="flex h-2 w-2 rounded-full bg-teal-500 animate-pulse"></span>
+                    <span>En attente GPS...</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div id="tracking-speed" class="flex items-center gap-1">
+                        <i class="fas fa-tachometer-alt"></i> -- km/h
+                    </div>
+                    <div class="w-px h-4 bg-gray-300"></div>
+                    <div id="tracking-time" class="flex items-center gap-1 text-orange-600">
+                        <i class="fas fa-clock"></i> --:--:--
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map Container -->
+            <div class="w-full flex-1 relative bg-gray-100">
+                <div id="trackingMap" class="absolute inset-0 z-10 w-full h-full"></div>
+                <!-- Loading indicator -->
+                <div id="trackingLoading" class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm transition-opacity duration-300">
+                    <i class="fas fa-circle-notch fa-spin text-teal-600 text-4xl mb-4"></i>
+                    <p class="text-sm font-bold text-gray-600 uppercase tracking-widest">Connexion au véhicule...</p>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    @push('styles')
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        /* Custom Leaflet marker */
+        .bus-marker {
+            background: #10b981;
+            border: 3px solid white;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+            color: white;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .bus-marker-offline {
+            background: #9ca3af;
+            box-shadow: 0 4px 12px rgba(156, 163, 175, 0.4);
+        }
+
+        .leaflet-popup-content {
+            font-family: 'Outfit', 'Segoe UI', sans-serif;
+            min-width: 200px;
+        }
+
+        .popup-title {
+            font-weight: 800;
+            font-size: 1rem;
+            color: #111827;
+            margin-bottom: 8px;
+        }
+
+        .popup-info {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.82rem;
+            color: #6b7280;
+            margin: 4px 0;
+            font-weight: 500;
+        }
+
+        .popup-info i {
+            width: 16px;
+            text-align: center;
+            color: #10b981;
+        }
+    </style>
+    @endpush
 
     @push('scripts')
     <script src="{{asset('assetsPoster/assets/vendors/chartjs/Chart.min.js')}}"></script>
@@ -265,6 +439,190 @@
                         }]
                     }
                 }
+            });
+            // Countdown Timer Logic
+            function updateTimers() {
+                const timers = document.querySelectorAll('[data-arrival]');
+                
+                timers.forEach(timer => {
+                    const arrivalTime = new Date(timer.dataset.arrival).getTime();
+                    const now = new Date().getTime();
+                    const distance = arrivalTime - now;
+                    
+                    if (distance < 0) {
+                        timer.innerHTML = "Arrivé";
+                        if (document.getElementById('tracking-time')) {
+                            document.getElementById('tracking-time').innerHTML = `<i class="fas fa-flag-checkered"></i> Arrivé`;
+                        }
+                        return;
+                    }
+                    
+                    const hours = Math.floor(distance / (1000 * 60 * 60));
+                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                    
+                    const timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    timer.innerHTML = timeString;
+                    
+                    const trackingTimeEl = document.getElementById('tracking-time');
+                    if (trackingTimeEl) {
+                        trackingTimeEl.innerHTML = `<i class="fas fa-clock"></i> ${timeString}`;
+                    }
+                });
+            }
+
+            if (document.querySelectorAll('[data-arrival]').length > 0) {
+                updateTimers();
+                setInterval(updateTimers, 1000);
+            }
+        });
+    </script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const btnOpenTracking = document.getElementById('btn-open-tracking-modal');
+            const trackingModal = document.getElementById('trackingModal');
+            const trackingModalBackdrop = document.getElementById('trackingModalBackdrop');
+            const trackingModalContent = document.getElementById('trackingModalContent');
+            const btnCloseTracking = document.querySelectorAll('.tracking-modal-close');
+            const trackingLoading = document.getElementById('trackingLoading');
+            
+            let map = null;
+            let busMarker = null;
+            let trackingInterval = null;
+            let isFirstLoad = true;
+
+            function createBusIcon(isOnline = true) {
+                return L.divIcon({
+                    html: `<div class="bus-marker ${isOnline ? '' : 'bus-marker-offline'}"><i class="fas fa-bus"></i></div>`,
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 16],
+                    popupAnchor: [0, -20],
+                    className: ''
+                });
+            }
+
+            function initMap() {
+                if (map) return; // Already initialized
+
+                // Default center (Côte d'Ivoire)
+                map = L.map('trackingMap').setView([6.8276, -5.2893], 7);
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap',
+                    maxZoom: 19,
+                }).addTo(map);
+            }
+
+            function fetchLiveLocation() {
+                fetch("{{ route('user.tracking.location') }}")
+                    .then(res => res.json())
+                    .then(data => {
+                        if (!data.success) {
+                            trackingLoading.querySelector('p').textContent = data.message || "Position indisponible";
+                            trackingLoading.querySelector('i').className = "fas fa-exclamation-triangle text-orange-500 text-4xl mb-4";
+                            return;
+                        }
+
+                        // Hide loading if showing
+                        if (trackingLoading.style.opacity !== '0') {
+                            trackingLoading.style.opacity = '0';
+                            setTimeout(() => { trackingLoading.style.display = 'none'; }, 300);
+                        }
+
+                        const loc = data.location;
+                        const latLng = [loc.latitude, loc.longitude];
+
+                        // Update DOM elements
+                        document.getElementById('tracking-itinerary').innerHTML = `
+                            <i class="fas fa-map-marker-alt text-teal-600"></i>
+                            <span class="text-gray-900">${loc.depart}</span>
+                            <i class="fas fa-arrow-right mx-1 text-gray-300"></i>
+                            <span class="text-gray-900">${loc.arrivee}</span>
+                        `;
+                        
+                        document.getElementById('tracking-speed').innerHTML = `<i class="fas fa-tachometer-alt"></i> ${loc.speed ? Math.round(loc.speed) : 0} km/h`;
+                        document.getElementById('tracking-status').innerHTML = `
+                            <span class="flex h-2 w-2 rounded-full bg-teal-500 animate-[livePulse_1.5s_infinite]"></span>
+                            <span>En direct</span>
+                        `;
+
+                        const popupContent = `
+                            <div class="popup-title">${loc.depart} → ${loc.arrivee}</div>
+                            <div class="popup-info"><i class="fas fa-user text-teal-600"></i> ${loc.chauffeur}</div>
+                            <div class="popup-info"><i class="fas fa-bus text-teal-600"></i> ${loc.vehicule}</div>
+                            <div class="popup-info"><i class="fas fa-tachometer-alt text-teal-600"></i> ${loc.speed ? Math.round(loc.speed) : 0} km/h</div>
+                            <div class="popup-info text-xs mt-2 text-gray-400 border-t border-gray-100 pt-2">
+                                <i class="fas fa-sync text-gray-400"></i> Màj: ${loc.last_update}
+                            </div>
+                        `;
+
+                        if (busMarker) {
+                            busMarker.setLatLng(latLng);
+                            busMarker.setPopupContent(popupContent);
+                        } else {
+                            busMarker = L.marker(latLng, { icon: createBusIcon(true) }).addTo(map);
+                            busMarker.bindPopup(popupContent).openPopup();
+                        }
+
+                        if (isFirstLoad) {
+                            map.setView(latLng, 14, { animate: true });
+                            isFirstLoad = false;
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Erreur GPS:', err);
+                    });
+            }
+
+            // Open Modal
+            if (btnOpenTracking) {
+                btnOpenTracking.addEventListener('click', function() {
+                    trackingModal.classList.remove('hidden');
+                    // Slight delay to allow display:block to apply before animating opacity/transform
+                    setTimeout(() => {
+                        trackingModalBackdrop.classList.remove('opacity-0');
+                        trackingModalContent.classList.remove('opacity-0', 'scale-95');
+                        trackingModalContent.classList.add('opacity-100', 'scale-100');
+                    }, 10);
+                    
+                    document.body.style.overflow = 'hidden'; // Prevent scrolling Behind
+                    
+                    // Init map only when modal is visible (Leaflet rendering fix)
+                    setTimeout(() => {
+                        initMap();
+                        map.invalidateSize();
+                        isFirstLoad = true;
+                        
+                        // Show loading initially
+                        trackingLoading.style.display = 'flex';
+                        trackingLoading.style.opacity = '1';
+                        trackingLoading.querySelector('p').textContent = "Connexion au véhicule...";
+                        trackingLoading.querySelector('i').className = "fas fa-circle-notch fa-spin text-teal-600 text-4xl mb-4";
+                        
+                        fetchLiveLocation();
+                        trackingInterval = setInterval(fetchLiveLocation, 5000);
+                    }, 300);
+                });
+            }
+
+            // Close Modal
+            btnCloseTracking.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    trackingModalBackdrop.classList.add('opacity-0');
+                    trackingModalContent.classList.add('opacity-0', 'scale-95');
+                    trackingModalContent.classList.remove('opacity-100', 'scale-100');
+                    
+                    if (trackingInterval) {
+                        clearInterval(trackingInterval);
+                        trackingInterval = null;
+                    }
+
+                    setTimeout(() => {
+                        trackingModal.classList.add('hidden');
+                        document.body.style.overflow = '';
+                    }, 300);
+                });
             });
         });
     </script>

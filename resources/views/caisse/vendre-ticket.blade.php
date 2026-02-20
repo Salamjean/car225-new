@@ -1,5 +1,51 @@
 @extends('caisse.layouts.template')
 
+@section('styles')
+<style>
+    /* Select2 custom styling to match the design */
+    .select2-container--default .select2-selection--single {
+        height: 50px !important;
+        border: 1px solid #d1d5db !important;
+        border-radius: 0.75rem !important;
+        padding: 8px 12px !important;
+        font-size: 0.875rem;
+        display: flex !important;
+        align-items: center !important;
+    }
+    .select2-container--default .select2-selection--single:focus,
+    .select2-container--default.select2-container--open .select2-selection--single {
+        border-color: #e94e1a !important;
+        box-shadow: 0 0 0 2px rgba(233, 78, 26, 0.2) !important;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 50px !important;
+        right: 8px !important;
+    }
+    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        background-color: #e94e1a !important;
+    }
+    .select2-dropdown {
+        border-radius: 0.75rem !important;
+        border: 1px solid #e5e7eb !important;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+        overflow: hidden;
+    }
+    .select2-search--dropdown .select2-search__field {
+        border-radius: 0.5rem !important;
+        border: 1px solid #d1d5db !important;
+        padding: 8px 12px !important;
+    }
+    .select2-search--dropdown .select2-search__field:focus {
+        border-color: #e94e1a !important;
+        outline: none !important;
+    }
+    .select2-results__option {
+        padding: 10px 14px !important;
+        font-size: 0.875rem;
+    }
+    .select2-container { width: 100% !important; }
+</style>
+@endsection
 @section('content')
 <div class="min-h-screen bg-gradient-to-br from-gray-50 to-orange-50 py-8 px-4">
     <div class="mx-auto" style="width: 90%">
@@ -29,6 +75,17 @@
         class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
         <option value="">-- Sélectionnez un départ --</option>
         @foreach($programmes as $programme)
+            @php
+                $today = \Carbon\Carbon::now()->toDateString();
+                $reserved = $programme->getPlacesReserveesForDate($today);
+                $total = $programme->getTotalSeats($today);
+                $status = $programme->getStatutPlacesForDate($today);
+                $statusLabel = [
+                    'complet' => 'Complet',
+                    'presque_complet' => 'Presque complet',
+                    'disponible' => 'Disponible'
+                ][$status] ?? 'Disponible';
+            @endphp
             <option value="{{ $programme->id }}" 
                 data-vehicle-id="{{ $programme->vehicule->id ?? 0 }}"
                 data-trajet="{{ $programme->point_depart }} → {{ $programme->point_arrive }}"
@@ -40,11 +97,9 @@
                 {{-- 2. Le trajet --}}
                 | {{ $programme->point_depart }} → {{ $programme->point_arrive }} 
                 
-                {{-- 3. La date (On affiche explicitement la date d'aujourd'hui) --}}
-                | {{ \Carbon\Carbon::now()->format('d/m/Y') }} 
+                | {{ $reserved }} / {{ $total }} places
+                | {{ $statusLabel }}
                 
-                {{-- 4. Infos véhicule et prix --}}
-                | {{ $programme->vehicule->immatriculation ?? 'Bus' }}
                 | {{ number_format($programme->montant_billet, 0, ',', ' ') }} FCFA
             </option>
         @endforeach
@@ -121,7 +176,6 @@
                                         <div class="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
                                         LIVE
                                     </div>
-                                    <span id="vehicle-info" class="text-xs font-bold text-gray-500 bg-white px-2 py-1 rounded border border-gray-200"></span>
                                 </div>
                             </h3>
 
@@ -230,7 +284,6 @@
             .then(res => res.json())
             .then(data => {
                 if(data.success) {
-                    info.textContent = `${data.vehicule.marque || 'Bus'} - ${data.vehicule.immatriculation}`;
                     
                     // Update Trip Info
                     if(tripInfoDiv) {
@@ -245,9 +298,21 @@
                         const percentage = totalSeats > 0 ? Math.round((occupiedCount / totalSeats) * 100) : 0;
                         
                         if(infoOccupied) {
+                            let statusLabel = 'Disponible';
+                            let statusClass = 'text-green-600';
+                            if (percentage >= 100) {
+                                statusLabel = 'Complet';
+                                statusClass = 'text-red-600';
+                            } else if (percentage >= 80) {
+                                statusLabel = 'Presque complet';
+                                statusClass = 'text-orange-600';
+                            }
+                            
                             infoOccupied.innerHTML = `
-                                <span class="mr-1">${occupiedCount} / ${totalSeats}</span>
-                                <span class="text-xs font-normal text-gray-500">(${percentage}%)</span>
+                                <div class="flex flex-col items-end">
+                                    <span class="text-sm font-bold text-gray-900">${occupiedCount} / ${totalSeats} places</span>
+                                    <span class="text-[10px] font-black uppercase ${statusClass}">${statusLabel}</span>
+                                </div>
                             `;
                         }
                     }
@@ -265,9 +330,21 @@
                                 // Update infoOccupied too
                                 if(infoOccupied) {
                                     const percentage = totalSeats > 0 ? Math.round((e.reservedSeats.length / totalSeats) * 100) : 0;
+                                    let statusLabel = 'Disponible';
+                                    let statusClass = 'text-green-600';
+                                    if (percentage >= 100) {
+                                        statusLabel = 'Complet';
+                                        statusClass = 'text-red-600';
+                                    } else if (percentage >= 80) {
+                                        statusLabel = 'Presque complet';
+                                        statusClass = 'text-orange-600';
+                                    }
+
                                     infoOccupied.innerHTML = `
-                                        <span class="mr-1">${e.reservedSeats.length} / ${totalSeats}</span>
-                                        <span class="text-xs font-normal text-gray-500">(${percentage}%)</span>
+                                        <div class="flex flex-col items-end">
+                                            <span class="text-sm font-bold text-gray-900">${e.reservedSeats.length} / ${totalSeats} places</span>
+                                            <span class="text-[10px] font-black uppercase ${statusClass}">${statusLabel}</span>
+                                        </div>
                                     `;
                                 }
                             });
@@ -456,4 +533,23 @@
         });
     @endif
 </script>
+
+@section('scripts')
+<script>
+    $(document).ready(function() {
+        $('#programme_id').select2({
+            placeholder: '🔍 Tapez pour rechercher un programme...',
+            allowClear: true,
+            language: {
+                noResults: function() { return 'Aucun programme trouvé'; },
+                searching: function() { return 'Recherche...'; }
+            }
+        });
+        // Relay Select2 change to native change event for existing JS listeners
+        $('#programme_id').on('select2:select select2:clear', function() {
+            this.dispatchEvent(new Event('change'));
+        });
+    });
+</script>
+@endsection
 @endsection

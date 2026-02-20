@@ -25,32 +25,33 @@ class AgentDashboard extends Controller
 
         $totalScans = Reservation::where('embarquement_agent_id', $agent->id)->count();
 
-        // Réservations de la compagnie
-        $reservationsEnCours = Reservation::whereHas('programme', function ($q) use ($compagnieId) {
-            $q->where('compagnie_id', $compagnieId);
-        })->where('statut', 'confirmee')->count();
 
-        $reservationsTerminees = Reservation::whereHas('programme', function ($q) use ($compagnieId) {
-            $q->where('compagnie_id', $compagnieId);
-        })->where('statut', 'terminee')->count();
+        // Programmes du jour de la GARE
+        $programmesQuery = Programme::where('compagnie_id', $compagnieId)
+            ->where('gare_depart_id', $agent->gare_id)
+            ->whereDate('date_depart', $today);
 
-        // Programmes du jour de la compagnie
-        $programmesToday = Programme::where('compagnie_id', $compagnieId)
-            ->whereDate('date_depart', $today)
-            ->count();
+        $programmesToday = $programmesQuery->count();
 
-        $programmesDuJour = Programme::where('compagnie_id', $compagnieId)
-            ->whereDate('date_depart', $today)
-            ->with('vehicule')
+        $programmesDuJour = $programmesQuery->with(['voyages.vehicule', 'compagnie.vehicules'])
             ->orderBy('heure_depart')
             ->get();
 
-        // Véhicules actifs de la compagnie
-        $vehiculesActifs = Vehicule::where('compagnie_id', $compagnieId)
-            ->where('is_active', true)
+        // Passagers embarqués du jour (Scans effectués par n'importe quel agent à CETTE GARE aujourd'hui)
+        $passagersEmbarquesToday = Reservation::whereHas('programme', function($q) use ($agent) {
+                $q->where('gare_depart_id', $agent->gare_id);
+            })
+            ->whereIn('statut', ['confirmee', 'terminee'])
+            ->whereNotNull('embarquement_scanned_at')
+            ->whereDate('embarquement_scanned_at', $today)
             ->count();
 
-        // Revenus des réservations scannées par l'agent
+        // Réservations terminées (Historique pour cette gare)
+        $reservationsTerminees = Reservation::whereHas('programme', function ($q) use ($agent) {
+            $q->where('gare_depart_id', $agent->gare_id);
+        })->where('statut', 'terminee')->count();
+
+        // Revenus des réservations scannées par l'agent (Optionnel, on le garde)
         $revenueAgent = Reservation::where('embarquement_agent_id', $agent->id)
             ->sum('montant');
 
@@ -65,11 +66,10 @@ class AgentDashboard extends Controller
             'agent',
             'scansToday',
             'totalScans',
-            'reservationsEnCours',
+            'passagersEmbarquesToday',
             'reservationsTerminees',
             'programmesToday',
             'programmesDuJour',
-            'vehiculesActifs',
             'revenueAgent',
             'recentScans'
         ));

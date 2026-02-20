@@ -1,1442 +1,750 @@
 @extends('compagnie.layouts.template')
+
 @section('content')
-<div class="container-fluid">
-    <!-- En-tête de page -->
-    <div class="row page-header-modern">
-        <div class="col-12">
-            <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between p-4">
-                <div class="d-flex align-items-center mb-3 mb-md-0">
-                    <div class="header-icon-wrapper me-3">
-                        <i class="fas fa-users"></i>
-                    </div>
-                    <div>
-                        <h1 class="page-title mb-1">Gestion des agents</h1>
-                        <p class="page-subtitle text-muted mb-0">Consultez et gérez les agents de votre compagnie</p>
-                    </div>
-                </div>
-                
-                <div class="d-flex flex-wrap gap-3">
-                    <a href="{{ route('compagnie.dashboard') }}" class="btn-back-modern">
-                        <i class="fas fa-arrow-left me-2"></i>
-                        Tableau de bord
-                    </a>
-                    <a href="{{ route('compagnie.agents.create') }}" class="btn-add-modern">
-                        <i class="fas fa-user-plus me-2"></i>
-                        Nouvel agent
-                    </a>
-                </div>
+<!-- Import Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
+<div class="content-wrapper-modern">
+    <!-- Top Stats Bar -->
+    <div class="stats-overview animate__animated animate__fadeInDown">
+        <div class="stat-item">
+            <div class="stat-icon-box bg-gradient-blue shadow-blue">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-label">Total Agents</span>
+                <h3 class="stat-number">{{ $totalAgents }}</h3>
+            </div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-icon-box bg-gradient-green shadow-green">
+                <i class="fas fa-user-check"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-label">Actifs</span>
+                <h3 class="stat-number">{{ $activeAgents }}</h3>
+            </div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-icon-box bg-gradient-orange shadow-orange">
+                <i class="fas fa-user-plus"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-label">Nouveaux (7j)</span>
+                <h3 class="stat-number">{{ $newAgents }}</h3>
+            </div>
+        </div>
+        <div class="stat-item d-none d-xl-flex">
+            <div class="stat-icon-box bg-gradient-purple shadow-purple">
+                <i class="fas fa-map-marked-alt"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-label">Communes</span>
+                <h3 class="stat-number">{{ $agents->pluck('commune')->filter()->unique()->count() }}</h3>
             </div>
         </div>
     </div>
 
-    <!-- Carte principale -->
-    <div class="modern-card">
-        <!-- En-tête de la carte -->
-        <div class="card-header-modern">
-            <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between">
-                <div>
-                    <h2 class="card-title mb-2">Liste des agents</h2>
-                    <p class="card-subtitle mb-0">
-                        <span class="badge-count-modern">{{ $agents->count() }}</span> 
-                        agent{{ $agents->count() > 1 ? 's' : '' }} trouvé{{ $agents->count() > 1 ? 's' : '' }}
-                    </p>
+    <!-- Header Actions -->
+    <div class="action-header animate__animated animate__fadeIn">
+        <div class="header-left">
+            <h1 class="main-title">Gestion de l'équipe</h1>
+            <p class="main-subtitle">Contrôlez les accès et suivez les performances de vos agents</p>
+        </div>
+        <div class="header-right">
+            <div class="search-wrapper">
+                <i class="fas fa-search"></i>
+                <input type="text" id="agentSearch" placeholder="Rechercher un agent, une commune...">
+            </div>
+            <button class="btn btn-filter" id="toggleFilters">
+                <i class="fas fa-sliders-h"></i>
+                <span>Filtres</span>
+            </button>
+            <a href="{{ route('compagnie.agents.create') }}" class="btn btn-primary-modern">
+                <i class="fas fa-plus-circle"></i>
+                <span>Nouvel Agent</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content Table -->
+    <div class="main-card-modern animate__animated animate__fadeInUp">
+        <div class="table-container">
+            @if($agents->count() > 0)
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th class="col-agent">AGENT</th>
+                        <th class="col-contact">COORDONNÉES</th>
+                        <th class="col-gare">AFFECTATION</th>
+                        <th class="col-status">STATUT</th>
+                        <th class="col-actions text-end">ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($agents as $index => $agent)
+                    <tr style="--delay: {{ $index * 0.05 }}s" class="agent-row">
+                        <td>
+                            <div class="agent-profile">
+                                <div class="avatar-container">
+                                    @if($agent->profile_picture)
+                                        <img src="{{ Storage::url($agent->profile_picture) }}" alt="{{ $agent->name }}">
+                                    @else
+                                        <div class="avatar-initials">
+                                            {{ substr($agent->name, 0, 1) }}{{ substr($agent->prenom, 0, 1) }}
+                                        </div>
+                                    @endif
+                                    <div class="status-indicator {{ $agent->is_active ? 'active' : 'inactive' }}"></div>
+                                </div>
+                                <div class="profile-meta">
+                                    <span class="name">{{ $agent->name }} {{ $agent->prenom }}</span>
+                                    <span class="id">#{{ str_pad($agent->id, 4, '0', STR_PAD_LEFT) }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="contact-stack">
+                                <a href="tel:{{ $agent->contact }}" class="contact-line">
+                                    <i class="fas fa-phone-alt"></i>
+                                    {{ $agent->contact }}
+                                </a>
+                                <a href="mailto:{{ $agent->email }}" class="contact-line email">
+                                    <i class="fas fa-envelope"></i>
+                                    {{ $agent->email }}
+                                </a>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="assignment-box">
+                                <span class="commune"><i class="fas fa-map-marker-alt"></i> {{ $agent->commune ?? 'Non défini' }}</span>
+                                @if($agent->gare)
+                                    <span class="gare-badge"><i class="fas fa-building"></i> {{ $agent->gare->nom_gare }}</span>
+                                @else
+                                    <span class="no-gare">Non affecté</span>
+                                @endif
+                            </div>
+                        </td>
+                        <td>
+                            @if($agent->is_active)
+                                <span class="badge-status success">
+                                    <i class="fas fa-check-circle"></i> Actif
+                                </span>
+                            @else
+                                <span class="badge-status danger">
+                                    <i class="fas fa-times-circle"></i> Inactif
+                                </span>
+                            @endif
+                        </td>
+                        <td>
+                            <div class="action-buttons justify-content-end">
+                                <button class="btn-icon-modern edit" title="Modifier" onclick="window.location.href='{{ route('compagnie.agents.edit', $agent->id) }}'">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                                <button class="btn-icon-modern message" title="Message" data-bs-toggle="modal" data-bs-target="#messageModal" 
+                                        data-agent-id="{{ $agent->id }}" data-agent-name="{{ $agent->name }} {{ $agent->prenom }}">
+                                    <i class="fas fa-comment-dots"></i>
+                                </button>
+                                <button class="btn-icon-modern delete" title="Supprimer" onclick="confirmDeleteAgent({{ $agent->id }})">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+            
+            <!-- Pagination -->
+            <div class="pagination-footer">
+                <div class="pagination-info">
+                    Affichage de <strong>{{ $agents->firstItem() }}</strong> à <strong>{{ $agents->lastItem() }}</strong> sur <strong>{{ $agents->total() }}</strong>
                 </div>
-                
-                <div class="d-flex flex-wrap gap-3 mt-3 mt-md-0">
-                    <!-- Filtres -->
-                    <div class="filter-group-modern">
-                        <button class="btn-filter-modern" type="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-filter me-2"></i>
-                            <span class="filter-text">Filtrer</span>
-                            <i class="fas fa-chevron-down ms-2"></i>
-                        </button>
-                        <div class="dropdown-menu-modern">
-                            <div class="dropdown-header">
-                                <i class="fas fa-filter me-2"></i>
-                                Filtrer par statut
-                            </div>
-                            <div class="dropdown-body">
-                                <div class="filter-option">
-                                    <input type="checkbox" id="filter-active" checked>
-                                    <label for="filter-active">
-                                        <span class="status-badge status-active"></span>
-                                        Actifs
-                                    </label>
-                                </div>
-                                <div class="filter-option">
-                                    <input type="checkbox" id="filter-inactive">
-                                    <label for="filter-inactive">
-                                        <span class="status-badge status-inactive"></span>
-                                        Inactifs
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Recherche -->
-                    <div class="search-box-modern">
-                        <i class="fas fa-search search-icon"></i>
-                        <input type="text" class="search-input-modern" placeholder="Rechercher un agent...">
-                        <button class="search-clear">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
+                <div class="pagination-links">
+                    {{ $agents->links() }}
                 </div>
             </div>
-        </div>
-
-        <!-- Corps de la carte -->
-        <div class="card-body-modern">
-            @if($agents->count() > 0)
-                <!-- Tableau des agents -->
-                <div class="table-responsive-modern">
-                    <table class="table-modern">
-                        <thead>
-                            <tr>
-                                <th class="table-header-modern">
-                                    <div class="d-flex align-items-center">
-                                        <span>Agent</span>
-                                        <button class="sort-btn" data-sort="name">
-                                            <i class="fas fa-sort"></i>
-                                        </button>
-                                    </div>
-                                </th>
-                                <th class="table-header-modern">
-                                    <div class="d-flex align-items-center">
-                                        <span>Contact</span>
-                                        <button class="sort-btn" data-sort="contact">
-                                            <i class="fas fa-sort"></i>
-                                        </button>
-                                    </div>
-                                </th>
-                                <th class="table-header-modern">
-                                    <div class="d-flex align-items-center">
-                                        <span>Email</span>
-                                        <button class="sort-btn" data-sort="email">
-                                            <i class="fas fa-sort"></i>
-                                        </button>
-                                    </div>
-                                </th>
-                                <th class="table-header-modern">
-                                    <div class="d-flex align-items-center">
-                                        <span>Localisation</span>
-                                        <button class="sort-btn" data-sort="commune">
-                                            <i class="fas fa-sort"></i>
-                                        </button>
-                                    </div>
-                                </th>
-                                <th class="table-header-modern">
-                                    <div class="d-flex align-items-center">
-                                        <span>Statut</span>
-                                        <button class="sort-btn" data-sort="status">
-                                            <i class="fas fa-sort"></i>
-                                        </button>
-                                    </div>
-                                </th>
-                                <th class="table-header-modern text-end">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($agents as $agent)
-                            <tr class="table-row-modern">
-                                <td>
-                                    <div class="agent-info">
-                                        <div class="agent-avatar">
-                                            @if($agent->profile_picture)
-                                                <img src="{{ Storage::url($agent->profile_picture) }}" 
-                                                     alt="{{ $agent->name }}" 
-                                                     class="avatar-img">
-                                            @else
-                                                <div class="avatar-placeholder">
-                                                    {{ substr($agent->name, 0, 1) }}{{ substr($agent->prenom, 0, 1) }}
-                                                </div>
-                                            @endif
-                                        </div>
-                                        <div class="agent-details">
-                                            <h6 class="agent-name">{{ $agent->name }} {{ $agent->prenom }}</h6>
-                                            <p class="agent-id">
-                                                <i class="fas fa-id-card me-1"></i>
-                                                ID: {{ $agent->id }}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="contact-info">
-                                        <div class="contact-item">
-                                            <i class="fas fa-phone me-2"></i>
-                                            <a href="tel:{{ $agent->contact }}" class="contact-link">
-                                                {{ $agent->contact }}
-                                            </a>
-                                        </div>
-                                        @if($agent->cas_urgence)
-                                        <div class="contact-item mt-2">
-                                            <i class="fas fa-phone-alt me-2 text-danger"></i>
-                                            <span class="contact-urgent">{{ $agent->cas_urgence }}</span>
-                                        </div>
-                                        @endif
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="email-info">
-                                        <i class="fas fa-envelope me-2"></i>
-                                        <a href="mailto:{{ $agent->email }}" class="email-link">
-                                            {{ $agent->email }}
-                                        </a>
-                                    </div>
-                                </td>
-                                <td>
-                                    @if($agent->commune)
-                                    <div class="location-info">
-                                        <i class="fas fa-map-marker-alt me-2"></i>
-                                        <span class="location-text">{{ $agent->commune }}</span>
-                                    </div>
-                                    @else
-                                    <span class="text-muted">Non spécifié</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    <div class="status-modern">
-                                        @if($agent->is_active)
-                                        <span class="status-badge status-active">
-                                            <i class="fas fa-circle me-1"></i>
-                                            Actif
-                                        </span>
-                                        @else
-                                        <span class="status-badge status-inactive">
-                                            <i class="fas fa-circle me-1"></i>
-                                            Inactif
-                                        </span>
-                                        @endif
-                                        <p class="status-date mt-1 mb-0">
-                                            <small>Créé le {{ $agent->created_at->format('d/m/Y') }}</small>
-                                        </p>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="actions-modern">
-                                        <div class="dropdown-actions-modern">
-                                            <button class="btn-actions-modern" type="button" data-bs-toggle="dropdown">
-                                                <i class="fas fa-ellipsis-v"></i>
-                                            </button>
-                                            <div class="dropdown-menu-modern">
-                                                <a href="#" class="dropdown-item-modern">
-                                                    <i class="fas fa-edit me-2"></i>
-                                                    Modifier
-                                                </a>
-                                                <a href="#" class="dropdown-item-modern">
-                                                    <i class="fas fa-eye me-2"></i>
-                                                    Voir détails
-                                                </a>
-                                                <div class="dropdown-divider"></div>
-                                                <button type="button" class="dropdown-item-modern text-danger" onclick="confirmDelete({{ $agent->id }})">
-                                                    <i class="fas fa-trash-alt me-2"></i>
-                                                    Supprimer
-                                                </button>
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Boutons d'action visibles -->
-                                        <button type="button" class="btn-action-modern btn-send-email" 
-                                                data-email="{{ $agent->email }}"
-                                                title="Envoyer un email">
-                                            <i class="fas fa-paper-plane"></i>
-                                        </button>
-                                        <button type="button" class="btn-action-modern btn-call" 
-                                                data-phone="{{ $agent->contact }}"
-                                                title="Appeler">
-                                            <i class="fas fa-phone"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Pagination -->
-                @if($agents->hasPages())
-                <div class="pagination-modern">
-                    <div class="pagination-info">
-                        Affichage de {{ $agents->firstItem() }} à {{ $agents->lastItem() }} sur {{ $agents->total() }} agents
-                    </div>
-                    <div class="pagination-links">
-                        {{ $agents->links('vendor.pagination.modern') }}
-                    </div>
-                </div>
-                @endif
-
             @else
-                <!-- État vide -->
-                <div class="empty-state-modern">
-                    <div class="empty-icon">
-                        <i class="fas fa-users-slash"></i>
-                    </div>
-                    <h3 class="empty-title">Aucun agent trouvé</h3>
-                    <p class="empty-text">
-                        Vous n'avez pas encore d'agents dans votre compagnie.<br>
-                        Commencez par ajouter votre premier agent.
-                    </p>
-                    <a href="{{ route('compagnie.agents.create') }}" class="btn-add-modern">
-                        <i class="fas fa-user-plus me-2"></i>
-                        Ajouter un agent
-                    </a>
+            <div class="empty-dashboard">
+                <div class="empty-animation">
+                    <i class="fas fa-user-astronaut"></i>
                 </div>
+                <h3>L'équipe est encore vide</h3>
+                <p>Commencez à construire votre réseau d'agents pour gérer vos gares en quelques clics.</p>
+                <a href="{{ route('compagnie.agents.create') }}" class="btn btn-primary-modern">
+                    Ajouter le premier membre
+                </a>
+            </div>
             @endif
         </div>
     </div>
-
-    <!-- Carte statistiques -->
-    <div class="row mt-4">
-        <div class="col-md-6 col-lg-4 mb-4">
-            <div class="stat-card-modern">
-                <div class="stat-icon stat-total">
-                    <i class="fas fa-users"></i>
-                </div>
-                <div class="stat-content">
-                    <h3 class="stat-value">{{ $agents->count() }}</h3>
-                    <p class="stat-label">Agents au total</p>
-                </div>
-            </div>
-        </div>
-                                             
-        
-        <div class="col-md-6 col-lg-4  mb-4">
-            <div class="stat-card-modern">
-                <div class="stat-icon stat-recent">
-                    <i class="fas fa-user-clock"></i>
-                </div>
-                <div class="stat-content">
-                    <h3 class="stat-value">{{ $agents->where('created_at', '>=', now()->subDays(7))->count() }}</h3>
-                    <p class="stat-label">Ajoutés cette semaine</p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-6 col-lg-4 mb-4">
-            <div class="stat-card-modern">
-                <div class="stat-icon stat-locations">
-                    <i class="fas fa-map-marked-alt"></i>
-                </div>
-                <div class="stat-content">
-                    <h3 class="stat-value">{{ $agents->pluck('commune')->filter()->unique()->count() }}</h3>
-                    <p class="stat-label">Communes différentes</p>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 
-<!-- Modal de confirmation de suppression -->
-<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+<!-- Message Modal -->
+<div class="modal fade" id="messageModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content modern-modal">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
-                    Confirmer la suppression
-                </h5>
-                <button type="button" class="btn-close-modal" data-bs-dismiss="modal">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p>Êtes-vous sûr de vouloir supprimer cet agent ? Cette action est irréversible.</p>
-                <div class="alert alert-warning border-warning border-start border-3">
-                    <i class="fas fa-exclamation-circle me-2"></i>
-                    Toutes les données associées à cet agent seront également supprimées.
+        <div class="modal-content glass-modal">
+            <form action="{{ route('compagnie.agents.send-message') }}" method="POST">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <span class="icon-circle"><i class="fas fa-paper-plane"></i></span>
+                        Contacter <span id="modalAgentName" class="highlight"></span>
+                    </h5>
+                    <button type="button" class="btn-close-glass" data-bs-dismiss="modal"><i class="fas fa-times"></i></button>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn-modal-secondary" data-bs-dismiss="modal">
-                    <i class="fas fa-times me-2"></i>
-                    Annuler
-                </button>
-                <form id="deleteForm" method="POST" style="display: inline;">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn-modal-danger">
-                        <i class="fas fa-trash-alt me-2"></i>
-                        Supprimer définitivement
-                    </button>
-                </form>
-            </div>
+                <div class="modal-body">
+                    <input type="hidden" name="agent_id" id="modalAgentId">
+                    <div class="form-group-modern mb-3">
+                        <label>Sujet du message</label>
+                        <input type="text" name="subject" required placeholder="Ex: Modification de planning">
+                    </div>
+                    <div class="form-group-modern">
+                        <label>Votre message</label>
+                        <textarea name="message" rows="4" required placeholder="Écrivez ici..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-link-modern" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary-modern">Envoyer le message</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
-<!-- Inclure SweetAlert2 -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Delete Form (Hidden) -->
+<form id="deleteForm" method="POST" style="display: none;">
+    @csrf
+    @method('DELETE')
+</form>
 
 <style>
-/* Variables de design modernes */
+/* Modern CSS Reset & Variables */
 :root {
-    /* Palette principale */
-    --primary-orange: #e94f1b;
-    --primary-orange-light: rgba(254, 162, 25, 0.1);
-    --primary-orange-dark: #e94f1b;
-    --secondary-green: #10b981;
-    --secondary-green-light: rgba(16, 185, 129, 0.1);
-    --accent-green: #0a8c5f;
-    
-    /* Couleurs neutres */
-    --white: #ffffff;
-    --gray-50: #f8fafc;
-    --gray-100: #f1f5f9;
-    --gray-200: #e2e8f0;
-    --gray-300: #cbd5e1;
-    --gray-400: #94a3b8;
-    --gray-500: #64748b;
-    --gray-600: #475569;
-    --gray-700: #334155;
-    --gray-800: #1e293b;
-    --gray-900: #0f172a;
-    
-    /* Couleurs fonctionnelles */
-    --success: #10b981;
-    --warning: #f59e0b;
-    --danger: #ef4444;
-    --info: #3b82f6;
-    
-    /* Effets */
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow-base: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-    
-    /* Bordures */
-    --radius-sm: 0.375rem;
-    --radius-base: 0.5rem;
-    --radius-md: 0.75rem;
-    --radius-lg: 1rem;
-    --radius-xl: 1.5rem;
-    
-    /* Transitions */
-    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
-    
-    /* Espacements */
-    --space-xs: 0.25rem;
-    --space-sm: 0.5rem;
-    --space-base: 1rem;
-    --space-md: 1.5rem;
-    --space-lg: 2rem;
-    --space-xl: 3rem;
+    --primary: #e94f1b;
+    --primary-light: #ff6b3d;
+    --primary-dark: #c13e13;
+    --secondary: #10b981;
+    --dark: #121415;
+    --gray-bg: #f5f7fb;
+    --card-bg: #ffffff;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --border-color: #e2e8f0;
+    --font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
-/* Reset et styles de base */
-.container-fluid {
-    padding: 0;
-    max-width: 100%;
+body {
+    background-color: var(--gray-bg);
 }
 
-/* Page Header Moderne */
-.page-header-modern {
-    background: var(--white);
-    border-bottom: 1px solid var(--gray-200);
-    padding: var(--space-lg) var(--space-xl);
-    margin-bottom: var(--space-xl);
+.content-wrapper-modern {
+    padding: 2rem;
+    font-family: var(--font-family);
+    max-width: 1600px;
+    margin: 0 auto;
 }
 
-.header-icon-wrapper {
-    width: 64px;
-    height: 64px;
-    background: linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-orange-dark) 100%);
-    border-radius: var(--radius-lg);
+/* Stats Overview */
+.stats-overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+}
+
+.stat-item {
+    background: var(--card-bg);
+    padding: 1.5rem;
+    border-radius: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    border: 1px solid var(--border-color);
+    transition: transform 0.3s ease;
+}
+
+.stat-item:hover {
+    transform: translateY(-5px);
+}
+
+.stat-icon-box {
+    width: 56px;
+    height: 56px;
+    border-radius: 1rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--white);
-    font-size: 1.75rem;
-    box-shadow: var(--shadow-lg);
-    transition: transform var(--transition-base);
-}
-
-.header-icon-wrapper:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-xl);
-}
-
-.page-title {
-    color: var(--gray-900);
-    font-weight: 800;
-    font-size: 2.25rem;
-    line-height: 1.1;
-    margin-bottom: var(--space-xs);
-    background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-700) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.page-subtitle {
-    color: var(--gray-500);
-    font-size: 1.125rem;
-    font-weight: 400;
-}
-
-/* Boutons modernes */
-.btn-back-modern {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.75rem 1.5rem;
-    background: var(--white);
-    border: 2px solid var(--gray-200);
-    border-radius: var(--radius-base);
-    color: var(--gray-700);
-    font-weight: 600;
-    text-decoration: none;
-    transition: all var(--transition-base);
-    gap: var(--space-sm);
-}
-
-.btn-back-modern:hover {
-    border-color: var(--primary-orange);
-    color: var(--primary-orange);
-    background: var(--primary-orange-light);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-}
-
-.btn-add-modern {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.875rem 1.75rem;
-    background: linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-orange-dark) 100%);
-    border: none;
-    border-radius: var(--radius-base);
-    color: var(--white);
-    font-weight: 600;
-    text-decoration: none;
-    transition: all var(--transition-base);
-    gap: var(--space-sm);
-    box-shadow: var(--shadow-md);
-}
-
-.btn-add-modern:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-lg);
-    background: linear-gradient(135deg, var(--primary-orange-dark) 0%, #d68909 100%);
-}
-
-/* Carte principale */
-.modern-card {
-    background: var(--white);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-lg);
-    border: 1px solid var(--gray-200);
-    overflow: hidden;
-    margin-bottom: var(--space-xl);
-    transition: box-shadow var(--transition-base);
-}
-
-.modern-card:hover {
-    box-shadow: var(--shadow-xl);
-}
-
-.card-header-modern {
-    padding: var(--space-lg) var(--space-xl);
-    border-bottom: 1px solid var(--gray-200);
-    background: linear-gradient(90deg, var(--gray-50) 0%, var(--white) 100%);
-}
-
-.card-title {
-    color: var(--gray-900);
-    font-weight: 700;
+    color: white;
     font-size: 1.5rem;
-    margin-bottom: var(--space-xs);
 }
 
-.card-subtitle {
-    color: var(--gray-500);
+.bg-gradient-blue { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.bg-gradient-green { background: linear-gradient(135deg, #10b981, #059669); }
+.bg-gradient-orange { background: linear-gradient(135deg, #f97316, #ea580c); }
+.bg-gradient-purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+
+.stat-info .stat-label {
     font-size: 0.875rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.stat-info .stat-number {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin: 0;
+}
+
+/* Header & Search */
+.action-header {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: var(--space-sm);
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1.5rem;
 }
 
-.badge-count-modern {
-    background: var(--secondary-green-light);
-    color: var(--secondary-green);
-    padding: 0.375rem 0.875rem;
-    border-radius: var(--radius-xl);
-    font-weight: 600;
-    font-size: 0.875rem;
-    border: 1px solid var(--secondary-green);
+.main-title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--text-main);
+    letter-spacing: -0.02em;
+    margin-bottom: 0.25rem;
 }
 
-/* Barre de recherche moderne */
-.search-box-modern {
+.main-subtitle {
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.header-right {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.search-wrapper {
     position: relative;
-    min-width: 280px;
+    min-width: 300px;
 }
 
-.search-icon {
+.search-wrapper i {
     position: absolute;
     left: 1rem;
     top: 50%;
     transform: translateY(-50%);
-    color: var(--gray-400);
-    z-index: 2;
-    transition: color var(--transition-fast);
+    color: var(--text-muted);
 }
 
-.search-input-modern {
+.search-wrapper input {
     width: 100%;
-    padding: 0.875rem 1rem 0.875rem 3rem;
-    background: var(--white);
-    border: 2px solid var(--gray-200);
-    border-radius: var(--radius-base);
-    color: var(--gray-900);
-    font-size: 0.95rem;
-    transition: all var(--transition-base);
-}
-
-.search-input-modern:focus {
-    outline: none;
-    border-color: var(--primary-orange);
-    box-shadow: 0 0 0 3px rgba(254, 162, 25, 0.15);
-    background: var(--white);
-}
-
-.search-input-modern:focus + .search-icon {
-    color: var(--primary-orange);
-}
-
-.search-clear {
-    position: absolute;
-    right: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    background: var(--gray-100);
-    border: none;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    color: var(--gray-500);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: all var(--transition-fast);
-}
-
-.search-input-modern:not(:placeholder-shown) ~ .search-clear {
-    opacity: 1;
-}
-
-.search-clear:hover {
-    background: var(--gray-200);
-    color: var(--gray-700);
-}
-
-/* Boutons de filtre */
-.filter-group-modern {
-    position: relative;
-}
-
-.btn-filter-modern {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.75rem 1.25rem;
-    background: var(--white);
-    border: 2px solid var(--gray-200);
-    border-radius: var(--radius-base);
-    color: var(--gray-700);
+    padding: 0.75rem 1rem 0.75rem 2.75rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--border-color);
+    background: white;
     font-weight: 500;
-    cursor: pointer;
-    transition: all var(--transition-base);
-    gap: var(--space-sm);
+    transition: all 0.2s;
 }
 
-.btn-filter-modern:hover {
-    border-color: var(--primary-orange);
-    color: var(--primary-orange);
-    background: var(--primary-orange-light);
+.search-wrapper input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(233, 79, 27, 0.1);
+    outline: none;
 }
 
-.dropdown-menu-modern {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    z-index: 50;
-    margin-top: 0.5rem;
-    background: var(--white);
-    border: 1px solid var(--gray-200);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-xl);
-    min-width: 240px;
-    opacity: 0;
-    transform: translateY(-10px);
-    visibility: hidden;
-    transition: all var(--transition-base);
-}
-
-.filter-group-modern:hover .dropdown-menu-modern {
-    opacity: 1;
-    transform: translateY(0);
-    visibility: visible;
-}
-
-.dropdown-header {
-    padding: 1rem 1.25rem;
-    background: var(--gray-50);
-    border-bottom: 1px solid var(--gray-200);
-    color: var(--gray-700);
-    font-weight: 600;
-    font-size: 0.875rem;
+/* Buttons */
+.btn-primary-modern {
+    background: var(--primary);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    font-weight: 700;
+    border: none;
     display: flex;
     align-items: center;
-    gap: var(--space-sm);
+    gap: 0.5rem;
+    transition: all 0.2s;
+    box-shadow: 0 4px 6px rgba(233, 79, 27, 0.2);
 }
 
-.dropdown-body {
-    padding: 0.5rem;
+.btn-primary-modern:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    color: white;
+    box-shadow: 0 6px 12px rgba(233, 79, 27, 0.3);
 }
 
-.filter-option {
+.btn-filter {
+    background: white;
+    border: 1px solid var(--border-color);
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    color: var(--text-main);
     display: flex;
     align-items: center;
-    padding: 0.625rem 1rem;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: background var(--transition-fast);
-}
-
-.filter-option:hover {
-    background: var(--gray-50);
-}
-
-.filter-option input[type="checkbox"] {
-    width: 1rem;
-    height: 1rem;
-    border: 2px solid var(--gray-300);
-    border-radius: 0.25rem;
-    margin-right: 0.75rem;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-}
-
-.filter-option input[type="checkbox"]:checked {
-    background-color: var(--primary-orange);
-    border-color: var(--primary-orange);
-}
-
-.filter-option label {
-    cursor: pointer;
-    color: var(--gray-700);
-    font-size: 0.875rem;
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-    flex: 1;
-}
-
-.status-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.25rem 0.75rem;
-    border-radius: var(--radius-xl);
-    font-size: 0.75rem;
-    font-weight: 600;
-    gap: 0.25rem;
-}
-
-.status-active {
-    background: rgba(16, 185, 129, 0.1);
-    color: var(--secondary-green);
-    border: 1px solid rgba(16, 185, 129, 0.2);
-}
-
-.status-inactive {
-    background: rgba(239, 68, 68, 0.1);
-    color: var(--danger);
-    border: 1px solid rgba(239, 68, 68, 0.2);
-}
-
-/* Tableau moderne */
-.table-responsive-modern {
-    overflow: hidden;
-    border-radius: var(--radius-lg);
-}
-
-.table-modern {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-}
-
-.table-header-modern {
-    background: var(--gray-50);
-    padding: 1rem 1.5rem;
-    border-bottom: 2px solid var(--gray-200);
-    color: var(--gray-700);
-    font-weight: 600;
-    font-size: 0.875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.table-header-modern .d-flex {
     gap: 0.5rem;
 }
 
-.sort-btn {
-    background: none;
-    border: none;
-    color: var(--gray-400);
-    padding: 0.25rem;
-    cursor: pointer;
-    transition: color var(--transition-fast);
+/* Card & Table */
+.main-card-modern {
+    background: white;
+    border-radius: 1.5rem;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
 }
 
-.sort-btn:hover {
-    color: var(--primary-orange);
+.premium-table {
+    width: 100%;
+    border-collapse: collapse;
 }
 
-.table-row-modern {
-    transition: all var(--transition-base);
-    border-bottom: 1px solid var(--gray-100);
+.premium-table thead th {
+    background: #f8fafc;
+    padding: 1.25rem 2rem;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid #f1f5f9;
 }
 
-.table-row-modern:last-child {
-    border-bottom: none;
+.agent-row {
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.2s;
+    opacity: 0;
+    animation: slideIn 0.5s ease forwards var(--delay);
 }
 
-.table-row-modern:hover {
-    background: linear-gradient(90deg, var(--primary-orange-light) 0%, transparent 100%);
-    transform: translateX(4px);
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
 }
 
-.table-row-modern td {
-    padding: 1.25rem 1.5rem;
+.agent-row:hover {
+    background: #fcfdfe;
+}
+
+.agent-row td {
+    padding: 1.25rem 2rem;
     vertical-align: middle;
 }
 
-/* Info agent */
-.agent-info {
+/* Agent Profile */
+.agent-profile {
     display: flex;
     align-items: center;
-    gap: var(--space-base);
+    gap: 1.25rem;
 }
 
-.agent-avatar {
-    flex-shrink: 0;
+.avatar-container {
+    position: relative;
+    width: 52px;
+    height: 52px;
 }
 
-.avatar-img {
-    width: 48px;
-    height: 48px;
-    border-radius: var(--radius-lg);
+.avatar-container img {
+    width: 100%;
+    height: 100%;
+    border-radius: 1rem;
     object-fit: cover;
-    border: 3px solid var(--white);
-    box-shadow: var(--shadow-md);
+    background: #f1f5f9;
 }
 
-.avatar-placeholder {
-    width: 48px;
-    height: 48px;
-    border-radius: var(--radius-lg);
-    background: linear-gradient(135deg, var(--primary-orange) 0%, var(--secondary-green) 100%);
+.avatar-initials {
+    width: 100%;
+    height: 100%;
+    border-radius: 1rem;
+    background: linear-gradient(135deg, #e94f1b, #f97316);
+    color: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--white);
-    font-weight: 600;
-    font-size: 1rem;
-    box-shadow: var(--shadow-md);
+    font-weight: 800;
+    font-size: 1.1rem;
 }
 
-.agent-name {
-    color: var(--gray-900);
-    font-weight: 600;
-    margin: 0;
-    font-size: 1rem;
+.status-indicator {
+    position: absolute;
+    bottom: -3px;
+    right: -3px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 3px solid white;
 }
 
-.agent-id {
-    color: var(--gray-500);
-    font-size: 0.75rem;
-    margin: 0.25rem 0 0;
+.status-indicator.active { background: #10b981; }
+.status-indicator.inactive { background: #ef4444; }
+
+.profile-meta .name {
+    display: block;
+    font-weight: 700;
+    color: var(--text-main);
+    font-size: 1.05rem;
+    line-height: 1.2;
+}
+
+.profile-meta .id {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+/* Contacts */
+.contact-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.contact-line {
+    text-decoration: none !important;
+    color: var(--text-main);
+    font-size: 0.9rem;
+    font-weight: 600;
     display: flex;
     align-items: center;
-    gap: 0.25rem;
+    gap: 0.6rem;
+    transition: color 0.2s;
 }
 
-/* Contact et email */
-.contact-item, .email-info {
+.contact-line i { color: var(--primary); font-size: 0.85rem; }
+.contact-line.email i { color: #3b82f6; }
+.contact-line:hover { color: var(--primary); }
+
+/* Assignment */
+.assignment-box {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 0.5rem;
 }
 
-.contact-link, .email-link {
-    color: var(--gray-700);
-    text-decoration: none;
-    transition: color var(--transition-fast);
+.commune {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.commune i { color: #3b82f6; margin-right: 4px; }
+
+.gare-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.75rem;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-radius: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    width: fit-content;
+}
+
+.no-gare {
+    font-size: 0.8rem;
+    font-style: italic;
+    color: var(--text-muted);
+}
+
+/* Badges */
+.badge-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.badge-status.success { background: #ecfdf5; color: #065f46; }
+.badge-status.danger { background: #fef2f2; color: #991b1b; }
+
+/* Actions */
+.btn-icon-modern {
+    width: 38px;
+    height: 38px;
+    border-radius: 0.75rem;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 0.5rem;
+    transition: all 0.2s;
     font-size: 0.9rem;
 }
 
-.contact-link:hover {
-    color: var(--primary-orange);
+.btn-icon-modern.edit { background: #f1f5f9; color: #475569; }
+.btn-icon-modern.message { background: #eff6ff; color: #1d4ed8; }
+.btn-icon-modern.delete { background: #fef2f2; color: #ef4444; }
+
+.btn-icon-modern:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-.email-link:hover {
-    color: var(--secondary-green);
-}
+.btn-icon-modern.edit:hover { background: #e2e8f0; }
+.btn-icon-modern.message:hover { background: #dbeafe; }
+.btn-icon-modern.delete:hover { background: #fee2e2; }
 
-.contact-urgent {
-    color: var(--danger);
-    font-size: 0.8rem;
-    font-weight: 500;
-}
-
-/* Actions */
-.actions-modern {
+/* Pagination Footer */
+.pagination-footer {
+    padding: 1.5rem 2rem;
+    background: #f8fafc;
     display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: var(--space-sm);
-}
-
-.btn-actions-modern {
-    background: var(--gray-100);
-    border: none;
-    width: 36px;
-    height: 36px;
-    border-radius: var(--radius-base);
-    color: var(--gray-600);
-    cursor: pointer;
-    transition: all var(--transition-base);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.btn-actions-modern:hover {
-    background: var(--gray-200);
-    color: var(--gray-900);
-    transform: rotate(90deg);
-}
-
-.btn-action-modern {
-    width: 36px;
-    height: 36px;
-    border-radius: var(--radius-base);
-    border: 1px solid var(--gray-200);
-    background: var(--white);
-    color: var(--gray-600);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all var(--transition-base);
-}
-
-.btn-send-email:hover {
-    background: var(--info);
-    border-color: var(--info);
-    color: var(--white);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-}
-
-.btn-call:hover {
-    background: var(--success);
-    border-color: var(--success);
-    color: var(--white);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-}
-
-/* Dropdown actions */
-.dropdown-actions-modern {
-    position: relative;
-}
-
-.dropdown-actions-modern .dropdown-menu-modern {
-    right: 0;
-    left: auto;
-    min-width: 200px;
-}
-
-.dropdown-item-modern {
-    display: flex;
-    align-items: center;
-    padding: 0.75rem 1rem;
-    color: var(--gray-700);
-    text-decoration: none;
-    transition: all var(--transition-fast);
-    border: none;
-    background: none;
-    width: 100%;
-    text-align: left;
-    cursor: pointer;
-    gap: var(--space-sm);
-    font-size: 0.875rem;
-}
-
-.dropdown-item-modern:hover {
-    background: var(--gray-50);
-    color: var(--gray-900);
-    padding-left: 1.25rem;
-}
-
-.dropdown-divider {
-    height: 1px;
-    background: var(--gray-200);
-    margin: 0.5rem 0;
-}
-
-/* État vide */
-.empty-state-modern {
-    text-align: center;
-    padding: var(--space-xl) var(--space-lg);
-}
-
-.empty-icon {
-    font-size: 4rem;
-    background: linear-gradient(135deg, var(--primary-orange) 0%, var(--secondary-green) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: var(--space-md);
-}
-
-.empty-title {
-    color: var(--gray-900);
-    font-weight: 700;
-    font-size: 1.5rem;
-    margin-bottom: var(--space-sm);
-}
-
-.empty-text {
-    color: var(--gray-500);
-    margin-bottom: var(--space-lg);
-    max-width: 400px;
-    margin-left: auto;
-    margin-right: auto;
-    line-height: 1.6;
-}
-
-/* Pagination */
-.pagination-modern {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     justify-content: space-between;
-    padding: var(--space-lg) var(--space-xl);
-    border-top: 1px solid var(--gray-200);
-    margin-top: var(--space-md);
-}
-
-@media (min-width: 768px) {
-    .pagination-modern {
-        flex-direction: row;
-    }
-}
-
-.pagination-info {
-    color: var(--gray-500);
-    font-size: 0.875rem;
-    margin-bottom: var(--space-md);
-}
-
-@media (min-width: 768px) {
-    .pagination-info {
-        margin-bottom: 0;
-    }
-}
-
-/* Cartes statistiques */
-.stat-card-modern {
-    padding: var(--space-lg);
-    display: flex;
     align-items: center;
-    gap: var(--space-base);
-    transition: all var(--transition-base);
-    border-radius: var(--radius-lg);
-    background: var(--white);
-    border: 1px solid var(--gray-200);
 }
 
-.stat-card-modern:hover {
-    transform: translateY(-8px);
-    box-shadow: var(--shadow-xl);
-}
-
-.stat-icon {
-    width: 64px;
-    height: 64px;
-    border-radius: var(--radius-lg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.75rem;
-    color: var(--white);
-    flex-shrink: 0;
-}
-
-.stat-total {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.stat-active {
-    background: linear-gradient(135deg, var(--secondary-green) 0%, var(--accent-green) 100%);
-}
-
-.stat-recent {
-    background: linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-orange-dark) 100%);
-}
-
-.stat-locations {
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-}
-
-.stat-content {
-    flex: 1;
-}
-
-.stat-value {
-    color: var(--gray-900);
-    font-weight: 800;
-    font-size: 2rem;
-    margin: 0;
-    line-height: 1;
-}
-
-.stat-label {
-    color: var(--gray-500);
-    font-size: 0.875rem;
-    margin: 0.5rem 0 0;
-    font-weight: 500;
-}
-
-/* Modal */
-.modern-modal {
-    border: none;
-    border-radius: var(--radius-xl);
-    overflow: hidden;
-    box-shadow: var(--shadow-2xl);
+/* Modals */
+.glass-modal {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 .modal-header {
-    background: linear-gradient(90deg, var(--gray-50) 0%, var(--white) 100%);
-    border-bottom: 1px solid var(--gray-200);
-    padding: var(--space-lg);
+    border-bottom: none;
+    padding: 1.5rem 2rem;
 }
 
-.modal-title {
-    color: var(--gray-900);
-    font-weight: 700;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-}
-
-.btn-close-modal {
-    background: var(--gray-100);
-    border: none;
-    width: 32px;
-    height: 32px;
-    border-radius: var(--radius-base);
-    color: var(--gray-600);
-    cursor: pointer;
-    transition: all var(--transition-fast);
+.inner-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--primary-light);
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
+    color: white;
 }
 
-.btn-close-modal:hover {
-    background: var(--gray-200);
-    color: var(--gray-900);
+.form-group-modern label {
+    display: block;
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-main);
 }
 
-.modal-body {
-    padding: var(--space-lg);
-    color: var(--gray-700);
+.form-group-modern input, .form-group-modern textarea {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--border-color);
+    background: #f8fafc;
+    font-weight: 500;
 }
 
-.modal-footer {
-    background: var(--gray-50);
-    border-top: 1px solid var(--gray-200);
-    padding: var(--space-lg);
-    display: flex;
-    justify-content: flex-end;
-    gap: var(--space-sm);
-}
-
-.btn-modal-secondary {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.75rem 1.5rem;
-    background: var(--white);
-    border: 2px solid var(--gray-300);
-    border-radius: var(--radius-base);
-    color: var(--gray-700);
-    font-weight: 600;
-    cursor: pointer;
-    transition: all var(--transition-base);
-    gap: var(--space-sm);
-}
-
-.btn-modal-secondary:hover {
-    border-color: var(--gray-400);
-    background: var(--gray-50);
-}
-
-.btn-modal-danger {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.75rem 1.5rem;
-    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+.btn-link-modern {
+    background: none;
     border: none;
-    border-radius: var(--radius-base);
-    color: var(--white);
-    font-weight: 600;
-    cursor: pointer;
-    transition: all var(--transition-base);
-    gap: var(--space-sm);
-    box-shadow: var(--shadow-md);
+    font-weight: 700;
+    color: var(--text-muted);
 }
 
-.btn-modal-danger:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
-    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+/* Empty State */
+.empty-dashboard {
+    padding: 5rem 2rem;
+    text-align: center;
 }
 
-/* Animations */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.empty-animation {
+    font-size: 5rem;
+    color: var(--primary);
+    margin-bottom: 2rem;
+    animation: float 3s ease-in-out infinite;
 }
 
-.table-row-modern {
-    animation: fadeIn 0.6s ease-out forwards;
-    animation-delay: calc(var(--index, 0) * 0.05s);
-    opacity: 0;
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-    .page-header-modern {
-        padding: var(--space-md);
-    }
-    
-    .page-title {
-        font-size: 1.75rem;
-    }
-    
-    .agent-info {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: var(--space-sm);
-    }
-    
-    .actions-modern {
-        flex-direction: column;
-        align-items: flex-end;
-    }
-    
-    .search-box-modern {
-        min-width: 100%;
-    }
-    
-    .modern-card {
-        border-radius: var(--radius-lg);
-    }
-    
-    .stat-card-modern {
-        flex-direction: column;
-        text-align: center;
-    }
+/* Responsive adjustments */
+@media (max-width: 992px) {
+    .content-wrapper-modern { padding: 1rem; }
+    .header-right { width: 100%; }
+    .search-wrapper { flex-grow: 1; }
+    .main-title { font-size: 1.5rem; }
 }
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialiser SweetAlert2
-    const Toast = Swal.mixin({
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 3000,
-        timerProgressBar: true,
-        didOpen: (toast) => {
-            toast.addEventListener('mouseenter', Swal.stopTimer)
-            toast.addEventListener('mouseleave', Swal.resumeTimer)
-        }
-    });
-
-    // Afficher les messages de session
-    @if(session('success'))
-        Toast.fire({
-            icon: 'success',
-            title: '{{ session('success') }}',
-            background: 'var(--light-bg)',
-            color: 'var(--text-primary)',
-            iconColor: 'var(--secondary-color)'
-        });
-    @endif
-
-    @if(session('error'))
-        Swal.fire({
-            icon: 'error',
-            title: 'Erreur',
-            text: '{{ session('error') }}',
-            confirmButtonColor: '#e94f1b',
-            background: 'var(--light-bg)',
-            color: 'var(--text-primary)'
-        });
-    @endif
-
-    // Gestion de la recherche
-    const searchInput = document.querySelector('.search-input-modern');
-    const searchClear = document.querySelector('.search-clear');
-    const tableRows = document.querySelectorAll('.table-row-modern');
+    // Agent Search Logic
+    const searchInput = document.getElementById('agentSearch');
+    const tableRows = document.querySelectorAll('.agent-row');
 
     searchInput.addEventListener('input', function() {
-        const searchTerm = this.value.toLowerCase().trim();
-        
+        const query = this.value.toLowerCase().trim();
         tableRows.forEach(row => {
-            const text = row.textContent.toLowerCase();
-            if (text.includes(searchTerm)) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
+            const text = row.innerText.toLowerCase();
+            row.style.display = text.includes(query) ? '' : 'none';
         });
     });
 
-    searchClear.addEventListener('click', function() {
-        searchInput.value = '';
-        searchInput.dispatchEvent(new Event('input'));
-        searchInput.focus();
-    });
-
-    // Gestion des filtres
-    const filterButtons = document.querySelectorAll('.btn-filter-modern');
-    filterButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const dropdown = this.nextElementSibling;
-            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+    // Message Modal Setup
+    const messageModal = document.getElementById('messageModal');
+    if (messageModal) {
+        messageModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const agentId = button.getAttribute('data-agent-id');
+            const agentName = button.getAttribute('data-agent-name');
+            
+            document.getElementById('modalAgentId').value = agentId;
+            document.getElementById('modalAgentName').innerText = agentName;
         });
-    });
+    }
 
-    // Fermer les dropdowns quand on clique ailleurs
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.filter-group-modern')) {
-            document.querySelectorAll('.dropdown-menu-modern').forEach(dropdown => {
-                dropdown.style.display = 'none';
-            });
-        }
-        
-        if (!e.target.closest('.dropdown-actions-modern')) {
-            document.querySelectorAll('.dropdown-actions-modern .dropdown-menu-modern').forEach(dropdown => {
-                dropdown.style.display = 'none';
-            });
-        }
-    });
-
-    // Gestion des boutons d'action
-    document.querySelectorAll('.btn-actions-modern').forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const dropdown = this.nextElementSibling;
-            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-        });
-    });
-
-    // Bouton d'appel
-    document.querySelectorAll('.btn-call').forEach(button => {
-        button.addEventListener('click', function() {
-            const phone = this.getAttribute('data-phone');
-            if (phone) {
-                window.open(`tel:${phone}`, '_self');
-            }
-        });
-    });
-
-    // Bouton d'email
-    document.querySelectorAll('.btn-send-email').forEach(button => {
-        button.addEventListener('click', function() {
-            const email = this.getAttribute('data-email');
-            if (email) {
-                window.open(`mailto:${email}`, '_self');
-            }
-        });
-    });
-
-    // Tri des colonnes
-    document.querySelectorAll('.sort-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const sortBy = this.getAttribute('data-sort');
-            alert(`Tri par ${sortBy} - Fonctionnalité à implémenter`);
-        });
-    });
-
-    // Confirmation de suppression
-    window.confirmDelete = function(agentId) {
-        const form = document.getElementById('deleteForm');
-        form.action = `/company/agent/${agentId}`;
-        
-        const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
-        modal.show();
-    };
-
-    // Animation au chargement
-    const tableRowsAnimated = document.querySelectorAll('.table-row-modern');
-    tableRowsAnimated.forEach((row, index) => {
-        row.style.animationDelay = `${index * 0.05}s`;
-        row.classList.add('animate__animated', 'animate__fadeIn');
-    });
-
-    // Export des données
-    document.querySelector('.btn-export')?.addEventListener('click', function() {
+    // Modern Delete Confirmation
+    window.confirmDeleteAgent = function(agentId) {
         Swal.fire({
-            title: 'Exporter les agents',
-            text: 'Choisissez le format d\'export',
-            icon: 'info',
+            title: 'Souhaitez-vous vraiment retirer cet agent ?',
+            text: "Cette action désactivera ses accès et supprimera ses données liées.",
+            icon: 'warning',
             showCancelButton: true,
-            confirmButtonText: 'CSV',
-            cancelButtonText: 'Excel',
-            showDenyButton: true,
-            denyButtonText: 'PDF',
             confirmButtonColor: '#e94f1b',
-            background: 'var(--light-bg)'
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Oui, supprimer !',
+            cancelButtonText: 'Annuler',
+            customClass: {
+                popup: 'premium-swal-popup',
+                confirmButton: 'premium-swal-confirm'
+            }
         }).then((result) => {
             if (result.isConfirmed) {
-                Toast.fire({
-                    icon: 'success',
-                    title: 'Export CSV démarré'
-                });
-            } else if (result.dismiss === Swal.DismissReason.cancel) {
-                Toast.fire({
-                    icon: 'success',
-                    title: 'Export Excel démarré'
-                });
-            } else if (result.isDenied) {
-                Toast.fire({
-                    icon: 'success',
-                    title: 'Export PDF démarré'
-                });
+                const form = document.getElementById('deleteForm');
+                form.action = `/company/agent/${agentId}`;
+                form.submit();
             }
         });
-    });
+    }
+
+    // Tost Confirmation (if exists in session)
+    @if(session('success'))
+        Swal.fire({
+            icon: 'success',
+            title: 'Opération réussie',
+            text: '{{ session('success') }}',
+            timer: 3000,
+            showConfirmButton: false,
+            toast: true,
+            position: 'top-end'
+        });
+    @endif
 });
 </script>
 

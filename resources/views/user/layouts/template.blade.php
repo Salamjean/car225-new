@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" class="bg-[#F8F9FA]">
+<html lang="fr" class="bg-[#f0f2f5]">
 
 <head>
     <meta charset="UTF-8">
@@ -47,7 +47,7 @@
     @stack('styles')
 </head>
 
-<body class="bg-[#F8F9FA] min-h-screen">
+<body class="bg-[#f0f2f5] min-h-screen text-gray-800">
     
     <!-- Sidebar -->
     @include('user.layouts.sidebar')

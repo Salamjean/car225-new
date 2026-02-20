@@ -13,7 +13,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 
-class ReservationConfirmeeNotification extends Notification implements ShouldBroadcastNow
+class ReservationConfirmeeNotification extends Notification
 {
     use Queueable;
 

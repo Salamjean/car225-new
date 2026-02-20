@@ -87,6 +87,8 @@
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Contact</label>
                                 <input type="text" id="contact" name="contact" value="{{ $user->contact }}"
+                                    maxlength="10" minlength="10" pattern="[0-9]{10}"
+                                    oninput="this.value = this.value.replace(/[^0-9]/g, '').substring(0, 10)"
                                     class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
                                 <div class="invalid-feedback text-red-500 text-sm mt-1"></div>
                             </div>
@@ -112,6 +114,8 @@
                                     <div class="md:col-span-2">
                                         <label class="block text-sm font-semibold text-gray-700 mb-2">Contact d'urgence</label>
                                         <input type="text" id="contact_urgence" name="contact_urgence" value="{{ $user->contact_urgence }}"
+                                            maxlength="10" minlength="10" pattern="[0-9]{10}"
+                                            oninput="this.value = this.value.replace(/[^0-9]/g, '').substring(0, 10)"
                                             class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
                                         <p class="text-[10px] text-gray-500 mt-1 italic">Doit être différent de votre contact principal.</p>
                                         <div class="invalid-feedback text-red-500 text-sm mt-1"></div>
@@ -206,6 +210,18 @@
         // Validation additionnelle côté client
         const contact = $('#contact').val();
         const contactUrgence = $('#contact_urgence').val();
+        
+        if (contact && contact.length !== 10) {
+            $('#contact').addClass('border-red-500 focus:ring-red-500').removeClass('border-gray-300');
+            $('#contact').next('.invalid-feedback').text('Le contact doit comporter exactement 10 chiffres.');
+            return;
+        }
+
+        if (contactUrgence && contactUrgence.length !== 10) {
+            $('#contact_urgence').addClass('border-red-500 focus:ring-red-500').removeClass('border-gray-300');
+            $('#contact_urgence').next('.invalid-feedback').text('Le contact d\'urgence doit comporter exactement 10 chiffres.');
+            return;
+        }
         
         if (contact && contactUrgence && contact === contactUrgence) {
             $('#contact_urgence').addClass('border-red-500 focus:ring-red-500').removeClass('border-gray-300');

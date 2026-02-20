@@ -26,7 +26,9 @@ class Personnel extends Authenticatable
         'statut',
         'profile_image',
         'compagnie_id',
+        'gare_id',
         'password',
+        'fcm_token',
     ];
 
     /**
@@ -37,6 +39,11 @@ class Personnel extends Authenticatable
         return $this->belongsTo(Compagnie::class);
     }
 
+    public function gare()
+    {
+        return $this->belongsTo(Gare::class);
+    }
+
     // Dans app/Models/Personnel.php
     public function getProfileImageUrlAttribute()
     {
@@ -45,5 +52,15 @@ class Personnel extends Authenticatable
         }
 
         return asset('storage/' . $this->profile_image);
+    }
+
+    public function messages()
+    {
+        return $this->morphMany(CompanyMessage::class, 'recipient');
+    }
+
+    public function receivedGareMessages()
+    {
+        return $this->morphMany(GareMessage::class, 'recipient');
     }
 }

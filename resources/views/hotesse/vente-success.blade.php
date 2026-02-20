@@ -43,7 +43,7 @@
                 <div class="flex justify-between items-center mt-3 pt-3 border-t border-gray-100">
                     <span class="font-bold text-lg text-[#e94e1a]">{{ number_format($reservation->montant, 0, ',', ' ') }} F</span>
                     <div class="flex gap-2">
-                        <button onclick="showTicketDetails({{ json_encode($reservation) }}, {{ json_encode($reservation->programme->point_depart) }}, {{ json_encode($reservation->programme->point_arrive) }}, {{ json_encode($reservation->programme->vehicule->immatriculation ?? 'Bus') }})" 
+                        <button onclick="showTicketDetails({{ json_encode($reservation) }}, {{ json_encode($reservation->programme->point_depart) }}, {{ json_encode($reservation->programme->point_arrive) }})" 
                             class="p-1.5 bg-gray-100 text-gray-600 rounded-lg hover:bg-[#e94e1a] hover:text-white transition-all duration-200 shadow-sm hover:shadow-md" title="Voir détails">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -63,7 +63,7 @@
         </div>
 
         <script>
-            function showTicketDetails(reservation, depart, arrive, vehicule) {
+            function showTicketDetails(reservation, depart, arrive) {
                 const dateVoyage = new Date(reservation.date_voyage).toLocaleDateString('fr-FR');
                 const heureDepart = reservation.heure_depart ? reservation.heure_depart.substring(0, 5) : '--:--';
                 const montant = new Intl.NumberFormat('fr-FR').format(reservation.montant);
@@ -116,13 +116,9 @@
                                     <span class="font-bold text-[#e94e1a] text-lg">N° ${reservation.seat_number}</span>
                                 </div>
                                 <div class="bg-white border rounded-lg p-3">
-                                    <span class="block text-xs text-gray-500 mb-1">Véhicule</span>
-                                    <span class="font-bold text-gray-800">${vehicule}</span>
-                                </div>
-                                <div class="bg-white border rounded-lg p-3">
-                                    <span class="block text-xs text-gray-500 mb-1">Prix</span>
-                                    <span class="font-bold text-gray-800">${montant} FCFA</span>
-                                </div>
+                                     <span class="block text-xs text-gray-500 mb-1">Prix</span>
+                                     <span class="font-bold text-gray-800">${montant} FCFA</span>
+                                 </div>
                             </div>
 
                             ${qrCodeHtml}

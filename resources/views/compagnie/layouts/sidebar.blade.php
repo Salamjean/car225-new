@@ -1,4 +1,4 @@
-<aside class="mdc-drawer mdc-drawer--dismissible mdc-drawer--open" style="background-color: red">
+<aside class="mdc-drawer mdc-drawer--dismissible mdc-drawer--open">
     <div class="mdc-drawer__header" style="padding: 20px 0;">
         <a href="{{ route('compagnie.dashboard') }}"
             class="brand-logo d-flex justify-content-center align-items-center">
@@ -27,6 +27,34 @@
                         Tableau de bord
                     </a>
                 </div>
+                      
+                <!-- Suivi GPS en temps réel -->
+                <div class="mdc-list-item mdc-drawer-item">
+                    <a class="mdc-drawer-link d-flex align-items-center" href="{{ route('compagnie.tracking.index') }}">
+                        <i class="fas fa-map-marked-alt mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true" style="color: #10b981;"></i>
+                        Voyages en cours
+                        <span class="ml-auto" style="width: 8px; height: 8px; background: #10b981; border-radius: 50; display: inline-block; animation: pulse 2s infinite;"></span>
+                    </a>
+                </div>
+               
+                  <!-- Onglet Messages -->
+                <div class="mdc-list-item mdc-drawer-item">
+                    <a class="mdc-drawer-link d-flex align-items-center justify-content-between w-100" href="{{ route('compagnie.messages.index') }}">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-envelope mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
+                            Messages
+                        </div>
+                        @php
+                            $unreadGareMessages = Auth::guard('compagnie')->user()->receivedGareMessages()->where('is_read', false)->count();
+                        @endphp
+                        @if($unreadGareMessages > 0)
+                            <span class="badge badge-pill badge-danger" style="background: #e94f1b; font-weight: bold; padding: 4px 8px;">
+                                {{ $unreadGareMessages }}
+                            </span>
+                        @endif
+                    </a>
+                </div>
+
                 <div class="mdc-list-item mdc-drawer-item">
                     <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel"
                         data-target="ui-sub-reservations">
@@ -159,6 +187,29 @@
                 </div>
                 <div class="mdc-list-item mdc-drawer-item">
                     <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel"
+                        data-target="ui-sub-vehicule">
+                        <i class="fas fa-bus mdc-list-item__start-detail mdc-drawer-item-icon"
+                            aria-hidden="true"></i>
+                        Véhicules
+                        <i class="mdc-drawer-arrow material-icons">chevron_right</i>
+                    </a>
+                    <div class="mdc-expansion-panel" id="ui-sub-vehicule">
+                        <nav class="mdc-list mdc-drawer-submenu">
+                            <div class="mdc-list-item mdc-drawer-item">
+                                <a class="mdc-drawer-link" href="{{route('vehicule.create')}}">
+                                    Ajouter
+                                </a>
+                            </div>
+                            <div class="mdc-list-item mdc-drawer-item">
+                                <a class="mdc-drawer-link" href="{{route('vehicule.index')}}">
+                                    Liste
+                                </a>
+                            </div>
+                        </nav>
+                    </div>
+                </div>
+                <div class="mdc-list-item mdc-drawer-item">
+                    <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel"
                         data-target="ui-sub-perso">
                         <i class="fas fa-route mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
                         Itinéraire
@@ -202,8 +253,6 @@
                     </div>
                 </div>
                 
-               
-                
                 <!-- Onglet Profil -->
                 <!-- <div class="mdc-list-item mdc-drawer-item">
                     <a class="mdc-drawer-link" href="{{ route('compagnie.profile') }}">
@@ -212,12 +261,25 @@
                     </a>
                 </div> -->
 
+              
                 <!-- Onglet Signalements -->
                 <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-drawer-link" href="{{ route('compagnie.signalements.index') }}">
-                        <i class="fas fa-exclamation-triangle mdc-list-item__start-detail mdc-drawer-item-icon text-danger"
-                            aria-hidden="true" style="color:red"></i>
-                        Signalements
+                    <a class="mdc-drawer-link d-flex align-items-center justify-content-between w-100" href="{{ route('compagnie.signalements.index') }}">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-exclamation-triangle mdc-list-item__start-detail mdc-drawer-item-icon text-danger"
+                                aria-hidden="true" style="color:red"></i>
+                            Signalements
+                        </div>
+                        @php
+                            $newSignalements = \App\Models\Signalement::where('compagnie_id', Auth::guard('compagnie')->id())
+                                ->where('statut', 'nouveau')
+                                ->count();
+                        @endphp
+                        @if($newSignalements > 0)
+                            <span class="badge badge-pill badge-danger" style="background: #ef4444; font-weight: bold; padding: 4px 8px;">
+                                {{ $newSignalements }}
+                            </span>
+                        @endif
                     </a>
                 </div>
                 <!-- <div class="mdc-list-item mdc-drawer-item">

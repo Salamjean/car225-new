@@ -61,8 +61,12 @@ class SignalementController extends Controller
                 $signalement->sapeur_pompier_id = $nearestSP->id;
                 $signalement->save();
 
-                Notification::route('mail', $nearestSP->email)
-                    ->notify(new SendSignalementToSapeurPompierNotification($signalement));
+                try {
+                    Notification::route('mail', $nearestSP->email)
+                        ->notify(new SendSignalementToSapeurPompierNotification($signalement));
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error('Erreur notification pompier: ' . $e->getMessage());
+                }
             }
         }
 

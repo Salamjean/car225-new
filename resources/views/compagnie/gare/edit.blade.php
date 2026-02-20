@@ -59,12 +59,100 @@
                     </div>
 
                     <!-- Adresse -->
-                    <div class="space-y-2 md:col-span-2">
+                    <div class="space-y-2">
                         <label class="block text-sm font-semibold text-gray-700">Adresse / Situation Géographique <span class="text-red-500">*</span></label>
                         <input type="text" name="adresse" value="{{ old('adresse', $gare->adresse) }}" required
                             class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent outline-none transition-all bg-gray-50 focus:bg-white"
                             placeholder="Ex: Rue 12, Face au marché">
                         @error('adresse')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Commune -->
+                    <div class="space-y-2">
+                        <label class="block text-sm font-semibold text-gray-700">Commune</label>
+                        <input type="text" name="commune" value="{{ old('commune', $gare->commune) }}"
+                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent outline-none transition-all bg-gray-50 focus:bg-white"
+                            placeholder="Ex: Cocody">
+                        @error('commune')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="col-span-full border-t border-gray-100 my-4"></div>
+
+                    <!-- Responsable Nom -->
+                    <div class="space-y-2">
+                        <label class="block text-sm font-semibold text-gray-700">Nom du Responsable <span class="text-red-500">*</span></label>
+                        <input type="text" name="responsable_nom" value="{{ old('responsable_nom', $gare->responsable_nom) }}" required
+                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent outline-none transition-all bg-gray-50 focus:bg-white"
+                            placeholder="Nom du responsable">
+                        @error('responsable_nom')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Responsable Prénom -->
+                    <div class="space-y-2">
+                        <label class="block text-sm font-semibold text-gray-700">Prénom du Responsable <span class="text-red-500">*</span></label>
+                        <input type="text" name="responsable_prenom" value="{{ old('responsable_prenom', $gare->responsable_prenom) }}" required
+                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent outline-none transition-all bg-gray-50 focus:bg-white"
+                            placeholder="Prénom du responsable">
+                        @error('responsable_prenom')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Email -->
+                    <div class="space-y-2">
+                        <label class="block text-sm font-semibold text-gray-700">Email <span class="text-red-500">*</span></label>
+                        <input type="email" name="email" value="{{ old('email', $gare->email) }}" required
+                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent outline-none transition-all bg-gray-50 focus:bg-white"
+                            placeholder="email@exemple.com">
+                        <p class="text-xs text-orange-600 mt-1">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            La modification de l'email nécessitera une vérification par code OTP.
+                        </p>
+                        @error('email')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Contact -->
+                    <div class="space-y-2">
+                        <label class="block text-sm font-semibold text-gray-700">Contact <span class="text-red-500">*</span></label>
+                        <input type="text" name="contact" value="{{ old('contact', $gare->contact) }}" required
+                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent outline-none transition-all bg-gray-50 focus:bg-white"
+                            placeholder="Contact principal">
+                        @error('contact')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Contact Urgence -->
+                    <div class="space-y-2">
+                        <label class="block text-sm font-semibold text-gray-700">Contact d'Urgence</label>
+                        <input type="text" name="contact_urgence" value="{{ old('contact_urgence', $gare->contact_urgence) }}"
+                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent outline-none transition-all bg-gray-50 focus:bg-white"
+                            placeholder="Contact d'urgence">
+                        @error('contact_urgence')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Photo de profil (Optionnel) -->
+                     <div class="space-y-2">
+                        <label class="block text-sm font-semibold text-gray-700">Photo de profil</label>
+                        <input type="file" name="profile_image" accept="image/*"
+                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent outline-none transition-all bg-gray-50 focus:bg-white">
+                        @if($gare->profile_image)
+                            <div class="mt-2">
+                                <span class="text-xs text-gray-500">Image actuelle:</span>
+                                <img src="{{ asset('storage/' . $gare->profile_image) }}" alt="Profile" class="h-10 w-10 rounded-full object-cover mt-1">
+                            </div>
+                        @endif
+                        @error('profile_image')
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                         @enderror
                     </div>

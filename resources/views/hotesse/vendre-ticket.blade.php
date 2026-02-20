@@ -102,11 +102,12 @@
                                 <!-- Compagnie & Trajet -->
                                 <div class="flex items-center gap-4 min-w-[280px]">
                                     <div class="w-16 h-16 bg-gradient-to-br from-[#e94f1b] to-orange-400 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-inner">
-                                        <i class="fas fa-bus text-white text-2xl"></i>
+                                        <i class="fas fa-route text-white text-2xl"></i>
                                     </div>
                                     <div>
                                         <h3 class="font-black text-gray-900 text-xl tracking-tight">
-                                            {{ $route->compagnie->name ?? 'Compagnie' }}
+                                            <span class="font-bold">{{ $route->compagnie->sigle ?? '' }}</span>
+                                            <span class="font-light text-gray-500 ml-1">{{ $route->compagnie->name ?? 'Compagnie' }}</span>
                                         </h3>
                                         <div class="flex items-center gap-2 text-sm text-gray-500 mt-1 font-medium">
                                             <span>{{ $route->point_depart }}</span>
@@ -357,10 +358,6 @@
 
     // Affichage du Plan des Places (Seat Map)
     async function showSeatMap(vehicleId, programId, date) {
-        if (!vehicleId) {
-            Swal.fire({ icon: 'info', title: 'Info', text: 'Aucun véhicule assigné.' });
-            return;
-        }
 
         Swal.fire({
             title: 'Chargement du plan...',
@@ -375,18 +372,11 @@
 
             if (!data.success) throw new Error(data.error || 'Erreur lors du chargement');
 
-            const marque = data.vehicule.marque || 'Bus';
-            const modele = data.vehicule.modele || '';
-
             Swal.fire({
-                title: `<div class="text-[#e94f1b] font-black">${marque} ${modele}</div>`,
+                title: `<div class="text-[#e94f1b] font-black">Plan des places</div>`,
                 html: `
                     <div class="text-left py-2">
-                        <div class="bg-gray-100 p-3 rounded-xl mb-4 flex justify-between items-center">
-                            <div>
-                                <div class="text-[10px] uppercase font-bold text-gray-400">Immatriculation</div>
-                                <div class="font-black text-gray-800">${data.vehicule.immatriculation}</div>
-                            </div>
+                        <div class="bg-gray-100 p-3 rounded-xl mb-4 flex justify-end items-center">
                             <div class="text-right">
                                 <div class="text-[10px] uppercase font-bold text-gray-400">Date du voyage</div>
                                 <div class="font-black text-[#e94f1b]">${new Date(date).toLocaleDateString('fr-FR')}</div>
@@ -394,7 +384,7 @@
                         </div>
                         <div class="mb-4">
                             <h4 class="font-black text-sm uppercase mb-3 flex items-center gap-2">
-                                <i class="fas fa-th text-[#e94f1b]"></i> Disposition des places
+                                <i class="fas fa-th text-[#e94f1b]"></i> Plan des places
                             </h4>
                             ${generatePlacesVisualization(data.vehicule, data.reserved_seats || [])}
                         </div>

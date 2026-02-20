@@ -20,6 +20,41 @@
             <form action="{{ route('compagnie.caisse.store') }}" method="POST" enctype="multipart/form-data" class="p-8">
                 @csrf
 
+                <!-- Section 0: Affectation à une Gare -->
+                @if(isset($gares) && $gares->count() > 0)
+                <div class="mb-12">
+                    <div class="flex items-center mb-6">
+                        <div class="w-2 h-8 bg-blue-500 rounded-full mr-4"></div>
+                        <h2 class="text-2xl font-bold text-gray-900">Affectation à une Gare</h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label class="flex items-center text-sm font-semibold text-gray-700">
+                                <span>Gare</span>
+                                <span class="text-red-500 ml-1">*</span>
+                            </label>
+                            <select name="gare_id" required
+                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white">
+                                <option value="" disabled {{ old('gare_id') ? '' : 'selected' }}>-- Sélectionnez une gare --</option>
+                                @foreach($gares as $gare)
+                                    <option value="{{ $gare->id }}" {{ old('gare_id') == $gare->id ? 'selected' : '' }}>
+                                        {{ $gare->nom_gare }} — {{ $gare->ville }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('gare_id')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                            <p class="text-xs text-gray-400 mt-1">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Sélectionnez la gare à laquelle cette caissière sera affectée.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
                 <!-- Section 1: Informations personnelles -->
                 <div class="mb-12">
                     <div class="flex items-center mb-6">
@@ -122,8 +157,10 @@
                                        name="contact" 
                                        value="{{ old('contact') }}"
                                        required
+                                       maxlength="10"
+                                       oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"
                                        class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
-                                       placeholder="Ex: +225 07 00 00 00 00">
+                                       placeholder="Ex: 0700000000">
                                 <div class="absolute inset-y-0 right-0 flex items-center pr-3">
                                     <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
@@ -144,8 +181,10 @@
                                 <input type="text" 
                                        name="cas_urgence" 
                                        value="{{ old('cas_urgence') }}"
+                                       maxlength="10"
+                                       oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"
                                        class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
-                                       placeholder="Numéro en cas d'urgence">
+                                       placeholder="Ex: 0100000000">
                                 <div class="absolute inset-y-0 right-0 flex items-center pr-3">
                                     <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>

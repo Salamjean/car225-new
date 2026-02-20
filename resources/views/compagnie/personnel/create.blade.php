@@ -20,6 +20,41 @@
             <form action="{{ route('personnel.store') }}" method="POST" enctype="multipart/form-data" class="p-8">
                 @csrf
 
+                <!-- Section 0: Affectation à une Gare -->
+                @if(isset($gares) && $gares->count() > 0)
+                <div class="mb-12">
+                    <div class="flex items-center mb-6">
+                        <div class="w-2 h-8 bg-blue-500 rounded-full mr-4"></div>
+                        <h2 class="text-2xl font-bold text-gray-900">Affectation à une Gare</h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label class="flex items-center text-sm font-semibold text-gray-700">
+                                <span>Gare</span>
+                                <span class="text-red-500 ml-1">*</span>
+                            </label>
+                            <select name="gare_id" required
+                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white">
+                                <option value="" disabled {{ old('gare_id') ? '' : 'selected' }}>-- Sélectionnez une gare --</option>
+                                @foreach($gares as $gare)
+                                    <option value="{{ $gare->id }}" {{ old('gare_id') == $gare->id ? 'selected' : '' }}>
+                                        {{ $gare->nom_gare }} — {{ $gare->ville }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('gare_id')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                            <p class="text-xs text-gray-400 mt-1">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Sélectionnez la gare à laquelle ce personnel sera affecté.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
                 <!-- Section 1: Informations personnelles -->
                 <div class="mb-12">
                     <div class="flex items-center mb-6">
@@ -157,8 +192,10 @@
                                            name="contact" 
                                            value="{{ old('contact') }}"
                                            required
+                                           maxlength="10"
+                                           oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"
                                            class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
-                                           placeholder="0700000000">
+                                           placeholder="Ex: 0700000000">
                                 </div>
                             </div>
                             @error('contact')
@@ -189,8 +226,10 @@
                                            name="contact_urgence" 
                                            value="{{ old('contact_urgence') }}"
                                            required
+                                           maxlength="10"
+                                           oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"
                                            class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
-                                           placeholder="Numéro en cas d'urgence">
+                                           placeholder="Ex: 0100000000">
                                 </div>
                             </div>
                             <p class="text-xs text-gray-500">Personne à contacter en cas d'urgence</p>
@@ -336,24 +375,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Formatage automatique des numéros de téléphone pour la Côte d'Ivoire
+    // Formatage automatique des numéros de téléphone (géré par oninput inline)
     const contactInput = document.querySelector('input[name="contact"]');
     const contactUrgenceInput = document.querySelector('input[name="contact_urgence"]');
 
-    function formatPhoneNumber(input) {
-        input.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
-            
-            if (value.length > 0) {
-                value = value.match(/.{1,2}/g).join('');
-            }
-            
-            e.target.value = value;
-        });
-    }
-
-    formatPhoneNumber(contactInput);
-    formatPhoneNumber(contactUrgenceInput);
 
     // Validation pour s'assurer que le contact personnel et d'urgence sont différents
     const errorSameContact = document.getElementById('error-contact-same');

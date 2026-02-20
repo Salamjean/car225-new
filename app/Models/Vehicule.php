@@ -19,11 +19,24 @@ class Vehicule extends Model
         'is_active',
         'motif',
         'compagnie_id',
+        'gare_id',
+        'statut',
     ];
 
     // Relation avec la compagnie
     public function compagnie()
     {
         return $this->belongsTo(Compagnie::class);
+    }
+
+    public function gare()
+    {
+        return $this->belongsTo(Gare::class);
+    }
+
+    // Relation avec les voyages
+    public function voyages()
+    {
+        return $this->hasMany(Voyage::class);
     }
 }

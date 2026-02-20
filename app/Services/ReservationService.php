@@ -52,18 +52,18 @@ class ReservationService
             // Penalty of 250
             $penalty = 250;
             $percentage = null; // Use penalty instead
-            $label = 'Entre 2h et 3h (-250 FCFA)';
+            $label = 'Entre 2h et 3h (-250 FCFA / billet)';
         } elseif ($hoursRemaining >= 1) {
             // Penalty of 500
             $penalty = 500;
             $percentage = null;
-            $label = 'Entre 1h et 2h (-500 FCFA)';
+            $label = 'Entre 1h et 2h (-500 FCFA / billet)';
         } else {
             // Between 15 min and 1 hour
             // Penalty of 500 (assumed same as 1h since not specified otherwise)
             $penalty = 500;
             $percentage = null;
-            $label = 'Moins d\'une heure (-500 FCFA)';
+            $label = 'Moins d\'une heure (-500 FCFA / billet)';
         }
 
         return [
@@ -91,21 +91,24 @@ class ReservationService
             $relatedReferences[] = $related->reference;
         }
 
+        $ticketCount = 1 + count($relatedReservations);
+        $totalPenalty = ($refundData['penalty'] ?? 0) * $ticketCount;
+
         // Calculate refund amount
         if ($refundData['percentage'] !== null) {
             $refundAmount = round($totalMontant * $refundData['percentage'] / 100, 0);
         } else {
-            $refundAmount = max(0, $totalMontant - $refundData['penalty']);
+            $refundAmount = max(0, $totalMontant - $totalPenalty);
         }
 
         return [
             'can_cancel' => $refundData['can_cancel'],
-            'penalty' => $refundData['penalty'],
+            'penalty' => $totalPenalty,
             'percentage' => $refundData['percentage'],
             'montant_original' => $totalMontant,
             'refund_amount' => $refundAmount,
             'time_remaining' => $refundData['time_remaining'],
-            'is_round_trip' => $reservation->is_aller_retour || count($relatedReservations) > 0,
+            'is_round_trip' => $reservation->is_aller_retour || $ticketCount > 1,
             'reference' => $reservation->reference,
             'related_references' => $relatedReferences,
             'fee_amount' => $totalMontant - $refundAmount,
@@ -129,6 +132,20 @@ class ReservationService
             return ['success' => false, 'message' => 'L\'annulation est impossible moins de 15 minutes avant le départ.'];
         }
 
+        // Validation Aller-Retour : Si l'aller est déjà passé ou scanné, on bloque l'annulation du retour
+        if ($reservation->is_aller_retour) {
+            $pairedReservation = $this->findPairedReservation($reservation);
+            $isRetourLeg = str_contains(strtoupper($reservation->reference), '-RET');
+            $mainRes = $isRetourLeg ? ($pairedReservation ?? $reservation) : $reservation;
+
+            $aHeure = $mainRes->heure_depart ?? optional($mainRes->programme)->heure_depart ?? '00:00';
+            $aDateTime = \Carbon\Carbon::parse(\Carbon\Carbon::parse($mainRes->date_voyage)->format('Y-m-d') . ' ' . $aHeure);
+
+            if ($aDateTime->isPast() || $mainRes->statut === 'terminee') {
+                return ['success' => false, 'message' => 'Annulation impossible : le voyage aller est déjà passé ou effectué.'];
+            }
+        }
+
         try {
             DB::beginTransaction();
 
@@ -136,13 +153,15 @@ class ReservationService
             $related = $this->getRelatedConfirmReservations($reservation);
             $reservationsToCancel = $reservationsToCancel->merge($related);
             
+            $ticketCount = $reservationsToCancel->count();
             $totalMontant = $reservationsToCancel->sum(fn($r) => (float)$r->montant);
+            $totalPenalty = ($refundData['penalty'] ?? 0) * $ticketCount;
 
             // Calculate refund amount
             if ($refundData['percentage'] !== null) {
                 $refundAmount = round($totalMontant * $refundData['percentage'] / 100, 0);
             } else {
-                $refundAmount = max(0, $totalMontant - $refundData['penalty']);
+                $refundAmount = max(0, $totalMontant - $totalPenalty);
             }
 
             foreach ($reservationsToCancel as $res) {
@@ -274,12 +293,22 @@ class ReservationService
             ->first();
         if ($paired) return $paired;
 
-        // Strategy 3: Reference with/without -RET suffix
-        if (str_ends_with($reservation->reference, '-RET')) {
-            $baseRef = substr($reservation->reference, 0, -4);
-            return Reservation::where('reference', $baseRef)->where('statut', 'confirmee')->first();
+        // Strategy 3: Reference with -RET pattern (fallback)
+        if (str_contains(strtoupper($reservation->reference), '-RET')) {
+            // C'est un RETOUR (ex: TX-RET-70), on cherche l'ALLER (ex: TX-70)
+            $basePart = explode('-RET', strtoupper($reservation->reference))[0];
+            return Reservation::where('reference', 'NOT LIKE', '%-RET%')
+                ->where('reference', 'LIKE', $basePart . '%')
+                ->where('id', '!=', $reservation->id)
+                ->where('is_aller_retour', true)
+                ->where('statut', 'confirmee')
+                ->first();
         } else {
-            return Reservation::where('reference', $reservation->reference . '-RET')->where('statut', 'confirmee')->first();
+            // C'est un ALLER, on cherche le RETOUR
+            return Reservation::where('reference', 'LIKE', $reservation->reference . '-RET%')
+                ->where('is_aller_retour', true)
+                ->where('statut', 'confirmee')
+                ->first();
         }
 
         return null;
@@ -311,11 +340,14 @@ class ReservationService
             }
         }
 
+        $ticketCount = count($reservationsToCancel);
+        $totalPenalty = ($refundData['penalty'] ?? 0) * $ticketCount;
+
         // Calculate residual value based on new rules
         if ($refundData['percentage'] !== null) {
             $residualValue = round($oldTotal * $refundData['percentage'] / 100, 0);
         } else {
-            $residualValue = max(0, $oldTotal - $refundData['penalty']);
+            $residualValue = max(0, $oldTotal - $totalPenalty);
         }
 
         $newProgramme = \App\Models\Programme::findOrFail($data['programme_id']);
@@ -352,10 +384,27 @@ class ReservationService
                 $this->freeSeat($res);
             }
 
-            // Generate new base reference if needed, or reuse old one
-            $newReference = $oldReservation->reference;
-            if (!str_contains($newReference, 'MOD-')) {
-                $newReference = 'MOD-' . $newReference . '-' . strtoupper(Str::random(4));
+            // Generate a unique reference for this modification
+            $oldRef = $oldReservation->reference;
+            if (str_starts_with($oldRef, 'MOD-')) {
+                // If already modified, we strip the previous random suffix to keep reference length reasonable
+                // Pattern expected: MOD-ORIGINAL-REF-RANDOM (random part is usually 4 chars after a dash)
+                $parts = explode('-', $oldRef);
+                if (count($parts) > 1) {
+                    array_pop($parts); // Remove last random part
+                    $baseRef = implode('-', $parts);
+                } else {
+                    $baseRef = $oldRef;
+                }
+            } else {
+                $baseRef = 'MOD-' . $oldRef;
+            }
+
+            $newReference = $baseRef . '-' . strtoupper(Str::random(4));
+
+            // In the very unlikely case of collision, regenerate
+            while (Reservation::where('reference', $newReference)->exists()) {
+                $newReference = $baseRef . '-' . strtoupper(Str::random(4));
             }
 
             // Calcul heure arrivée Aller
@@ -415,7 +464,7 @@ class ReservationService
                     'heure_depart' => $data['return_heure_depart'],
                     'heure_arrive' => $heureArriveRetour,
                     'montant' => $newTotal - $newPrice,
-                    'reference' => $newReference . '-RET',
+                    'reference' => $newReference . '-RET-' . $data['seat_number'],
                     'statut' => 'confirmee',
                     'is_aller_retour' => true,
                     'payment_method' => 'wallet',
@@ -446,6 +495,54 @@ class ReservationService
             if(isset($resRetour)) $this->occupySeat($resRetour);
 
             DB::commit();
+
+            // Envoi de la notification de modification
+            try {
+                // S'assurer que les relations nécessaires sont chargées
+                $newReservation->load('programme.compagnie');
+                if (isset($resRetour)) $resRetour->load('programme.compagnie');
+
+                $userToNotify = User::findOrFail($newReservation->user_id);
+                $qrAller = $newReservation->qr_code;
+                $qrRetour = isset($resRetour) ? $resRetour->qr_code : null;
+                $progRetour = isset($resRetour) ? $resRetour->programme : null;
+
+                try {
+                    $userToNotify->notify(new \App\Notifications\ReservationModifiedNotification(
+                        $newReservation,
+                        $newReservation->programme,
+                        $qrAller,
+                        $newReservation->passager_nom . ' ' . $newReservation->passager_prenom,
+                        $newReservation->seat_number,
+                        $newReservation->is_aller_retour ? 'ALLER-RETOUR' : 'ALLER SIMPLE',
+                        $qrRetour,
+                        $progRetour
+                    ));
+                } catch (\Exception $e) {
+                    Log::error("Erreur notification de modification Laravel (mail/broadcast): " . $e->getMessage());
+                }
+
+                // Notification Push FCM
+                if (!empty($userToNotify->fcm_token)) {
+                    try {
+                        $fcmService = app(\App\Services\FcmService::class);
+                        $dateVoyage = date('d/m/Y', strtotime($newReservation->date_voyage));
+                        $heureDepart = date('H:i', strtotime($newReservation->programme->heure_depart));
+                        
+                        $fcmService->sendNotification(
+                            $userToNotify->fcm_token, 
+                            'Réservation modifiée ✏️', 
+                            "Billet {$newReservation->reference}: {$newReservation->programme->point_depart} → {$newReservation->programme->point_arrive} le {$dateVoyage} à {$heureDepart}.",
+                            ['type' => 'modification', 'reservation_id' => $newReservation->id]
+                        );
+                    } catch (\Exception $e) {
+                        Log::error('FCM Error (Modification): ' . $e->getMessage());
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error("Erreur notification de modification: " . $e->getMessage());
+            }
+
             return ['success' => true, 'message' => 'Modification réussie.', 'new_reservation' => $newReservation];
         } catch (\Exception $e) {
             DB::rollBack();
@@ -543,7 +640,7 @@ class ReservationService
         
         // Re-calculate status
         $totalReservedSeats = $statutDate->nbre_siege_occupe;
-        $totalPlaces = optional(optional($reservation->programme)->vehicule)->nombre_place ?? 50;
+        $totalPlaces = $reservation->programme ? $reservation->programme->getTotalSeats($reservation->date_voyage) : 50;
         $percentage = ($totalReservedSeats / max($totalPlaces, 1)) * 100;
 
         $status = $percentage >= 100 ? 'rempli' : ($percentage >= 80 ? 'presque_complet' : 'vide');

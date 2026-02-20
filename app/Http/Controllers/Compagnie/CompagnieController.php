@@ -163,24 +163,9 @@ class CompagnieController extends Controller
                 $compagnie->path_logo = $logoPath;
             }
 
-            // Gestion du rechargement du solde (Ex-tickets)
-            if ($request->filled('add_tickets') && $request->add_tickets > 0) {
-                $amountToAdd = $request->input('add_tickets');
-                
-                $compagnie->tickets = ($compagnie->tickets ?? 0) + $amountToAdd;
-                
-                // Enregistrer dans l'historique
-                $compagnie->historiqueTickets()->create([
-                    'quantite' => $amountToAdd, // On garde le nom du champ 'quantite' mais on y stocke le montant
-                    'montant' => $amountToAdd,
-                    'motif' => 'Recharge administrateur (Solde)'
-                ]);
-            }
-
             // Mise à jour de la compagnie avec les champs validés, excluant ceux gérés séparément
             $compagnie->update($request->except(['path_logo', 'password', 'add_tickets', 'montant_paye']));
 
-            // Mise à jour du mot de passe si fourni
             // Mise à jour du mot de passe si fourni
             if ($request->filled('password')) {
                 $compagnie->password = $request->password; // Model hashes it
@@ -188,12 +173,66 @@ class CompagnieController extends Controller
             }
 
             return redirect()->route('compagnie.index')
-                ->with('success', 'Compagnie mise à jour avec succès (Solde rechargé si renseigné)!');
+                ->with('success', 'Compagnie mise à jour avec succès !');
 
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', 'Erreur lors de la mise à jour: ' . $e->getMessage())
                 ->withInput();
+        }
+    }
+
+    /**
+     * Afficher la page de recharge des compagnies
+     */
+    public function rechargeIndex(Request $request)
+    {
+        $query = Compagnie::query();
+        
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where('name', 'like', "%{$search}%")
+                  ->orWhere('sigle', 'like', "%{$search}%");
+        }
+        
+        $compagnies = $query->latest()->paginate(10);
+        
+        return view('admin.compagnie.recharge', compact('compagnies'));
+    }
+
+    /**
+     * Processus de recharge du solde d'une compagnie
+     */
+    public function processRecharge(Request $request, Compagnie $compagnie)
+    {
+        $request->validate([
+            'amount' => 'required|numeric|min:1'
+        ], [
+            'amount.required' => 'Le montant est obligatoire.',
+            'amount.min' => 'Le montant doit être au moins de 1 FCFA.'
+        ]);
+
+        try {
+            DB::beginTransaction();
+            
+            $amountToAdd = $request->input('amount');
+            $compagnie->tickets = ($compagnie->tickets ?? 0) + $amountToAdd;
+            $compagnie->save();
+            
+            // Enregistrer dans l'historique
+            $compagnie->historiqueTickets()->create([
+                'quantite' => $amountToAdd, 
+                'montant' => $amountToAdd,
+                'motif' => 'Recharge administrateur'
+            ]);
+
+            DB::commit();
+
+            return redirect()->back()->with('success', "Le compte de {$compagnie->name} a été rechargé de " . number_format($amountToAdd, 0, ',', ' ') . " FCFA.");
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Erreur lors de la recharge: ' . $e->getMessage());
         }
     }
 

@@ -19,6 +19,40 @@
             <form action="{{route('itineraire.store')}}" method="POST" class="p-8" id="itineraireForm">
                 @csrf
 
+                <!-- Section 0: Affectation à une Gare -->
+                @if(isset($gares) && $gares->count() > 0)
+                <div class="mb-12">
+                    <div class="flex items-center mb-6">
+                        <div class="w-2 h-8 bg-blue-500 rounded-full mr-4"></div>
+                        <h2 class="text-2xl font-bold text-gray-900">Affectation à une Gare</h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label class="flex items-center text-sm font-semibold text-gray-700">
+                                <span>Gare</span>
+                            </label>
+                            <select name="gare_id"
+                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white">
+                                <option value="">-- Aucune gare (non affecté) --</option>
+                                @foreach($gares as $gare)
+                                    <option value="{{ $gare->id }}" {{ old('gare_id') == $gare->id ? 'selected' : '' }}>
+                                        {{ $gare->nom_gare }} — {{ $gare->ville }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('gare_id')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                            <p class="text-xs text-gray-400 mt-1">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Sélectionnez la gare à laquelle cet itinéraire sera affecté.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
                 <!-- Section 1: Informations de base -->
                 <div class="mb-12">
                     <div class="flex items-center mb-6">

@@ -46,7 +46,12 @@ class Reservation extends Model
         'refund_amount',
         'refund_percentage',
         'is_aller_retour',
+        'statut_aller',
+        'statut_retour',
+        'date_retour',
     ];
+
+    protected $appends = ['voyage_statut', 'trajet', 'montant_formatted'];
 
     protected $casts = [
         'montant' => 'decimal:2',
@@ -112,6 +117,41 @@ class Reservation extends Model
         return $this->belongsTo(Vehicule::class, 'embarquement_vehicule_id');
     }
 
+    /**
+     * Relation avec le voyage (mission spécifique du jour)
+     * Note: Utiliser ->mission pour un accès fiable avec eager loading
+     */
+    public function voyage()
+    {
+        return $this->hasOne(Voyage::class, 'programme_id', 'programme_id')
+                    ->whereDate('date_voyage', $this->date_voyage);
+    }
+
+    /**
+     * Accesseur pour récupérer la mission d'aujourd'hui
+     * Supporte l'eager loading via programme.voyages
+     */
+    public function getMissionAttribute()
+    {
+        $targetDate = $this->date_voyage instanceof \Carbon\Carbon 
+            ? $this->date_voyage->toDateString() 
+            : $this->date_voyage;
+
+        // Si programme.voyages est déjà chargé, on cherche dedans (évite les requêtes dynamiques qui cassent l'eager loading)
+        if ($this->relationLoaded('programme') && $this->programme->relationLoaded('voyages')) {
+            return $this->programme->voyages->first(function($v) use ($targetDate) {
+                // S'assurer que la comparaison de date est saine
+                $vDate = $v->date_voyage instanceof \Carbon\Carbon 
+                    ? $v->date_voyage->toDateString() 
+                    : substr($v->date_voyage, 0, 10);
+                return $vDate === $targetDate;
+            });
+        }
+
+        // Sinon fallback sur la relation classique
+        return $this->voyage;
+    }
+
     // ========================================
     // HELPERS
     // ========================================
@@ -151,6 +191,14 @@ class Reservation extends Model
     public function getTrajetAttribute()
     {
         return $this->programme ? $this->programme->trajet_complet : null;
+    }
+
+    /**
+     * Accesseur pour le statut du voyage réel (mission)
+     */
+    public function getVoyageStatutAttribute()
+    {
+        return $this->mission->statut ?? null;
     }
 
     // ========================================

@@ -54,8 +54,9 @@ Route::prefix('user')->group(function () {
         Route::get('/devices', [UserController::class, 'getDevices']);
         Route::post('/deactivate', [UserController::class, 'deactivateAccount']);
         
-        // Dashboard
+        // Dashboard & Suivi temps réel
         Route::get('/dashboard', [UserController::class, 'dashboard']);
+        Route::get('/tracking/location', [UserController::class, 'getTrackingLocation']);
         
         // Réservations
         Route::get('/reservations', [UserReservationController::class, 'index']);
@@ -66,6 +67,11 @@ Route::prefix('user')->group(function () {
         Route::get('/reservations/{reservation}/ticket', [UserReservationController::class, 'ticket']);
         Route::get('/reservations/{reservation}/download', [UserReservationController::class, 'download']);
         Route::get('/reservations/{reservation}/round-trip-tickets', [UserReservationController::class, 'getRoundTripTickets']);
+        
+        // Modification de réservation
+        Route::get('/reservations/{reservation}/modification-data', [UserReservationController::class, 'getModificationData']);
+        Route::get('/reservations/{reservation}/modification-delta', [UserReservationController::class, 'calculateModificationDelta']);
+        Route::put('/reservations/{reservation}/modify', [UserReservationController::class, 'processModification']);
         
         // Vérification du statut de paiement CinetPay (polling mobile)
         Route::get('/payment/status/{transactionId}', [UserReservationController::class, 'getPaymentStatus']);

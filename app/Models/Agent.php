@@ -20,13 +20,39 @@ class Agent extends Authenticatable
         'commune', 
         'cas_urgence', 
         'compagnie_id',
+        'gare_id',
         'archived_at',
         'fcm_token',
         'nom_device',
     ];
 
+    protected $casts = [
+        'password' => 'hashed',
+        'archived_at' => 'datetime',
+    ];
+
+    public function getIsActiveAttribute()
+    {
+        return $this->archived_at === null;
+    }
+
     public function compagnie()
     {
         return $this->belongsTo(Compagnie::class, 'compagnie_id'); 
+    }
+
+    public function gare()
+    {
+        return $this->belongsTo(Gare::class, 'gare_id');
+    }
+
+    public function messages()
+    {
+        return $this->morphMany(CompanyMessage::class, 'recipient');
+    }
+
+    public function receivedGareMessages()
+    {
+        return $this->morphMany(GareMessage::class, 'recipient');
     }
 }

@@ -58,7 +58,7 @@ class AccueilController extends Controller
         ];
 
         // Envoyer la notification par email
-        Notification::route('mail', 'salamjeanlouis3@gmail.com')
+        Notification::route('mail', '')
             ->notify(new ContactFormNotification($contactData));
 
         return back()->with('success', 'Votre message a bien été envoyé. Notre équipe vous répondra très prochainement.');

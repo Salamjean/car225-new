@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\AgentRequest;
 use App\Models\Agent;
 use App\Models\ResetCodePasswordAgent;
+use App\Models\Gare;
 use App\Notifications\SendEmailToAgentAfterRegistrationNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,20 +16,77 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 
+use App\Models\CompanyMessage;
+use App\Notifications\NewInternalMessageNotification;
+use App\Services\FcmService;
+
 class AgentController extends Controller
 {
+    public function sendMessage(Request $request)
+    {
+        $request->validate([
+            'agent_id' => 'required|exists:agents,id',
+            'subject' => 'required|string|max:255',
+            'message' => 'required|string',
+        ]);
+
+        $compagnie = Auth::guard('compagnie')->user();
+
+        // Check if agent belongs to this company
+        $agent = Agent::where('id', $request->agent_id)
+            ->where('compagnie_id', $compagnie->id)
+            ->firstOrFail();
+
+        $message = CompanyMessage::create([
+            'compagnie_id' => $compagnie->id,
+            'recipient_id' => $agent->id,
+            'recipient_type' => Agent::class,
+            'subject' => $request->subject,
+            'message' => $request->message,
+            'is_read' => false,
+        ]);
+
+        // --- NOTIFICATIONS SYSTEM ---
+        try {
+            $agent->notify(new NewInternalMessageNotification($message));
+
+            if (!empty($agent->fcm_token)) {
+                $fcmService = app(FcmService::class);
+                $fcmService->sendNotification($agent->fcm_token, 'Nouveau Message direction 📩', "Sujet : {$message->subject}", [
+                    'type' => 'internal_message',
+                    'message_id' => $message->id,
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error("Erreur d'envoi de notification agent: " . $e->getMessage());
+        }
+
+        return back()->with('success', 'Message envoyé avec succès à ' . $agent->name);
+    }
     public function index()
     {
         $compagnie = Auth::guard('compagnie')->user();
         $agents = Agent::where('compagnie_id', $compagnie->id)
+            ->with('gare')
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
-        return view('compagnie.agent.index', compact('agents'));
+        // Company-wide stats
+        $totalAgents = Agent::where('compagnie_id', $compagnieId = $compagnie->id)->count();
+        $activeAgents = Agent::where('compagnie_id', $compagnieId)
+            ->whereNull('archived_at')
+            ->count();
+        $newAgents = Agent::where('compagnie_id', $compagnieId)
+            ->where('created_at', '>=', now()->subDays(7))
+            ->count();
+
+        return view('compagnie.agent.index', compact('agents', 'totalAgents', 'activeAgents', 'newAgents'));
     }
     public function create()
     {
-        return view('compagnie.agent.create');
+        $compagnie = Auth::guard('compagnie')->user();
+        $gares = Gare::where('compagnie_id', $compagnie->id)->get();
+        return view('compagnie.agent.create', compact('gares'));
     }
 
     public function store(AgentRequest $request)
@@ -56,6 +114,7 @@ class AgentController extends Controller
 
             $agent->commune = $request->commune;
             $agent->compagnie_id = $compagnie->id;
+            $agent->gare_id = $request->gare_id;
 
             $agent->save();
 
@@ -88,7 +147,9 @@ class AgentController extends Controller
 
     public function edit(Agent $agent)
     {
-        return view('compagnie.agent.edit', compact('agent'));
+        $compagnie = Auth::guard('compagnie')->user();
+        $gares = Gare::where('compagnie_id', $compagnie->id)->get();
+        return view('compagnie.agent.edit', compact('agent', 'gares'));
     }
 
     public function update(Request $request, Agent $agent)
@@ -101,6 +162,7 @@ class AgentController extends Controller
                 'contact' => 'required|string|max:20',
                 'cas_urgence' => 'required|string|max:20',
                 'commune' => 'required|string|max:255',
+                'gare_id' => 'required|exists:gares,id',
                 'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
             ]);
 

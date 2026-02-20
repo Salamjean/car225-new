@@ -27,17 +27,69 @@ class SignalementApiController extends Controller
             $user = Auth::user();
             $today = now()->format('Y-m-d');
 
-            $reservations = Reservation::with(['programme.compagnie'])
-                ->where('user_id', $user->id)
-                ->whereDate('date_voyage', $today)
-                ->where('statut', 'confirmee')
-                ->get();
+            // Récupérer les réservations récentes (aujourd'hui + hier pour les voyages de nuit)
+            // On charge programme.voyages pour que l'accesseur 'mission' fonctionne
+            $yesterday = now()->subDay()->format('Y-m-d');
+
+            $reservations = Reservation::with([
+                'programme.compagnie',
+                'programme.voyages',
+            ])
+            ->where('user_id', $user->id)
+            ->where(function($q) use ($today, $yesterday) {
+                $q->whereDate('date_voyage', $today)
+                  ->orWhereDate('date_voyage', $yesterday);
+            })
+            ->whereIn('statut', ['confirmee', 'terminee'])
+            ->get();
+
+            // Enrichir les données pour le mobile (identique à ReservationApiController)
+            $reservations->map(function($res) {
+                // Par défaut, le display_statut = statut DB
+                $res->display_statut = $res->statut;
+                $res->temps_restant = null;
+                $res->is_ongoing = false;
+                $res->can_report = false; // Par défaut, on ne peut pas signaler
+
+                if ($res->statut === 'terminee') {
+                    $voyage = $res->mission;
+                    
+                    if ($voyage) {
+                        if ($voyage->statut === 'en_cours') {
+                            $res->display_statut = 'en_voyage';
+                            $res->is_ongoing = true;
+                            $res->can_report = true; // SEULEMENT LORSQU'IL EST EN VOYAGE
+                            
+                            $res->temps_restant = $voyage->temps_restant;
+                            $res->occupancy = $voyage->occupancy;
+                        } elseif ($voyage->statut === 'termine' || $voyage->statut === 'terminé') {
+                            $res->display_statut = 'arrive';
+                            $res->can_report = false; // INTERDIT SI ARRIVÉ
+                        } else {
+                            $res->display_statut = 'enregistre';
+                        }
+                    } else {
+                         // Fallback si pas de voyage trouvé (rare)
+                         $res->display_statut = 'enregistre';
+                    }
+                } elseif ($res->statut === 'confirmee') {
+                    $res->display_statut = 'confirmee';
+                    $res->can_report = false; // Doit être scanné d'abord (en voyage)
+                }
+
+                return $res;
+            });
+
+            // Ne garder que les réservations en cours de voyage (display_statut = 'en_voyage')
+            $activeReservations = $reservations->filter(fn($res) => $res->display_statut === 'en_voyage')->values();
 
             return response()->json([
                 'success' => true,
-                'reservations' => $reservations
+                'reservations' => $activeReservations,
+                'en_voyage' => $activeReservations->isNotEmpty()
             ]);
         } catch (\Exception $e) {
+            Log::error('Erreur API getActiveReservations: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de la récupération des réservations: ' . $e->getMessage()
@@ -56,31 +108,52 @@ class SignalementApiController extends Controller
             'description' => 'required|string',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
+            'photo' => 'nullable|image|max:10240', // Obligatoire si accident ou non selon le web, rendu nullable ici pour compatibilité
             'vehicule_id' => 'nullable|exists:vehicules,id',
-            'photo' => 'required_if:type,accident|image|max:10240', // Obligatoire si accident
         ]);
 
         try {
             DB::beginTransaction();
 
             $signalement = new Signalement();
-            $signalement->user_id = Auth::id();
+            $signalement->user_id = Auth::id() ?? 1;
             $signalement->programme_id = $validated['programme_id'];
-
-            if (!empty($validated['vehicule_id'])) {
-                $signalement->vehicule_id = $validated['vehicule_id'];
-            } else {
-                $programme = Programme::find($validated['programme_id']);
-                if ($programme) {
-                    $signalement->vehicule_id = $programme->vehicule_id;
-                }
-            }
-
             $signalement->type = $validated['type'];
             $signalement->description = $validated['description'];
             $signalement->latitude = $validated['latitude'] ?? null;
             $signalement->longitude = $validated['longitude'] ?? null;
             $signalement->statut = 'nouveau';
+
+            if ($request->has('vehicule_id') && $request->vehicule_id) {
+                $signalement->vehicule_id = $request->vehicule_id;
+            }
+
+            // Tenter de récupérer le voyage actif pour enrichir les informations (NON BLOQUANT)
+            $voyage = \App\Models\Voyage::where('programme_id', $validated['programme_id'])
+                ->whereIn('statut', ['en_cours', 'programme'])
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            if ($voyage) {
+                $signalement->voyage_id = $voyage->id;
+                $signalement->personnel_id = $voyage->personnel_id;
+                $signalement->compagnie_id = $voyage->compagnie_id;
+                if (empty($signalement->vehicule_id)) {
+                    $signalement->vehicule_id = $voyage->vehicule_id;
+                }
+            } else {
+                $programme = Programme::find($validated['programme_id']);
+                if ($programme) {
+                    $signalement->compagnie_id = $programme->compagnie_id;
+                }
+            }
+
+            // Lier avec la réservation de l'utilisateur (NON BLOQUANT)
+            // Note: La colonne reservation_id n'existe pas dans la table signalements
+            $reservation = Reservation::where('user_id', Auth::id())
+                ->where('programme_id', $validated['programme_id'])
+                ->orderBy('created_at', 'desc')
+                ->first();
 
             if ($request->hasFile('photo')) {
                 $path = $request->file('photo')->store('signalements', 'public');
@@ -116,9 +189,27 @@ class SignalementApiController extends Controller
                 Log::error('Erreur envoi email API compagnie: ' . $e->getMessage());
             }
 
-            // Notification de confirmation à l'utilisateur (Database pour le "Bell" icon)
+            // Notification de confirmation à l'utilisateur (Mobile Push + Database)
             try {
-                Auth::user()->notify(new \App\Notifications\GeneralNotification(
+                $user = Auth::user();
+                
+                // Envoi de la notification Push Mobile
+                if ($user && $user->fcm_token) {
+                    try {
+                        $fcmService = app(\App\Services\FcmService::class);
+                        $fcmService->sendNotification(
+                            $user->fcm_token, 
+                            'Signalement reçu ⚠️', 
+                            "Votre signalement de type '" . ucfirst($signalement->type) . "' est en cours de traitement.",
+                            ['type' => 'signalement', 'signalement_id' => $signalement->id]
+                        );
+                    } catch (\Exception $e) {
+                        Log::error("Erreur FCM Signalement API: " . $e->getMessage());
+                    }
+                }
+
+                // Envoi de la notification Web/Database
+                $user->notify(new \App\Notifications\GeneralNotification(
                     'Signalement enregistré ⚠️',
                     "Votre signalement de type '" . ucfirst($signalement->type) . "' a été reçu et est en cours de traitement.",
                     'warning'

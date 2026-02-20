@@ -34,6 +34,22 @@
                         </div>
                     @endif
 
+                    @if(!$enVoyage && !$preselectedReservationId)
+                        <div class="rounded-xl bg-amber-50 border-l-4 border-amber-500 p-4 mb-6">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-info-circle text-amber-500 text-xl"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-sm font-bold text-amber-800 uppercase tracking-wide">Signalement Restreint</h3>
+                                    <p class="text-sm font-medium text-amber-700 mt-1">
+                                        Vous n'avez aucun voyage en cours actuellement. Le signalement d'incident est réservé aux passagers en cours de trajet.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
                     <!-- Section 1: Le Voyage -->
                     <div>
                         <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2 mb-4 border-b border-gray-100 pb-2">
@@ -42,13 +58,14 @@
                         </h3>
                         
                         <!-- Voyage Selection -->
-                        <div class="relative group">
+                        <div class="relative group {{ $preselectedReservationId ? 'hidden' : '' }}">
                             <label for="programme_id" class="block text-sm font-medium text-gray-700 mb-2">
                                 <i class="fas fa-route text-red-500 mr-1"></i> Sélectionner le trajet concerné
                             </label>
                             <div class="relative">
-                                <select id="programme_id" name="programme_id" required onchange="updateVehicleInfo(this)"
-                                    class="block w-full pl-4 pr-10 py-3 text-base border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent sm:text-sm rounded-xl shadow-sm transition-all duration-300 appearance-none bg-gray-50 hover:bg-white">
+                                <select id="programme_id" name="programme_id" {{ $preselectedReservationId ? '' : 'required' }} onchange="updateVehicleInfo(this)"
+                                    {{ (!$enVoyage && !$preselectedReservationId) ? 'disabled' : '' }}
+                                    class="block w-full pl-4 pr-10 py-3 text-base border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent sm:text-sm rounded-xl shadow-sm transition-all duration-300 appearance-none bg-gray-50 hover:bg-white {{ (!$enVoyage && !$preselectedReservationId) ? 'opacity-50 cursor-not-allowed' : '' }}">
                                     <option value="">-- Choisissez votre voyage d'aujourd'hui --</option>
                                     @foreach($reservations as $reservation)
                                         @php 
@@ -57,6 +74,7 @@
                                             $vehicule = $prog->vehicule;
                                         @endphp
                                         <option value="{{ $prog->id }}" 
+                                                {{ $preselectedReservationId == $reservation->id ? 'selected' : '' }}
                                                 data-compagnie-id="{{ $compagnie->id }}"
                                                 data-compagnie-name="{{ $compagnie->name ?? 'Compagnie' }}"
                                                 data-vehicule-id="{{ $vehicule->id ?? '' }}"
@@ -72,8 +90,40 @@
                             </div>
                         </div>
 
+                        @if($selectedReservation)
+                            <input type="hidden" name="programme_id" value="{{ $selectedReservation->programme_id }}">
+                            <div class="bg-red-50 p-4 rounded-xl border border-red-100 flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-red-600 shadow-sm">
+                                        <i class="fas fa-ticket-alt"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">Référence Voyage</p>
+                                        <p class="text-sm font-bold text-gray-900">{{ $selectedReservation->programme->point_depart }} → {{ $selectedReservation->programme->point_arrive }}</p>
+                                        @if($actualVoyage && $actualVoyage->statut === 'en_cours')
+                                            @php
+                                                $dateV = \Carbon\Carbon::parse($selectedReservation->date_voyage)->format('Y-m-d');
+                                                $arrTime = \Carbon\Carbon::parse($dateV . ' ' . $selectedReservation->programme->heure_arrive);
+                                                if (\Carbon\Carbon::parse($selectedReservation->programme->heure_arrive)->lt(\Carbon\Carbon::parse($selectedReservation->programme->heure_depart))) {
+                                                    $arrTime->addDay();
+                                                }
+                                            @endphp
+                                            <p class="text-[10px] font-bold text-blue-500 mt-1 flex items-center gap-1">
+                                                <i class="far fa-clock"></i> Temps restant : 
+                                                <span class="font-mono bg-blue-50 px-2 py-0.5 rounded shadow-sm timer-display" 
+                                                      data-arrival="{{ $arrTime->toIso8601String() }}">
+                                                    --:--:--
+                                                </span>
+                                            </p>
+                                        @endif
+                                    </div>
+                                </div>
+                                <span class="px-3 py-1 bg-white text-red-600 text-[10px] font-black rounded-lg border border-red-100 uppercase">Pré-sélectionné</span>
+                            </div>
+                        @endif
+
                         <!-- Info Véhicule Dynamique -->
-                        <div id="vehicule-section" class="hidden mt-6 bg-gradient-to-r from-gray-50 to-white p-5 rounded-xl border border-gray-200 shadow-inner">
+                        <div id="vehicule-section" class="{{ $preselectedReservationId ? 'block' : 'hidden' }} mt-6 bg-gradient-to-r from-gray-50 to-white p-5 rounded-xl border border-gray-200 shadow-inner">
                             <div class="flex items-start gap-4">
                                 <div class="bg-white p-3 rounded-full shadow-sm">
                                     <i class="fas fa-bus text-red-500 text-xl"></i>
@@ -81,25 +131,53 @@
                                 <div class="flex-1">
                                     <h4 class="text-sm font-bold text-gray-900 uppercase tracking-wide">Véhicule Identifié</h4>
                                     <div class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div>
-                                            <p class="text-xs text-gray-500">Compagnie</p>
-                                            <p id="display-compagnie" class="font-medium text-gray-800 text-sm">-</p>
-                                        </div>
-                                        <div>
-                                            <p class="text-xs text-gray-500">Immatriculation</p>
-                                            <p id="display-vehicule" class="font-medium text-gray-800 text-sm">-</p>
-                                        </div>
+                                        @if($actualVehicule)
+                                            <div>
+                                                <p class="text-xs text-gray-500">Compagnie</p>
+                                                <p class="font-medium text-gray-800 text-sm">{{ $actualVehicule->compagnie->name ?? 'N/A' }}</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-500">Immatriculation</p>
+                                                <p class="font-medium text-gray-800 text-sm">{{ $actualVehicule->immatriculation }} ({{ $actualVehicule->marque }})</p>
+                                            </div>
+                                        @else
+                                            <div>
+                                                <p class="text-xs text-gray-500">Compagnie</p>
+                                                <p id="display-compagnie" class="font-medium text-gray-800 text-sm">-</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-500">Immatriculation</p>
+                                                <p id="display-vehicule" class="font-medium text-gray-800 text-sm">-</p>
+                                            </div>
+                                        @endif
                                     </div>
 
-                                    <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+                                    @if($actualVoyage && $actualVoyage->chauffeur)
+                                        <div class="mt-3 bg-white/50 p-2 rounded-lg border border-gray-100">
+                                            <p class="text-[10px] text-gray-400 uppercase font-bold">Chauffeur en service</p>
+                                            <p class="text-sm font-medium text-gray-700">
+                                                <i class="fas fa-user-tie text-red-400 mr-2"></i> {{ $actualVoyage->chauffeur->name }} {{ $actualVoyage->chauffeur->prenom }}
+                                            </p>
+                                        </div>
+                                    @endif
+
+                                    <!-- <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
                                         <div>
                                             <p class="text-xs text-gray-500 mb-1">Passagers à bord</p>
-                                            <p id="display-occupancy" class="font-black text-red-600 text-lg">chargement...</p>
+                                            <p id="display-occupancy" class="font-black text-red-600 text-lg">
+                                                @if($preselectedReservationId)
+                                                    chargement...
+                                                @else
+                                                    -
+                                                @endif
+                                            </p>
                                         </div>
-                                        <button type="button" onclick="showPassengersPopup()" class="bg-red-50 text-red-600 px-4 py-2 rounded-xl text-xs font-bold hover:bg-red-100 transition-colors border border-red-100 flex items-center gap-2">
+                                        <button type="button" onclick="showPassengersPopup()" 
+                                            {{ (!$enVoyage && !$preselectedReservationId) ? 'disabled' : '' }}
+                                            class="bg-red-50 text-red-600 px-4 py-2 rounded-xl text-xs font-bold hover:bg-red-100 transition-colors border border-red-100 flex items-center gap-2 {{ (!$enVoyage && !$preselectedReservationId) ? 'opacity-50 cursor-not-allowed' : '' }}">
                                             <i class="fas fa-users"></i> Liste Passagers
                                         </button>
-                                    </div>
+                                    </div> -->
                                 </div>
                             </div>
                         </div>
@@ -120,7 +198,8 @@
                                 </label>
                                 <div class="relative">
                                     <select id="type" name="type" required onchange="handleProblemType(this.value)"
-                                        class="block w-full pl-4 pr-10 py-3 text-base border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent sm:text-sm rounded-xl shadow-sm transition-all duration-300 appearance-none bg-gray-50 hover:bg-white">
+                                        {{ (!$enVoyage && !$preselectedReservationId) ? 'disabled' : '' }}
+                                        class="block w-full pl-4 pr-10 py-3 text-base border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent sm:text-sm rounded-xl shadow-sm transition-all duration-300 appearance-none bg-gray-50 hover:bg-white {{ (!$enVoyage && !$preselectedReservationId) ? 'opacity-50 cursor-not-allowed' : '' }}">
                                         <option value="">-- Sélectionner --</option>
                                         <option value="accident">🚨 Accident Grave</option>
                                         <option value="panne">🔧 Panne Mécanique</option>
@@ -152,7 +231,8 @@
                                         <div class="text-xs text-gray-600">
                                             <span class="font-medium text-red-600 hover:text-red-500">Cliquez pour ajouter</span>
                                         </div>
-                                        <input id="photo" name="photo" type="file" class="sr-only" accept="image/*" onchange="previewImage(this)">
+                                        <input id="photo" name="photo" type="file" class="sr-only" accept="image/*" onchange="previewImage(this)"
+                                            {{ (!$enVoyage && !$preselectedReservationId) ? 'disabled' : '' }}>
                                         <p class="text-xs text-gray-500" id="photo-filename">PNG, JPG (Max 10MB)</p>
                                     </div>
                                 </label>
@@ -181,7 +261,8 @@
                                 <i class="fas fa-align-left text-gray-400 mr-1"></i> Description détaillée
                             </label>
                             <textarea id="description" name="description" rows="5" required
-                                class="shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-gray-300 rounded-xl bg-gray-50 hover:bg-white transition-colors p-4"
+                                {{ (!$enVoyage && !$preselectedReservationId) ? 'disabled' : '' }}
+                                class="shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-gray-300 rounded-xl bg-gray-50 hover:bg-white transition-colors p-4 {{ (!$enVoyage && !$preselectedReservationId) ? 'opacity-50 cursor-not-allowed' : '' }}"
                                 placeholder="Décrivez la situation avec le plus de précisions possible..."></textarea>
                         </div>
                     </div>
@@ -193,7 +274,8 @@
                     <!-- Submit Button -->
                     <div class="pt-6">
                         <button type="submit" id="submitBtn"
-                            class="w-full flex justify-center py-4 px-4 border border-transparent rounded-xl shadow-lg text-lg font-bold text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transform hover:-translate-y-1 transition-all duration-200">
+                            {{ (!$enVoyage && !$preselectedReservationId) ? 'disabled' : '' }}
+                            class="w-full flex justify-center py-4 px-4 border border-transparent rounded-xl shadow-lg text-lg font-bold text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transform hover:-translate-y-1 transition-all duration-200 {{ (!$enVoyage && !$preselectedReservationId) ? 'opacity-50 cursor-not-allowed' : '' }}">
                             <i class="fas fa-satellite-dish mr-2 animate-pulse"></i> Envoyer le Signalement
                         </button>
                     </div>
@@ -251,6 +333,40 @@
              );
         }
 
+        @if($selectedReservation)
+            document.addEventListener('DOMContentLoaded', function() {
+                const progId = "{{ $selectedReservation->programme_id }}";
+                if(progId) fetchOccupancy(progId);
+            });
+        @endif
+
+        // Countdown Timer Logic
+        function updateTimers() {
+            const timers = document.querySelectorAll('.timer-display[data-arrival]');
+            timers.forEach(timer => {
+                const arrivalTime = new Date(timer.dataset.arrival).getTime();
+                const now = new Date().getTime();
+                const distance = arrivalTime - now;
+                
+                if (distance < 0) {
+                    timer.innerHTML = "Arrivée imminente";
+                    timer.classList.remove('text-blue-500', 'bg-blue-50');
+                    timer.classList.add('text-emerald-500', 'bg-emerald-50');
+                    return;
+                }
+                
+                const hours = Math.floor(distance / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                
+                timer.innerHTML = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            });
+        }
+
+        if (document.querySelectorAll('.timer-display[data-arrival]').length > 0) {
+            updateTimers();
+            setInterval(updateTimers, 1000);
+        }
         function checkAccident(val) {
             const warning = document.getElementById('accident-warning');
             if (val === 'accident') {
@@ -320,7 +436,7 @@
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
-                        occupancyDisplay.textContent = `${data.count} passagers`;
+                        occupancyDisplay.textContent = `${data.count} / ${data.total_capacity} passagers à bord`;
                         currentPassengers = data.passengers;
                     } else {
                         occupancyDisplay.textContent = 'Erreur';

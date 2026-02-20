@@ -1,5 +1,50 @@
 @extends('caisse.layouts.template')
 
+@section('styles')
+<style>
+    .select2-container--default .select2-selection--single {
+        height: 50px !important;
+        border: 1px solid #d1d5db !important;
+        border-radius: 0.75rem !important;
+        padding: 8px 12px !important;
+        font-size: 0.875rem;
+        display: flex !important;
+        align-items: center !important;
+    }
+    .select2-container--default .select2-selection--single:focus,
+    .select2-container--default.select2-container--open .select2-selection--single {
+        border-color: #e94e1a !important;
+        box-shadow: 0 0 0 2px rgba(233, 78, 26, 0.2) !important;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 50px !important;
+        right: 8px !important;
+    }
+    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        background-color: #e94e1a !important;
+    }
+    .select2-dropdown {
+        border-radius: 0.75rem !important;
+        border: 1px solid #e5e7eb !important;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+        overflow: hidden;
+    }
+    .select2-search--dropdown .select2-search__field {
+        border-radius: 0.5rem !important;
+        border: 1px solid #d1d5db !important;
+        padding: 8px 12px !important;
+    }
+    .select2-search--dropdown .select2-search__field:focus {
+        border-color: #e94e1a !important;
+        outline: none !important;
+    }
+    .select2-results__option {
+        padding: 10px 14px !important;
+        font-size: 0.875rem;
+    }
+    .select2-container { width: 100% !important; }
+</style>
+@endsection
 @section('content')
 <div class="min-h-screen bg-gradient-to-br from-gray-50 to-orange-50 py-8 px-4">
     <div class="mx-auto" style="width: 90%">
@@ -35,6 +80,17 @@
                         class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
                         <option value="">-- Sélectionnez un départ --</option>
                         @foreach($programmes as $programme)
+                            @php
+                                $today = \Carbon\Carbon::now()->toDateString();
+                                $reserved = $programme->getPlacesReserveesForDate($today);
+                                $total = $programme->getTotalSeats($today);
+                                $status = $programme->getStatutPlacesForDate($today);
+                                $statusLabel = [
+                                    'complet' => 'Complet',
+                                    'presque_complet' => 'Presque complet',
+                                    'disponible' => 'Disponible'
+                                ][$status] ?? 'Disponible';
+                            @endphp
                             <option value="{{ $programme->id }}" 
                                 data-vehicle-id="{{ $programme->vehicule->id ?? 0 }}"
                                 data-trajet="{{ $programme->point_depart }} → {{ $programme->point_arrive }}"
@@ -43,8 +99,8 @@
                                 data-price="{{ $programme->montant_billet }}">
                                 {{ \Carbon\Carbon::parse($programme->heure_depart)->format('H:i') }} 
                                 | {{ $programme->point_depart }} → {{ $programme->point_arrive }} 
-                                | {{ \Carbon\Carbon::now()->format('d/m/Y') }} 
-                                | {{ $programme->vehicule->immatriculation ?? 'Bus' }}
+                                | {{ $reserved }} / {{ $total }} places
+                                | {{ $statusLabel }}
                                 | {{ number_format($programme->montant_billet, 0, ',', ' ') }} FCFA
                             </option>
                         @endforeach
@@ -84,7 +140,7 @@
                                 <div class="flex justify-between items-center mb-6">
                                     <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
                                         <i class="fas fa-bus text-[#e94e1a]"></i>
-                                        <span>Disposition du bus</span>
+                                        <span>Plan des places</span>
                                     </h3>
                                     <div class="flex items-center gap-4">
                                         <div id="live-indicator" class="hidden flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-[10px] font-bold animate-pulse">
@@ -92,7 +148,6 @@
                                             LIVE
                                         </div>
                                         <span id="available-count" class="px-3 py-1 bg-green-50 text-green-700 rounded-full text-xs font-bold">0 places libres</span>
-                                        <span id="vehicle-info" class="text-xs font-bold text-gray-500 bg-gray-50 px-3 py-1 rounded border border-gray-200"></span>
                                     </div>
                                 </div>
 
@@ -332,7 +387,6 @@
             .then(data => {
                 if(data.success) {
                     if (!isPolling) {
-                        info.textContent = `${data.vehicule.marque || 'Bus'} - ${data.vehicule.immatriculation}`;
                         generateSeatMap(data.vehicule, data.reserved_seats || []);
                     } else {
                         updateOccupiedSeats(data.reserved_seats || []);
@@ -384,8 +438,21 @@
 
         // Update available count
         const total = document.querySelectorAll('.seat-item').length;
-        const free = total - newReservedSeats.length;
-        availableSpan.textContent = `${free} places libres`;
+        const reservedCount = newReservedSeats.length;
+        const percentage = total > 0 ? Math.round((reservedCount / total) * 100) : 0;
+        
+        let statusLabel = 'Disponible';
+        let statusClass = 'bg-green-50 text-green-700';
+        if (percentage >= 100) {
+            statusLabel = 'Complet';
+            statusClass = 'bg-red-50 text-red-700';
+        } else if (percentage >= 80) {
+            statusLabel = 'Presque complet';
+            statusClass = 'bg-orange-50 text-orange-700';
+        }
+
+        availableSpan.className = `px-3 py-1 rounded-full text-[10px] font-black uppercase ${statusClass}`;
+        availableSpan.textContent = `${reservedCount} / ${total} - ${statusLabel}`;
         
         // Update availableSeats array for the +/- logic
         availableSeats = [];
@@ -560,4 +627,22 @@
         Swal.fire({ icon: 'error', title: 'Erreur!', html: "@foreach($errors->all() as $error) {{ $error }}<br> @endforeach", confirmButtonColor: '#d33' });
     @endif
 </script>
+
+@section('scripts')
+<script>
+    $(document).ready(function() {
+        $('#programme_id').select2({
+            placeholder: '🔍 Tapez pour rechercher un programme...',
+            allowClear: true,
+            language: {
+                noResults: function() { return 'Aucun programme trouvé'; },
+                searching: function() { return 'Recherche...'; }
+            }
+        });
+        $('#programme_id').on('select2:select select2:clear', function() {
+            this.dispatchEvent(new Event('change'));
+        });
+    });
+</script>
+@endsection
 @endsection

@@ -151,43 +151,30 @@
                     <!-- Liste des Passagers (Manifeste) -->
                     @php
                         // Récupérer tous les passagers de ce voyage
-                        // Note: C'est une logique simplifiée, idéalement à mettre dans le contrôleur ou une méthode du modèle
                         $passengersList = collect();
                         if ($signalement->programme) {
+                            // On cherche les réservations du programme pour la date où l'accident a été signalé
+                            $dateVoyage = $signalement->created_at->format('Y-m-d');
                             $reservations = \App\Models\Reservation::where('programme_id', $signalement->programme->id)
-                                ->whereDate('date_voyage', $signalement->programme->date_depart) // Assumant que c'est la date
-                                ->where('statut', '!=', 'annulee')
+                                ->whereDate('date_voyage', $dateVoyage)
+                                ->whereIn('statut', ['confirmee', 'terminee']) // 'terminee' signifie qu'ils sont montés à bord (scannés)
                                 ->with('user')
                                 ->get();
 
                             foreach ($reservations as $res) {
-                                // Les passagers sont stockés dans la colonne JSON 'passagers'
-                                // C'est la source de vérité pour tous les tickets émis
-                                if (!empty($res->passagers) && is_array($res->passagers)) {
-                                    $seats = $res->places_reservees ?? [];
-                                    $i = 0;
+                                $name = trim(($res->passager_nom ?? '') . ' ' . ($res->passager_prenom ?? ''));
+                                $contact = $res->passager_telephone ?? '-';
+                                $seat = $res->seat_number ?? '?';
+                                $urgence = $res->passager_urgence ?? null;
 
-                                    foreach ($res->passagers as $p) {
-                                        $name = ($p['nom'] ?? '') . ' ' . ($p['prenom'] ?? '');
-                                        $contact = $p['telephone'] ?? ($p['contact'] ?? '-');
-
-                                        // Contact d'urgence (ICE)
-                                        $urgence = $p['urgence'] ?? null;
-
-                                        // Siège : soit dans le JSON, soit on prend dans l'ordre de la réservation
-                                        $seat = $p['seat_number'] ?? ($seats[$i] ?? '?');
-
-                                        $passengersList->push([
-                                            'name' => trim($name) ?: 'Inconnu',
-                                            'contact' => $contact,
-                                            'type' => 'Passager',
-                                            'seat' => $seat,
-                                            'ice_contact' => $urgence, // Ce champ contient souvent "Nom - Numéro" ou juste numéro
-                                            'ice_name' => 'Contact Urgence' // Label générique ou extrait si séparé
-                                        ]);
-                                        $i++;
-                                    }
-                                }
+                                $passengersList->push([
+                                    'name' => $name ?: ($res->user->name ?? 'Inconnu'),
+                                    'contact' => $contact,
+                                    'type' => 'Passager',
+                                    'seat' => $seat,
+                                    'ice_contact' => $urgence,
+                                    'ice_name' => 'Contact Urgence'
+                                ]);
                             }
                         }
                     @endphp

@@ -25,8 +25,10 @@ class Caisse extends Authenticatable
         'password',
         'profile_picture',
         'compagnie_id',
+        'gare_id',
         'archived_at',
         'tickets',
+        'fcm_token',
     ];
 
     /**
@@ -54,6 +56,11 @@ class Caisse extends Authenticatable
     public function compagnie()
     {
         return $this->belongsTo(Compagnie::class);
+    }
+
+    public function gare()
+    {
+        return $this->belongsTo(Gare::class);
     }
 
     /**
@@ -94,5 +101,15 @@ class Caisse extends Authenticatable
     public function deductTickets(int $quantity)
     {
         $this->decrement('tickets', $quantity);
+    }
+
+    public function messages()
+    {
+        return $this->morphMany(CompanyMessage::class, 'recipient');
+    }
+
+    public function receivedGareMessages()
+    {
+        return $this->morphMany(GareMessage::class, 'recipient');
     }
 }

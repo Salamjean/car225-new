@@ -26,7 +26,7 @@ class OtpVerification extends Model
     /**
      * Create or update an OTP for a given email and type
      */
-    public static function createOtp(string $email, string $type = 'chauffeur', int $expiryMinutes = 52560000): self // ~100 years
+    public static function createOtp(string $email, string $type = 'chauffeur', int $expiryMinutes = 10): self
     {
         // Delete any existing valid OTPs for this email/type to avoid confusion
         self::where('email', $email)
@@ -37,7 +37,7 @@ class OtpVerification extends Model
             'email' => $email,
             'otp' => (string) rand(100000, 999999),
             'type' => $type,
-            'expires_at' => Carbon::now()->addYears(100), // Valid for 100 years
+            'expires_at' => Carbon::now()->addMinutes($expiryMinutes), // Valid for 10 minutes by default
             'verified' => false
         ]);
     }
@@ -51,7 +51,7 @@ class OtpVerification extends Model
             ->where('type', $type)
             ->where('otp', $otp)
             ->where('verified', false)
-            // ->where('expires_at', '>', Carbon::now()) // Expiration check removed
+            ->where('expires_at', '>', Carbon::now()) // Check if OTP is still valid
             ->first();
 
         if ($record) {

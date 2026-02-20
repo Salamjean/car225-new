@@ -38,7 +38,8 @@ class ItineraireController extends Controller
      * creer une itineraire
      */
     public function create(){
-        return view('compagnie.itineraire.create');
+        $gares = \App\Models\Gare::where('compagnie_id', Auth::guard('compagnie')->user()->id)->get();
+        return view('compagnie.itineraire.create', compact('gares'));
     }
 
     /**
@@ -51,6 +52,7 @@ class ItineraireController extends Controller
             'point_depart' => 'required|string|max:255',
             'point_arrive' => 'required|string|max:255',
             'durer_parcours' => 'required|string|max:50',
+            'gare_id' => 'nullable|exists:gares,id',
         ], [
             'point_depart.required' => 'Le point de départ est obligatoire.',
             'point_arrive.required' => 'Le point d\'arrivée est obligatoire.',
@@ -64,6 +66,7 @@ class ItineraireController extends Controller
                 'point_arrive' => $validated['point_arrive'],
                 'durer_parcours' => $validated['durer_parcours'],
                 'compagnie_id' => Auth::guard('compagnie')->user()->id,
+                'gare_id' => $validated['gare_id'] ?? null,
             ]);
 
             // Redirection avec message de succès
@@ -102,7 +105,9 @@ class ItineraireController extends Controller
             abort(403, 'Accès non autorisé.');
         }
 
-        return view('compagnie.itineraire.edit', compact('itineraire'));
+        $gares = \App\Models\Gare::where('compagnie_id', Auth::guard('compagnie')->user()->id)->get();
+
+        return view('compagnie.itineraire.edit', compact('itineraire', 'gares'));
     }
 
     /**
@@ -120,6 +125,7 @@ class ItineraireController extends Controller
             'point_depart' => 'required|string|max:255',
             'point_arrive' => 'required|string|max:255',
             'durer_parcours' => 'required|string|max:50',
+            'gare_id' => 'nullable|exists:gares,id',
         ], [
             'point_depart.required' => 'Le point de départ est obligatoire.',
             'point_arrive.required' => 'Le point d\'arrivée est obligatoire.',

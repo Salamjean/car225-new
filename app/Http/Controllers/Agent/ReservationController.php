@@ -17,25 +17,26 @@ class ReservationController extends Controller
         $agent = Auth::guard('agent')->user();
 
         $now = Carbon::now();
-        $heureMinimum = $now->copy()->subMinutes(30)->format('H:i');
         $today = Carbon::today()->toDateString();
+        $currentTime = $now->format('H:i');
 
-        // Récupérer les programmes du jour (FlixBus Model: Simple date check)
-        // On cherche les programmes dont la date de départ est aujourd'hui
-        // OU les programmes "continus" qui incluent aujourd'hui (si date_fin existe)
+        // Retour à la logique de Programmes pour plus d'automatisme
         $programmesDuJour = Programme::where('compagnie_id', $agent->compagnie_id)
+            ->where('gare_depart_id', $agent->gare_id)
             ->where('statut', 'actif')
             ->where(function ($query) use ($today) {
-                // Cas standard : Voyage à date unique
                 $query->whereDate('date_depart', $today)
-                      // Cas étendu : Période de validité (si utilisé)
                       ->orWhere(function ($q) use ($today) {
                           $q->where('date_depart', '<=', $today)
                             ->where('date_fin', '>=', $today);
                       });
             })
-            ->where('heure_depart', '>=', $heureMinimum)
-
+            ->where('heure_depart', '>', $currentTime) // Disparaît dès que l'heure de départ est atteinte
+            ->whereDoesntHave('voyages', function ($q) use ($today) {
+                $q->whereDate('date_voyage', $today)
+                  ->whereIn('statut', ['en_cours', 'terminé']);
+            })
+            ->with(['gareDepart', 'gareArrivee', 'voyages.vehicule'])
             ->orderBy('heure_depart')
             ->get();
 
@@ -60,13 +61,12 @@ class ReservationController extends Controller
     public function recherchePage()
     {
         $agent = Auth::guard('agent')->user();
-
-        // Récupérer les programmes du jour pour la recherche
-        $now = Carbon::now();
-        $heureMinimum = $now->copy()->subMinutes(30)->format('H:i');
         $today = Carbon::today()->toDateString();
+        $currentTime = Carbon::now()->format('H:i');
 
+        // Retour à la logique de Programmes
         $programmesDuJour = Programme::where('compagnie_id', $agent->compagnie_id)
+            ->where('gare_depart_id', $agent->gare_id)
             ->where('statut', 'actif')
             ->where(function ($query) use ($today) {
                 $query->whereDate('date_depart', $today)
@@ -75,8 +75,12 @@ class ReservationController extends Controller
                             ->where('date_fin', '>=', $today);
                       });
             })
-            ->where('heure_depart', '>=', $heureMinimum)
-
+            ->where('heure_depart', '>', $currentTime)
+            ->whereDoesntHave('voyages', function ($q) use ($today) {
+                $q->whereDate('date_voyage', $today)
+                  ->whereIn('statut', ['en_cours', 'terminé']);
+            })
+            ->with(['gareDepart', 'gareArrivee', 'voyages.vehicule'])
             ->orderBy('heure_depart')
             ->get();
 
@@ -167,8 +171,47 @@ class ReservationController extends Controller
     }
 
     /**
-     * Rechercher une réservation pour scan (AJAX)
+     * API pour récupérer les programmes/voyages à scanner aujourd'hui
      */
+    public function getProgrammesForScan()
+    {
+        $agent = Auth::guard('agent')->user();
+        $today = Carbon::today()->toDateString();
+        $currentTime = Carbon::now()->format('H:i');
+
+        $programmes = Programme::where('compagnie_id', $agent->compagnie_id)
+            ->where('gare_depart_id', $agent->gare_id)
+            ->where('statut', 'actif')
+            ->where(function ($query) use ($today) {
+                $query->whereDate('date_depart', $today)
+                      ->orWhere(function ($q) use ($today) {
+                          $q->where('date_depart', '<=', $today)
+                            ->where('date_fin', '>=', $today);
+                      });
+            })
+            ->where('heure_depart', '>', $currentTime)
+            ->whereDoesntHave('voyages', function ($q) use ($today) {
+                $q->whereDate('date_voyage', $today)
+                  ->whereIn('statut', ['en_cours', 'terminé']);
+            })
+            ->with(['voyages.vehicule'])
+            ->get();
+
+        $data = $programmes->map(function($p) {
+            return [
+                'id' => $p->id,
+                'point_depart' => $p->point_depart,
+                'point_arrive' => $p->point_arrive,
+                'heure_depart' => $p->heure_depart,
+                'vehicule_id' => $p->vehicule_id,
+                'immatriculation' => $p->vehicule->immatriculation ?? 'N/A'
+            ];
+        });
+
+        return response()->json(['success' => true, 'programmes' => $data]);
+    }
+
+    /* Méthode assignVoyageManual supprimée car l'assignation se fait désormais dans l'espace gare */
     public function search(Request $request)
     {
         $request->validate([
@@ -177,7 +220,7 @@ class ReservationController extends Controller
         ]);
 
         // On charge la réservation avec son programme ALLER par défaut
-        $reservation = Reservation::with(['programme', 'user'])
+        $reservation = Reservation::with(['programme.gareDepart', 'programme.gareArrivee', 'user'])
             ->where('reference', $request->reference)
             ->first();
 
@@ -241,10 +284,19 @@ class ReservationController extends Controller
         // --- PRÉPARATION DES DONNÉES D'AFFICHAGE ---
         // Ici on utilise $programmeActuel pour avoir la BONNE heure et le BON trajet (Aller ou Retour)
 
-        $heureDepart = $programmeActuel ? $programmeActuel->heure_depart : $reservation->programme->heure_depart;
-        $trajetLabel = $programmeActuel
-            ? ($programmeActuel->point_depart . ' → ' . $programmeActuel->point_arrive)
-            : ($reservation->programme->point_depart . ' → ' . $reservation->programme->point_arrive);
+        // Charger les gares du programme actuel si besoin
+        if ($programmeActuel && !$programmeActuel->relationLoaded('gareDepart')) {
+            $programmeActuel->load(['gareDepart', 'gareArrivee']);
+        }
+
+        $prog = $programmeActuel ?? $reservation->programme;
+        $heureDepart = $prog->heure_depart;
+        $heureArrivee = $prog->heure_arrive;
+        $trajetLabel = $prog->point_depart . ' → ' . $prog->point_arrive;
+        $gareDepartNom = optional($prog->gareDepart)->nom_gare ?? '';
+        $gareArriveeNom = optional($prog->gareArrivee)->nom_gare ?? '';
+        $gareDepartVille = optional($prog->gareDepart)->ville ?? '';
+        $gareArriveeVille = optional($prog->gareArrivee)->ville ?? '';
 
         return response()->json([
             'success' => true,
@@ -253,12 +305,20 @@ class ReservationController extends Controller
                 'reference' => $reservation->reference,
                 'passager_nom_complet' => $reservation->passager_prenom . ' ' . $reservation->passager_nom,
                 'passager_telephone' => $reservation->passager_telephone,
+                'passager_email' => $reservation->passager_email ?? '',
                 'seat_number' => $reservation->seat_number,
-                // On affiche la date du jour pour le scan, ou la date prévue
-                'date_voyage' => Carbon::parse($programmeActuel->date_depart ?? now())->format('d/m/Y'),
+                'date_voyage' => Carbon::parse($prog->date_depart ?? now())->format('d/m/Y'),
                 'trajet' => $trajetLabel,
-                'heure_depart' => $heureDepart, // <--- C'est ici que ça change (10:00 ou 20:00 selon le scan)
-                'type_scan' => strtoupper($targetScan)
+                'heure_depart' => $heureDepart,
+                'heure_arrivee' => $heureArrivee,
+                'gare_depart' => $gareDepartNom,
+                'gare_arrivee' => $gareArriveeNom,
+                'gare_depart_ville' => $gareDepartVille,
+                'gare_arrivee_ville' => $gareArriveeVille,
+                'montant' => number_format($reservation->montant ?? 0, 0, ',', ' ') . ' FCFA',
+                'is_aller_retour' => $reservation->is_aller_retour,
+                'type_scan' => strtoupper($targetScan),
+                'statut' => $statutActuel,
             ]
         ]);
     }
@@ -398,5 +458,58 @@ class ReservationController extends Controller
         ]);
 
         return back()->with('success', 'Réservation scannée et terminée avec succès.');
+    }
+
+    /**
+     * Rechercher une réservation par référence (pour recherche manuelle)
+     */
+    public function searchByReference(Request $request)
+    {
+        $request->validate(['reference' => 'required|string']);
+        
+        $reservation = Reservation::with(['programme', 'user', 'agentEmbarquement', 'embarquementVehicule'])
+            ->where('reference', $request->reference)
+            ->first();
+
+        if (!$reservation) {
+            return response()->json(['success' => false, 'message' => 'Réservation non trouvée.'], 404);
+        }
+
+        $agent = Auth::guard('agent')->user();
+        if ($reservation->programme->compagnie_id !== $agent->compagnie_id) {
+            return response()->json(['success' => false, 'message' => 'Ce billet n\'appartient pas à votre compagnie.'], 403);
+        }
+
+        // Formater pour la vue recherche
+        $res = [
+            'id' => $reservation->id,
+            'reference' => $reservation->reference,
+            'statut' => $reservation->statut,
+            'passager_nom' => $reservation->passager_nom,
+            'passager_prenom' => $reservation->passager_prenom,
+            'passager_telephone' => $reservation->passager_telephone,
+            'passager_email' => $reservation->passager_email,
+            'passager_urgence' => $reservation->passager_urgence,
+            'seat_number' => $reservation->seat_number,
+            'montant' => $reservation->montant_formatted,
+            'trajet' => $reservation->trajet,
+            'date_voyage' => $reservation->date_voyage->format('d/m/Y'),
+            'heure_depart' => $reservation->heure_depart,
+            'is_aller_retour' => $reservation->is_aller_retour,
+            'created_at' => $reservation->created_at->format('d/m/Y H:i'),
+        ];
+
+        if ($reservation->embarquement_scanned_at) {
+            $res['embarquement'] = [
+                'scanned_at' => $reservation->embarquement_scanned_at->format('d/m/Y H:i'),
+                'agent' => $reservation->agentEmbarquement ? $reservation->agentEmbarquement->nom_complet : 'N/A',
+                'vehicule' => $reservation->embarquementVehicule ? $reservation->embarquementVehicule->immatriculation : 'N/A',
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'reservation' => $res
+        ]);
     }
 }

@@ -3,10 +3,12 @@
 use App\Http\Controllers\Admin\AdminDashboard;
 use App\Http\Controllers\Admin\AuthenticateAdmin;
 use App\Http\Controllers\Admin\Itineraire\AdminItineraireController;
+use App\Http\Controllers\Admin\SettingController as AdminSettingController;
 use App\Http\Controllers\Agent\AgentController;
 use App\Http\Controllers\Agent\AgentDashboard;
 use App\Http\Controllers\Agent\AuthenticateAgent;
 use App\Http\Controllers\Agent\ReservationController as AgentReservationController;
+use App\Http\Controllers\Agent\VoyageController as AgentVoyageController;
 use App\Http\Controllers\User\WalletController;
 use App\Http\Controllers\Compagnie\Agent\AgentCompagnieController;
 use App\Http\Controllers\Compagnie\GareController;
@@ -38,6 +40,7 @@ use App\Http\Controllers\SapeurPompier\SapeurPompierAuthenticate;
 use App\Models\Signalement;
 use App\Http\Controllers\Chauffeur\ChauffeurController;
 use App\Http\Controllers\Chauffeur\ChauffeurAuthenticate;
+use App\Http\Controllers\Chauffeur\VoyageController as ChauffeurVoyageController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -78,6 +81,8 @@ Route::middleware('admin')->prefix('admin')->group(function () {
         Route::get('/index', [CompagnieController::class, 'index'])->name('compagnie.index');
         Route::get('/create', [CompagnieController::class, 'create'])->name('compagnie.create');
         Route::post('/create', [CompagnieController::class, 'store'])->name('compagnie.store');
+        Route::get('/recharge', [CompagnieController::class, 'rechargeIndex'])->name('compagnie.recharge.index');
+        Route::post('/recharge/{compagnie}', [CompagnieController::class, 'processRecharge'])->name('compagnie.recharge.process');
         Route::get('/{compagnie}', [CompagnieController::class, 'show'])->name('compagnie.show');
         Route::get('/{compagnie}/edit', [CompagnieController::class, 'edit'])->name('compagnie.edit');
         Route::put('/{compagnie}', [CompagnieController::class, 'update'])->name('compagnie.update');
@@ -86,6 +91,10 @@ Route::middleware('admin')->prefix('admin')->group(function () {
 
     //Les routes pour voir les itineraires
     Route::get('/indeItinery', [AdminItineraireController::class, 'index'])->name('admin.itineraire.index');
+
+    // Voyages en cours (temps réel)
+    Route::get('/voyages-en-cours', [AdminSettingController::class, 'voyagesEnCours'])->name('admin.voyages.en-cours');
+    Route::get('/voyages-en-cours/api', [AdminSettingController::class, 'voyagesEnCoursApi'])->name('admin.voyages.en-cours.api');
 
     // Gestion des Sapeurs Pompiers
     Route::resource('sapeur-pompier', SapeurPompierController::class);
@@ -115,6 +124,12 @@ Route::middleware('admin')->prefix('admin')->group(function () {
         Route::post('/{supportRequest}/repondre', [App\Http\Controllers\Admin\SupportController::class, 'repondre'])->name('admin.support.repondre');
         Route::patch('/{supportRequest}/statut', [App\Http\Controllers\Admin\SupportController::class, 'changeStatut'])->name('admin.support.statut');
     });
+
+    // Gestion des Paramètres
+    Route::prefix('settings')->group(function () {
+        Route::get('/', [AdminSettingController::class, 'index'])->name('admin.settings.index');
+        Route::post('/update', [AdminSettingController::class, 'update'])->name('admin.settings.update');
+    });
 });
 
 //Les routes de gestion du @admin
@@ -139,7 +154,10 @@ Route::middleware('compagnie')->prefix('company')->group(function () {
         Route::get('/Plist', [AgentController::class, 'index'])->name('compagnie.agents.index');
         Route::get('/AgentAdd', [AgentController::class, 'create'])->name('compagnie.agents.create');
         Route::post('/store', [AgentController::class, 'store'])->name('compagnie.agents.store');
+        Route::get('/{agent}/edit', [AgentController::class, 'edit'])->name('compagnie.agents.edit');
+        Route::put('/{agent}', [AgentController::class, 'update'])->name('compagnie.agents.update');
         Route::delete('/{agent}', [AgentController::class, 'destroy'])->name('compagnie.agents.destroy');
+        Route::post('/send-message', [AgentController::class, 'sendMessage'])->name('compagnie.agents.send-message');
     });
 
     //Les routes pour la gestion des itineraires 
@@ -181,6 +199,8 @@ Route::middleware('compagnie')->prefix('company')->group(function () {
         Route::get('/index', [App\Http\Controllers\Compagnie\CaisseController::class, 'index'])->name('compagnie.caisse.index');
         Route::get('/create', [App\Http\Controllers\Compagnie\CaisseController::class, 'create'])->name('compagnie.caisse.create');
         Route::post('/store', [App\Http\Controllers\Compagnie\CaisseController::class, 'store'])->name('compagnie.caisse.store');
+        Route::get('/{caisse}/edit', [App\Http\Controllers\Compagnie\CaisseController::class, 'edit'])->name('compagnie.caisse.edit');
+        Route::put('/{caisse}', [App\Http\Controllers\Compagnie\CaisseController::class, 'update'])->name('compagnie.caisse.update');
         Route::post('/{caisse}/recharge', [App\Http\Controllers\Compagnie\CaisseController::class, 'recharge'])->name('compagnie.caisse.recharge');
         Route::post('/{caisse}/toggle-archive', [App\Http\Controllers\Compagnie\CaisseController::class, 'toggleArchive'])->name('compagnie.caisse.toggle-archive');
         Route::delete('/{caisse}', [App\Http\Controllers\Compagnie\CaisseController::class, 'destroy'])->name('compagnie.caisse.destroy');
@@ -231,6 +251,22 @@ Route::middleware('compagnie')->prefix('company')->group(function () {
     Route::get('/profile', [CompagnieDashboard::class, 'profile'])->name('compagnie.profile');
     Route::post('/profile/update', [CompagnieDashboard::class, 'updateProfile'])->name('compagnie.profile.update');
     Route::post('/profile/password', [CompagnieDashboard::class, 'updatePassword'])->name('compagnie.profile.password');
+
+    // Routes de messagerie
+    Route::prefix('messages')->name('compagnie.messages.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Compagnie\CompanyMessageController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Compagnie\CompanyMessageController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Compagnie\CompanyMessageController::class, 'store'])->name('store');
+        Route::get('/recipients', [\App\Http\Controllers\Compagnie\CompanyMessageController::class, 'getRecipients'])->name('recipients');
+        Route::get('/received/{id}', [\App\Http\Controllers\Compagnie\CompanyMessageController::class, 'showReceived'])->name('show-received');
+        Route::get('/{message}', [\App\Http\Controllers\Compagnie\CompanyMessageController::class, 'show'])->name('show');
+    });
+
+    // Routes de suivi GPS en temps réel
+    Route::prefix('tracking')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Compagnie\TrackingController::class, 'index'])->name('compagnie.tracking.index');
+        Route::get('/locations', [\App\Http\Controllers\Compagnie\TrackingController::class, 'getActiveLocations'])->name('compagnie.tracking.locations');
+    });
 });
 
 //Les routes de gestion des @caissières
@@ -275,6 +311,12 @@ Route::middleware('caisse')->prefix('caisse')->group(function () {
     // Sales history and printing
     Route::get('/ventes', [App\Http\Controllers\Caisse\CaisseController::class, 'ventes'])->name('caisse.ventes');
     Route::get('/ticket/{reservation}/imprimer', [App\Http\Controllers\Caisse\CaisseController::class, 'imprimerTicket'])->name('caisse.ticket.imprimer');
+
+    // Inbox for Caisse
+    Route::prefix('messages')->name('caisse.messages.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Caisse\CaisseMessageController::class, 'index'])->name('index');
+        Route::get('/{id}', [\App\Http\Controllers\Caisse\CaisseMessageController::class, 'show'])->name('show');
+    });
 });
 
 //Les routes de gestion des @hotesses
@@ -332,20 +374,36 @@ Route::prefix('agent')->group(function () {
     Route::post('/password/verify-otp', [AgentPasswordResetController::class, 'verifyOtp'])->name('agent.password.verifyOtp');
     Route::post('/password/reset', [AgentPasswordResetController::class, 'resetPassword'])->name('agent.password.reset');
 });
-Route::middleware('agent')->prefix('agent')->group(function () {
-    Route::get('/dashboard', [AgentDashboard::class, 'dashboard'])->name('agent.dashboard');
-    Route::get('/logout', [AgentDashboard::class, 'logout'])->name('agent.logout');
+Route::middleware('agent')->prefix('agent')->name('agent.')->group(function () {
+    Route::get('/dashboard', [AgentDashboard::class, 'dashboard'])->name('dashboard');
+    Route::get('/logout', [AgentDashboard::class, 'logout'])->name('logout');
 
     // Gestion des réservations
-    Route::prefix('reservations')->group(function () {
-        Route::get('/', [AgentReservationController::class, 'index'])->name('agent.reservations.index');
-        Route::get('/recherche', [AgentReservationController::class, 'recherchePage'])->name('agent.reservations.recherche');
-        Route::get('/historique', [AgentReservationController::class, 'historique'])->name('agent.reservations.historique');
-        Route::get('/programmes-for-scan', [AgentReservationController::class, 'getProgrammesForScan'])->name('agent.programmes.for-scan');
-        Route::post('/scan', [AgentReservationController::class, 'scan'])->name('agent.reservations.scan');
-        Route::post('/search', [AgentReservationController::class, 'search'])->name('agent.reservations.search');
-        Route::post('/search-by-reference', [AgentReservationController::class, 'searchByReference'])->name('agent.reservations.search-by-reference');
-        Route::post('/confirm', [AgentReservationController::class, 'confirm'])->name('agent.reservations.confirm');
+    Route::prefix('reservations')->name('reservations.')->group(function () {
+        Route::get('/', [AgentReservationController::class, 'index'])->name('index');
+        Route::get('/recherche', [AgentReservationController::class, 'recherchePage'])->name('recherche');
+        Route::get('/historique', [AgentReservationController::class, 'historique'])->name('historique');
+        Route::get('/programmes-for-scan', [AgentReservationController::class, 'getProgrammesForScan'])->name('programmes.for-scan');
+        Route::post('/scan', [AgentReservationController::class, 'scan'])->name('scan');
+        Route::post('/search', [AgentReservationController::class, 'search'])->name('search');
+        Route::post('/search-by-reference', [AgentReservationController::class, 'searchByReference'])->name('search-by-reference');
+        Route::post('/confirm', [AgentReservationController::class, 'confirm'])->name('confirm');
+        // Route::post('/assign-voyage-manual', [AgentReservationController::class, 'assignVoyageManual'])->name('assign-voyage-manual');
+    });
+
+    /* Gestion des voyages supprimée
+    Route::prefix('voyages')->name('voyages.')->group(function () {
+        Route::get('/', [AgentVoyageController::class, 'index'])->name('index');
+        Route::get('/history', [AgentVoyageController::class, 'history'])->name('history');
+        Route::post('/', [AgentVoyageController::class, 'store'])->name('store');
+        Route::delete('/{voyage}', [AgentVoyageController::class, 'destroy'])->name('destroy');
+    }); */
+
+    // Gestion des messages
+    Route::prefix('messages')->name('messages.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Agent\AgentMessageController::class, 'index'])->name('index');
+        Route::get('/{id}', [\App\Http\Controllers\Agent\AgentMessageController::class, 'show'])->name('show');
+        Route::patch('/{id}/read', [\App\Http\Controllers\Agent\AgentMessageController::class, 'markAsRead'])->name('read');
     });
 });
 
@@ -367,11 +425,13 @@ Route::prefix('user')->group(function () {
 
 Route::middleware('auth')->prefix('user')->group(function () {
     Route::get('/dashboard', [UserController::class, 'dashboard'])->name('user.dashboard');
+    Route::get('/tracking/location', [UserController::class, 'getTrackingLocation'])->name('user.tracking.location');
     Route::get('/logout', [UserController::class, 'logout'])->name('user.logout');
 
     // Wallet Routes
     Route::get('/compte', [WalletController::class, 'index'])->name('user.wallet.index');
     Route::post('/compte/recharge', [WalletController::class, 'recharge'])->name('user.wallet.recharge');
+    Route::post('/compte/retrait', [WalletController::class, 'withdraw'])->name('user.wallet.withdraw');
     Route::post('/compte/verify', [WalletController::class, 'verifyRecharge'])->name('user.wallet.verify');
 
     // Profile Routes
@@ -396,7 +456,7 @@ Route::middleware('auth')->prefix('user')->group(function () {
         Route::delete('/reservations/{reservation}', [ReservationController::class, 'cancel'])->name('reservations.cancel');
         Route::get('/reservations/{reservation}/refund-preview', [ReservationController::class, 'getRefundPreview'])->name('reservations.refund-preview');
         Route::post('/reservations/{reservation}/cancel', [ReservationController::class, 'cancelReservation'])->name('reservations.cancel-refund');
-        Route::post('/reservations/{reservation}/modify', [ReservationController::class, 'modifyReservation'])->name('reservations.modify');
+        Route::post('/reservations/{reservation}/modify', [ReservationController::class, 'processModification'])->name('reservations.modify');
         Route::get('/api/programmes', [ReservationController::class, 'apiProgrammes'])->name('api.programmes');
         Route::get('/api/grouped-routes', [ReservationController::class, 'apiGroupedRoutes'])->name('api.grouped-routes');
         Route::get('/api/route-dates', [ReservationController::class, 'apiRouteDates'])->name('api.route-dates');
@@ -435,6 +495,7 @@ Route::middleware('auth')->prefix('user')->group(function () {
 Route::prefix('user')->group(function () {
     Route::post('/payment/notify', [App\Http\Controllers\PaymentController::class, 'notify'])->name('payment.notify');
     Route::post('/compte/notify', [App\Http\Controllers\User\WalletController::class, 'notify'])->name('cinetpay.notify');
+    Route::match(['get', 'post'], '/payment/notify/transfer', [App\Http\Controllers\User\WalletController::class, 'notifyTransfer'])->name('wallet.notify.transfer');
     Route::get('/payment/return', [App\Http\Controllers\PaymentController::class, 'return'])->name('payment.return');
 });
 
@@ -448,6 +509,9 @@ Route::prefix('sapeur-pompier')->group(function () {
     Route::get('/logout', [SapeurPompierAuthenticate::class, 'logout'])->name('sapeur-pompier.logout');
 
     Route::middleware('sapeur_pompier')->group(function () {
+        Route::get('/profile', [App\Http\Controllers\SapeurPompier\SapeurPompierDashboard::class, 'profile'])->name('sapeur-pompier.profile');
+        Route::put('/profile', [App\Http\Controllers\SapeurPompier\SapeurPompierDashboard::class, 'updateProfile'])->name('sapeur-pompier.profile.update');
+
         Route::get('/dashboard', function (\Illuminate\Http\Request $request) {
             $query = Signalement::where('sapeur_pompier_id', Auth::guard('sapeur_pompier')->id());
 
@@ -463,6 +527,29 @@ Route::prefix('sapeur-pompier')->group(function () {
             $signalements = $query->latest()->get();
             return view('sapeur_pompier.dashboard', compact('signalements', 'filterTitle'));
         })->name('sapeur-pompier.dashboard');
+
+        Route::post('/update-location', function (\Illuminate\Http\Request $request) {
+            $user = Auth::guard('sapeur_pompier')->user();
+            $request->validate([
+                'latitude' => 'required|numeric',
+                'longitude' => 'required|numeric',
+                'commune' => 'nullable|string',
+                'adresse' => 'nullable|string',
+            ]);
+            $user->update([
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude,
+            ]);
+            
+            // On ne met à jour l'adresse et commune que s'ils sont fournis (Reverse Geocoding réussi côté JS)
+            if ($request->filled('commune') && $request->filled('adresse')) {
+                $user->update([
+                    'commune' => $request->commune,
+                    'adresse' => $request->adresse,
+                ]);
+            }
+            return response()->json(['success' => true]);
+        })->name('sapeur-pompier.update-location');
 
         Route::get('/signalements/{signalement}', function (Signalement $signalement) {
             // Vérifier que le signalement appartient bien à ce pompier
@@ -522,6 +609,77 @@ Route::post('/validate-compagny-account/{email}', [CompagnieAuthenticate::class,
 Route::get('/validate-agent-account/{email}', [AuthenticateAgent::class, 'defineAccess']);
 Route::post('/validate-agent-account/{email}', [AuthenticateAgent::class, 'submitDefineAccess'])->name('agent.validate');
 
+// ==========================================
+// Routes Espace Gare
+// ==========================================
+Route::prefix('gare-espace')->name('gare-espace.')->group(function () {
+    // Auth routes (publiques)
+    Route::get('/login', [App\Http\Controllers\GareEspace\AuthenticateGare::class, 'login'])->name('login');
+    Route::post('/login', [App\Http\Controllers\GareEspace\AuthenticateGare::class, 'handleLogin'])->name('handleLogin');
+    Route::get('/verify-otp', [App\Http\Controllers\GareEspace\AuthenticateGare::class, 'verifyOtp'])->name('verifyOtp');
+    Route::post('/verify-otp', [App\Http\Controllers\GareEspace\AuthenticateGare::class, 'handleVerifyOtp'])->name('handleVerifyOtp');
+    Route::get('/define-access/{email}', [App\Http\Controllers\GareEspace\AuthenticateGare::class, 'defineAccess'])->name('defineAccess');
+    Route::post('/define-access/{email}', [App\Http\Controllers\GareEspace\AuthenticateGare::class, 'submitDefineAccess'])->name('validate');
+
+    // Routes protégées (gare middleware)
+    Route::middleware('gare')->group(function () {
+        Route::get('/dashboard', [App\Http\Controllers\GareEspace\GareDashboardController::class, 'index'])->name('dashboard');
+        Route::post('/logout', [App\Http\Controllers\GareEspace\AuthenticateGare::class, 'logout'])->name('logout');
+
+        // Voyages
+        Route::prefix('voyages')->name('voyages.')->group(function () {
+            Route::get('/', [App\Http\Controllers\GareEspace\GareVoyageController::class, 'index'])->name('index');
+            Route::get('/history', [App\Http\Controllers\GareEspace\GareVoyageController::class, 'history'])->name('history');
+            Route::post('/', [App\Http\Controllers\GareEspace\GareVoyageController::class, 'store'])->name('store');
+            Route::delete('/{voyage}', [App\Http\Controllers\GareEspace\GareVoyageController::class, 'destroy'])->name('destroy');
+        });
+
+        // Personnel (CRUD)
+        Route::prefix('personnel')->name('personnel.')->group(function () {
+            Route::get('/', [App\Http\Controllers\GareEspace\GarePersonnelController::class, 'index'])->name('index');
+            Route::get('/create', [App\Http\Controllers\GareEspace\GarePersonnelController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\GareEspace\GarePersonnelController::class, 'store'])->name('store');
+        });
+
+        // Véhicules (CRUD)
+        Route::prefix('vehicules')->name('vehicules.')->group(function () {
+            Route::get('/', [App\Http\Controllers\GareEspace\GareVehiculeController::class, 'index'])->name('index');
+            Route::get('/create', [App\Http\Controllers\GareEspace\GareVehiculeController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\GareEspace\GareVehiculeController::class, 'store'])->name('store');
+        });
+
+        // Caisse (CRUD)
+        Route::prefix('caisse')->name('caisse.')->group(function () {
+            Route::get('/', [App\Http\Controllers\GareEspace\GareCaisseController::class, 'index'])->name('index');
+            Route::get('/create', [App\Http\Controllers\GareEspace\GareCaisseController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\GareEspace\GareCaisseController::class, 'store'])->name('store');
+        });
+
+        // Agents (CRUD)
+        Route::prefix('agents')->name('agents.')->group(function () {
+            Route::get('/', [App\Http\Controllers\GareEspace\GareAgentController::class, 'index'])->name('index');
+            Route::get('/create', [App\Http\Controllers\GareEspace\GareAgentController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\GareEspace\GareAgentController::class, 'store'])->name('store');
+        });
+
+        // Itinéraires (CRUD)
+        Route::prefix('itineraire')->name('itineraire.')->group(function () {
+            Route::get('/', [App\Http\Controllers\GareEspace\GareItineraireController::class, 'index'])->name('index');
+            Route::get('/create', [App\Http\Controllers\GareEspace\GareItineraireController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\GareEspace\GareItineraireController::class, 'store'])->name('store');
+        });
+
+        // Messages (Boîte de réception)
+        Route::prefix('messages')->name('messages.')->group(function () {
+            Route::get('/', [App\Http\Controllers\GareEspace\GareMessageController::class, 'index'])->name('index');
+            Route::get('/create', [App\Http\Controllers\GareEspace\GareMessageController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\GareEspace\GareMessageController::class, 'store'])->name('store');
+            Route::get('/recipients', [App\Http\Controllers\GareEspace\GareMessageController::class, 'getRecipients'])->name('recipients');
+            Route::get('/{id}', [App\Http\Controllers\GareEspace\GareMessageController::class, 'show'])->name('show');
+        });
+    });
+});
+
 // On change Route::get en Route::match(['get', 'post'])
 Route::match(['get', 'post'], '/payment/callback', function (Request $request) {
     $transactionId = $request->get('transactionId') ?? $request->get('transaction_id');
@@ -557,26 +715,46 @@ Route::match(['get', 'post'], '/payment/callback', function (Request $request) {
 })->name('payment.callback');
 
 // Routes Chauffeur
-Route::prefix('chauffeur')->group(function () {
-    Route::get('/login', [ChauffeurAuthenticate::class, 'login'])->name('chauffeur.login');
-    Route::post('/login', [ChauffeurAuthenticate::class, 'handleLogin'])->name('chauffeur.handleLogin');
-    Route::get('/logout', [ChauffeurAuthenticate::class, 'logout'])->name('chauffeur.logout');
-
+Route::prefix('chauffeur')->name('chauffeur.')->group(function () {
+    Route::get('/login', [ChauffeurAuthenticate::class, 'login'])->name('login');
+    Route::post('/login', [ChauffeurAuthenticate::class, 'handleLogin'])->name('login.submit');
+    Route::get('/logout', [ChauffeurAuthenticate::class, 'logout'])->name('logout');
+    
     // OTP Verification routes
-    Route::get('/verify-otp', [\App\Http\Controllers\Chauffeur\OtpVerificationController::class, 'showVerifyForm'])->name('chauffeur.verify-otp');
-    Route::post('/verify-otp', [\App\Http\Controllers\Chauffeur\OtpVerificationController::class, 'verify'])->name('chauffeur.verify-otp.submit');
-    Route::post('/verify-otp/resend', [\App\Http\Controllers\Chauffeur\OtpVerificationController::class, 'resend'])->name('chauffeur.verify-otp.resend');
-
-    // Password Reset Routes
-    Route::get('/password/forgot', [\App\Http\Controllers\Chauffeur\ChauffeurForgotPasswordController::class, 'showLinkRequestForm'])->name('chauffeur.password.request');
-    Route::post('/password/forgot', [\App\Http\Controllers\Chauffeur\ChauffeurForgotPasswordController::class, 'sendOtp'])->name('chauffeur.password.email');
-    Route::get('/password/reset', [\App\Http\Controllers\Chauffeur\ChauffeurForgotPasswordController::class, 'showResetForm'])->name('chauffeur.password.reset');
-    Route::post('/password/reset', [\App\Http\Controllers\Chauffeur\ChauffeurForgotPasswordController::class, 'resetPassword'])->name('chauffeur.password.update');
+    Route::get('/verify-otp', [\App\Http\Controllers\Chauffeur\OtpVerificationController::class, 'showVerifyForm'])->name('verify-otp');
+    Route::post('/verify-otp', [\App\Http\Controllers\Chauffeur\OtpVerificationController::class, 'verify'])->name('verify-otp.submit');
+    Route::post('/verify-otp/resend', [\App\Http\Controllers\Chauffeur\OtpVerificationController::class, 'resend'])->name('verify-otp.resend');
+    
+    Route::get('/password/forgot', [\App\Http\Controllers\Chauffeur\ChauffeurForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
+    Route::post('/password/forgot', [\App\Http\Controllers\Chauffeur\ChauffeurForgotPasswordController::class, 'sendOtp'])->name('password.email');
+    Route::get('/password/reset', [\App\Http\Controllers\Chauffeur\ChauffeurForgotPasswordController::class, 'showResetForm'])->name('password.reset');
+    Route::post('/password/reset', [\App\Http\Controllers\Chauffeur\ChauffeurForgotPasswordController::class, 'resetPassword'])->name('password.update');
 
     Route::middleware('chauffeur')->group(function () {
-        Route::get('/dashboard', [ChauffeurController::class, 'dashboard'])->name('chauffeur.dashboard');
-        Route::get('/programmes', [ChauffeurController::class, 'availableProgrammes'])->name('chauffeur.programmes');
-        Route::post('/voyage/assign', [ChauffeurController::class, 'assign'])->name('chauffeur.voyage.assign');
-        Route::get('/voyages', [ChauffeurController::class, 'myVoyages'])->name('chauffeur.voyages');
+        Route::get('/dashboard', [ChauffeurController::class, 'dashboard'])->name('dashboard');
+        Route::get('/voyages-history', [ChauffeurController::class, 'myVoyages'])->name('voyages.history');
+        
+        // Voyage management routes
+        Route::prefix('voyages')->name('voyages.')->group(function () {
+            Route::get('/', [ChauffeurVoyageController::class, 'index'])->name('index');
+            Route::post('/{voyage}/confirm', [ChauffeurVoyageController::class, 'confirm'])->name('confirm');
+            Route::post('/{voyage}/start', [ChauffeurVoyageController::class, 'start'])->name('start');
+            Route::post('/{voyage}/complete', [ChauffeurVoyageController::class, 'complete'])->name('complete');
+            Route::post('/{voyage}/update-location', [ChauffeurVoyageController::class, 'updateLocation'])->name('update-location');
+        });
+
+        // Inbox for Chauffeur
+        Route::prefix('messages')->name('messages.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Chauffeur\ChauffeurMessageController::class, 'index'])->name('index');
+            Route::get('/{id}', [\App\Http\Controllers\Chauffeur\ChauffeurMessageController::class, 'show'])->name('show');
+        });
+
+        // Signalements for Chauffeur
+        Route::prefix('signalements')->name('signalements.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Chauffeur\ChauffeurSignalementController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Chauffeur\ChauffeurSignalementController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Chauffeur\ChauffeurSignalementController::class, 'store'])->name('store');
+            Route::get('/{signalement}', [\App\Http\Controllers\Chauffeur\ChauffeurSignalementController::class, 'show'])->name('show');
+        });
     });
 });

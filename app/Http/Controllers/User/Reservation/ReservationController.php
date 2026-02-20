@@ -42,9 +42,10 @@ class ReservationController extends Controller
         $user = Auth::user();
 
         // Récupérer les réservations avec les relations nécessaires
-        $query = Reservation::with(['programme', 'programme.compagnie', 'programme.gareDepart', 'programme.gareArrivee'])
-            ->where('user_id', $user->id)
-            ->where('statut', '!=', 'en_attente')
+        $query = Reservation::with(['programme', 'programme.compagnie', 'programme.gareDepart', 'programme.gareArrivee', 'programme.voyages'])
+         ->whereHas('programme') // Exclure les réservations dont le programme a été supprimé
+         ->where('user_id', $user->id)
+         ->where('statut', '!=', 'en_attente')
             ->orderBy('created_at', 'desc')
             ->orderBy('payment_transaction_id', 'desc')
             ->orderBy('seat_number', 'asc');
@@ -94,7 +95,7 @@ class ReservationController extends Controller
             abort(403);
         }
 
-        $reservation->load(['programme', 'programme.compagnie',]);
+        $reservation->load(['programme', 'programme.compagnie', 'programme.voyages']);
 
         return view('user.reservation.show', compact('reservation'));
     }
@@ -286,179 +287,7 @@ class ReservationController extends Controller
         return response()->json($result, $result['success'] ? 200 : 422);
     }
 
-    /**
-     * Modify a reservation (cancel & rebook).
-     */
-   public function modifyReservation(Reservation $oldReservation, array $data): array
-    {
-        if ($oldReservation->statut !== 'confirmee') {
-            return ['success' => false, 'message' => 'Seules les réservations confirmées peuvent être modifiées.'];
-        }
 
-        $refundData = $this->calculateRefundPercentage($oldReservation);
-        if (!$refundData['can_cancel']) {
-            return ['success' => false, 'message' => 'Modification impossible moins de 15 minutes avant le départ.'];
-        }
-
-        $oldTotal = (float) $oldReservation->montant;
-        $reservationsToCancel = [$oldReservation];
-
-        // Gestion Aller-Retour pour l'annulation
-        if ($oldReservation->is_aller_retour) {
-            $pairedReservation = $this->findPairedReservation($oldReservation);
-            if ($pairedReservation) {
-                $oldTotal += (float) $pairedReservation->montant;
-                $reservationsToCancel[] = $pairedReservation;
-            }
-        }
-
-        // Calcul valeur résiduelle
-        if ($refundData['percentage'] !== null) {
-            $residualValue = round($oldTotal * $refundData['percentage'] / 100, 0);
-        } else {
-            $residualValue = max(0, $oldTotal - $refundData['penalty']);
-        }
-
-        // Chargement Nouveau Programme
-        $newProgramme = \App\Models\Programme::findOrFail($data['programme_id']);
-        $newPrice = (float)str_replace(' ', '', $newProgramme->montant_billet ?? $newProgramme->prix ?? 0);
-        $newTotal = $newPrice;
-
-        $returnProgramme = null;
-        if ($oldReservation->is_aller_retour && isset($data['return_programme_id'])) {
-            $returnProgramme = \App\Models\Programme::findOrFail($data['return_programme_id']);
-            $newTotal += (float)str_replace(' ', '', $returnProgramme->montant_billet ?? $returnProgramme->prix ?? 0);
-        }
-
-        $difference = $newTotal - $residualValue;
-
-        try {
-            DB::beginTransaction();
-            $user = User::findOrFail($oldReservation->user_id);
-
-            // Vérification Solde
-            if ($difference > 0 && (float) $user->solde < $difference) {
-                DB::rollBack();
-                return ['success' => false, 'message' => "Solde insuffisant."];
-            }
-
-            // 1. Annuler les anciennes réservations
-            foreach ($reservationsToCancel as $res) {
-                $res->update([
-                    'statut' => 'annulee',
-                    'annulation_reason' => 'Modification',
-                    'annulation_date' => now(),
-                    'refund_amount' => ($refundData['percentage'] !== null) 
-                        ? round($res->montant * $refundData['percentage'] / 100, 0)
-                        : max(0, $res->montant - ($refundData['penalty'] / count($reservationsToCancel))),
-                    'refund_percentage' => $refundData['percentage'],
-                ]);
-                $this->freeSeat($res);
-            }
-
-            // Génération de la nouvelle référence
-            $newReference = $oldReservation->reference;
-            if (!str_contains($newReference, 'MOD-')) {
-                $newReference = 'MOD-' . $newReference . '-' . strtoupper(Str::random(4));
-            }
-
-            // --- CORRECTION HEURE ARRIVEE ---
-            // On prend celle du programme en priorité, sinon on calcule
-            $heureArriveAller = $newProgramme->heure_arrive;
-            if (empty($heureArriveAller)) {
-                $heureArriveAller = $this->calculateArrivalTime($data['heure_depart'], $newProgramme->durer_parcours);
-            }
-
-            // 2. Créer la nouvelle réservation (ALLER)
-            $newReservation = Reservation::create([
-                'user_id' => $oldReservation->user_id,
-                'paiement_id' => $oldReservation->paiement_id, // <-- CORRECTION: Garder le lien paiement
-                'payment_transaction_id' => $newReference, // <-- CORRECTION: ID Transaction rempli
-                'programme_id' => $data['programme_id'],
-                'compagnie_id' => $newProgramme->compagnie_id,
-                'seat_number' => $data['seat_number'],
-                'passager_nom' => $oldReservation->passager_nom,
-                'passager_prenom' => $oldReservation->passager_prenom,
-                'passager_email' => $oldReservation->passager_email,
-                'passager_telephone' => $oldReservation->passager_telephone,
-                'passager_urgence' => $oldReservation->passager_urgence,
-                'date_voyage' => $data['date_voyage'],
-                'heure_depart' => $data['heure_depart'],
-                'heure_arrive' => $heureArriveAller, // <-- CORRECTION: Heure d'arrivée remplie
-                'montant' => $newPrice,
-                'reference' => $newReference,
-                'statut' => 'confirmee',
-                'is_aller_retour' => $oldReservation->is_aller_retour,
-                'payment_method' => 'wallet',
-                'payment_status' => 'payé'
-            ]);
-
-            // Générer QR Code Aller
-            $this->generateAndSaveQR($newReservation);
-
-            // 3. Créer la nouvelle réservation (RETOUR) si nécessaire
-            if ($oldReservation->is_aller_retour && $returnProgramme) {
-                
-                $heureArriveRetour = $returnProgramme->heure_arrive;
-                if (empty($heureArriveRetour)) {
-                    $heureArriveRetour = $this->calculateArrivalTime($data['return_heure_depart'], $returnProgramme->durer_parcours);
-                }
-
-                $resRetour = Reservation::create([
-                    'user_id' => $oldReservation->user_id,
-                    'paiement_id' => $oldReservation->paiement_id, // <-- CORRECTION
-                    'payment_transaction_id' => $newReference, // <-- CORRECTION
-                    'programme_id' => $data['return_programme_id'],
-                    'compagnie_id' => $returnProgramme->compagnie_id,
-                    'seat_number' => $data['return_seat_number'],
-                    'passager_nom' => $oldReservation->passager_nom,
-                    'passager_prenom' => $oldReservation->passager_prenom,
-                    'passager_email' => $oldReservation->passager_email,
-                    'passager_telephone' => $oldReservation->passager_telephone,
-                    'passager_urgence' => $oldReservation->passager_urgence,
-                    'date_voyage' => $data['return_date_voyage'],
-                    'heure_depart' => $data['return_heure_depart'],
-                    'heure_arrive' => $heureArriveRetour, // <-- CORRECTION
-                    'montant' => $newTotal - $newPrice,
-                    'reference' => $newReference . '-RET',
-                    'statut' => 'confirmee',
-                    'is_aller_retour' => true,
-                    'payment_method' => 'wallet',
-                    'payment_status' => 'payé'
-                ]);
-
-                // Générer QR Code Retour
-                $this->generateAndSaveQR($resRetour);
-            }
-
-            // Gestion Wallet (Paiement ou Remboursement de la différence)
-            if ($difference != 0) {
-                $user->solde -= $difference;
-                $user->save();
-
-                WalletTransaction::create([
-                    'user_id' => $user->id,
-                    'amount' => abs($difference),
-                    'type' => $difference > 0 ? 'debit' : 'credit',
-                    'description' => "Modification réservation {$oldReservation->reference}",
-                    'status' => 'completed',
-                    'reference' => 'MOD-' . strtoupper(Str::random(10)),
-                    'payment_method' => 'wallet'
-                ]);
-            }
-            
-            // Mise à jour des places
-            $this->occupySeat($newReservation);
-            if(isset($resRetour)) $this->occupySeat($resRetour);
-
-            DB::commit();
-            return ['success' => true, 'message' => 'Modification réussie.', 'new_reservation' => $newReservation];
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error("Modification error: " . $e->getMessage());
-            return ['success' => false, 'message' => 'Erreur technique: ' . $e->getMessage()];
-        }
-    }
     /**
      * Recherche et affichage des lignes disponibles - Groupé par route unique
      * L'utilisateur choisit la route, le type (aller/retour), et l'heure de départ
@@ -472,8 +301,8 @@ class ReservationController extends Controller
         $heure_depart = $request->heure_depart ?? null;
         $formattedDate = date('Y-m-d', strtotime($date_depart_recherche));
 
-        // Initialiser la requête
-        $query = Programme::with(['compagnie', 'itineraire', 'gareDepart', 'gareArrivee'])
+        // Initialiser la requête avec les relations nécessaires pour éviter le N+1
+        $query = Programme::with(['compagnie', 'itineraire', 'gareDepart', 'gareArrivee', 'voyages.vehicule', 'compagnie.vehicules'])
             ->where('statut', 'actif');
 
         // Appliquer les filtres de recherche si présents
@@ -514,28 +343,38 @@ class ReservationController extends Controller
             ->groupBy('programme_id')
             ->pluck('count', 'programme_id');
 
-        // Grouper par route unique (compagnie + itinéraire)
+        // Grouper par trajet unique (compagnie + direction)
         $groupedRoutes = $allProgrammes->groupBy(function($p) {
-    return $p->compagnie_id . '|' . $p->itineraire_id;
-})->map(function($group) use ($reservationCounts, $formattedDate) {
-    $first = $group->first();
+            return $p->compagnie_id . '|' . trim($p->point_depart) . '|' . trim($p->point_arrive);
+        })->map(function($group) use ($reservationCounts, $formattedDate) {
+            $first = $group->first();
             
             // Tous les horaires aller
-            $allerHoraires = $group->sortBy('heure_depart')->map(function($p) use ($reservationCounts, $formattedDate) {
-                $vehicule = $p->getVehiculeForDate($formattedDate);
-                return [
-                    'id' => $p->id,
-                    'heure_depart' => $p->heure_depart,
-                    'heure_arrive' => $p->heure_arrive,
-                    'reserved_count' => $reservationCounts[$p->id] ?? 0,
-                    'total_seats' => $vehicule ? $vehicule->nombre_place : 70,
-                    'vehicule_id' => $vehicule ? $vehicule->id : null,
-                ];
-            })->values();
+            $now = now();
+            $isToday = $formattedDate === $now->format('Y-m-d');
+            $currentTime = $now->format('H:i:s');
+
+            $allerHoraires = $group->sortBy('heure_depart')
+                ->filter(function($p) use ($isToday, $currentTime) {
+                    if ($isToday) {
+                        return $p->heure_depart > $currentTime;
+                    }
+                    return true;
+                })
+                ->map(function($p) use ($reservationCounts, $formattedDate) {
+                    return [
+                        'id' => $p->id,
+                        'heure_depart' => $p->heure_depart,
+                        'heure_arrive' => $p->heure_arrive,
+                        'reserved_count' => $reservationCounts[$p->id] ?? 0,
+                        'total_seats' => $p->getTotalSeats($formattedDate),
+                        'capacity' => $p->capacity,
+                        'vehicule_id' => ($v = $p->getVehiculeForDate($formattedDate)) ? $v->id : null,
+                    ];
+                })->values();
             
-            // Retours
+            // Retours : On cherche tous les programmes qui font le trajet inverse pour cette compagnie
             $retourProgrammes = Programme::where('compagnie_id', $first->compagnie_id)
-                ->where('itineraire_id', $first->itineraire_id)
                 ->where('point_depart', $first->point_arrive)
                 ->where('point_arrive', $first->point_depart)
                 ->where('statut', 'actif')
@@ -547,6 +386,7 @@ class ReservationController extends Controller
                     'id' => $p->id,
                     'heure_depart' => $p->heure_depart,
                     'heure_arrive' => $p->heure_arrive,
+                    'capacity' => $p->capacity,
                     'vehicule_id' => $p->vehicule_id,
                 ];
             })->values();
@@ -622,9 +462,21 @@ class ReservationController extends Controller
             return response()->json(['error' => 'Programme non trouvé'], 404);
         }
 
-        // TENTATIVE 1 : Véhicule via getVehiculeForDate (si relation Voyage existe)
-        $vehicule = $programme->getVehiculeForDate($dateVoyage);
+        // ✅ Priorité à la capacité du programme
+        $programmeCapacity = $programme->getTotalSeats($dateVoyage);
 
+        // ✅ TENTATIVE 0 : Utiliser l'ID fourni s'il est valide (> 0)
+        $vehicule = null;
+        if ($id > 0) {
+            $vehicule = \App\Models\Vehicule::find($id);
+        }
+
+        // TENTATIVE 1 : Si non trouvé ou ID=0, chercher via getVehiculeForDate
+        if (!$vehicule) {
+            $vehicule = $programme->getVehiculeForDate($dateVoyage);
+        }
+
+        // TENTATIVE 2 : Fallback sur le premier véhicule de la compagnie
         if (!$vehicule && $programme->compagnie_id) {
             $vehicule = \App\Models\Vehicule::where('compagnie_id', $programme->compagnie_id)
                 ->where('is_active', true)
@@ -639,10 +491,23 @@ class ReservationController extends Controller
                 'immatriculation' => 'N/A',
                 'numero_serie' => 'N/A',
                 'type_range' => '2x3',
-                'nombre_place' => 70,
+                'nombre_place' => $programmeCapacity > 0 ? $programmeCapacity : 70,
                 'marque' => 'Bus',
                 'modele' => 'Standard'
             ];
+        } else {
+            // Pour ne pas modifier le véhicule en base lors des ajustements de capacité
+            $vehicule = clone $vehicule;
+        }
+
+        // ✅ Priorité absolue à la capacité du programme SI elle est définie
+        if ($programmeCapacity > 0) {
+            $vehicule->nombre_place = $programmeCapacity;
+        }
+
+        // Sécurité : évite d'avoir 0 places
+        if ((int)$vehicule->nombre_place <= 0) {
+            $vehicule->nombre_place = 70;
         }
 
         // Générer le HTML pour la visualisation
@@ -682,6 +547,7 @@ class ReservationController extends Controller
             'success' => true,
             'html' => $visualizationHTML,
             'vehicule' => $vehicule,
+            'programme_capacity' => $programme->capacity,
             'date' => $dateVoyage,
             'heure_depart' => $heureDepart,
             'reserved_seats' => $reservedSeats
@@ -886,6 +752,44 @@ $dateAller = $request->date_voyage;
             ], 404);
         }
 
+         // --- DEBUT VALIDATION HEURE RETOUR (AJOUT À COLLER ICI) ---
+    // Vérification logique : Si c'est le même jour, le retour doit être APRÈS l'aller (plus durée trajet)
+    if ($isAllerRetour && $dateRetour && $dateAller == $dateRetour) {
+        
+        // On récupère l'heure de départ du programme aller
+        $heureAller = $programme->heure_depart; // ex: "08:00:00"
+        
+        // On récupère l'heure de retour envoyée par le formulaire
+        $heureRetour = $request->heure_depart_retour; 
+
+        if ($heureAller && $heureRetour) {
+            // Conversion en timestamp pour comparer
+            $timeAller = strtotime($heureAller);
+            $timeRetour = strtotime($heureRetour);
+
+            // Estimation durée trajet (ex: on récupère "03:00" ou on met 2h par défaut)
+            // Tu peux ajuster cette logique selon comment 'durer_parcours' est stocké
+            $dureeMinimaleSeconds = 2 * 3600; // 2 heures minimum de battement par sécurité
+
+            if ($timeRetour <= $timeAller) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "L'heure de retour ($heureRetour) ne peut pas être antérieure ou égale à l'heure de départ ($heureAller) le même jour."
+                ], 422);
+            }
+            
+            // Optionnel : Vérifier qu'il y a assez de temps pour faire le trajet
+            
+            if ($timeRetour < ($timeAller + $dureeMinimaleSeconds)) {
+                 return response()->json([
+                    'success' => false,
+                    'message' => "L'heure de retour est trop proche de l'heure de départ. Il faut compter le temps de trajet."
+                ], 422);
+            }
+            
+        }
+    }
+
         // Vérifier si la date correspond au programme (Support date range)
         $dateVoyage = $request->date_voyage;
         $dateVoyageTimestamp = strtotime($dateVoyage);
@@ -944,7 +848,7 @@ $dateAller = $request->date_voyage;
             }
 
             // VÉRIFICATION DU SOLDE DE LA COMPAGNIE
-            if ($programme->compagnie->tickets < $montantTotal) {
+            if (\App\Models\Setting::isTicketSystemEnabled() && $programme->compagnie->tickets < $montantTotal) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Désolé, cette compagnie n\'a plus assez de crédit pour accepter de nouvelles réservations.'
@@ -1257,7 +1161,7 @@ $dateAller = $request->date_voyage;
                     'passager_email' => $passager['email'],
                     'passager_telephone' => $passager['telephone'],
                     'passager_urgence' => $passager['urgence'],
-                    // 'is_aller_retour' => $isAllerRetour, // Probablement ignoré par la DB si n'existe pas
+                    'is_aller_retour' => $isAllerRetour,
                     'montant' => $prixUnitaire,
                     'statut' => $reservationStatus,
                     'reference' => $reference,
@@ -1303,6 +1207,7 @@ $dateAller = $request->date_voyage;
                             $reservationDataRetour['seat_number'] = $returnSeat;
                             $reservationDataRetour['reference'] = $transactionId . '-RET-' . $seatNumber;
                             $reservationDataRetour['qr_code'] = Str::random(32);
+                            $reservationDataRetour['is_aller_retour'] = true;
                             $reservationDataRetour['gare_depart_id'] = $request->gare_arrivee_id;
                             $reservationDataRetour['gare_arrivee_id'] = $request->gare_depart_id;
                             
@@ -1335,6 +1240,7 @@ $dateAller = $request->date_voyage;
                                 $reservationDataRetour['seat_number'] = $returnSeat;
                                 $reservationDataRetour['reference'] = $transactionId . '-RET-' . $seatNumber;
                                 $reservationDataRetour['qr_code'] = Str::random(32);
+                                $reservationDataRetour['is_aller_retour'] = true;
                                 $reservationDataRetour['gare_depart_id'] = $request->gare_arrivee_id;
                                 $reservationDataRetour['gare_arrivee_id'] = $request->gare_depart_id;
                                 
@@ -1629,7 +1535,7 @@ $dateAller = $request->date_voyage;
     {
         try {
             // Correction pour le contexte Webhook (Auth::user() peut être null)
-            $user = Auth::user();
+            $user = $reservation->user ?? Auth::user();
             $email = $recipientEmail ?: ($user ? $user->email : null);
             $name = $recipientName ?: ($user ? $user->name : 'Client');
 
@@ -1648,7 +1554,11 @@ $dateAller = $request->date_voyage;
             // Envoyer la notification à l'email spécifié
             // Note: On peut utiliser Notification::route('mail', $email) pour envoyer à une adresse arbitraire
             if ($reservation->user) {
-                $reservation->user->notify(new ReservationConfirmeeNotification($reservation, $programme, $qrCodeBase64, $name, $seatNumber, $ticketType, $qrCodeRetourBase64, $programmeRetour));
+                try {
+                    $reservation->user->notify(new ReservationConfirmeeNotification($reservation, $programme, $qrCodeBase64, $name, $seatNumber, $ticketType, $qrCodeRetourBase64, $programmeRetour));
+                } catch (\Exception $e) {
+                    Log::error('Erreur lors de l\'envoi de la notification Laravel (mail/broadcast): ' . $e->getMessage());
+                }
                 
                 // Notification Push FCM
                 if ($reservation->user->fcm_token) {
@@ -1667,8 +1577,12 @@ $dateAller = $request->date_voyage;
                     }
                 }
             } else {
-            Notification::route('mail', $email)->notify(new ReservationConfirmeeNotification($reservation, $programme, $qrCodeBase64, $name, $seatNumber, $ticketType, $qrCodeRetourBase64, $programmeRetour));
-        }
+                try {
+                    Notification::route('mail', $email)->notify(new ReservationConfirmeeNotification($reservation, $programme, $qrCodeBase64, $name, $seatNumber, $ticketType, $qrCodeRetourBase64, $programmeRetour));
+                } catch (\Exception $e) {
+                    Log::error('Erreur lors de l\'envoi de la notification Laravel (route mail): ' . $e->getMessage());
+                }
+            }
 
             Log::info('Notification envoyée avec succès');
         } catch (\Exception $e) {
@@ -2138,27 +2052,8 @@ $dateAller = $request->date_voyage;
         ' . $dateInfo . '
         
         <div style="margin-bottom: 20px;">
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px;">
-                <div style="background: #f8f9fa; padding: 12px; border-radius: 8px;">
-                    <strong style="color: #6b7280; font-size: 0.9rem;">Immatriculation</strong>
-                    <div style="font-weight: bold; font-size: 1.1rem;">' . $vehicule->immatriculation . '</div>
-                </div>
-                <div style="background: #f8f9fa; padding: 12px; border-radius: 8px;">
-                    <strong style="color: #6b7280; font-size: 0.9rem;">Numéro de série</strong>
-                    <div style="font-weight: bold; font-size: 1.1rem;">' . ($vehicule->numero_serie ?? 'N/A') . '</div>
-                </div>
-            </div>
-            
             <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
-                    <div style="text-align: center;">
-                        <div style="color: #6b7280; font-size: 0.9rem;">Type de rangée</div>
-                        <div style="color: #fea219; font-weight: bold; font-size: 1.2rem;">' . $vehicule->type_range . '</div>
-                    </div>
-                    <div style="text-align: center;">
-                        <div style="color: #6b7280; font-size: 0.9rem;">Rangées</div>
-                        <div style="color: #10b981; font-weight: bold; font-size: 1.2rem;">' . $nombreRanger . '</div>
-                    </div>
+                <div style="display: grid; grid-template-columns: repeat(1, 1fr); gap: 15px;">
                     <div style="text-align: center;">
                         <div style="color: #6b7280; font-size: 0.9rem;">Total places</div>
                         <div style="color: #3b82f6; font-weight: bold; font-size: 1.2rem;">' . $totalPlaces . '</div>
@@ -2367,8 +2262,8 @@ public function apiRouteDates(Request $request)
         $requestedDate = $request->date ?? now()->format('Y-m-d');
         
         $programmes = Programme::with(['compagnie'])
-            ->where('point_depart', $request->point_depart)
-            ->where('point_arrive', $request->point_arrive)
+            ->whereRaw('TRIM(point_depart) = ?', [trim($request->point_depart)])
+            ->whereRaw('TRIM(point_arrive) = ?', [trim($request->point_arrive)])
             ->where('statut', 'actif')
             ->when($request->compagnie_id && $request->compagnie_id !== 'undefined', function($q) use ($request) {
                 return $q->where('compagnie_id', $request->compagnie_id);
@@ -2383,9 +2278,18 @@ public function apiRouteDates(Request $request)
             ->orderBy('heure_depart')
             ->get();
 
-        $schedules = $programmes->map(function ($programme) use ($requestedDate) {
-            $vehicule = $programme->getVehiculeForDate($requestedDate);
-            $capacite = $vehicule ? intval($vehicule->nombre_place) : 70;
+        $now = now();
+        $isToday = $requestedDate === $now->format('Y-m-d');
+        $currentTime = $now->format('H:i:s');
+
+        $schedules = $programmes->filter(function($p) use ($isToday, $currentTime) {
+            if ($isToday) {
+                // Ne garder que les voyages dont l'heure de départ n'est pas encore passée
+                return $p->heure_depart > $currentTime;
+            }
+            return true;
+        })->map(function ($programme) use ($requestedDate) {
+            $capacite = $programme->getTotalSeats($requestedDate);
             
             $reservedCount = Reservation::where('programme_id', $programme->id)
                 ->where('date_voyage', $requestedDate)
@@ -2397,13 +2301,13 @@ public function apiRouteDates(Request $request)
                 'heure_depart' => $programme->heure_depart,
                 'heure_arrive' => $programme->heure_arrive,
                 'montant_billet' => (int) str_replace(' ', '', $programme->montant_billet), // Nettoyage prix
-                'vehicule' => $programme->vehicule ? $programme->vehicule->immatriculation : 'N/A',
-                'vehicule_id' => $programme->vehicule_id,
+                'vehicule' => ($v = $programme->getVehiculeForDate($requestedDate)) ? $v->immatriculation : 'N/A',
+                'vehicule_id' => $v ? $v->id : null,
                 'places_totales' => $capacite,
                 'places_disponibles' => max(0, $capacite - $reservedCount),
                 'date_fin' => $programme->date_fin
             ];
-        });
+        })->values(); // Reset indexes after filter
 
         return response()->json([
             'success' => true,
@@ -2421,8 +2325,8 @@ public function apiRouteDates(Request $request)
         $requestedDate = $request->min_date ?? now()->format('Y-m-d');
         
         $returnTrips = Programme::with(['compagnie'])
-            ->where('point_depart', $request->original_arrive)
-            ->where('point_arrive', $request->original_depart)
+            ->whereRaw('TRIM(point_depart) = ?', [trim($request->original_arrive)])
+            ->whereRaw('TRIM(point_arrive) = ?', [trim($request->original_depart)])
             ->where('statut', 'actif')
             ->when($request->compagnie_id && $request->compagnie_id !== 'undefined', function($q) use ($request) {
                 return $q->where('compagnie_id', $request->compagnie_id);
@@ -2476,85 +2380,110 @@ public function apiRouteDates(Request $request)
         ]);
     }
 
-    // 1. Gestion de l'Aller-Retour et Paired Reservation
+    // 1. Identification rigoureuse Aller vs Retour
+    $isRetourLeg = Str::contains(Str::upper($reservation->reference), '-RET');
     $pairedReservation = $service->findPairedReservation($reservation);
-    $totalOldPrice = (float) $reservation->montant;
     
-    // Si c'est un aller-retour, on doit avoir les infos du retour
+    // On veut que "mainRes" soit toujours l'ALLER
+    $mainRes = $isRetourLeg ? ($pairedReservation ?? $reservation) : $reservation;
+    $retourRes = $isRetourLeg ? $reservation : $pairedReservation;
+
+    // Validation Spécifique : Si l'aller est passé ou effectué, on bloque tout pour l'A/R
+    if ($reservation->is_aller_retour) {
+        $allerHeure = $mainRes->heure_depart ?? optional($mainRes->programme)->heure_depart ?? '00:00';
+        $allerDateTime = \Carbon\Carbon::parse(\Carbon\Carbon::parse($mainRes->date_voyage)->format('Y-m-d') . ' ' . $allerHeure);
+        
+        if ($allerDateTime->isPast() || $mainRes->statut === 'terminee') {
+            return response()->json([
+                'success' => false,
+                'can_modify' => false,
+                'message' => 'Modification impossible : le voyage aller est déjà passé ou effectué.'
+            ], 400);
+        }
+    }
+
+    $totalOldPrice = (float) $mainRes->montant;
+    if ($retourRes) {
+        $totalOldPrice += (float) $retourRes->montant;
+    }
+    
     $returnDetails = null;
     $isRoundTrip = (bool) $reservation->is_aller_retour;
 
-    if ($pairedReservation) {
-        $totalOldPrice += (float) $pairedReservation->montant;
-        
-        // Si la réservation actuelle est l'ALLER, le paired est le RETOUR
-        // Si la réservation actuelle est le RETOUR, le paired est l'ALLER (mais on modifie généralement depuis l'aller)
-        // On assume ici qu'on clique sur l'une des deux et on veut modifier l'ensemble.
-        
-        // Logique pour déterminer qui est le retour
-        $retourRes = str_contains($reservation->reference, '-RET') ? $reservation : $pairedReservation;
-        
-        if ($isRoundTrip) {
-            $returnDetails = [
-                'prog_id' => $retourRes->programme_id,
-                // Formatage STRICT pour input type="date" (YYYY-MM-DD)
-                'date' => \Carbon\Carbon::parse($retourRes->date_voyage)->format('Y-m-d'),
-                'time' => $retourRes->heure_depart,
-                'seat' => $retourRes->seat_number
-            ];
-        }
-    } elseif ($isRoundTrip && $reservation->date_retour) {
-        // Cas fallback (si une seule ligne en base pour l'AR - rare mais possible selon ton schema)
+    if ($isRoundTrip && $retourRes) {
         $returnDetails = [
-            'prog_id' => $reservation->programme_retour_id,
-            'date' => \Carbon\Carbon::parse($reservation->date_retour)->format('Y-m-d'),
-            // On essaie de trouver l'heure via le programme si pas stockée
-            'time' => $reservation->programmeRetour ? $reservation->programmeRetour->heure_depart : null,
-            'seat' => null // Impossible de deviner le siège retour si pas de ligne dédiée
+            'prog_id' => $retourRes->programme_id,
+            'date' => \Carbon\Carbon::parse($retourRes->date_voyage)->format('Y-m-d'),
+            'time' => $retourRes->heure_depart,
+            'seat' => $retourRes->seat_number
+        ];
+    } elseif ($isRoundTrip && $mainRes->date_retour) {
+        // Fallback
+        $returnDetails = [
+            'prog_id' => $mainRes->programme_retour_id,
+            'date' => \Carbon\Carbon::parse($mainRes->date_retour)->format('Y-m-d'),
+            'time' => $mainRes->programmeRetour ? $mainRes->programmeRetour->heure_depart : null,
+            'seat' => null
         ];
     }
 
     // 2. Calcul Valeur Résiduelle
+    $ticketCount = ($pairedReservation || $isRoundTrip) ? 2 : 1;
+    $totalPenalty = ($refundData['penalty'] ?? 0) * $ticketCount;
+
     if ($refundData['percentage'] !== null) {
         $residualValue = round($totalOldPrice * $refundData['percentage'] / 100);
     } else {
-        $residualValue = max(0, $totalOldPrice - $refundData['penalty']);
+        $residualValue = max(0, $totalOldPrice - $totalPenalty);
     }
 
     // 3. Routes disponibles
-    $routes = Programme::where('statut', 'actif')
-        ->where('date_depart', '>=', now()->format('Y-m-d'))
-        ->get()
+    $today = now()->format('Y-m-d');
+    $routesQuery = Programme::where('statut', 'actif')
+        ->where(function($query) use ($today) {
+            $query->where('date_depart', '>=', $today)
+                  ->orWhere(function($q) use ($today) {
+                      $q->where('date_depart', '<=', $today)
+                        ->where(function($q2) use ($today) {
+                            $q2->whereNull('date_fin')
+                               ->orWhere('date_fin', '>=', $today);
+                        });
+                  });
+        });
+
+    $routes = $routesQuery->get()
         ->map(function ($prog) {
             return [
                 'id' => $prog->id, 
-                'unique_key' => $prog->point_depart . '|' . $prog->point_arrive . '|' . $prog->compagnie_id,
-                'name' => $prog->point_depart . ' ➝ ' . $prog->point_arrive,
+                'unique_key' => trim($prog->point_depart) . '|' . trim($prog->point_arrive) . '|' . $prog->compagnie_id,
+                'name' => trim($prog->point_depart) . ' ➝ ' . trim($prog->point_arrive),
                 'compagnie' => $prog->compagnie->name ?? 'Compagnie',
                 'prix' => (int) str_replace(' ', '', $prog->montant_billet ?? $prog->prix ?? 0),
-                'depart' => $prog->point_depart,
-                'arrive' => $prog->point_arrive,
+                'depart' => trim($prog->point_depart),
+                'arrive' => trim($prog->point_arrive),
                 'compagnie_id' => $prog->compagnie_id
             ];
         })
         ->unique('unique_key')
         ->values();
 
-    $currentProgramme = $reservation->programme;
-    $currentRouteKey = $currentProgramme->point_depart . '|' . $currentProgramme->point_arrive . '|' . $currentProgramme->compagnie_id;
+    $currentProgramme = $mainRes->programme;
+    // Utiliser trim() pour assurer la correspondance
+    $currentRouteKey = trim($currentProgramme->point_depart) . '|' . trim($currentProgramme->point_arrive) . '|' . $currentProgramme->compagnie_id;
 
     return response()->json([
         'success' => true,
         'can_modify' => true,
-        'reservation' => $reservation,
+        'reservation' => $mainRes,
         // Formatage STRICT pour l'aller aussi
-        'formatted_date_aller' => \Carbon\Carbon::parse($reservation->date_voyage)->format('Y-m-d'),
+        'formatted_date_aller' => \Carbon\Carbon::parse($mainRes->date_voyage)->format('Y-m-d'),
         'current_route_key' => $currentRouteKey,
         'is_aller_retour' => $isRoundTrip,
         'return_details' => $returnDetails,
         'residual_value' => $residualValue,
         'penalty_info' => $refundData['time_remaining'],
         'available_routes' => $routes,
+        'total_old_price' => $totalOldPrice,
         'user_solde' => (float) Auth::user()->solde
     ]);
 }
@@ -2717,6 +2646,21 @@ public function apiRouteDates(Request $request)
      */
      public function calculateModificationDelta(Request $request, Reservation $reservation)
     {
+        $request->validate([
+            'new_programme_id' => 'required|exists:programmes,id',
+            'new_date_aller' => 'required|date',
+        ]);
+
+        $service = new ReservationService();
+        $refundData = $service->calculateRefundPercentage($reservation);
+        
+        if (!$refundData['can_cancel']) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La modification est impossible moins de 15 minutes avant le départ.'
+            ], 422);
+        }
+
         $service = new ReservationService();
         $user = Auth::user();
 
@@ -2725,12 +2669,18 @@ public function apiRouteDates(Request $request)
         
         $pairedReservation = $service->findPairedReservation($reservation);
         $totalOldPrice = (float) $reservation->montant;
-        if ($pairedReservation) $totalOldPrice += (float) $pairedReservation->montant;
+        $ticketCount = 1;
+        if ($pairedReservation) {
+            $totalOldPrice += (float) $pairedReservation->montant;
+            $ticketCount = 2;
+        }
+
+        $totalPenalty = ($refundData['penalty'] ?? 0) * $ticketCount;
 
         if ($refundData['percentage'] !== null) {
             $residualValue = round($totalOldPrice * $refundData['percentage'] / 100);
         } else {
-            $residualValue = max(0, $totalOldPrice - $refundData['penalty']);
+            $residualValue = max(0, $totalOldPrice - $totalPenalty);
         }
 
         // Calculer nouveau prix
@@ -2754,8 +2704,10 @@ public function apiRouteDates(Request $request)
             'success' => true,
             'old_value' => $totalOldPrice,
             'residual_value' => $residualValue,
+            'penalty_amount' => $totalPenalty,
             'new_total' => $newTotal,
             'delta' => abs($delta),
+            'real_delta' => $delta,
             'action' => $action,
             'can_afford' => ($action === 'pay' ? ((float)$user->solde >= $delta) : true)
         ]);
@@ -2769,6 +2721,43 @@ public function apiRouteDates(Request $request)
             'seat_number' => 'required',
             'heure_depart' => 'required'
         ]);
+
+        $service = new ReservationService();
+        $refundData = $service->calculateRefundPercentage($reservation);
+        
+        if (!$refundData['can_cancel']) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La modification est impossible moins de 15 minutes avant le départ.'
+            ], 422);
+        }
+
+        // Vérifier si des modifications ont été réellement apportées
+        $isAllerIdentical = ($request->programme_id == $reservation->programme_id && 
+                            $request->date_voyage == $reservation->date_voyage && 
+                            $request->seat_number == $reservation->seat_number);
+        
+        if ($isAllerIdentical && !$reservation->is_aller_retour) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Aucune modification apportée.',
+                'no_change' => true
+            ]);
+        }
+
+        if ($isAllerIdentical && $reservation->is_aller_retour) {
+             $paired = $service->findPairedReservation($reservation);
+             if ($paired && 
+                 $request->return_programme_id == $paired->programme_id && 
+                 $request->return_date_voyage == $paired->date_voyage && 
+                 $request->return_seat_number == $paired->seat_number) {
+                 return response()->json([
+                     'success' => true,
+                     'message' => 'Aucune modification apportée.',
+                     'no_change' => true
+                 ]);
+             }
+        }
 
         $service = new ReservationService();
         

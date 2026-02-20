@@ -1,4 +1,4 @@
-<aside class="mdc-drawer mdc-drawer--dismissible mdc-drawer--open" style="background-color: red">
+<aside class="mdc-drawer mdc-drawer--dismissible mdc-drawer--open">
     <div class="mdc-drawer__header" style="padding: 20px 0;">
         <a href="{{ route('agent.dashboard') }}" class="brand-logo d-flex justify-content-center align-items-center">
             @if (Auth::guard('agent')->user()->profile_picture)
@@ -24,6 +24,25 @@
                     <a class="mdc-drawer-link" href="{{ route('agent.dashboard') }}">
                         <i class="fas fa-home mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
                         Tableau de bord
+                    </a>
+                </div>
+                <!-- Onglet Boîte de réception -->
+                <div class="mdc-list-item mdc-drawer-item">
+                    <a class="mdc-drawer-link d-flex align-items-center justify-content-between w-100" href="{{ route('agent.messages.index') }}">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-inbox mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
+                            Boîte de réception
+                        </div>
+                        @php
+                            $unreadCompany = Auth::guard('agent')->user()->messages()->where('is_read', false)->count();
+                            $unreadGare = Auth::guard('agent')->user()->receivedGareMessages()->where('is_read', false)->count();
+                            $totalUnread = $unreadCompany + $unreadGare;
+                        @endphp
+                        @if($totalUnread > 0)
+                            <span class="badge badge-pill badge-danger" style="background: #e94f1b; font-weight: bold; padding: 4px 8px;">
+                                {{ $totalUnread }}
+                            </span>
+                        @endif
                     </a>
                 </div>
                 <div class="mdc-list-item mdc-drawer-item">
@@ -54,122 +73,8 @@
                         </nav>
                     </div>
                 </div>
-                <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel"
-                        data-target="ui-sub-conteneur">
-                        <i class="fas fa-boxes mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
-                        Programmation
-                        <i class="mdc-drawer-arrow material-icons">chevron_right</i>
-                    </a>
-                    <div class="mdc-expansion-panel" id="ui-sub-conteneur">
-                        <nav class="mdc-list mdc-drawer-submenu">
-                            <div class="mdc-list-item mdc-drawer-item">
-                                <a class="mdc-drawer-link" href="#">
-                                    Ajouter
-                                </a>
-                            </div>
-                            <div class="mdc-list-item mdc-drawer-item">
-                                <a class="mdc-drawer-link" href="#">
-                                    Listes
-                                </a>
-                            </div>
-                            <div class="mdc-list-item mdc-drawer-item">
-                                <a class="mdc-drawer-link" href="#">
-                                    Historiques
-                                </a>
-                            </div>
-                        </nav>
-                    </div>
-                </div>
-                <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel"
-                        data-target="ui-sub-agentss">
-                        <i class="fas fa-users mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
-                        Agent
-                        <i class="mdc-drawer-arrow material-icons">chevron_right</i>
-                    </a>
-                    <div class="mdc-expansion-panel" id="ui-sub-agentss">
-                        <nav class="mdc-list mdc-drawer-submenu">
-                            <div class="mdc-list-item mdc-drawer-item">
-                                <a class="mdc-drawer-link" href="#">
-                                    Ajouter
-                                </a>
-                            </div>
-                            <div class="mdc-list-item mdc-drawer-item">
-                                <a class="mdc-drawer-link" href="#">
-                                    Liste
-                                </a>
-                            </div>
-                        </nav>
-                    </div>
-                </div>
-                <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel"
-                        data-target="ui-sub-colis">
-                        <i class="fas fa-user-tie mdc-list-item__start-detail mdc-drawer-item-icon"
-                            aria-hidden="true"></i>
-                        Personnel
-                        <i class="mdc-drawer-arrow material-icons">chevron_right</i>
-                    </a>
-                    <div class="mdc-expansion-panel" id="ui-sub-colis">
-                        <nav class="mdc-list mdc-drawer-submenu">
-                            <div class="mdc-list-item mdc-drawer-item">
-                                <a class="mdc-drawer-link" href="#">
-                                    Ajouter
-                                </a>
-                            </div>
-                            <div class="mdc-list-item mdc-drawer-item">
-                                <a class="mdc-drawer-link" href="#">
-                                    Liste
-                                </a>
-                            </div>
-                        </nav>
-                    </div>
-                </div>
-                <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel"
-                        data-target="ui-sub-perso">
-                        <i class="fas fa-route mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
-                        Itinéraire
-                        <i class="mdc-drawer-arrow material-icons">chevron_right</i>
-                    </a>
-                    <div class="mdc-expansion-panel" id="ui-sub-perso">
-                        <nav class="mdc-list mdc-drawer-submenu">
-                            <div class="mdc-list-item mdc-drawer-item">
-                                <a class="mdc-drawer-link" href="#">
-                                    Ajouter
-                                </a>
-                            </div>
-                            <div class="mdc-list-item mdc-drawer-item">
-                                <a class="mdc-drawer-link" href="#">
-                                    Liste
-                                </a>
-                            </div>
-                        </nav>
-                    </div>
-                </div>
-                <div class="mdc-list-item mdc-drawer-item">
-                    <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel"
-                        data-target="ui-sub-agent">
-                        <i class="fas fa-car mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
-                        Véhicule
-                        <i class="mdc-drawer-arrow material-icons">chevron_right</i>
-                    </a>
-                    <div class="mdc-expansion-panel" id="ui-sub-agent">
-                        <nav class="mdc-list mdc-drawer-submenu">
-                            <div class="mdc-list-item mdc-drawer-item">
-                                <a class="mdc-drawer-link" href="#">
-                                    Ajouter
-                                </a>
-                            </div>
-                            <div class="mdc-list-item mdc-drawer-item">
-                                <a class="mdc-drawer-link" href="#">
-                                    Liste
-                                </a>
-                            </div>
-                        </nav>
-                    </div>
-                </div>
+                {{-- Section Voyages supprimée --}}
+               
 
                 <!-- Onglet Signalements -->
                 <div class="mdc-list-item mdc-drawer-item">
@@ -179,6 +84,8 @@
                         Signalements
                     </a>
                 </div>
+
+                
             </nav>
         </div>
 </aside>

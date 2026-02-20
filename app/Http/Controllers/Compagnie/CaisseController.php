@@ -39,7 +39,8 @@ class CaisseController extends Controller
      */
     public function create()
     {
-        return view('compagnie.caisse.create');
+        $gares = \App\Models\Gare::where('compagnie_id', Auth::guard('compagnie')->user()->id)->get();
+        return view('compagnie.caisse.create', compact('gares'));
     }
 
     /**
@@ -55,6 +56,7 @@ class CaisseController extends Controller
             'cas_urgence' => 'nullable|string|max:191',
             'commune' => 'nullable|string|max:191',
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'gare_id' => 'required|exists:gares,id',
         ]);
 
         $compagnie = Auth::guard('compagnie')->user();
@@ -76,6 +78,7 @@ class CaisseController extends Controller
             'password' => Hash::make('temporary_password_' . time()),
             'profile_picture' => $profilePicturePath,
             'compagnie_id' => $compagnie->id,
+            'gare_id' => $request->gare_id,
         ]);
 
         // Generate and store OTP
@@ -132,6 +135,52 @@ class CaisseController extends Controller
             'message' => $message,
             'archived' => $caisse->fresh()->isArchived(),
         ]);
+    }
+
+    public function edit(Caisse $caisse)
+    {
+        if ($caisse->compagnie_id !== Auth::guard('compagnie')->user()->id) {
+            abort(403);
+        }
+        $gares = \App\Models\Gare::where('compagnie_id', Auth::guard('compagnie')->user()->id)->get();
+        return view('compagnie.caisse.edit', compact('caisse', 'gares'));
+    }
+
+    public function update(Request $request, Caisse $caisse)
+    {
+        if ($caisse->compagnie_id !== Auth::guard('compagnie')->user()->id) {
+            abort(403);
+        }
+
+        $request->validate([
+            'name' => 'required|string|max:191',
+            'prenom' => 'required|string|max:191',
+            'email' => 'required|email|max:191|unique:caisses,email,' . $caisse->id,
+            'contact' => 'required|string|max:191|unique:caisses,contact,' . $caisse->id,
+            'cas_urgence' => 'nullable|string|max:191',
+            'commune' => 'nullable|string|max:191',
+            'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'gare_id' => 'required|exists:gares,id',
+        ]);
+
+        try {
+            $data = $request->only(['name', 'prenom', 'email', 'contact', 'cas_urgence', 'commune', 'gare_id']);
+
+            if ($request->hasFile('profile_picture')) {
+                if ($caisse->profile_picture) {
+                    Storage::disk('public')->delete($caisse->profile_picture);
+                }
+                $image = $request->file('profile_picture');
+                $imageName = 'caisse_' . time() . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
+                $data['profile_picture'] = $image->storeAs('profiles', $imageName, 'public');
+            }
+
+            $caisse->update($data);
+
+            return redirect()->route('compagnie.caisse.index')->with('success', 'Caissière mise à jour avec succès !');
+        } catch (\Exception $e) {
+            return back()->withInput()->with('error', 'Erreur lors de la mise à jour : ' . $e->getMessage());
+        }
     }
 
     /**

@@ -28,6 +28,7 @@ class AgentRequest extends FormRequest
            'commune' => 'required|string|max:255',
            'cas_urgence' => 'required|string|max:15',
            'profile_picture' => 'nullable|image|max:2048',
+           'gare_id' => 'required|exists:gares,id',
         ];
     }
 
@@ -45,6 +46,8 @@ class AgentRequest extends FormRequest
             'email.unique' => 'Cette adresse e-mail est déjà associée à un compte.',
             'contact.required' => 'Le contact est obligatoire.',
             'commune.required' => 'La commune est obligatoire.',
+            'gare_id.required' => 'La gare est obligatoire.',
+            'gare_id.exists' => 'La gare sélectionnée n\'existe pas.',
             'cas_urgence.required' => 'Le contact d\'urgence est obligatoire.',
             'profile_picture.image' => 'Le fichier doit être une image.',
             'profile_picture.mimes' => 'L\'image doit être au format jpeg, png, jpg, gif ou svg.',

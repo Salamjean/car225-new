@@ -298,7 +298,7 @@
             </div>
 
             <p>Nous avons le plaisir de vous confirmer votre réservation auprès de
-                <strong>{{ $programme->compagnie->name ?? 'notre compagnie' }}</strong>. Votre voyage est maintenant
+                <strong>{{ $programme->compagnie->sigle ?? $programme->compagnie->name ?? 'notre compagnie' }}</strong>. Votre voyage est maintenant
                 confirmé et votre billet est prêt.</p>
 
             <!-- Confirmation Box -->

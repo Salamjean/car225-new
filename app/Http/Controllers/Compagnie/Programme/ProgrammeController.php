@@ -110,11 +110,12 @@ class ProgrammeController extends Controller
     {
         $compagnieId = Auth::guard('compagnie')->user()->id;
         
-        $programme = Programme::where('id', $id)->where('compagnie_id', $compagnieId)->firstOrFail();
-        $itineraires = Itineraire::where('compagnie_id', $compagnieId)->get();
-        $gares = \App\Models\Gare::where('compagnie_id', $compagnieId)->get();
+        $programme = Programme::with(['itineraire', 'gareDepart', 'gareArrivee'])
+            ->where('id', $id)
+            ->where('compagnie_id', $compagnieId)
+            ->firstOrFail();
 
-        return view('compagnie.programme.edit', compact('programme', 'itineraires', 'gares'));
+        return view('compagnie.programme.edit', compact('programme'));
     }
 
     /**
@@ -126,14 +127,16 @@ class ProgrammeController extends Controller
         $programme = Programme::where('id', $id)->where('compagnie_id', $compagnieId)->firstOrFail();
 
         $validated = $request->validate([
+            'heure_depart' => 'required|date_format:H:i',
+            'heure_arrive' => 'required|date_format:H:i',
             'montant_billet' => 'required|numeric|min:0',
-            'date_fin' => 'required|date|after_or_equal:date_depart',
+            'capacity' => 'required|integer|min:1',
             'statut' => 'required|in:actif,annule',
         ]);
 
         $programme->update($validated);
 
-        return redirect()->route('programme.index')->with('success', 'Ligne mise à jour avec succès');
+        return redirect()->route('programme.index')->with('success', 'Programme mis à jour avec succès');
     }
 
     /**
@@ -257,15 +260,13 @@ class ProgrammeController extends Controller
             'gare_depart_id' => 'required|exists:gares,id',
             'gare_arrivee_id' => 'required|exists:gares,id|different:gare_depart_id',
             'montant_billet' => 'required|numeric|min:0',
-            'aller_horaires' => 'required|array|min:1',
+            'capacity' => 'required|integer|min:1',
+            'aller_horaires' => 'nullable|array',
             'aller_horaires.*.heure_depart' => 'required|date_format:H:i',
             'aller_horaires.*.heure_arrive' => 'required|date_format:H:i',
-            
-            // Retour optionnel
-            'with_retour' => 'nullable',
-            'retour_horaires' => 'required_if:with_retour,on|array',
-            'retour_horaires.*.heure_depart' => 'required_if:with_retour,on|date_format:H:i',
-            'retour_horaires.*.heure_arrive' => 'required_if:with_retour,on|date_format:H:i',
+            'retour_horaires' => 'nullable|array',
+            'retour_horaires.*.heure_depart' => 'required|date_format:H:i',
+            'retour_horaires.*.heure_arrive' => 'required|date_format:H:i',
         ]);
 
         $compagnieId = Auth::guard('compagnie')->user()->id;
@@ -286,38 +287,40 @@ class ProgrammeController extends Controller
             $createdRetour = 0;
 
             // === CRÉER LES PROGRAMMES ALLER ===
-            foreach ($validated['aller_horaires'] as $index => $horaire) {
-                // Vérifier si ce programme existe déjà
-                $exists = Programme::where('compagnie_id', $compagnieId)
-                    ->where('itineraire_id', $itineraire->id)
-                    ->where('gare_depart_id', $validated['gare_depart_id'])
-                    ->where('gare_arrivee_id', $validated['gare_arrivee_id'])
-                    ->where('heure_depart', $horaire['heure_depart'])
-                    ->where('statut', 'actif')
-                    ->exists();
+            if (!empty($validated['aller_horaires'])) {
+                foreach ($validated['aller_horaires'] as $index => $horaire) {
+                    $exists = Programme::where('compagnie_id', $compagnieId)
+                        ->where('itineraire_id', $itineraire->id)
+                        ->where('gare_depart_id', $validated['gare_depart_id'])
+                        ->where('gare_arrivee_id', $validated['gare_arrivee_id'])
+                        ->where('heure_depart', $horaire['heure_depart'])
+                        ->where('statut', 'actif')
+                        ->exists();
 
-                if (!$exists) {
-                    Programme::create([
-                        'compagnie_id' => $compagnieId,
-                        'itineraire_id' => $itineraire->id,
-                        'gare_depart_id' => $validated['gare_depart_id'],
-                        'gare_arrivee_id' => $validated['gare_arrivee_id'],
-                        'point_depart' => $itineraire->point_depart, // On garde par compatibilité
-                        'point_arrive' => $itineraire->point_arrive,
-                        'durer_parcours' => $itineraire->durer_parcours,
-                        'montant_billet' => $validated['montant_billet'],
-                        'date_depart' => $dateDebut,
-                        'date_fin' => $dateFin,
-                        'heure_depart' => $horaire['heure_depart'],
-                        'heure_arrive' => $horaire['heure_arrive'],
-                        'statut' => 'actif',
-                    ]);
-                    $createdAller++;
+                    if (!$exists) {
+                        Programme::create([
+                            'compagnie_id' => $compagnieId,
+                            'itineraire_id' => $itineraire->id,
+                            'gare_depart_id' => $validated['gare_depart_id'],
+                            'gare_arrivee_id' => $validated['gare_arrivee_id'],
+                            'point_depart' => $itineraire->point_depart,
+                            'point_arrive' => $itineraire->point_arrive,
+                            'durer_parcours' => $itineraire->durer_parcours,
+                            'montant_billet' => $validated['montant_billet'],
+                            'date_depart' => $dateDebut,
+                            'date_fin' => $dateFin,
+                            'heure_depart' => $horaire['heure_depart'],
+                            'heure_arrive' => $horaire['heure_arrive'],
+                            'capacity' => $validated['capacity'],
+                            'statut' => 'actif',
+                        ]);
+                        $createdAller++;
+                    }
                 }
             }
 
             // === CRÉER LES PROGRAMMES RETOUR ===
-            if ($request->has('with_retour') && !empty($validated['retour_horaires'])) {
+            if (!empty($validated['retour_horaires'])) {
                 foreach ($validated['retour_horaires'] as $index => $horaire) {
                     $exists = Programme::where('compagnie_id', $compagnieId)
                         ->where('itineraire_id', $itineraire->id)
@@ -341,6 +344,7 @@ class ProgrammeController extends Controller
                             'date_fin' => $dateFin,
                             'heure_depart' => $horaire['heure_depart'],
                             'heure_arrive' => $horaire['heure_arrive'],
+                            'capacity' => $validated['capacity'],
                             'statut' => 'actif',
                         ]);
                         $createdRetour++;

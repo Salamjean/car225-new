@@ -27,6 +27,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'caisse' => \App\Http\Middleware\CaisseMiddleware::class,
             'hotesse' => \App\Http\Middleware\HotesseMiddleware::class,
             'chauffeur' => \App\Http\Middleware\ChauffeurMiddleware::class,
+            'gare' => \App\Http\Middleware\GareMiddleware::class,
+        ]);
+
+        $middleware->web(append: [
+            \App\Http\Middleware\CheckMaintenanceMode::class,
         ]);
 
 

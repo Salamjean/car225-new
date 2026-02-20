@@ -89,15 +89,9 @@ class CompagnieAuthenticate extends Controller
             elseif (preg_match('/^[\+\d\s\-\(\)]+$/', $login)) {
                 $credentials = ['contact' => $login, 'password' => $password];
             }
-            // Sinon, considérer comme username
-            else {
-                $credentials = ['username' => $login, 'password' => $password];
-            }
-
             // Vérifier si le credential existe dans la base
             $compagnie = Compagnie::where('email', $login)
                 ->orWhere('contact', $login)
-                ->orWhere('username', $login)
                 ->first();
 
             if (!$compagnie) {
@@ -117,6 +111,7 @@ class CompagnieAuthenticate extends Controller
             }
 
         } catch (Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Login Error: ' . $e->getMessage());
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'Une erreur est survenue lors de la connexion.');

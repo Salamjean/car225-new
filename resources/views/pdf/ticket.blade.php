@@ -122,14 +122,11 @@
         <div class="ticket-content">
             <!-- Header -->
             <div class="header-section">
-                <div class="ticket-title">BILLET DE VOYAGE ÉLECTRONIQUE <br><span style="font-size: 20px; color: #02245b;">({{ $ticketType ?? 'ALLER SIMPLE' }})</span></div>
+                <div class="ticket-title">BILLET DE VOYAGE <br> <span style="color: #e94f1b;">{{ $compagnie->sigle ?? $compagnie->name ?? 'CAR 225' }}</span> <br> <span style="font-size: 16px; color: #02245b;">({{ $ticketType ?? 'ALLER SIMPLE' }})</span></div>
                 <div class="reference-container">
                     <span>Référence:</span>
                     <strong>{{ $reservation->reference }}</strong>
                 </div>
-                {{-- <div style="font-size: 14px; color: #6b7280; margin-top: 10px;">
-                    Document officiel - CAR 225 Plateforme de Transport
-                </div> --}}
             </div>
 
             <!-- Itinéraire -->

@@ -20,6 +20,175 @@ class WalletController extends Controller
         $this->cinetPayService = $cinetPayService;
     }
 
+    public function withdraw(Request $request)
+    {
+        $request->validate([
+            'amount' => 'required|numeric|min:100',
+            'phone' => 'required|string',
+            'network' => 'required|string', // Orange, MTN, Wave
+        ]);
+
+        $user = Auth::user();
+        $amount = $request->amount;
+        $phone = $request->phone;
+        $network = $request->network;
+
+        // 1. Vérifier le solde
+        if ($user->solde < $amount) {
+            return response()->json(['success' => false, 'message' => 'Solde insuffisant.'], 400);
+        }
+
+        DB::beginTransaction();
+        try {
+            // 2. Débiter le solde immédiatement (pour éviter double dépense)
+            // On utilise lockForUpdate pour être sûr
+            $user = \App\Models\User::where('id', $user->id)->lockForUpdate()->first();
+            
+            if ($user->solde < $amount) {
+                DB::rollBack();
+                return response()->json(['success' => false, 'message' => 'Solde insuffisant.'], 400);
+            }
+
+            $user->solde -= $amount;
+            $user->save();
+
+            // 3. Créer la transaction locale
+            $transactionId = 'W-OUT-' . time() . '-' . Str::random(5);
+            
+            $transaction = WalletTransaction::create([
+                'user_id' => $user->id,
+                'amount' => $amount,
+                'type' => 'debit',
+                'description' => 'Retrait vers ' . $network . ' (' . $phone . ')',
+                'reference' => $transactionId,
+                'status' => 'pending', // En attente de conf CinetPay
+                'payment_method' => 'cinetpay_transfer',
+                'metadata' => [
+                    'phone' => $phone,
+                    'network' => $network,
+                    'initiated_at' => now()->toDateTimeString(),
+                ]
+            ]);
+
+            DB::commit();
+
+            // 4. Appeler l'API de transfert CinetPay
+            // Mappe le network vers les codes CinetPay si nécessaire
+            // Selon l'exemple: WAVECI... pour l'instant on passe tel quel ou on mappe
+            $paymentMethod = null;
+            switch(strtoupper($network)) {
+                case 'ORANGE': $paymentMethod = 'OMCI'; break;
+                case 'MTN': $paymentMethod = 'MOMOCI'; break;
+                case 'WAVE': $paymentMethod = 'WAVECI'; break;
+                // Ajouter d'autres si besoin
+                default: $paymentMethod = null; // CinetPay détectera peut-être par préfixe si null?
+            }
+
+            $transferData = [
+                'prefix' => '225', // Par défaut
+                'phone' => $phone,
+                'amount' => $amount,
+                'transaction_id' => $transactionId,
+                'notify_url' => route('wallet.notify.transfer'), // Route spécifique pour le transfert
+                'payment_method' => $paymentMethod
+            ];
+
+            // On fait l'appel APRES le commit pour débloquer la DB, 
+            // mais si l'API échoue, il faudra rembourser.
+            $result = $this->cinetPayService->transfer($transferData);
+
+            if ($result['success']) {
+                // Succès de l'initiation
+                $transaction->update([
+                    'status' => 'pending', // Reste pending jusqu'à confirmation webhook ou check
+                    'external_transaction_id' => $result['data']['transaction_id'] ?? null,
+                    'metadata' => array_merge($transaction->metadata ?? [], ['api_response' => $result['data']])
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Retrait initié avec succès. Vous recevrez une notification une fois validé.',
+                    'new_balance' => $user->solde
+                ]);
+            } else {
+                // Echec de l'initiation -> Remboursement
+                Log::error("Echec init transfert pour {$transactionId}, remboursement...");
+                
+                $user->solde += $amount;
+                $user->save();
+
+                $transaction->update([
+                    'status' => 'failed',
+                    'metadata' => array_merge($transaction->metadata ?? [], ['error' => $result['message']])
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Echec du transfert: ' . $result['message']
+                ], 500);
+            }
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Erreur retrait wallet: " . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Une erreur est survenue.'], 500);
+        }
+    }
+
+    /**
+     * Webhook spécifique pour les transferts (Retraits)
+     * Note: CinetPay envoie parfois sur la même URL de notif que le paiement, 
+     * mais l'API Transfert demande une notify_url spécifique dans le payload.
+     */
+    public function notifyTransfer(Request $request)
+    {
+        Log::info('CinetPay Transfer Notification Received', $request->all());
+
+        // Les champs retournés par CinetPay Transfert peuvent différer du checkout
+        // Exemple doc: client_transaction_id, transaction_id, lot, amount, etc.
+        
+        $clientTransactionId = $request->client_transaction_id ?? $request->cpm_trans_id; // adapter selon retour réel
+
+        if (!$clientTransactionId) {
+             return response()->json(['message' => 'Transaction ID missing'], 400);
+        }
+
+        $transaction = WalletTransaction::where('reference', $clientTransactionId)->first();
+
+        if (!$transaction) {
+            return response()->json(['message' => 'Transaction not found'], 404);
+        }
+
+        if ($transaction->status !== 'pending') {
+            return response()->json(['message' => 'Already processed'], 200);
+        }
+
+        // Vérifier le statut envoyé
+        // Doc example response success: "treatment_status": "NEW" ? Non, ça c'est la réponse synchrone.
+        // La notif asynchrone devrait contenir le statut final (VALIDATED, FAILED ?)
+        // On va devoir logger pour voir le format exact en prod, car la doc est légère là dessus.
+        // Mais supposons un champ 'status' ou 'treatment_status'
+
+        // Pour l'instant, on log et on return 200.
+        // Idéalement on met à jour le statut si on a les infos.
+        
+        // Si CinetPay envoie treatment_status
+        $status = $request->treatment_status ?? $request->status;
+
+        if ($status == 'VALIDATED' || $status == 'SUCCESS') {
+            $transaction->update(['status' => 'completed']);
+        } elseif ($status == 'FAILED' || $status == 'REJECTED') {
+            // Rembourser l'utilisateur
+            $user = $transaction->user;
+             $user->solde += $transaction->amount;
+             $user->save();
+             
+             $transaction->update(['status' => 'failed']);
+        }
+
+        return response()->json(['message' => 'Received'], 200);
+    }
+
     public function index()
     {
         $user = Auth::user();
