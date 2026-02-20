@@ -37,18 +37,26 @@ class ChauffeurSignalementController extends Controller
         $preselectedVoyageId = $request->query('voyage_id');
         
         // On récupère les voyages en cours ou confirmés du chauffeur
-        $query = Voyage::where('personnel_id', $chauffeur->id)
+        $voyages = Voyage::where('personnel_id', $chauffeur->id)
             ->whereIn('statut', ['confirmé', 'en_cours'])
-            ->with(['programme'])
-            ->orderBy('created_at', 'desc');
+            ->with(['programme', 'vehicule', 'gareDepart'])
+            ->orderBy('created_at', 'desc')
+            ->get();
 
+        // Auto-detect the active voyage (en_cours)
+        $activeVoyage = $voyages->firstWhere('statut', 'en_cours');
+        
+        // If a voyage_id was passed via query string, use that
         if ($preselectedVoyageId) {
-            $query->where('id', $preselectedVoyageId);
+            $activeVoyage = $voyages->firstWhere('id', $preselectedVoyageId) ?? $activeVoyage;
         }
 
-        $voyages = $query->get();
+        // If we have an active voyage, auto-select it
+        if ($activeVoyage && !$preselectedVoyageId) {
+            $preselectedVoyageId = $activeVoyage->id;
+        }
 
-        return view('chauffeur.signalements.create', compact('voyages', 'preselectedVoyageId'));
+        return view('chauffeur.signalements.create', compact('voyages', 'preselectedVoyageId', 'activeVoyage'));
     }
 
     public function store(Request $request)
@@ -130,6 +138,8 @@ class ChauffeurSignalementController extends Controller
         if ($signalement->personnel_id !== $chauffeur->id) {
             abort(403);
         }
+
+        $signalement->load(['voyage.programme', 'voyage.gareDepart', 'vehicule', 'compagnie']);
 
         return view('chauffeur.signalements.show', compact('signalement'));
     }

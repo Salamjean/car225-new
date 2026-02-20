@@ -37,7 +37,7 @@
                 @if($todayVoyages->count() > 0)
                     <div class="space-y-4">
                         @foreach($todayVoyages as $voyage)
-                            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col sm:flex-row sm:items-center gap-4 hover:shadow-md transition-shadow"
+                            <a href="{{ route('chauffeur.voyages.index') }}" class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col sm:flex-row sm:items-center gap-4 hover:shadow-md transition-shadow text-decoration-none"
                                 @if($voyage->statut === 'en_cours')
                                     data-voyage-tracking="{{ $voyage->id }}"
                                     data-tracking-url="{{ route('chauffeur.voyages.update-location', $voyage) }}"
@@ -92,7 +92,7 @@
                                         {{ $voyage->statut }}
                                     </span>
                                 </div>
-                            </div>
+                            </a>
                         @endforeach
                     </div>
                 @else

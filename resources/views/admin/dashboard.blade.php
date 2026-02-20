@@ -336,6 +336,16 @@
                     </tbody>
                 </table>
             </div>
+            @if($recentReservations->hasPages())
+            <div class="px-8 py-4 border-t border-gray-100 flex items-center justify-between">
+                <div class="text-xs text-gray-400 font-medium">
+                    Affichage {{ $recentReservations->firstItem() }}-{{ $recentReservations->lastItem() }} sur {{ $recentReservations->total() }}
+                </div>
+                <div class="flex items-center gap-1">
+                    {{ $recentReservations->links() }}
+                </div>
+            </div>
+            @endif
         </div>
 
     </div>

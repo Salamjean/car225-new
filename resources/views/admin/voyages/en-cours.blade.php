@@ -93,7 +93,7 @@
                                 </div>
                                 <div>
                                     <p class="font-semibold text-gray-900 text-xs">Chauffeur</p>
-                                    <p class="text-gray-500 text-xs">{{ $voyage->chauffeur->prenom ?? '' }} {{ $voyage->chauffeur->nom ?? 'Non assigné' }}</p>
+                                    <p class="text-gray-500 text-xs">{{ $voyage->chauffeur->prenom ?? '' }} {{ $voyage->chauffeur->name ?? 'Non assigné' }}</p>
                                 </div>
                             </div>
                         </div>
@@ -106,7 +106,7 @@
                                 </div>
                                 <div>
                                     <p class="font-semibold text-gray-900 text-xs">Véhicule</p>
-                                    <p class="text-gray-500 text-xs">{{ $voyage->vehicule->marque ?? 'N/A' }} — {{ $voyage->vehicule->immatriculation ?? '' }}</p>
+                                    <p class="text-gray-500 text-xs">{{ $voyage->vehicule->immatriculation ?? '' }}</p>
                                 </div>
                             </div>
                         </div>
