@@ -27,15 +27,19 @@ class SignalementApiController extends Controller
             $user = Auth::user();
             $today = now()->format('Y-m-d');
 
-            // Récupérer les réservations avec toutes les relations nécessaires
-            // Note: 'voyage' est défini dans le modèle Reservation avec une contrainte de date
+            // Récupérer les réservations récentes (aujourd'hui + hier pour les voyages de nuit)
+            // On charge programme.voyages pour que l'accesseur 'mission' fonctionne
+            $yesterday = now()->subDay()->format('Y-m-d');
+
             $reservations = Reservation::with([
                 'programme.compagnie',
-                'voyage.vehicule',
-                'voyage.chauffeur'
+                'programme.voyages',
             ])
             ->where('user_id', $user->id)
-            ->whereDate('date_voyage', $today)
+            ->where(function($q) use ($today, $yesterday) {
+                $q->whereDate('date_voyage', $today)
+                  ->orWhereDate('date_voyage', $yesterday);
+            })
             ->whereIn('statut', ['confirmee', 'terminee'])
             ->get();
 
@@ -76,10 +80,13 @@ class SignalementApiController extends Controller
                 return $res;
             });
 
+            // Ne garder que les réservations en cours de voyage (display_statut = 'en_voyage')
+            $activeReservations = $reservations->filter(fn($res) => $res->display_statut === 'en_voyage')->values();
+
             return response()->json([
                 'success' => true,
-                'reservations' => $reservations,
-                'en_voyage' => $reservations->contains('is_ongoing', true)
+                'reservations' => $activeReservations,
+                'en_voyage' => $activeReservations->isNotEmpty()
             ]);
         } catch (\Exception $e) {
             Log::error('Erreur API getActiveReservations: ' . $e->getMessage());

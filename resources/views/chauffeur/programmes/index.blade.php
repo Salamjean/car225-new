@@ -171,13 +171,21 @@
                                 </button>
                             </form>
                         @elseif($voyage->statut === 'confirmé')
-                            <form action="{{ route('chauffeur.voyages.start', $voyage->id) }}" method="POST">
-                                @csrf
-                                <button type="submit" class="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-3 hover:from-green-700 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg">
-                                    <i class="fas fa-play-circle text-xl"></i>
-                                    Démarrer le voyage
-                                </button>
-                            </form>
+                            @if(\Carbon\Carbon::parse($voyage->date_voyage)->isToday())
+                                <form action="{{ route('chauffeur.voyages.start', $voyage->id) }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-3 hover:from-green-700 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg">
+                                        <i class="fas fa-play-circle text-xl"></i>
+                                        Démarrer le voyage
+                                    </button>
+                                </form>
+                            @else
+                                <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl text-center">
+                                    <i class="fas fa-calendar-check text-blue-400 text-2xl mb-2"></i>
+                                    <p class="text-blue-700 font-semibold">Voyage confirmé</p>
+                                    <p class="text-blue-500 text-sm mt-1">Vous pourrez démarrer le jour du voyage ({{ \Carbon\Carbon::parse($voyage->date_voyage)->format('d/m/Y') }})</p>
+                                </div>
+                            @endif
                         @elseif($voyage->statut === 'en_cours')
                             <div class="flex flex-col md:flex-row gap-3">
                                 <form action="{{ route('chauffeur.voyages.complete', $voyage->id) }}" method="POST" onsubmit="return confirm('Confirmez-vous l\'arrivée à destination ?')" class="flex-1">
