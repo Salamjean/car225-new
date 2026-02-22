@@ -70,8 +70,7 @@ class AdminDashboard extends Controller
         // 5. Activités récentes (dernières 10)
         $recentReservations = Reservation::with(['user', 'programme.compagnie'])
             ->orderBy('created_at', 'desc')
-            ->take(10)
-            ->get();
+            ->paginate(5);
         
         $recentCompagnies = Compagnie::orderBy('created_at', 'desc')
             ->take(5)
