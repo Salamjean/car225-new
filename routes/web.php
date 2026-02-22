@@ -421,6 +421,7 @@ Route::prefix('user')->group(function () {
 
 Route::middleware('auth')->prefix('user')->group(function () {
     Route::get('/dashboard', [UserController::class, 'dashboard'])->name('user.dashboard');
+    Route::get('/tracking/location', [UserController::class, 'getTrackingLocation'])->name('user.tracking.location');
     Route::get('/logout', [UserController::class, 'logout'])->name('user.logout');
 
     // Wallet Routes

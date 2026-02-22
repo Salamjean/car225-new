@@ -2689,7 +2689,7 @@ function onAllerRetourChoiceChange() {
                                                                                 <div style="background: white; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
                                                                                     <!-- En-tête -->
                                                                                     <div style="display: grid; grid-template-columns: 100px 1fr 80px 1fr; gap: 10px; padding: 15px; background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
-                                                                                        <div style="text-align: center; font-weight: 600; color: #4b5563;">RangÃ©e</div>
+                                                                                        <div style="text-align: center; font-weight: 600; color: #4b5563;">Rangee</div>
                                                                                         <div style="text-align: center; font-weight: 600; color: #4b5563;">CÃ´tÃ© gauche</div>
                                                                                         <div style="text-align: center; font-weight: 600; color: #4b5563;">AllÃ©e</div>
                                                                                         <div style="text-align: center; font-weight: 600; color: #4b5563;">CÃ´tÃ© droit</div>
@@ -3001,7 +3001,7 @@ function onAllerRetourChoiceChange() {
                                                                                     <div class="flex items-center justify-center mb-8 gap-8">
                                                                                         <!-- CÃ´tÃ© gauche -->
                                                                                         <div class="flex flex-col items-center">
-                                                                                            <div class="text-sm text-gray-600 mb-2">RangÃ©e ${ranger}</div>
+                                                                                            <div class="text-sm text-gray-600 mb-2">Rangee ${ranger}</div>
                                                                                             <div class="flex gap-3">
                                                                                 `;
 
@@ -3034,7 +3034,7 @@ function onAllerRetourChoiceChange() {
 
                                                                                         <!-- CÃ´tÃ© droit -->
                                                                                         <div class="flex flex-col items-center">
-                                                                                            <div class="text-sm text-gray-600 mb-2">RangÃ©e ${ranger}</div>
+                                                                                            <div class="text-sm text-gray-600 mb-2">Rangée ${ranger}</div>
                                                                                             <div class="flex gap-3">
                                                                                 `;
 
@@ -3471,7 +3471,7 @@ function generateSeatSelectionViewRetour(program) {
             <div class="flex items-center justify-center mb-8 gap-8">
                 <!-- CÃ´tÃ© gauche -->
                 <div class="flex flex-col items-center">
-                    <div class="text-sm text-gray-600 mb-2">RangÃ©e ${ranger}</div>
+                    <div class="text-sm text-gray-600 mb-2">Rangée ${ranger}</div>
                     <div class="flex gap-3">
         `;
 

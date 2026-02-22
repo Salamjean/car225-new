@@ -1554,7 +1554,11 @@ $dateAller = $request->date_voyage;
             // Envoyer la notification à l'email spécifié
             // Note: On peut utiliser Notification::route('mail', $email) pour envoyer à une adresse arbitraire
             if ($reservation->user) {
-                $reservation->user->notify(new ReservationConfirmeeNotification($reservation, $programme, $qrCodeBase64, $name, $seatNumber, $ticketType, $qrCodeRetourBase64, $programmeRetour));
+                try {
+                    $reservation->user->notify(new ReservationConfirmeeNotification($reservation, $programme, $qrCodeBase64, $name, $seatNumber, $ticketType, $qrCodeRetourBase64, $programmeRetour));
+                } catch (\Exception $e) {
+                    Log::error('Erreur lors de l\'envoi de la notification Laravel (mail/broadcast): ' . $e->getMessage());
+                }
                 
                 // Notification Push FCM
                 if ($reservation->user->fcm_token) {
@@ -1573,8 +1577,12 @@ $dateAller = $request->date_voyage;
                     }
                 }
             } else {
-            Notification::route('mail', $email)->notify(new ReservationConfirmeeNotification($reservation, $programme, $qrCodeBase64, $name, $seatNumber, $ticketType, $qrCodeRetourBase64, $programmeRetour));
-        }
+                try {
+                    Notification::route('mail', $email)->notify(new ReservationConfirmeeNotification($reservation, $programme, $qrCodeBase64, $name, $seatNumber, $ticketType, $qrCodeRetourBase64, $programmeRetour));
+                } catch (\Exception $e) {
+                    Log::error('Erreur lors de l\'envoi de la notification Laravel (route mail): ' . $e->getMessage());
+                }
+            }
 
             Log::info('Notification envoyée avec succès');
         } catch (\Exception $e) {

@@ -161,7 +161,7 @@
                                         </div>
                                     @endif
 
-                                    <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+                                    <!-- <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
                                         <div>
                                             <p class="text-xs text-gray-500 mb-1">Passagers à bord</p>
                                             <p id="display-occupancy" class="font-black text-red-600 text-lg">
@@ -177,7 +177,7 @@
                                             class="bg-red-50 text-red-600 px-4 py-2 rounded-xl text-xs font-bold hover:bg-red-100 transition-colors border border-red-100 flex items-center gap-2 {{ (!$enVoyage && !$preselectedReservationId) ? 'opacity-50 cursor-not-allowed' : '' }}">
                                             <i class="fas fa-users"></i> Liste Passagers
                                         </button>
-                                    </div>
+                                    </div> -->
                                 </div>
                             </div>
                         </div>

@@ -220,7 +220,7 @@ class ReservationController extends Controller
         ]);
 
         // On charge la réservation avec son programme ALLER par défaut
-        $reservation = Reservation::with(['programme', 'user'])
+        $reservation = Reservation::with(['programme.gareDepart', 'programme.gareArrivee', 'user'])
             ->where('reference', $request->reference)
             ->first();
 
@@ -284,10 +284,19 @@ class ReservationController extends Controller
         // --- PRÉPARATION DES DONNÉES D'AFFICHAGE ---
         // Ici on utilise $programmeActuel pour avoir la BONNE heure et le BON trajet (Aller ou Retour)
 
-        $heureDepart = $programmeActuel ? $programmeActuel->heure_depart : $reservation->programme->heure_depart;
-        $trajetLabel = $programmeActuel
-            ? ($programmeActuel->point_depart . ' → ' . $programmeActuel->point_arrive)
-            : ($reservation->programme->point_depart . ' → ' . $reservation->programme->point_arrive);
+        // Charger les gares du programme actuel si besoin
+        if ($programmeActuel && !$programmeActuel->relationLoaded('gareDepart')) {
+            $programmeActuel->load(['gareDepart', 'gareArrivee']);
+        }
+
+        $prog = $programmeActuel ?? $reservation->programme;
+        $heureDepart = $prog->heure_depart;
+        $heureArrivee = $prog->heure_arrive;
+        $trajetLabel = $prog->point_depart . ' → ' . $prog->point_arrive;
+        $gareDepartNom = optional($prog->gareDepart)->nom_gare ?? '';
+        $gareArriveeNom = optional($prog->gareArrivee)->nom_gare ?? '';
+        $gareDepartVille = optional($prog->gareDepart)->ville ?? '';
+        $gareArriveeVille = optional($prog->gareArrivee)->ville ?? '';
 
         return response()->json([
             'success' => true,
@@ -296,12 +305,20 @@ class ReservationController extends Controller
                 'reference' => $reservation->reference,
                 'passager_nom_complet' => $reservation->passager_prenom . ' ' . $reservation->passager_nom,
                 'passager_telephone' => $reservation->passager_telephone,
+                'passager_email' => $reservation->passager_email ?? '',
                 'seat_number' => $reservation->seat_number,
-                // On affiche la date du jour pour le scan, ou la date prévue
-                'date_voyage' => Carbon::parse($programmeActuel->date_depart ?? now())->format('d/m/Y'),
+                'date_voyage' => Carbon::parse($prog->date_depart ?? now())->format('d/m/Y'),
                 'trajet' => $trajetLabel,
-                'heure_depart' => $heureDepart, // <--- C'est ici que ça change (10:00 ou 20:00 selon le scan)
-                'type_scan' => strtoupper($targetScan)
+                'heure_depart' => $heureDepart,
+                'heure_arrivee' => $heureArrivee,
+                'gare_depart' => $gareDepartNom,
+                'gare_arrivee' => $gareArriveeNom,
+                'gare_depart_ville' => $gareDepartVille,
+                'gare_arrivee_ville' => $gareArriveeVille,
+                'montant' => number_format($reservation->montant ?? 0, 0, ',', ' ') . ' FCFA',
+                'is_aller_retour' => $reservation->is_aller_retour,
+                'type_scan' => strtoupper($targetScan),
+                'statut' => $statutActuel,
             ]
         ]);
     }

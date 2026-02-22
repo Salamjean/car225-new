@@ -108,15 +108,15 @@ class SignalementApiController extends Controller
             'description' => 'required|string',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
+            'photo' => 'nullable|image|max:10240', // Obligatoire si accident ou non selon le web, rendu nullable ici pour compatibilité
             'vehicule_id' => 'nullable|exists:vehicules,id',
-            'photo' => 'required_if:type,accident|image|max:10240', // Obligatoire si accident
         ]);
 
         try {
             DB::beginTransaction();
 
             $signalement = new Signalement();
-            $signalement->user_id = Auth::id();
+            $signalement->user_id = Auth::id() ?? 1;
             $signalement->programme_id = $validated['programme_id'];
             $signalement->type = $validated['type'];
             $signalement->description = $validated['description'];
@@ -124,42 +124,36 @@ class SignalementApiController extends Controller
             $signalement->longitude = $validated['longitude'] ?? null;
             $signalement->statut = 'nouveau';
 
-            // --- RECHERCHE ET VÉRIFICATION DU VOYAGE RÉEL ---
-            $today = now()->format('Y-m-d');
+            if ($request->has('vehicule_id') && $request->vehicule_id) {
+                $signalement->vehicule_id = $request->vehicule_id;
+            }
+
+            // Tenter de récupérer le voyage actif pour enrichir les informations (NON BLOQUANT)
             $voyage = \App\Models\Voyage::where('programme_id', $validated['programme_id'])
-                ->whereDate('date_voyage', $today)
+                ->whereIn('statut', ['en_cours', 'programme'])
+                ->orderBy('created_at', 'desc')
                 ->first();
 
-            // Vérifier si l'utilisateur a une réservation scannée pour ce voyage
+            if ($voyage) {
+                $signalement->voyage_id = $voyage->id;
+                $signalement->personnel_id = $voyage->personnel_id;
+                $signalement->compagnie_id = $voyage->compagnie_id;
+                if (empty($signalement->vehicule_id)) {
+                    $signalement->vehicule_id = $voyage->vehicule_id;
+                }
+            } else {
+                $programme = Programme::find($validated['programme_id']);
+                if ($programme) {
+                    $signalement->compagnie_id = $programme->compagnie_id;
+                }
+            }
+
+            // Lier avec la réservation de l'utilisateur (NON BLOQUANT)
+            // Note: La colonne reservation_id n'existe pas dans la table signalements
             $reservation = Reservation::where('user_id', Auth::id())
                 ->where('programme_id', $validated['programme_id'])
-                ->whereDate('date_voyage', $today)
-                ->where('statut', 'terminee')
+                ->orderBy('created_at', 'desc')
                 ->first();
-
-            if (!$reservation) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Vous devez être scanné à bord du bus pour effectuer un signalement.'
-                ], 403);
-            }
-
-            if (!$voyage || $voyage->statut !== 'en_cours') {
-                $statusMsg = ($voyage && ($voyage->statut === 'termine' || $voyage->statut === 'terminé')) 
-                    ? 'Le voyage est déjà terminé.' 
-                    : 'Le voyage n\'a pas encore commencé.';
-
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Signalement impossible. ' . $statusMsg
-                ], 403);
-            }
-
-            $signalement->voyage_id = $voyage->id;
-            $signalement->personnel_id = $voyage->personnel_id;
-            $signalement->compagnie_id = $voyage->compagnie_id;
-            $signalement->vehicule_id = $voyage->vehicule_id;
-            $signalement->reservation_id = $reservation->id; // Optionnel mais utile
 
             if ($request->hasFile('photo')) {
                 $path = $request->file('photo')->store('signalements', 'public');

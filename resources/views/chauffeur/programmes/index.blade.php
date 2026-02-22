@@ -52,7 +52,12 @@
         <!-- Voyages List -->
         <div class="space-y-6">
             @forelse($voyages as $voyage)
-                <div class="bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
+                <div class="bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300"
+                    @if($voyage->statut === 'en_cours')
+                        data-voyage-tracking="{{ $voyage->id }}"
+                        data-tracking-url="{{ route('chauffeur.voyages.update-location', $voyage) }}"
+                    @endif
+                >
                     <!-- Voyage Header -->
                     <div class="p-6 border-b border-gray-100 bg-gradient-to-r from-green-50 to-emerald-50">
                         <div class="flex justify-between items-start">
@@ -95,6 +100,11 @@
                                                 <i class="fas fa-hourglass-half animate-spin-slow"></i>
                                                 <span class="countdown-text">Temps restant: --:--:--</span>
                                             </p>
+                                            <!-- GPS Status Indicator -->
+                                            <div class="flex items-center gap-1 mt-1" id="gps-indicator-{{ $voyage->id }}" style="display: none;">
+                                                <span style="width:8px;height:8px;background:#10b981;border-radius:50%;display:inline-block;animation:gpsPulse 1.5s infinite;"></span>
+                                                <span class="text-xs text-green-600 font-bold" id="gps-text-{{ $voyage->id }}">Activation GPS...</span>
+                                            </div>
                                         @endif
                                     </div>
                                 </div>
@@ -253,6 +263,11 @@
 .animate-spin-slow {
     animation: spin-slow 3s linear infinite;
 }
+
+@keyframes gpsPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.4); }
+}
 </style>
 @endsection
 
@@ -294,6 +309,104 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update every second
     updateTimers();
     setInterval(updateTimers, 1000);
+
+    // ============================================
+    // GPS Location Sharing for active voyages
+    // ============================================
+    const activeVoyages = document.querySelectorAll('[data-voyage-tracking]');
+    let gpsIntervals = {};
+
+    function startGPSTracking(voyageId, url) {
+        const indicator = document.getElementById('gps-indicator-' + voyageId);
+        const gpsText = document.getElementById('gps-text-' + voyageId);
+
+        if (!navigator.geolocation) {
+            console.warn('Geolocation non supportée par ce navigateur');
+            if (indicator) {
+                indicator.style.display = 'flex';
+                if (gpsText) gpsText.textContent = 'GPS non supporté';
+            }
+            return;
+        }
+
+        // Show activating state
+        if (indicator) {
+            indicator.style.display = 'flex';
+            if (gpsText) gpsText.textContent = 'Activation GPS...';
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            function(pos) {
+                // Success - GPS is active
+                if (indicator) {
+                    indicator.style.display = 'flex';
+                    if (gpsText) {
+                        gpsText.textContent = 'Position GPS partagée';
+                        gpsText.style.color = '#10b981';
+                    }
+                }
+
+                // Send position immediately
+                sendPosition(voyageId, url, pos);
+
+                // Then poll every 5 seconds
+                gpsIntervals[voyageId] = setInterval(function() {
+                    navigator.geolocation.getCurrentPosition(
+                        function(p) { sendPosition(voyageId, url, p); },
+                        function(err) { console.warn('GPS error:', err.message); },
+                        { enableHighAccuracy: true, timeout: 4000, maximumAge: 2000 }
+                    );
+                }, 5000);
+            },
+            function(err) {
+                console.warn('GPS permission denied or error:', err.message);
+                if (indicator) {
+                    indicator.style.display = 'flex';
+                    const dot = indicator.querySelector('span:first-child');
+                    if (dot) dot.style.background = '#f59e0b';
+                    if (gpsText) {
+                        gpsText.textContent = 'GPS désactivé - Activez la localisation';
+                        gpsText.style.color = '#d97706';
+                    }
+                }
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+    }
+
+    function sendPosition(voyageId, url, position) {
+        const data = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            speed: position.coords.speed ? (position.coords.speed * 3.6) : null,
+            heading: position.coords.heading
+        };
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                console.log('GPS position sent successfully for voyage', voyageId);
+            }
+        })
+        .catch(err => console.error('GPS send error:', err));
+    }
+
+    // Auto-start GPS for all active en_cours trips
+    activeVoyages.forEach(function(el) {
+        const voyageId = el.getAttribute('data-voyage-tracking');
+        const url = el.getAttribute('data-tracking-url');
+        console.log('Starting GPS tracking for voyage', voyageId, 'url:', url);
+        startGPSTracking(voyageId, url);
+    });
 });
 </script>
 @endsection

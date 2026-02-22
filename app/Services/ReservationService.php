@@ -507,29 +507,37 @@ class ReservationService
                 $qrRetour = isset($resRetour) ? $resRetour->qr_code : null;
                 $progRetour = isset($resRetour) ? $resRetour->programme : null;
 
-                $userToNotify->notify(new \App\Notifications\ReservationModifiedNotification(
-                    $newReservation,
-                    $newReservation->programme,
-                    $qrAller,
-                    $newReservation->passager_nom . ' ' . $newReservation->passager_prenom,
-                    $newReservation->seat_number,
-                    $newReservation->is_aller_retour ? 'ALLER-RETOUR' : 'ALLER SIMPLE',
-                    $qrRetour,
-                    $progRetour
-                ));
+                try {
+                    $userToNotify->notify(new \App\Notifications\ReservationModifiedNotification(
+                        $newReservation,
+                        $newReservation->programme,
+                        $qrAller,
+                        $newReservation->passager_nom . ' ' . $newReservation->passager_prenom,
+                        $newReservation->seat_number,
+                        $newReservation->is_aller_retour ? 'ALLER-RETOUR' : 'ALLER SIMPLE',
+                        $qrRetour,
+                        $progRetour
+                    ));
+                } catch (\Exception $e) {
+                    Log::error("Erreur notification de modification Laravel (mail/broadcast): " . $e->getMessage());
+                }
 
                 // Notification Push FCM
                 if (!empty($userToNotify->fcm_token)) {
-                    $fcmService = app(\App\Services\FcmService::class);
-                    $dateVoyage = date('d/m/Y', strtotime($newReservation->date_voyage));
-                    $heureDepart = date('H:i', strtotime($newReservation->programme->heure_depart));
-                    
-                    $fcmService->sendNotification(
-                        $userToNotify->fcm_token, 
-                        'Réservation modifiée ✏️', 
-                        "Billet {$newReservation->reference}: {$newReservation->programme->point_depart} → {$newReservation->programme->point_arrive} le {$dateVoyage} à {$heureDepart}.",
-                        ['type' => 'modification', 'reservation_id' => $newReservation->id]
-                    );
+                    try {
+                        $fcmService = app(\App\Services\FcmService::class);
+                        $dateVoyage = date('d/m/Y', strtotime($newReservation->date_voyage));
+                        $heureDepart = date('H:i', strtotime($newReservation->programme->heure_depart));
+                        
+                        $fcmService->sendNotification(
+                            $userToNotify->fcm_token, 
+                            'Réservation modifiée ✏️', 
+                            "Billet {$newReservation->reference}: {$newReservation->programme->point_depart} → {$newReservation->programme->point_arrive} le {$dateVoyage} à {$heureDepart}.",
+                            ['type' => 'modification', 'reservation_id' => $newReservation->id]
+                        );
+                    } catch (\Exception $e) {
+                        Log::error('FCM Error (Modification): ' . $e->getMessage());
+                    }
                 }
             } catch (\Exception $e) {
                 Log::error("Erreur notification de modification: " . $e->getMessage());

@@ -54,8 +54,9 @@ Route::prefix('user')->group(function () {
         Route::get('/devices', [UserController::class, 'getDevices']);
         Route::post('/deactivate', [UserController::class, 'deactivateAccount']);
         
-        // Dashboard
+        // Dashboard & Suivi temps réel
         Route::get('/dashboard', [UserController::class, 'dashboard']);
+        Route::get('/tracking/location', [UserController::class, 'getTrackingLocation']);
         
         // Réservations
         Route::get('/reservations', [UserReservationController::class, 'index']);

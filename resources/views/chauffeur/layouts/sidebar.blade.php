@@ -56,7 +56,7 @@
                 <div class="mdc-list-item mdc-drawer-item">
                     <a class="mdc-drawer-link" href="{{ route('chauffeur.voyages.index') }}">
                         <i class="fas fa-road mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
-                        Mes Voyages
+                        Voyages
                     </a>
                 </div>
 

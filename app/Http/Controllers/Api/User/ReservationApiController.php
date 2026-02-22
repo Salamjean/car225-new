@@ -258,12 +258,16 @@ class ReservationApiController extends Controller
             ]);
 
             // Notification pour annulation (même sans remboursement)
-            try {
-                $user = $reservation->user ?? Auth::user();
-                if ($user) {
+            $user = $reservation->user ?? Auth::user();
+            if ($user) {
+                try {
                     $user->notify(new \App\Notifications\ReservationCancelledNotification($reservation, 0, 0));
-                    
-                    if ($user->fcm_token) {
+                } catch (\Exception $e) {
+                    Log::error("Erreur notification annulation Laravel (mail/broadcast): " . $e->getMessage());
+                }
+                
+                if ($user->fcm_token) {
+                    try {
                         $fcmService = app(\App\Services\FcmService::class);
                         $fcmService->sendNotification(
                             $user->fcm_token, 
@@ -271,10 +275,10 @@ class ReservationApiController extends Controller
                             "Votre réservation {$reservation->reference} (" . optional($reservation->programme)->point_depart . " → " . optional($reservation->programme)->point_arrive . ") a été annulée.",
                             ['type' => 'cancellation', 'reservation_id' => $reservation->id]
                         );
+                    } catch (\Exception $e) {
+                        Log::error("FCM Error (Cancel API): " . $e->getMessage());
                     }
                 }
-            } catch (\Exception $e) {
-                Log::error("Notification error (cancel API): " . $e->getMessage());
             }
 
             return response()->json([
@@ -2715,18 +2719,22 @@ class ReservationApiController extends Controller
             }
 
             if ($user) {
-                $user->notify(
-                    new ReservationConfirmeeNotification(
-                        $reservation, 
-                        $programme, 
-                        $qrCodeBase64, 
-                        $name, 
-                        $seatNumber, 
-                        $ticketType, 
-                        $qrCodeRetourBase64, 
-                        $programmeRetour
-                    )
-                );
+                try {
+                    $user->notify(
+                        new ReservationConfirmeeNotification(
+                            $reservation, 
+                            $programme, 
+                            $qrCodeBase64, 
+                            $name, 
+                            $seatNumber, 
+                            $ticketType, 
+                            $qrCodeRetourBase64, 
+                            $programmeRetour
+                        )
+                    );
+                } catch (\Exception $e) {
+                    Log::error('Erreur notification confirmation Laravel (mail/broadcast): ' . $e->getMessage());
+                }
 
                 // Notification Push FCM
                 if ($user->fcm_token) {
@@ -2745,18 +2753,22 @@ class ReservationApiController extends Controller
                     }
                 }
             } else {
-                Notification::route('mail', $email)->notify(
-                    new ReservationConfirmeeNotification(
-                        $reservation, 
-                        $programme, 
-                        $qrCodeBase64, 
-                        $name, 
-                        $seatNumber, 
-                        $ticketType, 
-                        $qrCodeRetourBase64, 
-                        $programmeRetour
-                    )
-                );
+                try {
+                    Notification::route('mail', $email)->notify(
+                        new ReservationConfirmeeNotification(
+                            $reservation, 
+                            $programme, 
+                            $qrCodeBase64, 
+                            $name, 
+                            $seatNumber, 
+                            $ticketType, 
+                            $qrCodeRetourBase64, 
+                            $programmeRetour
+                        )
+                    );
+                } catch (\Exception $e) {
+                    Log::error('Erreur notification confirmation Laravel (route mail): ' . $e->getMessage());
+                }
             }
 
             Log::info('Notification envoyée (Mail + Database)');

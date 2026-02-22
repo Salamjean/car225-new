@@ -13,7 +13,7 @@
                     
                     @if($currentTrip)
                     <!-- Ongoing Voyage Card (Steel UI Style) -->
-                    <div class="bg-gradient-to-br from-teal-700 via-emerald-800 to-green-900 rounded-[32px] p-8 shadow-[inset_0_2px_1px_rgba(255,255,255,0.3),_0_20px_40px_rgba(20,83,45,0.5)] border-t border-l border-white/20 text-white relative overflow-hidden group">
+                    <div id="btn-open-tracking-modal" class="bg-gradient-to-br from-teal-700 via-emerald-800 to-green-900 rounded-[32px] p-8 shadow-[inset_0_2px_1px_rgba(255,255,255,0.3),_0_20px_40px_rgba(20,83,45,0.5)] border-t border-l border-white/20 text-white relative overflow-hidden group cursor-pointer hover:shadow-[0_20px_50px_rgba(20,83,45,0.7)] hover:-translate-y-1 transition-all duration-300">
                         <div class="absolute -right-10 -top-10 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-700"></div>
                         
                         <div class="relative z-10">
@@ -256,6 +256,112 @@
                 </div>
             </div>
 
+    <!-- Tracking Modal -->
+    <div id="trackingModal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+        <!-- Backdrop, blur effect -->
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm tracking-modal-close transition-opacity duration-300 opacity-0" id="trackingModalBackdrop"></div>
+        
+        <!-- Modal Content -->
+        <div class="relative w-full max-w-4xl h-[85vh] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col mx-4 transform scale-95 opacity-0 transition-all duration-300" id="trackingModalContent">
+            
+            <!-- Header -->
+            <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-teal-50 to-white">
+                <h3 class="text-xl font-black tracking-tight text-gray-900"><i class="fas fa-satellite-dish text-teal-600 mr-2"></i> Suivi en temps réel</h3>
+                <button class="text-gray-400 hover:text-red-500 transition-colors tracking-modal-close p-2">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            
+            <!-- Info Bar -->
+            <div class="px-6 py-3 bg-gray-50 border-b border-gray-100 flex flex-wrap gap-4 text-xs font-bold text-gray-600 uppercase tracking-widest justify-between items-center">
+                <div id="tracking-itinerary" class="flex items-center gap-2">
+                    <i class="fas fa-map-marker-alt text-gray-400"></i>
+                    <span>--</span>
+                    <i class="fas fa-arrow-right text-[10px] text-gray-300"></i>
+                    <span>--</span>
+                </div>
+                <div id="tracking-status" class="text-teal-600 flex items-center gap-2">
+                    <span class="flex h-2 w-2 rounded-full bg-teal-500 animate-pulse"></span>
+                    <span>En attente GPS...</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div id="tracking-speed" class="flex items-center gap-1">
+                        <i class="fas fa-tachometer-alt"></i> -- km/h
+                    </div>
+                    <div class="w-px h-4 bg-gray-300"></div>
+                    <div id="tracking-time" class="flex items-center gap-1 text-orange-600">
+                        <i class="fas fa-clock"></i> --:--:--
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map Container -->
+            <div class="w-full flex-1 relative bg-gray-100">
+                <div id="trackingMap" class="absolute inset-0 z-10 w-full h-full"></div>
+                <!-- Loading indicator -->
+                <div id="trackingLoading" class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm transition-opacity duration-300">
+                    <i class="fas fa-circle-notch fa-spin text-teal-600 text-4xl mb-4"></i>
+                    <p class="text-sm font-bold text-gray-600 uppercase tracking-widest">Connexion au véhicule...</p>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    @push('styles')
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        /* Custom Leaflet marker */
+        .bus-marker {
+            background: #10b981;
+            border: 3px solid white;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+            color: white;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .bus-marker-offline {
+            background: #9ca3af;
+            box-shadow: 0 4px 12px rgba(156, 163, 175, 0.4);
+        }
+
+        .leaflet-popup-content {
+            font-family: 'Outfit', 'Segoe UI', sans-serif;
+            min-width: 200px;
+        }
+
+        .popup-title {
+            font-weight: 800;
+            font-size: 1rem;
+            color: #111827;
+            margin-bottom: 8px;
+        }
+
+        .popup-info {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.82rem;
+            color: #6b7280;
+            margin: 4px 0;
+            font-weight: 500;
+        }
+
+        .popup-info i {
+            width: 16px;
+            text-align: center;
+            color: #10b981;
+        }
+    </style>
+    @endpush
+
     @push('scripts')
     <script src="{{asset('assetsPoster/assets/vendors/chartjs/Chart.min.js')}}"></script>
     <script>
@@ -345,6 +451,9 @@
                     
                     if (distance < 0) {
                         timer.innerHTML = "Arrivé";
+                        if (document.getElementById('tracking-time')) {
+                            document.getElementById('tracking-time').innerHTML = `<i class="fas fa-flag-checkered"></i> Arrivé`;
+                        }
                         return;
                     }
                     
@@ -352,7 +461,13 @@
                     const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
                     const seconds = Math.floor((distance % (1000 * 60)) / 1000);
                     
-                    timer.innerHTML = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    const timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    timer.innerHTML = timeString;
+                    
+                    const trackingTimeEl = document.getElementById('tracking-time');
+                    if (trackingTimeEl) {
+                        trackingTimeEl.innerHTML = `<i class="fas fa-clock"></i> ${timeString}`;
+                    }
                 });
             }
 
@@ -360,6 +475,155 @@
                 updateTimers();
                 setInterval(updateTimers, 1000);
             }
+        });
+    </script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const btnOpenTracking = document.getElementById('btn-open-tracking-modal');
+            const trackingModal = document.getElementById('trackingModal');
+            const trackingModalBackdrop = document.getElementById('trackingModalBackdrop');
+            const trackingModalContent = document.getElementById('trackingModalContent');
+            const btnCloseTracking = document.querySelectorAll('.tracking-modal-close');
+            const trackingLoading = document.getElementById('trackingLoading');
+            
+            let map = null;
+            let busMarker = null;
+            let trackingInterval = null;
+            let isFirstLoad = true;
+
+            function createBusIcon(isOnline = true) {
+                return L.divIcon({
+                    html: `<div class="bus-marker ${isOnline ? '' : 'bus-marker-offline'}"><i class="fas fa-bus"></i></div>`,
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 16],
+                    popupAnchor: [0, -20],
+                    className: ''
+                });
+            }
+
+            function initMap() {
+                if (map) return; // Already initialized
+
+                // Default center (Côte d'Ivoire)
+                map = L.map('trackingMap').setView([6.8276, -5.2893], 7);
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap',
+                    maxZoom: 19,
+                }).addTo(map);
+            }
+
+            function fetchLiveLocation() {
+                fetch("{{ route('user.tracking.location') }}")
+                    .then(res => res.json())
+                    .then(data => {
+                        if (!data.success) {
+                            trackingLoading.querySelector('p').textContent = data.message || "Position indisponible";
+                            trackingLoading.querySelector('i').className = "fas fa-exclamation-triangle text-orange-500 text-4xl mb-4";
+                            return;
+                        }
+
+                        // Hide loading if showing
+                        if (trackingLoading.style.opacity !== '0') {
+                            trackingLoading.style.opacity = '0';
+                            setTimeout(() => { trackingLoading.style.display = 'none'; }, 300);
+                        }
+
+                        const loc = data.location;
+                        const latLng = [loc.latitude, loc.longitude];
+
+                        // Update DOM elements
+                        document.getElementById('tracking-itinerary').innerHTML = `
+                            <i class="fas fa-map-marker-alt text-teal-600"></i>
+                            <span class="text-gray-900">${loc.depart}</span>
+                            <i class="fas fa-arrow-right mx-1 text-gray-300"></i>
+                            <span class="text-gray-900">${loc.arrivee}</span>
+                        `;
+                        
+                        document.getElementById('tracking-speed').innerHTML = `<i class="fas fa-tachometer-alt"></i> ${loc.speed ? Math.round(loc.speed) : 0} km/h`;
+                        document.getElementById('tracking-status').innerHTML = `
+                            <span class="flex h-2 w-2 rounded-full bg-teal-500 animate-[livePulse_1.5s_infinite]"></span>
+                            <span>En direct</span>
+                        `;
+
+                        const popupContent = `
+                            <div class="popup-title">${loc.depart} → ${loc.arrivee}</div>
+                            <div class="popup-info"><i class="fas fa-user text-teal-600"></i> ${loc.chauffeur}</div>
+                            <div class="popup-info"><i class="fas fa-bus text-teal-600"></i> ${loc.vehicule}</div>
+                            <div class="popup-info"><i class="fas fa-tachometer-alt text-teal-600"></i> ${loc.speed ? Math.round(loc.speed) : 0} km/h</div>
+                            <div class="popup-info text-xs mt-2 text-gray-400 border-t border-gray-100 pt-2">
+                                <i class="fas fa-sync text-gray-400"></i> Màj: ${loc.last_update}
+                            </div>
+                        `;
+
+                        if (busMarker) {
+                            busMarker.setLatLng(latLng);
+                            busMarker.setPopupContent(popupContent);
+                        } else {
+                            busMarker = L.marker(latLng, { icon: createBusIcon(true) }).addTo(map);
+                            busMarker.bindPopup(popupContent).openPopup();
+                        }
+
+                        if (isFirstLoad) {
+                            map.setView(latLng, 14, { animate: true });
+                            isFirstLoad = false;
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Erreur GPS:', err);
+                    });
+            }
+
+            // Open Modal
+            if (btnOpenTracking) {
+                btnOpenTracking.addEventListener('click', function() {
+                    trackingModal.classList.remove('hidden');
+                    // Slight delay to allow display:block to apply before animating opacity/transform
+                    setTimeout(() => {
+                        trackingModalBackdrop.classList.remove('opacity-0');
+                        trackingModalContent.classList.remove('opacity-0', 'scale-95');
+                        trackingModalContent.classList.add('opacity-100', 'scale-100');
+                    }, 10);
+                    
+                    document.body.style.overflow = 'hidden'; // Prevent scrolling Behind
+                    
+                    // Init map only when modal is visible (Leaflet rendering fix)
+                    setTimeout(() => {
+                        initMap();
+                        map.invalidateSize();
+                        isFirstLoad = true;
+                        
+                        // Show loading initially
+                        trackingLoading.style.display = 'flex';
+                        trackingLoading.style.opacity = '1';
+                        trackingLoading.querySelector('p').textContent = "Connexion au véhicule...";
+                        trackingLoading.querySelector('i').className = "fas fa-circle-notch fa-spin text-teal-600 text-4xl mb-4";
+                        
+                        fetchLiveLocation();
+                        trackingInterval = setInterval(fetchLiveLocation, 5000);
+                    }, 300);
+                });
+            }
+
+            // Close Modal
+            btnCloseTracking.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    trackingModalBackdrop.classList.add('opacity-0');
+                    trackingModalContent.classList.add('opacity-0', 'scale-95');
+                    trackingModalContent.classList.remove('opacity-100', 'scale-100');
+                    
+                    if (trackingInterval) {
+                        clearInterval(trackingInterval);
+                        trackingInterval = null;
+                    }
+
+                    setTimeout(() => {
+                        trackingModal.classList.add('hidden');
+                        document.body.style.overflow = '';
+                    }, 300);
+                });
+            });
         });
     </script>
     @endpush
