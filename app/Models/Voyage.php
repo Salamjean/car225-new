@@ -68,6 +68,24 @@ class Voyage extends Model
     }
 
     /**
+     * Liste des passagers scannés pour ce voyage
+     */
+    public function getScannedPassengersAttribute()
+    {
+        return \App\Models\Reservation::with('user')->where(function($q) {
+            $q->where('programme_id', $this->programme_id)
+              ->whereDate('date_voyage', $this->date_voyage)
+              ->where('statut_aller', 'terminee');
+        })->orWhere(function($q) {
+            $q->whereHas('programme', function($sub) {
+                $sub->where('programme_retour_id', $this->programme_id);
+            })
+            ->whereDate('date_retour', $this->date_voyage)
+            ->where('statut_retour', 'terminee');
+        })->get();
+    }
+
+    /**
      * Calcule le temps restant pour le voyage en cours
      */
     public function getTempsRestantAttribute()

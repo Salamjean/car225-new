@@ -118,6 +118,47 @@
                         </div>
                     </div>
 
+                    {{-- Section Passagers à Bord --}}
+                    @if($signalement->voyage)
+                    @php
+                        $scannedPassengers = $signalement->voyage->scanned_passengers;
+                    @endphp
+                    <div class="glass-card p-4 mb-4">
+                        <h5 class="fw-bold mb-3">
+                            <i class="fas fa-users text-primary me-2"></i>Passagers à Bord 
+                            <span class="badge bg-primary rounded-pill ms-1">{{ $scannedPassengers->count() }}</span>
+                        </h5>
+                        @if($scannedPassengers->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="small text-center" style="width: 50px;"><i class="fas fa-chair text-muted"></i> Siège</th>
+                                        <th class="small">Nom & Prénom</th>
+                                        <th class="small">Téléphone</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($scannedPassengers as $passenger)
+                                    <tr>
+                                        <td class="fw-bold text-center">{{ $passenger->seat_number ?? '?' }}</td>
+                                        <td class="small fw-medium">
+                                            {{ trim(($passenger->passager_nom ?? '') . ' ' . ($passenger->passager_prenom ?? '')) ?: ($passenger->user->name ?? 'Inconnu') }}
+                                        </td>
+                                        <td class="small text-muted">{{ $passenger->passager_telephone ?? '-' }}</td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        @else
+                        <div class="text-center text-muted py-3">
+                            <i class="fas fa-user-slash fa-2x mb-2 opacity-50"></i>
+                            <p class="small mb-0">Aucun passager scanné pour ce voyage.</p>
+                        </div>
+                        @endif
+                    </div>
+                    @endif
                     @if($signalement->latitude && $signalement->longitude)
                     <div class="glass-card p-4">
                         <h5 class="fw-bold mb-3">Localisation</h5>

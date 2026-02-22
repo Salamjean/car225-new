@@ -70,10 +70,16 @@
                     </p>
                 </div>
             </div>
-            <a href="{{ route('sapeur-pompier.logout') }}"
-                class="flex items-center justify-center gap-2 w-full py-2 bg-red-900/50 hover:bg-red-800 text-red-200 text-sm font-medium rounded-lg transition-colors border border-red-900">
-                <i class="fas fa-sign-out-alt"></i> Déconnexion
-            </a>
+            <div class="space-y-2">
+                <a href="{{ route('sapeur-pompier.profile') }}"
+                    class="flex items-center justify-center gap-2 w-full py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 text-sm font-medium rounded-lg transition-colors border border-gray-700">
+                    <i class="fas fa-user-cog"></i> Mon Profil
+                </a>
+                <a href="{{ route('sapeur-pompier.logout') }}"
+                    class="flex items-center justify-center gap-2 w-full py-2 bg-red-900/50 hover:bg-red-800 text-red-200 text-sm font-medium rounded-lg transition-colors border border-red-900">
+                    <i class="fas fa-sign-out-alt"></i> Déconnexion
+                </a>
+            </div>
         </div>
     </aside>
 

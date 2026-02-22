@@ -117,7 +117,69 @@
     document.addEventListener('DOMContentLoaded', function() {
         initGeocoding();
         startAutoRefresh();
+        updateSapeurLocation();
     });
+
+    function updateSapeurLocation() {
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(async function(position) {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                let communeStr = '';
+                let adresseStr = '';
+
+                try {
+                    // Reverse Geocoding avec OpenStreetMap (Nominatim)
+                    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+                    const data = await response.json();
+
+                    if (data && data.address) {
+                        communeStr = data.address.city || data.address.town || data.address.village || data.address.suburb || data.address.county || '';
+                        
+                        if (data.display_name) {
+                            adresseStr = data.display_name.split(',').slice(0, 2).join(', ').trim();
+                        }
+                    }
+                } catch (error) {
+                    console.error('Erreur Reverse Geocoding arrière-plan:', error);
+                }
+
+                // Send to backend
+                fetch('{{ route('sapeur-pompier.update-location') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        latitude: lat,
+                        longitude: lon,
+                        commune: communeStr,
+                        adresse: adresseStr
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if(data.success) {
+                        console.log('Localisation GPS, commune et adresse mis à jour avec succès');
+                    }
+                })
+                .catch(err => console.error('Erreur lors de la mise à jour GPS', err));
+                
+            }, function(error) {
+                console.error("Erreur Geolocation: ", error.message);
+                if (error.code === error.PERMISSION_DENIED) {
+                    alert("Avertissement : Veuillez autoriser la localisation sur votre navigateur pour recevoir les alertes d'accidents proches de vous.");
+                }
+            }, {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            });
+        } else {
+            console.log("La géolocalisation n'est pas supportée par ce navigateur.");
+        }
+    }
 
     function initGeocoding() {
         // On cible uniquement les conteneurs qui n'ont pas encore été traités (facultatif mais plus propre)

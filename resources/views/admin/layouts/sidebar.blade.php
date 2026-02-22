@@ -118,6 +118,13 @@
           </a>
         </div>
         <div class="mdc-list-item mdc-drawer-item">
+          <a class="mdc-drawer-link" href="{{route('admin.voyages.en-cours')}}" style="display: flex; align-items: center; gap: 4px;">
+            <i class="fas fa-satellite-dish mdc-list-item__start-detail mdc-drawer-item-icon"></i>
+            Voyages en cours
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:8px;height:8px;border-radius:50%;background:#22c55e;margin-left:4px;animation:pulse-dot 2s infinite;"></span>
+          </a>
+        </div>
+        <div class="mdc-list-item mdc-drawer-item">
           <a class="mdc-drawer-link" href="{{route('admin.notifications.index')}}">
             <i class="fas fa-bell mdc-list-item__start-detail mdc-drawer-item-icon"></i>
             Notifications

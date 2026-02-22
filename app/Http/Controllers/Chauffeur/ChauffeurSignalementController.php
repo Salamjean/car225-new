@@ -22,7 +22,9 @@ class ChauffeurSignalementController extends Controller
     {
         $chauffeur = Auth::guard('chauffeur')->user();
         $signalements = Signalement::where('personnel_id', $chauffeur->id)
-            ->with(['voyage', 'compagnie', 'vehicule'])
+            ->whereNotNull('compagnie_id')
+            ->whereNull('user_id')
+            ->with(['voyage.gareDepart', 'voyage.gareArrivee', 'compagnie', 'vehicule'])
             ->orderBy('created_at', 'desc')
             ->get();
 

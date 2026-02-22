@@ -189,9 +189,27 @@ class SignalementApiController extends Controller
                 Log::error('Erreur envoi email API compagnie: ' . $e->getMessage());
             }
 
-            // Notification de confirmation à l'utilisateur (Database pour le "Bell" icon)
+            // Notification de confirmation à l'utilisateur (Mobile Push + Database)
             try {
-                Auth::user()->notify(new \App\Notifications\GeneralNotification(
+                $user = Auth::user();
+                
+                // Envoi de la notification Push Mobile
+                if ($user && $user->fcm_token) {
+                    try {
+                        $fcmService = app(\App\Services\FcmService::class);
+                        $fcmService->sendNotification(
+                            $user->fcm_token, 
+                            'Signalement reçu ⚠️', 
+                            "Votre signalement de type '" . ucfirst($signalement->type) . "' est en cours de traitement.",
+                            ['type' => 'signalement', 'signalement_id' => $signalement->id]
+                        );
+                    } catch (\Exception $e) {
+                        Log::error("Erreur FCM Signalement API: " . $e->getMessage());
+                    }
+                }
+
+                // Envoi de la notification Web/Database
+                $user->notify(new \App\Notifications\GeneralNotification(
                     'Signalement enregistré ⚠️',
                     "Votre signalement de type '" . ucfirst($signalement->type) . "' a été reçu et est en cours de traitement.",
                     'warning'

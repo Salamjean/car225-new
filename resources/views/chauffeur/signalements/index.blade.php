@@ -119,11 +119,38 @@
                             </div>
                         </td>
                         <td>
+                            @php
+                                $passengersData = [];
+                                if($s->voyage) {
+                                    // Use the newly created Voyage attribute to get passengers
+                                    foreach($s->voyage->scanned_passengers as $p) {
+                                        $passengersData[] = [
+                                            'name' => trim(($p->passager_nom ?? '') . ' ' . ($p->passager_prenom ?? '')) ?: ($p->user->name ?? 'Inconnu'),
+                                            'seat' => $p->seat_number ?? '?',
+                                            'contact' => $p->passager_telephone ?? '-'
+                                        ];
+                                    }
+                                }
+                            @endphp
+
                             @if($s->voyage)
                             <div class="fw-medium text-dark">
-                                {{ $s->voyage->programme->point_depart }} → {{ $s->voyage->programme->point_arrive }}
+                                {{ $s->voyage->programme->point_depart ?? 'N/A' }} → {{ $s->voyage->programme->point_arrive ?? 'N/A' }}
                             </div>
-                            <div class="text-muted small">Passagers: {{ $s->voyage->programme->nbre_siege_occupe ?? 'N/A' }}</div>
+                            <div class="text-muted small">
+                                <i class="fas fa-building me-1 text-primary"></i> 
+                                Gare: <span class="fw-bold">{{ $s->voyage->gareDepart->nom_gare ?? 'Non définie' }}</span>
+                            </div>
+                            <div class="text-muted small mt-1">
+                                <button type="button" class="btn badge bg-light text-dark fw-normal border ms-0 p-1 px-2" onclick="showPassengersPopup(this)" data-passengers="{{ htmlspecialchars(json_encode($passengersData)) }}" style="cursor: pointer;">
+                                    <i class="fas fa-users me-1 text-primary"></i> Passagers scannés: {{ count($passengersData) }}
+                                </button>
+                                @if($s->vehicule)
+                                <span class="badge bg-light text-dark fw-normal border ms-1 p-1 px-2">
+                                    <i class="fas fa-bus me-1"></i> {{ $s->vehicule->immatriculation }}
+                                </span>
+                                @endif
+                            </div>
                             @else
                             <span class="text-muted">N/A</span>
                             @endif
@@ -159,4 +186,64 @@
         </div>
     </div>
 </div>
+@endsection
+
+@section('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+function showPassengersPopup(btn) {
+    const passengersData = JSON.parse(btn.getAttribute('data-passengers') || '[]');
+    
+    if (passengersData.length === 0) {
+        Swal.fire({
+            icon: 'info',
+            title: 'Aucun passager',
+            text: 'Il n\'y a aucun passager scanné enregistré pour ce voyage.',
+            confirmButtonColor: '#0369a1'
+        });
+        return;
+    }
+
+    let html = `
+        <div class="table-responsive mt-3">
+            <table class="table table-sm table-bordered text-start align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th class="small text-center"><i class="fas fa-chair text-muted"></i></th>
+                        <th class="small">Nom et Prénom</th>
+                        <th class="small">Contact</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    passengersData.forEach(p => {
+        html += `
+            <tr>
+                <td class="fw-bold text-center">${p.seat}</td>
+                <td class="small fw-medium">${p.name}</td>
+                <td class="small text-muted">${p.contact}</td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    Swal.fire({
+        title: '<i class="fas fa-users text-primary me-2"></i>Liste des Passagers',
+        html: html,
+        width: '600px',
+        confirmButtonColor: '#0369a1',
+        confirmButtonText: 'Fermer',
+        customClass: {
+            title: 'h5 fw-bold mb-0',
+            htmlContainer: 'text-start m-0'
+        }
+    });
+}
+</script>
 @endsection

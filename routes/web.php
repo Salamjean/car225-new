@@ -92,6 +92,10 @@ Route::middleware('admin')->prefix('admin')->group(function () {
     //Les routes pour voir les itineraires
     Route::get('/indeItinery', [AdminItineraireController::class, 'index'])->name('admin.itineraire.index');
 
+    // Voyages en cours (temps réel)
+    Route::get('/voyages-en-cours', [AdminSettingController::class, 'voyagesEnCours'])->name('admin.voyages.en-cours');
+    Route::get('/voyages-en-cours/api', [AdminSettingController::class, 'voyagesEnCoursApi'])->name('admin.voyages.en-cours.api');
+
     // Gestion des Sapeurs Pompiers
     Route::resource('sapeur-pompier', SapeurPompierController::class);
 
@@ -505,6 +509,9 @@ Route::prefix('sapeur-pompier')->group(function () {
     Route::get('/logout', [SapeurPompierAuthenticate::class, 'logout'])->name('sapeur-pompier.logout');
 
     Route::middleware('sapeur_pompier')->group(function () {
+        Route::get('/profile', [App\Http\Controllers\SapeurPompier\SapeurPompierDashboard::class, 'profile'])->name('sapeur-pompier.profile');
+        Route::put('/profile', [App\Http\Controllers\SapeurPompier\SapeurPompierDashboard::class, 'updateProfile'])->name('sapeur-pompier.profile.update');
+
         Route::get('/dashboard', function (\Illuminate\Http\Request $request) {
             $query = Signalement::where('sapeur_pompier_id', Auth::guard('sapeur_pompier')->id());
 
@@ -520,6 +527,29 @@ Route::prefix('sapeur-pompier')->group(function () {
             $signalements = $query->latest()->get();
             return view('sapeur_pompier.dashboard', compact('signalements', 'filterTitle'));
         })->name('sapeur-pompier.dashboard');
+
+        Route::post('/update-location', function (\Illuminate\Http\Request $request) {
+            $user = Auth::guard('sapeur_pompier')->user();
+            $request->validate([
+                'latitude' => 'required|numeric',
+                'longitude' => 'required|numeric',
+                'commune' => 'nullable|string',
+                'adresse' => 'nullable|string',
+            ]);
+            $user->update([
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude,
+            ]);
+            
+            // On ne met à jour l'adresse et commune que s'ils sont fournis (Reverse Geocoding réussi côté JS)
+            if ($request->filled('commune') && $request->filled('adresse')) {
+                $user->update([
+                    'commune' => $request->commune,
+                    'adresse' => $request->adresse,
+                ]);
+            }
+            return response()->json(['success' => true]);
+        })->name('sapeur-pompier.update-location');
 
         Route::get('/signalements/{signalement}', function (Signalement $signalement) {
             // Vérifier que le signalement appartient bien à ce pompier

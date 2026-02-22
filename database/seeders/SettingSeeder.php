@@ -20,5 +20,23 @@ class SettingSeeder extends Seeder
                 'label' => 'Activer le système de tickets/crédits'
             ]
         );
+
+        \App\Models\Setting::updateOrCreate(
+            ['key' => 'maintenance_mode'],
+            [
+                'value' => '0',
+                'type' => 'boolean',
+                'label' => 'Activer le mode maintenance (bloque l\'accès au site pour tous sauf l\'admin)'
+            ]
+        );
+
+        \App\Models\Setting::updateOrCreate(
+            ['key' => 'maintenance_message'],
+            [
+                'value' => 'Notre plateforme est actuellement en maintenance. Nous serons de retour très bientôt.',
+                'type' => 'string',
+                'label' => 'Message affiché aux visiteurs pendant la maintenance'
+            ]
+        );
     }
 }
