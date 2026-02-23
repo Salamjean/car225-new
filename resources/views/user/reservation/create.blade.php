@@ -4964,5 +4964,47 @@ function proceedToPassengerInfoFromRetour() {
             });
         }
     }
+
+    // Auto-reservation logic
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const autoReserveId = urlParams.get('auto_reserve');
+        
+        if (autoReserveId) {
+            console.log("Auto-reserve detected for ID:", autoReserveId);
+            // Wait a bit for the page to be fully interactive
+            setTimeout(() => {
+                const reserveButtons = document.querySelectorAll('button[onclick="handleReservationClick(this)"], button[onclick*="handleReservationClick"]');
+                console.log("Found reserve buttons:", reserveButtons.length);
+                
+                for (let btn of reserveButtons) {
+                    try {
+                        const routeDataStr = btn.getAttribute('data-route');
+                        if (!routeDataStr) continue;
+                        
+                        const routeData = JSON.parse(routeDataStr);
+                        console.log("Checking routeData:", routeData.id);
+                        
+                        // Check if it's the main ID or one of the horaires
+                        let match = (routeData.id == autoReserveId);
+                        if (!match && routeData.aller_horaires) {
+                            match = routeData.aller_horaires.some(h => h.id == autoReserveId);
+                        }
+                        
+                        if (match) {
+                            console.log("Match found! Triggering click.");
+                            btn.click();
+                            // Clean URL
+                            const newUrl = window.location.pathname + window.location.search.replace(/&?auto_reserve=[^&]*/, '').replace(/\?$/, '');
+                            window.history.replaceState({}, '', newUrl);
+                            break;
+                        }
+                    } catch (e) {
+                        console.error("Error parsing route data:", e);
+                    }
+                }
+            }, 800);
+        }
+    });
 </script>
 @endpush

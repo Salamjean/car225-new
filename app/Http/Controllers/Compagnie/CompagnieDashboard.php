@@ -119,7 +119,6 @@ class CompagnieDashboard extends Controller
         
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'username' => 'required|string|max:255|unique:compagnies,username,' . $compagnie->id,
             'email' => 'required|email|max:255|unique:compagnies,email,' . $compagnie->id,
             'contact' => 'required|string|max:255',
             'commune' => 'required|string|max:255',

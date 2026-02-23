@@ -6,6 +6,8 @@ use App\Http\Controllers\Api\User\ReservationApiController as UserReservationCon
 use App\Http\Controllers\Api\User\WalletController;
 use App\Http\Controllers\Api\User\CompagnieController;
 use App\Http\Controllers\Api\User\SignalementApiController;
+use App\Http\Controllers\Api\User\SupportApiController;
+use App\Http\Controllers\Api\User\StatistiqueApiController;
 use App\Http\Controllers\Api\Agent\AuthController as AgentAuthController;
 use App\Http\Controllers\Api\Agent\AgentController;
 use App\Http\Controllers\Api\Agent\ReservationApiController as AgentReservationController;
@@ -86,6 +88,16 @@ Route::prefix('user')->group(function () {
         Route::get('/signalements/active-reservations', [SignalementApiController::class, 'getActiveReservations']);
         Route::get('/signalements', [SignalementApiController::class, 'index']);
         Route::post('/signalements', [SignalementApiController::class, 'store']);
+
+        // Support Client
+        Route::get('/support/categories', [SupportApiController::class, 'getCategories']);
+        Route::get('/support/reservations', [SupportApiController::class, 'getReservations']);
+        Route::get('/support', [SupportApiController::class, 'index']);
+        Route::post('/support', [SupportApiController::class, 'store']);
+
+        // Statistiques
+        Route::get('/stats', [StatistiqueApiController::class, 'index']);
+        Route::get('/stats/trips', [StatistiqueApiController::class, 'tripStats']);
 
         // Notifications
         Route::get('/notifications', [\App\Http\Controllers\Api\User\NotificationApiController::class, 'index']);

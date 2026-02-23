@@ -95,6 +95,13 @@
                                 {{ number_format($programme->montant_billet, 0, ',', ' ') }} FCFA
                             </div>
                         </div>
+
+                        <!-- Places disponibles -->
+                        <div class="bg-orange-50 border border-orange-100 p-4 rounded-xl text-center">
+                            <i class="fas fa-chair text-[#e94f1b] mr-2"></i>
+                            <span class="font-bold text-gray-900">{{ $programme->getPlacesDisponiblesForDate(\Carbon\Carbon::parse($programme->date_depart)->format('Y-m-d')) }} Places disponibles</span>
+                            <div class="text-[10px] text-gray-500 uppercase font-bold mt-1">Pour le {{ \Carbon\Carbon::parse($programme->date_depart)->format('d/m/Y') }}</div>
+                        </div>
                     </div>
                 </div>
 

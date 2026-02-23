@@ -6,10 +6,10 @@
             <div class="mb-6 sm:mb-8">
                 <div class="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100 text-center">
                     <h1 class="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
-                        Programmes du jour
+                        Prochains Programmes
                     </h1>
                     <p class="text-gray-600 mb-4 max-w-2xl mx-auto">
-                        Voici les départs disponibles pour aujourd'hui le <span class="font-bold text-[#e94e1a]">{{ \Carbon\Carbon::now()->format('d/m/Y') }}</span>.
+                        Voici les départs disponibles pour demain le <span class="font-bold text-[#e94e1a]">{{ \Carbon\Carbon::now()->addDay()->format('d/m/Y') }}</span>.
                     </p>
                     <div class="inline-block bg-[#e94e1a] text-white px-4 py-2 rounded-xl font-bold text-lg shadow-md">
                         {{ $programmes->total() }} programme(s) disponible(s)
@@ -45,7 +45,7 @@
                     <div class="space-y-4">
                         @foreach ($programmes as $programme)
                             @php
-                                $displayDate = \Carbon\Carbon::now(); 
+                                $displayDate = \Carbon\Carbon::now()->addDay(); 
                                 $formattedDisplayDate = $displayDate->format('d/m/Y');
                                 $searchDateParam = $displayDate->format('Y-m-d');
                             @endphp
@@ -133,8 +133,13 @@
                                         <!-- Actions mobile -->
                                         <div class="flex gap-2">
                                             @if ($programme->statut_places != 'complet')
-                                                <a href="{{ auth()->check() ? route('user.dashboard') : route('login') }}"
-                                                    class="flex-1 bg-[#e94e1a] text-white text-center py-2 rounded-lg font-bold hover:bg-[#d33d0f] transition-all duration-300 flex items-center justify-center gap-2">
+                                                <a href="{{ route('reservation.create', [
+                                                        'point_depart' => $programme->point_depart,
+                                                        'point_arrive' => $programme->point_arrive,
+                                                        'date_depart' => $searchDateParam,
+                                                        'auto_reserve' => $programme->id
+                                                    ]) }}"
+                                                    class="flex-1 bg-[#e94e1a] text-white text-center py-2 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 flex items-center justify-center gap-2">
                                                     <i class="fas fa-ticket-alt"></i> <span>Réserver</span>
                                                 </a>
                                             @else
@@ -239,7 +244,12 @@
                                                 </button>
 
                                                 @if ($programme->statut_places != 'complet')
-                                                    <a href="{{ auth()->check() ? route('user.dashboard') : route('login') }}"
+                                                    <a href="{{ route('reservation.create', [
+                                                            'point_depart' => $programme->point_depart,
+                                                            'point_arrive' => $programme->point_arrive,
+                                                            'date_depart' => $searchDateParam,
+                                                            'auto_reserve' => $programme->id
+                                                        ]) }}"
                                                         class="bg-[#e94e1a] text-white px-4 py-2 rounded-lg font-bold hover:bg-[#d33d0f] transition-all duration-300 flex items-center gap-2 text-sm shadow-sm hover:shadow-md">
                                                         <i class="fas fa-ticket-alt"></i> <span>Réserver</span>
                                                     </a>
