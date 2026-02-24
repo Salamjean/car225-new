@@ -1,7 +1,7 @@
 @extends('home.layouts.template')
 @section('content')
-    <div class="min-h-screen bg-gradient-to-br from-white to-gray-50 py-6 sm:py-8 lg:py-10">
-        <div class="w-full px-3 sm:px-4 lg:px-6">
+    <div class="min-h-screen bg-gradient-to-br from-white to-gray-50 pt-28 sm:pt-32 pb-6 sm:pb-8 lg:pb-10">
+        <div class="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
             <!-- En-tête des résultats -->
             <div class="mb-6 sm:mb-8">
                 <div class="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
@@ -85,15 +85,13 @@
             @if ($programmes->count() > 0)
                 <div class="w-full mb-6 sm:mb-8">
                     <!-- En-tête de la liste (version desktop) -->
-                    <div class="hidden md:block mb-4">
-                        <div class="bg-gradient-to-r from-[#e94e1a]/10 to-orange-500/10 rounded-xl p-4">
-                            <div class="grid grid-cols-12 gap-4 text-sm font-semibold text-gray-700">
-                                <div class="col-span-3">Compagnie & Trajet</div>
-                                <div class="col-span-2 text-center">Heures</div>
-                                <div class="col-span-2 text-center">Durée & Prix</div>
-                                <div class="col-span-2 text-center">Places</div>
-                                <div class="col-span-3 text-right">Actions</div>
-                            </div>
+                    <div class="hidden md:block mb-4 md:px-2">
+                        <div class="grid grid-cols-12 gap-4 px-3 py-2 text-xs font-black uppercase tracking-widest text-gray-400">
+                            <div class="col-span-3 pl-2">Compagnie & Trajet</div>
+                            <div class="col-span-2 text-center">Départ</div>
+                            <div class="col-span-2 text-center">Tarif</div>
+                            <div class="col-span-2 text-center">Disponibilité</div>
+                            <div class="col-span-3 text-right pr-2">Action</div>
                         </div>
                     </div>
 
@@ -111,14 +109,14 @@
                                                     <i class="fas fa-bus text-white"></i>
                                                 </div>
                                                 <div>
-                                                    <h3 class="font-bold text-gray-900">{{ $programme->compagnie->name ?? 'Compagnie' }}</h3>
+                                                    <h3 class="font-bold text-gray-900 leading-tight">{{ $programme->compagnie->slogan ?: ($programme->compagnie->name ?? 'Compagnie') }}</h3>
                                                     @if ($programme->is_aller_retour)
-                                                        <span class="text-xs text-blue-600 font-semibold block">
+                                                        <span class="text-xs text-blue-600 font-semibold block mt-0.5">
                                                             <i class="fas fa-exchange-alt"></i> Aller-Retour
                                                         </span>
                                                     @endif
                                                     @if ($programme->compagnie)
-                                                        <span class="text-xs text-green-600 font-semibold">
+                                                        <span class="text-xs text-green-600 font-semibold block mt-0.5">
                                                             <i class="fas fa-check-circle"></i> Vérifié
                                                         </span>
                                                     @endif
@@ -128,22 +126,20 @@
                                                 <div class="text-lg font-bold text-[#e94e1a]">
                                                     {{ number_format($programme->montant_billet, 0, ',', ' ') }} FCFA
                                                 </div>
-                                                <div class="text-xs text-gray-500">Prix</div>
                                             </div>
                                         </div>
 
                                         <!-- Trajet mobile -->
-                                        <div class="mb-4 p-3 bg-gray-50 rounded-lg">
-                                            <div class="flex items-center justify-between mb-2">
-                                                <div class="text-center">
-                                                    <div class="font-bold text-gray-900">{{ $programme->point_depart }}</div>
-                                                    <div class="text-[10px] text-blue-600 font-bold uppercase">{{ $programme->gareDepart->nom_gare ?? 'Gare' }}</div>
-                                                    <div class="text-xs text-gray-500">Départ</div>
+                                        <div class="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                            <div class="flex items-center justify-between mb-1">
+                                                <div class="text-center flex-1">
+                                                    <div class="font-black text-gray-900 text-base leading-tight">{{ $programme->point_depart }}</div>
+                                                    <div class="text-[10px] text-blue-600 font-bold uppercase mt-1 bg-blue-50/50 px-1.5 py-0.5 border border-blue-100 rounded inline-flex items-start gap-1 max-w-full text-left"><i class="fas fa-map-marker-alt mt-0.5 flex-shrink-0"></i><span class="whitespace-normal leading-tight">{{ $programme->gareDepart->nom_gare ?? 'Gare Départ' }}</span></div>
                                                 </div>
-                                                <div class="mx-2"><i class="fas fa-arrow-right text-[#e94e1a]"></i></div>
-                                                <div class="text-center">
-                                                    <div class="font-bold text-gray-900">{{ $programme->point_arrive }}</div>
-                                                    <div class="text-xs text-gray-500">Arrivée</div>
+                                                <div class="mx-3 text-gray-300"><i class="fas fa-long-arrow-alt-right text-lg"></i></div>
+                                                <div class="text-center flex-1">
+                                                    <div class="font-black text-gray-900 text-base leading-tight">{{ $programme->point_arrive }}</div>
+                                                    <div class="text-[10px] text-green-600 font-bold uppercase mt-1 bg-green-50/50 px-1.5 py-0.5 border border-green-100 rounded inline-flex items-start gap-1 max-w-full text-left"><i class="fas fa-map-marker-alt mt-0.5 flex-shrink-0"></i><span class="whitespace-normal leading-tight">{{ $programme->gareArrivee->nom_gare ?? 'Gare Arrivée' }}</span></div>
                                                 </div>
                                             </div>
                                         </div>
@@ -155,7 +151,7 @@
                                                     <i class="fas fa-clock text-green-500"></i>
                                                     <span class="text-sm font-semibold">Heures</span>
                                                 </div>
-                                                <div class="text-xs">{{ $programme->heure_depart }} - {{ $programme->heure_arrive }}</div>
+                                                <div class="text-xs">{{ substr($programme->heure_depart, 0, 5) }} - {{ substr($programme->heure_arrive, 0, 5) }}</div>
                                             </div>
                                             <div class="bg-purple-50 p-2 rounded-lg">
                                                 <div class="flex items-center gap-2 mb-1">
@@ -178,7 +174,7 @@
                                                         $isToday = \Carbon\Carbon::parse($searchParams['date_depart'])->isToday();
                                                     @endphp
                                                     <span class="{{ $statusKey == 'complet' ? 'text-red-600' : ($statusKey == 'presque_complet' ? 'text-yellow-600' : 'text-green-600') }} font-bold">
-                                                        {{ $reservedSeatsCount }}/{{ $totalSeats }}
+                                                        {{ $totalSeats - $reservedSeatsCount }} restantes
                                                     </span>
                                                     <span class="text-[10px] text-gray-500 ml-1">({{ $statusTexts[$statusKey] ?? '' }})</span>
                                                 </div>
@@ -194,15 +190,15 @@
                                                          'date_depart' => $searchParams['date_depart'],
                                                          'auto_reserve' => $programme->id
                                                      ]) }}"
-                                                     class="flex-1 bg-[#e94e1a] text-white text-center py-2 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 flex items-center justify-center gap-2">
+                                                     class="flex-1 bg-[#e94e1a] text-white text-center py-2 rounded-lg font-bold hover:bg-[#d14316] shadow-sm hover:shadow-md transition-all duration-300 flex items-center justify-center gap-2 text-sm">
                                                      <i class="fas fa-ticket-alt"></i> <span>Réserver</span>
                                                  </a>
                                              @elseif($isToday)
-                                                 <button class="flex-1 bg-gray-400 text-white text-center py-2 rounded-lg font-bold cursor-not-allowed flex items-center justify-center gap-2" disabled title="Les réservations doivent être faites au moins 24h à l'avance">
+                                                 <button class="flex-1 bg-gray-400 text-white text-center py-2 rounded-lg font-bold cursor-not-allowed flex items-center justify-center gap-2 text-sm" disabled title="Les réservations doivent être faites au moins 24h à l'avance">
                                                      <i class="fas fa-clock"></i> <span>Fermé (Jour J)</span>
                                                  </button>
                                              @else
-                                                 <button class="flex-1 bg-gray-400 text-white text-center py-2 rounded-lg font-bold cursor-not-allowed flex items-center justify-center gap-2" disabled>
+                                                 <button class="flex-1 bg-gray-400 text-white text-center py-2 rounded-lg font-bold cursor-not-allowed flex items-center justify-center gap-2 text-sm" disabled>
                                                      <i class="fas fa-times-circle"></i> <span>Complet</span>
                                                  </button>
                                              @endif
@@ -210,8 +206,8 @@
                                             <!-- BOUTON DÉTAILS MOBILE -->
                                             <button 
                                                 onclick="showVehicleDetails({{ optional($programme->getVehiculeForDate($searchParams['date_depart']))->id ?? 'null' }}, '{{ $searchParams['date_depart'] }}', {{ $programme->id }})"
-                                                class="w-12 bg-white text-[#e94e1a] border border-[#e94e1a] text-center py-2 rounded-lg font-bold hover:bg-gray-50 transition-all duration-300 flex items-center justify-center vehicle-details-btn">
-                                                <i class="fas fa-info-circle"></i>
+                                                class="px-3 bg-white text-gray-600 border border-gray-200 text-center py-2 rounded-lg font-bold hover:bg-gray-50 transition-all duration-300 flex items-center justify-center gap-1.5 vehicle-details-btn text-xs hover:text-gray-900">
+                                                <i class="fas fa-info-circle"></i> Détails
                                             </button>
                                         </div>
                                     </div>
@@ -219,31 +215,38 @@
 
                                 <!-- Version Desktop -->
                                 <div class="hidden md:block">
-                                    <div class="grid grid-cols-12 gap-4 p-6 items-center">
+                                    <div class="grid grid-cols-12 gap-4 p-5 items-center">
                                         <!-- Compagnie & Trajet -->
                                         <div class="col-span-3">
-                                            <div class="flex items-center gap-3">
-                                                <div class="w-12 h-12 bg-gradient-to-r from-[#e94e1a] to-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                                    <i class="fas fa-bus text-white text-lg"></i>
+                                            <div class="flex items-center gap-4">
+                                                <div class="w-14 h-14 bg-gray-50 border border-gray-100 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm overflow-hidden p-1">
+                                                    @if($programme->compagnie->path_logo ?? false)
+                                                        <img src="{{ asset('storage/' . $programme->compagnie->path_logo) }}" class="w-full h-full object-contain" alt="Logo">
+                                                    @else
+                                                        <i class="fas fa-bus text-gray-400 text-2xl"></i>
+                                                    @endif
                                                 </div>
-                                                <div class="flex-1 min-w-0">
-                                                    <div class="flex items-center gap-2 mb-1 justify-center">
-                                                        <h3 class="font-bold text-gray-900 truncate">{{ $programme->compagnie->name ?? 'Compagnie' }}</h3>
+                                                <div class="flex-1 min-w-0 flex flex-col justify-center">
+                                                    <div class="flex items-center gap-2 mb-2">
+                                                        <h3 class="font-black text-gray-900 text-sm whitespace-normal leading-tight line-clamp-2 max-w-[180px]">{{ $programme->compagnie->sigle ?: ($programme->compagnie->name ?? 'Compagnie') }}</h3>
                                                         @if ($programme->is_aller_retour)
-                                                            <span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full font-semibold"><i class="fas fa-exchange-alt text-xs"></i> Aller-Retour</span>
+                                                            <span class="bg-blue-50 text-blue-600 border border-blue-100 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider"><i class="fas fa-exchange-alt"></i></span>
                                                         @endif
                                                         @if ($programme->compagnie)
-                                                            <span class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-semibold"><i class="fas fa-check-circle text-xs"></i> Vérifié</span>
+                                                            <span class="bg-green-50 text-green-600 border border-green-100 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider"><i class="fas fa-check-circle"></i></span>
                                                         @endif
                                                     </div>
-                                                    <div class="flex flex-col items-center gap-1 text-sm text-gray-600 justify-center">
-                                                        <div class="flex items-center gap-2">
-                                                            <div class="font-semibold text-gray-900">{{ $programme->point_depart }}</div>
-                                                            <i class="fas fa-arrow-right text-[#e94e1a] text-xs"></i>
-                                                            <div class="font-semibold text-gray-900">{{ $programme->point_arrive }}</div>
+                                                    <div class="flex items-start gap-2 text-xs">
+                                                        <div class="flex flex-col">
+                                                            <div class="font-bold text-gray-800 leading-none">{{ $programme->point_depart }}</div>
+                                                            <div class="text-[9px] text-blue-600 font-bold uppercase mt-1 flex items-start gap-1 max-w-[120px]"><i class="fas fa-map-marker-alt mt-0.5"></i><span class="whitespace-normal leading-tight text-left">{{ $programme->gareDepart->nom_gare ?? 'Gare' }}</span></div>
                                                         </div>
-                                                        <div class="text-[10px] text-blue-600 font-bold uppercase bg-blue-50 px-2 py-0.5 rounded shadow-sm">
-                                                            <i class="fas fa-map-marker-alt mr-1"></i>{{ $programme->gareDepart->nom_gare ?? 'Gare' }}
+                                                        <div class="flex flex-col justify-center translate-y-0.5">
+                                                            <i class="fas fa-long-arrow-alt-right text-gray-300"></i>
+                                                        </div>
+                                                        <div class="flex flex-col">
+                                                            <div class="font-bold text-gray-800 leading-none">{{ $programme->point_arrive }}</div>
+                                                            <div class="text-[9px] text-green-600 font-bold uppercase mt-1 flex items-start gap-1 max-w-[120px]"><i class="fas fa-map-marker-alt mt-0.5"></i><span class="whitespace-normal leading-tight text-left">{{ $programme->gareArrivee->nom_gare ?? 'Gare' }}</span></div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -251,80 +254,75 @@
                                         </div>
 
                                         <!-- Date & Heure -->
-                                        <div class="col-span-2 flex flex-col justify-center items-center h-full">
-                                            <div class="space-y-1 text-center">
-                                                <div class="flex items-center justify-center gap-2 text-sm">
-                                                    <i class="fas fa-clock text-green-500"></i>
-                                                    <span>{{ $programme->heure_depart }} → {{ $programme->heure_arrive }}</span>
-                                                </div>
+                                        <div class="col-span-2 flex flex-col items-center justify-center border-l border-gray-100 h-full">
+                                            <div class="flex items-center gap-2 text-xs font-bold text-gray-800 mb-1">
+                                                <i class="fas fa-calendar-day text-gray-400"></i>
+                                                <span>{{ date('d/m/Y', strtotime($searchParams['date_depart'])) }}</span>
+                                            </div>
+                                            <div class="flex items-center gap-2 text-xs font-semibold text-gray-500 bg-gray-50 px-2.5 py-1 rounded-md">
+                                                <i class="fas fa-clock text-gray-400"></i>
+                                                <span>{{ substr($programme->heure_depart, 0, 5) }} &rarr; {{ substr($programme->heure_arrive, 0, 5) }}</span>
                                             </div>
                                         </div>
 
                                         <!-- Durée & Prix -->
-                                        <div class="col-span-2 flex flex-col justify-center items-center h-full">
-                                            <div class="space-y-1 text-center">
-                                                <div class="flex items-center justify-center gap-2">
-                                                    <i class="fas fa-hourglass-half text-purple-500"></i>
-                                                    <span class="font-semibold">{{ $programme->durer_parcours }}</span>
-                                                </div>
-                                                <div class="flex items-center justify-center gap-2">
-                                                    <i class="fas fa-money-bill-wave text-red-500"></i>
-                                                    <span class="font-bold text-lg text-[#e94e1a]">{{ number_format($programme->montant_billet, 0, ',', ' ') }} FCFA</span>
-                                                </div>
+                                        <div class="col-span-2 flex justify-center flex-col items-center border-l border-gray-100 h-full">
+                                            <div class="flex items-center gap-1.5 text-[11px] font-bold text-gray-500 mb-1">
+                                                <i class="fas fa-hourglass-half"></i>
+                                                <span>{{ $programme->durer_parcours }}</span>
+                                            </div>
+                                            <div class="text-lg font-black text-[#e94e1a]">
+                                                {{ number_format($programme->montant_billet, 0, ',', ' ') }} <span class="text-[10px] font-bold text-gray-500">FCFA</span>
                                             </div>
                                         </div>
 
                                         <!-- Statut -->
-                                        <div class="col-span-2 flex flex-col justify-center items-center h-full">
+                                        <div class="col-span-2 flex justify-center border-l border-gray-100 h-full">
                                             @php
                                                 $totalSeats = $programme->getTotalSeats($searchParams['date_depart']);
                                                 $reservedSeatsCount = $programme->getPlacesReserveesForDate($searchParams['date_depart']);
                                                 $statusKey = $programme->getStatutPlacesForDate($searchParams['date_depart']);
                                             @endphp
                                             <div class="flex flex-col items-center">
-                                                <div class="flex items-center justify-center gap-2">
-                                                    <div class="w-3 h-3 rounded-full {{ $statusKey == 'disponible' ? 'bg-green-500' : ($statusKey == 'presque_complet' ? 'bg-yellow-500' : 'bg-red-500') }}"></div>
-                                                    <span class="font-bold {{ $statusKey == 'disponible' ? 'text-green-700' : ($statusKey == 'presque_complet' ? 'text-yellow-700' : 'text-red-700') }}">
-                                                        {{ $reservedSeatsCount }} / {{ $totalSeats }}
+                                                <div class="flex items-center gap-2 bg-gray-50 px-3 py-1 rounded-lg border border-gray-100 mb-1.5">
+                                                    <div class="w-2.5 h-2.5 rounded-full {{ $statusKey == 'disponible' ? 'bg-green-500 animate-pulse' : ($statusKey == 'presque_complet' ? 'bg-yellow-500' : 'bg-red-500') }}"></div>
+                                                    <span class="font-black text-sm {{ $statusKey == 'disponible' ? 'text-green-600' : ($statusKey == 'presque_complet' ? 'text-yellow-600' : 'text-red-600') }}">
+                                                        {{ $totalSeats - $reservedSeatsCount }} <span class="text-[10px] font-bold text-gray-500 uppercase">rest.</span>
                                                     </span>
                                                 </div>
-                                                <span class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
+                                                <span class="text-[9px] uppercase font-black tracking-widest text-gray-400">
                                                     {{ $statusTexts[$statusKey] ?? '' }}
                                                 </span>
                                             </div>
                                         </div>
 
                                         <!-- Actions -->
-                                        <div class="col-span-3 flex justify-end items-center h-full">
-                                            <div class="flex gap-2">
-                                                <!-- BOUTON DÉTAILS DESKTOP -->
-                                                <button
-                                                    onclick="showVehicleDetails({{ optional($programme->getVehiculeForDate($searchParams['date_depart']))->id ?? 'null' }}, '{{ $searchParams['date_depart'] }}', {{ $programme->id }})"
-                                                    class="bg-white text-[#e94e1a] border border-[#e94e1a] px-3 py-2 rounded-lg font-bold hover:bg-gray-50 transition-all duration-300 flex items-center gap-2 vehicle-details-btn text-sm">
-                                                    <i class="fas fa-info-circle"></i>
-                                                    <span class="hidden lg:inline">Détails</span>
-                                                </button>
+                                        <div class="col-span-3 flex items-center justify-end gap-2 text-right">
+                                            <button
+                                                onclick="showVehicleDetails({{ optional($programme->getVehiculeForDate($searchParams['date_depart']))->id ?? 'null' }}, '{{ $searchParams['date_depart'] }}', {{ $programme->id }})"
+                                                class="px-4 py-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-gray-900 border border-gray-200 transition-colors flex items-center justify-center font-bold text-xs gap-2" title="Détails du véhicule">
+                                                <i class="fas fa-info-circle text-base"></i> Détails
+                                            </button>
 
-                                                 @if($statusKey != 'complet' && !$isToday)
-                                                     <a href="{{ route('reservation.create', [
-                                                             'point_depart' => $programme->point_depart,
-                                                             'point_arrive' => $programme->point_arrive,
-                                                             'date_depart' => $searchParams['date_depart'],
-                                                             'auto_reserve' => $programme->id
-                                                         ]) }}"
-                                                         class="bg-[#e94e1a] text-white px-4 py-2 rounded-lg font-bold hover:bg-[#d33d0f] transition-all duration-300 flex items-center gap-2 text-sm shadow-sm hover:shadow-md">
-                                                         <i class="fas fa-ticket-alt"></i> <span>Réserver</span>
-                                                     </a>
-                                                 @elseif($isToday)
-                                                     <button class="bg-gray-400 text-white px-4 py-2 rounded-lg font-bold cursor-not-allowed flex items-center gap-2 text-sm" disabled title="Les réservations doivent être faites au moins 24h à l'avance">
-                                                         <i class="fas fa-clock"></i> <span>Fermé (Jour J)</span>
-                                                     </button>
-                                                 @else
-                                                     <button class="bg-gray-400 text-white px-4 py-2 rounded-lg font-bold cursor-not-allowed flex items-center gap-2 text-sm" disabled>
-                                                         <i class="fas fa-times-circle"></i> <span>Complet</span>
-                                                     </button>
-                                                 @endif
-                                            </div>
+                                            @if($statusKey != 'complet' && !$isToday)
+                                                <a href="{{ route('reservation.create', [
+                                                        'point_depart' => $programme->point_depart,
+                                                        'point_arrive' => $programme->point_arrive,
+                                                        'date_depart' => $searchParams['date_depart'],
+                                                        'auto_reserve' => $programme->id
+                                                    ]) }}"
+                                                    class="flex-1 max-w-[140px] bg-[#e94e1a] text-white px-4 py-2.5 rounded-xl font-bold hover:bg-[#d14316] shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2 text-sm">
+                                                    <i class="fas fa-ticket-alt"></i> Réserver
+                                                </a>
+                                            @elseif($isToday)
+                                                <button class="flex-1 max-w-[140px] bg-gray-100 text-gray-400 px-4 py-2.5 rounded-xl font-bold cursor-not-allowed justify-center flex items-center gap-2 text-sm" disabled title="Les réservations doivent être faites au moins 24h à l'avance">
+                                                    <i class="fas fa-clock text-gray-300"></i> Jour J
+                                                </button>
+                                            @else
+                                                <button class="flex-1 max-w-[140px] bg-gray-100 text-gray-400 px-4 py-2.5 rounded-xl font-bold cursor-not-allowed justify-center flex items-center gap-2 text-sm" disabled>
+                                                    <i class="fas fa-times-circle text-gray-300"></i> Complet
+                                                </button>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>

@@ -85,6 +85,85 @@
     </section>
 
     <!-- ============================================ -->
+    <!-- SECTION COMPTEUR DE CONFIANCE -->
+    <!-- ============================================ -->
+    <section id="trust-counter" class="trust-counter-section">
+        <div class="container">
+            <div class="trust-content text-center" data-aos="fade-up">
+                <h2 class="trust-title text-[#1a1a1a] font-black md:text-3xl text-2xl mx-auto mb-8" style="line-height: 1.4; max-width: 900px;">
+                    Avec plus de <span class="counter-highlight text-[#008000] text-4xl inline-block mx-1" data-target="{{ $usersCount ?? 0 }}">0</span>personnes, <br class="hidden md:block">
+                    <span class="text-[#e94e1a]">Car225</span> est le partenaire de confiance pour vos trajets en Côte d’Ivoire.
+                </h2>
+                
+                @if(isset($compagnies) && $compagnies->count() > 0)
+                <!-- COMPANY LOGOS -->
+                <div class="partner-logos-container mt-12 mb-12 max-w-4xl mx-auto flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-60">
+                    @foreach($compagnies->take(4) as $comp)
+                        @if($comp->path_logo)
+                            <img src="{{ asset('storage/' . $comp->path_logo) }}" alt="{{ $comp->nom_compagnie ?? 'Compagnie' }}" class="h-12 md:h-16 object-contain grayscale opacity-80 hover:grayscale-0 hover:opacity-100 transition-all duration-300">
+                        @else
+                            <span class="text-2xl font-black text-gray-400 uppercase tracking-widest hover:text-gray-800 transition-colors duration-300">{{ $comp->nom_compagnie ?? 'CAR225' }}</span>
+                        @endif
+                    @endforeach
+                </div>
+                @endif
+                
+                <!-- DESTINATION BANNER (Orange Theme) -->
+                <div class="destination-promo mt-8 max-w-6xl mx-auto relative rounded-2xl overflow-hidden flex flex-col md:flex-row items-center border border-[#ffedd5]" style="background: linear-gradient(135deg, #fff6f0 0%, #ffedd5 100%); min-height: 280px; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
+                    <!-- Content -->
+                    <div class="p-8 md:p-12 z-20 md:w-1/2 text-left">
+                        <h3 class="text-[#2d3748] text-2xl md:text-3xl font-black mb-3 leading-tight opacity-90">Quelle sera votre prochaine destination ?</h3>
+                        <p class="text-[#4a5568] mb-6 text-sm md:text-base leading-relaxed max-w-sm font-medium">Découvrez notre carte du réseau avec de nombreuses destinations à travers la Côte d'Ivoire.</p>
+                        <a href="{{ route('programmes.all') }}" class="inline-flex cursor-pointer text-sm items-center justify-center bg-[#e94e1a] hover:bg-[#d14316] text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-all duration-300">
+                            <i class="fas fa-map mr-2"></i> Voir les itinéraires
+                        </a>
+                    </div>
+                    
+                    <!-- Decorative Graphic Background -->
+                    <div class="absolute inset-0 z-10 w-full h-full pointer-events-none opacity-80">
+                        <!-- City Skyline SVG -->
+                        <svg viewBox="0 0 1000 300" preserveAspectRatio="xMaxYMax slice" class="absolute right-0 bottom-0 h-[100%] w-[150%] md:w-[100%] mix-blend-multiply opacity-20">
+                            <path fill="#fdb391" d="M300,300 L300,220 L330,220 L330,150 L360,150 L360,200 L400,200 L400,100 L430,100 L430,180 L490,180 L490,120 L550,120 L550,230 L590,230 L590,160 L650,160 L650,250 L690,250 L690,190 L740,190 L740,240 L800,240 L800,130 L850,130 L850,220 L900,220 L900,100 L950,100 L950,300 Z"></path>
+                            <path fill="#fa986a" d="M350,300 L350,250 L380,250 L380,180 L420,180 L420,270 L470,270 L470,210 L510,210 L510,140 L560,140 L560,240 L620,240 L620,170 L680,170 L680,260 L720,260 L720,200 L770,200 L770,280 L820,280 L820,160 L880,160 L880,250 L930,250 L930,180 L1000,180 L1000,300 Z"></path>
+                            <path fill="#f5763b" d="M400,300 L400,280 L440,280 L440,220 L480,220 L480,290 L530,290 L530,240 L590,240 L590,190 L640,190 L640,270 L670,270 L670,220 L720,220 L720,300 L780,300 L780,260 L840,260 L840,210 L890,210 L890,280 L960,280 L960,230 L1000,230 L1000,300 Z"></path>
+                        </svg>
+                        
+                        <!-- Floating Location Tags -->
+                        <div class="hidden md:flex absolute right-[25%] top-[15%] bg-white/90 backdrop-blur-sm rounded-lg p-2 shadow-sm items-center gap-2 transform">
+                            <div class="bg-gray-800 text-[#e94e1a] rounded px-1.5 py-1 text-[10px]"><i class="fas fa-ticket-alt"></i></div>
+                            <div>
+                                <div class="text-[11px] font-bold text-gray-700 leading-none mb-0.5">Yamoussoukro</div>
+                                <div class="text-[9px] text-gray-500 leading-none">2h30m · Trajet direct</div>
+                            </div>
+                        </div>
+
+                        <div class="hidden md:flex absolute right-[12%] top-[35%] bg-white/90 backdrop-blur-sm rounded-lg p-2 shadow-sm items-center gap-2 transform -rotate-1">
+                            <div class="bg-gray-800 text-[#e94e1a] rounded px-1.5 py-1 text-[10px]"><i class="fas fa-ticket-alt"></i></div>
+                            <div>
+                                <div class="text-[11px] font-bold text-gray-700 leading-none mb-0.5">Bouaké</div>
+                                <div class="text-[9px] text-gray-500 leading-none">4h45m · Trajet direct</div>
+                            </div>
+                        </div>
+
+                        <div class="hidden md:flex absolute right-[35%] top-[55%] bg-white/90 backdrop-blur-sm rounded-lg p-2 shadow-sm items-center gap-2 transform rotate-2">
+                            <div class="bg-gray-800 text-[#e94e1a] rounded px-1.5 py-1 text-[10px]"><i class="fas fa-ticket-alt"></i></div>
+                            <div>
+                                <div class="text-[11px] font-bold text-gray-700 leading-none mb-0.5">Abidjan</div>
+                                <div class="text-[9px] text-gray-500 leading-none">Départs fréquents</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Car225 Logo -->
+                        <div class="absolute right-[5%] bottom-4 text-[#e94e1a] drop-shadow-md flex items-center gap-2">
+                            <img src="{{ asset('assetsPoster/assets/images/Car225_favicon.png') }}" class="h-10 w-10 md:h-12 md:w-12 object-contain" alt="Car225 Logo">
+                            <span class="font-black text-xl italic mt-1 opacity-90" style="letter-spacing: -1px;">car<span class="text-[#2d3748]">225</span></span>
+                        </div>
+                    </div>
+                </div>
+        </div>
+    </section>
+
+    <!-- ============================================ -->
     <!-- SECTION PRÊT À VOYAGER (CTA) -->
     <!-- ============================================ -->
     <section id="pret-a-voyager" class="pret-a-voyager-section">
@@ -310,5 +389,58 @@
         font-size: 16px;
     }
 }
+
+/* ============================================
+   TRUST COUNTER SECTION
+   ============================================ */
+.trust-counter-section {
+    padding: 100px 0 80px;
+    background-color: #ffffff;
+    border-top: 1px solid #f2f2f2;
+}
+
+.counter-highlight {
+    font-family: 'Inter', 'Poppins', sans-serif;
+    position: relative;
+    top: 4px; /* Slight visual adjustment */
+}
 </style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const counters = document.querySelectorAll('.counter-highlight');
+        const speed = 100;
+
+        const animateCounters = (counter) => {
+            const updateCount = () => {
+                const target = +counter.getAttribute('data-target');
+                const rawCount = counter.innerText.replace(/,/g, '');
+                const count = +rawCount;
+                
+                const inc = target / speed;
+
+                if (count < target) {
+                    counter.innerText = Math.ceil(count + inc).toLocaleString();
+                    setTimeout(updateCount, 15);
+                } else {
+                    counter.innerText = target.toLocaleString();
+                }
+            };
+            updateCount();
+        };
+
+        const observer = new IntersectionObserver((entries, obs) => {
+            entries.forEach(entry => {
+                if(entry.isIntersecting) {
+                    animateCounters(entry.target);
+                    obs.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.5 });
+
+        counters.forEach(counter => {
+            observer.observe(counter);
+        });
+    });
+</script>
 @endsection
