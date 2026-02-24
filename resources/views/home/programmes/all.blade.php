@@ -6,10 +6,10 @@
             <div class="mb-6 sm:mb-8">
                 <div class="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100 text-center">
                     <h1 class="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
-                        Programmes du jour
+                        Prochains Programmes
                     </h1>
                     <p class="text-gray-600 mb-4 max-w-2xl mx-auto">
-                        Voici les départs disponibles pour aujourd'hui le <span class="font-bold text-[#e94e1a]">{{ \Carbon\Carbon::now()->format('d/m/Y') }}</span>.
+                        Voici les départs disponibles pour demain le <span class="font-bold text-[#e94e1a]">{{ \Carbon\Carbon::now()->addDay()->format('d/m/Y') }}</span>.
                     </p>
                     <div class="inline-block bg-[#e94e1a] text-white px-4 py-2 rounded-xl font-bold text-lg shadow-md">
                         {{ $programmes->total() }} programme(s) disponible(s)
@@ -45,7 +45,7 @@
                     <div class="space-y-4">
                         @foreach ($programmes as $programme)
                             @php
-                                $displayDate = \Carbon\Carbon::now(); 
+                                $displayDate = \Carbon\Carbon::now()->addDay(); 
                                 $formattedDisplayDate = $displayDate->format('d/m/Y');
                                 $searchDateParam = $displayDate->format('Y-m-d');
                             @endphp
@@ -133,8 +133,13 @@
                                         <!-- Actions mobile -->
                                         <div class="flex gap-2">
                                             @if ($programme->statut_places != 'complet')
-                                                <a href="{{ auth()->check() ? route('user.dashboard') : route('login') }}"
-                                                    class="flex-1 bg-[#e94e1a] text-white text-center py-2 rounded-lg font-bold hover:bg-[#d33d0f] transition-all duration-300 flex items-center justify-center gap-2">
+                                                <a href="{{ route('reservation.create', [
+                                                        'point_depart' => $programme->point_depart,
+                                                        'point_arrive' => $programme->point_arrive,
+                                                        'date_depart' => $searchDateParam,
+                                                        'auto_reserve' => $programme->id
+                                                    ]) }}"
+                                                    class="flex-1 bg-[#e94e1a] text-white text-center py-2 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 flex items-center justify-center gap-2">
                                                     <i class="fas fa-ticket-alt"></i> <span>Réserver</span>
                                                 </a>
                                             @else
@@ -239,7 +244,12 @@
                                                 </button>
 
                                                 @if ($programme->statut_places != 'complet')
-                                                    <a href="{{ auth()->check() ? route('user.dashboard') : route('login') }}"
+                                                    <a href="{{ route('reservation.create', [
+                                                            'point_depart' => $programme->point_depart,
+                                                            'point_arrive' => $programme->point_arrive,
+                                                            'date_depart' => $searchDateParam,
+                                                            'auto_reserve' => $programme->id
+                                                        ]) }}"
                                                         class="bg-[#e94e1a] text-white px-4 py-2 rounded-lg font-bold hover:bg-[#d33d0f] transition-all duration-300 flex items-center gap-2 text-sm shadow-sm hover:shadow-md">
                                                         <i class="fas fa-ticket-alt"></i> <span>Réserver</span>
                                                     </a>
@@ -452,12 +462,7 @@
     let html = `
     <div class="flex flex-col items-center w-full font-sans">
         
-        <!-- Conducteur (Style épuré) -->
-        <div class="w-full mb-3 flex justify-start px-4">
-            <div class="bg-gray-100 border border-gray-200 w-10 h-10 rounded-full flex items-center justify-center shadow-sm" title="Conducteur">
-                <i class="fas fa-steering-wheel text-gray-400"></i>
-            </div>
-        </div>
+
 
         <!-- Conteneur Tableau -->
         <div class="w-full border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
@@ -499,7 +504,7 @@
             // Occupé : Fond rouge, texte blanc
             // Libre : Fond blanc, bordure grise. Hover : Bordure orange, texte orange
             const styleClass = isRes 
-                ? 'bg-[#ef4444] text-white border-transparent cursor-not-allowed opacity-100' 
+                ? 'bg-[#e94e1a] text-white border-transparent cursor-not-allowed opacity-100' 
                 : 'bg-white text-gray-700 border-gray-300 hover:border-[#e94f1b] hover:text-[#e94f1b] cursor-pointer shadow-sm';
             
             html += `<div class="w-9 h-9 border-2 rounded-lg flex items-center justify-center font-bold text-sm transition-all duration-200 ${styleClass}" title="Place ${sn}">
@@ -522,7 +527,7 @@
             
             // Même style ici
             const styleClass = isRes 
-                ? 'bg-[#ef4444] text-white border-transparent cursor-not-allowed opacity-100' 
+                ? 'bg-[#e94e1a] text-white border-transparent cursor-not-allowed opacity-100' 
                 : 'bg-white text-gray-700 border-gray-300 hover:border-[#e94f1b] hover:text-[#e94f1b] cursor-pointer shadow-sm';
 
              html += `<div class="w-9 h-9 border-2 rounded-lg flex items-center justify-center font-bold text-sm transition-all duration-200 ${styleClass}" title="Place ${sn}">
@@ -540,7 +545,7 @@
     html += `   </div>
                 <div class="border-t border-gray-100 bg-gray-50 p-3 flex justify-center gap-6 rounded-b-xl">
                     <div class="flex items-center gap-2">
-                        <div class="w-3 h-3 rounded-full bg-[#ef4444]"></div>
+                        <div class="w-3 h-3 rounded-full bg-[#e94e1a]"></div>
                         <span class="text-xs font-bold text-gray-600">Occupé</span>
                     </div>
                     <div class="flex items-center gap-2">

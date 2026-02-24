@@ -175,6 +175,7 @@
                                                         $totalSeats = $programme->getTotalSeats($searchParams['date_depart']);
                                                         $reservedSeatsCount = $programme->getPlacesReserveesForDate($searchParams['date_depart']);
                                                         $statusKey = $programme->getStatutPlacesForDate($searchParams['date_depart']);
+                                                        $isToday = \Carbon\Carbon::parse($searchParams['date_depart'])->isToday();
                                                     @endphp
                                                     <span class="{{ $statusKey == 'complet' ? 'text-red-600' : ($statusKey == 'presque_complet' ? 'text-yellow-600' : 'text-green-600') }} font-bold">
                                                         {{ $reservedSeatsCount }}/{{ $totalSeats }}
@@ -184,18 +185,27 @@
                                             </div>
                                         </div>
 
-                                        <!-- Actions mobile -->
-                                        <div class="flex gap-2">
-                                            @if ($programme->statut_places != 'complet')
-                                                <a href="{{ auth()->check() ? route('user.dashboard') : route('login') }}"
-                                                    class="flex-1 bg-[#e94e1a] text-white text-center py-2 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 flex items-center justify-center gap-2">
-                                                    <i class="fas fa-ticket-alt"></i> <span>Réserver</span>
-                                                </a>
-                                            @else
-                                                <button class="flex-1 bg-gray-400 text-white text-center py-2 rounded-lg font-bold cursor-not-allowed flex items-center justify-center gap-2" disabled>
-                                                    <i class="fas fa-times-circle"></i> <span>Complet</span>
-                                                </button>
-                                            @endif
+                                         <!-- Actions mobile -->
+                                         <div class="flex gap-2">
+                                             @if ($programme->statut_places != 'complet' && !$isToday)
+                                                 <a href="{{ route('reservation.create', [
+                                                         'point_depart' => $programme->point_depart,
+                                                         'point_arrive' => $programme->point_arrive,
+                                                         'date_depart' => $searchParams['date_depart'],
+                                                         'auto_reserve' => $programme->id
+                                                     ]) }}"
+                                                     class="flex-1 bg-[#e94e1a] text-white text-center py-2 rounded-lg font-bold hover:bg-orange-600 transition-all duration-300 flex items-center justify-center gap-2">
+                                                     <i class="fas fa-ticket-alt"></i> <span>Réserver</span>
+                                                 </a>
+                                             @elseif($isToday)
+                                                 <button class="flex-1 bg-gray-400 text-white text-center py-2 rounded-lg font-bold cursor-not-allowed flex items-center justify-center gap-2" disabled title="Les réservations doivent être faites au moins 24h à l'avance">
+                                                     <i class="fas fa-clock"></i> <span>Fermé (Jour J)</span>
+                                                 </button>
+                                             @else
+                                                 <button class="flex-1 bg-gray-400 text-white text-center py-2 rounded-lg font-bold cursor-not-allowed flex items-center justify-center gap-2" disabled>
+                                                     <i class="fas fa-times-circle"></i> <span>Complet</span>
+                                                 </button>
+                                             @endif
                                             
                                             <!-- BOUTON DÉTAILS MOBILE -->
                                             <button 
@@ -295,23 +305,25 @@
                                                     <span class="hidden lg:inline">Détails</span>
                                                 </button>
 
-                                                @if($statusKey != 'complet')
-                                                    @auth
-                                                        <a href="{{ route('user.dashboard') }}"
-                                                            class="bg-[#e94e1a] text-white px-4 py-2 rounded-lg font-bold hover:bg-[#d33d0f] transition-all duration-300 flex items-center gap-2 text-sm shadow-sm hover:shadow-md">
-                                                            <i class="fas fa-ticket-alt"></i> <span>Réserver</span>
-                                                        </a>
-                                                    @else
-                                                        <a href="{{ route('login') }}"
-                                                            class="bg-[#e94e1a] text-white px-4 py-2 rounded-lg font-bold hover:bg-[#d33d0f] transition-all duration-300 flex items-center gap-2 text-sm shadow-sm hover:shadow-md">
-                                                            <i class="fas fa-ticket-alt"></i> <span>Réserver</span>
-                                                        </a>
-                                                    @endauth
-                                                @else
-                                                    <button class="bg-gray-400 text-white px-4 py-2 rounded-lg font-bold cursor-not-allowed flex items-center gap-2 text-sm" disabled>
-                                                        <i class="fas fa-times-circle"></i> <span>Complet</span>
-                                                    </button>
-                                                @endif
+                                                 @if($statusKey != 'complet' && !$isToday)
+                                                     <a href="{{ route('reservation.create', [
+                                                             'point_depart' => $programme->point_depart,
+                                                             'point_arrive' => $programme->point_arrive,
+                                                             'date_depart' => $searchParams['date_depart'],
+                                                             'auto_reserve' => $programme->id
+                                                         ]) }}"
+                                                         class="bg-[#e94e1a] text-white px-4 py-2 rounded-lg font-bold hover:bg-[#d33d0f] transition-all duration-300 flex items-center gap-2 text-sm shadow-sm hover:shadow-md">
+                                                         <i class="fas fa-ticket-alt"></i> <span>Réserver</span>
+                                                     </a>
+                                                 @elseif($isToday)
+                                                     <button class="bg-gray-400 text-white px-4 py-2 rounded-lg font-bold cursor-not-allowed flex items-center gap-2 text-sm" disabled title="Les réservations doivent être faites au moins 24h à l'avance">
+                                                         <i class="fas fa-clock"></i> <span>Fermé (Jour J)</span>
+                                                     </button>
+                                                 @else
+                                                     <button class="bg-gray-400 text-white px-4 py-2 rounded-lg font-bold cursor-not-allowed flex items-center gap-2 text-sm" disabled>
+                                                         <i class="fas fa-times-circle"></i> <span>Complet</span>
+                                                     </button>
+                                                 @endif
                                             </div>
                                         </div>
                                     </div>
@@ -506,11 +518,7 @@
 
             let html = `
             <div class="flex flex-col items-center w-full font-sans">
-                <div class="w-full max-w-lg mb-3 flex justify-start px-4">
-                    <div class="bg-gray-100 border border-gray-200 w-10 h-10 rounded-full flex items-center justify-center shadow-sm" title="Conducteur">
-                        <i class="fas fa-steering-wheel text-gray-400"></i>
-                    </div>
-                </div>
+
 
                 <div class="w-full max-w-lg border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
                     <div class="grid grid-cols-[60px_1fr_40px_1fr] bg-gray-50 border-b border-gray-100 py-3 px-2">
@@ -540,7 +548,7 @@
                     const sn = numeroPlace + i;
                     const isRes = reservedSeats.includes(sn);
                     const styleClass = isRes 
-                        ? 'bg-[#ef4444] text-white border-transparent cursor-not-allowed opacity-100' 
+                        ? 'bg-[#e94e1a] text-white border-transparent cursor-not-allowed opacity-100' 
                         : 'bg-white text-gray-700 border-gray-300 hover:border-[#e94f1b] hover:text-[#e94f1b] cursor-pointer shadow-sm';
                     
                     html += `<div class="w-9 h-9 border-2 rounded-lg flex items-center justify-center font-bold text-sm transition-all duration-200 ${styleClass}" title="Place ${sn}">
@@ -556,7 +564,7 @@
                     const sn = numeroPlace + placesGaucheCetteRanger + i;
                     const isRes = reservedSeats.includes(sn);
                     const styleClass = isRes 
-                        ? 'bg-[#ef4444] text-white border-transparent cursor-not-allowed opacity-100' 
+                        ? 'bg-[#e94e1a] text-white border-transparent cursor-not-allowed opacity-100' 
                         : 'bg-white text-gray-700 border-gray-300 hover:border-[#e94f1b] hover:text-[#e94f1b] cursor-pointer shadow-sm';
 
                      html += `<div class="w-9 h-9 border-2 rounded-lg flex items-center justify-center font-bold text-sm transition-all duration-200 ${styleClass}" title="Place ${sn}">
@@ -571,7 +579,7 @@
             html += `</div>
                     <div class="border-t border-gray-100 bg-gray-50 p-3 flex justify-center gap-6 rounded-b-xl">
                         <div class="flex items-center gap-2">
-                            <div class="w-3 h-3 rounded-full bg-[#ef4444]"></div>
+                            <div class="w-3 h-3 rounded-full bg-[#e94e1a]"></div>
                             <span class="text-xs font-bold text-gray-600">Occupé</span>
                         </div>
                         <div class="flex items-center gap-2">

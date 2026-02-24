@@ -36,8 +36,13 @@
                                                 <i class="fas fa-user text-muted" style="font-size: 14px;"></i>
                                             </div>
                                             <div>
-                                                <div class="font-weight-bold text-dark">{{ $request->user->name }}</div>
-                                                <small class="text-muted">{{ $request->user->telephone }}</small>
+                                                @if($request->user)
+                                                    <div class="font-weight-bold text-dark">{{ $request->user->name }}</div>
+                                                    <small class="text-muted">{{ $request->user->telephone }}</small>
+                                                @else
+                                                    <div class="font-weight-bold text-dark">Utilisateur (Non inscrit)</div>
+                                                    <small class="text-muted">{{ $request->telephone ?? $request->email ?? 'Non précisé' }}</small>
+                                                @endif
                                             </div>
                                         </div>
                                     </td>

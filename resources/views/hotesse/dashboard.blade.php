@@ -128,6 +128,9 @@
                                     {{ $reservation->programme->point_depart }} 
                                     <svg class="w-3 h-3 mx-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
                                     {{ $reservation->programme->point_arrive }}
+                                    <span class="ml-2 inline-flex items-center px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded-md text-[10px] font-bold">
+                                        <i class="fas fa-clock mr-1 opacity-70"></i> {{ substr($reservation->programme->heure_depart, 0, 5) }}
+                                    </span>
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

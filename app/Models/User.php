@@ -30,6 +30,7 @@ class User extends Authenticatable
         'contact_urgence',
         'nom_urgence',
         'prenom_urgence',
+        'lien_parente_urgence',
         'email_verified_at',
         'photo_profile_path',
         'password',

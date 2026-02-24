@@ -46,7 +46,7 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @forelse($signalements as $signalement)
-                            <tr class="hover:bg-gray-50 transition-colors duration-200">
+                            <tr onclick="window.location='{{ route('compagnie.signalements.show', $signalement->id) }}'" class="{{ !$signalement->is_read_by_company ? 'bg-red-50/60 font-medium' : 'hover:bg-gray-50' }} transition-colors duration-200 cursor-pointer">
                                 <td class="px-6 py-4 whitespace-nowrap text-center">
                                     @php
                                         $colors = [
@@ -63,27 +63,34 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center">
-                                    <div class="text-sm font-bold text-gray-900">{{ $signalement->created_at->format('d/m/Y') }}</div>
+                                     <div class="text-sm font-bold text-gray-900">
+                                        {{ $signalement->created_at->format('d/m/Y') }}
+                                        @if(!$signalement->is_read_by_company)
+                                            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-red-600 text-white animate-pulse">
+                                                Nouveau
+                                            </span>
+                                        @endif
+                                    </div>
                                     <div class="text-xs text-gray-500">{{ $signalement->created_at->format('H:i') }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center">
                                     <div class="text-sm font-mono font-bold text-gray-900">
-                                        {{ $signalement->programme->vehicule->immatriculation ?? 'Non assigné' }}
+                                        {{ $signalement->programme?->vehicule?->immatriculation ?? 'Non assigné' }}
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center">
                                     <div class="text-sm text-gray-900">
-                                        {{ $signalement->programme->point_depart ?? '?' }} <i class="fas fa-arrow-right text-xs mx-1 text-gray-400"></i> {{ $signalement->programme->point_arrive ?? '?' }}
+                                        {{ $signalement->programme?->point_depart ?? '?' }} <i class="fas fa-arrow-right text-xs mx-1 text-gray-400"></i> {{ $signalement->programme?->point_arrive ?? '?' }}
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center">
                                     <div class="flex items-center justify-center">
                                         <div class="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold mr-2">
-                                            {{ substr($signalement->user->name ?? '?', 0, 1) }}
+                                            {{ substr($signalement->user?->name ?? '?', 0, 1) }}
                                         </div>
                                         <div class="text-left">
-                                            <div class="text-sm font-medium text-gray-900">{{ $signalement->user->name ?? 'Inconnu' }}</div>
-                                            <div class="text-xs text-gray-500">{{ $signalement->user->telephone ?? '' }}</div>
+                                            <div class="text-sm font-medium text-gray-900">{{ $signalement->user?->name ?? 'Inconnu' }}</div>
+                                            <div class="text-xs text-gray-500">{{ $signalement->user?->telephone ?? '' }}</div>
                                         </div>
                                     </div>
                                 </td>

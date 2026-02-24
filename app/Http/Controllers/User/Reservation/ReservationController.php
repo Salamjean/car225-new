@@ -566,7 +566,7 @@ class ReservationController extends Controller
     public function getProgram($id)
     {
         try {
-            $programme = Programme::with(['compagnie'])->find($id);
+            $programme = Programme::with(['compagnie', 'gareDepart', 'gareArrivee'])->find($id);
 
             if (!$programme) {
                 return response()->json([

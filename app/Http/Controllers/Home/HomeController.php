@@ -20,7 +20,18 @@ class HomeController extends Controller
     {
         $compagnies = Compagnie::get();
         $usersCount = User::count();
-        return view('home.home', compact('compagnies', 'usersCount'));
+        
+        // Trajets populaires - programmes actifs
+        $today = Carbon::now()->format('Y-m-d');
+        $trajetsPopulaires = Programme::with(['compagnie', 'gareDepart', 'gareArrivee'])
+            ->where('statut', 'actif')
+            ->whereRaw('DATE(date_depart) <= ?', [$today])
+            ->whereRaw('DATE(date_fin) >= ?', [$today])
+            ->orderBy('montant_billet', 'asc')
+            ->take(8)
+            ->get();
+        
+        return view('home.home', compact('compagnies', 'usersCount', 'trajetsPopulaires'));
     }
 
       public function search(Request $request)
@@ -96,7 +107,7 @@ class HomeController extends Controller
      */
    public function show(Programme $programme)
     {
-        $programme->load(['compagnie', 'itineraire', 'chauffeur', 'convoyeur', 'gareDepart', 'gareArrivee']);
+        $programme->load(['compagnie', 'itineraire', 'gareDepart', 'gareArrivee']);
         return view('home.programmes.show', compact('programme'));
     }
 

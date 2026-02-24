@@ -32,7 +32,7 @@ class ProfileController extends Controller
             'email' => 'required|email|unique:users,email,' . $user->id,
             'contact' => 'nullable|string|digits:10',
             'nom_urgence' => 'nullable|string|max:255',
-            'prenom_urgence' => 'nullable|string|max:255',
+            'lien_parente_urgence' => 'nullable|string|max:255',
             'contact_urgence' => 'nullable|string|digits:10|different:contact',
         ], [
             'contact.digits' => 'Le contact doit comporter exactement 10 chiffres.',
@@ -41,6 +41,8 @@ class ProfileController extends Controller
         ]);
 
         try {
+            // Since we merged nom and prenom into nom_urgence, we force prenom_urgence to null
+            $validated['prenom_urgence'] = null;
             $user->update($validated);
 
             return response()->json([

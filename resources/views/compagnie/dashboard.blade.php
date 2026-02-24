@@ -1,199 +1,245 @@
 @extends('compagnie.layouts.template')
 
 @section('content')
-    <div class="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-        <div class="mx-auto" style="width: 95%;">
+    <div class="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8 font-sans">
+        <div class="max-w-7xl mx-auto space-y-8">
 
-            <!-- Header -->
-            <div class="mb-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <!-- Header Section -->
+            <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
                 <div>
-                    <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Tableau de bord</h1>
-                    <p class="text-gray-500 mt-1">Bienvenue dans votre espace partenaire CAR225.</p>
+                    <h1 class="text-4xl font-black text-slate-900 tracking-tight">Tableau de bord</h1>
+                    <p class="text-slate-500 mt-2 text-sm font-medium">Bienvenue dans votre espace partenaire, suivez l'évolution de vos activités.</p>
                 </div>
-                <div class="flex items-center gap-3">
-                    <span class="text-sm font-medium text-gray-400">Dernière mise à jour: Aujourd'hui à
-                        {{ now()->format('H:i') }}</span>
-                    <button onclick="window.location.reload()"
-                        class="p-2 bg-white rounded-lg shadow-sm border border-gray-200 hover:bg-gray-50 transition-colors">
-                        <i class="fas fa-sync-alt text-gray-600"></i>
+                <div class="flex items-center gap-4 bg-white px-4 py-2 rounded-2xl shadow-sm border border-slate-200/60">
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Mise à jour: {{ now()->format('H:i') }}</span>
+                    </div>
+                    <div class="w-px h-4 bg-slate-200"></div>
+                    <button onclick="window.location.reload()" class="text-slate-400 hover:text-emerald-600 transition-colors" title="Actualiser">
+                        <i class="fas fa-sync-alt"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- Stat Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-10">
-                <!-- Revenue Card -->
-                <div
-                    class="bg-white rounded-2xl p-6 shadow-xl border border-gray-100 transform hover:-translate-y-1 transition-all">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                            <i class="fas fa-wallet text-green-600 text-xl"></i>
+            <!-- Metric Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+                <!-- Solde Global -->
+                <div class="bg-white rounded-[1.5rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/60 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-50 to-emerald-100/50 rounded-full blur-2xl -mr-8 -mt-8 transition-transform group-hover:scale-150"></div>
+                    <div class="relative z-10 flex flex-col h-full justify-between">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center shadow-sm border border-emerald-100/50">
+                                <i class="fas fa-wallet text-xl"></i>
+                            </div>
+                            <span class="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-black tracking-widest uppercase rounded-lg">Global</span>
                         </div>
-                    </div>
-                    <p class="text-sm font-bold text-gray-400 uppercase tracking-wider">Soldes</p>
-                    <h3 class="text-2xl font-black text-gray-900 mt-2">{{ number_format($totalRevenue, 0, ',', ' ') }} FCFA
-                    </h3>
-                    <div class="mt-4 flex items-center text-xs text-green-600 font-bold">
-                        <i class="fas fa-arrow-up mr-1"></i> Global
+                        <div>
+                            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Soldes Total</p>
+                            <h3 class="text-2xl font-black text-slate-900 tracking-tight">{{ number_format($totalRevenue, 0, ',', ' ') }} <span class="text-sm text-slate-500 font-bold">CFA</span></h3>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Reservations Card -->
-                <div
-                    class="bg-white rounded-2xl p-6 shadow-xl border border-gray-100 transform hover:-translate-y-1 transition-all">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                            <i class="fas fa-ticket-alt text-blue-600 text-xl"></i>
+                <!-- Réservations -->
+                <div class="bg-white rounded-[1.5rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/60 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-full blur-2xl -mr-8 -mt-8 transition-transform group-hover:scale-150"></div>
+                    <div class="relative z-10 flex flex-col h-full justify-between">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shadow-sm border border-blue-100/50">
+                                <i class="fas fa-ticket-alt text-xl"></i>
+                            </div>
+                            <span class="px-2.5 py-1 bg-slate-50 text-slate-500 text-[10px] font-black tracking-widest uppercase rounded-lg">Cumul</span>
+                        </div>
+                        <div>
+                            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Réservations</p>
+                            <h3 class="text-2xl font-black text-slate-900 tracking-tight">{{ $totalReservations }}</h3>
                         </div>
                     </div>
-                    <p class="text-sm font-bold text-gray-400 uppercase tracking-wider">Réservations Totales</p>
-                    <h3 class="text-2xl font-black text-gray-900 mt-2">{{ $totalReservations }}</h3>
-                    <p class="mt-4 text-xs text-blue-600 font-bold">Total cumulé</p>
                 </div>
 
-                <!-- Vehicles Card -->
-                <div
-                    class="bg-white rounded-2xl p-6 shadow-xl border border-gray-100 transform hover:-translate-y-1 transition-all">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
-                            <i class="fas fa-bus text-red-600 text-xl"></i>
+                <!-- Flotte -->
+                <div class="bg-white rounded-[1.5rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/60 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-rose-50 to-rose-100/50 rounded-full blur-2xl -mr-8 -mt-8 transition-transform group-hover:scale-150"></div>
+                    <div class="relative z-10 flex flex-col h-full justify-between">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center shadow-sm border border-rose-100/50">
+                                <i class="fas fa-bus text-xl"></i>
+                            </div>
+                            <span class="px-2.5 py-1 bg-rose-50 text-rose-700 text-[10px] font-black tracking-widest uppercase rounded-lg">Actifs</span>
+                        </div>
+                        <div>
+                            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Flotte Véhicules</p>
+                            <h3 class="text-2xl font-black text-slate-900 tracking-tight">{{ $totalVehicles }}</h3>
                         </div>
                     </div>
-                    <p class="text-sm font-bold text-gray-400 uppercase tracking-wider">Flotte Véhicules</p>
-                    <h3 class="text-2xl font-black text-gray-900 mt-2">{{ $totalVehicles }}</h3>
-                    <p class="mt-4 text-xs text-red-600 font-bold">Véhicules actifs</p>
                 </div>
 
-                <!-- Signalements Card -->
-                <div
-                    class="bg-white rounded-2xl p-6 shadow-xl border border-gray-100 transform hover:-translate-y-1 transition-all">
-                    <div class="flex items-center justify-between mb-4">
-                        <div
-                            class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600 font-bold">
-                            <i class="fas fa-exclamation-triangle text-xl"></i>
+                <!-- Signalements -->
+                <div class="bg-white rounded-[1.5rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/60 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-full blur-2xl -mr-8 -mt-8 transition-transform group-hover:scale-150"></div>
+                    <div class="relative z-10 flex flex-col h-full justify-between">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center shadow-sm border border-amber-100/50">
+                                <i class="fas fa-exclamation-triangle text-xl"></i>
+                            </div>
+                            <span class="px-2.5 py-1 bg-amber-50 text-amber-700 text-[10px] font-black tracking-widest uppercase rounded-lg">Alertes</span>
+                        </div>
+                        <div>
+                            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Incidents</p>
+                            <h3 class="text-2xl font-black text-slate-900 tracking-tight">{{ $totalSignalements }}</h3>
                         </div>
                     </div>
-                    <p class="text-sm font-bold text-gray-400 uppercase tracking-wider">Incidents Signalés</p>
-                    <h3 class="text-2xl font-black text-gray-900 mt-2">{{ $totalSignalements }}</h3>
-                    <p class="mt-4 text-xs text-amber-600 font-bold">Nécessitant attention</p>
                 </div>
 
-                <!-- Balance Card -->
-                <div class="bg-white rounded-2xl p-6 shadow-xl border border-purple-100 transform hover:-translate-y-1 transition-all">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600 font-bold">
-                            <i class="fas fa-wallet text-xl"></i>
+                <!-- Solde Compagnie -->
+                <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-[1.5rem] p-6 shadow-[0_8px_30px_rgb(249,115,22,0.3)] border border-orange-400 hover:shadow-[0_8px_30px_rgb(249,115,22,0.4)] transition-all duration-300 relative overflow-hidden group">
+                    <div class="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-3xl"></div>
+                    <div class="absolute -bottom-6 -left-6 w-24 h-24 bg-black/10 rounded-full blur-2xl"></div>
+                    
+                    <div class="relative z-10 flex flex-col h-full justify-between">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="w-12 h-12 bg-white/20 text-white rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/20">
+                                <i class="fas fa-coins text-xl"></i>
+                            </div>
+                            <span class="px-2.5 py-1 bg-white/20 text-white text-[10px] font-black tracking-widest uppercase rounded-lg backdrop-blur-sm border border-white/20">Crédit</span>
+                        </div>
+                        <div>
+                            <p class="text-[11px] font-bold text-orange-100 uppercase tracking-widest mb-1">Solde Compagnie</p>
+                            <h3 class="text-2xl font-black text-white tracking-tight">
+                                {{ number_format(Auth::guard('compagnie')->user()->tickets, 0, ',', ' ') }} <span class="text-sm text-orange-200 font-bold">CFA</span>
+                            </h3>
                         </div>
                     </div>
-                    <p class="text-sm font-bold text-gray-400 uppercase tracking-wider">Solde Compagnie</p>
-                    <h3 class="text-2xl font-black text-purple-900 mt-2">
-                        {{ number_format(Auth::guard('compagnie')->user()->tickets, 0, ',', ' ') }} FCFA
-                    </h3>
-                    <p class="mt-4 text-xs text-purple-600 font-bold">Crédit disponible pour les réservations</p>
                 </div>
             </div>
 
-
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
-                <!-- Chart Section -->
-                <div class="lg:col-span-2 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-                    <div
-                        class="px-8 py-6 border-b border-gray-50 flex items-center justify-between bg-gradient-to-r from-gray-50 to-white">
-                        <h3 class="text-lg font-black text-gray-900 uppercase tracking-tight">Évolution des revenus (7j)
-                        </h3>
-                        <span class="text-xs text-gray-400 font-bold uppercase tracking-widest">FCFA / Jour</span>
+            <!-- Charts & Lists row -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Main Chart -->
+                <div class="lg:col-span-2 bg-white rounded-[1.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/60 overflow-hidden flex flex-col">
+                    <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between z-10">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-500 border border-emerald-100">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <h3 class="text-base font-black text-slate-900 tracking-tight uppercase">Évolution des revenus</h3>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-3 py-1 bg-slate-50 text-slate-500 rounded-lg text-[10px] font-black tracking-widest uppercase">7 Derniers jours</span>
+                        </div>
                     </div>
-                    <div class="p-8">
-                        <canvas id="revenueChart" height="300"></canvas>
+                    <div class="p-6 flex-1 min-h-[300px] relative">
+                        <canvas id="revenueChart"></canvas>
                     </div>
                 </div>
 
-                <!-- Recent Signalements Section -->
-                <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden flex flex-col">
-                    <div
-                        class="px-8 py-6 border-b border-gray-50 flex items-center justify-between bg-gradient-to-r from-red-50 to-white">
-                        <h3 class="text-lg font-black text-red-800 uppercase tracking-tight">Signalements récents</h3>
-                        <a href="{{ route('compagnie.signalements.index') }}"
-                            class="text-xs text-red-600 font-extrabold hover:underline">VOIR TOUT</a>
-                    </div>
-                    <div class="flex-1 overflow-y-auto p-4 space-y-4">
-                        @forelse($recentSignalements as $sig)
-                            <div
-                                class="bg-gray-50 p-4 rounded-xl border border-gray-100 hover:border-red-200 transition-all group">
-                                <div class="flex justify-between items-start mb-2">
-                                    <span
-                                        class="px-2 py-0.5 bg-red-100 text-red-700 text-[10px] font-black uppercase rounded">{{ $sig->type }}</span>
-                                    <span
-                                        class="text-[10px] text-gray-400 font-bold uppercase">{{ $sig->created_at->diffForHumans() }}</span>
-                                </div>
-                                <p class="text-xs text-gray-600 line-clamp-2 italic mb-2">"{{ $sig->description }}"</p>
-                                <div class="flex items-center justify-between mt-3 text-[10px]">
-                                    <span class="font-bold text-gray-900 text-xs">{{ $sig->user->name ?? 'Inconnu' }}</span>
-                                    <a href="{{ route('compagnie.signalements.show', $sig->id) }}"
-                                        class="text-blue-600 font-black hover:underline">DÉTAILS</a>
-                                </div>
+                <!-- Incidents List -->
+                <div class="bg-white rounded-[1.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/60 overflow-hidden flex flex-col lg:h-auto h-[400px]">
+                    <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white z-10 shrink-0">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-red-500 border border-red-100">
+                                <i class="fas fa-bell"></i>
                             </div>
+                            <h3 class="text-base font-black text-slate-900 tracking-tight uppercase">Signalements</h3>
+                        </div>
+                        <a href="{{ route('compagnie.signalements.index') }}" class="text-[10px] text-red-600 font-black hover:text-red-800 tracking-wider uppercase transition-colors">Tout voir</a>
+                    </div>
+                    <div class="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+                        @forelse($recentSignalements as $sig)
+                            <a href="{{ route('compagnie.signalements.show', $sig->id) }}" class="block p-4 rounded-xl {{ !$sig->is_read_by_company ? 'bg-red-50/50 border border-red-100' : 'hover:bg-slate-50' }} transition-colors group">
+                                <div class="flex justify-between items-start mb-2 gap-4">
+                                    <div class="flex items-center gap-2">
+                                        <span class="px-2 py-0.5 bg-red-50 text-red-600 text-[10px] font-black uppercase tracking-wider rounded border border-red-100 shrink-0">{{ $sig->type }}</span>
+                                        @if(!$sig->is_read_by_company)
+                                            <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                                        @endif
+                                    </div>
+                                    <span class="text-[10px] text-slate-400 font-bold tracking-tight shrink-0">{{ $sig->created_at->diffForHumans() }}</span>
+                                </div>
+                                <p class="text-xs text-slate-600 font-medium line-clamp-2 leading-relaxed mb-3 group-hover:text-slate-900 transition-colors">"{{ $sig->description }}"</p>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-500">
+                                        {{ substr($sig->user?->name ?? 'I', 0, 1) }}
+                                    </div>
+                                    <span class="font-bold text-slate-700 text-xs">{{ $sig->user?->name ?? 'Inconnu' }}</span>
+                                </div>
+                            </a>
                         @empty
-                            <div class="text-center py-10 flex flex-col items-center justify-center">
-                                <i class="fas fa-check-circle text-green-500 text-3xl mb-2"></i>
-                                <p class="text-xs text-gray-400 font-bold uppercase">Aucun incident à signaler</p>
+                            <div class="h-full flex flex-col items-center justify-center text-center px-4 py-8">
+                                <div class="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mb-4">
+                                    <i class="fas fa-check text-2xl"></i>
+                                </div>
+                                <h4 class="text-sm font-black text-slate-900 mb-1">Tout est calme</h4>
+                                <p class="text-xs text-slate-500 font-medium">Aucun incident n'a été signalé récemment.</p>
                             </div>
                         @endforelse
                     </div>
                 </div>
             </div>
 
-            <!-- Recent Reservations Table -->
-            <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-                <div
-                    class="px-8 py-6 border-b border-gray-50 flex items-center justify-between bg-gradient-to-r from-blue-50 to-white">
-                    <h3 class="text-lg font-black text-blue-900 uppercase tracking-tight">Dernières réservations</h3>
-                    <a href="{{ route('company.reservation.index') }}"
-                        class="text-xs text-blue-600 font-extrabold hover:underline">GERER LES RESERVATIONS</a>
+            <!-- Recent Reservations -->
+            <div class="bg-white rounded-[1.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/60 overflow-hidden">
+                <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500 border border-blue-100">
+                            <i class="fas fa-ticket-alt"></i>
+                        </div>
+                        <h3 class="text-base font-black text-slate-900 tracking-tight uppercase">Dernières réservations</h3>
+                    </div>
+                    <a href="{{ route('company.reservation.index') }}" class="text-[10px] text-blue-600 font-black hover:text-blue-800 tracking-wider uppercase transition-colors">Gestion complète</a>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead class="bg-gray-50 text-[10px] uppercase font-black text-gray-500 tracking-widest">
-                            <tr>
-                                <th class="px-8 py-4 text-center">Client</th>
-                                <th class="px-8 py-4 text-center">Trajet</th>
-                                <th class="px-8 py-4 text-center">Montant</th>
-                                <th class="px-8 py-4 text-center">Places</th>
-                                <th class="px-8 py-4 text-center">Date</th>
+                <div class="overflow-x-auto relative">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50/50">
+                                <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Client</th>
+                                <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Trajet</th>
+                                <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap text-right">Montant</th>
+                                <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap text-center">Date</th>
                             </tr>
                         </thead>
-                        <tbody class="text-sm divide-y divide-gray-100">
+                        <tbody class="divide-y divide-slate-100/60">
                             @forelse($recentReservations as $res)
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-8 py-4 text-center">
-                                        <div class="font-bold text-gray-900">{{ $res->user->name ?? 'Inconnu' }}</div>
-                                        <div class="text-[10px] text-gray-400 font-bold uppercase tracking-tight">
-                                            {{ $res->user->telephone ?? '' }}</div>
-                                    </td>
-                                    <td class="px-8 py-4 text-center" style="display: flex; align-items: center; justify-content: center;">
-                                        <div class="font-bold text-gray-700 flex items-center gap-2">
-                                            {{ $res->programme->point_depart }} <i
-                                                class="fas fa-arrow-right text-[10px] text-gray-300"></i>
-                                            {{ $res->programme->point_arrive }}
+                                <tr class="hover:bg-slate-50/50 transition-colors group">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-black text-slate-600">
+                                                {{ substr($res->user?->name ?? 'I', 0, 1) }}
+                                            </div>
+                                            <div>
+                                                <div class="font-bold text-slate-900 text-sm group-hover:text-blue-600 transition-colors">{{ $res->user?->name ?? 'Inconnu' }}</div>
+                                                <div class="text-[11px] text-slate-400 font-medium">{{ $res->user?->telephone ?? '---' }}</div>
+                                            </div>
                                         </div>
                                     </td>
-                                    <td class="px-8 py-4 text-center">
-                                        <span
-                                            class="font-black text-gray-900">{{ number_format($res->montant, 0, ',', ' ') }}
-                                            <span class="text-[10px]">CFA</span></span>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center gap-3 bg-slate-50 w-fit px-3 py-1.5 rounded-lg border border-slate-100 group-hover:bg-white group-hover:shadow-sm transition-all">
+                                            <span class="font-bold text-slate-700 text-xs">{{ $res->programme->point_depart }}</span>
+                                            <i class="fas fa-arrow-right text-[10px] text-slate-300"></i>
+                                            <span class="font-bold text-slate-700 text-xs">{{ $res->programme->point_arrive }}</span>
+                                            <div class="w-px h-3 bg-slate-200 mx-1"></div>
+                                            <span class="text-[10px] font-black text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">{{ substr($res->programme->heure_depart, 0, 5) }}</span>
+                                            <div class="w-px h-3 bg-slate-200 mx-1"></div>
+                                            <span class="text-[10px] font-black bg-white px-2 py-0.5 rounded shadow-sm text-slate-600">{{ $res->nombre_places }} pl</span>
+                                        </div>
                                     </td>
-                                    <td class="px-8 py-4 text-center">
-                                        <span
-                                            class="px-2 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs font-black">{{ $res->nombre_places }}</span>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right">
+                                        <div class="font-black text-slate-900 text-sm">
+                                            {{ number_format($res->montant, 0, ',', ' ') }} <span class="text-[10px] text-slate-400">CFA</span>
+                                        </div>
                                     </td>
-                                    <td class="px-8 py-4 text-center">
-                                        {{ $res->created_at->format('d/m/Y') }}
+                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                        <span class="font-bold text-slate-500 text-xs">{{ $res->created_at->format('d/m/Y') }}</span>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="px-8 py-10 text-center text-gray-400 font-bold uppercase italic">
-                                        Aucune réservation enregistrée
+                                    <td colspan="4" class="px-6 py-12 text-center">
+                                        <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-50 text-slate-400 mb-3">
+                                            <i class="fas fa-inbox text-xl"></i>
+                                        </div>
+                                        <p class="text-sm font-bold text-slate-500">Aucune réservation trouvée</p>
                                     </td>
                                 </tr>
                             @endforelse
@@ -211,25 +257,27 @@
         document.addEventListener('DOMContentLoaded', function () {
             const ctx = document.getElementById('revenueChart').getContext('2d');
 
-            // Gradient for line
             const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-            gradient.addColorStop(0, 'rgba(34, 197, 94, 0.4)');
-            gradient.addColorStop(1, 'rgba(34, 197, 94, 0)');
+            gradient.addColorStop(0, 'rgba(16, 185, 129, 0.2)'); // emerald-500 transparent
+            gradient.addColorStop(1, 'rgba(16, 185, 129, 0)');
 
             new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: {!! json_encode($days) !!},
                     datasets: [{
-                        label: 'Revenus (FCFA)',
+                        label: 'Revenus',
                         data: {!! json_encode($revenuePerDay) !!},
-                        borderColor: '#22c55e',
-                        borderWidth: 4,
-                        pointBackgroundColor: '#fff',
-                        pointBorderColor: '#22c55e',
+                        borderColor: '#10b981', // emerald-500
+                        borderWidth: 3,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#10b981',
                         pointBorderWidth: 2,
-                        pointRadius: 6,
-                        pointHoverRadius: 8,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        pointHoverBackgroundColor: '#10b981',
+                        pointHoverBorderColor: '#ffffff',
+                        pointHoverBorderWidth: 2,
                         fill: true,
                         backgroundColor: gradient,
                         tension: 0.4
@@ -238,19 +286,22 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
                     plugins: {
                         legend: { display: false },
                         tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                            backgroundColor: '#1f2937',
-                            titleFont: { size: 12, weight: 'bold' },
-                            bodyFont: { size: 14 },
+                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                            titleFont: { size: 13, family: "'Inter', sans-serif" },
+                            bodyFont: { size: 14, weight: 'bold', family: "'Inter', sans-serif" },
                             padding: 12,
-                            cornerRadius: 12,
+                            cornerRadius: 8,
+                            displayColors: false,
                             callbacks: {
                                 label: function (context) {
-                                    return context.parsed.y.toLocaleString('fr-FR') + ' FCFA';
+                                    return context.parsed.y.toLocaleString('fr-FR') + ' CFA';
                                 }
                             }
                         }
@@ -258,36 +309,61 @@
                     scales: {
                         y: {
                             beginAtZero: true,
-                            grid: { color: 'rgba(0,0,0,0.03)' },
+                            border: { display: false },
+                            grid: { 
+                                color: 'rgba(241, 245, 249, 1)',
+                                drawTicks: false,
+                            },
                             ticks: {
-                                font: { weight: 'bold', size: 10 },
-                                callback: value => value.toLocaleString('fr-FR') + ' CFA'
+                                font: { weight: '600', size: 11, family: "'Inter', sans-serif" },
+                                color: '#94a3b8',
+                                padding: 10,
+                                callback: function(value) {
+                                    if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M';
+                                    if (value >= 1000) return (value / 1000).toFixed(0) + 'k';
+                                    return value;
+                                }
                             }
                         },
                         x: {
+                            border: { display: false },
                             grid: { display: false },
-                            ticks: { font: { weight: 'bold', size: 10 } }
+                            ticks: { 
+                                font: { weight: '600', size: 11, family: "'Inter', sans-serif" },
+                                color: '#94a3b8',
+                                padding: 10
+                            }
                         }
                     }
                 }
             });
         });
-
     </script>
 
     <style>
-        /* Custom scrollbar for recent incidents list if needed */
-        .overflow-y-auto::-webkit-scrollbar {
-            width: 4px;
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        
+        .font-sans {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
         }
 
-        .overflow-y-auto::-webkit-scrollbar-track {
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
             background: transparent;
         }
-
-        .overflow-y-auto::-webkit-scrollbar-thumb {
-            background: #eee;
-            border-radius: 10px;
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #e2e8f0;
+            border-radius: 4px;
+        }
+        .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+        }
+        
+        .min-h-\[300px\] {
+            min-height: 300px;
         }
     </style>
 @endsection

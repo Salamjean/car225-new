@@ -78,12 +78,7 @@
                                 @error('name') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                             </div>
 
-                            <div class="space-y-2">
-                                <label class="text-sm font-bold text-gray-700 ml-1">Nom d'utilisateur (Login) *</label>
-                                <input type="text" name="username" value="{{ old('username', $compagnie->username) }}" required
-                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all bg-gray-50 focus:bg-white">
-                                @error('username') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-                            </div>
+
 
                             <div class="space-y-2">
                                 <label class="text-sm font-bold text-gray-700 ml-1">Email professionnel *</label>

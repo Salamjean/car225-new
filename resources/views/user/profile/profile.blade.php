@@ -99,19 +99,30 @@
                                     Personne à contacter d'urgence
                                 </h3>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label class="block text-sm font-semibold text-gray-700 mb-2">Nom personne à contacter</label>
-                                        <input type="text" id="nom_urgence" name="nom_urgence" value="{{ $user->nom_urgence }}"
-                                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
-                                        <div class="invalid-feedback text-red-500 text-sm mt-1"></div>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-semibold text-gray-700 mb-2">Prénom personne à contacter</label>
-                                        <input type="text" id="prenom_urgence" name="prenom_urgence" value="{{ $user->prenom_urgence }}"
-                                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
-                                        <div class="invalid-feedback text-red-500 text-sm mt-1"></div>
-                                    </div>
                                     <div class="md:col-span-2">
+                                        <label class="block text-sm font-semibold text-gray-700 mb-2">Nom et prénom de la personne à contacter</label>
+                                        <input type="text" id="nom_urgence" name="nom_urgence" value="{{ trim($user->nom_urgence . ' ' . $user->prenom_urgence) }}"
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
+                                        <div class="invalid-feedback text-red-500 text-sm mt-1"></div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 mb-2">Lien de parenté</label>
+                                        <select id="lien_parente_urgence" name="lien_parente_urgence" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
+                                            <option value="">Sélectionner</option>
+                                            <option value="Père" {{ $user->lien_parente_urgence == 'Père' ? 'selected' : '' }}>Père</option>
+                                            <option value="Mère" {{ $user->lien_parente_urgence == 'Mère' ? 'selected' : '' }}>Mère</option>
+                                            <option value="Frère" {{ $user->lien_parente_urgence == 'Frère' ? 'selected' : '' }}>Frère</option>
+                                            <option value="Sœur" {{ $user->lien_parente_urgence == 'Sœur' ? 'selected' : '' }}>Sœur</option>
+                                            <option value="Oncle" {{ $user->lien_parente_urgence == 'Oncle' ? 'selected' : '' }}>Oncle</option>
+                                            <option value="Tante" {{ $user->lien_parente_urgence == 'Tante' ? 'selected' : '' }}>Tante</option>
+                                            <option value="Cousin(e)" {{ $user->lien_parente_urgence == 'Cousin(e)' ? 'selected' : '' }}>Cousin(e)</option>
+                                            <option value="Conjoint(e)" {{ $user->lien_parente_urgence == 'Conjoint(e)' ? 'selected' : '' }}>Conjoint(e)</option>
+                                            <option value="Ami(e)" {{ $user->lien_parente_urgence == 'Ami(e)' ? 'selected' : '' }}>Ami(e)</option>
+                                            <option value="Autre" {{ $user->lien_parente_urgence == 'Autre' ? 'selected' : '' }}>Autre</option>
+                                        </select>
+                                        <div class="invalid-feedback text-red-500 text-sm mt-1"></div>
+                                    </div>
+                                    <div>
                                         <label class="block text-sm font-semibold text-gray-700 mb-2">Contact d'urgence</label>
                                         <input type="text" id="contact_urgence" name="contact_urgence" value="{{ $user->contact_urgence }}"
                                             maxlength="10" minlength="10" pattern="[0-9]{10}"

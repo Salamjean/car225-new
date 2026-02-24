@@ -1,4 +1,4 @@
-<header class="mdc-top-app-bar" style="background-color: #e94f1b">
+<header class="mdc-top-app-bar">
     <div class="mdc-top-app-bar__row">
         <div class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start">
             <button
@@ -20,7 +20,7 @@
                                 </div>
                             @endif
                         </span>
-                        <span class="user-name text-white"> {{ Auth::guard('compagnie')->user()->name }}</span>
+                        <span class="user-name text-white"> {{ Auth::guard('compagnie')->user()->sigle }}</span>
                         <span class="ml-2 text-white">&#9662;</span>
                     </span>
                 </button>
@@ -145,6 +145,48 @@
         height: 30px;
         border-radius: 50%;
         object-fit: cover;
+    }
+
+    /* Styles premium ajoutés */
+    .mdc-top-app-bar {
+        background: linear-gradient(135deg, #ea580c 0%, #f97316 100%) !important;
+        box-shadow: 0 4px 20px rgba(234, 88, 12, 0.25) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .mdc-icon-button {
+        transition: all 0.3s ease;
+    }
+    .mdc-icon-button:hover {
+        background: rgba(255, 255, 255, 0.2) !important;
+        border-radius: 50%;
+        transform: scale(1.05);
+    }
+    .user-name {
+        font-weight: 700 !important;
+        font-family: 'Inter', sans-serif;
+        letter-spacing: 0.3px;
+    }
+    .mdc-menu-surface {
+        border-radius: 16px !important;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08) !important;
+        border: 1px solid #f1f5f9 !important;
+        padding: 8px 0 !important;
+    }
+    .mdc-list-item[role="menuitem"] {
+        margin: 4px 12px !important;
+        border-radius: 10px !important;
+        transition: all 0.2s;
+    }
+    .mdc-list-item[role="menuitem"]:hover {
+        background-color: #fff7ed !important;
+        color: #ea580c !important;
+    }
+    .mdc-list-item[role="menuitem"]:hover a, .mdc-list-item[role="menuitem"]:hover i {
+        color: #ea580c !important;
+    }
+    .mobile-user-info {
+        background-color: #ffffff !important;
+        border-bottom: 1px solid #f1f5f9 !important;
     }
 
     /* Styles pour la version mobile */

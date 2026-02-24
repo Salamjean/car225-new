@@ -68,8 +68,18 @@
                     <div class="d-flex align-items-center">
                         <i class="fas fa-user-circle fa-2x text-muted mr-3"></i>
                         <div>
-                            <div class="font-weight-bold">{{ $supportRequest->user->name }}</div>
-                            <div class="small text-muted">{{ $supportRequest->user->telephone }}</div>
+                            @if($supportRequest->user)
+                                <div class="font-weight-bold">{{ $supportRequest->user->name }}</div>
+                                <div class="small text-muted">{{ $supportRequest->user->telephone }}</div>
+                                <div class="small text-muted">{{ $supportRequest->user->email }}</div>
+                            @else
+                                <div class="font-weight-bold">Utilisateur (Non inscrit)</div>
+                                <div class="small text-muted">Tél: {{ $supportRequest->telephone ?? 'Non renseigné' }}</div>
+                                <div class="small text-muted">Email: {{ $supportRequest->email ?? 'Non renseigné' }}</div>
+                                @if($supportRequest->billet)
+                                <div class="small text-muted mt-1"><strong>Billet:</strong> {{ $supportRequest->billet }}</div>
+                                @endif
+                            @endif
                         </div>
                     </div>
                 </div>

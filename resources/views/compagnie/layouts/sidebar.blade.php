@@ -271,9 +271,11 @@
                             Signalements
                         </div>
                         @php
-                            $newSignalements = \App\Models\Signalement::where('compagnie_id', Auth::guard('compagnie')->id())
-                                ->where('statut', 'nouveau')
-                                ->count();
+                            $newSignalements = \App\Models\Signalement::whereHas('programme', function ($q) {
+                                $q->where('compagnie_id', Auth::guard('compagnie')->id());
+                            })
+                            ->where('is_read_by_company', false)
+                            ->count();
                         @endphp
                         @if($newSignalements > 0)
                             <span class="badge badge-pill badge-danger" style="background: #ef4444; font-weight: bold; padding: 4px 8px;">
@@ -337,4 +339,163 @@
                     </div>
                 </div> -->
         </div>
+
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+            
+            /* Styles premium pour la Sidebar */
+            .mdc-drawer {
+                background-color: #ffffff !important;
+                border-right: 1px solid #f1f5f9 !important;
+                box-shadow: 4px 0 24px rgba(0, 0, 0, 0.02) !important;
+                font-family: 'Inter', sans-serif;
+            }
+            .user-info {
+                background: linear-gradient(to bottom, #f8fafc, #ffffff);
+                padding: 24px 0 16px 0 !important;
+                border-bottom: 1px solid #f1f5f9;
+                margin-bottom: 16px;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.01);
+            }
+            .user-info .name {
+                font-weight: 800 !important;
+                color: #0f172a !important;
+                font-size: 0.95rem !important;
+                letter-spacing: -0.2px;
+                margin-bottom: 4px;
+            }
+            .user-info .email {
+                color: #64748b !important;
+                font-size: 0.70rem !important;
+                font-weight: 600 !important;
+                letter-spacing: 0.5px;
+            }
+            .brand-logo img, .default-company-logo {
+                box-shadow: 0 4px 14px rgba(234, 88, 12, 0.15) !important;
+                border: 2px solid #ffffff !important;
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .brand-logo:hover img, .brand-logo:hover .default-company-logo {
+                transform: scale(1.05) translateY(-2px);
+            }
+            
+            /* Elements de la liste */
+            .mdc-drawer .mdc-list-item {
+                margin: 4px 16px !important;
+                border-radius: 12px !important;
+                height: auto !important; /* Autoriser l'extension pour les sous-menus */
+                min-height: 46px !important;
+                display: block !important; /* Pour que le contenu s'empile verticalement */
+                padding: 0 !important;
+                transition: all 0.2s ease;
+                overflow: visible !important;
+            }
+            .mdc-drawer .mdc-list-item:hover {
+                background-color: #fff7ed !important;
+            }
+            .mdc-drawer-link, .mdc-expansion-panel-link {
+                height: 46px !important;
+                display: flex !important;
+                align-items: center;
+                padding: 0 16px !important;
+                text-decoration: none !important;
+            }
+            .mdc-drawer .mdc-list-item:hover > .mdc-drawer-link,
+            .mdc-drawer .mdc-list-item:hover > .mdc-expansion-panel-link {
+                color: #ea580c !important;
+            }
+            .mdc-drawer .mdc-list-item:hover .mdc-drawer-item-icon {
+                color: #ea580c !important;
+                transform: scale(1.1);
+            }
+            
+            /* Liens et Texte */
+            .mdc-drawer-link, .mdc-expansion-panel-link {
+                color: #475569 !important; /* Slate 600 */
+                font-weight: 600 !important;
+                font-size: 0.825rem !important;
+                letter-spacing: 0.3px;
+                width: 100%;
+                transition: color 0.2s ease;
+            }
+            .mdc-drawer-item-icon {
+                color: #94a3b8 !important; /* Slate 400 */
+                font-size: 1.15rem !important;
+                width: 24px;
+                text-align: center;
+                margin-right: 14px !important;
+                transition: all 0.2s ease;
+            }
+
+            /* Badges Notifications */
+            .badge-danger {
+                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+                box-shadow: 0 4px 10px rgba(239, 68, 68, 0.25) !important;
+                border: none !important;
+                padding: 4px 8px !important;
+                border-radius: 20px !important;
+                font-size: 0.65rem !important;
+                font-weight: 800 !important;
+            }
+
+            /* Flèche des sous-menus */
+            .mdc-drawer-arrow {
+                color: #cbd5e1 !important;
+                transition: transform 0.3s ease, color 0.2s ease;
+                margin-left: auto !important;
+            }
+            .mdc-list-item:hover .mdc-drawer-arrow {
+                color: #ea580c !important;
+            }
+
+            /* Sous-menus */
+            .mdc-expansion-panel {
+                background-color: transparent !important;
+                padding-top: 0px;
+                padding-bottom: 8px;
+                display: none; /* Par défaut via le template JS, mais on s'assure de la cohérence */
+            }
+            /* Lorsque le panel est ouvert (géré par misc.js via la classe 'expanded' ou autre, 
+               mais le template utilise souvent le style direct height. 
+               On s'assure juste que si display est block, il s'affiche bien) */
+            
+            .mdc-drawer-submenu .mdc-list-item {
+                margin: 2px 12px 2px 32px !important;
+                height: 38px !important;
+                min-height: 38px !important;
+                border-radius: 8px !important;
+                display: flex !important; /* Les sous-items restent en flex */
+                align-items: center !important;
+            }
+            .mdc-drawer-submenu .mdc-drawer-link {
+                font-weight: 500 !important;
+                color: #64748b !important;
+                font-size: 0.8rem !important;
+                position: relative;
+                transition: all 0.2s ease;
+            }
+            .mdc-drawer-submenu .mdc-drawer-link::before {
+                content: '';
+                position: absolute;
+                left: -16px;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 4px;
+                height: 4px;
+                background-color: #cbd5e1;
+                border-radius: 50%;
+                transition: all 0.2s ease;
+            }
+            .mdc-drawer-submenu .mdc-list-item:hover {
+                background-color: #f8fafc !important;
+            }
+            .mdc-drawer-submenu .mdc-list-item:hover .mdc-drawer-link {
+                color: #ea580c !important;
+                padding-left: 4px;
+            }
+            .mdc-drawer-submenu .mdc-list-item:hover .mdc-drawer-link::before {
+                background-color: #ea580c;
+                transform: translateY(-50%) scale(1.5);
+            }
+        </style>
 </aside>
