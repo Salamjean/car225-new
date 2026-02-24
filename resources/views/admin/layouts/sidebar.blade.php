@@ -131,9 +131,15 @@
           </a>
         </div>
         <div class="mdc-list-item mdc-drawer-item">
-          <a class="mdc-drawer-link" href="{{route('admin.support.index')}}">
+          <a class="mdc-drawer-link" href="{{route('admin.support.index')}}" style="display: flex; align-items: center; gap: 4px;">
             <i class="fas fa-headset mdc-list-item__start-detail mdc-drawer-item-icon"></i>
             Support Client
+            @php
+              $supportCount = \App\Models\SupportRequest::where('statut', 'ouvert')->count();
+            @endphp
+            @if($supportCount > 0)
+              <span class="badge badge-danger" style="margin-left: auto; border-radius: 12px; font-size: 10px; padding: 2px 6px; background-color: #dc3545; color: white;">{{ $supportCount }}</span>
+            @endif
           </a>
         </div>
         <div class="mdc-list-item mdc-drawer-item">

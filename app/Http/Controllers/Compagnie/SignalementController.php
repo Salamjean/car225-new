@@ -24,7 +24,7 @@ class SignalementController extends Controller
         })
             ->with(['user', 'programme'])
             ->orderBy('created_at', 'desc')
-            ->paginate(15);
+            ->paginate(10);
 
         return view('compagnie.signalements.index', compact('signalements'));
     }
@@ -41,6 +41,11 @@ class SignalementController extends Controller
         })
             ->with(['user', 'programme'])
             ->findOrFail($id);
+
+        if (!$signalement->is_read_by_company) {
+            $signalement->is_read_by_company = true;
+            $signalement->save();
+        }
 
         return view('compagnie.signalements.show', compact('signalement'));
     }

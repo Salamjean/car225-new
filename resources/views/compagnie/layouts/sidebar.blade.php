@@ -271,9 +271,11 @@
                             Signalements
                         </div>
                         @php
-                            $newSignalements = \App\Models\Signalement::where('compagnie_id', Auth::guard('compagnie')->id())
-                                ->where('statut', 'nouveau')
-                                ->count();
+                            $newSignalements = \App\Models\Signalement::whereHas('programme', function ($q) {
+                                $q->where('compagnie_id', Auth::guard('compagnie')->id());
+                            })
+                            ->where('is_read_by_company', false)
+                            ->count();
                         @endphp
                         @if($newSignalements > 0)
                             <span class="badge badge-pill badge-danger" style="background: #ef4444; font-weight: bold; padding: 4px 8px;">

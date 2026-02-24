@@ -188,10 +188,10 @@
                             <p class="text-gray-500 mb-6">Veuillez sélectionner <span id="nb-places-txt" class="font-bold text-[#e94f1b]">0</span> place(s) sur le plan.</p>
                             
                             <!-- Légende -->
-                            <div class="flex flex-wrap gap-4 mb-6 text-sm justify-center bg-gray-50 p-3 rounded-lg">
-                                <div class="flex items-center gap-2"><div class="w-4 h-4 rounded bg-[#e94f1b]"></div> Disponible</div>
+                                <div class="flex flex-wrap gap-4 mb-6 text-sm justify-center bg-gray-50 p-3 rounded-lg">
+                                <div class="flex items-center gap-2"><div class="w-4 h-4 rounded border border-gray-300 bg-white"></div> Disponible</div>
                                 <div class="flex items-center gap-2"><div class="w-4 h-4 rounded bg-[#10b981]"></div> Sélectionné</div>
-                                <div class="flex items-center gap-2"><div class="w-4 h-4 rounded bg-red-400 opacity-50"></div> Indisponible</div>
+                                <div class="flex items-center gap-2"><div class="w-4 h-4 rounded bg-[#e94e1a]"></div> Occupé</div>
                             </div>
 
                             <!-- Zone de visualisation -->
@@ -377,14 +377,9 @@
         
         let html = '<div class="inline-block bg-white p-4 rounded-xl border border-gray-200 shadow-sm">';
         
-        // Volant / Chauffeur
+        // Top margin spacer instead of driver icon
         html += `
-            <div class="flex justify-between mb-8 px-4 opacity-50">
-                <div class="w-10 h-10 border-2 border-gray-400 rounded-full flex items-center justify-center">
-                    <i class="fas fa-steering-wheel text-gray-400"></i>
-                </div>
-                <div class="text-xs uppercase font-bold text-gray-400 py-2">Avant</div>
-            </div>
+            <div class="mb-4"></div>
         `;
 
         let seatCounter = 1;
@@ -428,7 +423,7 @@
         let onclick = "";
 
         if (isReserved) {
-            classes += "bg-red-100 text-red-400 cursor-not-allowed occupied";
+            classes += "bg-[#e94e1a] text-white border-transparent cursor-not-allowed occupied opacity-100";
             return `<div class="${classes}" title="Occupé">${num}</div>`;
         } else if (isSelected) {
             classes += "bg-[#10b981] text-white ring-2 ring-offset-1 ring-[#10b981]";

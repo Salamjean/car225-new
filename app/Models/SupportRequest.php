@@ -14,6 +14,9 @@ class SupportRequest extends Model
         'description',
         'statut',
         'reponse',
+        'email',
+        'telephone',
+        'billet',
     ];
 
     public function user()

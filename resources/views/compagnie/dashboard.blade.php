@@ -147,17 +147,22 @@
                     </div>
                     <div class="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
                         @forelse($recentSignalements as $sig)
-                            <a href="{{ route('compagnie.signalements.show', $sig->id) }}" class="block p-4 rounded-xl hover:bg-slate-50 transition-colors group">
+                            <a href="{{ route('compagnie.signalements.show', $sig->id) }}" class="block p-4 rounded-xl {{ !$sig->is_read_by_company ? 'bg-red-50/50 border border-red-100' : 'hover:bg-slate-50' }} transition-colors group">
                                 <div class="flex justify-between items-start mb-2 gap-4">
-                                    <span class="px-2 py-0.5 bg-red-50 text-red-600 text-[10px] font-black uppercase tracking-wider rounded border border-red-100 shrink-0">{{ $sig->type }}</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="px-2 py-0.5 bg-red-50 text-red-600 text-[10px] font-black uppercase tracking-wider rounded border border-red-100 shrink-0">{{ $sig->type }}</span>
+                                        @if(!$sig->is_read_by_company)
+                                            <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                                        @endif
+                                    </div>
                                     <span class="text-[10px] text-slate-400 font-bold tracking-tight shrink-0">{{ $sig->created_at->diffForHumans() }}</span>
                                 </div>
                                 <p class="text-xs text-slate-600 font-medium line-clamp-2 leading-relaxed mb-3 group-hover:text-slate-900 transition-colors">"{{ $sig->description }}"</p>
                                 <div class="flex items-center gap-2">
                                     <div class="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-500">
-                                        {{ substr($sig->user->name ?? 'I', 0, 1) }}
+                                        {{ substr($sig->user?->name ?? 'I', 0, 1) }}
                                     </div>
-                                    <span class="font-bold text-slate-700 text-xs">{{ $sig->user->name ?? 'Inconnu' }}</span>
+                                    <span class="font-bold text-slate-700 text-xs">{{ $sig->user?->name ?? 'Inconnu' }}</span>
                                 </div>
                             </a>
                         @empty
@@ -200,11 +205,11 @@
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center gap-3">
                                             <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-black text-slate-600">
-                                                {{ substr($res->user->name ?? 'I', 0, 1) }}
+                                                {{ substr($res->user?->name ?? 'I', 0, 1) }}
                                             </div>
                                             <div>
-                                                <div class="font-bold text-slate-900 text-sm group-hover:text-blue-600 transition-colors">{{ $res->user->name ?? 'Inconnu' }}</div>
-                                                <div class="text-[11px] text-slate-400 font-medium">{{ $res->user->telephone ?? '---' }}</div>
+                                                <div class="font-bold text-slate-900 text-sm group-hover:text-blue-600 transition-colors">{{ $res->user?->name ?? 'Inconnu' }}</div>
+                                                <div class="text-[11px] text-slate-400 font-medium">{{ $res->user?->telephone ?? '---' }}</div>
                                             </div>
                                         </div>
                                     </td>

@@ -147,12 +147,12 @@
                                 <div class="flex items-center gap-3">
                                     <div
                                         class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center text-red-600 font-bold text-xl">
-                                        {{ substr($signalement->user->name ?? '?', 0, 1) }}
+                                        {{ substr(optional($signalement->user)->name ?? '?', 0, 1) }}
                                     </div>
                                     <div>
-                                        <p class="font-bold text-gray-900">{{ $signalement->user->name.' '.$signalement->user->prenom ?? 'Inconnu' }}</p>
+                                        <p class="font-bold text-gray-900">{{ optional($signalement->user)->name ? optional($signalement->user)->name . ' ' . optional($signalement->user)->prenom : 'Inconnu' }}</p>
                                         <p class="text-xs text-gray-500">
-                                            {{ $signalement->user->contact ?? 'Sans numéro' }}</p>
+                                            {{ optional($signalement->user)->contact ?? 'Sans numéro' }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -165,11 +165,11 @@
                                         <i class="fas fa-bus text-gray-400 mt-1"></i>
                                         <div>
                                             <p class="text-sm font-bold text-gray-900">
-                                                {{ $signalement->programme->vehicule->immatriculation ?? 'Non assigné' }}
+                                                {{ $signalement->programme?->vehicule?->immatriculation ?? 'Non assigné' }}
                                             </p>
                                             <p class="text-xs text-gray-500">
-                                                {{ $signalement->programme->vehicule->marque ?? '' }}
-                                                {{ $signalement->programme->vehicule->modele ?? '' }}
+                                                {{ $signalement->programme?->vehicule?->marque ?? '' }}
+                                                {{ $signalement->programme?->vehicule?->modele ?? '' }}
                                             </p>
                                         </div>
                                     </div>
@@ -177,8 +177,8 @@
                                         <i class="fas fa-route text-gray-400 mt-1"></i>
                                         <div>
                                             <p class="text-sm font-bold text-gray-900">
-                                                {{ $signalement->programme->point_depart ?? '?' }} →
-                                                {{ $signalement->programme->point_arrive ?? '?' }}
+                                                {{ $signalement->programme?->point_depart ?? '?' }} →
+                                                {{ $signalement->programme?->point_arrive ?? '?' }}
                                             </p>
                                             <p class="text-xs text-gray-500">Trajet via programme
                                                 #{{ $signalement->programme_id }}</p>

@@ -63,6 +63,10 @@ Route::prefix('/')->group(function () {
     Route::get('/home/infos', [AccueilController::class, 'infos'])->name('home.infos');
     Route::get('/home/services', [AccueilController::class, 'services'])->name('home.services');
     Route::get('/home/contact', [AccueilController::class, 'contact'])->name('home.contact');
+    Route::get('/home/signaler-probleme', [AccueilController::class, 'signaler'])->name('home.signaler');
+    Route::post('/home/signaler-probleme', [AccueilController::class, 'storeSignaler'])->name('home.signaler.store');
+    Route::get('/home/mes-reservations', [AccueilController::class, 'mesReservations'])->name('home.reservations');
+    Route::get('/home/mes-reservations/download/{reservation}', [AccueilController::class, 'downloadTicket'])->name('home.reservations.download');
     Route::post('/home/contact/store', [AccueilController::class, 'storeContact'])->name('home.contact.store');
 });
 

@@ -1,241 +1,271 @@
 @extends('home.layouts.template')
+
 @section('content')
 
-    <!-- Hero Company - Immersive Background -->
-    <section class="company-hero-section"
-        style="background: linear-gradient(rgba(5, 30, 35, 0.8), rgba(5, 30, 35, 0.8)), url('{{ asset('assets/img/travel/destination-10.webp') }}') center/cover no-repeat;">
-        <div class="container">
-            <div class="row align-items-center py-5">
-                <div class="col-lg-8 offset-lg-2 text-center" data-aos="fade-up">
-                    <div class="hero-badge mb-3">Partenaires de Confiance</div>
-                    <h1 class="hero-title text-white mb-3">Nos <span style="color: #e94f1b;">Compagnies</span> Partenaires
-                    </h1>
-                    <p class="hero-subtitle text-white-50 mb-4 mx-auto" style="max-width: 600px;">
-                        Découvrez les transporteurs qui assurent vos trajets en toute sécurité à travers le pays.
-                    </p>
-                    <nav aria-label="breadcrumb">
-                        <ol class="breadcrumb justify-content-center bg-transparent p-0">
-                            <li class="breadcrumb-item"><a href="{{ route('home') }}" class="text-white-50">Accueil</a></li>
-                            <li class="breadcrumb-item active text-white" aria-current="page">Compagnies</li>
-                        </ol>
-                    </nav>
+@php
+    $incontournables = $compagnies->take(2);
+    $groupedCompagnies = $compagnies->sortBy('name')->groupBy(function($item) {
+        return strtoupper(substr($item->name, 0, 1));
+    });
+    $letters = $groupedCompagnies->keys();
+
+    // Fonction Helper for tag generation
+    $getCompanyTag = function($id) {
+        $tags = [
+            0 => ['label' => 'PREMIUM', 'class' => 'bg-orange-100 text-[#f15a24] border border-orange-200'],
+            1 => ['label' => 'LUXE', 'class' => 'bg-purple-100 text-purple-500 border border-purple-200'],
+            2 => ['label' => 'ECONOMIQUE', 'class' => 'bg-orange-100 text-[#f15a24] border border-orange-200'], 
+            3 => ['label' => 'STANDARD', 'class' => 'bg-slate-100 text-slate-500 border border-slate-200'],
+        ];
+        return $tags[$id % 4];
+    };
+@endphp
+
+<!-- Hero / Header -->
+<section class="bg-slate-50 pt-28 pb-8">
+    <div class="container mx-auto px-4 max-w-[1000px]">
+        <div class="text-center mb-10">
+            <h1 class="text-[2.5rem] md:text-5xl font-black text-slate-900 mb-4 tracking-tight">
+                Nos <span class="text-[#0e743a]">Compagnies</span>
+            </h1>
+            <p class="text-slate-700 text-[15px] font-medium">
+                Découvrez les meilleures compagnies de transport partenaires
+            </p>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="max-w-[700px] mx-auto mb-6">
+            <div class="relative shadow-sm rounded-xl overflow-hidden bg-white border border-slate-200">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                    <i class="bi bi-search text-slate-400"></i>
                 </div>
+                <input type="text" id="companySearch" class="bg-white text-slate-900 text-[15px] rounded-xl block w-full pl-11 px-4 py-3.5 focus:outline-none focus:ring-1 focus:ring-emerald-500" placeholder="Tapez le nom d'une compagnie ( ex: GTI, Sotra...)">
             </div>
         </div>
-    </section>
 
-    <!-- Company Stats Bar -->
-    <section class="py-4">
-        <div class="container">
-            <div class="stats-card-wrapper bg-white shadow-lg rounded-4 p-4 position-relative"
-                style="margin-top: 15px; z-index: 10; " >
-                <div class="row g-4 text-center">
-                    <div class="col-md-4 border-end">
-                        <div class="stat-content">
-                            <h2 class="fw-bold text-dark mb-0">{{ $compagnies->count() }}</h2>
-                            <p class="text-muted text-uppercase small mb-0">Partenaires Actifs</p>
-                        </div>
-                    </div>
-                    <div class="col-md-4 border-end">
-                        <div class="stat-content">
-                            <h2 class="fw-bold text-dark mb-0">100%</h2>
-                            <p class="text-muted text-uppercase small mb-0">Sécurité Garantie</p>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="stat-content">
-                            <h2 class="fw-bold text-dark mb-0">24/7</h2>
-                            <p class="text-muted text-uppercase small mb-0">Disponibilité</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <!-- Filters -->
+        <div class="flex flex-wrap justify-center gap-2 max-w-[800px] mx-auto" id="categoryFilters">
+            <button class="filter-btn active px-5 py-2 bg-black text-white text-[13px] font-bold rounded-md hover:bg-slate-800 transition-colors" data-filter="all">Tous</button>
+            <button class="filter-btn px-5 py-2 bg-[#dadbdf] text-slate-800 text-[13px] font-bold rounded-md hover:bg-slate-300 transition-colors" data-filter="LUXE">Luxe</button>
+            <button class="filter-btn px-5 py-2 bg-[#dadbdf] text-slate-800 text-[13px] font-bold rounded-md hover:bg-slate-300 transition-colors" data-filter="PREMIUM">Premium</button>
+            <button class="filter-btn px-5 py-2 bg-[#dadbdf] text-slate-800 text-[13px] font-bold rounded-md hover:bg-slate-300 transition-colors" data-filter="STANDARD">Standard</button>
+            <button class="filter-btn px-5 py-2 bg-[#dadbdf] text-slate-800 text-[13px] font-bold rounded-md hover:bg-slate-300 transition-colors" data-filter="ECONOMIQUE">Economique</button>
+            <button class="px-5 py-2 bg-[#dadbdf] text-slate-800 text-[13px] font-bold rounded-md hover:bg-slate-300 transition-colors flex items-center gap-1">
+                <i class="bi bi-funnel"></i> Plus de filtres
+            </button>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- Companies Grid - Modern Card Style with Logo in Header -->
-    <section class="py-5 bg-light-soft">
-        <div class="container">
-            <div class="section-header text-center mb-5" data-aos="fade-up">
-                <h2 class="section-title">Choisissez votre <span style="color: #e94f1b;">Transporteur</span></h2>
-                <p class="text-muted">Des compagnies certifiées pour un voyage en toute sérénité</p>
-            </div>
-
-            <div class="row g-4">
-                @forelse($compagnies as $compagnie)
-                    <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="{{ ($loop->index % 3) * 100 }}">
-                        <div class="company-card-modern">
-                            <div class="card-logo-header bg-white d-flex align-items-center justify-content-center p-4">
+<!-- Main List Section -->
+<section class="bg-slate-50 pb-20 relative">
+    <div class="container mx-auto px-4 max-w-[1000px] relative flex gap-8">
+        
+        <!-- Left Content (Main) -->
+        <div class="flex-1 pb-10">
+            
+            <!-- Les Incontournables -->
+            @if($incontournables->isNotEmpty())
+            <div class="mt-8 mb-12">
+                <h3 class="text-[17px] font-extrabold flex items-center gap-2 text-slate-800 mb-6">
+                    <i class="bi bi-award text-[#f15a24] text-xl"></i> Les incontournables
+                </h3>
+                <div class="space-y-4">
+                    @foreach($incontournables as $compagnie)
+                    <div class="bg-white border hover:border-orange-300 shadow-sm transition-all rounded-xl p-5 border-[#fadfc2]">
+                        <div class="flex flex-col sm:flex-row items-center gap-6">
+                            <!-- Logo -->
+                            <div class="w-16 h-16 flex-shrink-0 bg-[#f8f9fa] border border-slate-100 rounded-lg flex items-center justify-center p-2">
                                 @if($compagnie->path_logo)
-                                    <img src="{{ asset('storage/' . $compagnie->path_logo) }}" alt="{{ $compagnie->name }}"
-                                        class="main-company-logo">
+                                    <img src="{{ asset('storage/' . $compagnie->path_logo) }}" alt="Logo {{ $compagnie->name }}" class="max-w-full max-h-full object-contain">
                                 @else
-                                    <div class="placeholder-logo-large">{{ substr($compagnie->name, 0, 2) }}</div>
+                                    <i class="bi bi-bus-front-fill text-3xl text-slate-700"></i>
                                 @endif
-                                <div class="vehicle-icon-badge">
-                                    <i class="bi bi-bus-front-fill"></i>
+                            </div>
+                            
+                            <!-- Info -->
+                            <div class="flex-1 text-center sm:text-left">
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
+                                    <h4 class="text-lg font-extrabold text-[#111]">{{ $compagnie->name }}</h4>
+                                    <span class="text-[8px] font-black tracking-widest px-2 py-0.5 rounded-sm bg-[#fff2e8] text-[#f15a24] w-max mx-auto sm:mx-0 uppercase">PREMIUM</span>
+                                </div>
+                                <div class="text-[13px] font-bold mt-1 text-slate-800">
+                                    <i class="bi bi-star-fill text-[#ffc107] text-[15px]"></i> 4.8 <span class="text-slate-500 font-medium text-[11px]">(1250 avis)</span>
                                 </div>
                             </div>
-                            <div class="card-body-modern p-4 text-center border-top">
-                                <h4 class="company-name fw-bold text-dark mb-2">{{ $compagnie->name }}</h4>
-                                @if($compagnie->slogan)
-                                    <p class="company-slogan italic text-muted small mb-3">"{{ $compagnie->slogan }}"</p>
+
+                            <!-- Action -->
+                            <div class="mt-4 sm:mt-0">
+                                <a href="{{ route('user.dashboard') }}" class="text-[#f15a24] hover:text-[#d84e1b] font-bold text-sm flex items-center gap-1 group">
+                                    Voir les trajets <i class="bi bi-chevron-right text-xs group-hover:translate-x-1 transition-transform"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
+            <!-- Alphabetical List -->
+            @foreach($groupedCompagnies as $letter => $group)
+            <div id="section-{{ $letter }}" class="alphabet-section pt-0">
+                
+                <!-- Divider -->
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-10 h-10 bg-white border border-[#eeeff1] rounded-lg flex items-center justify-center text-[#f15a24] font-black text-xl shadow-sm z-10">
+                        {{ $letter }}
+                    </div>
+                    <div class="flex-1 h-px bg-[#e5e7eb] -ml-2"></div>
+                    <div class="text-[10px] font-black text-slate-700 uppercase tracking-widest">{{ $group->count() }} COMPAGNIE{{ $group->count() > 1 ? 'S' : '' }}</div>
+                </div>
+
+                <!-- Companies -->
+                <div class="space-y-4 mb-12">
+                    @foreach($group as $compagnie)
+                    @php $tag = $getCompanyTag($compagnie->id); @endphp
+                    <div class="company-item bg-white border border-[#eeeff1] hover:border-[#f15a24] shadow-sm transition-all rounded-xl p-6" data-name="{{ strtolower($compagnie->name) }}" data-tag="{{ $tag['label'] }}">
+                        <div class="flex flex-col sm:flex-row items-center sm:items-stretch gap-6">
+                            
+                            <!-- Logo -->
+                            <div class="w-20 h-20 flex-shrink-0 bg-[#f8f9fa] border border-slate-100 rounded-lg flex items-center justify-center p-3 self-center">
+                                @if($compagnie->path_logo)
+                                    <img src="{{ asset('storage/' . $compagnie->path_logo) }}" alt="Logo {{ $compagnie->name }}" class="max-w-full max-h-full object-contain">
+                                @else
+                                    <i class="bi bi-bus-front-fill text-4xl text-slate-700"></i>
                                 @endif
+                            </div>
 
-                                <div class="company-info-tags d-flex justify-content-center gap-2 mb-4">
-                                    <span class="info-tag"><i
-                                            class="bi bi-geo-alt me-1"></i>{{ $compagnie->commune ?? 'Côte d\'Ivoire' }}</span>
-                                    <span class="info-tag"><i class="bi bi-star-fill text-warning me-1"></i>4.9</span>
+                            <!-- Info -->
+                            <div class="flex-1 text-center sm:text-left flex flex-col justify-center">
+                                <div class="flex flex-col sm:flex-row justify-between sm:items-start mb-2">
+                                    <div>
+                                        <div class="flex flex-col sm:flex-row sm:items-center gap-2 mb-1.5">
+                                            <h4 class="text-xl font-extrabold text-[#111]">{{ $compagnie->name }}</h4>
+                                            <span class="text-[8px] font-black tracking-widest px-2 py-0.5 rounded-sm {{ $tag['class'] }} w-max mx-auto sm:mx-0">{{ $tag['label'] }}</span>
+                                        </div>
+                                        <p class="text-slate-500 text-[13px] italic font-medium">"{{ $compagnie->slogan ?? 'L\'excellence du voyage avec un confort inégalé.' }}"</p>
+                                    </div>
+                                    <div class="text-[13px] font-bold text-slate-800 sm:text-right mt-3 sm:mt-0 flex flex-row items-center justify-center sm:flex-col sm:items-end gap-1">
+                                        <div class="flex items-center gap-1">
+                                            <i class="bi bi-star-fill text-[#ffc107] text-[15px]"></i> 4.8 
+                                            <span class="text-slate-500 font-medium text-[11px]">(1100 avis)</span>
+                                        </div>
+                                    </div>
                                 </div>
-
-                                <div class="d-grid">
-                                    <a href="{{ route('home.destination', ['compagnie_id' => $compagnie->id]) }}"
-                                        class="btn btn-company-action">
-                                        Voir les Itinéraires <i class="bi bi-chevron-right ms-2"></i>
+                                
+                                <div class="mt-4 flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4">
+                                    <div class="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-[13px] font-medium text-slate-600">
+                                        <div class="flex items-center gap-1">
+                                            <i class="bi bi-geo text-[#f15a24]"></i> {{ $compagnie->commune ?? 'Sud, Nord' }}
+                                        </div>
+                                        <div class="flex items-center gap-1 font-semibold text-slate-600">
+                                            <i class="bi bi-truck-front text-[#f15a24]"></i> {{ rand(15, 60) }} trajets disponibles
+                                        </div>
+                                    </div>
+                                    <a href="{{ route('user.dashboard') }}" class="px-5 py-2.5 bg-[#eb511b] text-white hover:bg-[#d84e1b] font-bold rounded-lg text-sm shadow-sm transition-colors w-full sm:w-auto text-center flex items-center justify-center gap-1.5">
+                                        Réserver <i class="bi bi-chevron-right text-[11px] mt-0.5"></i>
                                     </a>
                                 </div>
                             </div>
+
                         </div>
                     </div>
-                @empty
-                    <div class="col-12 text-center py-5">
-                        <div class="empty-state p-5 bg-white rounded-4 shadow-sm">
-                            <i class="bi bi-building text-muted" style="font-size: 3rem; opacity: 0.3;"></i>
-                            <h4 class="mt-3">Bientôt de nouvelles compagnies</h4>
-                            <p class="text-muted">Revenez bientôt pour découvrir nos nouveaux partenaires.</p>
-                        </div>
-                    </div>
-                @endforelse
+                    @endforeach
+                </div>
+            </div>
+            @endforeach
+
+        </div>
+
+        <!-- Right Alpha Nav (Sticky) -->
+        <div class="hidden lg:block w-10 sticky top-[120px] self-start mt-8">
+            <div class="bg-white border border-[#eeeff1] rounded-2xl py-2 flex flex-col items-center gap-2 shadow-sm">
+                @foreach($letters as $index => $letter)
+                <a href="#section-{{ $letter }}" class="w-7 h-7 rounded-sm flex items-center justify-center text-[10px] font-black transition-colors {{ $index === 0 ? 'bg-[#f15a24] text-white' : 'text-slate-700 hover:bg-slate-100' }}" onclick="updateActiveLetter(this, '{{ $letter }}')">
+                    {{ $letter }}
+                </a>
+                @endforeach
             </div>
         </div>
-    </section>
 
-    <style>
-        .bg-light-soft {
-            background-color: #f8fafb;
-        }
-
-        /* Hero */
-        .company-hero-section {
-            padding: 120px 0 60px;
-            position: relative;
-        }
-
-        .hero-badge {
-            display: inline-block;
-            padding: 5px 15px;
-            background: rgba(254, 162, 25, 0.1);
-            color: #e94f1b;
-            border-radius: 50px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        /* Company Card Modern */
-        .company-card-modern {
-            background: white;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-            transition: all 0.4s ease;
-            height: 100%;
-            border: 1px solid rgba(0, 0, 0, 0.02);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .company-card-modern:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-        }
-
-        .card-logo-header {
-            height: 180px;
-            position: relative;
-            background: radial-gradient(circle, #ffffff 0%, #f8f9fa 100%);
-        }
-
-        .main-company-logo {
-            max-width: 80%;
-            max-height: 120px;
-            object-fit: contain;
-            transition: transform 0.3s ease;
-        }
-
-        .company-card-modern:hover .main-company-logo {
-            transform: scale(1.05);
-        }
-
-        .placeholder-logo-large {
-            width: 120px;
-            height: 120px;
-            background: #e94f1b;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 3rem;
-            border-radius: 20px;
-            box-shadow: 0 5px 15px rgba(254, 162, 25, 0.2);
-        }
-
-        .vehicle-icon-badge {
-            position: absolute;
-            bottom: -20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 50px;
-            height: 50px;
-            background: #e94f1b;
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            box-shadow: 0 4px 10px rgba(254, 162, 25, 0.3);
-            z-index: 5;
-            border: 4px solid white;
-        }
-
-        .card-body-modern {
-            padding-top: 30px !important;
-            flex-grow: 1;
-        }
-
-        .info-tag {
-            font-size: 0.75rem;
-            background: #f1f3f5;
-            padding: 5px 12px;
-            border-radius: 50px;
-            color: #495057;
-        }
-
-        .btn-company-action {
-            background: #051e23;
-            color: white;
-            border-radius: 12px;
-            padding: 12px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .btn-company-action:hover {
-            background: #e94f1b;
-            color: white;
-            box-shadow: 0 5px 15px rgba(254, 162, 25, 0.3);
-        }
-
-        @media (max-width: 768px) {
-            .stats-card-wrapper .border-end {
-                border-end: none !important;
-                border-bottom: 1px solid #eee;
-                padding-bottom: 15px;
-            }
-        }
-    </style>
+    </div>
+</section>
 
 @endsection
+
+@push('styles')
+<style>
+    body {
+        padding-top: 0 !important;
+        scroll-behavior: smooth;
+    }
+    ::placeholder {
+        color: #9ca3af !important;
+        font-weight: 500;
+    }
+</style>
+<script>
+    function updateActiveLetter(el, letter) {
+        document.querySelectorAll('.hidden.lg\\:block .rounded-sm').forEach(a => {
+            a.className = "w-7 h-7 rounded-sm flex items-center justify-center text-[10px] font-black transition-colors text-slate-700 hover:bg-slate-100";
+        });
+        el.className = "w-7 h-7 rounded-sm flex items-center justify-center text-[10px] font-black transition-colors bg-[#f15a24] text-white";
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('companySearch');
+        const items = document.querySelectorAll('.company-item');
+        const sections = document.querySelectorAll('.alphabet-section');
+        const filterBtns = document.querySelectorAll('.filter-btn');
+
+        let currentSearch = '';
+        let currentFilter = 'all';
+
+        function filterCompanies() {
+            items.forEach(item => {
+                const nameMatch = item.dataset.name.includes(currentSearch);
+                const tagMatch = currentFilter === 'all' || item.dataset.tag === currentFilter;
+                
+                if(nameMatch && tagMatch) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            // Hide sections with no visible items
+            sections.forEach(section => {
+                const hasVisibleItemsNoStyle = section.querySelectorAll('.company-item:not([style*="display: none"])').length;
+                if(hasVisibleItemsNoStyle > 0) {
+                    section.style.display = 'block';
+                } else {
+                    section.style.display = 'none';
+                }
+            });
+        }
+
+        if(searchInput) {
+            searchInput.addEventListener('input', function(e) {
+                currentSearch = e.target.value.toLowerCase();
+                filterCompanies();
+            });
+        }
+
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Update active state
+                filterBtns.forEach(b => {
+                    b.classList.remove('bg-black', 'text-white', 'hover:bg-slate-800');
+                    b.classList.add('bg-[#dadbdf]', 'text-slate-800', 'hover:bg-slate-300');
+                });
+                this.classList.remove('bg-[#dadbdf]', 'text-slate-800', 'hover:bg-slate-300');
+                this.classList.add('bg-black', 'text-white', 'hover:bg-slate-800');
+
+                currentFilter = this.dataset.filter;
+                filterCompanies();
+            });
+        });
+    });
+</script>
+@endpush
