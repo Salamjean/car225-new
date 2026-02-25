@@ -167,13 +167,17 @@
                             </div>
                         </div>
 
-                        {{-- Rechercher --}}
-                        <div class="lg:col-span-3">
+                        {{-- Rechercher et Réinitialiser --}}
+                        <div class="lg:col-span-3 flex gap-2">
                             <button type="submit"
-                                class="w-full bg-[#e94f1b] hover:bg-[#d4430f] text-white px-6 py-3.5 rounded-xl font-black text-sm uppercase tracking-wider shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300 flex items-center justify-center gap-2.5 active:scale-[0.97]">
+                                class="flex-1 bg-[#e94f1b] hover:bg-[#d4430f] text-white px-3 py-3.5 rounded-xl font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300 flex items-center justify-center gap-2 active:scale-[0.97]">
                                 <i class="fas fa-search"></i>
                                 <span>Rechercher</span>
                             </button>
+                            <a href="{{ route('reservation.create') }}" title="Réinitialiser"
+                                class="w-[50px] sm:w-[56px] flex-shrink-0 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl shadow-lg shadow-white/5 backdrop-blur-sm transition-all duration-300 flex items-center justify-center active:scale-[0.97]">
+                                <i class="fas fa-undo"></i>
+                            </a>
                         </div>
                     </div>
                 </form>
@@ -260,7 +264,7 @@
                                                 <div class="min-w-0">
                                                     <h3 class="text-base sm:text-lg font-black text-gray-900 tracking-tight truncate">
                                                         <span class="text-[#e94f1b]">{{ $route->compagnie->sigle ?? '' }}</span>
-                                                        <span class="font-medium text-gray-500 ml-1">{{ $route->compagnie->name ?? 'Compagnie' }}</span>
+                                                        <span class="font-medium text-gray-500 ml-1">{{ $route->gare_depart ? $route->gare_depart->nom_gare : ($route->compagnie->name ?? 'Compagnie') }}</span>
                                                     </h3>
                                                 </div>
                                             </div>
@@ -562,7 +566,12 @@
                             @endfor
                         </div>
 
-                        <div class="flex justify-end">
+                        <div class="flex justify-between items-center">
+                            <button onclick="backToTripTypeChoice()"
+                                class="px-6 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-2xl font-bold transition-all flex items-center gap-2 text-sm">
+                                <i class="fas fa-arrow-left text-xs"></i>
+                                <span>Retour</span>
+                            </button>
                             <button id="nextStepBtn" onclick="showSeatSelection()"
                                 class="bg-gradient-to-r from-[#e94f1b] to-orange-500 text-white px-8 py-3.5 rounded-2xl font-bold hover:shadow-lg hover:shadow-orange-500/25 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none flex items-center gap-3 text-sm"
                                 disabled>
@@ -1073,6 +1082,8 @@ var currentRetourProgramId = null;
 
         // Ã‰TAPE 1: Choix Type de Voyage (Aller Simple / Aller-Retour)
         function showRouteTripTypeModal(routeData, dateDepart) {
+            window.currentRouteData = routeData;
+            window.currentDateDepart = dateDepart;
     // Conversion sécurisée du prix en nombre
     // On convertit d'abord en string, on enlève tout sauf chiffres et points, puis on parse
     let priceString = String(routeData.montant_billet || '0');
@@ -1162,11 +1173,11 @@ var currentRetourProgramId = null;
         });
         timeSlotsHtml += '</div>';
     } else {
-        timeSlotsHtml = '<p class="text-center text-red-500 font-medium py-4">Aucun horaire de dÃ©part programmÃ© pour cette date.</p>';
+        timeSlotsHtml = '<p class="text-center text-red-500 font-medium py-4">Aucun horaire de départ programmé pour cette date.</p>';
     }
 
     Swal.fire({
-        title: '<i class="fas fa-clock text-green-600"></i> Heure de dÃ©part',
+        title: '<i class="fas fa-clock text-green-600"></i> Heure de départ',
         html: `
             <div class="text-left space-y-4">
                 <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
@@ -1182,7 +1193,7 @@ var currentRetourProgramId = null;
                         ${isAllerRetour ? 'Aller-Retour' : 'Aller Simple'}
                      </p>
                 </div>
-                <p class="font-medium text-gray-700">Choisissez l'heure de dÃ©part :</p>
+                <p class="font-medium text-gray-700">Choisissez l'heure de départ :</p>
                 ${timeSlotsHtml}
             </div>
         `,
@@ -1238,10 +1249,10 @@ var currentRetourProgramId = null;
                         <div class="text-left space-y-4">
                             <div class="bg-purple-100 p-3 rounded-lg border border-purple-200">
                                 <p class="font-bold text-purple-900">Retour : ${routeData.point_arrive} <i class="fas fa-long-arrow-alt-right mx-1"></i> ${routeData.point_depart}</p>
-                                <p class="text-sm text-gray-700">SÃ©lectionnez la date de votre retour</p>
+                                <p class="text-sm text-gray-700">Sélectionnez la date de votre retour</p>
                             </div>
                             <div class="bg-green-50 p-2 rounded border border-green-200 text-sm flex justify-between items-center">
-                                <div><span class="font-bold text-green-700">DÃ©part :</span> ${new Date(dateDep).toLocaleDateString('fr-FR')}</div>
+                                <div><span class="font-bold text-green-700">Départ :</span> ${new Date(dateDep).toLocaleDateString('fr-FR')}</div>
                                 <div class="text-xs bg-green-100 px-2 py-1 rounded font-bold">${window.selectedDepartureTime}</div>
                             </div>
 
@@ -1703,7 +1714,7 @@ async function showDepartureSchedulesModal(program, departureDate, isAllerRetour
                             ${isAllerRetour ? 'Aller-Retour' : 'Aller Simple'}
                         </p>
                     </div>
-                    <p class="font-medium text-gray-700">â†’ Choisissez l'heure de dÃ©part :</p>
+                    <p class="font-medium text-gray-700">â†’ Choisissez l'heure de départ :</p>
                     ${timeSlotsHtml}
                 </div>
             `,
@@ -1785,9 +1796,9 @@ async function showDepartureSchedulesModal(program, departureDate, isAllerRetour
             if (timeSlots.length === 0) {
                 Swal.fire({
                     icon: 'warning',
-                    title: 'Aucun crÃ©neau disponible',
-                    html: `<p>Pour la date du <strong>${dateFormatted}</strong>, aucun crÃ©neau horaire n'est disponible.</p>
-                           <p class="text-sm text-gray-500 mt-2">Rappel: La rÃ©servation doit Ãªtre faite au minimum 4 heures Ã  l'avance.</p>`,
+                    title: 'Aucun créneau disponible',
+                    html: `<p>Pour la date du <strong>${dateFormatted}</strong>, aucun créneau horaire n'est disponible.</p>
+                           <p class="text-sm text-gray-500 mt-2">Rappel: La réservation doit être faite au minimum 4 heures à l'avance.</p>`,
                     confirmButtonText: 'Choisir une autre date',
                     confirmButtonColor: '#e94f1b'
                 });
@@ -1807,7 +1818,7 @@ async function showDepartureSchedulesModal(program, departureDate, isAllerRetour
             timeSlotsHtml += '</div>';
             
             Swal.fire({
-                title: '<i class="fas fa-clock text-[#e94f1b]"></i> Heure de dÃ©part',
+                title: '<i class="fas fa-clock text-[#e94f1b]"></i> Heure de départ',
                 html: `
                     <div class="text-left space-y-4">
                         <div class="bg-blue-50 p-4 rounded-lg">
@@ -1818,10 +1829,10 @@ async function showDepartureSchedulesModal(program, departureDate, isAllerRetour
                                 <span><i class="fas fa-flag"></i> ${program.gare_arrivee?.nom_gare || 'Ville'}</span>
                             </div>
                             <p class="text-sm text-gray-600"><i class="fas fa-calendar mr-2"></i>${dateFormatted}</p>
-                            <p class="text-sm text-gray-500 mt-1"><i class="fas fa-hourglass-half mr-2"></i>DurÃ©e: ${program.durer_parcours || '~1h30'}</p>
+                            <p class="text-sm text-gray-500 mt-1"><i class="fas fa-hourglass-half mr-2"></i>Durée: ${program.durer_parcours || '~1h30'}</p>
                         </div>
-                        <p class="text-gray-600 font-medium">Ã€ quelle heure souhaitez-vous partir ?</p>
-                        <p class="text-xs text-gray-400"><i class="fas fa-info-circle mr-1"></i>RÃ©servation minimum 4h Ã  l'avance â€¢ Service 6h-22h</p>
+                        <p class="text-gray-600 font-medium">A quelle heure souhaitez-vous partir ?</p>
+                        <p class="text-xs text-gray-400"><i class="fas fa-info-circle mr-1"></i>Réservation minimum 4h à l'avance • Service 6h-22h</p>
                         ${timeSlotsHtml}
                         <div id="selectedTimeDisplay" class="hidden bg-green-50 p-3 rounded-lg text-center">
                             <span class="font-bold text-green-800">Départ sélectionné: <span id="selectedTimeValue"></span></span>
@@ -1838,7 +1849,7 @@ async function showDepartureSchedulesModal(program, departureDate, isAllerRetour
                 },
                 preConfirm: () => {
                     if (!window.selectedDepartureTime) {
-                        Swal.showValidationMessage('Veuillez sÃ©lectionner une heure de dÃ©part');
+                        Swal.showValidationMessage('Veuillez sélectionner une heure de départ');
                         return false;
                     }
                     return window.selectedDepartureTime;
@@ -1890,7 +1901,7 @@ async function showDepartureSchedulesModal(program, departureDate, isAllerRetour
                                 <span class="flex items-center gap-1"><i class="fas fa-flag text-[10px] text-green-500"></i> ${program.gare_arrivee?.nom_gare || 'Ville'}</span>
                             </div>
                             <p class="text-sm text-gray-600"><i class="fas fa-calendar mr-2"></i>${dateFormatted}</p>
-                            <p class="text-sm text-green-600 font-semibold"><i class="fas fa-clock mr-2"></i>DÃ©part Ã  ${window.selectedDepartureTime}</p>
+                            <p class="text-sm text-green-600 font-semibold"><i class="fas fa-clock mr-2"></i>Départ à ${window.selectedDepartureTime}</p>
                         </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div class="border-2 border-gray-200 rounded-lg p-4 text-center hover:border-gray-400 transition-all cursor-pointer" id="choiceSimple">
@@ -2024,14 +2035,14 @@ async function showDepartureSchedulesModal(program, departureDate, isAllerRetour
                         <div class="bg-green-50 p-3 rounded-lg">
                             <p class="font-bold text-green-800"><i class="fas fa-check-circle mr-2"></i>Aller confirmÃ©</p>
                             <p class="text-sm text-green-700">${program.point_depart} â†’ ${program.point_arrive}</p>
-                            <p class="text-sm text-green-600">${dateFormatted} â€¢ DÃ©part: ${window.selectedDepartureTime} â€¢ ArrivÃ©e: ~${arrivalTimeStr}</p>
+                            <p class="text-sm text-green-600">${dateFormatted} â€¢ Départ: ${window.selectedDepartureTime} â€¢ Arrivée: ~${arrivalTimeStr}</p>
                         </div>
                         <div class="bg-blue-50 p-3 rounded-lg">
                             <p class="font-bold text-blue-800">${program.point_arrive} â†’ ${program.point_depart}</p>
                             <p class="text-sm text-blue-600">${dateFormatted} (mÃªme jour)</p>
                         </div>
-                        <p class="text-gray-600 font-medium">Ã€ quelle heure souhaitez-vous repartir ?</p>
-                        <p class="text-xs text-gray-400"><i class="fas fa-info-circle mr-1"></i>Minimum 1h aprÃ¨s votre arrivÃ©e</p>
+                        <p class="text-gray-600 font-medium">À quelle heure souhaitez-vous repartir ?</p>
+                        <p class="text-xs text-gray-400"><i class="fas fa-info-circle mr-1"></i>Minimum 1h après votre arrivée</p>
                         ${timeSlotsHtml}
                     </div>
                 `,
@@ -2097,7 +2108,7 @@ async function showDepartureSchedulesModal(program, departureDate, isAllerRetour
                         </div>
                     </div>
                 `,
-                confirmButtonText: 'Continuer la rÃ©servation',
+                confirmButtonText: 'Continuer la réservation',
                 confirmButtonColor: '#e94f1b'
             }).then(() => {
                 openReservationModal(program.id, departureDate);
@@ -2199,7 +2210,7 @@ async function showDepartureSchedulesModal(program, departureDate, isAllerRetour
                             <span>→</span>
                             <span><i class="fas fa-flag"></i> ${outboundProgram.gare_arrivee?.nom_gare || 'Ville'}</span>
                         </div>
-                        <p class="text-green-600 text-xs">${dateFormatted} â€¢ DÃ©part: ${window.selectedDepartureTime || outboundProgram.heure_depart}</p>
+                        <p class="text-green-600 text-xs">${dateFormatted} â€¢ Départ: ${window.selectedDepartureTime || outboundProgram.heure_depart}</p>
                     </div>
                     <div class="bg-blue-50 p-3 rounded-lg mb-4">
                         <p class="font-bold text-blue-800"><i class="fas fa-undo mr-2"></i>Retour: ${outboundProgram.point_arrive} â†’ ${outboundProgram.point_depart}</p>
@@ -2247,10 +2258,10 @@ async function showDepartureSchedulesModal(program, departureDate, isAllerRetour
                                         <p class="text-lg font-bold text-[#e94f1b] mt-3">Total: ${totalPrice.toLocaleString('fr-FR')} FCFA</p>
                                     </div>
                                 `,
-                                confirmButtonText: 'Continuer la rÃ©servation',
+                                confirmButtonText: 'Continuer la réservation',
                                 confirmButtonColor: '#e94f1b'
                             }).then(() => {
-                                // Ouvrir le modal de rÃ©servation pour l'aller
+                                // Ouvrir le modal de réservation pour l'aller
                                 console.log('DEBUG: Opening final reservation modal with OutboundDate:', savedOutboundDate);
                                 
                                 // FORCE RESTORE: On s'assure que globalement la date aller est correcte
@@ -2279,7 +2290,7 @@ async function showDepartureSchedulesModal(program, departureDate, isAllerRetour
             currentRequestId++;
             const thisRequestId = currentRequestId;
 
-            console.log(`[REQ #${thisRequestId}] Ouverture modal RÃ©servation pour ID ${programId}`);
+            console.log(`[REQ #${thisRequestId}] Ouverture modal Réservation pour ID ${programId}`);
 
             // RÃ©initialisation
             currentProgramId = programId;
@@ -2362,6 +2373,16 @@ window.outboundDate = dateVoyage;
 
         // Exposer globalement pour compatibilitÃ©
         window.openReservationModal = showReservationModal;
+
+        window.backToTripTypeChoice = function() {
+            closeReservationModal();
+            if (window.currentRouteData && window.currentDateDepart) {
+                // Petit délai pour permettre l'animation de fermeture
+                setTimeout(() => {
+                    showRouteTripTypeModal(window.currentRouteData, window.currentDateDepart);
+                }, 100);
+            }
+        };
 
         // ============================================
         // STEPPER UPDATE FUNCTION
@@ -3894,7 +3915,7 @@ function proceedToPassengerInfoFromRetour() {
                 }
             }
 
-            console.log("Date finale pour rÃ©servation:", dateVoyageFinal);
+            console.log("Date finale pour réservation:", dateVoyageFinal);
             console.log("DEBUG VARIABLES:", {
                 'window.outboundDate': window.outboundDate,
                 'window.currentReservationDate': window.currentReservationDate,
@@ -3907,10 +3928,10 @@ function proceedToPassengerInfoFromRetour() {
             }
 
             Swal.fire({
-                title: 'Confirmer la rÃ©servation',
+                title: 'Confirmer la réservation',
                 html: `
                     <div class="text-left">
-                        <p class="mb-3">Voulez-vous confirmer la rÃ©servation de <strong>${selectedNumberOfPlaces} place(s)</strong> ?</p>
+                        <p class="mb-3">Voulez-vous confirmer la réservation de <strong>${selectedNumberOfPlaces} place(s)</strong> ?</p>
                         <div class="bg-gray-50 p-4 rounded-lg mb-4">
                             <!-- CORRECTION ICI : utilisation de dateVoyageFinal au lieu de dateVoyage -->
                             <p class="font-semibold mb-2">Date : <span class="text-blue-600">${new Date(dateVoyageFinal).toLocaleDateString('fr-FR')}</span></p>

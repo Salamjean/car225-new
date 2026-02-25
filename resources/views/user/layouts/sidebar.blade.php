@@ -2,7 +2,7 @@
     <div class="flex flex-col h-full">
         <!-- Logo Section -->
         <div class="p-8">
-            <a href="{{ route('user.dashboard') }}" class="flex items-center gap-3">
+            <a href="{{ route('reservation.create') }}" class="flex items-center gap-3">
                 <div class="w-10 h-10 flex items-center justify-center">
                     <img src="{{ asset('assetsPoster/assets/images/Car225_favicon.png') }}" alt="Logo" class="w-full h-full object-contain">
                 </div>
