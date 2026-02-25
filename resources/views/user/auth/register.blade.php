@@ -415,7 +415,7 @@
                         <div class="form-group">
                             <label for="contact"><i class="fas fa-phone"></i> Contact</label>
                             <input type="text" id="contact" name="contact" class="form-control"
-                                value="{{ old('contact') }}" required placeholder="Votre numéro de téléphone">
+                                value="{{ old('contact') }}" required placeholder="Votre numéro de téléphone" maxlength="10" minlength="10">
                             <div class="input-icon">
                                 <i class="fas fa-mobile-alt"></i>
                             </div>
