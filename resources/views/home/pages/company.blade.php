@@ -43,17 +43,7 @@
             </div>
         </div>
 
-        <!-- Filters -->
-        <div class="flex flex-wrap justify-center gap-2 max-w-[800px] mx-auto" id="categoryFilters">
-            <button class="filter-btn active px-5 py-2 bg-black text-white text-[13px] font-bold rounded-md hover:bg-slate-800 transition-colors" data-filter="all">Tous</button>
-            <button class="filter-btn px-5 py-2 bg-[#dadbdf] text-slate-800 text-[13px] font-bold rounded-md hover:bg-slate-300 transition-colors" data-filter="LUXE">Luxe</button>
-            <button class="filter-btn px-5 py-2 bg-[#dadbdf] text-slate-800 text-[13px] font-bold rounded-md hover:bg-slate-300 transition-colors" data-filter="PREMIUM">Premium</button>
-            <button class="filter-btn px-5 py-2 bg-[#dadbdf] text-slate-800 text-[13px] font-bold rounded-md hover:bg-slate-300 transition-colors" data-filter="STANDARD">Standard</button>
-            <button class="filter-btn px-5 py-2 bg-[#dadbdf] text-slate-800 text-[13px] font-bold rounded-md hover:bg-slate-300 transition-colors" data-filter="ECONOMIQUE">Economique</button>
-            <button class="px-5 py-2 bg-[#dadbdf] text-slate-800 text-[13px] font-bold rounded-md hover:bg-slate-300 transition-colors flex items-center gap-1">
-                <i class="bi bi-funnel"></i> Plus de filtres
-            </button>
-        </div>
+     
     </div>
 </section>
 

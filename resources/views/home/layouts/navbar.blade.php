@@ -11,7 +11,7 @@
         <li><a href="{{route('home')}}" class="active !text-white font-bold uppercase text-xs tracking-wider hover:!text-white/80">Accueil</a></li>
         <li><a href="{{route('home.compagny')}}" class="!text-white font-bold uppercase text-xs tracking-wider hover:!text-white/80">Compagnies</a></li>
         <li><a href="{{route('home.reservations')}}" class="!text-white font-bold uppercase text-xs tracking-wider hover:!text-white/80">Mes réservations</a></li>
-        <li><a href="{{route('home.signaler')}}" class="!text-white font-bold uppercase text-xs tracking-wider hover:!text-white/80">Signalez un probleme</a></li>
+        <!-- <li><a href="{{route('home.signaler')}}" class="!text-white font-bold uppercase text-xs tracking-wider hover:!text-white/80">Signalez un probleme</a></li> -->
         <li><a href="{{route('home.contact')}}" class="!text-white font-bold uppercase text-xs tracking-wider hover:!text-white/80">Contactez-nous</a></li>
       </ul>
       <i class="mobile-nav-toggle d-xl-none bi bi-list text-white"></i>

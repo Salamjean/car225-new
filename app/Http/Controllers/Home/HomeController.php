@@ -28,7 +28,7 @@ class HomeController extends Controller
             ->whereRaw('DATE(date_depart) <= ?', [$today])
             ->whereRaw('DATE(date_fin) >= ?', [$today])
             ->orderBy('montant_billet', 'asc')
-            ->take(8)
+            ->take(4)
             ->get();
         
         return view('home.home', compact('compagnies', 'usersCount', 'trajetsPopulaires'));
