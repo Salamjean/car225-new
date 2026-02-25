@@ -214,8 +214,8 @@ class GareVoyageController extends Controller
             return back()->with('error', 'Ce voyage n\'appartient pas à votre compagnie.');
         }
 
-        if (in_array($voyage->statut, ['en_cours', 'terminé'])) {
-            return back()->with('error', 'Impossible d\'annuler un voyage déjà démarré ou terminé.');
+        if ($voyage->statut === 'terminé') {
+            return back()->with('error', 'Impossible d\'annuler un voyage déjà terminé.');
         }
 
         if ($voyage->chauffeur) {

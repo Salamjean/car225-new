@@ -112,6 +112,7 @@ class AuthController extends Controller
             'message' => 'Connexion réussie',
             'user' => [
                 'id' => $user->id,
+                'code_id' => $user->code_id,
                 'name' => $user->name,
                 'prenom' => $user->prenom,
                 'email' => $user->email,
@@ -199,6 +200,7 @@ class AuthController extends Controller
                 'message' => 'Inscription réussie',
                 'user' => [
                     'id' => $user->id,
+                    'code_id' => $user->code_id,
                     'name' => $user->name,
                     'prenom' => $user->prenom,
                     'email' => $user->email,

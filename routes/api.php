@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\User\StatistiqueApiController;
 use App\Http\Controllers\Api\Agent\AuthController as AgentAuthController;
 use App\Http\Controllers\Api\Agent\AgentController;
 use App\Http\Controllers\Api\Agent\ReservationApiController as AgentReservationController;
+use App\Http\Controllers\Api\UnifiedAuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -23,6 +24,12 @@ use Illuminate\Support\Facades\Route;
 | Toutes les routes authentifiées utilisent Laravel Sanctum.
 |
 */
+
+// ============================================================================
+// CONNEXION UNIFIÉE (Mobile - toutes interfaces)
+// ============================================================================
+
+Route::post('/unified-login', [UnifiedAuthController::class, 'login']);
 
 // ============================================================================
 // USER API ROUTES

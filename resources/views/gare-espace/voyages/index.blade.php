@@ -222,13 +222,13 @@
                                 </div>
                             </div>
 
-                            @if(!in_array($voyageAssigne->statut, ['en_cours', 'terminé']))
-                                <form action="{{ route('gare-espace.voyages.destroy', $voyageAssigne->id) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir annuler cette assignation ?')">
+                            @if($voyageAssigne->statut !== 'terminé')
+                                <form action="{{ route('gare-espace.voyages.destroy', $voyageAssigne->id) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir annuler {{ $voyageAssigne->statut === 'en_cours' ? 'ce voyage en cours' : 'cette assignation' }} ?')">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="w-full bg-red-500 text-white py-3 rounded-xl font-bold hover:bg-red-600 transition-colors flex items-center justify-center gap-2">
                                         <i class="fas fa-times-circle"></i>
-                                        Annuler l'assignation
+                                        {{ $voyageAssigne->statut === 'en_cours' ? 'Annuler le voyage' : 'Annuler l\'assignation' }}
                                     </button>
                                 </form>
                             @endif

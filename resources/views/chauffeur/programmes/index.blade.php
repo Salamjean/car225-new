@@ -171,34 +171,92 @@
                             </div>
                         </div>
 
-                        <!-- Action Buttons -->
+                        {{-- ===== Action Buttons ===== --}}
+                        @php $nbPassagers = $voyage->occupancy; @endphp
+
                         @if($voyage->statut === 'en_attente')
-                            <form action="{{ route('chauffeur.voyages.confirm', $voyage->id) }}" method="POST">
-                                @csrf
-                                <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-3 hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg">
-                                    <i class="fas fa-check-circle text-xl"></i>
-                                    Confirmer le voyage
-                                </button>
-                            </form>
-                        @elseif($voyage->statut === 'confirmé')
-                            @if(\Carbon\Carbon::parse($voyage->date_voyage)->isToday())
-                                <form action="{{ route('chauffeur.voyages.start', $voyage->id) }}" method="POST">
+                            <div class="flex flex-col gap-3">
+                                <form action="{{ route('chauffeur.voyages.confirm', $voyage->id) }}" method="POST">
                                     @csrf
-                                    <button type="submit" class="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-3 hover:from-green-700 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg">
-                                        <i class="fas fa-play-circle text-xl"></i>
-                                        Démarrer le voyage
+                                    <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-3 hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg">
+                                        <i class="fas fa-check-circle text-xl"></i>
+                                        Confirmer le voyage
                                     </button>
                                 </form>
+                                {{-- Annuler --}}
+                                <button type="button"
+                                    class="cancel-voyage-btn w-full bg-white border-2 border-red-200 text-red-500 py-3 rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-red-50 hover:border-red-400 transition-all"
+                                    data-voyage-id="{{ $voyage->id }}"
+                                    data-trip-label="{{ $voyage->programme->point_depart }} → {{ $voyage->programme->point_arrive }}">
+                                    <i class="fas fa-times-circle"></i>
+                                    Annuler le voyage
+                                </button>
+                            </div>
+
+                        @elseif($voyage->statut === 'confirmé')
+                            @if(\Carbon\Carbon::parse($voyage->date_voyage)->isToday())
+                                <div class="flex flex-col gap-3">
+
+                                    {{-- Alerte si aucun passager --}}
+                                    @if($nbPassagers === 0)
+                                        <div class="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                                            <i class="fas fa-exclamation-triangle text-amber-500 text-lg flex-shrink-0"></i>
+                                            <div>
+                                                <p class="font-bold text-amber-800 text-sm">Aucun passager enregistré</p>
+                                                <p class="text-amber-600 text-xs mt-0.5">Au moins <strong>1 passager</strong> doit être présent dans le véhicule pour démarrer.</p>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    {{-- Bouton Démarrer --}}
+                                    @if($nbPassagers >= 1)
+                                        <form action="{{ route('chauffeur.voyages.start', $voyage->id) }}" method="POST">
+                                            @csrf
+                                            <button type="submit" class="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-3 hover:from-green-700 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg">
+                                                <i class="fas fa-play-circle text-xl"></i>
+                                                Démarrer le voyage
+                                                <span class="text-xs bg-white/20 px-2 py-0.5 rounded-full">{{ $nbPassagers }} passager(s)</span>
+                                            </button>
+                                        </form>
+                                    @else
+                                        <button type="button" disabled
+                                            class="w-full bg-gray-200 text-gray-400 py-4 rounded-xl font-bold flex items-center justify-center gap-3 cursor-not-allowed">
+                                            <i class="fas fa-ban text-xl"></i>
+                                            Démarrer le voyage
+                                            <span class="text-xs bg-gray-300 px-2 py-0.5 rounded-full">0 passager</span>
+                                        </button>
+                                    @endif
+
+                                    {{-- Annuler --}}
+                                    <button type="button"
+                                        class="cancel-voyage-btn w-full bg-white border-2 border-red-200 text-red-500 py-3 rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-red-50 hover:border-red-400 transition-all"
+                                        data-voyage-id="{{ $voyage->id }}"
+                                        data-trip-label="{{ $voyage->programme->point_depart }} → {{ $voyage->programme->point_arrive }}">
+                                        <i class="fas fa-times-circle"></i>
+                                        Annuler le voyage
+                                    </button>
+                                </div>
                             @else
-                                <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl text-center">
-                                    <i class="fas fa-calendar-check text-blue-400 text-2xl mb-2"></i>
-                                    <p class="text-blue-700 font-semibold">Voyage confirmé</p>
-                                    <p class="text-blue-500 text-sm mt-1">Vous pourrez démarrer le jour du voyage ({{ \Carbon\Carbon::parse($voyage->date_voyage)->format('d/m/Y') }})</p>
+                                <div class="flex flex-col gap-3">
+                                    <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl text-center">
+                                        <i class="fas fa-calendar-check text-blue-400 text-2xl mb-2"></i>
+                                        <p class="text-blue-700 font-semibold">Voyage confirmé</p>
+                                        <p class="text-blue-500 text-sm mt-1">Vous pourrez démarrer le jour du voyage ({{ \Carbon\Carbon::parse($voyage->date_voyage)->format('d/m/Y') }})</p>
+                                    </div>
+                                    {{-- Annuler --}}
+                                    <button type="button"
+                                        class="cancel-voyage-btn w-full bg-white border-2 border-red-200 text-red-500 py-3 rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-red-50 hover:border-red-400 transition-all"
+                                        data-voyage-id="{{ $voyage->id }}"
+                                        data-trip-label="{{ $voyage->programme->point_depart }} → {{ $voyage->programme->point_arrive }}">
+                                        <i class="fas fa-times-circle"></i>
+                                        Annuler le voyage
+                                    </button>
                                 </div>
                             @endif
+
                         @elseif($voyage->statut === 'en_cours')
                             <div class="flex flex-col md:flex-row gap-3">
-                                <form action="{{ route('chauffeur.voyages.complete', $voyage->id) }}" method="POST" onsubmit="return confirm('Confirmez-vous l\'arrivée à destination ?')" class="flex-1">
+                                <form action="{{ route('chauffeur.voyages.complete', $voyage->id) }}" method="POST" onsubmit="return confirm('Confirmez-vous l\'arrivée à destination ?')" class="flex-1 hidden" id="finish-btn-container-{{ $voyage->id }}">
                                     @csrf
                                     <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-3 hover:from-purple-700 hover:to-pink-700 transition-all shadow-md hover:shadow-lg">
                                         <i class="fas fa-flag-checkered text-xl"></i>
@@ -232,6 +290,43 @@
         <!-- Pagination -->
         <div class="mt-8">
             {{ $voyages->appends(['date' => $date])->links() }}
+        </div>
+    </div>
+</div>
+
+{{-- ===== Modal Annulation du voyage ===== --}}
+<div id="cancelModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.55);">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+        <div class="bg-gradient-to-r from-red-500 to-rose-600 p-5 text-white">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-times-circle text-xl"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-lg">Annuler le voyage ?</h4>
+                    <p class="text-xs text-white/80">Cette action est irréversible</p>
+                </div>
+                <button onclick="closeCancelModal()" class="ml-auto text-white/70 hover:text-white transition">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+        </div>
+        <div class="p-6">
+            <p class="text-gray-600 text-sm mb-2">Vous êtes sur le point d'annuler le voyage :</p>
+            <p class="font-bold text-gray-900 text-lg mb-4" id="cancelTripLabel"></p>
+            <p class="text-gray-400 text-xs">Le véhicule et votre statut seront remis à <strong>disponible</strong>.</p>
+        </div>
+        <div class="border-t border-gray-100 p-4 flex gap-3">
+            <button onclick="closeCancelModal()" class="flex-1 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition text-sm">
+                Garder le voyage
+            </button>
+            <form id="cancelForm" method="POST" class="flex-1">
+                @csrf
+                <button type="submit" class="w-full py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold transition text-sm flex items-center justify-center gap-2">
+                    <i class="fas fa-times-circle"></i>
+                    Oui, annuler
+                </button>
+            </form>
         </div>
     </div>
 </div>
@@ -290,6 +385,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 timer.classList.remove('text-blue-600');
                 timer.classList.add('text-green-600');
+
+                // Afficher le bouton Terminer le voyage
+                const voyageId = timer.id.replace('timer-', '');
+                const finishBtn = document.getElementById('finish-btn-container-' + voyageId);
+                if (finishBtn) {
+                    finishBtn.classList.remove('hidden');
+                }
+
                 return;
             }
             
@@ -408,5 +511,32 @@ document.addEventListener('DOMContentLoaded', function() {
         startGPSTracking(voyageId, url);
     });
 });
+</script>
+
+<script>
+// ===== Modal Annulation =====
+document.addEventListener('DOMContentLoaded', function() {
+    // Event delegation for all cancel buttons
+    document.querySelectorAll('.cancel-voyage-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var voyageId = this.getAttribute('data-voyage-id');
+            var tripLabel = this.getAttribute('data-trip-label');
+            document.getElementById('cancelTripLabel').textContent = tripLabel;
+            document.getElementById('cancelForm').action = '/chauffeur/voyages/' + voyageId + '/annuler';
+            document.getElementById('cancelModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        });
+    });
+
+    // Close modal
+    document.getElementById('cancelModal').addEventListener('click', function(e) {
+        if (e.target === this) closeCancelModal();
+    });
+});
+
+function closeCancelModal() {
+    document.getElementById('cancelModal').classList.add('hidden');
+    document.body.style.overflow = '';
+}
 </script>
 @endsection

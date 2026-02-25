@@ -36,7 +36,9 @@ class ReservationController extends Controller
                 $q->whereDate('date_voyage', $today)
                   ->whereIn('statut', ['en_cours', 'terminé']);
             })
-            ->with(['gareDepart', 'gareArrivee', 'voyages.vehicule'])
+            ->with(['gareDepart', 'gareArrivee', 'voyages' => function($q) use ($today) {
+                $q->whereDate('date_voyage', $today)->with('vehicule');
+            }])
             ->orderBy('heure_depart')
             ->get();
 
@@ -80,7 +82,9 @@ class ReservationController extends Controller
                 $q->whereDate('date_voyage', $today)
                   ->whereIn('statut', ['en_cours', 'terminé']);
             })
-            ->with(['gareDepart', 'gareArrivee', 'voyages.vehicule'])
+            ->with(['gareDepart', 'gareArrivee', 'voyages' => function($q) use ($today) {
+                $q->whereDate('date_voyage', $today)->with('vehicule');
+            }])
             ->orderBy('heure_depart')
             ->get();
 

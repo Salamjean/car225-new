@@ -41,6 +41,7 @@ use App\Models\Signalement;
 use App\Http\Controllers\Chauffeur\ChauffeurController;
 use App\Http\Controllers\Chauffeur\ChauffeurAuthenticate;
 use App\Http\Controllers\Chauffeur\VoyageController as ChauffeurVoyageController;
+use App\Http\Controllers\Chauffeur\ChauffeurReservationController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -745,6 +746,7 @@ Route::prefix('chauffeur')->name('chauffeur.')->group(function () {
             Route::post('/{voyage}/start', [ChauffeurVoyageController::class, 'start'])->name('start');
             Route::post('/{voyage}/complete', [ChauffeurVoyageController::class, 'complete'])->name('complete');
             Route::post('/{voyage}/update-location', [ChauffeurVoyageController::class, 'updateLocation'])->name('update-location');
+            Route::post('/{voyage}/annuler', [ChauffeurVoyageController::class, 'annuler'])->name('annuler');
         });
 
         // Inbox for Chauffeur
@@ -759,6 +761,13 @@ Route::prefix('chauffeur')->name('chauffeur.')->group(function () {
             Route::get('/create', [\App\Http\Controllers\Chauffeur\ChauffeurSignalementController::class, 'create'])->name('create');
             Route::post('/', [\App\Http\Controllers\Chauffeur\ChauffeurSignalementController::class, 'store'])->name('store');
             Route::get('/{signalement}', [\App\Http\Controllers\Chauffeur\ChauffeurSignalementController::class, 'show'])->name('show');
+        });
+
+        // Scan QR des réservations pour le chauffeur
+        Route::prefix('reservations')->name('reservations.')->group(function () {
+            Route::get('/scan', [ChauffeurReservationController::class, 'scanPage'])->name('scan');
+            Route::post('/search', [ChauffeurReservationController::class, 'search'])->name('search');
+            Route::post('/confirm', [ChauffeurReservationController::class, 'confirm'])->name('confirm');
         });
     });
 });
