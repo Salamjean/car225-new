@@ -12,13 +12,51 @@ use Carbon\Carbon;
 class ReservationApiController extends Controller
 {
     /**
-     * Liste des réservations de la compagnie
+     * Liste des réservations + programmes du jour
      */
     public function index(Request $request)
     {
         $agent = $request->user();
+        $now = Carbon::now();
+        $today = Carbon::today()->toDateString();
+        $currentTime = $now->format('H:i');
 
-        $query = Reservation::with(['programme', 'user'])
+        // Programmes du jour (même logique que le web)
+        $programmesDuJour = Programme::where('compagnie_id', $agent->compagnie_id)
+            ->where('gare_depart_id', $agent->gare_id)
+            ->where('statut', 'actif')
+            ->where(function ($query) use ($today) {
+                $query->whereDate('date_depart', $today)
+                      ->orWhere(function ($q) use ($today) {
+                          $q->where('date_depart', '<=', $today)
+                            ->where('date_fin', '>=', $today);
+                      });
+            })
+            ->where('heure_depart', '>', $currentTime)
+            ->whereDoesntHave('voyages', function ($q) use ($today) {
+                $q->whereDate('date_voyage', $today)
+                  ->whereIn('statut', ['en_cours', 'terminé']);
+            })
+            ->with(['gareDepart', 'gareArrivee', 'voyages' => function($q) use ($today) {
+                $q->whereDate('date_voyage', $today)->with('vehicule');
+            }])
+            ->orderBy('heure_depart')
+            ->get()
+            ->map(function($p) {
+                return [
+                    'id' => $p->id,
+                    'point_depart' => $p->point_depart,
+                    'point_arrive' => $p->point_arrive,
+                    'heure_depart' => $p->heure_depart,
+                    'gare_depart' => $p->gareDepart ? $p->gareDepart->nom_gare : null,
+                    'gare_arrivee' => $p->gareArrivee ? $p->gareArrivee->nom_gare : null,
+                    'vehicule_id' => $p->vehicule_id,
+                    'immatriculation' => $p->vehicule->immatriculation ?? 'N/A',
+                ];
+            });
+
+        // Réservations
+        $query = Reservation::with(['programme.gareDepart', 'programme.gareArrivee', 'user'])
             ->whereHas('programme', function($q) use ($agent) {
                 $q->where('compagnie_id', $agent->compagnie_id);
             })
@@ -35,27 +73,21 @@ class ReservationApiController extends Controller
 
         $reservations = $query->paginate($request->get('per_page', 20));
 
+        // Catégoriser
+        $enCours = $reservations->getCollection()->whereNotIn('statut', ['terminee', 'annulee'])->values();
+        $terminees = $reservations->getCollection()->where('statut', 'terminee')->values();
+
         return response()->json([
             'success' => true,
+            'programmes_du_jour' => $programmesDuJour,
+            'en_cours' => $enCours->map(function($r) {
+                return $this->formatReservation($r);
+            }),
+            'terminees' => $terminees->map(function($r) {
+                return $this->formatReservation($r);
+            }),
             'reservations' => $reservations->map(function($reservation) {
-                return [
-                    'id' => $reservation->id,
-                    'reference' => $reservation->reference,
-                    'passager_nom' => $reservation->passager_nom,
-                    'passager_prenom' => $reservation->passager_prenom,
-                    'passager_telephone' => $reservation->passager_telephone,
-                    'seat_number' => $reservation->seat_number,
-                    'date_voyage' => $reservation->date_voyage,
-                    'statut' => $reservation->statut,
-                    'statut_aller' => $reservation->statut_aller,
-                    'statut_retour' => $reservation->statut_retour,
-                    'is_aller_retour' => $reservation->is_aller_retour,
-                    'programme' => $reservation->programme ? [
-                        'point_depart' => $reservation->programme->point_depart,
-                        'point_arrive' => $reservation->programme->point_arrive,
-                        'heure_depart' => $reservation->programme->heure_depart,
-                    ] : null,
-                ];
+                return $this->formatReservation($reservation);
             }),
             'pagination' => [
                 'current_page' => $reservations->currentPage(),
@@ -67,24 +99,23 @@ class ReservationApiController extends Controller
     }
 
     /**
-     * Rechercher une réservation par référence QR
+     * Rechercher une réservation par référence QR (pour scan)
      */
     public function search(Request $request)
     {
         $request->validate([
             'reference' => 'required|string',
-            'vehicule_id' => 'nullable|integer',
-            'programme_id' => 'nullable|integer', // Pour detection aller/retour
+            'programme_id' => 'nullable|integer',
         ]);
 
-        $reservation = Reservation::with(['programme', 'user', 'embarquementVehicule'])
+        $reservation = Reservation::with(['programme.gareDepart', 'programme.gareArrivee', 'user'])
             ->where('reference', $request->reference)
             ->first();
 
         if (!$reservation) {
             return response()->json([
                 'success' => false,
-                'message' => 'Reservation non trouvee.',
+                'message' => 'Réservation non trouvée.',
             ], 404);
         }
 
@@ -92,76 +123,60 @@ class ReservationApiController extends Controller
         if ($reservation->programme->compagnie_id !== $agent->compagnie_id) {
             return response()->json([
                 'success' => false,
-                'message' => 'Ce billet n\'appartient pas a votre compagnie.',
+                'message' => 'Ce billet n\'appartient pas à votre compagnie.',
             ], 403);
         }
 
-        // --- DETECTION PAR PROGRAMME_ID (prioritaire) ---
-        $programScanId = $request->input('programme_id');
+        // --- LOGIQUE CIBLE (Aller ou Retour) ---
         $targetScan = null;
+        $programScanId = $request->input('programme_id');
         $programmeActuel = null;
 
+        // 1. DÉTECTION VIA LE PROGRAMME SÉLECTIONNÉ
         if ($programScanId) {
             if ($programScanId == $reservation->programme_id) {
                 $targetScan = 'aller';
                 $programmeActuel = $reservation->programme;
             } elseif ($reservation->programme->programme_retour_id == $programScanId) {
                 $targetScan = 'retour';
-                $programmeActuel = Programme::find($programScanId);
+                $programmeActuel = Programme::with(['gareDepart', 'gareArrivee'])->find($programScanId);
             } else {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Ce billet ne correspond pas au trajet selectionne.',
+                    'message' => 'Ce billet ne correspond pas au trajet sélectionné.',
                 ], 400);
             }
-        } else {
-            // Fallback par date
-            $today = Carbon::today();
-            $dateAller = Carbon::parse($reservation->date_voyage)->startOfDay();
-            $dateRetour = $reservation->date_retour ? Carbon::parse($reservation->date_retour)->startOfDay() : null;
-
-            $isDayAller = $dateAller->equalTo($today);
-            $isDayRetour = $reservation->is_aller_retour && $dateRetour && $dateRetour->equalTo($today);
-
-            if ($isDayAller && $isDayRetour) {
-                $targetScan = ($reservation->statut_aller === 'terminee') ? 'retour' : 'aller';
-            } elseif ($isDayAller) {
-                $targetScan = 'aller';
-            } elseif ($isDayRetour) {
-                $targetScan = 'retour';
-            } else {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Date invalide pour ce billet.',
-                ], 400);
-            }
+        }
+        // 2. FALLBACK
+        else {
             $programmeActuel = $reservation->programme;
+            $targetScan = 'aller';
         }
 
-        // Trajet label selon le programme actuel
-        if ($targetScan === 'aller') {
-            $statutActuel = $reservation->statut_aller;
-            $trajetLabel = "ALLER : " . $programmeActuel->point_depart . ' -> ' . $programmeActuel->point_arrive;
-        } else {
-            $statutActuel = $reservation->statut_retour;
-            $trajetLabel = "RETOUR : " . ($programmeActuel ? $programmeActuel->point_depart . ' -> ' . $programmeActuel->point_arrive : $reservation->programme->point_arrive . ' -> ' . $reservation->programme->point_depart);
-        }
+        // Vérification du statut
+        $statutActuel = ($targetScan === 'aller') ? $reservation->statut_aller : $reservation->statut_retour;
 
-        // Si ce trajet spécifique est déjà terminé
         if ($statutActuel === 'terminee') {
             return response()->json([
                 'success' => false,
-                'message' => "Le trajet " . strtoupper($targetScan) . " a déjà été validé et consommé.",
+                'message' => "Le trajet " . strtoupper($targetScan) . " a déjà été validé.",
                 'already_scanned' => true,
             ], 400);
         }
 
-        if ($statutActuel !== 'confirmee') {
-            return response()->json([
-                'success' => false,
-                'message' => "Le statut du trajet $targetScan n'est pas valide ($statutActuel).",
-            ], 400);
+        // Charger les gares du programme actuel si besoin
+        if ($programmeActuel && !$programmeActuel->relationLoaded('gareDepart')) {
+            $programmeActuel->load(['gareDepart', 'gareArrivee']);
         }
+
+        $prog = $programmeActuel ?? $reservation->programme;
+        $heureDepart = $prog->heure_depart;
+        $heureArrivee = $prog->heure_arrive;
+        $trajetLabel = $prog->point_depart . ' → ' . $prog->point_arrive;
+        $gareDepartNom = optional($prog->gareDepart)->nom_gare ?? '';
+        $gareArriveeNom = optional($prog->gareArrivee)->nom_gare ?? '';
+        $gareDepartVille = optional($prog->gareDepart)->ville ?? '';
+        $gareArriveeVille = optional($prog->gareArrivee)->ville ?? '';
 
         return response()->json([
             'success' => true,
@@ -170,12 +185,20 @@ class ReservationApiController extends Controller
                 'reference' => $reservation->reference,
                 'passager_nom_complet' => $reservation->passager_prenom . ' ' . $reservation->passager_nom,
                 'passager_telephone' => $reservation->passager_telephone,
+                'passager_email' => $reservation->passager_email ?? '',
                 'seat_number' => $reservation->seat_number,
-                'date_voyage' => $today->format('d/m/Y'),
+                'date_voyage' => Carbon::parse($prog->date_depart ?? now())->format('d/m/Y'),
                 'trajet' => $trajetLabel,
-                'heure_depart' => $reservation->programme->heure_depart,
-                'type_scan' => strtoupper($targetScan),
+                'heure_depart' => $heureDepart,
+                'heure_arrivee' => $heureArrivee,
+                'gare_depart' => $gareDepartNom,
+                'gare_arrivee' => $gareArriveeNom,
+                'gare_depart_ville' => $gareDepartVille,
+                'gare_arrivee_ville' => $gareArriveeVille,
+                'montant' => number_format($reservation->montant ?? 0, 0, ',', ' ') . ' FCFA',
                 'is_aller_retour' => $reservation->is_aller_retour,
+                'type_scan' => strtoupper($targetScan),
+                'statut' => $statutActuel,
             ],
         ]);
     }
@@ -188,7 +211,7 @@ class ReservationApiController extends Controller
         $request->validate([
             'reference' => 'required|string',
             'vehicule_id' => 'required|integer',
-            'programme_id' => 'nullable|integer', // Pour detection aller/retour
+            'programme_id' => 'nullable|integer',
         ]);
 
         $reservation = Reservation::with('programme')->where('reference', $request->reference)->first();
@@ -198,44 +221,46 @@ class ReservationApiController extends Controller
         if (!$reservation || !$vehicule) {
             return response()->json([
                 'success' => false,
-                'message' => 'Donnees invalides.',
+                'message' => 'Données invalides.',
             ], 400);
         }
 
-        // --- DETECTION PAR PROGRAMME_ID (prioritaire) ---
-        $programScanId = $request->input('programme_id');
+        // --- DÉTECTION PAR DATE (prioritaire, comme la version web) ---
+        $today = Carbon::today();
+        $dateAller = Carbon::parse($reservation->date_voyage)->startOfDay();
+        $dateRetour = $reservation->date_retour ? Carbon::parse($reservation->date_retour)->startOfDay() : null;
+
+        $isDayAller = $dateAller->equalTo($today);
+        $isDayRetour = $dateRetour && $dateRetour->equalTo($today);
+
         $targetScan = null;
 
-        if ($programScanId) {
-            if ($programScanId == $reservation->programme_id) {
-                $targetScan = 'aller';
-            } elseif ($reservation->programme->programme_retour_id == $programScanId) {
-                $targetScan = 'retour';
-            } else {
+        if (!$isDayAller && !$isDayRetour) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cette réservation n\'est pas valable pour aujourd\'hui.',
+            ], 400);
+        }
+
+        if ($isDayAller && $isDayRetour) {
+            $targetScan = ($reservation->statut_aller === 'terminee') ? 'retour' : 'aller';
+        } elseif ($isDayAller) {
+            $targetScan = 'aller';
+        } elseif ($isDayRetour) {
+            $targetScan = 'retour';
+        }
+
+        // Vérifier le programme sélectionné (optionnel mais recommandé)
+        if ($request->has('programme_id')) {
+            $programScanId = $request->input('programme_id');
+            $expectedProgramId = ($targetScan === 'aller')
+                ? $reservation->programme_id
+                : $reservation->programme->programme_retour_id;
+
+            if ($programScanId != $expectedProgramId) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Ce billet ne correspond pas au trajet selectionne.',
-                ], 400);
-            }
-        } else {
-            // Fallback par date
-            $today = Carbon::today();
-            $dateAller = Carbon::parse($reservation->date_voyage)->startOfDay();
-            $dateRetour = $reservation->date_retour ? Carbon::parse($reservation->date_retour)->startOfDay() : null;
-
-            $isDayAller = $dateAller->equalTo($today);
-            $isDayRetour = $reservation->is_aller_retour && $dateRetour && $dateRetour->equalTo($today);
-
-            if ($isDayAller && $isDayRetour) {
-                $targetScan = ($reservation->statut_aller === 'terminee') ? 'retour' : 'aller';
-            } elseif ($isDayAller) {
-                $targetScan = 'aller';
-            } elseif ($isDayRetour) {
-                $targetScan = 'retour';
-            } else {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Date invalide.',
+                    'message' => 'Le programme sélectionné ne correspond pas au trajet à scanner.',
                 ], 400);
             }
         }
@@ -244,7 +269,7 @@ class ReservationApiController extends Controller
             'embarquement_scanned_at' => now(),
             'embarquement_agent_id' => $agent->id,
             'embarquement_vehicule_id' => $vehicule->id,
-            'embarquement_status' => 'scanned'
+            'embarquement_status' => 'scanned',
         ];
 
         $message = "";
@@ -319,60 +344,42 @@ class ReservationApiController extends Controller
 
     /**
      * Récupérer les programmes du jour pour le scan
+     * (Aligné avec la logique web : filtrage par gare, statut actif, voyages)
      */
     public function getProgrammesForScan(Request $request)
     {
         $agent = $request->user();
-        $today = Carbon::today();
-        $now = Carbon::now();
-        $heureMinimum = $now->copy()->subMinutes(30)->format('H:i'); // 30 min de marge
+        $today = Carbon::today()->toDateString();
+        $currentTime = Carbon::now()->format('H:i');
 
         $programmes = Programme::where('compagnie_id', $agent->compagnie_id)
-            ->where('heure_depart', '>=', $heureMinimum) // FILTRE PAR HEURE
-            ->where(function($query) use ($today) {
-                $query->where(function($q) use ($today) {
-                    $q->where('type_programmation', 'ponctuel')
-                      ->whereDate('date_depart', $today);
-                })
-                ->orWhere(function($q) use ($today) {
-                    $joursFrancais = [
-                        'monday' => 'lundi',
-                        'tuesday' => 'mardi',
-                        'wednesday' => 'mercredi',
-                        'thursday' => 'jeudi',
-                        'friday' => 'vendredi',
-                        'saturday' => 'samedi',
-                        'sunday' => 'dimanche'
-                    ];
-                    $jourSemaine = $joursFrancais[strtolower($today->format('l'))];
-                    
-                    $q->where('type_programmation', 'recurrent')
-                      ->whereDate('date_depart', '<=', $today)
-                      ->where(function($dateCheck) use ($today) {
-                          $dateCheck->whereNull('date_fin_programmation')
-                                   ->orWhereDate('date_fin_programmation', '>=', $today);
-                      })
-                      ->where(function($dayCheck) use ($jourSemaine) {
-                          $dayCheck->whereJsonContains('jours_recurrence', $jourSemaine)
-                                   ->orWhere('jours_recurrence', 'like', "%{$jourSemaine}%");
+            ->where('gare_depart_id', $agent->gare_id)
+            ->where('statut', 'actif')
+            ->where(function ($query) use ($today) {
+                $query->whereDate('date_depart', $today)
+                      ->orWhere(function ($q) use ($today) {
+                          $q->where('date_depart', '<=', $today)
+                            ->where('date_fin', '>=', $today);
                       });
-                });
             })
-            ->with('compagnie')
+            ->where('heure_depart', '>', $currentTime)
+            ->whereDoesntHave('voyages', function ($q) use ($today) {
+                $q->whereDate('date_voyage', $today)
+                  ->whereIn('statut', ['en_cours', 'terminé']);
+            })
+            ->with(['gareDepart', 'gareArrivee', 'voyages.vehicule'])
             ->orderBy('heure_depart')
             ->get()
-            ->map(function($programme) {
+            ->map(function($p) {
                 return [
-                    'id' => $programme->id,
-                    'point_depart' => $programme->point_depart,
-                    'point_arrive' => $programme->point_arrive,
-                    'heure_depart' => $programme->heure_depart,
-                    'vehicule' => $programme->getVehiculeForDate($today) ? [
-                        'id' => $programme->getVehiculeForDate($today)->id,
-                        'marque' => $programme->getVehiculeForDate($today)->marque,
-                        'modele' => $programme->getVehiculeForDate($today)->modele,
-                        'immatriculation' => $programme->getVehiculeForDate($today)->immatriculation,
-                    ] : null,
+                    'id' => $p->id,
+                    'point_depart' => $p->point_depart,
+                    'point_arrive' => $p->point_arrive,
+                    'heure_depart' => $p->heure_depart,
+                    'gare_depart' => $p->gareDepart ? $p->gareDepart->nom_gare : null,
+                    'gare_arrivee' => $p->gareArrivee ? $p->gareArrivee->nom_gare : null,
+                    'vehicule_id' => $p->vehicule_id,
+                    'immatriculation' => $p->vehicule->immatriculation ?? 'N/A',
                 ];
             });
 
@@ -383,8 +390,160 @@ class ReservationApiController extends Controller
     }
 
     /**
+     * Historique des scans (nouveau endpoint, aligné avec le web)
+     */
+    public function historique(Request $request)
+    {
+        $agent = $request->user();
+        $date = $request->get('date', Carbon::today()->format('Y-m-d'));
+        $type = $request->get('type');
+        $trajetFilter = $request->get('trajet');
+
+        // Requête de base pour les scans
+        $query = Reservation::with(['programme.gareDepart', 'programme.gareArrivee', 'embarquementVehicule'])
+            ->whereHas('programme', function ($q) use ($agent) {
+                $q->where('compagnie_id', $agent->compagnie_id);
+            })
+            ->whereNotNull('embarquement_scanned_at');
+
+        // Filtre par date
+        if ($date) {
+            $query->whereDate('embarquement_scanned_at', $date);
+        }
+
+        // Filtre par type
+        if ($type) {
+            if ($type === 'aller_simple') {
+                $query->where('is_aller_retour', false);
+            } elseif ($type === 'aller') {
+                $query->where('is_aller_retour', true)
+                      ->where('statut_aller', 'terminee');
+            } elseif ($type === 'retour') {
+                $query->where('is_aller_retour', true)
+                      ->where('statut_retour', 'terminee');
+            }
+        }
+
+        // Filtre par trajet
+        if ($trajetFilter) {
+            $query->whereHas('programme', function ($q) use ($trajetFilter) {
+                $q->whereRaw("CONCAT(point_depart, ' → ', point_arrive) = ?", [$trajetFilter]);
+            });
+        }
+
+        $scans = $query->orderBy('embarquement_scanned_at', 'desc')->paginate(20);
+
+        // Statistiques
+        $statsQuery = Reservation::whereHas('programme', function ($q) use ($agent) {
+            $q->where('compagnie_id', $agent->compagnie_id);
+        })->whereNotNull('embarquement_scanned_at');
+
+        if ($date) {
+            $statsQuery->whereDate('embarquement_scanned_at', $date);
+        }
+
+        $allScans = $statsQuery->get();
+
+        $stats = [
+            'total' => $allScans->count(),
+            'aller_simple' => $allScans->where('is_aller_retour', false)->count(),
+            'aller' => $allScans->where('is_aller_retour', true)->where('statut_aller', 'terminee')->count(),
+            'retour' => $allScans->where('is_aller_retour', true)->where('statut_retour', 'terminee')->count(),
+        ];
+
+        // Liste des trajets pour le filtre
+        $trajets = Programme::where('compagnie_id', $agent->compagnie_id)
+            ->selectRaw("CONCAT(point_depart, ' → ', point_arrive) as trajet")
+            ->distinct()
+            ->pluck('trajet');
+
+        return response()->json([
+            'success' => true,
+            'stats' => $stats,
+            'trajets' => $trajets,
+            'scans' => $scans->map(function($scan) {
+                return [
+                    'id' => $scan->id,
+                    'reference' => $scan->reference,
+                    'passager_nom' => $scan->passager_prenom . ' ' . $scan->passager_nom,
+                    'passager_telephone' => $scan->passager_telephone,
+                    'seat_number' => $scan->seat_number,
+                    'is_aller_retour' => $scan->is_aller_retour,
+                    'statut_aller' => $scan->statut_aller,
+                    'statut_retour' => $scan->statut_retour,
+                    'embarquement_scanned_at' => $scan->embarquement_scanned_at ? Carbon::parse($scan->embarquement_scanned_at)->format('d/m/Y H:i') : null,
+                    'vehicule' => $scan->embarquementVehicule ? $scan->embarquementVehicule->immatriculation : 'N/A',
+                    'trajet' => $scan->programme ? $scan->programme->point_depart . ' → ' . $scan->programme->point_arrive : '',
+                    'heure_depart' => $scan->programme ? $scan->programme->heure_depart : '',
+                ];
+            }),
+            'pagination' => [
+                'current_page' => $scans->currentPage(),
+                'last_page' => $scans->lastPage(),
+                'per_page' => $scans->perPage(),
+                'total' => $scans->total(),
+            ],
+        ]);
+    }
+
+    /**
+     * Rechercher une réservation par référence (recherche manuelle)
+     */
+    public function searchByReference(Request $request)
+    {
+        $request->validate(['reference' => 'required|string']);
+
+        $reservation = Reservation::with(['programme.gareDepart', 'programme.gareArrivee', 'user', 'agentEmbarquement', 'embarquementVehicule'])
+            ->where('reference', $request->reference)
+            ->first();
+
+        if (!$reservation) {
+            return response()->json(['success' => false, 'message' => 'Réservation non trouvée.'], 404);
+        }
+
+        $agent = $request->user();
+        if ($reservation->programme->compagnie_id !== $agent->compagnie_id) {
+            return response()->json(['success' => false, 'message' => 'Ce billet n\'appartient pas à votre compagnie.'], 403);
+        }
+
+        $res = [
+            'id' => $reservation->id,
+            'reference' => $reservation->reference,
+            'statut' => $reservation->statut,
+            'passager_nom' => $reservation->passager_nom,
+            'passager_prenom' => $reservation->passager_prenom,
+            'passager_telephone' => $reservation->passager_telephone,
+            'passager_email' => $reservation->passager_email,
+            'passager_urgence' => $reservation->passager_urgence,
+            'seat_number' => $reservation->seat_number,
+            'montant' => number_format($reservation->montant ?? 0, 0, ',', ' ') . ' FCFA',
+            'trajet' => $reservation->programme ? $reservation->programme->point_depart . ' → ' . $reservation->programme->point_arrive : '',
+            'date_voyage' => $reservation->date_voyage ? Carbon::parse($reservation->date_voyage)->format('d/m/Y') : '',
+            'heure_depart' => $reservation->programme ? $reservation->programme->heure_depart : '',
+            'is_aller_retour' => $reservation->is_aller_retour,
+            'statut_aller' => $reservation->statut_aller,
+            'statut_retour' => $reservation->statut_retour,
+            'gare_depart' => optional($reservation->programme->gareDepart)->nom_gare ?? '',
+            'gare_arrivee' => optional($reservation->programme->gareArrivee)->nom_gare ?? '',
+            'created_at' => $reservation->created_at ? $reservation->created_at->format('d/m/Y H:i') : '',
+        ];
+
+        if ($reservation->embarquement_scanned_at) {
+            $res['embarquement'] = [
+                'scanned_at' => Carbon::parse($reservation->embarquement_scanned_at)->format('d/m/Y H:i'),
+                'agent' => $reservation->agentEmbarquement ? $reservation->agentEmbarquement->nom_complet : 'N/A',
+                'vehicule' => $reservation->embarquementVehicule ? $reservation->embarquementVehicule->immatriculation : 'N/A',
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'reservation' => $res,
+        ]);
+    }
+
+    /**
      * Récupérer les réservations d'un programme pour une date donnée
-     * Utile pour voir la liste des passagers à embarquer
      */
     public function getReservationsForProgramme(Request $request, $programmeId)
     {
@@ -412,7 +571,7 @@ class ReservationApiController extends Controller
             ->get()
             ->map(function($reservation) use ($date) {
                 $today = Carbon::parse($date);
-                $isRetourDay = $reservation->date_retour && 
+                $isRetourDay = $reservation->date_retour &&
                                Carbon::parse($reservation->date_retour)->isSameDay($today) &&
                                !Carbon::parse($reservation->date_voyage)->isSameDay($today);
 
@@ -427,7 +586,7 @@ class ReservationApiController extends Controller
                     'type_trajet' => $isRetourDay ? 'RETOUR' : 'ALLER',
                     'statut_aller' => $reservation->statut_aller,
                     'statut_retour' => $reservation->statut_retour,
-                    'is_scanned' => $isRetourDay 
+                    'is_scanned' => $isRetourDay
                         ? $reservation->statut_retour === 'terminee'
                         : $reservation->statut_aller === 'terminee',
                 ];
@@ -460,7 +619,7 @@ class ReservationApiController extends Controller
     {
         $agent = $request->user();
 
-        $reservation = Reservation::with(['programme', 'user'])
+        $reservation = Reservation::with(['programme.gareDepart', 'programme.gareArrivee', 'user'])
             ->whereHas('programme', function($q) use ($agent) {
                 $q->where('compagnie_id', $agent->compagnie_id);
             })
@@ -486,7 +645,7 @@ class ReservationApiController extends Controller
                 'date_voyage' => $reservation->date_voyage,
                 'date_retour' => $reservation->date_retour,
                 'is_aller_retour' => $reservation->is_aller_retour,
-                'montant' => $reservation->montant,
+                'montant' => number_format($reservation->montant ?? 0, 0, ',', ' ') . ' FCFA',
                 'statut' => $reservation->statut,
                 'statut_aller' => $reservation->statut_aller,
                 'statut_retour' => $reservation->statut_retour,
@@ -496,6 +655,8 @@ class ReservationApiController extends Controller
                     'point_depart' => $reservation->programme->point_depart,
                     'point_arrive' => $reservation->programme->point_arrive,
                     'heure_depart' => $reservation->programme->heure_depart,
+                    'gare_depart' => optional($reservation->programme->gareDepart)->nom_gare ?? '',
+                    'gare_arrivee' => optional($reservation->programme->gareArrivee)->nom_gare ?? '',
                     'vehicule' => $reservation->programme->getVehiculeForDate($reservation->date_voyage) ? [
                         'marque' => $reservation->programme->getVehiculeForDate($reservation->date_voyage)->marque,
                         'modele' => $reservation->programme->getVehiculeForDate($reservation->date_voyage)->modele,
@@ -504,5 +665,34 @@ class ReservationApiController extends Controller
                 ] : null,
             ],
         ]);
+    }
+
+    /**
+     * Helper: formater une réservation pour la réponse JSON
+     */
+    private function formatReservation($reservation)
+    {
+        return [
+            'id' => $reservation->id,
+            'reference' => $reservation->reference,
+            'passager_nom' => $reservation->passager_nom,
+            'passager_prenom' => $reservation->passager_prenom,
+            'passager_telephone' => $reservation->passager_telephone,
+            'seat_number' => $reservation->seat_number,
+            'date_voyage' => $reservation->date_voyage,
+            'statut' => $reservation->statut,
+            'statut_aller' => $reservation->statut_aller,
+            'statut_retour' => $reservation->statut_retour,
+            'is_aller_retour' => $reservation->is_aller_retour,
+            'montant' => number_format($reservation->montant ?? 0, 0, ',', ' ') . ' FCFA',
+            'programme' => $reservation->programme ? [
+                'id' => $reservation->programme->id,
+                'point_depart' => $reservation->programme->point_depart,
+                'point_arrive' => $reservation->programme->point_arrive,
+                'heure_depart' => $reservation->programme->heure_depart,
+                'gare_depart' => optional($reservation->programme->gareDepart)->nom_gare ?? '',
+                'gare_arrivee' => optional($reservation->programme->gareArrivee)->nom_gare ?? '',
+            ] : null,
+        ];
     }
 }
