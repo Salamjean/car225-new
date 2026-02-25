@@ -407,6 +407,7 @@ Route::middleware('agent')->prefix('agent')->name('agent.')->group(function () {
     // Gestion des messages
     Route::prefix('messages')->name('messages.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Agent\AgentMessageController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\Agent\AgentMessageController::class, 'store'])->name('store');
         Route::get('/{id}', [\App\Http\Controllers\Agent\AgentMessageController::class, 'show'])->name('show');
         Route::patch('/{id}/read', [\App\Http\Controllers\Agent\AgentMessageController::class, 'markAsRead'])->name('read');
     });
@@ -681,6 +682,7 @@ Route::prefix('gare-espace')->name('gare-espace.')->group(function () {
             Route::post('/', [App\Http\Controllers\GareEspace\GareMessageController::class, 'store'])->name('store');
             Route::get('/recipients', [App\Http\Controllers\GareEspace\GareMessageController::class, 'getRecipients'])->name('recipients');
             Route::get('/{id}', [App\Http\Controllers\GareEspace\GareMessageController::class, 'show'])->name('show');
+            Route::patch('/{id}/mark-read', [App\Http\Controllers\GareEspace\GareMessageController::class, 'markStaffRead'])->name('markStaffRead');
         });
     });
 });
@@ -752,6 +754,7 @@ Route::prefix('chauffeur')->name('chauffeur.')->group(function () {
         // Inbox for Chauffeur
         Route::prefix('messages')->name('messages.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Chauffeur\ChauffeurMessageController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Chauffeur\ChauffeurMessageController::class, 'store'])->name('store');
             Route::get('/{id}', [\App\Http\Controllers\Chauffeur\ChauffeurMessageController::class, 'show'])->name('show');
         });
 

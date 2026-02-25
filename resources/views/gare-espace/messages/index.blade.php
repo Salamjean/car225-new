@@ -59,6 +59,19 @@
                 <i class="fas fa-paper-plane text-xl"></i>
                 <span>Messages Envoyés</span>
             </button>
+            <button class="flex-1 py-3.5 px-6 rounded-xl font-bold transition-all flex items-center justify-center gap-3 text-slate-500 hover:bg-slate-50 tab-btn" 
+                    id="staff-trigger" onclick="switchTab('staff')">
+                <i class="fas fa-users text-xl"></i>
+                <div class="flex items-center gap-2">
+                    <span>Du Personnel</span>
+                    @php $staffUnread = $staffMessages->where('is_read', false)->count(); @endphp
+                    @if($staffUnread > 0)
+                        <span class="flex items-center justify-center bg-blue-500 text-white text-[11px] min-w-[22px] h-[22px] px-1.5 rounded-full shadow-md animate-pulse">
+                            {{ $staffUnread }}
+                        </span>
+                    @endif
+                </div>
+            </button>
         </div>
     </div>
 
@@ -147,6 +160,64 @@
                         @endforeach
                     </div>
                     <div class="p-4">{{ $sentMessages->links() }}</div>
+                @endif
+            </div>
+        </div>
+
+        <!-- Staff Messages Tab -->
+        <div class="tab-panel hidden animate__animated animate__fadeIn" id="staff-panel">
+            <div class="msg-card animate__animated animate__fadeInUp">
+                @if($staffMessages->isEmpty())
+                    <div class="empty-state">
+                        <div class="empty-icon"><i class="fas fa-users"></i></div>
+                        <h3>Aucun message du personnel</h3>
+                        <p>Vos chauffeurs et agents n'ont envoyé aucun message pour le moment.</p>
+                    </div>
+                @else
+                    <div class="msg-list">
+                        @foreach($staffMessages as $msg)
+                            @php
+                                $senderName = 'Inconnu';
+                                $senderBadge = 'Personnel';
+                                if ($msg->sender_type === 'App\Models\Personnel') {
+                                    $sender = \App\Models\Personnel::find($msg->sender_id);
+                                    $senderName = $sender ? ($sender->prenom . ' ' . $sender->name) : 'Chauffeur inconnu';
+                                    $senderBadge = 'Chauffeur';
+                                } elseif ($msg->sender_type === 'App\Models\Agent') {
+                                    $sender = \App\Models\Agent::find($msg->sender_id);
+                                    $senderName = $sender ? ($sender->prenom . ' ' . $sender->name) : 'Agent inconnu';
+                                    $senderBadge = 'Agent';
+                                }
+                                $initials = strtoupper(substr($senderName, 0, 1)) . strtoupper(substr(explode(' ', $senderName)[1] ?? '', 0, 1));
+                            @endphp
+                            <div class="msg-item staff-msg-toggle {{ !$msg->is_read ? 'unread' : '' }}" data-msg-id="{{ $msg->id }}" style="cursor: pointer; flex-wrap: wrap;">
+                                <div class="msg-item-left">
+                                    <div class="msg-avatar" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">
+                                        {{ $initials }}
+                                    </div>
+                                    <div class="msg-content">
+                                        <div class="msg-recipient">
+                                            {{ $senderName }}
+                                            <span class="msg-badge" style="background: #dbeafe; color: #2563eb;">{{ $senderBadge }}</span>
+                                            @if(!$msg->is_read)
+                                                <span class="msg-badge new-badge" style="background: #fef2f2; color: #ef4444;">Nouveau</span>
+                                            @endif
+                                        </div>
+                                        <p class="msg-subject">{{ $msg->subject }}</p>
+                                        <p class="msg-preview text-slate-400">{{ Str::limit($msg->message, 80) }}</p>
+                                    </div>
+                                </div>
+                                <div class="msg-item-right">
+                                    <span class="msg-date">{{ $msg->created_at->diffForHumans() }}</span>
+                                    <i class="fas fa-chevron-down msg-arrow"></i>
+                                </div>
+                                <div class="staff-msg-detail hidden w-full mt-3 p-4 bg-slate-50 rounded-xl">
+                                    <p class="text-sm text-slate-700">{{ $msg->message }}</p>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    <div class="p-4">{{ $staffMessages->appends(request()->query())->links() }}</div>
                 @endif
             </div>
         </div>
@@ -421,7 +492,7 @@
 @section('scripts')
 <script>
 function switchTab(tabId) {
-    const panels = ['received', 'sent'];
+    const panels = ['received', 'sent', 'staff'];
     
     panels.forEach(id => {
         const panel = document.getElementById(`${id}-panel`);
@@ -468,6 +539,29 @@ document.addEventListener('DOMContentLoaded', function() {
             position: 'top-end'
         });
     @endif
+
+    // Staff messages: toggle detail + mark as read
+    document.querySelectorAll('.staff-msg-toggle').forEach(function(el) {
+        el.addEventListener('click', function() {
+            var detail = this.querySelector('.staff-msg-detail');
+            if (detail) detail.classList.toggle('hidden');
+
+            if (this.classList.contains('unread')) {
+                var msgId = this.dataset.msgId;
+                this.classList.remove('unread');
+                var newBadge = this.querySelector('.new-badge');
+                if (newBadge) newBadge.remove();
+
+                fetch('/gare-espace/messages/' + msgId + '/mark-read', {
+                    method: 'PATCH',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    }
+                });
+            }
+        });
+    });
 });
 </script>
 @endsection

@@ -1,67 +1,64 @@
-
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <title>Espace - Agent</title>
-  <!-- plugins:css -->
-  <link rel="stylesheet" href="{{asset('assetsPoster/assets/vendors/mdi/css/materialdesignicons.min.css')}}">
-  <link rel="stylesheet" href="{{asset('assetsPoster/assets/vendors/css/vendor.bundle.base.css')}}">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-<script src="https://cdn.tailwindcss.com"></script>
-
-
-  <!-- endinject -->
-  <!-- Plugin css for this page -->
-  <link rel="stylesheet" href="{{asset('assetsPoster/assets/vendors/flag-icon-css/css/flag-icon.min.css')}}">
-  <link rel="stylesheet" href="{{asset('assetsPoster/assets/vendors/jvectormap/jquery-jvectormap.cs')}}s">
-  <!-- End plugin css for this page -->
-  <!-- Layout styles -->
-  <link rel="stylesheet" href="{{asset('assetsPoster/assets/css/demo/style.css')}}">
-  <!-- End layout styles -->
-   <link rel="shortcut icon" href="{{asset('assetsPoster/assets/images/Car225_favicon.png')}}" />
-   @yield('styles')
+  <title>Espace Agent - CAR225</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="shortcut icon" href="{{asset('assetsPoster/assets/images/Car225_favicon.png')}}" />
+  
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+    
+    .agent-main-wrapper {
+      margin-left: 260px;
+      padding-top: 64px;
+      min-height: 100vh;
+      background: #f8fafc;
+      transition: margin-left 0.3s;
+    }
+    
+    @media (max-width: 767.98px) {
+      .agent-main-wrapper {
+        margin-left: 0;
+      }
+    }
+  </style>
+  
+  @yield('styles')
 </head>
-<body>
-<script src="{{asset('assetsPoster/assets/js/preloader.js')}}"></script>
-  <div class="body-wrapper">
-    <!-- partial:partials/_sidebar.html -->
-    @include('agent.layouts.sidebar')
-    <!-- partial -->
-    <div class="main-wrapper mdc-drawer-app-content">
-      <!-- partial:partials/_navbar.html -->
-      @include('agent.layouts.navbar')
-      <!-- partial -->
-      <div class="page-wrapper mdc-toolbar-fixed-adjust">
-        @yield('content')
-      </div>
-    </div>
+
+<body style="background: #f8fafc;">
+  <!-- Sidebar -->
+  @include('agent.layouts.sidebar')
+  
+  <!-- Navbar -->
+  @include('agent.layouts.navbar')
+
+  <!-- Main Content -->
+  <div class="agent-main-wrapper">
+    @yield('content')
   </div>
-  <!-- plugins:js -->
-  <script src="{{asset('assetsPoster/assets/vendors/js/vendor.bundle.base.js')}} "></script>
-  <!-- endinject -->
-  <!-- Plugin js for this page-->
-  <script src="{{asset('assetsPoster/assets/vendors/chartjs/Chart.min.js')}}"></script>
-  <script src="{{asset('assetsPoster/assets/vendors/jvectormap/jquery-jvectormap.min.js')}}"></script>
-  <script src="{{asset('assetsPoster/assets/vendors/jvectormap/jquery-jvectormap-world-mill-en.js')}}"></script>
-  <!-- End plugin js for this page-->
-  <!-- inject:js -->
-  <script src="{{asset('assetsPoster/assets/js/material.js')}}"></script>
-  <script src="{{asset('assetsPoster/assets/js/misc.js')}}"></script>
-  <!-- endinject -->
-  <!-- Custom js for this page-->
-  <script src="{{asset('assetsPoster/assets/js/dashboard.js')}}"></script>
-  <!-- End custom js for this page-->
-  
-  <!-- Bootstrap 4 JS for modals and other components -->
+
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
   
-  <!-- Page-specific scripts -->
+  @yield('scripts')
   @stack('scripts')
 </body>
-</html> 
+
+</html>

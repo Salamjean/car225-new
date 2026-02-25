@@ -20,8 +20,9 @@ class GareMessageController extends Controller
     {
         $gare = Auth::guard('gare')->user();
 
-        // Messages envoyés par la gare
+        // Messages envoyés par la gare (exclude messages sent BY staff TO gare)
         $sentQuery = GareMessage::where('gare_id', $gare->id)
+            ->whereNull('sender_type')
             ->with('recipient')
             ->latest();
 
@@ -45,22 +46,22 @@ class GareMessageController extends Controller
         $sentMessages = $sentQuery->paginate(10, ['*'], 'sent_page');
 
         // Messages reçus de la direction (compagnie)
-        // On utilise une requête directe pour éviter les soucis de polymorphisme (App\Models\Gare vs Gare)
-        // On veut TOUJOURS avoir ces messages disponibles, car ils sont affichés dans un onglet séparé
         $receivedQuery = CompanyMessage::where(function($q) use ($gare) {
                 $q->where('recipient_id', $gare->id)
                   ->whereIn('recipient_type', ['App\Models\Gare', 'Gare']);
             })
             ->with('compagnie');
 
-        // Si l'utilisateur demande explicitement un filtrage 'compagnie', on s'assure que *seuls* ces messages sont comptés/paginés comme principaux
-        // Mais ici, l'architecture sépare "envoyés" et "reçus" dans deux variables distinctes.
-        // Donc on laisse $receivedQuery intact pour qu'il contienne toujours les messages de la direction.
-
         $receivedMessages = $receivedQuery->latest()
             ->paginate(10, ['*'], 'received_page');
+
+        // Messages reçus du personnel (chauffeurs, agents)
+        $staffMessages = GareMessage::where('gare_id', $gare->id)
+            ->whereNotNull('sender_type')
+            ->latest()
+            ->paginate(10, ['*'], 'staff_page');
         
-        return view('gare-espace.messages.index', compact('sentMessages', 'receivedMessages'));
+        return view('gare-espace.messages.index', compact('sentMessages', 'receivedMessages', 'staffMessages'));
     }
 
     public function create()
@@ -203,5 +204,17 @@ class GareMessageController extends Controller
         }
 
         return response()->json($recipients);
+    }
+
+    public function markStaffRead($id)
+    {
+        $gare = Auth::guard('gare')->user();
+        $message = GareMessage::where('gare_id', $gare->id)
+            ->whereNotNull('sender_type')
+            ->findOrFail($id);
+
+        $message->update(['is_read' => true]);
+
+        return response()->json(['success' => true]);
     }
 }

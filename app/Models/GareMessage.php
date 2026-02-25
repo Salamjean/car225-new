@@ -11,6 +11,8 @@ class GareMessage extends Model
 
     protected $fillable = [
         'gare_id',
+        'sender_type',
+        'sender_id',
         'recipient_type',
         'recipient_id',
         'subject',
