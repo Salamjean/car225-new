@@ -111,7 +111,10 @@ class SupportApiController extends Controller
         }
 
         try {
-            $query = Reservation::with(['programme.compagnie'])
+            $query = Reservation::with([
+                    'programme.gareDepart',
+                    'programme.gareArrivee',
+                ])
                 ->where('user_id', Auth::id())
                 ->orderBy('date_voyage', 'desc')
                 ->take(20);
@@ -129,10 +132,28 @@ class SupportApiController extends Controller
                     break;
             }
 
-            $reservations = $query->get();
+            $reservations = $query->get()->map(function ($r) {
+                $prog = $r->programme;
+                return [
+                    'id'           => $r->id,
+                    'reference'    => $r->reference ?? null,
+                    'gare_depart'  => $prog && $prog->gareDepart
+                                        ? $prog->gareDepart->nom_gare . ' (' . $prog->gareDepart->ville . ')'
+                                        : null,
+                    'gare_arrivee' => $prog && $prog->gareArrivee
+                                        ? $prog->gareArrivee->nom_gare . ' (' . $prog->gareArrivee->ville . ')'
+                                        : null,
+                    'point_depart' => $prog->point_depart ?? null,
+                    'point_arrive' => $prog->point_arrive ?? null,
+                    'date'         => $r->date_voyage
+                                        ? \Carbon\Carbon::parse($r->date_voyage)->format('d/m/Y')
+                                        : null,
+                    'statut'       => $r->statut,
+                ];
+            });
 
             return response()->json([
-                'success' => true,
+                'success'      => true,
                 'reservations' => $reservations
             ]);
         } catch (\Exception $e) {
@@ -196,20 +217,115 @@ class SupportApiController extends Controller
     }
 
     /**
-     * Liste les demandes de support de l'utilisateur.
+     * Labels lisibles par type de déclaration.
      */
-    public function index()
+    private const TYPE_LABELS = [
+        'bagage_perdu'  => 'Bagage Perdu',
+        'objet_oublie'  => 'Objet Oublié',
+        'remboursement' => 'Remboursement',
+        'qualite'       => 'Qualité de Service',
+        'compte'        => 'Mon Compte',
+        'autre'         => 'Autre demande',
+    ];
+
+    /**
+     * Formate une déclaration en tableau allégé.
+     */
+    private function formatDeclaration(SupportRequest $s): array
+    {
+        $res  = $s->reservation;
+        $prog = $res?->programme;
+
+        return [
+            'id'          => $s->id,
+            'type'        => $s->type,
+            'type_label'  => self::TYPE_LABELS[$s->type] ?? ucfirst($s->type),
+            'objet'       => $s->objet,
+            'description' => $s->description,
+            'statut'      => $s->statut,
+            'reponse'     => $s->reponse,
+            'created_at'  => $s->created_at->format('d/m/Y H:i'),
+            'reservation' => $res ? [
+                'id'           => $res->id,
+                'reference'    => $res->reference ?? null,
+                'gare_depart'  => $prog && $prog->gareDepart
+                                    ? $prog->gareDepart->nom_gare . ' (' . $prog->gareDepart->ville . ')'
+                                    : null,
+                'gare_arrivee' => $prog && $prog->gareArrivee
+                                    ? $prog->gareArrivee->nom_gare . ' (' . $prog->gareArrivee->ville . ')'
+                                    : null,
+                'point_depart' => $prog->point_depart ?? null,
+                'point_arrive' => $prog->point_arrive ?? null,
+                'date'         => $res->date_voyage
+                                    ? \Carbon\Carbon::parse($res->date_voyage)->format('d/m/Y')
+                                    : null,
+                'statut'       => $res->statut,
+            ] : null,
+        ];
+    }
+
+    /**
+     * Liste les demandes de support de l'utilisateur.
+     *
+     * Query params optionnels :
+     *   ?type=bagage_perdu   → filtre par type précis
+     *   (aucun paramètre)    → toutes les déclarations groupées par type
+     */
+    public function index(Request $request)
     {
         try {
-            $requests = SupportRequest::with(['reservation.programme'])
+            $type = $request->get('type');
+
+            $query = SupportRequest::with([
+                    'reservation.programme.gareDepart',
+                    'reservation.programme.gareArrivee',
+                ])
                 ->where('user_id', Auth::id())
-                ->orderBy('created_at', 'desc')
-                ->get();
+                ->orderBy('created_at', 'desc');
+
+            // ── Filtre par type si fourni ──────────────────────────────────
+            if ($type) {
+                $validTypes = array_keys(self::TYPE_LABELS);
+                if (!in_array($type, $validTypes)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Type invalide. Types acceptés : ' . implode(', ', $validTypes),
+                    ], 422);
+                }
+
+                $items = $query->where('type', $type)->get()->map(fn($s) => $this->formatDeclaration($s));
+
+                return response()->json([
+                    'success'    => true,
+                    'type'       => $type,
+                    'type_label' => self::TYPE_LABELS[$type],
+                    'total'      => $items->count(),
+                    'declarations' => $items,
+                ]);
+            }
+
+            // ── Sans filtre : groupées par type ────────────────────────────
+            $all = $query->get();
+
+            $grouped = [];
+            foreach (self::TYPE_LABELS as $key => $label) {
+                $items = $all->where('type', $key)->values();
+                if ($items->isEmpty()) continue;
+
+                $grouped[] = [
+                    'type'       => $key,
+                    'type_label' => $label,
+                    'total'      => $items->count(),
+                    'declarations' => $items->map(fn($s) => $this->formatDeclaration($s))->values(),
+                ];
+            }
 
             return response()->json([
-                'success' => true,
-                'support_requests' => $requests
+                'success'       => true,
+                'total_general' => $all->count(),
+                'par_type'      => $grouped,
             ]);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

@@ -5,9 +5,19 @@
     <div class="mx-auto max-w-[1200px]">
         
         <!-- Header -->
-        <div class="mb-10">
-            <h1 class="text-3xl font-black text-[#1A1D1F] tracking-tight">Support Client</h1>
-            <p class="text-gray-500 font-medium">Comment pouvons-nous vous aider aujourd'hui ?</p>
+        <div class="mb-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-black text-[#1A1D1F] tracking-tight">Support Client</h1>
+                <p class="text-gray-500 font-medium">Comment pouvons-nous vous aider aujourd'hui ?</p>
+            </div>
+            <a href="{{ route('user.support.mes-declarations') }}"
+               class="inline-flex items-center gap-3 bg-[#1A1D1F] text-white px-6 py-3 rounded-2xl font-bold text-sm hover:bg-[#e94f1b] transition-all duration-300 shadow-lg hover:shadow-[0_8px_30px_rgba(233,79,27,0.3)] group">
+                <span class="w-8 h-8 bg-white/15 rounded-xl flex items-center justify-center group-hover:bg-white/20 transition-all">
+                    <i class="fas fa-list-alt text-sm"></i>
+                </span>
+                Mes Déclarations
+                <i class="fas fa-arrow-right text-xs opacity-60 group-hover:translate-x-1 transition-transform"></i>
+            </a>
         </div>
 
         @if(session('success'))
