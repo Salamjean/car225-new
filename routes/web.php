@@ -627,6 +627,12 @@ Route::prefix('gare-espace')->name('gare-espace.')->group(function () {
     Route::get('/define-access/{email}', [App\Http\Controllers\GareEspace\AuthenticateGare::class, 'defineAccess'])->name('defineAccess');
     Route::post('/define-access/{email}', [App\Http\Controllers\GareEspace\AuthenticateGare::class, 'submitDefineAccess'])->name('validate');
 
+    // Password Reset Routes
+    Route::get('/password/reset', [App\Http\Controllers\GareEspace\PasswordResetController::class, 'showResetForm'])->name('password.request');
+    Route::post('/password/send-otp', [App\Http\Controllers\GareEspace\PasswordResetController::class, 'sendOtp'])->name('password.sendOtp');
+    Route::post('/password/verify-otp', [App\Http\Controllers\GareEspace\PasswordResetController::class, 'verifyOtp'])->name('password.verifyOtp');
+    Route::post('/password/reset', [App\Http\Controllers\GareEspace\PasswordResetController::class, 'resetPassword'])->name('password.reset');
+
     // Routes protégées (gare middleware)
     Route::middleware('gare')->group(function () {
         Route::get('/dashboard', [App\Http\Controllers\GareEspace\GareDashboardController::class, 'index'])->name('dashboard');

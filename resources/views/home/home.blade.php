@@ -109,9 +109,9 @@
                 @endif
                 
                 <!-- DESTINATION BANNER (Orange Theme) -->
-                <div class="destination-promo mt-8 max-w-6xl mx-auto relative rounded-2xl overflow-hidden flex flex-col md:flex-row items-center border border-[#ffedd5]" style="background: linear-gradient(135deg, #fff6f0 0%, #ffedd5 100%); min-height: 280px; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
+                <div class="destination-promo mt-8 w-full relative rounded-2xl overflow-hidden flex flex-col md:flex-row items-center border border-[#ffedd5]" style="background: linear-gradient(135deg, #fff6f0 0%, #ffedd5 100%); min-height: 360px; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
                     <!-- Content -->
-                    <div class="p-8 md:p-12 z-20 md:w-1/2 text-left">
+                    <div class="p-10 md:p-16 z-20 md:w-1/2 text-left">
                         <h3 class="text-[#2d3748] text-2xl md:text-3xl font-black mb-3 leading-tight opacity-90">Quelle sera votre prochaine destination ?</h3>
                         <p class="text-[#4a5568] mb-6 text-sm md:text-base leading-relaxed max-w-sm font-medium">Découvrez notre carte du réseau avec de nombreuses destinations à travers la Côte d'Ivoire.</p>
                         <a href="{{ route('programmes.all') }}" class="inline-flex cursor-pointer text-sm items-center justify-center bg-[#e94e1a] hover:bg-[#d14316] text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-all duration-300">
@@ -160,6 +160,20 @@
                         </div>
                     </div>
                 </div>
+        </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- SECTION VIDEO -->
+    <!-- ============================================ -->
+    <section id="video-presentation" class="py-4 bg-white">
+        <div class="container max-w-[512px] mx-auto px-4 relative z-10" data-aos="fade-up">
+            <div class="relative rounded-3xl overflow-hidden shadow-2xl border-[6px] border-white bg-gray-100 ring-1 ring-gray-200 flex items-center justify-center">
+                <video autoplay loop muted playsinline class="w-full h-auto object-cover max-h-[512px]">
+                    <source src="{{ asset('assets/images/VideoCar225.mp4') }}" type="video/mp4">
+                    Votre navigateur ne supporte pas la vidéo.
+                </video>
+            </div>
         </div>
     </section>
 
@@ -327,7 +341,7 @@
 
 .pret-a-voyager-section .cta-content {
     background-color: #004a29 !important;
-    padding: 80px 20px !important;
+    padding: 40px 20px 80px !important;
     text-align: center;
     border: none !important;
 }
@@ -394,7 +408,7 @@
    TRUST COUNTER SECTION
    ============================================ */
 .trust-counter-section {
-    padding: 100px 0 80px;
+    padding: 100px 0 30px;
     background-color: #ffffff;
     border-top: 1px solid #f2f2f2;
 }
