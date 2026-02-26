@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Chauffeur;
 
 use App\Http\Controllers\Controller;
 use App\Models\Voyage;
+use App\Models\Reservation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -66,6 +67,10 @@ class VoyageController extends Controller
             return back()->with('error', 'Vous devez d\'abord confirmer ce voyage avant de le démarrer.');
         }
 
+        if ($voyage->occupancy < 1) {
+            return back()->with('error', 'Impossible de démarrer le voyage : au moins 1 passager doit être présent dans le car.');
+        }
+
         $voyage->update(['statut' => 'en_cours']);
 
         return back()->with('success', 'Bon voyage ! Le voyage a été démarré.');
@@ -118,22 +123,50 @@ class VoyageController extends Controller
         }
 
         $request->validate([
-            'latitude' => 'required|numeric|between:-90,90',
+            'latitude'  => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
-            'speed' => 'nullable|numeric|min:0',
-            'heading' => 'nullable|numeric|between:0,360',
+            'speed'     => 'nullable|numeric|min:0',
+            'heading'   => 'nullable|numeric|between:0,360',
         ]);
 
         \App\Models\DriverLocation::updateOrCreate(
             ['voyage_id' => $voyage->id, 'personnel_id' => $chauffeur->id],
             [
-                'latitude' => $request->latitude,
+                'latitude'  => $request->latitude,
                 'longitude' => $request->longitude,
-                'speed' => $request->speed,
-                'heading' => $request->heading,
+                'speed'     => $request->speed,
+                'heading'   => $request->heading,
             ]
         );
 
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Annuler un voyage (confirmé ou en_attente -> annulé)
+     */
+    public function annuler(Voyage $voyage)
+    {
+        $chauffeur = Auth::guard('chauffeur')->user();
+
+        if ($voyage->personnel_id !== $chauffeur->id) {
+            return back()->with('error', 'Ce voyage ne vous appartient pas.');
+        }
+
+        if (!in_array($voyage->statut, ['en_attente', 'confirmé'])) {
+            return back()->with('error', 'Ce voyage ne peut plus être annulé.');
+        }
+
+        $voyage->update(['statut' => 'annulé']);
+
+        // Libérer le chauffeur
+        $chauffeur->update(['statut' => 'disponible']);
+
+        // Libérer le véhicule
+        if ($voyage->vehicule) {
+            $voyage->vehicule->update(['statut' => 'disponible']);
+        }
+
+        return back()->with('success', 'Le voyage a été annulé.');
     }
 }

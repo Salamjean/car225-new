@@ -1,0 +1,481 @@
+{
+    "info": {
+        "name": "Car225 — Support Client API",
+        "_postman_id": "car225-support-client-001",
+        "description": "Collection Postman pour tester les endpoints de Support Client de l'application Car225.\n\nÉtapes :\n1. Lancez la requête '0. Login' pour obtenir le token.\n2. Copiez le token dans la variable d'environnement {{token}}.\n3. Testez les autres requêtes.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:8000",
+            "type": "string"
+        },
+        {
+            "key": "token",
+            "value": "METTRE_LE_TOKEN_ICI",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "0. 🔑 Login (obtenir le token)",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/user/login",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "user",
+                        "login"
+                    ]
+                },
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"code_id\": \"USER-XXXXX\",\n  \"password\": \"votre_mot_de_passe\"\n}"
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "const res = pm.response.json();",
+                            "if (res.token) {",
+                            "  pm.collectionVariables.set('token', res.token);",
+                            "  console.log('✅ Token sauvegardé automatiquement !');",
+                            "}"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "1. 📋 GET — Catégories de support",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/user/support/categories",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "user",
+                        "support",
+                        "categories"
+                    ]
+                },
+                "description": "Retourne toutes les catégories de support disponibles avec leurs métadonnées (icône, couleur, si réservation est requise, etc.)"
+            }
+        },
+        {
+            "name": "2a. 🎒 GET — Réservations (bagage_perdu)",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/user/support/reservations?type=bagage_perdu",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "user",
+                        "support",
+                        "reservations"
+                    ],
+                    "query": [
+                        {
+                            "key": "type",
+                            "value": "bagage_perdu"
+                        }
+                    ]
+                },
+                "description": "Retourne les réservations terminées (statut=terminee) pour le type 'bagage_perdu'."
+            }
+        },
+        {
+            "name": "2b. 👓 GET — Réservations (objet_oublie)",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/user/support/reservations?type=objet_oublie",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "user",
+                        "support",
+                        "reservations"
+                    ],
+                    "query": [
+                        {
+                            "key": "type",
+                            "value": "objet_oublie"
+                        }
+                    ]
+                },
+                "description": "Retourne les réservations terminées (statut=terminee) pour le type 'objet_oublie'."
+            }
+        },
+        {
+            "name": "2c. 💰 GET — Réservations (remboursement)",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/user/support/reservations?type=remboursement",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "user",
+                        "support",
+                        "reservations"
+                    ],
+                    "query": [
+                        {
+                            "key": "type",
+                            "value": "remboursement"
+                        }
+                    ]
+                },
+                "description": "Retourne les réservations annulées (statut=annulee) pour le type 'remboursement'."
+            }
+        },
+        {
+            "name": "2d. ⭐ GET — Réservations (qualite)",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/user/support/reservations?type=qualite",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "user",
+                        "support",
+                        "reservations"
+                    ],
+                    "query": [
+                        {
+                            "key": "type",
+                            "value": "qualite"
+                        }
+                    ]
+                },
+                "description": "Retourne les réservations confirmées ou terminées pour le type 'qualite'."
+            }
+        },
+        {
+            "name": "3. 📂 GET — Mes demandes de support",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/user/support",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "user",
+                        "support"
+                    ]
+                },
+                "description": "Liste toutes les demandes de support de l'utilisateur connecté, triées par date décroissante."
+            }
+        },
+        {
+            "name": "4a. 🎒 POST — Créer demande (bagage_perdu)",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/user/support",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "user",
+                        "support"
+                    ]
+                },
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"type\": \"bagage_perdu\",\n  \"reservation_id\": 1,\n  \"objet\": \"Valise bleue à roulettes\",\n  \"description\": \"Ma valise bleue n'était plus présente à l'arrivée à Abidjan. Elle contient des vêtements et documents importants.\"\n}"
+                },
+                "description": "⚠️ reservation_id est OBLIGATOIRE pour ce type. Remplacez '1' par un ID de réservation terminée réel."
+            }
+        },
+        {
+            "name": "4b. 👓 POST — Créer demande (objet_oublie)",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/user/support",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "user",
+                        "support"
+                    ]
+                },
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"type\": \"objet_oublie\",\n  \"reservation_id\": 1,\n  \"objet\": \"Téléphone Samsung Galaxy S21\",\n  \"description\": \"J'ai oublié mon téléphone sous le siège numéro 12 du bus. Il est de couleur noire avec une coque transparente.\"\n}"
+                },
+                "description": "⚠️ reservation_id est OBLIGATOIRE pour ce type."
+            }
+        },
+        {
+            "name": "4c. 💰 POST — Créer demande (remboursement)",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/user/support",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "user",
+                        "support"
+                    ]
+                },
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"type\": \"remboursement\",\n  \"reservation_id\": 1,\n  \"objet\": \"Remboursement réservation annulée du 15/02\",\n  \"description\": \"Mon voyage a été annulé par la compagnie mais je n'ai pas encore reçu le remboursement sur mon portefeuille.\"\n}"
+                },
+                "description": "⚠️ reservation_id est OBLIGATOIRE pour ce type. Doit être une réservation annulée."
+            }
+        },
+        {
+            "name": "4d. ⭐ POST — Créer demande (qualite)",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/user/support",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "user",
+                        "support"
+                    ]
+                },
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"type\": \"qualite\",\n  \"reservation_id\": 1,\n  \"objet\": \"Comportement du chauffeur\",\n  \"description\": \"Le chauffeur était très impoli avec les passagers et a pris des pauses non prévues pendant le trajet.\"\n}"
+                },
+                "description": "⚠️ reservation_id est OBLIGATOIRE pour ce type."
+            }
+        },
+        {
+            "name": "4e. 👤 POST — Créer demande (mon compte)",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/user/support",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "user",
+                        "support"
+                    ]
+                },
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"type\": \"compte\",\n  \"objet\": \"Problème de solde portefeuille\",\n  \"description\": \"Mon solde affiche 0 XOF alors que j'ai rechargé 5000 XOF hier via Orange Money. La transaction a bien été débitée.\"\n}"
+                },
+                "description": "✅ reservation_id est OPTIONNEL pour ce type — ne pas l'inclure."
+            }
+        },
+        {
+            "name": "4f. ❓ POST — Créer demande (autre)",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/user/support",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "user",
+                        "support"
+                    ]
+                },
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"type\": \"autre\",\n  \"objet\": \"Suggestion sur l'application\",\n  \"description\": \"Je souhaite pouvoir filtrer les voyages par compagnie directement depuis l'écran d'accueil de l'application.\"\n}"
+                },
+                "description": "✅ reservation_id est OPTIONNEL pour ce type — ne pas l'inclure."
+            }
+        }
+    ]
+}

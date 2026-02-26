@@ -43,7 +43,7 @@
     }
     
     .msg-card.unread {
-        background: #fffafa; /* Very subtle orange tint */
+        background: #fffafa;
         border-color: rgba(233, 79, 27, 0.1);
     }
     
@@ -57,6 +57,11 @@
     .msg-card:hover::before {
         width: 6px;
     }
+    
+    .msg-card.sent {
+        border-left: 4px solid #3b82f6;
+    }
+    .msg-card.sent::before { display: none; }
     
     .sender-icon {
         width: 48px;
@@ -103,6 +108,21 @@
 
 @section('content')
 <div class="container-fluid px-4 py-8">
+
+    {{-- Flash messages --}}
+    @if(session('success'))
+    <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl mb-5 flex items-center gap-2">
+        <i class="fas fa-check-circle"></i>
+        <span class="font-medium">{{ session('success') }}</span>
+    </div>
+    @endif
+    @if(session('error'))
+    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-5 flex items-center gap-2">
+        <i class="fas fa-exclamation-circle"></i>
+        <span class="font-medium">{{ session('error') }}</span>
+    </div>
+    @endif
+
     <!-- Header Section -->
     <div class="pro-header flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
@@ -112,7 +132,7 @@
             </p>
         </div>
         
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-3">
             <div class="px-5 py-3 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">
                 <div class="relative">
                     <i class="fas fa-inbox text-slate-400 text-lg"></i>
@@ -125,20 +145,66 @@
                     <span class="text-lg font-black text-slate-800 leading-none">{{ $messages->total() }}</span>
                 </div>
             </div>
+            <button onclick="openComposeModal()" class="px-5 py-3 bg-[#e94f1b] hover:bg-[#d33d0f] text-white rounded-2xl font-bold text-sm transition flex items-center gap-2 shadow-sm">
+                <i class="fas fa-pen"></i>
+                Écrire à la gare
+            </button>
         </div>
     </div>
 
-    <!-- Messages Grid -->
+    {{-- Messages sent by agent --}}
+    @php
+        $sentMessages = \App\Models\GareMessage::where('sender_type', \App\Models\Agent::class)
+            ->where('sender_id', Auth::guard('agent')->user()->id)
+            ->latest()
+            ->limit(5)
+            ->get();
+    @endphp
+
+    @if($sentMessages->count() > 0)
+    <div class="mb-6">
+        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+            <i class="fas fa-paper-plane text-blue-400"></i>
+            Messages envoyés
+        </h3>
+        <div class="flex flex-col gap-2">
+            @foreach($sentMessages as $sent)
+            <div class="msg-card sent p-4 block">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 flex-shrink-0">
+                        <i class="fas fa-paper-plane text-sm"></i>
+                    </div>
+                    <div class="flex-grow min-w-0">
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-bold text-slate-800 text-sm truncate">{{ $sent->subject }}</h4>
+                            <span class="text-xs text-slate-400 whitespace-nowrap ml-2">{{ $sent->created_at->diffForHumans() }}</span>
+                        </div>
+                        <p class="text-slate-400 text-xs truncate mt-0.5">{{ $sent->message }}</p>
+                    </div>
+                    @if($sent->is_read)
+                    <span class="text-green-400 text-xs"><i class="fas fa-check-double"></i></span>
+                    @else
+                    <span class="text-slate-300 text-xs"><i class="fas fa-check"></i></span>
+                    @endif
+                </div>
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
+
+    {{-- Received messages --}}
+    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+        <i class="fas fa-inbox text-orange-400"></i>
+        Boîte de réception
+    </h3>
     <div class="flex flex-col gap-3">
         @forelse($messages as $message)
             <a href="{{ route('agent.messages.show', ['id' => $message->id, 'source' => $message->source]) }}" class="msg-card p-5 group hover:no-underline block {{ !$message->is_read ? 'unread' : '' }}">
                 <div class="flex items-start gap-5">
-                    <!-- Icon -->
                     <div class="sender-icon flex-shrink-0 group-hover:scale-110">
                         <i class="fas {{ $message->sender_icon ?? 'fa-building' }}"></i>
                     </div>
-                    
-                    <!-- Content -->
                     <div class="flex-grow min-w-0 pt-1">
                         <div class="flex items-center justify-between mb-1">
                             <h3 class="text-lg font-bold text-slate-800 truncate group-hover:text-[#e94f1b] transition-colors">
@@ -148,14 +214,11 @@
                                 {{ $message->created_at->diffForHumans() }}
                             </span>
                         </div>
-                        
                         <h4 class="text-sm font-bold text-slate-600 mb-1 truncate">{{ $message->subject }}</h4>
                         <p class="text-slate-400 text-sm line-clamp-1 group-hover:text-slate-500 transition-colors">
                             {{ $message->message }}
                         </p>
                     </div>
-                    
-                    <!-- New Badge -->
                     @if(!$message->is_read)
                     <div class="flex-shrink-0 self-center">
                         <span class="px-3 py-1 bg-[#fff1f2] text-[#e94f1b] text-[10px] font-black uppercase tracking-widest rounded-full ring-1 ring-[#e94f1b]/20">
@@ -175,7 +238,7 @@
                     <i class="fas fa-inbox text-4xl text-slate-300"></i>
                 </div>
                 <h3 class="text-2xl font-black text-slate-800 mb-2">Tout est calme</h3>
-                <p class="text-slate-400 max-w-sm mx-auto">Votre boîte de réception est vide. Les communications importantes de la direction apparaîtront ici.</p>
+                <p class="text-slate-400 max-w-sm mx-auto">Votre boîte de réception est vide. Les communications importantes apparaîtront ici.</p>
             </div>
         @endforelse
     </div>
@@ -186,4 +249,70 @@
     </div>
     @endif
 </div>
+
+{{-- Modal composer --}}
+<div id="composeModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.5);">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="bg-gradient-to-r from-[#e94f1b] to-[#d33d0f] p-5 text-white">
+            <div class="flex items-center justify-between">
+                <h4 class="font-bold text-lg flex items-center gap-2">
+                    <i class="fas fa-pen-to-square"></i>
+                    Écrire à la gare
+                </h4>
+                <button onclick="closeComposeModal()" class="text-white/70 hover:text-white transition">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+        </div>
+        <form action="{{ route('agent.messages.store') }}" method="POST">
+            @csrf
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Destinataire</label>
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-600 flex items-center gap-2">
+                        <i class="fas fa-warehouse text-[#e94f1b]"></i>
+                        <span class="font-medium">
+                            {{ Auth::guard('agent')->user()->gare->nom_gare ?? 'Ma Gare' }}
+                        </span>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Sujet</label>
+                    <input type="text" name="subject" required placeholder="Sujet du message..."
+                           class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#e94f1b]/30 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Message</label>
+                    <textarea name="message" rows="5" required placeholder="Votre message..."
+                              class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#e94f1b]/30 focus:border-transparent resize-none"></textarea>
+                </div>
+            </div>
+            <div class="border-t border-slate-100 p-4 flex gap-3">
+                <button type="button" onclick="closeComposeModal()" class="flex-1 py-3 border border-slate-200 rounded-xl text-slate-600 font-medium hover:bg-slate-50 transition text-sm">
+                    Annuler
+                </button>
+                <button type="submit" class="flex-1 py-3 bg-[#e94f1b] hover:bg-[#d33d0f] text-white rounded-xl font-bold transition text-sm flex items-center justify-center gap-2">
+                    <i class="fas fa-paper-plane"></i>
+                    Envoyer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+@endsection
+
+@section('scripts')
+<script>
+function openComposeModal() {
+    document.getElementById('composeModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+function closeComposeModal() {
+    document.getElementById('composeModal').classList.add('hidden');
+    document.body.style.overflow = '';
+}
+document.getElementById('composeModal').addEventListener('click', function(e) {
+    if (e.target === this) closeComposeModal();
+});
+</script>
 @endsection

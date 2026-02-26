@@ -460,23 +460,10 @@
     const totalPlaces = parseInt(vehicle.nombre_place);
     const nombreRanger = Math.ceil(totalPlaces / placesParRanger);
 
-    // 2. Début du HTML (Style Tableau Clean)
+    // 2. Début du HTML
     let html = `
-    <div class="flex flex-col items-center w-full font-sans">
-        
-
-
-        <!-- Conteneur Tableau -->
-        <div class="w-full border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
-            <!-- En-têtes -->
-            <div class="grid grid-cols-[60px_1fr_40px_1fr] bg-gray-50 border-b border-gray-100 py-3 px-2">
-                <div class="text-xs font-black text-gray-400 uppercase text-center">RANG</div>
-                <div class="text-xs font-black text-gray-400 uppercase text-center">GAUCHE</div>
-                <div class="text-xs font-black text-gray-400 uppercase text-center border-l border-r border-gray-200 mx-1">ALLÉE</div>
-                <div class="text-xs font-black text-gray-400 uppercase text-center">DROITE</div>
-            </div>
-            
-            <div class="max-h-[350px] overflow-y-auto scrollbar-thin p-3 space-y-2">
+    <div class="flex flex-col items-center w-full font-sans bg-white pt-4">
+        <div class="w-full max-h-[350px] overflow-y-auto scrollbar-thin px-2 pb-4 space-y-6">
     `;
 
     // 3. Boucle des places
@@ -489,12 +476,11 @@
         const placesDroiteCetteRanger = Math.min(placesDroite, placesCetteRanger - placesGaucheCetteRanger);
 
         html += `
-            <div class="grid grid-cols-[60px_1fr_40px_1fr] items-center py-1">
-                <!-- Numéro Rangée -->
-                <div class="text-center font-black text-gray-300 text-sm">R${ranger}</div>
-                
+            <div class="flex items-center justify-center gap-4 sm:gap-8">
                 <!-- Places Gauche -->
-                <div class="flex justify-center gap-3 flex-wrap">
+                <div class="flex flex-col items-center">
+                    <span class="text-xs font-semibold text-gray-500 mb-2">Rangée ${ranger}</span>
+                    <div class="flex justify-center gap-2 flex-wrap">
         `;
 
         // Génération Gauche
@@ -502,42 +488,43 @@
             const sn = numeroPlace + i; // sn = Seat Number
             const isRes = reservedSeats.includes(sn);
             
-            // STYLE EXACT DU POPUP PRÉCÉDENT
-            // Occupé : Fond rouge, texte blanc
-            // Libre : Fond blanc, bordure grise. Hover : Bordure orange, texte orange
             const styleClass = isRes 
-                ? 'bg-[#e94e1a] text-white border-transparent cursor-not-allowed opacity-100' 
-                : 'bg-white text-gray-700 border-gray-300 hover:border-[#e94f1b] hover:text-[#e94f1b] cursor-pointer shadow-sm';
+                ? 'bg-[#e94e1a] text-white border-transparent cursor-not-allowed opacity-90' 
+                : 'bg-blue-500 text-white hover:bg-blue-600 cursor-pointer shadow-sm';
             
-            html += `<div class="w-9 h-9 border-2 rounded-lg flex items-center justify-center font-bold text-sm transition-all duration-200 ${styleClass}" title="Place ${sn}">
+            html += `<div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center font-bold text-sm sm:text-base transition-all duration-200 ${styleClass}" title="Place ${sn}">
                         ${sn}
                      </div>`;
         }
 
-        html += `</div>
+        html += `    </div>
+                </div>
                 <!-- Allée visuelle -->
-                <div class="flex justify-center h-full">
-                    <div class="w-px bg-gray-100 h-full"></div>
+                <div class="flex flex-col justify-end h-full mt-6" style="min-width: 30px;">
+                    <div class="w-full h-1 bg-gray-400 rounded-full"></div>
                 </div>
                 <!-- Places Droite -->
-                <div class="flex justify-center gap-3 flex-wrap">`;
+                <div class="flex flex-col items-center">
+                    <span class="text-xs font-semibold text-gray-500 mb-2">Rangée ${ranger}</span>
+                    <div class="flex justify-center gap-2 flex-wrap">`;
 
         // Génération Droite
         for (let i = 0; i < placesDroiteCetteRanger; i++) {
             const sn = numeroPlace + placesGaucheCetteRanger + i;
             const isRes = reservedSeats.includes(sn);
             
-            // Même style ici
             const styleClass = isRes 
-                ? 'bg-[#e94e1a] text-white border-transparent cursor-not-allowed opacity-100' 
-                : 'bg-white text-gray-700 border-gray-300 hover:border-[#e94f1b] hover:text-[#e94f1b] cursor-pointer shadow-sm';
+                ? 'bg-[#e94e1a] text-white border-transparent cursor-not-allowed opacity-90' 
+                : 'bg-green-500 text-white hover:bg-green-600 cursor-pointer shadow-sm';
 
-             html += `<div class="w-9 h-9 border-2 rounded-lg flex items-center justify-center font-bold text-sm transition-all duration-200 ${styleClass}" title="Place ${sn}">
+             html += `<div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center font-bold text-sm sm:text-base transition-all duration-200 ${styleClass}" title="Place ${sn}">
                         ${sn}
                      </div>`;
         }
 
-        html += `</div></div>`;
+        html += `    </div>
+                </div>
+            </div>`;
         
         // Mise à jour du compteur global
         numeroPlace += placesCetteRanger;
@@ -545,18 +532,21 @@
 
     // 4. Pied de page (Légende)
     html += `   </div>
-                <div class="border-t border-gray-100 bg-gray-50 p-3 flex justify-center gap-6 rounded-b-xl">
+                <div class="border-t border-gray-100 bg-gray-50 p-4 flex flex-wrap justify-center gap-4 sm:gap-6 rounded-xl mt-2 w-full shadow-inner">
                     <div class="flex items-center gap-2">
-                        <div class="w-3 h-3 rounded-full bg-[#e94e1a]"></div>
+                        <div class="w-4 h-4 rounded-md bg-[#e94e1a]"></div>
                         <span class="text-xs font-bold text-gray-600">Occupé</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <div class="w-3 h-3 rounded-full bg-white border border-gray-300"></div>
-                        <span class="text-xs font-bold text-gray-600">Libre</span>
+                        <div class="w-4 h-4 rounded-md bg-blue-500"></div>
+                        <span class="text-xs font-bold text-gray-600">Libre (Gauche)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-4 h-4 rounded-md bg-green-500"></div>
+                        <span class="text-xs font-bold text-gray-600">Libre (Droite)</span>
                     </div>
                 </div>
-            </div>
-        </div>`;
+            </div>`;
     
     return html;
 }

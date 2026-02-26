@@ -7,6 +7,7 @@ use App\Models\CompanyMessage;
 use App\Models\GareMessage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Agent;
 
 class AgentMessageController extends Controller
 {
@@ -107,5 +108,32 @@ class AgentMessageController extends Controller
 
         $message->update(['is_read' => true]);
         return back()->with('success', 'Message marqué comme lu');
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'subject' => 'required|string|max:255',
+            'message' => 'required|string',
+        ]);
+
+        $agent = Auth::guard('agent')->user();
+
+        if (!$agent->gare_id) {
+            return back()->with('error', 'Vous n\'êtes rattaché à aucune gare.');
+        }
+
+        GareMessage::create([
+            'gare_id'        => $agent->gare_id,
+            'sender_type'    => Agent::class,
+            'sender_id'      => $agent->id,
+            'recipient_type' => \App\Models\Gare::class,
+            'recipient_id'   => $agent->gare_id,
+            'subject'        => $request->subject,
+            'message'        => $request->message,
+            'is_read'        => false,
+        ]);
+
+        return back()->with('success', 'Message envoyé à la gare avec succès.');
     }
 }

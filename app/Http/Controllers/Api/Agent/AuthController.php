@@ -61,6 +61,7 @@ class AuthController extends Controller
             'message' => 'Connexion réussie',
             'agent' => [
                 'id' => $agent->id,
+                'code_id' => $agent->code_id,
                 'name' => $agent->name,
                 'prenom' => $agent->prenom,
                 'email' => $agent->email,

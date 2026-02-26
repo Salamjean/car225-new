@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\User\StatistiqueApiController;
 use App\Http\Controllers\Api\Agent\AuthController as AgentAuthController;
 use App\Http\Controllers\Api\Agent\AgentController;
 use App\Http\Controllers\Api\Agent\ReservationApiController as AgentReservationController;
+use App\Http\Controllers\Api\UnifiedAuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -23,6 +24,12 @@ use Illuminate\Support\Facades\Route;
 | Toutes les routes authentifiées utilisent Laravel Sanctum.
 |
 */
+
+// ============================================================================
+// CONNEXION UNIFIÉE (Mobile - toutes interfaces)
+// ============================================================================
+
+Route::post('/unified-login', [UnifiedAuthController::class, 'login']);
 
 // ============================================================================
 // USER API ROUTES
@@ -98,6 +105,7 @@ Route::prefix('user')->group(function () {
         // Statistiques
         Route::get('/stats', [StatistiqueApiController::class, 'index']);
         Route::get('/stats/trips', [StatistiqueApiController::class, 'tripStats']);
+        Route::get('/stats/historique-voyages', [StatistiqueApiController::class, 'historiqueVoyages']);
 
         // Notifications
         Route::get('/notifications', [\App\Http\Controllers\Api\User\NotificationApiController::class, 'index']);
@@ -152,6 +160,8 @@ Route::prefix('agent')->group(function () {
         Route::get('/reservations', [AgentReservationController::class, 'index']);
         Route::post('/reservations/search', [AgentReservationController::class, 'search']);
         Route::post('/reservations/confirm', [AgentReservationController::class, 'confirm']);
+        Route::post('/reservations/search-by-reference', [AgentReservationController::class, 'searchByReference']);
+        Route::get('/reservations/historique', [AgentReservationController::class, 'historique']);
         
         // Véhicules et Programmes
         Route::get('/vehicles', [AgentReservationController::class, 'getVehicles']);
@@ -160,6 +170,56 @@ Route::prefix('agent')->group(function () {
         
         // Détails réservation
         Route::get('/reservations/{reservationId}', [AgentReservationController::class, 'showReservation']);
+    });
+});
+
+// ============================================================================
+// CHAUFFEUR API ROUTES
+// ============================================================================
+
+Route::prefix('chauffeur')->group(function () {
+
+    // Routes publiques (sans authentification)
+    Route::post('/login', [\App\Http\Controllers\Api\Chauffeur\AuthController::class, 'login']);
+
+    // Routes protégées (authentification requise)
+    Route::middleware('auth:sanctum')->group(function () {
+        // Authentification
+        Route::post('/logout', [\App\Http\Controllers\Api\Chauffeur\AuthController::class, 'logout']);
+
+        // Profil chauffeur
+        Route::get('/profile', [\App\Http\Controllers\Api\Chauffeur\ChauffeurApiController::class, 'profile']);
+        Route::put('/profile', [\App\Http\Controllers\Api\Chauffeur\ChauffeurApiController::class, 'updateProfile']);
+        Route::post('/change-password', [\App\Http\Controllers\Api\Chauffeur\ChauffeurApiController::class, 'changePassword']);
+        Route::post('/fcm-token', [\App\Http\Controllers\Api\Chauffeur\ChauffeurApiController::class, 'updateFcmToken']);
+
+        // Dashboard
+        Route::get('/dashboard', [\App\Http\Controllers\Api\Chauffeur\ChauffeurApiController::class, 'dashboard']);
+
+        // Voyages
+        Route::get('/voyages', [\App\Http\Controllers\Api\Chauffeur\VoyageApiController::class, 'index']);
+        Route::get('/voyages/history', [\App\Http\Controllers\Api\Chauffeur\VoyageApiController::class, 'history']);
+        Route::post('/voyages/{voyage}/confirm', [\App\Http\Controllers\Api\Chauffeur\VoyageApiController::class, 'confirm']);
+        Route::post('/voyages/{voyage}/start', [\App\Http\Controllers\Api\Chauffeur\VoyageApiController::class, 'start']);
+        Route::post('/voyages/{voyage}/complete', [\App\Http\Controllers\Api\Chauffeur\VoyageApiController::class, 'complete']);
+        Route::post('/voyages/{voyage}/annuler', [\App\Http\Controllers\Api\Chauffeur\VoyageApiController::class, 'annuler']);
+        Route::post('/voyages/{voyage}/update-location', [\App\Http\Controllers\Api\Chauffeur\VoyageApiController::class, 'updateLocation']);
+
+        // Scan QR des réservations
+        Route::get('/reservations/scan-info', [\App\Http\Controllers\Api\Chauffeur\ReservationApiController::class, 'scanInfo']);
+        Route::post('/reservations/search', [\App\Http\Controllers\Api\Chauffeur\ReservationApiController::class, 'search']);
+        Route::post('/reservations/confirm', [\App\Http\Controllers\Api\Chauffeur\ReservationApiController::class, 'confirm']);
+
+        // Signalements
+        Route::get('/signalements', [\App\Http\Controllers\Api\Chauffeur\SignalementApiController::class, 'index']);
+        Route::get('/signalements/voyages', [\App\Http\Controllers\Api\Chauffeur\SignalementApiController::class, 'getVoyagesForSignalement']);
+        Route::post('/signalements', [\App\Http\Controllers\Api\Chauffeur\SignalementApiController::class, 'store']);
+        Route::get('/signalements/{signalement}', [\App\Http\Controllers\Api\Chauffeur\SignalementApiController::class, 'show']);
+
+        // Messages
+        Route::get('/messages', [\App\Http\Controllers\Api\Chauffeur\MessageApiController::class, 'index']);
+        Route::post('/messages', [\App\Http\Controllers\Api\Chauffeur\MessageApiController::class, 'store']);
+        Route::get('/messages/{id}', [\App\Http\Controllers\Api\Chauffeur\MessageApiController::class, 'show']);
     });
 });
 

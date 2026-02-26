@@ -256,14 +256,16 @@
                     @if(isset($programmesDuJour) && $programmesDuJour->count() > 0)
                         @foreach($programmesDuJour as $prog)
                             @php
-                                $v = $prog->vehicule;
+                                $voyage = $prog->voyages->first();
+                                $v = $voyage ? $voyage->vehicule : null;
+                                $isAssigned = $v ? true : false;
                             @endphp
-                            <div class="programme-item p-0 mb-3 cursor-pointer" 
+                            <div class="programme-item p-0 mb-3 {{ $isAssigned ? 'cursor-pointer' : '' }}" 
                                  data-programme-id="{{ $prog->id }}"
                                  data-vehicule-id="{{ $v->id ?? '' }}"
                                  data-vehicule-immat="{{ $v->immatriculation ?? '' }}"
-                                 onclick="selectProgramme(this)"
-                                 style="border-radius: 16px; border: 2px solid #e2e8f0; background: white; transition: all 0.2s; overflow: hidden;">
+                                 onclick="{{ $isAssigned ? 'selectProgramme(this)' : '' }}"
+                                 style="border-radius: 16px; border: 2px solid #e2e8f0; background: {{ $isAssigned ? 'white' : '#f1f5f9' }}; transition: all 0.2s; overflow: hidden; {{ !$isAssigned ? 'opacity: 0.7; cursor: not-allowed;' : '' }}">
                                  
                                  <!-- Route Header -->
                                  <div style="padding: 16px 18px 12px;">
@@ -321,8 +323,8 @@
                                          @if($v)
                                              <span class="badge-immat" style="font-size: 0.75rem;">{{ $v->immatriculation }}</span>
                                          @else
-                                             <span style="background: #fefcbf; color: #d69e2e; padding: 3px 10px; border-radius: 6px; font-size: 0.72rem; font-weight: 700;">
-                                                 <i class="material-icons" style="font-size: 12px; vertical-align: middle;">warning</i> Non assigné
+                                             <span style="background: #e2e8f0; color: #4a5568; padding: 4px 10px; border-radius: 6px; font-size: 0.72rem; font-weight: 700;">
+                                                 <i class="material-icons" style="font-size: 13px; vertical-align: middle;">directions_bus</i> Aucun véhicule attribué
                                              </span>
                                          @endif
                                      </div>

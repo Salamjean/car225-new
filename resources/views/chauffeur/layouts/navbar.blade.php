@@ -1,246 +1,275 @@
-<header class="mdc-top-app-bar" style="background-color: #e94e1a">
-  <div class="mdc-top-app-bar__row">
-    <div class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start">
-      <button
-        class="material-icons mdc-top-app-bar__navigation-icon mdc-icon-button sidebar-toggler text-white">menu</button>
-    </div>
-    <div class="mdc-top-app-bar__section mdc-top-app-bar__section--align-end mdc-top-app-bar__section-right">
-      <!-- Version desktop -->
-      <div class="menu-button-container menu-profile d-none d-md-block">
-        <button class="mdc-button mdc-menu-button">
-          <span class="d-flex align-items-center">
-            <span class="figure"
-              style="width:40px; height:40px; border-radius:50%; background:#d33d0f; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; overflow: hidden;">
-              @php
-                $user = Auth::guard('chauffeur')->user();
-                $initials = strtoupper(substr($user->name, 0, 1) . substr($user->prenom, 0, 1));
-              @endphp
-              @if($user->profile_image) <!-- Corrected to profile_image -->
-                <img src="{{ asset('storage/' . $user->profile_image) }}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
-              @else
-                {{ $initials }}
-              @endif
-            </span>
-            <span class="user-name text-white ml-2">{{ $user->name }} {{ $user->prenom }}</span>
-            <span class="ml-2 text-white">&#9662;</span>
-          </span>
-        </button>
-        <div class="mdc-menu mdc-menu-surface" tabindex="-1">
-          <ul class="mdc-list" role="menu" aria-hidden="true" aria-orientation="vertical">
-            <!--
-            <li class="mdc-list-item" role="menuitem">
-              <a href="#" class="d-flex align-items-center w-100 text-decoration-none text-dark">
-                <i class="mdi mdi-account mr-2" style="color: #193561; font-size: 1.5rem;"></i>
-                <span>Mon Profil</span>
-              </a>
-            </li>
-            <li role="separator" class="mdc-list-divider"></li>
-            -->
-            <li class="mdc-list-item" role="menuitem">
-              <a href="{{route('chauffeur.logout')}}" class="d-flex align-items-center w-100 text-decoration-none text-dark">
-                <i class="mdi mdi-logout mr-2" style="color: #193561; font-size: 1.5rem;"></i>
-                <span>Déconnexion</span>
-              </a>
-            </li>
-          </ul>
-        </div>
-      </div>
+@php
+    $user = Auth::guard('chauffeur')->user();
+    $initials = strtoupper(substr($user->name, 0, 1) . substr($user->prenom, 0, 1));
+@endphp
 
-      <!-- Version mobile -->
-      <div class="d-md-none mobile-menu-container">
-        <button class="mdc-icon-button text-white mobile-profile-toggle">
-          <span class="figure"
-            style="width:35px; height:35px; border-radius:50%; background:#d33d0f; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:14px; overflow: hidden;">
-            @if($user->profile_image)
-                <img src="{{ asset('storage/' . $user->profile_image) }}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
-            @else
-                {{ $initials }}
-            @endif
-          </span>
-        </button>
-        <div class="mobile-menu mdc-menu mdc-menu-surface" tabindex="-1">
-          <ul class="mdc-list" role="menu" aria-hidden="true" aria-orientation="vertical">
-            <li class="mobile-user-info mdc-list-item" style="pointer-events: none;">
-              <div class="d-flex align-items-center w-100">
-                <span class="figure mr-2"
-                  style="width:30px; height:30px; border-radius:50%; background:#d33d0f; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:12px;">
-                  {{ $initials }}
-                </span>
-                <span class="user-name">{{ $user->name }} {{ $user->prenom }}</span>
-              </div>
-            </li>
-            <!--
-            <li class="mdc-list-item" role="menuitem">
-              <a href="#"
-                class="d-flex align-items-center w-100 text-decoration-none text-dark py-2">
-                <i class="mdi mdi-account mr-2" style="color: #193561; font-size: 1.5rem;"></i>
-                <span>Mon Profil</span>
-              </a>
-            </li>
-            <li role="separator" class="mdc-list-divider"></li>
-            -->
-            <li class="mdc-list-item" role="menuitem">
-              <a href="{{route('chauffeur.logout')}}"
-                class="d-flex align-items-center w-100 text-decoration-none text-dark py-2">
-                <i class="mdi mdi-logout mr-2" style="color: #193561; font-size: 1.5rem;"></i>
-                <span>Déconnexion</span>
-              </a>
-            </li>
-          </ul>
+<header class="chauffeur-navbar">
+    <div class="navbar-inner">
+        {{-- Left: Menu toggle (mobile) + Page title --}}
+        <div class="navbar-left">
+            <button class="navbar-toggle d-md-none" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="navbar-title d-none d-md-block">
+                @yield('title', 'Espace Chauffeur')
+            </div>
         </div>
-      </div>
+
+        {{-- Right: Actions --}}
+        <div class="navbar-right">
+            {{-- Notifications hint --}}
+            <a href="{{ route('chauffeur.messages.index') }}" class="navbar-icon-btn" title="Messages">
+                <i class="fas fa-bell"></i>
+                @php
+                    $unreadC = $user->messages()->where('is_read', false)->count();
+                    $unreadG = $user->receivedGareMessages()->where('is_read', false)->count();
+                    $totalU = $unreadC + $unreadG;
+                @endphp
+                @if($totalU > 0)
+                    <span class="notification-dot"></span>
+                @endif
+            </a>
+
+            {{-- Profile dropdown --}}
+            <div class="profile-dropdown-wrapper">
+                <button class="profile-trigger" onclick="toggleProfileDropdown()">
+                    <div class="trigger-avatar">
+                        @if($user->profile_image)
+                            <img src="{{ asset('storage/' . $user->profile_image) }}" alt="Profile">
+                        @else
+                            {{ $initials }}
+                        @endif
+                    </div>
+                    <span class="trigger-name d-none d-md-inline">{{ $user->prenom }}</span>
+                    <i class="fas fa-chevron-down trigger-arrow d-none d-md-inline"></i>
+                </button>
+                <div class="profile-dropdown" id="profileDropdown">
+                    <div class="dropdown-header">
+                        <p class="dropdown-user-name">{{ $user->prenom }} {{ $user->name }}</p>
+                        <p class="dropdown-user-role">Chauffeur</p>
+                    </div>
+                    <div class="dropdown-divider"></div>
+                    <a href="{{ route('chauffeur.logout') }}" class="dropdown-item">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Déconnexion
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
 </header>
 
 <style>
-  .mdc-menu-button .ml-2 {
-    font-size: 0.9rem;
-    transition: transform 0.3s ease;
-  }
+.chauffeur-navbar {
+    position: fixed;
+    top: 0;
+    left: 260px;
+    right: 0;
+    height: 64px;
+    background: white;
+    border-bottom: 1px solid #f0f0f0;
+    z-index: 1050;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
 
-  .mdc-menu-button:focus .ml-2 {
-    transform: rotate(180deg);
-  }
-
-  /* Styles pour la version mobile */
-  .mobile-menu-container {
-    position: relative;
-  }
-
-  .mobile-profile-toggle {
-    padding: 8px;
-  }
-
-  .mobile-user-info {
-    background-color: #f8f9fa;
-    border-bottom: 1px solid #dee2e6;
-    min-height: 60px;
-  }
-
-  .mobile-menu .mdc-list-item {
-    min-height: 48px;
+.navbar-inner {
     display: flex;
     align-items: center;
-  }
+    justify-content: space-between;
+    height: 100%;
+    padding: 0 24px;
+}
 
-  /* Ajustement pour les écrans très petits */
-  @media (max-width: 576px) {
-    .mobile-menu .mdc-list-item {
-      padding: 12px 16px;
-    }
+.navbar-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
 
-    .mobile-menu {
-      min-width: 200px;
-      right: 0 !important;
-      left: auto !important;
-    }
+.navbar-toggle {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #374151;
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.navbar-toggle:hover {
+    background: #f3f4f6;
+}
 
-    .mobile-user-info .user-name {
-      font-size: 0.9rem;
-      font-weight: 500;
-    }
-  }
+.navbar-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #1f2937;
+}
 
-  /* Correction pour l'alignement des menus */
-  .mdc-menu-surface {
-    z-index: 1000;
-  }
+.navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
 
-  .mobile-menu .mdc-list {
-    padding: 0;
-  }
-
-  /* Assurer que les menus s'affichent à droite */
-  .mdc-menu {
-    position: absolute;
-    right: 0;
-    top: 100%;
-    left: auto !important;
-  }
-
-  .menu-button-container {
+.navbar-icon-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280 !important;
+    text-decoration: none !important;
+    transition: all 0.2s;
     position: relative;
-  }
+}
+.navbar-icon-btn:hover {
+    background: #f3f4f6;
+    color: #e94e1a !important;
+}
 
-  /* Forcer l'alignement à droite pour tous les menus */
-  .mdc-menu-surface--open {
-    right: 0 !important;
-    left: auto !important;
-  }
+.notification-dot {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 8px;
+    height: 8px;
+    background: #ef4444;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+.profile-dropdown-wrapper {
+    position: relative;
+}
+
+.profile-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 5px 12px 5px 5px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.profile-trigger:hover {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+}
+
+.trigger-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #e94e1a, #d33d0f);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 12px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+.trigger-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.trigger-name {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #374151;
+}
+
+.trigger-arrow {
+    font-size: 10px;
+    color: #9ca3af;
+    transition: transform 0.2s;
+}
+
+.profile-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+    border: 1px solid #e5e7eb;
+    min-width: 200px;
+    overflow: hidden;
+    z-index: 1200;
+}
+.profile-dropdown.open {
+    display: block;
+}
+
+.dropdown-header {
+    padding: 14px 16px;
+}
+.dropdown-user-name {
+    font-weight: 700;
+    color: #1f2937;
+    font-size: 0.9rem;
+    margin: 0;
+}
+.dropdown-user-role {
+    color: #9ca3af;
+    font-size: 0.75rem;
+    margin: 2px 0 0;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: #f0f0f0;
+}
+
+.profile-dropdown .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    color: #6b7280 !important;
+    text-decoration: none !important;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+.profile-dropdown .dropdown-item:hover {
+    background: #fef2f2;
+    color: #ef4444 !important;
+}
+
+/* Responsive */
+@media (max-width: 767.98px) {
+    .chauffeur-navbar {
+        left: 0;
+    }
+}
 </style>
 
 <script>
-  // Initialisation du menu mobile
-  document.addEventListener('DOMContentLoaded', function () {
-    // Menu desktop
-    const menuButton = document.querySelector('.mdc-menu-button');
-    const menu = document.querySelector('.mdc-menu');
+function toggleSidebar() {
+    var sidebar = document.getElementById('chauffeurSidebar');
+    var overlay = document.getElementById('sidebarOverlay');
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('open');
+}
 
-    // Menu mobile
-    const mobileMenuButton = document.querySelector('.mobile-profile-toggle');
-    const mobileMenu = document.querySelector('.mobile-menu');
+function toggleProfileDropdown() {
+    var dd = document.getElementById('profileDropdown');
+    dd.classList.toggle('open');
+}
 
-    // Initialiser le menu desktop
-    if (menuButton && menu) {
-      const menuInstance = new mdc.menu.MDCMenu(menu);
-      // Forcer l'ancrage en bas à droite
-      menuInstance.setAnchorCorner(mdc.menu.Corner.BOTTOM_END);
-      menuInstance.setAnchorMargin({ top: 0, bottom: 0, left: 0, right: 0 });
-
-      menuButton.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        menuInstance.open = !menuInstance.open;
-      });
-    }
-
-    // Initialiser le menu mobile
-    if (mobileMenuButton && mobileMenu) {
-      const mobileMenuInstance = new mdc.menu.MDCMenu(mobileMenu);
-      // Forcer l'ancrage en bas à droite
-      mobileMenuInstance.setAnchorCorner(mdc.menu.Corner.BOTTOM_END);
-      mobileMenuInstance.setAnchorMargin({ top: 0, bottom: 0, left: 0, right: 0 });
-
-      mobileMenuButton.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        mobileMenuInstance.open = !mobileMenuInstance.open;
-      });
-
-      // Fermer le menu quand on clique sur un lien
-      mobileMenu.addEventListener('click', (e) => {
-        if (e.target.closest('a')) {
-          setTimeout(() => {
-            mobileMenuInstance.open = false;
-          }, 100);
-        }
-      });
-    }
-
-    // Fermer les menus quand on clique ailleurs
-    document.addEventListener('click', function (e) {
-      if (menu && menuButton && !menuButton.contains(e.target) && !menu.contains(e.target)) {
-        const menuInstance = mdc.menu.MDCMenu.attachTo(menu);
-        menuInstance.open = false;
-      }
-      if (mobileMenu && mobileMenuButton && !mobileMenuButton.contains(e.target) && !mobileMenu.contains(e.target)) {
-        const mobileMenuInstance = mdc.menu.MDCMenu.attachTo(mobileMenu);
-        mobileMenuInstance.open = false;
-      }
-    });
-  });
-
-  // Correction supplémentaire pour forcer l'alignement à droite
-  function fixMenuPosition() {
-    const menus = document.querySelectorAll('.mdc-menu-surface');
-    menus.forEach(menu => {
-      menu.style.left = 'auto';
-      menu.style.right = '0';
-    });
-  }
-
-  // Appliquer la correction après le chargement et après chaque ouverture de menu
-  document.addEventListener('DOMContentLoaded', fixMenuPosition);
-  setTimeout(fixMenuPosition, 100);
+// Close dropdown on outside click
+document.addEventListener('click', function(e) {
+    var dd = document.getElementById('profileDropdown');
+    var wrapper = e.target.closest('.profile-dropdown-wrapper');
+    if (!wrapper && dd) dd.classList.remove('open');
+});
 </script>

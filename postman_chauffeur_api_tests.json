@@ -1,0 +1,1134 @@
+{
+    "info": {
+        "_postman_id": "chauffeur-api-tests-2026",
+        "name": "🚌 Car225 - Chauffeur API Tests",
+        "description": "Collection complète pour tester l'API mobile du Chauffeur Car225.\n\n## Setup\n1. Créer un environnement avec `base_url` = `http://127.0.0.1:8000/api`\n2. Exécuter le Login en premier (le token est sauvegardé automatiquement)\n3. Remplacer les IDs par des valeurs réelles de votre base",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://127.0.0.1:8000/api"
+        },
+        {
+            "key": "chauffeur_token",
+            "value": ""
+        }
+    ],
+    "item": [
+        {
+            "name": "🔐 Authentification",
+            "item": [
+                {
+                    "name": "Login Chauffeur",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = pm.response.json();",
+                                    "if (jsonData.token) {",
+                                    "    pm.collectionVariables.set('chauffeur_token', jsonData.token);",
+                                    "    console.log('Token sauvegardé: ' + jsonData.token.substring(0, 20) + '...');",
+                                    "}",
+                                    "pm.test('Login réussi', function () {",
+                                    "    pm.expect(pm.response.code).to.be.oneOf([200]);",
+                                    "    pm.expect(jsonData.success).to.be.true;",
+                                    "    pm.expect(jsonData.token).to.be.a('string');",
+                                    "    pm.expect(jsonData.chauffeur).to.have.property('id');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"chauffeur@example.com\",\n    \"password\": \"password123\",\n    \"fcm_token\": \"test-fcm-token-123\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/chauffeur/login",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "chauffeur",
+                                "login"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Logout Chauffeur",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{chauffeur_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/chauffeur/logout",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "chauffeur",
+                                "logout"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "👤 Profil & Dashboard",
+            "item": [
+                {
+                    "name": "Dashboard",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = pm.response.json();",
+                                    "pm.test('Dashboard OK', function () {",
+                                    "    pm.expect(pm.response.code).to.equal(200);",
+                                    "    pm.expect(jsonData.success).to.be.true;",
+                                    "    pm.expect(jsonData).to.have.property('today_voyages');",
+                                    "    pm.expect(jsonData).to.have.property('upcoming_voyages');",
+                                    "    pm.expect(jsonData).to.have.property('stats');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{chauffeur_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/chauffeur/dashboard",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "chauffeur",
+                                "dashboard"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Voir Profil",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = pm.response.json();",
+                                    "pm.test('Profil OK', function () {",
+                                    "    pm.expect(pm.response.code).to.equal(200);",
+                                    "    pm.expect(jsonData.chauffeur).to.have.property('nom');",
+                                    "    pm.expect(jsonData.chauffeur).to.have.property('email');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{chauffeur_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/chauffeur/profile",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "chauffeur",
+                                "profile"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Modifier Profil",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{chauffeur_token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nom\": \"Koné\",\n    \"prenom\": \"Moussa\",\n    \"telephone\": \"0707070707\",\n    \"commune\": \"Yopougon\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/chauffeur/profile",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "chauffeur",
+                                "profile"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Changer Mot de Passe",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{chauffeur_token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"current_password\": \"password123\",\n    \"new_password\": \"newpassword456\",\n    \"new_password_confirmation\": \"newpassword456\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/chauffeur/change-password",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "chauffeur",
+                                "change-password"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Mettre à jour FCM Token",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{chauffeur_token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"fcm_token\": \"new-fcm-token-xyz\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/chauffeur/fcm-token",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "chauffeur",
+                                "fcm-token"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "🚌 Voyages",
+            "item": [
+                {
+                    "name": "Voyages du Jour",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = pm.response.json();",
+                                    "pm.test('Voyages OK', function () {",
+                                    "    pm.expect(pm.response.code).to.equal(200);",
+                                    "    pm.expect(jsonData.success).to.be.true;",
+                                    "    pm.expect(jsonData).to.have.property('voyages');",
+                                    "    pm.expect(jsonData).to.have.property('pagination');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{chauffeur_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/chauffeur/voyages?date=2026-02-25",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "chauffeur",
+                                "voyages"
+                            ],
+                            "query": [
+                                {
+                                    "key": "date",
+                                    "value": "2026-02-25"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Historique des Voyages",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = pm.response.json();",
+                                    "pm.test('Historique OK', function () {",
+                                    "    pm.expect(pm.response.code).to.equal(200);",
+                                    "    pm.expect(jsonData).to.have.property('voyages');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{chauffeur_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/chauffeur/voyages/history",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "chauffeur",
+                                "voyages",
+                                "history"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Confirmer Voyage",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = pm.response.json();",
+                                    "pm.test('Confirmation OK', function () {",
+                                    "    pm.expect(pm.response.code).to.be.oneOf([200, 400, 403]);",
+                                    "    pm.expect(jsonData).to.have.property('message');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{chauffeur_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/chauffeur/voyages/1/confirm",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "chauffeur",
+                                "voyages",
+                                "1",
+                                "confirm"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Démarrer Voyage",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{chauffeur_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/chauffeur/voyages/1/start",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "chauffeur",
+                                "voyages",
+                                "1",
+                                "start"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Terminer Voyage",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{chauffeur_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/chauffeur/voyages/1/complete",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "chauffeur",
+                                "voyages",
+                                "1",
+                                "complete"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Annuler Voyage",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{chauffeur_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/chauffeur/voyages/1/annuler",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "chauffeur",
+                                "voyages",
+                                "1",
+                                "annuler"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "📍 Envoyer Position GPS",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = pm.response.json();",
+                                    "pm.test('GPS Update OK', function () {",
+                                    "    pm.expect(pm.response.code).to.be.oneOf([200, 422]);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{chauffeur_token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"latitude\": 5.3600,\n    \"longitude\": -3.9418,\n    \"speed\": 65.5,\n    \"heading\": 180\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/chauffeur/voyages/1/update-location",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "chauffeur",
+                                "voyages",
+                                "1",
+                                "update-location"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "🔍 Scan & Réservations",
+            "item": [
+                {
+                    "name": "Infos Scan (Voyage Actif + Derniers Scans)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = pm.response.json();",
+                                    "pm.test('Scan Info OK', function () {",
+                                    "    pm.expect(pm.response.code).to.equal(200);",
+                                    "    pm.expect(jsonData.success).to.be.true;",
+                                    "    pm.expect(jsonData).to.have.property('voyage_actif');",
+                                    "    pm.expect(jsonData).to.have.property('derniers_scans');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{chauffeur_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/chauffeur/reservations/scan-info",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "chauffeur",
+                                "reservations",
+                                "scan-info"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Recherche par QR Code",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = pm.response.json();",
+                                    "pm.test('Search OK', function () {",
+                                    "    pm.expect(pm.response.code).to.be.oneOf([200, 400, 403, 404]);",
+                                    "    if (pm.response.code === 200) {",
+                                    "        pm.expect(jsonData.reservation).to.have.property('reference');",
+                                    "        pm.expect(jsonData.reservation).to.have.property('type_scan');",
+                                    "    }",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{chauffeur_token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"reference\": \"RES-XXXXXXXX\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/chauffeur/reservations/search",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "chauffeur",
+                                "reservations",
+                                "search"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Confirmer Embarquement",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = pm.response.json();",
+                                    "pm.test('Confirm OK', function () {",
+                                    "    pm.expect(pm.response.code).to.be.oneOf([200, 400, 403, 404]);",
+                                    "    pm.expect(jsonData).to.have.property('message');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{chauffeur_token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"reference\": \"RES-XXXXXXXX\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/chauffeur/reservations/confirm",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "chauffeur",
+                                "reservations",
+                                "confirm"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "⚠️ Signalements",
+            "item": [
+                {
+                    "name": "Liste des Signalements",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = pm.response.json();",
+                                    "pm.test('Signalements OK', function () {",
+                                    "    pm.expect(pm.response.code).to.equal(200);",
+                                    "    pm.expect(jsonData.success).to.be.true;",
+                                    "    pm.expect(jsonData).to.have.property('signalements');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{chauffeur_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/chauffeur/signalements",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "chauffeur",
+                                "signalements"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Voyages Disponibles pour Signalement",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = pm.response.json();",
+                                    "pm.test('Voyages for Signalement OK', function () {",
+                                    "    pm.expect(pm.response.code).to.equal(200);",
+                                    "    pm.expect(jsonData).to.have.property('voyages');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{chauffeur_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/chauffeur/signalements/voyages",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "chauffeur",
+                                "signalements",
+                                "voyages"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Créer Signalement (Panne)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = pm.response.json();",
+                                    "pm.test('Signalement créé', function () {",
+                                    "    pm.expect(pm.response.code).to.be.oneOf([201, 422]);",
+                                    "    if (pm.response.code === 201) {",
+                                    "        pm.expect(jsonData.success).to.be.true;",
+                                    "        pm.expect(jsonData.signalement).to.have.property('id');",
+                                    "    }",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{chauffeur_token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "voyage_id",
+                                    "value": "1",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "type",
+                                    "value": "panne",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "description",
+                                    "value": "Pneu crevé sur l'autoroute",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "latitude",
+                                    "value": "5.3600",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "longitude",
+                                    "value": "-3.9418",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/chauffeur/signalements",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "chauffeur",
+                                "signalements"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Créer Signalement (Accident avec Photo)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{chauffeur_token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "voyage_id",
+                                    "value": "1",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "type",
+                                    "value": "accident",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "description",
+                                    "value": "Collision légère au carrefour",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "latitude",
+                                    "value": "5.3500",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "longitude",
+                                    "value": "-3.9300",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "photo",
+                                    "type": "file",
+                                    "src": ""
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/chauffeur/signalements",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "chauffeur",
+                                "signalements"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Détails Signalement",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{chauffeur_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/chauffeur/signalements/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "chauffeur",
+                                "signalements",
+                                "1"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "💬 Messages",
+            "item": [
+                {
+                    "name": "Boîte de Réception",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = pm.response.json();",
+                                    "pm.test('Messages OK', function () {",
+                                    "    pm.expect(pm.response.code).to.equal(200);",
+                                    "    pm.expect(jsonData.success).to.be.true;",
+                                    "    pm.expect(jsonData).to.have.property('messages');",
+                                    "    pm.expect(jsonData).to.have.property('unread_count');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{chauffeur_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/chauffeur/messages",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "chauffeur",
+                                "messages"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Voir Message (Company)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{chauffeur_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/chauffeur/messages/1?source=company",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "chauffeur",
+                                "messages",
+                                "1"
+                            ],
+                            "query": [
+                                {
+                                    "key": "source",
+                                    "value": "company"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Voir Message (Gare)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{chauffeur_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/chauffeur/messages/1?source=gare",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "chauffeur",
+                                "messages",
+                                "1"
+                            ],
+                            "query": [
+                                {
+                                    "key": "source",
+                                    "value": "gare"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Envoyer Message à la Gare",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = pm.response.json();",
+                                    "pm.test('Message envoyé', function () {",
+                                    "    pm.expect(pm.response.code).to.be.oneOf([201, 400]);",
+                                    "    pm.expect(jsonData).to.have.property('message');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{chauffeur_token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"subject\": \"Demande d'information\",\n    \"message\": \"Bonjour, je souhaite connaître les horaires de demain.\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/chauffeur/messages",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "chauffeur",
+                                "messages"
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}

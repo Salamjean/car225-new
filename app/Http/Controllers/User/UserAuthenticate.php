@@ -18,7 +18,7 @@ class UserAuthenticate extends Controller
     public function login()
     {
         if (auth('web')->check()) {
-            return redirect()->route('user.dashboard');
+            return redirect()->route('reservation.create');
         }
         return view('user.auth.login');
     }
@@ -41,7 +41,7 @@ class UserAuthenticate extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('user.dashboard', absolute: false))->with('success', 'Bienvenue sur votre page!');
+        return redirect()->intended(route('reservation.create', absolute: false))->with('success', 'Bienvenue sur votre page!');
     }
 
 
@@ -153,7 +153,7 @@ class UserAuthenticate extends Controller
         // Si l'utilisateur existe déjà avec Google, on le connecte
         if ($existingUserByGoogleId) {
             Auth::login($existingUserByGoogleId);
-            return redirect()->intended(route('user.dashboard'))->with('success', 'Bienvenue ' . $existingUserByGoogleId->prenom . ' !');
+            return redirect()->intended(route('reservation.create'))->with('success', 'Bienvenue ' . $existingUserByGoogleId->prenom . ' !');
         }
         
         // Sinon, on crée un nouveau compte
@@ -185,7 +185,7 @@ class UserAuthenticate extends Controller
 
         Auth::login($user);
 
-        return redirect()->intended(route('user.dashboard'))->with('success', 'Bienvenue ' . $user->prenom . ' !');
+        return redirect()->intended(route('reservation.create'))->with('success', 'Bienvenue ' . $user->prenom . ' !');
 
     } catch (\Exception $e) {
         Log::error('Erreur Google Login: ' . $e->getMessage());

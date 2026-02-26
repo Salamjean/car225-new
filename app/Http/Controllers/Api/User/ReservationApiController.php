@@ -1549,7 +1549,8 @@ class ReservationApiController extends Controller
                 'passagers.*.return_seat_number' => 'nullable|integer',
                 'seats_retour' => 'nullable|array',
                 'seats_retour.*' => 'nullable|integer',
-                'payment_method' => 'required|in:wallet,cinetpay'
+                'payment_method' => 'required|in:wallet,cinetpay',
+                'frais_choix_siege' => 'nullable|integer|min:0',
             ]);
 
             $programme = Programme::find($request->programme_id);
@@ -1744,6 +1745,12 @@ class ReservationApiController extends Controller
             if ($isAllerRetour) {
                 $montantTotal = $montantTotal * 2;
             }
+
+            // --- FRAIS DE SÉLECTION DE SIÈGE (manuelle vs auto) ---
+            $fraisChoixSiege = (int) $request->input('frais_choix_siege', 0);
+            if ($fraisChoixSiege > 0) {
+                $montantTotal += $fraisChoixSiege;
+            }
             
             $user = Auth::user();
             $passagers = $request->passagers;
@@ -1826,7 +1833,7 @@ class ReservationApiController extends Controller
                         'passager_telephone' => $passager['telephone'],
                         'passager_urgence' => $passager['urgence'],
                         'is_aller_retour' => $isAllerRetour,
-                        'montant' => $prixUnitaire,
+                        'montant' => $prixUnitaire + ($fraisChoixSiege / (count($request->passagers) * ($isAllerRetour ? 2 : 1))),
                         'statut' => 'confirmee', // CONFIRMÉ pour wallet
                         'statut_aller' => 'confirmee',
                         'reference' => $reference,
@@ -1997,7 +2004,7 @@ class ReservationApiController extends Controller
                         'passager_telephone' => $passager['telephone'],
                         'passager_urgence' => $passager['urgence'],
                         'is_aller_retour' => $isAllerRetour,
-                        'montant' => $prixUnitaire,
+                        'montant' => $prixUnitaire + ($fraisChoixSiege / (count($request->passagers) * ($isAllerRetour ? 2 : 1))),
                         'statut' => 'en_attente', // EN ATTENTE pour CinetPay
                         'statut_aller' => 'en_attente',
                         'reference' => $reference,

@@ -41,6 +41,7 @@ use App\Models\Signalement;
 use App\Http\Controllers\Chauffeur\ChauffeurController;
 use App\Http\Controllers\Chauffeur\ChauffeurAuthenticate;
 use App\Http\Controllers\Chauffeur\VoyageController as ChauffeurVoyageController;
+use App\Http\Controllers\Chauffeur\ChauffeurReservationController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -406,6 +407,7 @@ Route::middleware('agent')->prefix('agent')->name('agent.')->group(function () {
     // Gestion des messages
     Route::prefix('messages')->name('messages.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Agent\AgentMessageController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\Agent\AgentMessageController::class, 'store'])->name('store');
         Route::get('/{id}', [\App\Http\Controllers\Agent\AgentMessageController::class, 'show'])->name('show');
         Route::patch('/{id}/read', [\App\Http\Controllers\Agent\AgentMessageController::class, 'markAsRead'])->name('read');
     });
@@ -625,6 +627,12 @@ Route::prefix('gare-espace')->name('gare-espace.')->group(function () {
     Route::get('/define-access/{email}', [App\Http\Controllers\GareEspace\AuthenticateGare::class, 'defineAccess'])->name('defineAccess');
     Route::post('/define-access/{email}', [App\Http\Controllers\GareEspace\AuthenticateGare::class, 'submitDefineAccess'])->name('validate');
 
+    // Password Reset Routes
+    Route::get('/password/reset', [App\Http\Controllers\GareEspace\PasswordResetController::class, 'showResetForm'])->name('password.request');
+    Route::post('/password/send-otp', [App\Http\Controllers\GareEspace\PasswordResetController::class, 'sendOtp'])->name('password.sendOtp');
+    Route::post('/password/verify-otp', [App\Http\Controllers\GareEspace\PasswordResetController::class, 'verifyOtp'])->name('password.verifyOtp');
+    Route::post('/password/reset', [App\Http\Controllers\GareEspace\PasswordResetController::class, 'resetPassword'])->name('password.reset');
+
     // Routes protégées (gare middleware)
     Route::middleware('gare')->group(function () {
         Route::get('/dashboard', [App\Http\Controllers\GareEspace\GareDashboardController::class, 'index'])->name('dashboard');
@@ -680,6 +688,7 @@ Route::prefix('gare-espace')->name('gare-espace.')->group(function () {
             Route::post('/', [App\Http\Controllers\GareEspace\GareMessageController::class, 'store'])->name('store');
             Route::get('/recipients', [App\Http\Controllers\GareEspace\GareMessageController::class, 'getRecipients'])->name('recipients');
             Route::get('/{id}', [App\Http\Controllers\GareEspace\GareMessageController::class, 'show'])->name('show');
+            Route::patch('/{id}/mark-read', [App\Http\Controllers\GareEspace\GareMessageController::class, 'markStaffRead'])->name('markStaffRead');
         });
     });
 });
@@ -745,11 +754,13 @@ Route::prefix('chauffeur')->name('chauffeur.')->group(function () {
             Route::post('/{voyage}/start', [ChauffeurVoyageController::class, 'start'])->name('start');
             Route::post('/{voyage}/complete', [ChauffeurVoyageController::class, 'complete'])->name('complete');
             Route::post('/{voyage}/update-location', [ChauffeurVoyageController::class, 'updateLocation'])->name('update-location');
+            Route::post('/{voyage}/annuler', [ChauffeurVoyageController::class, 'annuler'])->name('annuler');
         });
 
         // Inbox for Chauffeur
         Route::prefix('messages')->name('messages.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Chauffeur\ChauffeurMessageController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Chauffeur\ChauffeurMessageController::class, 'store'])->name('store');
             Route::get('/{id}', [\App\Http\Controllers\Chauffeur\ChauffeurMessageController::class, 'show'])->name('show');
         });
 
@@ -759,6 +770,13 @@ Route::prefix('chauffeur')->name('chauffeur.')->group(function () {
             Route::get('/create', [\App\Http\Controllers\Chauffeur\ChauffeurSignalementController::class, 'create'])->name('create');
             Route::post('/', [\App\Http\Controllers\Chauffeur\ChauffeurSignalementController::class, 'store'])->name('store');
             Route::get('/{signalement}', [\App\Http\Controllers\Chauffeur\ChauffeurSignalementController::class, 'show'])->name('show');
+        });
+
+        // Scan QR des réservations pour le chauffeur
+        Route::prefix('reservations')->name('reservations.')->group(function () {
+            Route::get('/scan', [ChauffeurReservationController::class, 'scanPage'])->name('scan');
+            Route::post('/search', [ChauffeurReservationController::class, 'search'])->name('search');
+            Route::post('/confirm', [ChauffeurReservationController::class, 'confirm'])->name('confirm');
         });
     });
 });

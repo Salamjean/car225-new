@@ -97,10 +97,15 @@
             <span class="font-medium text-sm flex-1">Boîte de réception</span>
             @php
                 $unreadFromCompany = Auth::guard('gare')->user()->messages()->where('is_read', false)->count();
+                $unreadFromStaff = \App\Models\GareMessage::where('gare_id', Auth::guard('gare')->user()->id)
+                    ->whereNotNull('sender_type')
+                    ->where('is_read', false)
+                    ->count();
+                $totalGareUnread = $unreadFromCompany + $unreadFromStaff;
             @endphp
-            @if($unreadFromCompany > 0)
+            @if($totalGareUnread > 0)
                 <span class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg animate-pulse">
-                    {{ $unreadFromCompany }}
+                    {{ $totalGareUnread }}
                 </span>
             @endif
         </a>

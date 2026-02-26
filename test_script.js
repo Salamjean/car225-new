@@ -1,999 +1,4 @@
-﻿@extends('user.layouts.template')
-@section('content')
 
-@push('styles')
-<style>
-    /* Hero Search */
-    .hero-search {
-        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-        position: relative;
-        overflow: hidden;
-    }
-    .hero-search::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        right: -20%;
-        width: 500px;
-        height: 500px;
-        background: radial-gradient(circle, rgba(233,79,27,0.15) 0%, transparent 70%);
-        border-radius: 50%;
-    }
-    .hero-search::after {
-        content: '';
-        position: absolute;
-        bottom: -30%;
-        left: -10%;
-        width: 400px;
-        height: 400px;
-        background: radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 70%);
-        border-radius: 50%;
-    }
-    .glass-input {
-        background: rgba(255,255,255,0.08);
-        border: 1px solid rgba(255,255,255,0.15);
-        backdrop-filter: blur(10px);
-        color: #fff;
-        transition: all 0.3s ease;
-    }
-    .glass-input::placeholder { color: rgba(255,255,255,0.5); }
-    .glass-input:focus {
-        background: rgba(255,255,255,0.15);
-        border-color: #e94f1b;
-        box-shadow: 0 0 0 3px rgba(233,79,27,0.2);
-        outline: none;
-    }
-    /* Route Card */
-    .route-card {
-        border-left: 4px solid #e94f1b;
-        transition: all 0.35s cubic-bezier(.4,0,.2,1);
-    }
-    .route-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 20px 40px rgba(0,0,0,0.08), 0 0 0 1px rgba(233,79,27,0.1);
-        border-left-width: 6px;
-    }
-    /* Timeline */
-    .timeline-line {
-        background: repeating-linear-gradient(90deg, #d1d5db 0, #d1d5db 6px, transparent 6px, transparent 12px);
-        height: 2px;
-    }
-    /* Schedule chip */
-    .schedule-chip {
-        transition: all 0.2s ease;
-        position: relative;
-    }
-    .schedule-chip:hover {
-        transform: scale(1.08);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    .schedule-chip::before {
-        content: '';
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        position: absolute;
-        top: -3px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: currentColor;
-        opacity: 0;
-        transition: opacity 0.2s;
-    }
-    .schedule-chip:hover::before { opacity: 1; }
-    /* Swap button rotation */
-    .swap-btn { transition: all 0.4s cubic-bezier(.4,0,.2,1); }
-    .swap-btn:hover { transform: rotate(180deg) scale(1.1); }
-    .swap-btn:active { transform: rotate(180deg) scale(0.95); }
-    /* Price pulse */
-    @keyframes pricePulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.03)} }
-    .route-card:hover .price-value { animation: pricePulse 0.5s ease; }
-</style>
-@endpush
-
-    <div class="min-h-screen bg-[#f5f6fa]">
-
-        {{-- ============================================ --}}
-        {{-- HERO SEARCH BAR --}}
-        {{-- ============================================ --}}
-        <div class="hero-search rounded-b-3xl sm:rounded-b-[2.5rem] shadow-2xl px-4 sm:px-6 lg:px-8 pt-6 pb-10 sm:pt-8 sm:pb-14 relative z-10">
-            <div class="relative z-20 max-w-6xl mx-auto">
-                {{-- Title --}}
-                <div class="mb-6 sm:mb-8 text-center sm:text-left">
-                    <h1 class="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight">
-                        Où allez-vous <span class="text-[#e94f1b]">?</span>
-                    </h1>
-                    <p class="text-blue-200/70 text-sm sm:text-base mt-1 font-medium">Trouvez le meilleur trajet au meilleur prix</p>
-                </div>
-
-                {{-- Search Form --}}
-                <form action="{{ route('reservation.create') }}" method="GET" id="search-form">
-                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-end">
-
-                        {{-- Départ --}}
-                        <div class="lg:col-span-3">
-                            <label class="block text-xs font-bold text-blue-200/80 uppercase tracking-widest mb-2">
-                                <i class="fas fa-map-marker-alt text-[#e94f1b] mr-1"></i> Départ
-                            </label>
-                            <div class="relative">
-                                <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <i class="fas fa-map-marker-alt text-[#e94f1b]/60"></i>
-                                </span>
-                                <input type="text" id="point_depart" name="point_depart"
-                                    value="{{ $searchParams['point_depart'] ?? '' }}"
-                                    class="glass-input w-full pl-11 pr-4 py-3.5 rounded-xl font-semibold text-sm"
-                                    placeholder="Ville ou gare de départ" required>
-                            </div>
-                        </div>
-
-                        {{-- Swap --}}
-                        <div class="lg:col-span-1 flex items-end justify-center pb-1">
-                            <button type="button" onclick="swapLocations()"
-                                class="swap-btn w-11 h-11 bg-[#e94f1b] text-white rounded-full shadow-lg shadow-orange-500/30 flex items-center justify-center"
-                                title="Inverser départ/arrivée">
-                                <i class="fas fa-exchange-alt text-sm"></i>
-                            </button>
-                        </div>
-
-                        {{-- Arrivée --}}
-                        <div class="lg:col-span-3">
-                            <label class="block text-xs font-bold text-blue-200/80 uppercase tracking-widest mb-2">
-                                <i class="fas fa-flag text-emerald-400 mr-1"></i> Arrivée
-                            </label>
-                            <div class="relative">
-                                <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <i class="fas fa-flag text-emerald-400/60"></i>
-                                </span>
-                                <input type="text" id="point_arrive" name="point_arrive"
-                                    value="{{ $searchParams['point_arrive'] ?? '' }}"
-                                    class="glass-input w-full pl-11 pr-4 py-3.5 rounded-xl font-semibold text-sm"
-                                    placeholder="Ville ou gare d'arrivée" required>
-                            </div>
-                        </div>
-
-                        {{-- Date --}}
-                        <div class="lg:col-span-2">
-                            <label class="block text-xs font-bold text-blue-200/80 uppercase tracking-widest mb-2">
-                                <i class="fas fa-calendar-alt text-blue-400 mr-1"></i> Date
-                            </label>
-                            <div class="relative">
-                                <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <i class="fas fa-calendar-alt text-blue-400/60"></i>
-                                </span>
-                                <input type="date" id="date_depart" name="date_depart"
-                                    value="{{ $searchParams['date_depart'] ?? date('Y-m-d', strtotime('+1 day')) }}"
-                                    class="glass-input w-full pl-11 pr-4 py-3.5 rounded-xl font-semibold text-sm"
-                                    min="{{ date('Y-m-d', strtotime('+1 day')) }}" required>
-                            </div>
-                        </div>
-
-                        {{-- Rechercher et Réinitialiser --}}
-                        <div class="lg:col-span-3 flex gap-2">
-                            <button type="submit"
-                                class="flex-1 bg-[#e94f1b] hover:bg-[#d4430f] text-white px-3 py-3.5 rounded-xl font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300 flex items-center justify-center gap-2 active:scale-[0.97]">
-                                <i class="fas fa-search"></i>
-                                <span>Rechercher</span>
-                            </button>
-                            <a href="{{ route('reservation.create') }}" title="Réinitialiser"
-                                class="w-[50px] sm:w-[56px] flex-shrink-0 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl shadow-lg shadow-white/5 backdrop-blur-sm transition-all duration-300 flex items-center justify-center active:scale-[0.97]">
-                                <i class="fas fa-undo"></i>
-                            </a>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <div class="max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 -mt-4 sm:-mt-6 relative z-20">
-
-            {{-- ============================================ --}}
-            {{-- ALERTE HEURE NON DISPONIBLE --}}
-            {{-- ============================================ --}}
-            @if (isset($timeMismatch) && $timeMismatch && isset($availableTimesMessage))
-                <div class="mb-6 bg-amber-50 border border-amber-200 p-4 rounded-2xl shadow-sm">
-                    <div class="flex items-start gap-3">
-                        <div class="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                            <i class="fas fa-exclamation-triangle text-amber-500"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-amber-800 text-sm">Heure non disponible</h4>
-                            <p class="text-amber-700 text-sm mt-1">{{ $availableTimesMessage }}</p>
-                            <p class="text-xs text-amber-500 mt-1">Nous affichons quand même les programmes disponibles pour cette route.</p>
-                        </div>
-                    </div>
-                </div>
-            @endif
-
-            {{-- ============================================ --}}
-            {{-- RÉSULTATS --}}
-            {{-- ============================================ --}}
-            @if (isset($groupedRoutes) && $groupedRoutes->count() > 0)
-                <div class="mb-6 sm:mb-8">
-
-                    {{-- Results Header --}}
-                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm p-4 sm:p-5 border border-gray-100/80 mb-5">
-                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 bg-[#e94f1b]/10 rounded-xl flex items-center justify-center">
-                                    <i class="fas fa-route text-[#e94f1b]"></i>
-                                </div>
-                                <div>
-                                    <h2 class="text-lg sm:text-xl font-black text-gray-900">Voyages disponibles</h2>
-                                    <div class="flex flex-wrap items-center gap-2 mt-1">
-                                        @if(isset($searchParams['point_depart']) && $searchParams['point_depart'])
-                                            <span class="text-xs font-bold text-gray-700 bg-gray-100 px-2.5 py-1 rounded-lg">
-                                                <i class="fas fa-map-marker-alt text-[#e94f1b] mr-1"></i>{{ $searchParams['point_depart'] }}
-                                            </span>
-                                            <i class="fas fa-arrow-right text-[#e94f1b] text-[10px]"></i>
-                                            <span class="text-xs font-bold text-gray-700 bg-gray-100 px-2.5 py-1 rounded-lg">
-                                                <i class="fas fa-flag text-emerald-500 mr-1"></i>{{ $searchParams['point_arrive'] }}
-                                            </span>
-                                        @else
-                                            <span class="text-xs font-bold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-lg">
-                                                <i class="fas fa-globe mr-1"></i>Toutes les destinations
-                                            </span>
-                                        @endif
-                                        <span class="text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg">
-                                            <i class="fas fa-calendar-alt mr-1"></i>{{ date('d/m/Y', strtotime($searchParams['date_depart'])) }}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="flex-shrink-0">
-                                <span class="bg-[#e94f1b] text-white px-4 py-2 rounded-xl font-black text-sm shadow-lg shadow-orange-500/20">
-                                    {{ $groupedRoutes->count() }} trajet{{ $groupedRoutes->count() > 1 ? 's' : '' }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Route Cards --}}
-                    <div class="space-y-4">
-                        @foreach ($groupedRoutes as $route)
-                            <div class="route-card bg-white rounded-2xl shadow-md border border-gray-100/80 overflow-hidden">
-                                <div class="p-5 sm:p-6">
-                                    <div class="flex flex-col lg:flex-row lg:items-stretch gap-5 lg:gap-6">
-
-                                        {{-- LEFT: Company & Route --}}
-                                        <div class="flex-1 min-w-0">
-                                            {{-- Company --}}
-                                            <div class="flex items-center gap-3 mb-4">
-                                                <div class="w-12 h-12 bg-gradient-to-br from-[#e94f1b] to-orange-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md shadow-orange-500/20">
-                                                    <i class="fas fa-bus text-white text-lg"></i>
-                                                </div>
-                                                <div class="min-w-0">
-                                                    <h3 class="text-base sm:text-lg font-black text-gray-900 tracking-tight truncate">
-                                                        <span class="text-[#e94f1b]">{{ $route->compagnie->sigle ?? '' }}</span>
-                                                        <span class="font-medium text-gray-500 ml-1">{{ $route->gare_depart ? $route->gare_depart->nom_gare : ($route->compagnie->name ?? 'Compagnie') }}</span>
-                                                    </h3>
-                                                </div>
-                                            </div>
-
-                                            {{-- Route Timeline --}}
-                                            <div class="flex items-center gap-3 sm:gap-4">
-                                                {{-- Departure --}}
-                                                <div class="text-center sm:text-left flex-shrink-0">
-                                                    <p class="font-black text-gray-900 text-sm sm:text-base leading-tight">{{ $route->point_depart }}</p>
-                                                    @if($route->gare_depart)
-                                                        <p class="text-[10px] text-gray-400 font-semibold mt-0.5 flex items-center gap-1">
-                                                            <i class="fas fa-building"></i>{{ $route->gare_depart->nom_gare }}
-                                                        </p>
-                                                    @endif
-                                                </div>
-
-                                                {{-- Timeline line --}}
-                                                <div class="flex-1 flex flex-col items-center gap-1 min-w-[80px]">
-                                                    <span class="text-[10px] font-black text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full whitespace-nowrap">
-                                                        <i class="fas fa-clock mr-0.5"></i>{{ $route->durer_parcours }}
-                                                    </span>
-                                                    <div class="w-full relative flex items-center">
-                                                        <div class="w-2 h-2 rounded-full bg-[#e94f1b] flex-shrink-0 z-10"></div>
-                                                        <div class="timeline-line flex-1"></div>
-                                                        <div class="absolute left-1/2 -translate-x-1/2 bg-white px-1">
-                                                            <i class="fas fa-bus text-[#e94f1b] text-[10px]"></i>
-                                                        </div>
-                                                        <div class="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0 z-10"></div>
-                                                    </div>
-                                                </div>
-
-                                                {{-- Arrival --}}
-                                                <div class="text-center sm:text-right flex-shrink-0">
-                                                    <p class="font-black text-gray-900 text-sm sm:text-base leading-tight">{{ $route->point_arrive }}</p>
-                                                    @if($route->gare_arrivee)
-                                                        <p class="text-[10px] text-gray-400 font-semibold mt-0.5 flex items-center gap-1 justify-end">
-                                                            <i class="fas fa-building"></i>{{ $route->gare_arrivee->nom_gare }}
-                                                        </p>
-                                                    @endif
-                                                </div>
-                                            </div>
-
-                                            {{-- Schedules --}}
-                                            <div class="mt-4">
-                                                <p class="text-[9px] font-black text-gray-400 uppercase tracking-[0.15em] mb-2 flex items-center gap-1.5">
-                                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                                                    Horaires & Disponibilité
-                                                </p>
-                                                <div class="flex flex-wrap gap-2">
-                                                    @foreach($route->aller_horaires as $horaire)
-                                                        @php
-                                                            $occupancyRate = ($horaire['reserved_count'] / $horaire['total_seats']) * 100;
-                                                            $isFull = $horaire['reserved_count'] >= $horaire['total_seats'];
-                                                            $isAlmost = $occupancyRate > 80;
-                                                            $chipBg = $isFull ? 'bg-red-50 border-red-200 text-red-600' : ($isAlmost ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700');
-                                                            $dotColor = $isFull ? 'bg-red-400' : ($isAlmost ? 'bg-amber-400' : 'bg-emerald-400');
-                                                        @endphp
-                                                        <div onclick="showVehicleDetails('{{ $horaire['vehicule_id'] ?? 0 }}', '{{ $horaire['id'] }}', '{{ $searchParams['date_depart'] }}', '{{ substr($horaire['heure_depart'], 0, 5) }}')"
-                                                             class="schedule-chip flex items-center gap-2 px-3 py-2 rounded-xl border {{ $chipBg }} cursor-pointer group shadow-sm"
-                                                             title="Cliquez pour voir les places disponibles">
-                                                            <span class="w-1.5 h-1.5 rounded-full {{ $dotColor }}"></span>
-                                                            <span class="font-black text-sm">{{ substr($horaire['heure_depart'], 0, 5) }}</span>
-                                                            <div class="w-px h-3 bg-current opacity-15"></div>
-                                                            <div class="flex items-center gap-1 text-[10px] font-bold opacity-80">
-                                                                <i class="fas fa-couch"></i>
-                                                                <span>{{ $horaire['reserved_count'] }}/{{ $horaire['total_seats'] }}</span>
-                                                            </div>
-                                                        </div>
-                                                    @endforeach
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {{-- RIGHT: Price & Book --}}
-                                        <div class="flex lg:flex-col items-center lg:items-end justify-between lg:justify-center gap-4 border-t lg:border-t-0 lg:border-l border-gray-100 pt-4 lg:pt-0 lg:pl-6 lg:min-w-[180px]">
-                                            <div class="text-right">
-                                                <p class="text-[9px] text-gray-400 font-black uppercase tracking-widest">Prix à partir de</p>
-                                                <p class="price-value text-2xl sm:text-3xl font-black text-[#e94f1b] leading-tight mt-0.5">
-                                                    {{ number_format($route->montant_billet, 0, ',', ' ') }}
-                                                    <span class="text-xs font-bold text-gray-400">FCFA</span>
-                                                </p>
-                                            </div>
-
-                                            @php
-                                                $routeData = [
-                                                    'id' => $route->id,
-                                                    'compagnie_id' => $route->compagnie_id ?? null,
-                                                    'compagnie' => $route->compagnie->name ?? 'Compagnie',
-                                                    'sigle' => $route->compagnie->sigle ?? '',
-                                                    'point_depart' => $route->point_depart,
-                                                    'point_arrive' => $route->point_arrive,
-                                                    'gare_depart' => $route->gare_depart,
-                                                    'gare_arrivee' => $route->gare_arrivee,
-                                                    'montant_billet' => $route->montant_billet,
-                                                    'durer_parcours' => $route->durer_parcours,
-                                                    'aller_horaires' => $route->aller_horaires,
-                                                    'retour_horaires' => $route->retour_horaires,
-                                                    'has_retour' => $route->has_retour,
-                                                    'date_fin' => $route->date_fin ?? null,
-                                                    'capacity' => $route->capacity ?? 50,
-                                                ];
-                                            @endphp
-                                            <button type="button"
-                                                data-route="{{ json_encode($routeData, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) }}"
-                                                data-date="{{ $searchParams['date_depart'] }}"
-                                                onclick="handleReservationClick(this)"
-                                                class="bg-gradient-to-r from-[#e94f1b] to-orange-500 text-white px-6 sm:px-8 py-3 rounded-xl font-black text-sm shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:from-[#d4430f] hover:to-orange-600 transition-all duration-300 active:scale-95 flex items-center gap-2 whitespace-nowrap">
-                                                <span>RÉSERVER</span>
-                                                <i class="fas fa-chevron-right text-[10px]"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-
-            @elseif(isset($groupedRoutes))
-                {{-- Empty State --}}
-                <div class="bg-white rounded-2xl shadow-md p-10 sm:p-14 text-center border border-gray-100/80 mt-6">
-                    <div class="w-24 h-24 bg-gradient-to-br from-orange-100 to-blue-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
-                        <i class="fas fa-route text-4xl text-[#e94f1b]"></i>
-                    </div>
-                    <h3 class="text-2xl font-black text-gray-900 mb-2">Aucun trajet trouvé</h3>
-                    <p class="text-gray-500 font-medium max-w-md mx-auto mb-8">Nous n'avons trouvé aucun programme pour cette recherche. Essayez de modifier vos critères.</p>
-                    <div class="flex flex-wrap justify-center gap-3">
-                        <button onclick="document.getElementById('date_depart').focus()" class="px-5 py-2.5 bg-blue-50 text-blue-700 rounded-xl font-bold text-sm hover:bg-blue-100 transition-colors flex items-center gap-2">
-                            <i class="fas fa-calendar-alt"></i> Changer la date
-                        </button>
-                        <button onclick="document.getElementById('point_depart').focus()" class="px-5 py-2.5 bg-orange-50 text-[#e94f1b] rounded-xl font-bold text-sm hover:bg-orange-100 transition-colors flex items-center gap-2">
-                            <i class="fas fa-map-marker-alt"></i> Modifier le trajet
-                        </button>
-                    </div>
-                </div>
-            @endif
-        </div>
-    </div>
-    
-    <!-- Modal Sélection Gare (conservé) -->
-    <div id="gareSelectionModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4 modal-overlay">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 transform transition-all">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-900">Sélectionnez votre gare</h2>
-                <button onclick="closeGareSelectionModal()" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
-                    <i class="fas fa-times text-gray-500"></i>
-                </button>
-            </div>
-            <div class="mb-6">
-                <p class="text-sm text-gray-600 mb-4">De quelle gare souhaitez-vous partir ?</p>
-                <div id="gareOptions" class="space-y-3"></div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Modal Type de Voyage (conservé, amélioré visuellement) -->
-    <div id="tripTypeModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4 modal-overlay">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 transform transition-all">
-            <div class="flex justify-between items-center mb-4">
-                <div>
-                    <h2 class="text-xl font-bold text-gray-900 flex items-center gap-2">
-                        <i class="fas fa-bus text-[#e94f1b]"></i>
-                        Type de voyage
-                    </h2>
-                    <p id="tripRouteInfo" class="text-sm text-gray-600 mt-2"></p>
-                </div>
-                <button onclick="closeTripTypeModal()" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
-                    <i class="fas fa-times text-gray-500"></i>
-                </button>
-            </div>
-            <div class="grid grid-cols-1 gap-4 mt-6">
-                <button onclick="selectTripType('simple')" 
-                    class="p-6 border-2 border-gray-200 rounded-xl hover:border-[#e94f1b] hover:bg-orange-50 transition-all duration-300 text-left group">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center group-hover:bg-[#e94f1b] transition-colors">
-                                <i class="fas fa-arrow-right text-[#e94f1b] text-xl group-hover:text-white"></i>
-                            </div>
-                            <div>
-                                <h3 class="font-bold text-lg text-gray-900">Aller Simple</h3>
-                                <p id="simplePrice" class="text-sm text-gray-600">--  FCFA</p>
-                            </div>
-                        </div>
-                    </div>
-                </button>
-                <button onclick="selectTripType('round')" id="roundTripBtn"
-                    class="p-6 border-2 border-gray-200 rounded-xl hover:border-[#e94f1b] hover:bg-orange-50 transition-all duration-300 text-left group disabled:opacity-50 disabled:cursor-not-allowed">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-[#e94f1b] transition-colors">
-                                <i class="fas fa-exchange-alt text-blue-500 text-xl group-hover:text-white"></i>
-                            </div>
-                            <div>
-                                <h3 class="font-bold text-lg text-gray-900">Aller-Retour</h3>
-                                <p id="roundPrice" class="text-sm text-gray-600">-- FCFA</p>
-                                <p id="roundStatus" class="text-xs text-gray-500"></p>
-                            </div>
-                        </div>
-                    </div>
-                </button>
-            </div>
-            <div class="mt-6 flex justify-end">
-                <button onclick="closeTripTypeModal()" class="px-6 py-2 bg-gray-100 rounded-lg font-bold hover:bg-gray-200 transition-colors">
-                    Annuler
-                </button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- ============================================= -->
-    <!-- MODAL UNIFIÉ DE RÉSERVATION (REDESIGNED)      -->
-    <!-- ============================================= -->
-    <div id="reservationModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-50 overflow-y-auto modal-overlay">
-        <div class="min-h-screen flex items-center justify-center p-4">
-            <div class="bg-white rounded-3xl shadow-2xl w-full max-w-5xl overflow-hidden reservation-modal-content" style="max-height: 95vh;">
-                
-                <!-- ===== HEADER PREMIUM ===== -->
-                <div class="relative overflow-hidden">
-                    <!-- Gradient Background -->
-                    <div class="bg-gradient-to-r from-[#e94f1b] via-orange-500 to-amber-500 px-6 py-5">
-                        <!-- Decorative circles -->
-                        <div class="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-                        <div class="absolute bottom-0 left-10 w-20 h-20 bg-white/5 rounded-full translate-y-1/2"></div>
-                        
-                        <div class="relative flex justify-between items-start">
-                            <div>
-                                <div class="flex items-center gap-2 mb-1">
-                                    <div class="w-8 h-8 bg-white/20 backdrop-blur rounded-lg flex items-center justify-center">
-                                        <i class="fas fa-ticket-alt text-white text-sm"></i>
-                                    </div>
-                                    <h2 class="text-xl font-black text-white tracking-tight">Réservation</h2>
-                                </div>
-                                <div id="reservationProgramInfo" class="text-white/90 text-sm font-medium"></div>
-                            </div>
-                            <button onclick="closeReservationModal()" class="w-9 h-9 rounded-xl bg-white/20 backdrop-blur hover:bg-white/30 flex items-center justify-center transition-all">
-                                <i class="fas fa-times text-white"></i>
-                            </button>
-                        </div>
-
-                        <!-- ===== STEPPER ===== -->
-                        <div class="mt-5 flex items-center justify-between" id="reservationStepper">
-                            <div class="stepper-item active" data-step="1">
-                                <div class="stepper-circle">
-                                    <span class="stepper-number">1</span>
-                                    <i class="fas fa-check stepper-check"></i>
-                                </div>
-                                <span class="stepper-label">Places</span>
-                            </div>
-                            <div class="stepper-line" id="stepperLine1"></div>
-                            <div class="stepper-item" data-step="2">
-                                <div class="stepper-circle">
-                                    <span class="stepper-number">2</span>
-                                    <i class="fas fa-check stepper-check"></i>
-                                </div>
-                                <span class="stepper-label">Sièges</span>
-                            </div>
-                            <div class="stepper-line" id="stepperLine2"></div>
-                            <div class="stepper-item" data-step="3">
-                                <div class="stepper-circle">
-                                    <span class="stepper-number">3</span>
-                                    <i class="fas fa-check stepper-check"></i>
-                                </div>
-                                <span class="stepper-label">Passagers</span>
-                            </div>
-                            <div class="stepper-line" id="stepperLine3"></div>
-                            <div class="stepper-item" data-step="4">
-                                <div class="stepper-circle">
-                                    <span class="stepper-number">4</span>
-                                    <i class="fas fa-check stepper-check"></i>
-                                </div>
-                                <span class="stepper-label">Paiement</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ===== CONTENU DES ÉTAPES ===== -->
-                <div class="p-6 md:p-8" style="max-height: calc(95vh - 180px); overflow-y: auto;">
-                    
-                    <!-- ═══ Étape 1: Nombre de places ═══ -->
-                    <div id="step1" class="step-content active-step">
-                        <div class="text-center mb-6">
-                            <div class="inline-flex items-center gap-2 bg-orange-50 text-[#e94f1b] px-4 py-2 rounded-full text-sm font-bold mb-3">
-                                <i class="fas fa-users"></i>
-                                <span>Étape 1 sur 4</span>
-                            </div>
-                            <h3 class="text-2xl font-black text-gray-900">Combien de places ?</h3>
-                            <p class="text-gray-500 mt-1">Sélectionnez le nombre de passagers</p>
-                        </div>
-                        
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8 max-w-2xl mx-auto">
-                            @for ($i = 1; $i <= 8; $i++)
-                                <button onclick="selectNumberOfPlaces({{ $i }}, this)"
-                                    class="place-count-btn group relative p-5 border-2 border-gray-200 rounded-2xl hover:border-[#e94f1b] hover:bg-orange-50 transition-all duration-300 text-center">
-                                    <div class="text-3xl font-black text-gray-800 group-hover:text-[#e94f1b] transition-colors">{{ $i }}</div>
-                                    <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mt-1">place{{ $i > 1 ? 's' : '' }}</div>
-                                    <div class="absolute inset-0 border-2 border-[#e94f1b] rounded-2xl opacity-0 scale-105 transition-all duration-300 pointer-events-none"></div>
-                                </button>
-                            @endfor
-                        </div>
-
-                        <div class="flex justify-between items-center">
-                            <button onclick="backToTripTypeChoice()"
-                                class="px-6 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-2xl font-bold transition-all flex items-center gap-2 text-sm">
-                                <i class="fas fa-arrow-left text-xs"></i>
-                                <span>Retour</span>
-                            </button>
-                            <button id="nextStepBtn" onclick="showSeatSelection()"
-                                class="bg-gradient-to-r from-[#e94f1b] to-orange-500 text-white px-8 py-3.5 rounded-2xl font-bold hover:shadow-lg hover:shadow-orange-500/25 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none flex items-center gap-3 text-sm"
-                                disabled>
-                                <span>Choisir les sièges</span>
-                                <i class="fas fa-arrow-right"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- ═══ Étape 2: Sélection des sièges ALLER ═══ -->
-                    <div id="step2" class="step-content hidden">
-                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                            <div>
-                                <div class="inline-flex items-center gap-2 bg-orange-50 text-[#e94f1b] px-3 py-1.5 rounded-full text-xs font-bold mb-2">
-                                    <i class="fas fa-couch"></i>
-                                    <span>Étape 2 — Sièges Aller</span>
-                                </div>
-                                <h3 class="text-xl font-black text-gray-900">Choisissez vos places</h3>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <span id="selectedSeatsCount" class="px-4 py-2 bg-[#e94f1b]/10 text-[#e94f1b] rounded-xl font-bold text-sm">
-                                    0 place sélectionnée
-                                </span>
-                                <button onclick="backToStep1()"
-                                    class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-600 font-medium text-sm transition-colors flex items-center gap-2">
-                                    <i class="fas fa-arrow-left text-xs"></i>
-                                    <span>Retour</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Plan des sièges -->
-                        <div id="seatSelectionArea" class="mb-6"></div>
-
-                        <!-- Légende améliorée -->
-                        <div class="flex flex-wrap items-center gap-x-6 gap-y-2 mb-6 p-4 bg-gray-50 rounded-2xl">
-                            <div class="flex items-center gap-2">
-                                <div class="w-7 h-7 bg-emerald-500 rounded-lg shadow-sm flex items-center justify-center">
-                                    <i class="fas fa-couch text-white text-[10px]"></i>
-                                </div>
-                                <span class="text-xs font-medium text-gray-600">Disponible</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <div class="w-7 h-7 bg-[#e94f1b] rounded-lg shadow-sm flex items-center justify-center">
-                                    <i class="fas fa-check text-white text-[10px]"></i>
-                                </div>
-                                <span class="text-xs font-medium text-gray-600">Sélectionné</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <div class="w-7 h-7 bg-red-400/80 rounded-lg shadow-sm flex items-center justify-center">
-                                    <i class="fas fa-times text-white text-[10px]"></i>
-                                </div>
-                                <span class="text-xs font-medium text-gray-600">Réservé</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <div class="w-7 h-7 bg-sky-500 rounded-lg shadow-sm flex items-center justify-center">
-                                    <i class="fas fa-couch text-white text-[10px]"></i>
-                                </div>
-                                <span class="text-xs font-medium text-gray-600">Côté gauche</span>
-                            </div>
-                        </div>
-
-                        <!-- Actions -->
-                        <div class="flex justify-between hidden" id="step2OldActions">
-                            <button onclick="backToStep1()"
-                                class="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-2xl font-bold transition-all flex items-center gap-2 text-sm">
-                                <i class="fas fa-arrow-left text-xs"></i>
-                                <span>Retour</span>
-                            </button>
-                            <button id="showPassengerInfoBtn" onclick="showPassengerInfo()"
-                                class="bg-gradient-to-r from-[#e94f1b] to-orange-500 text-white px-8 py-3 rounded-2xl font-bold hover:shadow-lg hover:shadow-orange-500/25 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-3 text-sm"
-                                disabled>
-                                <span>Informations passagers</span>
-                                <i class="fas fa-arrow-right"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- ═══ Étape 2.5: Sièges RETOUR (si Aller-Retour) ═══ -->
-                    <div id="step2_5" class="step-content hidden">
-                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                            <div>
-                                <div class="inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-3 py-1.5 rounded-full text-xs font-bold mb-2">
-                                    <i class="fas fa-undo"></i>
-                                    <span>Étape 2 — Sièges Retour</span>
-                                </div>
-                                <h3 class="text-xl font-black text-gray-900">Places pour le retour</h3>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <span id="selectedSeatsCountRetour" class="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl font-bold text-sm">0 place sélectionnée</span>
-                                <button onclick="backToStep2()"
-                                    class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-600 font-medium text-sm transition-colors flex items-center gap-2">
-                                    <i class="fas fa-arrow-left text-xs"></i>
-                                    <span>Retour</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Info retour -->
-                        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-2xl mb-6 border border-blue-100">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center flex-shrink-0">
-                                    <i class="fas fa-undo text-white"></i>
-                                </div>
-                                <div>
-                                    <p class="font-bold text-blue-900 text-sm">Voyage Retour</p>
-                                    <p id="returnProgramInfo" class="text-xs text-blue-700"></p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Plan retour -->
-                        <div id="seatSelectionAreaRetour" class="mb-6"></div>
-
-                        <!-- Légende -->
-                        <div class="flex flex-wrap items-center gap-x-6 gap-y-2 mb-6 p-4 bg-gray-50 rounded-2xl">
-                            <div class="flex items-center gap-2">
-                                <div class="w-7 h-7 bg-emerald-500 rounded-lg shadow-sm"></div>
-                                <span class="text-xs font-medium text-gray-600">Disponible</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <div class="w-7 h-7 bg-blue-600 rounded-lg shadow-sm"></div>
-                                <span class="text-xs font-medium text-gray-600">Sélectionné</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <div class="w-7 h-7 bg-red-400/80 rounded-lg shadow-sm"></div>
-                                <span class="text-xs font-medium text-gray-600">Réservé</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <div class="w-7 h-7 bg-sky-500 rounded-lg shadow-sm"></div>
-                                <span class="text-xs font-medium text-gray-600">Côté gauche</span>
-                            </div>
-                        </div>
-
-                        <!-- Actions -->
-                        <div class="flex justify-between hidden" id="step2_5OldActions">
-                            <button onclick="backToStep2()"
-                                class="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-2xl font-bold transition-all flex items-center gap-2 text-sm">
-                                <i class="fas fa-arrow-left text-xs"></i>
-                                <span>Retour</span>
-                            </button>
-                            <button id="showPassengerInfoBtnRetour" onclick="proceedToPassengerInfoFromRetour()"
-                                class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-3 rounded-2xl font-bold hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-3 text-sm"
-                                disabled>
-                                <span>Informations passagers</span>
-                                <i class="fas fa-arrow-right"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- ═══ Étape 3: Informations passagers ═══ -->
-                    <div id="step3" class="step-content hidden">
-                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                            <div>
-                                <div class="inline-flex items-center gap-2 bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-full text-xs font-bold mb-2">
-                                    <i class="fas fa-user-edit"></i>
-                                    <span>Étape 3 — Passagers</span>
-                                </div>
-                                <h3 class="text-xl font-black text-gray-900">Informations des passagers</h3>
-                            </div>
-                            <button onclick="backFromPassengerInfo()"
-                                class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-600 font-medium text-sm transition-colors flex items-center gap-2">
-                                <i class="fas fa-arrow-left text-xs"></i>
-                                <span>Retour aux places</span>
-                            </button>
-                        </div>
-
-                        <div id="passengersFormArea" class="space-y-6 mb-8"></div>
-
-                        <!-- Actions -->
-                        <div class="flex justify-between">
-                            <button onclick="backFromPassengerInfo()"
-                                class="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-2xl font-bold transition-all flex items-center gap-2 text-sm">
-                                <i class="fas fa-arrow-left text-xs"></i>
-                                <span>Retour</span>
-                            </button>
-                            <button id="confirmReservationBtn" onclick="confirmReservation()"
-                                class="bg-gradient-to-r from-emerald-500 to-green-500 text-white px-8 py-3.5 rounded-2xl font-bold hover:shadow-lg hover:shadow-green-500/25 transition-all duration-300 flex items-center gap-3 text-sm">
-                                <i class="fas fa-shield-alt"></i>
-                                <span>Confirmer & Payer</span>
-                                <i class="fas fa-arrow-right text-xs"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ============================================= -->
-    <!-- STYLES PREMIUM                                -->
-    <!-- ============================================= -->
-    <style>
-        /* === Modal Animations === */
-        .modal-overlay {
-            animation: modalFadeIn 0.3s ease-out;
-        }
-        @keyframes modalFadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        .reservation-modal-content {
-            animation: modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        @keyframes modalSlideUp {
-            from { opacity: 0; transform: translateY(30px) scale(0.97); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        /* === Step Content Transitions === */
-        .step-content {
-            animation: stepFadeIn 0.4s ease-out;
-        }
-        .step-content.hidden { display: none; }
-        @keyframes stepFadeIn {
-            from { opacity: 0; transform: translateX(20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        /* === Stepper === */
-        .stepper-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-            min-width: 60px;
-        }
-        .stepper-circle {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.2);
-            backdrop-filter: blur(4px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            position: relative;
-        }
-        .stepper-number {
-            color: rgba(255,255,255,0.7);
-            font-weight: 800;
-            font-size: 13px;
-            transition: all 0.3s;
-        }
-        .stepper-check {
-            display: none;
-            color: white;
-            font-size: 11px;
-        }
-        .stepper-label {
-            font-size: 10px;
-            font-weight: 700;
-            color: rgba(255,255,255,0.5);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            transition: all 0.3s;
-        }
-        .stepper-line {
-            flex: 1;
-            height: 2px;
-            background: rgba(255,255,255,0.15);
-            border-radius: 1px;
-            margin: 0 4px;
-            margin-bottom: 22px;
-            position: relative;
-            overflow: hidden;
-        }
-        .stepper-line::after {
-            content: '';
-            position: absolute;
-            left: 0; top: 0; bottom: 0;
-            width: 0;
-            background: white;
-            border-radius: 1px;
-            transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .stepper-line.filled::after {
-            width: 100%;
-        }
-
-        /* Active step */
-        .stepper-item.active .stepper-circle {
-            background: white;
-            box-shadow: 0 0 0 3px rgba(255,255,255,0.3);
-        }
-        .stepper-item.active .stepper-number {
-            color: #e94f1b;
-        }
-        .stepper-item.active .stepper-label {
-            color: white;
-        }
-
-        /* Completed step */
-        .stepper-item.completed .stepper-circle {
-            background: rgba(255,255,255,0.9);
-        }
-        .stepper-item.completed .stepper-number {
-            display: none;
-        }
-        .stepper-item.completed .stepper-check {
-            display: block;
-            color: #10b981;
-        }
-        .stepper-item.completed .stepper-label {
-            color: rgba(255,255,255,0.8);
-        }
-
-        /* === Place Count Button === */
-        .place-count-btn.active {
-            border-color: #e94f1b !important;
-            background: linear-gradient(135deg, #fff7ed, #ffedd5) !important;
-            box-shadow: 0 0 0 3px rgba(233, 79, 27, 0.15), 0 4px 12px rgba(233, 79, 27, 0.1) !important;
-        }
-        .place-count-btn.active > div:first-child {
-            color: #e94f1b !important;
-        }
-
-        /* === Seat styles === */
-        .seat {
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-            cursor: pointer;
-        }
-        .seat:hover {
-            transform: scale(1.12);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        .seat.selected {
-            transform: scale(1.08);
-            box-shadow: 0 0 0 3px rgba(233, 79, 27, 0.3), 0 4px 12px rgba(233, 79, 27, 0.2);
-        }
-        .seat.reserved {
-            cursor: not-allowed;
-            opacity: 0.45;
-        }
-        .seat.reserved:hover {
-            transform: none;
-            box-shadow: none;
-        }
-
-        /* === Responsive === */
-        @media (max-width: 640px) {
-            .stepper-label { font-size: 8px; }
-            .stepper-circle { width: 26px; height: 26px; }
-            .stepper-number { font-size: 11px; }
-        }
-
-        /* === SweetAlert Premium Overrides === */
-        .swal2-popup.rounded-2xl {
-            border-radius: 1.5rem !important;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
-        }
-        .swal2-popup {
-            font-family: inherit !important;
-        }
-        .swal2-title {
-            font-weight: 800 !important;
-            font-size: 1.3rem !important;
-        }
-        .swal2-confirm {
-            border-radius: 0.75rem !important;
-            font-weight: 700 !important;
-            padding: 0.65rem 1.5rem !important;
-            box-shadow: 0 4px 14px rgba(233, 79, 27, 0.3) !important;
-            transition: all 0.3s !important;
-        }
-        .swal2-cancel {
-            border-radius: 0.75rem !important;
-            font-weight: 600 !important;
-            padding: 0.65rem 1.5rem !important;
-        }
-        .swal2-confirm:hover {
-            transform: translateY(-1px) !important;
-            box-shadow: 0 6px 20px rgba(233, 79, 27, 0.4) !important;
-        }
-        div:where(.swal2-container) {
-            backdrop-filter: blur(4px);
-        }
-
-        /* === Passenger Card Styling === */
-        #passengersFormArea .bg-gray-50 {
-            border-radius: 1rem;
-            border: 1px solid #e5e7eb;
-            transition: all 0.3s;
-        }
-        #passengersFormArea .bg-gray-50:hover {
-            border-color: #e94f1b;
-            box-shadow: 0 4px 12px rgba(233, 79, 27, 0.08);
-        }
-        #passengersFormArea input {
-            border-radius: 0.75rem;
-        }
-        #passengersFormArea input:focus {
-            border-color: #e94f1b;
-            box-shadow: 0 0 0 3px rgba(233, 79, 27, 0.1);
-        }
-    </style>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.cinetpay.com/seamless/main.js"></script>
-     <script>
-        function initAutocompleteUser() {
-            const options = {
-                componentRestrictions: { country: "ci" }, // Restreindre Ã  la CÃ´te d'Ivoire
-                fields: ["formatted_address", "geometry", "name"],
-            };
-
-            const inputDepart = document.getElementById("point_depart");
-            const inputArrive = document.getElementById("point_arrive");
-
-            if (inputDepart) {
-                new google.maps.places.Autocomplete(inputDepart, options);
-            }
-
-            if (inputArrive) {
-                new google.maps.places.Autocomplete(inputArrive, options);
-            }
-        }
-    </script>
-       <script
-        src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google_maps.key') }}&libraries=places&loading=async&callback=initAutocompleteUser"
-        async defer></script>
-    <script>
         // Variables globales
          var currentProgramId = null;
         var currentSelectedProgram = null; 
@@ -1060,7 +65,7 @@ var currentRetourProgramId = null;
         // Fonction handler pour le clic sur RÃ©server (gÃ¨re le parsing JSON depuis data attributes)
        
 
-        // Configuration des types de rangées
+        // Configuration des types de rangÃ©es
         const typeRangeConfig = {
             '2x2': { placesGauche: 2, placesDroite: 2 },
             '2x3': { placesGauche: 2, placesDroite: 3 },
@@ -2217,7 +1222,7 @@ async function showDepartureSchedulesModal(program, departureDate, isAllerRetour
                         <p class="text-blue-600 text-sm font-semibold">${returnDateFormatted}</p>
                          <p class="text-blue-600 text-xs">Options disponibles</p>
                     </div>
-                    <p class="font-medium text-gray-700 mb-3">Sélectionnez votre heure de retour :</p>
+                    <p class="font-medium text-gray-700 mb-3">SÃ©lectionnez votre heure de retour :</p>
                     ${timeSlotsHtml}
                 </div>
             `;
@@ -2248,13 +1253,13 @@ async function showDepartureSchedulesModal(program, departureDate, isAllerRetour
                             // Afficher rÃ©capitulatif et ouvrir modal rÃ©servation
                             Swal.fire({
                                 icon: 'success',
-                                title: 'Aller-Retour sélectionné !',
+                                title: 'Aller-Retour sÃ©lectionnÃ© !',
                                 html: `
                                     <div class="text-left space-y-2">
-                                        <p><strong>Aller:</strong> ${outboundProgram.point_depart} à ${outboundProgram.point_arrive}<br>
-                                           <span class="text-sm text-gray-500">${new Date(outboundDate).toLocaleDateString('fr-FR')} à  ${outboundProgram.heure_depart}</span></p>
-                                        <p><strong>Retour:</strong> ${window.selectedReturnProgram.point_depart} à ${window.selectedReturnProgram.point_arrive}<br>
-                                           <span class="text-sm text-gray-500">${new Date(tripDate).toLocaleDateString('fr-FR')} à  ${window.selectedReturnProgram.heure_depart}</span></p>
+                                        <p><strong>Aller:</strong> ${outboundProgram.point_depart} â†’ ${outboundProgram.point_arrive}<br>
+                                           <span class="text-sm text-gray-500">${new Date(outboundDate).toLocaleDateString('fr-FR')} Ã  ${outboundProgram.heure_depart}</span></p>
+                                        <p><strong>Retour:</strong> ${window.selectedReturnProgram.point_depart} â†’ ${window.selectedReturnProgram.point_arrive}<br>
+                                           <span class="text-sm text-gray-500">${new Date(tripDate).toLocaleDateString('fr-FR')} Ã  ${window.selectedReturnProgram.heure_depart}</span></p>
                                         <p class="text-lg font-bold text-[#e94f1b] mt-3">Total: ${totalPrice.toLocaleString('fr-FR')} FCFA</p>
                                     </div>
                                 `,
@@ -2716,7 +1721,7 @@ function onAllerRetourChoiceChange() {
                                                                                         <div style="text-align: center; font-weight: 600; color: #4b5563;">CÃ´tÃ© droit</div>
                                                                                     </div>
 
-                                                                                    <!-- Rangée -->
+                                                                                    <!-- RangÃ©es -->
                                                                                     <div style="max-height: 400px; overflow-y:                                                 auto;">
                                                                             `;
 
@@ -2980,7 +1985,7 @@ function onAllerRetourChoiceChange() {
             const nombreRanger = Math.ceil(totalPlaces / placesParRanger);
             
             // On ne montre plus les dÃ©tails du vÃ©hicule selon la demande utilisateur
-            const programTitle = (program.compagnie?.sigle || 'Compagnie') + ' - ' + program.point_depart + ' → ' + program.point_arrive;
+            const programTitle = (program.compagnie?.name || 'Compagnie') + ' - ' + program.point_depart + ' → ' + program.point_arrive;
 
             window.seatAssignmentMode = null; // Réinitialiser le mode
             const basePriceTemp = parseInt(window.currentProgramPrice) * selectedNumberOfPlaces;
@@ -3015,7 +2020,7 @@ function onAllerRetourChoiceChange() {
                                     <span class="text-2xl font-black text-left leading-tight">CHOISIR<br>SA PLACE</span>
                                 </div>
                                 <div class="bg-white text-gray-800 rounded-xl p-3 flex items-center justify-between w-full mt-2 shadow-sm">
-                                    <p class="text-xs text-left font-medium leading-tight flex-1">Le choix de places ajoutera <strong class="text-[#e94f1b]">100 FCFA</strong> par place sur le prix du billet.</p>
+                                    <p class="text-xs text-left font-medium leading-tight flex-1">Le choix de places ajoutera <strong class="text-[#e94f1b]">250 FCFA</strong> par place sur le prix du billet.</p>
                                     <div class="ml-2 w-10 h-10 border-2 border-gray-200 rounded grid grid-cols-2 gap-0.5 p-0.5" style="transform: scale(0.8)">
                                         <div class="bg-gray-200 rounded-sm"></div><div class="bg-gray-200 rounded-sm"></div>
                                         <div class="bg-orange-500 rounded-sm"></div><div class="bg-gray-200 rounded-sm"></div>
@@ -3196,7 +2201,7 @@ function onAllerRetourChoiceChange() {
             const extraPriceElem = document.getElementById('extraPriceDisplay');
             
             if (window.seatAssignmentMode === 'manual') {
-                const addedPrice = selectedSeats.length * 100;
+                const addedPrice = selectedSeats.length * 250;
                 if (addedPrice > 0) {
                     extraPriceElem.textContent = ' / ' + (basePrice + addedPrice).toLocaleString('fr-FR') + ' FCFA';
                     extraPriceElem.classList.remove('hidden');
@@ -3219,7 +2224,7 @@ function onAllerRetourChoiceChange() {
                 return;
             }
             if (window.seatAssignmentMode === 'manual') {
-                window.seatSelectionExtraCost = selectedSeats.length * 100;
+                window.seatSelectionExtraCost = selectedSeats.length * 250;
             } else {
                 window.seatSelectionExtraCost = 0;
             }
@@ -3297,7 +2302,7 @@ function onAllerRetourChoiceChange() {
                     seatElement.classList.add('bg-[#e94f1b]', 'text-white', 'shadow-lg', 'transform', 'scale-110');
                     seatElement.classList.remove(isLeftSide ? 'bg-blue-500' : 'bg-green-500');
                     seatElement.classList.remove('hover:bg-blue-600', 'hover:bg-green-600'); // Optional cleanup
-                    seatElement.querySelector('.text-xs').textContent = '✓';
+                    seatElement.querySelector('.text-xs').textContent = 'âœ“';
                 }
             });
             
@@ -3317,7 +2322,7 @@ function onAllerRetourChoiceChange() {
                     Swal.fire({
                         icon: 'warning',
                         title: 'Limite atteinte',
-                        text: `Vous ne pouvez sÃ©lectionner que ${selectedNumberOfPlaces} place(s). désélectionnez d'abord une place si vous voulez en choisir une autre.`,
+                        text: `Vous ne pouvez sÃ©lectionner que ${selectedNumberOfPlaces} place(s). DÃ©sÃ©lectionnez d'abord une place si vous voulez en choisir une autre.`,
                         confirmButtonColor: '#e94f1b',
                     });
                     return;
@@ -3348,7 +2353,7 @@ function onAllerRetourChoiceChange() {
                 // Mettre Ã  jour le checkmark
                 const checkmark = seatElement.querySelector('.text-xs');
                 if (checkmark) {
-                    checkmark.textContent = isSelected ? '✓' : '';
+                    checkmark.textContent = isSelected ? 'âœ“' : '';
                 }
             }
 
@@ -3572,7 +2577,7 @@ function generateSeatSelectionViewRetour(program) {
     const nombreRanger = Math.ceil(totalPlaces / placesParRanger);
     
     // On ne montre plus les dÃ©tails du vÃ©hicule
-    const programTitle = (program.compagnie?.sigle || 'Compagnie') + ' - ' + program.point_depart + ' → ' + program.point_arrive;
+    const programTitle = (program.compagnie?.name || 'Compagnie') + ' - ' + program.point_depart + ' → ' + program.point_arrive;
 
     window.seatAssignmentModeRetour = null;
 
@@ -3604,7 +2609,7 @@ function generateSeatSelectionViewRetour(program) {
                             <span class="text-2xl font-black text-left leading-tight">CHOISIR<br>SA PLACE</span>
                         </div>
                         <div class="bg-white text-gray-800 rounded-xl p-3 flex items-center justify-between w-full shadow-inner mt-2">
-                            <p class="text-xs text-left font-medium leading-tight flex-1">Le choix de places ajoutera <strong class="text-[#e94f1b]">100 FCFA</strong> par place sur le prix du billet.</p>
+                            <p class="text-xs text-left font-medium leading-tight flex-1">Le choix de places ajoutera <strong class="text-[#e94f1b]">250 FCFA</strong> par place sur le prix du billet.</p>
                             <div class="ml-2 w-10 h-10 border-2 border-gray-200 rounded grid grid-cols-2 gap-0.5 p-0.5" style="transform: scale(0.8)">
                                 <div class="bg-gray-200 rounded-sm"></div><div class="bg-gray-200 rounded-sm"></div>
                                 <div class="bg-orange-500 rounded-sm"></div><div class="bg-gray-200 rounded-sm"></div>
@@ -3655,7 +2660,7 @@ function generateSeatSelectionViewRetour(program) {
                      ${!isReserved ? `onclick="toggleSeatRetour(${seatNumber})"` : ''}
                      title="Place ${seatNumber}${isReserved ? ' (RÃ©servÃ©e)' : ''}">
                     <span class="text-lg">${seatNumber}</span>
-                    <span class="text-xs">${isReserved ? '✘' : (isSelected ? '✓' : '')}</span>
+                    <span class="text-xs">${isReserved ? 'âœ—' : (isSelected ? 'âœ“' : '')}</span>
                 </div>
             `;
         }
@@ -3669,7 +2674,7 @@ function generateSeatSelectionViewRetour(program) {
 
                 <!-- CÃ´tÃ© droit -->
                 <div class="flex flex-col items-center">
-                    <div class="text-sm text-gray-600 mb-2">Rangée ${ranger}</div>
+                    <div class="text-sm text-gray-600 mb-2">RangÃ©e ${ranger}</div>
                     <div class="flex gap-3">
         `;
 
@@ -3701,14 +2706,13 @@ function generateSeatSelectionViewRetour(program) {
         numeroPlace += placesCetteRanger;
     }
 
-        html += `
                 </div>
 
                 <!-- Information -->
                 <div class="mt-6 p-4 bg-blue-50 rounded-lg">
                     <p class="text-sm text-gray-700">
                         <i class="fas fa-info-circle text-blue-500 mr-2"></i>
-                        Sélectionnez ${selectedNumberOfPlaces} place${selectedNumberOfPlaces > 1 ? 's' : ''} pour le retour.
+                        SÃ©lectionnez ${selectedNumberOfPlaces} place${selectedNumberOfPlaces > 1 ? 's' : ''} pour le retour.
                         Les places en rouge sont déjà réservées.
                     </p>
                 </div>
@@ -3890,7 +2894,7 @@ function handleSeatValidationRetour() {
     }
     
     if (window.seatAssignmentModeRetour === 'manual') {
-        window.seatSelectionExtraCostRetour = selectedSeatsRetour.length * 100; 
+        window.seatSelectionExtraCostRetour = selectedSeatsRetour.length * 250;
     } else {
         window.seatSelectionExtraCostRetour = 0;
     }
@@ -4134,13 +3138,8 @@ function proceedToPassengerInfoFromRetour() {
                         <p class="mb-3">Voulez-vous confirmer la réservation de <strong>${selectedNumberOfPlaces} place(s)</strong> ?</p>
                         <div class="bg-gray-50 p-4 rounded-lg mb-4">
                             <!-- CORRECTION ICI : utilisation de dateVoyageFinal au lieu de dateVoyage -->
-                            <p class="font-semibold mb-2">Date Aller : <span class="text-blue-600">${new Date(dateVoyageFinal).toLocaleDateString('fr-FR')}</span></p>
-                            <p class="font-semibold mb-2">Places Aller : <span class="text-[#e94f1b]">${sortedSeats.join(', ')}</span></p>
-                            ${window.userChoseAllerRetour && selectedSeatsRetour.length > 0 ? `
-                            <hr class="my-2 border-gray-200">
-                            <p class="font-semibold mb-2">Date Retour : <span class="text-blue-600">${new Date(window.selectedReturnDate).toLocaleDateString('fr-FR')}</span></p>
-                            <p class="font-semibold mb-2">Places Retour : <span class="text-[#e94f1b]">${[...selectedSeatsRetour].sort((a,b) => a-b).join(', ')}</span></p>
-                            ` : ''}
+                            <p class="font-semibold mb-2">Date : <span class="text-blue-600">${new Date(dateVoyageFinal).toLocaleDateString('fr-FR')}</span></p>
+                            <p class="font-semibold mb-2">Places : <span class="text-[#e94f1b]">${sortedSeats.join(', ')}</span></p>
                         </div>
                     </div>
                 `,
@@ -4224,8 +3223,7 @@ function proceedToPassengerInfoFromRetour() {
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
             },
             body: JSON.stringify({
                 programme_id: currentProgramId,
@@ -4286,16 +3284,7 @@ function proceedToPassengerInfoFromRetour() {
                             throw new Error(data.message || 'Erreur');
                         }
                     } catch (error) {
-                        if (error.message && error.message.toLowerCase().includes('csrf')) {
-                            Swal.fire({ 
-                                icon: 'error', 
-                                title: 'Session expirée', 
-                                text: 'Votre session a expiré. Veuillez rafraîchir la page (F5) et réessayer.',
-                                confirmButtonColor: '#e94f1b'
-                            });
-                        } else {
-                            Swal.fire({ icon: 'error', title: 'Erreur', text: error.message });
-                        }
+                        Swal.fire({ icon: 'error', title: 'Erreur', text: error.message });
                     }
                 }
             });
@@ -4361,7 +3350,7 @@ function proceedToPassengerInfoFromRetour() {
             
             // Mettre Ã  jour le titre
             if(title) title.textContent = 'Choisir votre ligne';
-            if(subtitle) subtitle.textContent = 'Sélectionnez votre trajet pour voir les disponibilités';
+            if(subtitle) subtitle.textContent = 'SÃ©lectionnez votre trajet pour voir les disponibilitÃ©s';
             
             container.innerHTML = `<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-4xl text-[#e94f1b]"></i><p class="mt-2 text-gray-500">Chargement des lignes...</p></div>`;
 
@@ -4968,291 +3957,4 @@ function proceedToPassengerInfoFromRetour() {
             table += `</tbody></table></div>`;
             return table;
         }
-    </script>
-
-
- <!-- Modal Confirmation Aller-Retour -->
-    <div id="allerRetourConfirmModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-[75] flex items-center justify-center">
-        <div class="relative w-[450px] mx-auto p-6 border shadow-2xl rounded-2xl bg-white">
-            <div class="flex flex-col gap-4">
-                <!-- En-tête -->
-                <div class="text-center border-b pb-4">
-                    <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3"><i class="fas fa-bus text-[#e94f1b] text-2xl"></i></div>
-                    <h3 class="text-xl font-bold text-gray-900">Ce programme propose un aller-retour</h3>
-                    <p class="text-sm text-gray-500 mt-1">Choisissez le type de voyage que vous souhaitez</p>
-                </div>
-                
-                <!-- Infos du trajet -->
-                <div id="allerRetourTripInfo" class="py-2">
-                    <!-- Contenu injecté par JS -->
-                </div>
-                
-                <!-- Choix du type de voyage -->
-                <div class="py-2">
-                    <label for="allerRetourChoice" class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-route me-1"></i> Type de voyage
-                    </label>
-                    <div class="relative">
-                        <select id="allerRetourChoice" onchange="onAllerRetourChoiceChange()" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#e94f1b] appearance-none bg-white font-medium text-gray-700">
-                            <option value="aller_simple">🚌 Aller Simple</option>
-                            <option value="aller_retour">🔄 Aller-Retour</option>
-                        </select>
-                        <div class="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                            <i class="fas fa-chevron-down text-gray-400"></i>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Affichage du prix dynamique -->
-                <div id="allerRetourPriceDisplay" class="text-center">
-                    <!-- Contenu injecté par JS -->
-                </div>
-                
-                <!-- Sélection date retour (pour récurrents + aller-retour) -->
-                <div id="returnDateSection" class="hidden py-2 border-t">
-                    <label for="returnDateSelect" class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-plane-arrival text-blue-500 me-1"></i> Date de retour
-                    </label>
-                    <div class="relative">
-                        <select id="returnDateSelect" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500 appearance-none bg-white"></select>
-                        <i class="fas fa-chevron-down absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"></i>
-                    </div>
-                </div>
-
-                <div class="flex justify-end gap-3 border-t pt-4">
-                    <button onclick="closeAllerRetourConfirmModal()" class="px-5 py-2 bg-gray-100 rounded-lg font-bold">Annuler</button>
-                    <button onclick="confirmAllerRetour()" class="px-5 py-2 bg-[#e94f1b] text-white rounded-lg font-bold">Continuer</button>
-                </div>
-            </div>
-        </div>
-    </div>
-     <!-- Modal Date Selection (RÃ©current) -->
-    <div id="dateSelectionModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-[70] flex items-center justify-center">
-        <div class="relative w-96 mx-auto p-6 border shadow-2xl rounded-2xl bg-white">
-            <div class="flex flex-col gap-4">
-                <div class="border-b pb-4">
-                    <h3 class="text-xl font-bold text-gray-900">Choisir une date de voyage</h3>
-                    <p class="text-sm text-gray-500 mt-1">Ce programme est récurrent.</p>
-                </div>
-                
-                <div class="py-4">
-                    <label for="recurrenceDateSelect" class="block text-sm font-medium text-gray-700 mb-2">Sélectionnez une date parmi les prochains jours disponibles :</label>
-                    <div class="relative">
-                        <select id="recurrenceDateSelect" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent appearance-none bg-white">
-                            <!-- Options générées par JS -->
-                        </select>
-                        <div class="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                            <i class="fas fa-chevron-down text-gray-400"></i>
-                        </div>
-                    </div>
-                    <p id="recurrenceDateError" class="text-red-500 text-xs mt-1 hidden">Veuillez choisir une date.</p>
-                </div>
-
-                <div class="flex justify-end gap-3 border-t pt-4">
-                    <button onclick="closeDateSelectionModal()" class="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors">Annuler</button>
-                    <button onclick="confirmDateSelection()" class="px-5 py-2.5 bg-[#e94f1b] text-white rounded-xl font-bold hover:bg-orange-600 transition-colors shadow-lg hover:shadow-xl">Confirmer</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-<input type="hidden" id="selected_gare_depart_id" name="gare_depart_id">
-<input type="hidden" id="selected_gare_arrivee_id" name="gare_arrivee_id">
-@endsection
-
-@push('scripts')
-<script>
-    // Variables globales pour stocker la gare sélectionnée
-    // Ces variables seront utilisées lors de la confirmation de réservation
-    window.selectedGareDepartId = null;
-    window.selectedGareArriveeId = null;
-
-    // Remplacement de la fonction handleReservationClick pour intégrer la sélection de gare
-    window.handleReservationClick = function(button) {
-        console.log("Bouton réserver cliqué - Flux avec Gare");
-        
-        const routeDataJson = button.getAttribute('data-route');
-        const dateDepart = button.getAttribute('data-date');
-        
-        if (!routeDataJson) {
-            console.error("Pas de données data-route trouvées");
-            return;
-        }
-
-        try {
-            const routeData = JSON.parse(routeDataJson);
-            // Stocker les infos courantes dans window pour accès global
-            window.currentRouteData = routeData; 
-            window.currentRouteData.date_depart = dateDepart;
-
-            // Réinitialiser la sélection de gare
-            window.selectedGareDepartId = null;
-            window.selectedGareArriveeId = null;
-
-            // Vérifier s'il y a des gares configurées
-            const gareDepart = routeData.gare_depart;
-            
-            // Si pas de gare ou gare vide -> Flux standard direct
-            if (!gareDepart) {
-                launchOriginalFlow(routeData, dateDepart);
-                return;
-            }
-
-            // Sinon -> Afficher le modal de sélection de gare
-            showGareSelectionModal();
-            
-        } catch (e) {
-            console.error('Erreur JS lors du clic réservation:', e);
-            Swal.fire({
-                icon: 'error',
-                title: 'Erreur',
-                text: 'Une erreur est survenue lors de l\'initialisation de la réservation.'
-            });
-        }
-    };
-
-    function showGareSelectionModal() {
-        const routeData = window.currentRouteData;
-        const gareDepart = routeData.gare_depart;
-        const gareOptions = document.getElementById('gareOptions');
-        const modal = document.getElementById('gareSelectionModal');
-        
-        if (!modal) {
-            console.error("Modal de sélection de gare introuvable (#gareSelectionModal)");
-            // Fallback flux normal
-            launchOriginalFlow(routeData, routeData.date_depart);
-            return;
-        }
-        
-        if (gareOptions) gareOptions.innerHTML = '';
-        
-        // Cas 1: Une seule gare (Objet) ou Tableau de 1 élément
-        let singleGare = null;
-        if (gareDepart && !Array.isArray(gareDepart) && typeof gareDepart === 'object') {
-            singleGare = gareDepart;
-        } else if (Array.isArray(gareDepart) && gareDepart.length === 1) {
-            singleGare = gareDepart[0];
-        }
-
-        if (singleGare) {
-            console.log("Une seule gare détectée, sélection automatique:", singleGare);
-            selectGareAndContinue(singleGare.id);
-            return;
-        }
-        
-        // Cas 2: Plusieurs gares (Tableau)
-        if (Array.isArray(gareDepart) && gareDepart.length > 0) {
-             gareDepart.forEach(gare => {
-                 const btn = document.createElement('button');
-                 btn.className = 'w-full p-4 border-2 border-gray-200 rounded-xl hover:border-[#e94f1b] hover:bg-orange-50 transition-all text-left mb-3 group';
-                 btn.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-[#e94f1b] transition-colors">
-                            <i class="fas fa-building text-gray-500 group-hover:text-white text-lg"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-gray-900">${gare.nom_gare}</h4>
-                            ${gare.adresse ? `<p class="text-sm text-gray-600">${gare.adresse}</p>` : ''}
-                        </div>
-                    </div>
-                `;
-                btn.onclick = () => selectGareAndContinue(gare.id);
-                gareOptions.appendChild(btn);
-             });
-        } 
-        // Cas 3: Objet unique (pour être sûr)
-        else if (gareDepart && typeof gareDepart === 'object') {
-             const btn = document.createElement('button');
-             btn.className = 'w-full p-4 border-2 border-gray-200 rounded-xl hover:border-[#e94f1b] hover:bg-orange-50 transition-all text-left mb-3 group';
-             btn.innerHTML = `
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-[#e94f1b] transition-colors">
-                        <i class="fas fa-building text-gray-500 group-hover:text-white text-lg"></i>
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-gray-900">${gareDepart.nom_gare}</h4>
-                        ${gareDepart.adresse ? `<p class="text-sm text-gray-600">${gareDepart.adresse}</p>` : ''}
-                    </div>
-                </div>
-            `;
-            btn.onclick = () => selectGareAndContinue(gareDepart.id);
-            gareOptions.appendChild(btn);
-        }
-
-        modal.classList.remove('hidden');
-    }
-
-    function closeGareSelectionModal() {
-        const modal = document.getElementById('gareSelectionModal');
-        if (modal) modal.classList.add('hidden');
-    }
-
-    function selectGareAndContinue(gareId) {
-        window.selectedGareDepartId = gareId;
-        // On suppose que la gare d'arrivée est unique ou déduite du trajet
-        if (window.currentRouteData.gare_arrivee) {
-            window.selectedGareArriveeId = window.currentRouteData.gare_arrivee.id;
-        }
-        
-        closeGareSelectionModal();
-        launchOriginalFlow(window.currentRouteData, window.currentRouteData.date_depart);
-    }
-
-    function launchOriginalFlow(routeData, dateDepart) {
-        // Appeler la fonction SweetAlert existante pour choisir le type de voyage
-        if (typeof window.showRouteTripTypeModal === 'function') {
-            window.showRouteTripTypeModal(routeData, dateDepart);
-        } else {
-            console.error("La fonction window.showRouteTripTypeModal est introuvable. Code manquant ?");
-            // Fallback
-             Swal.fire({
-                icon: 'error',
-                title: 'Erreur',
-                text: 'Impossible de lancer le flux de réservation.'
-            });
-        }
-    }
-
-    // Auto-reservation logic
-    document.addEventListener('DOMContentLoaded', function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const autoReserveId = urlParams.get('auto_reserve');
-        
-        if (autoReserveId) {
-            console.log("Auto-reserve detected for ID:", autoReserveId);
-            // Wait a bit for the page to be fully interactive
-            setTimeout(() => {
-                const reserveButtons = document.querySelectorAll('button[onclick="handleReservationClick(this)"], button[onclick*="handleReservationClick"]');
-                console.log("Found reserve buttons:", reserveButtons.length);
-                
-                for (let btn of reserveButtons) {
-                    try {
-                        const routeDataStr = btn.getAttribute('data-route');
-                        if (!routeDataStr) continue;
-                        
-                        const routeData = JSON.parse(routeDataStr);
-                        console.log("Checking routeData:", routeData.id);
-                        
-                        // Check if it's the main ID or one of the horaires
-                        let match = (routeData.id == autoReserveId);
-                        if (!match && routeData.aller_horaires) {
-                            match = routeData.aller_horaires.some(h => h.id == autoReserveId);
-                        }
-                        
-                        if (match) {
-                            console.log("Match found! Triggering click.");
-                            btn.click();
-                            // Clean URL
-                            const newUrl = window.location.pathname + window.location.search.replace(/&?auto_reserve=[^&]*/, '').replace(/\?$/, '');
-                            window.history.replaceState({}, '', newUrl);
-                            break;
-                        }
-                    } catch (e) {
-                        console.error("Error parsing route data:", e);
-                    }
-                }
-            }, 800);
-        }
-    });
-</script>
-@endpush
+    

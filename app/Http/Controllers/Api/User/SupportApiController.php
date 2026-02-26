@@ -172,7 +172,7 @@ class SupportApiController extends Controller
                 'objet' => $validated['objet'],
                 'description' => $validated['description'],
                 'reservation_id' => $validated['reservation_id'] ?? null,
-                'statut' => 'nouveau'
+                'statut' => 'ouvert'
             ]);
 
             return response()->json([

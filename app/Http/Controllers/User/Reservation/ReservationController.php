@@ -847,6 +847,13 @@ $dateAller = $request->date_voyage;
                 $montantTotal = $montantTotal * 2;
             }
 
+            // --- AJOUT DES FRAIS DE SÉLECTION DE SIÈGE ---
+            $fraisChoixSiege = $request->input('frais_choix_siege', 0);
+            if ($fraisChoixSiege > 0) {
+                // S'assurer que c'est bien une valeur numérique
+                $montantTotal += intval($fraisChoixSiege);
+            }
+
             // VÉRIFICATION DU SOLDE DE LA COMPAGNIE
             if (\App\Models\Setting::isTicketSystemEnabled() && $programme->compagnie->tickets < $montantTotal) {
                 return response()->json([
@@ -1003,7 +1010,7 @@ $dateAller = $request->date_voyage;
                     'passager_telephone' => $passager['telephone'],
                     'passager_urgence' => $passager['urgence'],
                     'is_aller_retour' => $isAllerRetour,
-                    'montant' => $prixUnitaire,
+                    'montant' => $prixUnitaire + ($fraisChoixSiege / (count($request->passagers) * ($isAllerRetour ? 2 : 1))),
                     'statut' => $reservationStatus,
                     'reference' => $reference,
                     'date_voyage' => $dateVoyage,
@@ -1070,7 +1077,7 @@ $dateAller = $request->date_voyage;
                                 'passager_telephone' => $passager['telephone'],
                                 'passager_urgence' => $passager['urgence'],
                                 'is_aller_retour' => $isAllerRetour,
-                                'montant' => $prixUnitaire,
+                                'montant' => $prixUnitaire + ($fraisChoixSiege / (count($request->passagers) * ($isAllerRetour ? 2 : 1))),
                                 'statut' => $reservationStatus,
                                 'date_voyage' => $dateRetour,
                                 'date_retour' => $dateRetour,
@@ -1121,7 +1128,7 @@ $dateAller = $request->date_voyage;
                                     'passager_telephone' => $passager['telephone'],
                                     'passager_urgence' => $passager['urgence'],
                                     'is_aller_retour' => $isAllerRetour,
-                                    'montant' => $prixUnitaire,
+                                    'montant' => $prixUnitaire + ($fraisChoixSiege / (count($request->passagers) * ($isAllerRetour ? 2 : 1))),
                                     'statut' => $reservationStatus,
                                     'date_voyage' => $dateRetour,
                                     'date_retour' => $dateRetour,
@@ -1162,7 +1169,7 @@ $dateAller = $request->date_voyage;
                     'passager_telephone' => $passager['telephone'],
                     'passager_urgence' => $passager['urgence'],
                     'is_aller_retour' => $isAllerRetour,
-                    'montant' => $prixUnitaire,
+                    'montant' => $prixUnitaire + ($fraisChoixSiege / (count($request->passagers) * ($isAllerRetour ? 2 : 1))),
                     'statut' => $reservationStatus,
                     'reference' => $reference,
                     'date_voyage' => $dateVoyage,

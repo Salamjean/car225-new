@@ -2,13 +2,15 @@
 
 namespace App\Models;
 
+use App\Traits\HasCodeId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class Hotesse extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasApiTokens, HasCodeId;
 
     /**
      * The attributes that are mass assignable.
@@ -16,6 +18,7 @@ class Hotesse extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
+        'code_id',
         'name',
         'prenom',
         'email',

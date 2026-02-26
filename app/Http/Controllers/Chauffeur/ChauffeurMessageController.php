@@ -88,4 +88,31 @@ class ChauffeurMessageController extends Controller
 
         return view('chauffeur.messages.show', compact('message'));
     }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'subject' => 'required|string|max:255',
+            'message' => 'required|string',
+        ]);
+
+        $chauffeur = Auth::guard('chauffeur')->user();
+
+        if (!$chauffeur->gare_id) {
+            return back()->with('error', 'Vous n\'êtes rattaché à aucune gare.');
+        }
+
+        GareMessage::create([
+            'gare_id'        => $chauffeur->gare_id,
+            'sender_type'    => Personnel::class,
+            'sender_id'      => $chauffeur->id,
+            'recipient_type' => \App\Models\Gare::class,
+            'recipient_id'   => $chauffeur->gare_id,
+            'subject'        => $request->subject,
+            'message'        => $request->message,
+            'is_read'        => false,
+        ]);
+
+        return back()->with('success', 'Message envoyé à la gare avec succès.');
+    }
 }
