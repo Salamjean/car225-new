@@ -105,6 +105,7 @@ Route::prefix('user')->group(function () {
         // Statistiques
         Route::get('/stats', [StatistiqueApiController::class, 'index']);
         Route::get('/stats/trips', [StatistiqueApiController::class, 'tripStats']);
+        Route::get('/stats/historique-voyages', [StatistiqueApiController::class, 'historiqueVoyages']);
 
         // Notifications
         Route::get('/notifications', [\App\Http\Controllers\Api\User\NotificationApiController::class, 'index']);

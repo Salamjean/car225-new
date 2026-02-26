@@ -132,4 +132,43 @@ class StatistiqueApiController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get lists of cancelled and completed trips for the authenticated user.
+     */
+    public function historiqueVoyages(Request $request)
+    {
+        try {
+            $userId = Auth::id();
+
+            // 1. Voyages effectués (statut: terminee)
+            $voyagesEffectues = Reservation::with(['programme.compagnie', 'programme.gareDepart', 'programme.gareArrivee'])
+                ->where('user_id', $userId)
+                ->where('statut', 'terminee')
+                ->orderBy('date_voyage', 'desc')
+                ->orderBy('heure_depart', 'desc')
+                ->get();
+
+            // 2. Réservations annulées (statut: annulee)
+            $reservationsAnnulees = Reservation::with(['programme.compagnie', 'programme.gareDepart', 'programme.gareArrivee'])
+                ->where('user_id', $userId)
+                ->where('statut', 'annulee')
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'voyages_effectues' => $voyagesEffectues,
+                    'reservations_annulees' => $reservationsAnnulees,
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la récupération de l\'historique: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
