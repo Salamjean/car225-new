@@ -2,7 +2,7 @@
     "info": {
         "name": "Car225 — Support Client API",
         "_postman_id": "car225-support-client-001",
-        "description": "Collection Postman pour tester les endpoints de Support Client de l'application Car225.\n\nÉtapes :\n1. Lancez la requête '0. Login' pour obtenir le token.\n2. Copiez le token dans la variable d'environnement {{token}}.\n3. Testez les autres requêtes.",
+        "description": "Collection Postman pour tester les endpoints de Support Client de l'application Car225.\n\n📌 FLUX COMPLET :\n1. '0. Login' → obtenir le token (automatiquement sauvegardé)\n2. '1. Catégories' → voir les types de déclarations disponibles\n3. '2x. Réservations' → choisir la réservation concernée selon le type\n4. '4x. POST' → soumettre la déclaration\n5. '3a. Mes déclarations (toutes)' → voir toutes ses déclarations groupées par type\n6. '3b. Mes déclarations (par type)' → filtrer par type précis",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "variable": [
@@ -46,7 +46,8 @@
                 "body": {
                     "mode": "raw",
                     "raw": "{\n  \"code_id\": \"USER-XXXXX\",\n  \"password\": \"votre_mot_de_passe\"\n}"
-                }
+                },
+                "description": "Se connecter pour obtenir le Bearer token. Le script de test le sauvegarde automatiquement dans la variable {{token}}."
             },
             "event": [
                 {
@@ -90,7 +91,7 @@
                         "categories"
                     ]
                 },
-                "description": "Retourne toutes les catégories de support disponibles avec leurs métadonnées (icône, couleur, si réservation est requise, etc.)"
+                "description": "Retourne toutes les catégories de support disponibles avec leurs métadonnées.\n\nRéponse :\n{\n  \"success\": true,\n  \"categories\": [\n    {\n      \"id\": \"bagage_perdu\",\n      \"title\": \"Bagage Perdu\",\n      \"description\": \"...\",\n      \"icon\": \"suitcase-rolling\",\n      \"color\": \"#e94f1b\",\n      \"needs_reservation\": true,\n      \"placeholder_object\": \"...\",\n      \"placeholder_description\": \"...\"\n    },\n    ...\n  ]\n}"
             }
         },
         {
@@ -125,7 +126,7 @@
                         }
                     ]
                 },
-                "description": "Retourne les réservations terminées (statut=terminee) pour le type 'bagage_perdu'."
+                "description": "Retourne les réservations TERMINÉES de l'utilisateur, utilisées pour choisir le voyage concerné.\n\nRéponse :\n{\n  \"success\": true,\n  \"reservations\": [\n    {\n      \"id\": 18,\n      \"reference\": \"TX-WAL-HAU2RRX0OV-6\",\n      \"gare_depart\": \"Gare de Yopougon (Abidjan)\",\n      \"gare_arrivee\": \"Gare de daloa (Daloa)\",\n      \"point_depart\": \"Abidjan, Côte d'Ivoire\",\n      \"point_arrive\": \"Daloa, Côte d'Ivoire\",\n      \"date\": \"22/02/2026\",\n      \"statut\": \"terminee\"\n    }\n  ]\n}"
             }
         },
         {
@@ -160,7 +161,7 @@
                         }
                     ]
                 },
-                "description": "Retourne les réservations terminées (statut=terminee) pour le type 'objet_oublie'."
+                "description": "Retourne les réservations TERMINÉES. Même structure que bagage_perdu."
             }
         },
         {
@@ -195,7 +196,7 @@
                         }
                     ]
                 },
-                "description": "Retourne les réservations annulées (statut=annulee) pour le type 'remboursement'."
+                "description": "Retourne les réservations ANNULÉES (statut=annulee) uniquement."
             }
         },
         {
@@ -230,11 +231,11 @@
                         }
                     ]
                 },
-                "description": "Retourne les réservations confirmées ou terminées pour le type 'qualite'."
+                "description": "Retourne les réservations CONFIRMÉES ou TERMINÉES."
             }
         },
         {
-            "name": "3. 📂 GET — Mes demandes de support",
+            "name": "3a. 📂 GET — Mes déclarations (toutes, groupées par type)",
             "request": {
                 "method": "GET",
                 "header": [
@@ -258,11 +259,215 @@
                         "support"
                     ]
                 },
-                "description": "Liste toutes les demandes de support de l'utilisateur connecté, triées par date décroissante."
+                "description": "Retourne TOUTES les déclarations de l'utilisateur, groupées par type.\n\nRéponse :\n{\n  \"success\": true,\n  \"total_general\": 3,\n  \"par_type\": [\n    {\n      \"type\": \"bagage_perdu\",\n      \"type_label\": \"Bagage Perdu\",\n      \"total\": 2,\n      \"declarations\": [\n        {\n          \"id\": 5,\n          \"type\": \"bagage_perdu\",\n          \"type_label\": \"Bagage Perdu\",\n          \"objet\": \"Valise noire à roulettes\",\n          \"description\": \"Je n'ai pas retrouvé ma valise...\",\n          \"statut\": \"ouvert\",\n          \"reponse\": null,\n          \"created_at\": \"26/02/2026 17:05\",\n          \"reservation\": {\n            \"id\": 18,\n            \"reference\": \"TX-WAL-HAU2RRX0OV-6\",\n            \"gare_depart\": \"Gare de Yopougon (Abidjan)\",\n            \"gare_arrivee\": \"Gare de daloa (Daloa)\",\n            \"point_depart\": \"Abidjan, Côte d'Ivoire\",\n            \"point_arrive\": \"Daloa, Côte d'Ivoire\",\n            \"date\": \"22/02/2026\",\n            \"statut\": \"terminee\"\n          }\n        }\n      ]\n    },\n    {\n      \"type\": \"remboursement\",\n      \"type_label\": \"Remboursement\",\n      \"total\": 1,\n      \"declarations\": [ ... ]\n    }\n  ]\n}"
             }
         },
         {
-            "name": "4a. 🎒 POST — Créer demande (bagage_perdu)",
+            "name": "3b. 🎒 GET — Mes déclarations (filtre: bagage_perdu)",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/user/support?type=bagage_perdu",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "user",
+                        "support"
+                    ],
+                    "query": [
+                        {
+                            "key": "type",
+                            "value": "bagage_perdu"
+                        }
+                    ]
+                },
+                "description": "Filtre les déclarations par type. Types acceptés : bagage_perdu, objet_oublie, remboursement, qualite, compte, autre.\n\nRéponse :\n{\n  \"success\": true,\n  \"type\": \"bagage_perdu\",\n  \"type_label\": \"Bagage Perdu\",\n  \"total\": 2,\n  \"declarations\": [\n    {\n      \"id\": 5,\n      \"type\": \"bagage_perdu\",\n      \"type_label\": \"Bagage Perdu\",\n      \"objet\": \"Valise noire à roulettes\",\n      \"description\": \"Je n'ai pas retrouvé ma valise...\",\n      \"statut\": \"ouvert\",\n      \"reponse\": null,\n      \"created_at\": \"26/02/2026 17:05\",\n      \"reservation\": {\n        \"id\": 18,\n        \"reference\": \"TX-WAL-HAU2RRX0OV-6\",\n        \"gare_depart\": \"Gare de Yopougon (Abidjan)\",\n        \"gare_arrivee\": \"Gare de daloa (Daloa)\",\n        \"point_depart\": \"Abidjan, Côte d'Ivoire\",\n        \"point_arrive\": \"Daloa, Côte d'Ivoire\",\n        \"date\": \"22/02/2026\",\n        \"statut\": \"terminee\"\n      }\n    }\n  ]\n}"
+            }
+        },
+        {
+            "name": "3c. 👓 GET — Mes déclarations (filtre: objet_oublie)",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/user/support?type=objet_oublie",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "user",
+                        "support"
+                    ],
+                    "query": [
+                        {
+                            "key": "type",
+                            "value": "objet_oublie"
+                        }
+                    ]
+                },
+                "description": "Filtre les déclarations de type 'Objet Oublié'. Même structure de réponse que 3b."
+            }
+        },
+        {
+            "name": "3d. 💰 GET — Mes déclarations (filtre: remboursement)",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/user/support?type=remboursement",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "user",
+                        "support"
+                    ],
+                    "query": [
+                        {
+                            "key": "type",
+                            "value": "remboursement"
+                        }
+                    ]
+                },
+                "description": "Filtre les déclarations de type 'Remboursement'."
+            }
+        },
+        {
+            "name": "3e. ⭐ GET — Mes déclarations (filtre: qualite)",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/user/support?type=qualite",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "user",
+                        "support"
+                    ],
+                    "query": [
+                        {
+                            "key": "type",
+                            "value": "qualite"
+                        }
+                    ]
+                },
+                "description": "Filtre les déclarations de type 'Qualité de Service'."
+            }
+        },
+        {
+            "name": "3f. 👤 GET — Mes déclarations (filtre: compte)",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/user/support?type=compte",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "user",
+                        "support"
+                    ],
+                    "query": [
+                        {
+                            "key": "type",
+                            "value": "compte"
+                        }
+                    ]
+                },
+                "description": "Filtre les déclarations de type 'Mon Compte'. reservation sera null car ce type ne nécessite pas de réservation."
+            }
+        },
+        {
+            "name": "3g. ❓ GET — Mes déclarations (filtre: autre)",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/user/support?type=autre",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "user",
+                        "support"
+                    ],
+                    "query": [
+                        {
+                            "key": "type",
+                            "value": "autre"
+                        }
+                    ]
+                },
+                "description": "Filtre les déclarations de type 'Autre demande'. reservation sera null car ce type ne nécessite pas de réservation."
+            }
+        },
+        {
+            "name": "4a. 🎒 POST — Créer déclaration (bagage_perdu)",
             "request": {
                 "method": "POST",
                 "header": [
@@ -292,13 +497,13 @@
                 },
                 "body": {
                     "mode": "raw",
-                    "raw": "{\n  \"type\": \"bagage_perdu\",\n  \"reservation_id\": 1,\n  \"objet\": \"Valise bleue à roulettes\",\n  \"description\": \"Ma valise bleue n'était plus présente à l'arrivée à Abidjan. Elle contient des vêtements et documents importants.\"\n}"
+                    "raw": "{\n  \"type\": \"bagage_perdu\",\n  \"reservation_id\": 18,\n  \"objet\": \"Valise bleue à roulettes\",\n  \"description\": \"Ma valise bleue n'était plus présente à l'arrivée à Daloa. Elle contient des vêtements et documents importants.\"\n}"
                 },
-                "description": "⚠️ reservation_id est OBLIGATOIRE pour ce type. Remplacez '1' par un ID de réservation terminée réel."
+                "description": "⚠️ reservation_id est OBLIGATOIRE (réservation avec statut=terminee).\n\nChamps requis :\n- type (string) : bagage_perdu\n- reservation_id (int) : ID d'une réservation terminée\n- objet (string, max 255) : Titre court de la déclaration\n- description (string) : Description détaillée\n\nRéponse succès (201) :\n{\n  \"success\": true,\n  \"message\": \"Votre demande a été enregistrée avec succès.\",\n  \"support_request\": { ... }\n}"
             }
         },
         {
-            "name": "4b. 👓 POST — Créer demande (objet_oublie)",
+            "name": "4b. 👓 POST — Créer déclaration (objet_oublie)",
             "request": {
                 "method": "POST",
                 "header": [
@@ -328,13 +533,13 @@
                 },
                 "body": {
                     "mode": "raw",
-                    "raw": "{\n  \"type\": \"objet_oublie\",\n  \"reservation_id\": 1,\n  \"objet\": \"Téléphone Samsung Galaxy S21\",\n  \"description\": \"J'ai oublié mon téléphone sous le siège numéro 12 du bus. Il est de couleur noire avec une coque transparente.\"\n}"
+                    "raw": "{\n  \"type\": \"objet_oublie\",\n  \"reservation_id\": 18,\n  \"objet\": \"Téléphone Samsung Galaxy S21\",\n  \"description\": \"J'ai oublié mon téléphone sous le siège numéro 12 du bus. Il est de couleur noire avec une coque transparente.\"\n}"
                 },
-                "description": "⚠️ reservation_id est OBLIGATOIRE pour ce type."
+                "description": "⚠️ reservation_id OBLIGATOIRE (réservation terminée)."
             }
         },
         {
-            "name": "4c. 💰 POST — Créer demande (remboursement)",
+            "name": "4c. 💰 POST — Créer déclaration (remboursement)",
             "request": {
                 "method": "POST",
                 "header": [
@@ -366,11 +571,11 @@
                     "mode": "raw",
                     "raw": "{\n  \"type\": \"remboursement\",\n  \"reservation_id\": 1,\n  \"objet\": \"Remboursement réservation annulée du 15/02\",\n  \"description\": \"Mon voyage a été annulé par la compagnie mais je n'ai pas encore reçu le remboursement sur mon portefeuille.\"\n}"
                 },
-                "description": "⚠️ reservation_id est OBLIGATOIRE pour ce type. Doit être une réservation annulée."
+                "description": "⚠️ reservation_id OBLIGATOIRE (réservation avec statut=annulee uniquement)."
             }
         },
         {
-            "name": "4d. ⭐ POST — Créer demande (qualite)",
+            "name": "4d. ⭐ POST — Créer déclaration (qualite)",
             "request": {
                 "method": "POST",
                 "header": [
@@ -400,13 +605,13 @@
                 },
                 "body": {
                     "mode": "raw",
-                    "raw": "{\n  \"type\": \"qualite\",\n  \"reservation_id\": 1,\n  \"objet\": \"Comportement du chauffeur\",\n  \"description\": \"Le chauffeur était très impoli avec les passagers et a pris des pauses non prévues pendant le trajet.\"\n}"
+                    "raw": "{\n  \"type\": \"qualite\",\n  \"reservation_id\": 18,\n  \"objet\": \"Comportement du chauffeur\",\n  \"description\": \"Le chauffeur était très impoli avec les passagers et a pris des pauses non prévues pendant le trajet.\"\n}"
                 },
-                "description": "⚠️ reservation_id est OBLIGATOIRE pour ce type."
+                "description": "⚠️ reservation_id OBLIGATOIRE (réservation confirmée ou terminée)."
             }
         },
         {
-            "name": "4e. 👤 POST — Créer demande (mon compte)",
+            "name": "4e. 👤 POST — Créer déclaration (compte)",
             "request": {
                 "method": "POST",
                 "header": [
@@ -438,11 +643,11 @@
                     "mode": "raw",
                     "raw": "{\n  \"type\": \"compte\",\n  \"objet\": \"Problème de solde portefeuille\",\n  \"description\": \"Mon solde affiche 0 XOF alors que j'ai rechargé 5000 XOF hier via Orange Money. La transaction a bien été débitée.\"\n}"
                 },
-                "description": "✅ reservation_id est OPTIONNEL pour ce type — ne pas l'inclure."
+                "description": "✅ reservation_id OPTIONNEL — ne pas l'inclure pour ce type."
             }
         },
         {
-            "name": "4f. ❓ POST — Créer demande (autre)",
+            "name": "4f. ❓ POST — Créer déclaration (autre)",
             "request": {
                 "method": "POST",
                 "header": [
@@ -474,7 +679,7 @@
                     "mode": "raw",
                     "raw": "{\n  \"type\": \"autre\",\n  \"objet\": \"Suggestion sur l'application\",\n  \"description\": \"Je souhaite pouvoir filtrer les voyages par compagnie directement depuis l'écran d'accueil de l'application.\"\n}"
                 },
-                "description": "✅ reservation_id est OPTIONNEL pour ce type — ne pas l'inclure."
+                "description": "✅ reservation_id OPTIONNEL — ne pas l'inclure pour ce type."
             }
         }
     ]

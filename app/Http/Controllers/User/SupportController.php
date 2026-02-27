@@ -54,6 +54,26 @@ class SupportController extends Controller
         return view('user.support.create', compact('type', 'reservations', 'needsReservation'));
     }
 
+    public function mesDeclarations()
+    {
+        $declarations = \App\Models\SupportRequest::where('user_id', Auth::id())
+            ->with('reservation')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->groupBy('type');
+
+        $typesLabels = [
+            'bagage_perdu'  => ['label' => 'Bagage Perdu',        'icon' => 'fa-suitcase-rolling', 'color' => 'orange'],
+            'objet_oublie'  => ['label' => 'Objet Oublié',         'icon' => 'fa-glasses',           'color' => 'blue'],
+            'remboursement' => ['label' => 'Remboursement',        'icon' => 'fa-hand-holding-usd',  'color' => 'green'],
+            'qualite'       => ['label' => 'Qualité de Service',   'icon' => 'fa-star',              'color' => 'purple'],
+            'compte'        => ['label' => 'Mon Compte',           'icon' => 'fa-user-cog',          'color' => 'gray'],
+            'autre'         => ['label' => 'Autre demande',        'icon' => 'fa-question',          'color' => 'red'],
+        ];
+
+        return view('user.support.mes-declarations', compact('declarations', 'typesLabels'));
+    }
+
     public function store(Request $request)
     {
         $type = $request->input('type', 'autre');
