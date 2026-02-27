@@ -1,118 +1,226 @@
 @extends('admin.layouts.template')
 
 @section('content')
-<div class="mdc-layout-grid">
-    <div class="mdc-layout-grid__inner">
-        <div class="mdc-layout-grid__cell stretch-card mdc-layout-grid__cell--span-8">
-            <div class="mdc-card">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h4 class="card-title mb-0">Détails de la demande</h4>
-                    <a href="{{ route('admin.support.index') }}" class="btn btn-sm btn-outline-secondary">
-                        <i class="fas fa-arrow-left"></i> Retour
-                    </a>
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-indigo-50/30 py-8 px-4">
+    <div class="mx-auto" style="width: 92%">
+
+        {{-- Header --}}
+        <div class="flex items-center gap-4 mb-6">
+            <a href="{{ route('admin.support.index') }}" class="w-10 h-10 bg-white rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all shadow-sm">
+                <i class="fas fa-arrow-left text-sm"></i>
+            </a>
+            <div>
+                <h1 class="text-xl font-bold text-gray-900">{{ $supportRequest->objet }}</h1>
+                <div class="flex items-center gap-2 mt-1">
+                    @php
+                        $typeBadges = [
+                            'bagage_perdu' => ['label' => 'Bagage Perdu', 'color' => 'text-red-700', 'bg' => 'bg-red-50'],
+                            'objet_oublie' => ['label' => 'Objet Oublié', 'color' => 'text-amber-700', 'bg' => 'bg-amber-50'],
+                            'remboursement' => ['label' => 'Remboursement', 'color' => 'text-green-700', 'bg' => 'bg-green-50'],
+                            'qualite' => ['label' => 'Qualité Service', 'color' => 'text-purple-700', 'bg' => 'bg-purple-50'],
+                            'compte' => ['label' => 'Mon Compte', 'color' => 'text-sky-700', 'bg' => 'bg-sky-50'],
+                            'autre' => ['label' => 'Autre', 'color' => 'text-gray-600', 'bg' => 'bg-gray-100'],
+                        ];
+                        $tb = $typeBadges[$supportRequest->type] ?? ['label' => $supportRequest->type, 'color' => 'text-gray-600', 'bg' => 'bg-gray-100'];
+                    @endphp
+                    <span class="inline-flex items-center px-2.5 py-1 {{ $tb['bg'] }} {{ $tb['color'] }} rounded-lg text-[10px] font-bold uppercase tracking-wider">{{ $tb['label'] }}</span>
+                    <span class="text-xs text-gray-400"><i class="far fa-clock mr-1"></i>{{ $supportRequest->created_at->format('d/m/Y à H:i') }}</span>
                 </div>
-
-                <div class="mb-4 p-3 bg-light rounded">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <small class="text-muted d-block uppercase font-weight-bold" style="font-size: 10px; letter-spacing: 1px;">Objet</small>
-                            <h5 class="text-dark font-weight-bold">{{ $supportRequest->objet }}</h5>
-                        </div>
-                        <div class="col-md-6 text-right">
-                            <small class="text-muted d-block uppercase font-weight-bold" style="font-size: 10px; letter-spacing: 1px;">Catégorie</small>
-                            <span class="badge badge-info">{{ ucfirst(str_replace('_', ' ', $supportRequest->type)) }}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mb-4">
-                    <small class="text-muted d-block uppercase font-weight-bold mb-2" style="font-size: 10px; letter-spacing: 1px;">Description du problème</small>
-                    <div class="p-4 border rounded bg-white text-dark shadow-sm" style="line-height: 1.6;">
-                        {{ $supportRequest->description }}
-                    </div>
-                </div>
-
-                @if($supportRequest->reponse)
-                    <div class="mb-4">
-                        <small class="text-muted d-block uppercase font-weight-bold mb-2 text-primary" style="font-size: 10px; letter-spacing: 1px;">Votre réponse précédente</small>
-                        <div class="p-4 border border-primary rounded bg-primary-subtle text-dark shadow-sm" style="line-height: 1.6; background-color: #f0f7ff;">
-                            {{ $supportRequest->reponse }}
-                        </div>
-                    </div>
-                @endif
-
-                @if($supportRequest->statut != 'ferme')
-                    <div class="mt-4 pt-4 border-top">
-                        <h6 class="font-weight-bold mb-3">Répondre à l'utilisateur</h6>
-                        <form action="{{ route('admin.support.repondre', $supportRequest->id) }}" method="POST">
-                            @csrf
-                            <div class="form-group mb-3">
-                                <textarea name="reponse" class="form-control" rows="6" placeholder="Saisissez votre réponse ici..." required></textarea>
-                            </div>
-                            <button type="submit" class="mdc-button mdc-button--raised w-100">
-                                <i class="material-icons mdc-button__icon">send</i>
-                                Envoyer la réponse
-                            </button>
-                        </form>
-                    </div>
-                @endif
             </div>
         </div>
 
-        <div class="mdc-layout-grid__cell stretch-card mdc-layout-grid__cell--span-4">
-            <div class="mdc-card">
-                <h6 class="card-title mb-4">Informations Complémentaires</h6>
-                
-                <div class="mb-4 pb-3 border-bottom">
-                    <small class="text-muted d-block mb-1">Utilisateur</small>
-                    <div class="d-flex align-items-center">
-                        <i class="fas fa-user-circle fa-2x text-muted mr-3"></i>
+        @if(session('success'))
+            <div class="bg-green-50 border border-green-200 text-green-700 px-5 py-4 rounded-2xl mb-6 flex items-center gap-3">
+                <i class="fas fa-check-circle text-green-500"></i>
+                <span class="font-semibold text-sm">{{ session('success') }}</span>
+            </div>
+        @endif
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {{-- Colonne principale : Conversation --}}
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 flex flex-col" style="height: calc(100vh - 200px); min-height: 500px;">
+
+                    {{-- Zone de messages --}}
+                    <div class="flex-1 overflow-y-auto p-6 space-y-5 bg-gray-50/50" id="chatBody">
+
+                        {{-- Message initial --}}
+                        <div class="flex gap-3 max-w-[85%]">
+                            <div class="w-9 h-9 rounded-xl bg-gray-200 flex items-center justify-center text-gray-500 flex-shrink-0 overflow-hidden">
+                                @if($supportRequest->user && $supportRequest->user->photo_profile_path)
+                                    <img src="{{ asset('storage/' . $supportRequest->user->photo_profile_path) }}" alt="" class="w-full h-full object-cover">
+                                @else
+                                    <i class="fas fa-user text-xs"></i>
+                                @endif
+                            </div>
+                            <div>
+                                <p class="text-[11px] font-bold text-gray-400 mb-1">{{ $supportRequest->user->name ?? 'Utilisateur' }}</p>
+                                <div class="bg-white border border-gray-200 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
+                                    <p class="text-sm text-gray-700 leading-relaxed">{{ $supportRequest->description }}</p>
+                                </div>
+                                <p class="text-[10px] text-gray-400 mt-1 ml-1">{{ $supportRequest->created_at->format('d/m/Y à H:i') }}</p>
+                            </div>
+                        </div>
+
+                        {{-- Rétrocompatibilité --}}
+                        @if($supportRequest->reponse && $supportRequest->messages->isEmpty())
+                            <div class="flex gap-3 max-w-[85%] ml-auto flex-row-reverse">
+                                <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white flex-shrink-0">
+                                    <i class="fas fa-headset text-xs"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[11px] font-bold text-gray-400 mb-1 text-right">Admin</p>
+                                    <div class="bg-indigo-600 rounded-2xl rounded-tr-sm px-4 py-3 shadow-sm">
+                                        <p class="text-sm text-white leading-relaxed">{{ $supportRequest->reponse }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+
+                        {{-- Messages --}}
+                        @foreach($supportRequest->messages as $msg)
+                            @if($msg->sender_type == 'user')
+                                <div class="flex gap-3 max-w-[85%]">
+                                    <div class="w-9 h-9 rounded-xl bg-gray-200 flex items-center justify-center text-gray-500 flex-shrink-0 overflow-hidden">
+                                        @if($supportRequest->user && $supportRequest->user->photo_profile_path)
+                                            <img src="{{ asset('storage/' . $supportRequest->user->photo_profile_path) }}" alt="" class="w-full h-full object-cover">
+                                        @else
+                                            <i class="fas fa-user text-xs"></i>
+                                        @endif
+                                    </div>
+                                    <div>
+                                        <p class="text-[11px] font-bold text-gray-400 mb-1">{{ $supportRequest->user->name ?? 'Utilisateur' }}</p>
+                                        <div class="bg-white border border-gray-200 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
+                                            <p class="text-sm text-gray-700 leading-relaxed">{{ $msg->message }}</p>
+                                        </div>
+                                        <p class="text-[10px] text-gray-400 mt-1 ml-1">{{ $msg->created_at->format('d/m/Y à H:i') }}</p>
+                                    </div>
+                                </div>
+                            @else
+                                <div class="flex gap-3 max-w-[85%] ml-auto flex-row-reverse">
+                                    <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white flex-shrink-0">
+                                        <i class="fas fa-headset text-xs"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-[11px] font-bold text-gray-400 mb-1 text-right">Admin</p>
+                                        <div class="bg-indigo-600 rounded-2xl rounded-tr-sm px-4 py-3 shadow-sm">
+                                            <p class="text-sm text-white leading-relaxed">{{ $msg->message }}</p>
+                                        </div>
+                                        <p class="text-[10px] text-gray-400 mt-1 text-right mr-1">{{ $msg->created_at->format('d/m/Y à H:i') }}</p>
+                                    </div>
+                                </div>
+                            @endif
+                        @endforeach
+                    </div>
+
+                    {{-- Input de réponse --}}
+                    @if($supportRequest->statut != 'ferme')
+                        <div class="p-4 border-t border-gray-100 bg-white">
+                            <form action="{{ route('admin.support.repondre', $supportRequest->id) }}" method="POST">
+                                @csrf
+                                <div class="flex items-end gap-3">
+                                    <textarea name="reponse" rows="1" placeholder="Rédigez votre réponse..." required
+                                        class="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all resize-none"
+                                        style="max-height: 120px;" id="chatInput"></textarea>
+                                    <button type="submit" class="w-11 h-11 bg-indigo-600 text-white rounded-xl flex items-center justify-center hover:bg-indigo-700 transition-all hover:shadow-lg hover:shadow-indigo-200 flex-shrink-0">
+                                        <i class="fas fa-paper-plane text-sm"></i>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    @else
+                        <div class="p-4 border-t border-gray-100 bg-gray-50 text-center">
+                            <p class="text-sm text-gray-400 font-semibold"><i class="fas fa-lock mr-1"></i> Cette demande est fermée</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            {{-- Colonne latérale : Infos --}}
+            <div class="lg:col-span-1 space-y-6">
+
+                {{-- Utilisateur --}}
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                    <h6 class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Utilisateur</h6>
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 overflow-hidden flex-shrink-0">
+                            @if($supportRequest->user && $supportRequest->user->photo_profile_path)
+                                <img src="{{ asset('storage/' . $supportRequest->user->photo_profile_path) }}" alt="" class="w-full h-full object-cover">
+                            @else
+                                <i class="fas fa-user text-lg"></i>
+                            @endif
+                        </div>
                         <div>
                             @if($supportRequest->user)
-                                <div class="font-weight-bold">{{ $supportRequest->user->name }}</div>
-                                <div class="small text-muted">{{ $supportRequest->user->telephone }}</div>
-                                <div class="small text-muted">{{ $supportRequest->user->email }}</div>
+                                <p class="text-sm font-bold text-gray-900">{{ $supportRequest->user->name }}</p>
+                                <p class="text-xs text-gray-400">{{ $supportRequest->user->telephone }}</p>
+                                <p class="text-xs text-gray-400">{{ $supportRequest->user->email }}</p>
                             @else
-                                <div class="font-weight-bold">Utilisateur (Non inscrit)</div>
-                                <div class="small text-muted">Tél: {{ $supportRequest->telephone ?? 'Non renseigné' }}</div>
-                                <div class="small text-muted">Email: {{ $supportRequest->email ?? 'Non renseigné' }}</div>
-                                @if($supportRequest->billet)
-                                <div class="small text-muted mt-1"><strong>Billet:</strong> {{ $supportRequest->billet }}</div>
-                                @endif
+                                <p class="text-sm font-bold text-gray-900">Non inscrit</p>
+                                <p class="text-xs text-gray-400">{{ $supportRequest->telephone ?? 'Non renseigné' }}</p>
+                                <p class="text-xs text-gray-400">{{ $supportRequest->email ?? 'Non renseigné' }}</p>
                             @endif
                         </div>
                     </div>
                 </div>
 
+                {{-- Voyage concerné --}}
                 @if($supportRequest->reservation)
-                    <div class="mb-4 pb-3 border-bottom text-dark">
-                        <small class="text-muted d-block mb-2">Voyage concerné</small>
-                        <div class="p-2 bg-light rounded small">
-                            <strong>{{ $supportRequest->reservation->programme->itineraire->point_depart }} &rarr; {{ $supportRequest->reservation->programme->itineraire->point_arrive }}</strong><br>
-                            Date : {{ \Carbon\Carbon::parse($supportRequest->reservation->date_voyage)->format('d/m/Y') }}<br>
-                            Réf : {{ $supportRequest->reservation->reference }}
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                        <h6 class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Voyage concerné</h6>
+                        <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                            <div class="flex items-center gap-2 text-sm font-bold text-gray-900 mb-2">
+                                <span>{{ $supportRequest->reservation->programme->itineraire->point_depart ?? '' }}</span>
+                                <i class="fas fa-long-arrow-alt-right text-gray-300 text-xs"></i>
+                                <span>{{ $supportRequest->reservation->programme->itineraire->point_arrive ?? '' }}</span>
+                            </div>
+                            <div class="space-y-1">
+                                <p class="text-xs text-gray-500"><i class="far fa-calendar mr-1.5 text-gray-400"></i>{{ \Carbon\Carbon::parse($supportRequest->reservation->date_voyage)->format('d/m/Y') }}</p>
+                                <p class="text-xs text-gray-500"><i class="fas fa-barcode mr-1.5 text-gray-400"></i>{{ $supportRequest->reservation->reference }}</p>
+                            </div>
                         </div>
                     </div>
                 @endif
 
-                <div class="mb-4">
-                    <small class="text-muted d-block mb-2">Statut de la demande</small>
+                {{-- Statut --}}
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                    <h6 class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Statut de la demande</h6>
                     <form action="{{ route('admin.support.statut', $supportRequest->id) }}" method="POST">
                         @csrf
                         @method('PATCH')
-                        <select name="statut" class="form-control mb-3" onchange="this.form.submit()">
-                            <option value="ouvert" {{ $supportRequest->statut == 'ouvert' ? 'selected' : '' }}>Ouvert / Nouveau</option>
-                            <option value="en_cours" {{ $supportRequest->statut == 'en_cours' ? 'selected' : '' }}>En cours de traitement</option>
-                            <option value="ferme" {{ $supportRequest->statut == 'ferme' ? 'selected' : '' }}>Fermé / Résolu</option>
+                        <select name="statut" onchange="this.form.submit()"
+                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold cursor-pointer outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                            <option value="ouvert" {{ $supportRequest->statut == 'ouvert' ? 'selected' : '' }}>🟡 Ouvert / Nouveau</option>
+                            <option value="en_cours" {{ $supportRequest->statut == 'en_cours' ? 'selected' : '' }}>🔵 En cours de traitement</option>
+                            <option value="ferme" {{ $supportRequest->statut == 'ferme' ? 'selected' : '' }}>🟢 Fermé / Résolu</option>
                         </select>
                     </form>
                 </div>
 
-                <div class="text-muted small">
-                    Créé le : {{ $supportRequest->created_at->format('d/m/Y à H:i') }}
+                {{-- Date --}}
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                    <h6 class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Créé le</h6>
+                    <p class="text-sm font-semibold text-gray-700">{{ $supportRequest->created_at->format('d/m/Y à H:i') }}</p>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-scroll chat to bottom
+    const chatBody = document.getElementById('chatBody');
+    if (chatBody) chatBody.scrollTop = chatBody.scrollHeight;
+
+    // Auto-resize textarea
+    const input = document.getElementById('chatInput');
+    if (input) {
+        input.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+    }
+});
+</script>
 @endsection

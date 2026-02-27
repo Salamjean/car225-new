@@ -236,6 +236,18 @@ class SupportApiController extends Controller
         $res  = $s->reservation;
         $prog = $res?->programme;
 
+        $formattedMessages = [];
+        if ($s->relationLoaded('messages')) {
+            $formattedMessages = $s->messages->map(function ($msg) {
+                return [
+                    'id' => $msg->id,
+                    'sender_type' => $msg->sender_type,
+                    'message' => $msg->message,
+                    'created_at' => $msg->created_at->format('d/m/Y H:i'),
+                ];
+            });
+        }
+
         return [
             'id'          => $s->id,
             'type'        => $s->type,
@@ -245,6 +257,7 @@ class SupportApiController extends Controller
             'statut'      => $s->statut,
             'reponse'     => $s->reponse,
             'created_at'  => $s->created_at->format('d/m/Y H:i'),
+            'messages'    => $formattedMessages,
             'reservation' => $res ? [
                 'id'           => $res->id,
                 'reference'    => $res->reference ?? null,
@@ -265,6 +278,57 @@ class SupportApiController extends Controller
     }
 
     /**
+     * Répondre à une demande existante.
+     */
+    public function repondre(Request $request, SupportRequest $supportRequest)
+    {
+        if ($supportRequest->user_id !== Auth::id()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Non autorisé.'
+            ], 403);
+        }
+
+        try {
+            $request->validate([
+                'reponse' => 'required|string',
+            ]);
+
+            $message = $supportRequest->messages()->create([
+                'sender_type' => 'user',
+                'message' => $request->reponse,
+            ]);
+
+            $supportRequest->update([
+                'statut' => 'ouvert', // On remet en ouvert pour que l'admin le voit
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Votre réponse a été envoyée.',
+                'support_message' => [
+                    'id' => $message->id,
+                    'sender_type' => $message->sender_type,
+                    'message' => $message->message,
+                    'created_at' => $message->created_at->format('d/m/Y H:i'),
+                ]
+            ], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Données invalides.',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Erreur SupportApiController@repondre: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Une erreur est survenue lors de l\'envoi de la réponse.'
+            ], 500);
+        }
+    }
+
+    /**
      * Liste les demandes de support de l'utilisateur.
      *
      * Query params optionnels :
@@ -279,6 +343,7 @@ class SupportApiController extends Controller
             $query = SupportRequest::with([
                     'reservation.programme.gareDepart',
                     'reservation.programme.gareArrivee',
+                    'messages'
                 ])
                 ->where('user_id', Auth::id())
                 ->orderBy('created_at', 'desc');

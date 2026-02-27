@@ -1,144 +1,345 @@
 @extends('compagnie.layouts.template')
 
 @section('content')
-<div class="min-h-screen bg-gradient-to-br from-gray-50 to-red-50 py-8 px-4">
-    <div class="mx-auto" style="width: 90%">
-        <!-- En-tête -->
-        <div class="text-center mb-12">
-            <div class="inline-flex items-center justify-center w-16 h-16 bg-red-600 rounded-2xl shadow-lg mb-4">
-                <i class="fas fa-exclamation-triangle text-white text-2xl"></i>
+<div class="space-y-8">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+        <div>
+            <h1 class="text-3xl font-black text-[#1A1D1F] tracking-tight flex items-center gap-3 uppercase">
+                <i class="fas fa-exclamation-triangle text-red-500"></i>
+                Gestion des <span class="text-red-500">Signalements</span>
+            </h1>
+            <p class="text-gray-500 font-medium">Suivez et traitez les incidents signalés sur vos trajets</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="px-5 py-2.5 bg-red-500 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg shadow-red-500/20">
+                {{ $stats['total'] }} signalement(s)
+            </span>
+        </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- New -->
+        <div class="bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-600 transition-colors group-hover:bg-red-600 group-hover:text-white">
+                    <i class="fas fa-bell text-xl"></i>
+                </div>
+                <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Nouveaux</span>
             </div>
-            <h1 class="text-4xl font-bold text-gray-900 mb-3">Gestion des Signalements</h1>
-            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
-                Suivez et traitez les incidents signalés sur vos trajets
-            </p>
+            <h3 class="text-3xl font-black text-gray-900">{{ $stats['nouveaux'] }}</h3>
         </div>
 
-        <!-- Carte principale -->
-        <div class="bg-white rounded-3xl shadow-xl overflow-hidden">
-            <!-- En-tête de la carte -->
-            <div class="px-8 py-6 bg-gradient-to-r from-red-600 to-red-500">
-                <div class="flex flex-col sm:flex-row justify-between items-center">
-                    <h2 class="text-2xl font-bold text-white mb-4 sm:mb-0">Signalements Reçus</h2>
-                    <div class="flex items-center space-x-2">
-                        <span class="px-4 py-2 bg-white/20 text-white rounded-lg font-bold backdrop-blur-sm">
-                            Total: {{ $signalements->total() }}
-                        </span>
-                    </div>
+        <!-- Treated -->
+        <div class="bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center text-green-600 transition-colors group-hover:bg-green-600 group-hover:text-white">
+                    <i class="fas fa-check-circle text-xl"></i>
                 </div>
+                <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Traités</span>
             </div>
-
-            <!-- Contenu -->
-            <div class="p-8">
-                <!-- Tableau des signalements -->
-                <div class="overflow-hidden rounded-2xl border border-gray-200">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Type</th>
-                                <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Date</th>
-                                <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Véhicule</th>
-                                <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Trajet</th>
-                                <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Signalé par</th>
-                                <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Statut</th>
-                                <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            @forelse($signalements as $signalement)
-                            <tr onclick="window.location='{{ route('compagnie.signalements.show', $signalement->id) }}'" class="{{ !$signalement->is_read_by_company ? 'bg-red-50/60 font-medium' : 'hover:bg-gray-50' }} transition-colors duration-200 cursor-pointer">
-                                <td class="px-6 py-4 whitespace-nowrap text-center">
-                                    @php
-                                        $colors = [
-                                            'accident' => 'red',
-                                            'panne' => 'orange',
-                                            'retard' => 'yellow',
-                                            'comportement' => 'purple',
-                                            'autre' => 'gray'
-                                        ];
-                                        $color = $colors[$signalement->type] ?? 'gray';
-                                    @endphp
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-{{ $color }}-100 text-{{ $color }}-800 capitalize border border-{{ $color }}-200">
-                                        {{ ucfirst($signalement->type) }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-center">
-                                     <div class="text-sm font-bold text-gray-900">
-                                        {{ $signalement->created_at->format('d/m/Y') }}
-                                        @if(!$signalement->is_read_by_company)
-                                            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-red-600 text-white animate-pulse">
-                                                Nouveau
-                                            </span>
-                                        @endif
-                                    </div>
-                                    <div class="text-xs text-gray-500">{{ $signalement->created_at->format('H:i') }}</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-center">
-                                    <div class="text-sm font-mono font-bold text-gray-900">
-                                        {{ $signalement->programme?->vehicule?->immatriculation ?? 'Non assigné' }}
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-center">
-                                    <div class="text-sm text-gray-900">
-                                        {{ $signalement->programme?->point_depart ?? '?' }} <i class="fas fa-arrow-right text-xs mx-1 text-gray-400"></i> {{ $signalement->programme?->point_arrive ?? '?' }}
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-center">
-                                    <div class="flex items-center justify-center">
-                                        <div class="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold mr-2">
-                                            {{ substr($signalement->user?->name ?? '?', 0, 1) }}
-                                        </div>
-                                        <div class="text-left">
-                                            <div class="text-sm font-medium text-gray-900">{{ $signalement->user?->name ?? 'Inconnu' }}</div>
-                                            <div class="text-xs text-gray-500">{{ $signalement->user?->telephone ?? '' }}</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-center">
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium {{ $signalement->statut === 'traite' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200' }} capitalize">
-                                        <span class="w-2 h-2 mr-1.5 rounded-full {{ $signalement->statut === 'traite' ? 'bg-green-500' : 'bg-red-500' }}"></span>
-                                        {{ ucfirst($signalement->statut) }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-center">
-                                    <a href="{{ route('compagnie.signalements.show', $signalement->id) }}" 
-                                       class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-sm text-sm font-medium">
-                                        <i class="fas fa-eye mr-2"></i> Détails
-                                    </a>
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="7" class="px-6 py-12 text-center">
-                                    <div class="flex flex-col items-center justify-center text-gray-500">
-                                        <div class="bg-gray-100 p-4 rounded-full mb-4">
-                                            <i class="fas fa-check-circle text-green-500 text-4xl"></i>
-                                        </div>
-                                        <p class="text-xl font-bold text-gray-700 mb-2">Aucun signalement</p>
-                                        <p class="text-sm">Tout semble calme pour le moment. Bonne route !</p>
-                                    </div>
-                                </td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Pagination -->
-                <div class="mt-6">
-                    {{ $signalements->links() }}
-                </div>
-            </div>
+            <h3 class="text-3xl font-black text-gray-900">{{ $stats['traites'] }}</h3>
         </div>
+
+        <!-- From Drivers -->
+        <div class="bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white">
+                    <i class="fas fa-id-badge text-xl"></i>
+                </div>
+                <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Chauffeurs</span>
+            </div>
+            <h3 class="text-3xl font-black text-gray-900">{{ $stats['from_chauffeurs'] }}</h3>
+        </div>
+
+        <!-- From Users -->
+        <div class="bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-600 transition-colors group-hover:bg-purple-600 group-hover:text-white">
+                    <i class="fas fa-user text-xl"></i>
+                </div>
+                <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Passagers</span>
+            </div>
+            <h3 class="text-3xl font-black text-gray-900">{{ $stats['from_users'] }}</h3>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden">
+        <button id="toggleFilters" class="w-full px-8 py-5 flex items-center justify-between hover:bg-gray-50 transition-colors">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-gray-500">
+                    <i class="fas fa-filter text-xs"></i>
+                </div>
+                <span class="text-sm font-black text-gray-700 uppercase tracking-wider">Filtres de recherche</span>
+            </div>
+            <i class="fas fa-chevron-down text-gray-400 transition-transform duration-300" id="filterChevron"></i>
+        </button>
+        <div id="filtersSection" class="hidden border-t border-gray-50 p-8">
+            <form method="GET" action="{{ route('compagnie.signalements.index') }}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Source -->
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Source</label>
+                    <select name="source" class="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-red-500 focus:bg-white outline-none transition-all text-sm font-bold">
+                        <option value="">Toutes les sources</option>
+                        <option value="chauffeur" {{ request('source') == 'chauffeur' ? 'selected' : '' }}>🚗 Chauffeurs</option>
+                        <option value="utilisateur" {{ request('source') == 'utilisateur' ? 'selected' : '' }}>👤 Passagers</option>
+                    </select>
+                </div>
+
+                <!-- Type -->
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Type</label>
+                    <select name="type" class="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-red-500 focus:bg-white outline-none transition-all text-sm font-bold">
+                        <option value="">Tous les types</option>
+                        <option value="accident" {{ request('type') == 'accident' ? 'selected' : '' }}>Accident</option>
+                        <option value="panne" {{ request('type') == 'panne' ? 'selected' : '' }}>Panne</option>
+                        <option value="retard" {{ request('type') == 'retard' ? 'selected' : '' }}>Retard</option>
+                        <option value="comportement" {{ request('type') == 'comportement' ? 'selected' : '' }}>Comportement</option>
+                        <option value="autre" {{ request('type') == 'autre' ? 'selected' : '' }}>Autre</option>
+                    </select>
+                </div>
+
+                <!-- Statut -->
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Statut</label>
+                    <select name="statut" class="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-red-500 focus:bg-white outline-none transition-all text-sm font-bold">
+                        <option value="">Tous les statuts</option>
+                        <option value="nouveau" {{ request('statut') == 'nouveau' ? 'selected' : '' }}>Nouveau</option>
+                        <option value="traite" {{ request('statut') == 'traite' ? 'selected' : '' }}>Traité</option>
+                    </select>
+                </div>
+
+                <!-- Buttons -->
+                <div class="flex items-end gap-3">
+                    <button type="submit" class="flex-1 py-3.5 bg-red-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-red-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                        <i class="fas fa-search"></i> Filtrer
+                    </button>
+                    <a href="{{ route('compagnie.signalements.index') }}" class="px-6 py-3.5 bg-gray-100 text-gray-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all flex items-center justify-center gap-2">
+                        <i class="fas fa-redo"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Signalements Table -->
+    <div class="bg-white rounded-[32px] border border-gray-100 shadow-xl shadow-gray-200/40 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-50/80 border-b border-gray-100">
+                        <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-8">Source</th>
+                        <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Type</th>
+                        <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Date</th>
+                        <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Véhicule</th>
+                        <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Trajet</th>
+                        <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Signalé par</th>
+                        <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Statut</th>
+                        <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center pr-8">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    @forelse($signalements as $signalement)
+                    @php
+                        $isChauffeur = $signalement->personnel_id && !$signalement->user_id;
+                        $isUser = (bool) $signalement->user_id;
+
+                        // Determine the reporter's name
+                        if ($isChauffeur && $signalement->personnel) {
+                            $reporterName = $signalement->personnel->name . ' ' . ($signalement->personnel->prenom ?? '');
+                            $reporterContact = $signalement->personnel->contact ?? '';
+                            $reporterInitial = strtoupper(substr($signalement->personnel->name, 0, 1));
+                        } elseif ($isUser && $signalement->user) {
+                            $reporterName = $signalement->user->name . ' ' . ($signalement->user->prenom ?? '');
+                            $reporterContact = $signalement->user->contact ?? $signalement->user->telephone ?? '';
+                            $reporterInitial = strtoupper(substr($signalement->user->name, 0, 1));
+                        } else {
+                            $reporterName = 'Inconnu';
+                            $reporterContact = '';
+                            $reporterInitial = '?';
+                        }
+
+                        $typeColors = [
+                            'accident' => ['bg' => 'bg-red-50', 'text' => 'text-red-700', 'border' => 'border-red-200', 'icon' => 'fa-car-crash'],
+                            'panne' => ['bg' => 'bg-orange-50', 'text' => 'text-orange-700', 'border' => 'border-orange-200', 'icon' => 'fa-tools'],
+                            'retard' => ['bg' => 'bg-yellow-50', 'text' => 'text-yellow-700', 'border' => 'border-yellow-200', 'icon' => 'fa-clock'],
+                            'comportement' => ['bg' => 'bg-purple-50', 'text' => 'text-purple-700', 'border' => 'border-purple-200', 'icon' => 'fa-user-slash'],
+                            'autre' => ['bg' => 'bg-gray-50', 'text' => 'text-gray-700', 'border' => 'border-gray-200', 'icon' => 'fa-question-circle'],
+                        ];
+                        $tc = $typeColors[$signalement->type] ?? $typeColors['autre'];
+                    @endphp
+                    <tr class="group hover:bg-gray-50/60 transition-all duration-300 {{ !$signalement->is_read_by_company ? 'bg-red-50/30' : '' }}">
+                        
+                        {{-- SOURCE BADGE --}}
+                        <td class="px-6 py-5 pl-8">
+                            @if($isChauffeur)
+                                <div class="flex items-center gap-2">
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 text-[10px] font-black rounded-lg uppercase tracking-widest border border-blue-200">
+                                        <i class="fas fa-id-badge text-[9px]"></i> Chauffeur
+                                    </span>
+                                </div>
+                            @else
+                                <div class="flex items-center gap-2">
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-700 text-[10px] font-black rounded-lg uppercase tracking-widest border border-purple-200">
+                                        <i class="fas fa-user text-[9px]"></i> Passager
+                                    </span>
+                                </div>
+                            @endif
+                        </td>
+
+                        {{-- TYPE --}}
+                        <td class="px-6 py-5">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 {{ $tc['bg'] }} {{ $tc['text'] }} text-[10px] font-bold rounded-lg uppercase tracking-widest border {{ $tc['border'] }}">
+                                <i class="fas {{ $tc['icon'] }} text-[9px]"></i>
+                                {{ ucfirst($signalement->type) }}
+                            </span>
+                        </td>
+
+                        {{-- DATE --}}
+                        <td class="px-6 py-5">
+                            <div class="flex items-center gap-3">
+                                <div class="flex flex-col items-center justify-center bg-gray-50 border border-gray-100 rounded-xl w-12 h-12 group-hover:bg-white group-hover:border-red-200 group-hover:shadow-md transition-all">
+                                    <span class="text-[8px] font-semibold text-red-500 uppercase leading-none mt-1">
+                                        {{ Str::upper(\Carbon\Carbon::parse($signalement->created_at)->locale('fr')->translatedFormat('M')) }}
+                                    </span>
+                                    <span class="text-lg font-bold text-gray-800 leading-none">
+                                        {{ $signalement->created_at->format('d') }}
+                                    </span>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-900">{{ $signalement->created_at->format('H:i') }}</p>
+                                    @if(!$signalement->is_read_by_company)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black bg-red-600 text-white animate-pulse">
+                                            Nouveau
+                                        </span>
+                                    @else
+                                        <span class="text-[10px] text-gray-400">{{ $signalement->created_at->diffForHumans() }}</span>
+                                    @endif
+                                </div>
+                            </div>
+                        </td>
+
+                        {{-- VEHICULE --}}
+                        <td class="px-6 py-5">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 group-hover:bg-gray-900 group-hover:text-white transition-colors">
+                                    <i class="fas fa-bus text-xs"></i>
+                                </div>
+                                <span class="text-xs font-mono font-bold text-gray-900">
+                                    {{ $signalement->vehicule?->immatriculation ?? $signalement->programme?->vehicule?->immatriculation ?? 'N/A' }}
+                                </span>
+                            </div>
+                        </td>
+
+                        {{-- TRAJET --}}
+                        <td class="px-6 py-5">
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-sm font-medium text-gray-900">{{ $signalement->programme?->point_depart ?? '?' }}</span>
+                                <i class="fas fa-arrow-right text-[8px] text-gray-300 mx-1"></i>
+                                <span class="text-sm font-medium text-gray-900">{{ $signalement->programme?->point_arrive ?? '?' }}</span>
+                            </div>
+                        </td>
+
+                        {{-- SIGNALE PAR --}}
+                        <td class="px-6 py-5">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm shadow-sm
+                                    {{ $isChauffeur ? 'bg-blue-100 text-blue-700 border border-blue-200' : 'bg-purple-100 text-purple-700 border border-purple-200' }}">
+                                    {{ $reporterInitial }}
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-gray-900 leading-tight">{{ trim($reporterName) }}</p>
+                                    @if($reporterContact)
+                                        <p class="text-[10px] text-gray-400 font-medium">{{ $reporterContact }}</p>
+                                    @endif
+                                </div>
+                            </div>
+                        </td>
+
+                        {{-- STATUT --}}
+                        <td class="px-6 py-5 text-center">
+                            @if($signalement->statut === 'traite')
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-green-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Traité
+                                </span>
+                            @else
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-red-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span> Nouveau
+                                </span>
+                            @endif
+                        </td>
+
+                        {{-- ACTIONS --}}
+                        <td class="px-6 py-5 text-center pr-8">
+                            <div class="flex items-center justify-center gap-2">
+                                {{-- Lien direct : la méthode show() du contrôleur gère déjà le marquage comme lu --}}
+                                <a href="{{ route('compagnie.signalements.show', $signalement->id) }}"
+                                   onclick="if(!{{ $signalement->is_read_by_company ? 'true' : 'false' }}) { markReadOptimistic(); }"
+                                   class="w-8 h-8 {{ $signalement->is_read_by_company ? 'bg-gray-100 text-gray-400' : 'bg-blue-50 text-blue-600' }} rounded-lg flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                                   title="Cliquer pour voir les détails">
+                                    <i class="fas fa-eye text-xs"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="8" class="px-8 py-24 text-center">
+                            <div class="flex flex-col items-center animate-fade-in-up">
+                                <div class="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center text-green-500 mb-6 shadow-xl shadow-green-100">
+                                    <i class="fas fa-check-circle text-4xl"></i>
+                                </div>
+                                <h3 class="text-xl font-bold text-gray-900 mb-2 uppercase tracking-tight">Aucun signalement</h3>
+                                <p class="text-gray-400 font-medium max-w-sm mx-auto">Tout semble calme pour le moment. Bonne route !</p>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        @if($signalements->hasPages())
+        <div class="px-8 py-6 border-t border-gray-50 bg-gray-50">
+            {{ $signalements->links() }}
+        </div>
+        @endif
     </div>
 </div>
 
-<style>
-    /* Styles spécifiques pour la pagination personnalisée si nécessaire, 
-       sinon Tailwind gère bien les liens de pagination Laravel par défaut avec le bon provider */
-    .pagination {
-        display: flex;
-        justify-content: center;
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle Filters
+        const toggleBtn = document.getElementById('toggleFilters');
+        const filtersSection = document.getElementById('filtersSection');
+        const chevron = document.getElementById('filterChevron');
+
+        if(toggleBtn && filtersSection) {
+            toggleBtn.addEventListener('click', () => {
+                filtersSection.classList.toggle('hidden');
+                chevron.classList.toggle('rotate-180');
+            });
+        }
+    });
+
+    function markReadOptimistic() {
+        // Décrémenter instantanément le badge de la sidebar au clic (effet visuel rapide)
+        const badge = document.querySelector('.sidebar-signalement-badge');
+        if (badge) {
+            let count = parseInt(badge.textContent.trim()) - 1;
+            if (count <= 0) {
+                badge.style.display = 'none';
+            } else {
+                badge.textContent = count;
+            }
+        }
+        // Pas besoin de fetch ici car la page show() du contrôleur
+        // s'occupera de marquer comme lu en base de données lors du chargement.
+        return true; 
     }
-</style>
+</script>
+@endpush
 @endsection

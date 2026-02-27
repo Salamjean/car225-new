@@ -2,7 +2,26 @@
 
 @section('content')
     <div class="min-h-screen bg-gradient-to-br from-gray-50 to-red-50 py-8 px-4">
-        <div class="max-w-4xl mx-auto">
+        <div class="max-w-5xl mx-auto">
+
+            {{-- Flash Messages --}}
+            @if(session('success'))
+                <div class="mb-6 bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center gap-3 animate-fade-in">
+                    <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center text-green-600 flex-shrink-0">
+                        <i class="fas fa-check-circle text-lg"></i>
+                    </div>
+                    <p class="text-green-800 font-semibold text-sm">{{ session('success') }}</p>
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="mb-6 bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center gap-3 animate-fade-in">
+                    <div class="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center text-red-600 flex-shrink-0">
+                        <i class="fas fa-exclamation-circle text-lg"></i>
+                    </div>
+                    <p class="text-red-800 font-semibold text-sm">{{ session('error') }}</p>
+                </div>
+            @endif
 
             <!-- Navigation & Actions -->
             <div class="mb-6 flex justify-between items-center">
@@ -13,10 +32,14 @@
                 </a>
                 <div class="flex gap-2">
                     @if($signalement->statut !== 'traite')
-                        <button
-                            class="px-4 py-2 bg-green-600 text-white rounded-xl shadow-lg hover:bg-green-700 transition-all font-bold text-sm flex items-center gap-2">
-                            <i class="fas fa-check-circle"></i> Marquer comme traité
-                        </button>
+                        <form action="{{ route('compagnie.signalements.mark-traite', $signalement->id) }}" method="POST" class="inline">
+                            @csrf
+                            @method('PATCH')
+                            <button type="submit"
+                                class="px-4 py-2 bg-green-600 text-white rounded-xl shadow-lg hover:bg-green-700 transition-all font-bold text-sm flex items-center gap-2">
+                                <i class="fas fa-check-circle"></i> Marquer comme traité
+                            </button>
+                        </form>
                     @endif
                 </div>
             </div>
@@ -35,6 +58,11 @@
                                 class="px-3 py-1 bg-white text-red-600 rounded-full text-xs font-bold uppercase tracking-wider">
                                 {{ $signalement->type }}
                             </span>
+                            @if($signalement->statut === 'traite')
+                                <span class="px-3 py-1 bg-green-500 text-white rounded-full text-xs font-bold uppercase tracking-wider">
+                                    <i class="fas fa-check mr-1"></i> Traité
+                                </span>
+                            @endif
                         </div>
                         <h1 class="text-3xl font-extrabold mb-2">Détails du Signalement</h1>
                         <p class="text-red-100 flex items-center gap-2">
@@ -73,11 +101,12 @@
                                         <i class="fas fa-camera text-red-500"></i> Preuve Visuelle
                                     </h3>
                                     <div class="rounded-2xl overflow-hidden border-4 border-white shadow-xl group relative">
-                                        <img src="{{ Storage::url($signalement->photo_path) }}" alt="Photo de l'incident"
-                                            class="w-full h-auto object-cover max-h-[500px] transition-transform duration-500 group-hover:scale-105">
+                                        <img src="{{ asset($signalement->photo_path) }}" alt="Photo de l'incident"
+                                            class="w-full h-auto object-cover max-h-[500px] transition-transform duration-500 group-hover:scale-105"
+                                            onerror="this.onerror=null; this.src='{{ $signalement->photo_path }}';">
                                         <div
                                             class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                            <a href="{{ Storage::url($signalement->photo_path) }}" target="_blank"
+                                            <a href="{{ asset($signalement->photo_path) }}" target="_blank"
                                                 class="bg-white text-gray-900 px-6 py-3 rounded-xl font-bold flex items-center gap-2 transform translate-y-4 group-hover:translate-y-0 transition-transform">
                                                 <i class="fas fa-expand"></i> Voir en plein écran
                                             </a>
@@ -141,20 +170,46 @@
 
                         <!-- Right Column: Sidebar Stats -->
                         <div class="space-y-6">
-                            <!-- User Card -->
+                            <!-- Reporter Card -->
                             <div class="bg-gray-50 rounded-2xl p-6 border border-gray-100">
                                 <h4 class="text-xs font-bold text-gray-400 uppercase mb-4">Signalé par</h4>
-                                <div class="flex items-center gap-3">
-                                    <div
-                                        class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center text-red-600 font-bold text-xl">
-                                        {{ substr(optional($signalement->user)->name ?? '?', 0, 1) }}
+                                @php
+                                    $isChauffeur = $signalement->personnel_id && !$signalement->user_id;
+                                    if ($isChauffeur && $signalement->personnel) {
+                                        $rName = $signalement->personnel->name . ' ' . ($signalement->personnel->prenom ?? '');
+                                        $rContact = $signalement->personnel->contact ?? 'Sans numéro';
+                                        $rInitial = strtoupper(substr($signalement->personnel->name, 0, 1));
+                                        $rType = 'Chauffeur';
+                                        $rColor = 'blue';
+                                        $rIcon = 'fa-id-badge';
+                                    } elseif ($signalement->user) {
+                                        $rName = $signalement->user->name . ' ' . ($signalement->user->prenom ?? '');
+                                        $rContact = $signalement->user->contact ?? $signalement->user->telephone ?? 'Sans numéro';
+                                        $rInitial = strtoupper(substr($signalement->user->name, 0, 1));
+                                        $rType = 'Passager';
+                                        $rColor = 'purple';
+                                        $rIcon = 'fa-user';
+                                    } else {
+                                        $rName = 'Inconnu';
+                                        $rContact = 'Sans numéro';
+                                        $rInitial = '?';
+                                        $rType = 'Inconnu';
+                                        $rColor = 'gray';
+                                        $rIcon = 'fa-question';
+                                    }
+                                @endphp
+                                <div class="flex items-center gap-3 mb-3">
+                                    <div class="w-12 h-12 bg-{{ $rColor }}-100 rounded-full flex items-center justify-center text-{{ $rColor }}-600 font-bold text-xl border-2 border-{{ $rColor }}-200">
+                                        {{ $rInitial }}
                                     </div>
                                     <div>
-                                        <p class="font-bold text-gray-900">{{ optional($signalement->user)->name ? optional($signalement->user)->name . ' ' . optional($signalement->user)->prenom : 'Inconnu' }}</p>
-                                        <p class="text-xs text-gray-500">
-                                            {{ optional($signalement->user)->contact ?? 'Sans numéro' }}</p>
+                                        <p class="font-bold text-gray-900">{{ trim($rName) }}</p>
+                                        <p class="text-xs text-gray-500">{{ $rContact }}</p>
                                     </div>
                                 </div>
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-{{ $rColor }}-50 text-{{ $rColor }}-700 text-[10px] font-black rounded-lg uppercase tracking-widest border border-{{ $rColor }}-200">
+                                    <i class="fas {{ $rIcon }} text-[9px]"></i> {{ $rType }}
+                                </span>
                             </div>
 
                             <!-- Vehicle Card -->
@@ -165,11 +220,11 @@
                                         <i class="fas fa-bus text-gray-400 mt-1"></i>
                                         <div>
                                             <p class="text-sm font-bold text-gray-900">
-                                                {{ $signalement->programme?->vehicule?->immatriculation ?? 'Non assigné' }}
+                                                {{ $signalement->vehicule?->immatriculation ?? $signalement->programme?->vehicule?->immatriculation ?? 'Non assigné' }}
                                             </p>
                                             <p class="text-xs text-gray-500">
-                                                {{ $signalement->programme?->vehicule?->marque ?? '' }}
-                                                {{ $signalement->programme?->vehicule?->modele ?? '' }}
+                                                {{ $signalement->vehicule?->marque ?? $signalement->programme?->vehicule?->marque ?? '' }}
+                                                {{ $signalement->vehicule?->modele ?? $signalement->programme?->vehicule?->modele ?? '' }}
                                             </p>
                                         </div>
                                     </div>
@@ -187,6 +242,34 @@
                                 </div>
                             </div>
 
+                            {{-- Sapeur Pompier Card (si accident et pompier assigné) --}}
+                            @if($signalement->type === 'accident' && $signalement->sapeurPompier)
+                            <div class="bg-red-50 rounded-2xl p-6 border border-red-100">
+                                <h4 class="text-xs font-bold text-red-400 uppercase mb-4 flex items-center gap-2">
+                                    <i class="fas fa-fire-extinguisher text-red-500"></i> Sapeur Pompier assigné
+                                </h4>
+                                <div class="flex items-center gap-3 mb-2">
+                                    <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center border-2 border-red-200">
+                                        <i class="fas fa-fire-alt text-red-600"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-gray-900 text-sm">{{ $signalement->sapeurPompier->name }}</p>
+                                        <p class="text-xs text-gray-500">{{ $signalement->sapeurPompier->commune }}</p>
+                                    </div>
+                                </div>
+                                @if($signalement->sapeurPompier->contact)
+                                    <div class="flex items-center gap-2 mt-2 text-xs text-gray-500">
+                                        <i class="fas fa-phone text-[10px]"></i> {{ $signalement->sapeurPompier->contact }}
+                                    </div>
+                                @endif
+                                @if($signalement->sapeurPompier->email)
+                                    <div class="flex items-center gap-2 mt-1 text-xs text-gray-500">
+                                        <i class="fas fa-envelope text-[10px]"></i> {{ $signalement->sapeurPompier->email }}
+                                    </div>
+                                @endif
+                            </div>
+                            @endif
+
                             <!-- Status Badge -->
                             <div class="bg-gray-900 rounded-2xl p-6 text-center">
                                 <h4 class="text-xs font-bold text-gray-500 uppercase mb-3">Statut Actuel</h4>
@@ -195,8 +278,128 @@
                                     {{ ucfirst($signalement->statut) }}
                                 </span>
                             </div>
+
+                            {{-- Gare de départ --}}
+                            @if(isset($gareDepart) && $gareDepart)
+                            <div class="bg-blue-50 rounded-2xl p-6 border border-blue-100">
+                                <h4 class="text-xs font-bold text-blue-400 uppercase mb-4 flex items-center gap-2">
+                                    <i class="fas fa-warehouse text-blue-500"></i> Gare de départ
+                                </h4>
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center border-2 border-blue-200">
+                                        <i class="fas fa-warehouse text-blue-600 text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-gray-900 text-sm">{{ $gareDepart->nom_gare }}</p>
+                                        <p class="text-xs text-gray-500">{{ $gareDepart->ville ?? $gareDepart->commune ?? '' }}</p>
+                                    </div>
+                                </div>
+                                @if($gareDepart->contact)
+                                    <div class="flex items-center gap-2 mt-3 text-xs text-gray-500">
+                                        <i class="fas fa-phone text-[10px]"></i> {{ $gareDepart->contact }}
+                                    </div>
+                                @endif
+                            </div>
+                            @endif
                         </div>
                     </div>
+
+                    {{-- ============== ACTION BUTTONS SECTION (AFTER content) ============== --}}
+                    @if($signalement->statut !== 'traite' && in_array($signalement->type, ['accident', 'panne', 'retard']))
+                    <div class="mt-10 bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl border border-amber-200 p-6">
+                        <div class="flex items-center gap-3 mb-5">
+                            <div class="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-bolt text-amber-600 text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-black text-gray-900 uppercase tracking-tight">Actions d'urgence</h3>
+                                <p class="text-xs text-gray-500">Alertez les parties concernées rapidement</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-{{ $signalement->type === 'accident' ? '2' : '1' }} gap-4">
+                            {{-- ALERTER LA GARE --}}
+                            <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+                                <div class="flex items-center gap-3 mb-4">
+                                    <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                                        <i class="fas fa-warehouse text-blue-600"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-gray-900 text-sm">Alerter la Gare</h4>
+                                        @if(isset($gareDepart) && $gareDepart)
+                                            <p class="text-[10px] text-gray-400">{{ $gareDepart->nom_gare }} — {{ $gareDepart->email ?? 'pas d\'email' }}</p>
+                                        @else
+                                            <p class="text-[10px] text-red-400">Aucune gare de départ trouvée</p>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                @if(isset($gareDepart) && $gareDepart)
+                                    <form action="{{ route('compagnie.signalements.alert-gare', $signalement->id) }}" method="POST">
+                                        @csrf
+                                        <textarea name="message" rows="2" placeholder="Message personnalisé à la gare (optionnel)..."
+                                            class="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all resize-none mb-3"></textarea>
+                                        <button type="submit"
+                                            class="w-full py-3 bg-blue-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-blue-200 hover:bg-blue-700 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2">
+                                            <i class="fas fa-paper-plane"></i> Envoyer l'alerte à la gare
+                                        </button>
+                                    </form>
+                                @else
+                                    <div class="py-4 px-4 bg-gray-50 rounded-xl text-center text-gray-400 text-xs font-medium">
+                                        <i class="fas fa-info-circle mr-1"></i> Aucune gare de départ assignée à ce programme
+                                    </div>
+                                @endif
+                            </div>
+
+                            {{-- CONTACTER SAPEUR POMPIER (seulement pour les accidents) --}}
+                            @if($signalement->type === 'accident')
+                            <div class="bg-white rounded-2xl border border-red-100 p-5 shadow-sm">
+                                <div class="flex items-center gap-3 mb-4">
+                                    <div class="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
+                                        <i class="fas fa-fire-extinguisher text-red-600"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-gray-900 text-sm">Contacter Sapeur Pompier</h4>
+                                        @if(isset($sapeurPompier) && $sapeurPompier)
+                                            <p class="text-[10px] text-gray-400">
+                                                {{ $sapeurPompier->name }} — {{ $sapeurPompier->commune }}
+                                                @if($signalement->sapeur_pompier_id)
+                                                    <span class="text-green-500 font-bold">(Déjà assigné)</span>
+                                                @else
+                                                    <span class="text-blue-500">(Le plus proche)</span>
+                                                @endif
+                                            </p>
+                                        @else
+                                            <p class="text-[10px] text-red-400">Aucun pompier disponible à proximité</p>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                @if(isset($sapeurPompier) && $sapeurPompier)
+                                    <form action="{{ route('compagnie.signalements.alert-pompier', $signalement->id) }}" method="POST">
+                                        @csrf
+                                        <textarea name="message" rows="2" placeholder="Instructions supplémentaires (optionnel)..."
+                                            class="w-full px-4 py-2.5 bg-gray-50 border border-red-50 rounded-xl text-sm focus:ring-2 focus:ring-red-500 focus:bg-white outline-none transition-all resize-none mb-3"></textarea>
+                                        <button type="submit"
+                                            class="w-full py-3 bg-red-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-red-200 hover:bg-red-700 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2">
+                                            <i class="fas fa-fire-extinguisher"></i> Contacter le Sapeur Pompier
+                                        </button>
+                                    </form>
+                                @elseif(!$signalement->latitude || !$signalement->longitude)
+                                    <div class="py-4 px-4 bg-red-50 rounded-xl text-center text-red-400 text-xs font-medium">
+                                        <i class="fas fa-map-marker-alt mr-1"></i> Coordonnées GPS manquantes pour localiser un pompier
+                                    </div>
+                                @else
+                                    <div class="py-4 px-4 bg-gray-50 rounded-xl text-center text-gray-400 text-xs font-medium">
+                                        <i class="fas fa-info-circle mr-1"></i> Aucun sapeur pompier actif trouvé à proximité
+                                    </div>
+                                @endif
+                            </div>
+                            @endif
+                        </div>
+                    </div>
+                    @endif
+
                 </div>
             </div>
 

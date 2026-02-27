@@ -32,9 +32,35 @@
                     </h2>
                 </div>
                 <div class="text-right">
+                    @php
+                        $isChauffeur = $signalement->personnel_id && !$signalement->user_id;
+                        $isCompagnie = $signalement->compagnie_id && !$signalement->user_id && !$signalement->personnel_id;
+                    @endphp
                     <p class="text-xs text-gray-500 mb-1">Signalé par</p>
-                    <p class="font-bold text-gray-900">{{ $signalement->user->name ?? 'Utilisateur Inconnu' }}</p>
-                    <p class="text-xs text-gray-400">{{ $signalement->user->telephone ?? '' }}</p>
+                    @if($isChauffeur && $signalement->personnel)
+                        <p class="font-bold text-gray-900">{{ $signalement->personnel->name }} {{ $signalement->personnel->prenom ?? '' }}</p>
+                        <p class="text-xs text-gray-400">{{ $signalement->personnel->contact ?? '' }}</p>
+                        <span class="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-bold rounded-full uppercase">
+                            <i class="fas fa-id-badge text-[8px]"></i> Chauffeur
+                        </span>
+                    @elseif($signalement->compagnie)
+                        <p class="font-bold text-gray-900">{{ $signalement->compagnie->name ?? 'Compagnie' }}</p>
+                        <p class="text-xs text-gray-400">{{ $signalement->compagnie->email ?? '' }}</p>
+                        <span class="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-orange-100 text-orange-700 text-[10px] font-bold rounded-full uppercase">
+                            <i class="fas fa-building text-[8px]"></i> Compagnie
+                        </span>
+                    @elseif($signalement->user)
+                        <p class="font-bold text-gray-900">{{ $signalement->user->name ?? 'Utilisateur Inconnu' }}</p>
+                        <p class="text-xs text-gray-400">{{ $signalement->user->telephone ?? $signalement->user->contact ?? '' }}</p>
+                        <span class="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-purple-100 text-purple-700 text-[10px] font-bold rounded-full uppercase">
+                            <i class="fas fa-user text-[8px]"></i> Passager
+                        </span>
+                    @else
+                        <p class="font-bold text-gray-900">Source inconnue</p>
+                        <span class="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-gray-100 text-gray-700 text-[10px] font-bold rounded-full uppercase">
+                            <i class="fas fa-question text-[8px]"></i> Inconnu
+                        </span>
+                    @endif
                 </div>
             </div>
 
@@ -46,6 +72,18 @@
                         {{ $signalement->description }}
                     </p>
                 </div>
+
+                <!-- Photo du Signalement -->
+                @if($signalement->photo_path)
+                    <div class="mb-6">
+                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Photo du site</h3>
+                        <div class="rounded-lg overflow-hidden shadow-lg border border-gray-200">
+                            <img src="{{ asset($signalement->photo_path) }}" alt="Photo du signalement"
+                                class="w-full h-auto max-h-[500px] object-cover"
+                                onerror="this.onerror=null; this.src='{{ $signalement->photo_path }}';">
+                        </div>
+                    </div>
+                @endif
 
                 <!-- Localisation -->
                 <div>
@@ -91,17 +129,6 @@
                         <p class="text-gray-400 italic">Aucune donnée de géolocalisation disponible.</p>
                     @endif
                 </div>
-
-                <!-- Photo du Signalement -->
-                @if($signalement->photo_path)
-                    <div class="mb-6">
-                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Photo du site</h3>
-                        <div class="rounded-lg overflow-hidden shadow-lg border border-gray-200">
-                            <img src="{{ Storage::url($signalement->photo_path) }}" alt="Photo du signalement"
-                                class="w-full h-auto max-h-[500px] object-cover">
-                        </div>
-                    </div>
-                @endif
 
                 <!-- Voyage Info (Si disponible) -->
                 @if($signalement->programme)

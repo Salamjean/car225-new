@@ -43,9 +43,22 @@
                         <i class="fas fa-exclamation-triangle text-sm {{ request()->routeIs('signalement.create') ? 'text-[#e94f1b]' : 'group-hover:text-[#1A1D1F]' }}"></i>
                         <span class="text-sm font-bold tracking-tight">Déclarer incident</span>
                     </a>
-                    <a href="{{ route('user.support.index') }}" class="flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all group {{ request()->routeIs('user.support.*') ? 'bg-[#e94f1b]/5 text-[#e94f1b]' : 'text-[#1A1D1F]/80 hover:bg-gray-50 hover:text-[#1A1D1F]' }}">
-                        <i class="fas fa-headset text-sm {{ request()->routeIs('user.support.*') ? 'text-[#e94f1b]' : 'group-hover:text-[#1A1D1F]' }}"></i>
-                        <span class="text-sm font-bold tracking-tight">Support Client</span>
+                    <a href="{{ route('user.support.index') }}" class="flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all group {{ request()->routeIs('user.support.*') ? 'bg-[#e94f1b]/5 text-[#e94f1b]' : 'text-[#1A1D1F]/80 hover:bg-gray-50 hover:text-[#1A1D1F]' }}">
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-headset text-sm {{ request()->routeIs('user.support.*') ? 'text-[#e94f1b]' : 'group-hover:text-[#1A1D1F]' }}"></i>
+                            <span class="text-sm font-bold tracking-tight">Support Client</span>
+                        </div>
+                        @php
+                            $unreadSupportCount = 0;
+                            if(auth()->check()) {
+                                $unreadSupportCount = \App\Models\SupportRequest::where('user_id', auth()->id())
+                                    ->where('statut', 'en_cours')
+                                    ->count();
+                            }
+                        @endphp
+                        @if($unreadSupportCount > 0)
+                            <span class="bg-[#e94f1b] text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm">{{ $unreadSupportCount }}</span>
+                        @endif
                     </a>
                 </nav>
             </div>

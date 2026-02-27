@@ -39,6 +39,7 @@
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="bg-gray-50 text-gray-500 text-sm uppercase tracking-wider">
+                        <th class="text-center p-4 font-semibold">Source</th>
                         <th class="text-center p-4 font-semibold">Type</th>
                         <th class="text-center p-4 font-semibold">Date & Heure</th>
                         <th class="text-center p-4 font-semibold">Description</th>
@@ -49,11 +50,46 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @foreach($signalements as $signalement)
+                        @php
+                            $isChauffeur = $signalement->personnel_id && !$signalement->user_id;
+                            $isCompagnie = $signalement->compagnie_id && !$signalement->user_id && !$signalement->personnel_id;
+                        @endphp
                         <tr class="hover:bg-gray-50 transition-colors {{ $signalement->type == 'accident' ? 'bg-red-50' : '' }}">
+                            
+                            {{-- SOURCE --}}
+                            <td class="p-4" style="text-align: center;">
+                                @if($isChauffeur)
+                                    <span class="inline-flex items-center gap-1 bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full font-bold uppercase">
+                                        <i class="fas fa-id-badge text-[9px]"></i> Chauffeur
+                                    </span>
+                                @elseif($isCompagnie || ($signalement->compagnie_id && !$signalement->user_id))
+                                    <span class="inline-flex items-center gap-1 bg-orange-100 text-orange-700 text-xs px-2 py-1 rounded-full font-bold uppercase">
+                                        <i class="fas fa-building text-[9px]"></i> Compagnie
+                                    </span>
+                                @elseif($signalement->user_id)
+                                    <span class="inline-flex items-center gap-1 bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded-full font-bold uppercase">
+                                        <i class="fas fa-user text-[9px]"></i> Passager
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full font-bold uppercase">
+                                        <i class="fas fa-question text-[9px]"></i> Inconnu
+                                    </span>
+                                @endif
+                            </td>
+
+                            {{-- TYPE --}}
                             <td class="p-4" style="text-align: center;">
                                 @if($signalement->type == 'accident')
                                     <span class="inline-flex items-center gap-1 bg-red-100 text-red-700 text-xs px-2 py-1 rounded-full font-bold uppercase">
                                         <i class="fas fa-car-crash"></i> Accident
+                                    </span>
+                                @elseif($signalement->type == 'panne')
+                                    <span class="inline-flex items-center gap-1 bg-orange-100 text-orange-700 text-xs px-2 py-1 rounded-full font-bold uppercase">
+                                        <i class="fas fa-tools"></i> Panne
+                                    </span>
+                                @elseif($signalement->type == 'retard')
+                                    <span class="inline-flex items-center gap-1 bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded-full font-bold uppercase">
+                                        <i class="fas fa-clock"></i> Retard
                                     </span>
                                 @else
                                     <span class="inline-flex items-center gap-1 bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full font-bold uppercase">
@@ -61,13 +97,19 @@
                                     </span>
                                 @endif
                             </td>
+
+                            {{-- DATE --}}
                             <td class="p-4 text-sm font-medium text-gray-700" style="text-align: center;">
                                 {{ $signalement->created_at->format('d/m/Y H:i') }}
                                 <div class="text-xs text-gray-400">{{ $signalement->created_at->diffForHumans() }}</div>
                             </td>
+
+                            {{-- DESCRIPTION --}}
                             <td class="p-4 text-sm text-gray-600 max-w-xs truncate" style="text-align: center;">
-                                {{ $signalement->description }}
+                                {{ Str::limit($signalement->description, 50) }}
                             </td>
+
+                            {{-- STATUT --}}
                             <td class="p-4" style="text-align: center;">
                                 @if($signalement->statut == 'nouveau')
                                     <span class="inline-flex items-center gap-1 bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded-full font-bold uppercase">
@@ -83,6 +125,8 @@
                                     </span>
                                 @endif
                             </td>
+
+                            {{-- LIEU --}}
                             <td class="p-4 text-sm text-gray-600" style="display: flex; justify-content: center; align-items: center;">
                                 @if($signalement->latitude && $signalement->longitude)
                                     <span class="location-container text-xs font-medium text-gray-700 block max-w-xs cursor-help" 
@@ -97,6 +141,8 @@
                                     <span class="text-gray-400 italic">Non localisé</span>
                                 @endif
                             </td>
+
+                            {{-- ACTION --}}
                             <td class="p-4 text-right" style="text-align: center;">
                                 <a href="{{ route('sapeur-pompier.signalement.show', $signalement->id) }}" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-white border border-gray-200 hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-all shadow-sm">
                                     <i class="fas fa-eye"></i>
@@ -232,5 +278,6 @@
                 .catch(err => console.error('Erreur auto-refresh', err));
         }, 15000); // 15 secondes
     }
+
 </script>
 @endsection

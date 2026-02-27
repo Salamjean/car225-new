@@ -94,6 +94,7 @@
                         <option value="">Tous les statuts</option>
                         <option value="confirmee" {{ request('statut') == 'confirmee' ? 'selected' : '' }}>Confirmée</option>
                         <option value="en_attente" {{ request('statut') == 'en_attente' ? 'selected' : '' }}>En attente</option>
+                        <option value="terminee" {{ request('statut') == 'terminee' ? 'selected' : '' }}>Terminée</option>
                         <option value="annulee" {{ request('statut') == 'annulee' ? 'selected' : '' }}>Annulée</option>
                     </select>
                 </div>
@@ -309,6 +310,11 @@
                                     $dateVoyage = \Carbon\Carbon::parse($reservation->date_voyage)->format('Y-m-d');
                                     $departureDateTime = \Carbon\Carbon::parse("{$dateVoyage} {$heureDepart}");
                                     $canAct = $departureDateTime->diffInMinutes(now(), false) < -15;
+
+                                    // Bloquer les actions si le ticket a été scanné (embarquement)
+                                    if ($reservation->embarquement_scanned_at) {
+                                        $canAct = false;
+                                    }
 
                                     // Si c'est un retour, on bloque aussi si l'aller est déjà passé/fait
                                     if ($canAct && $reservation->is_aller_retour && str_contains(strtoupper($reservation->reference), '-RET')) {

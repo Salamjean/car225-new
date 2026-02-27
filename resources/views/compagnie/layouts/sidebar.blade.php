@@ -278,7 +278,7 @@
                             ->count();
                         @endphp
                         @if($newSignalements > 0)
-                            <span class="badge badge-pill badge-danger" style="background: #ef4444; font-weight: bold; padding: 4px 8px;">
+                            <span class="badge badge-pill badge-danger sidebar-signalement-badge" style="background: #ef4444; font-weight: bold; padding: 4px 8px;">
                                 {{ $newSignalements }}
                             </span>
                         @endif

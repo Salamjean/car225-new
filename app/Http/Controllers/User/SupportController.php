@@ -57,7 +57,7 @@ class SupportController extends Controller
     public function mesDeclarations()
     {
         $declarations = \App\Models\SupportRequest::where('user_id', Auth::id())
-            ->with('reservation')
+            ->with(['reservation', 'messages'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->groupBy('type');
@@ -102,5 +102,41 @@ class SupportController extends Controller
         ]);
         
         return redirect()->route('user.support.index')->with('success', 'Votre demande a bien été enregistrée. Un administrateur vous répondra prochainement.');
+    }
+
+    public function repondre(Request $request, \App\Models\SupportRequest $supportRequest)
+    {
+        // Ensure user owns the support request
+        if ($supportRequest->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $request->validate([
+            'reponse' => 'required|string',
+        ]);
+
+        $supportRequest->messages()->create([
+            'sender_type' => 'user',
+            'message' => $request->reponse,
+        ]);
+
+        $supportRequest->update([
+            'statut' => 'ouvert', // Change back to ouvert so admin sees it
+        ]);
+
+        return back()->with('success', 'Votre réponse a été envoyée.');
+    }
+
+    public function markAsRead(\App\Models\SupportRequest $supportRequest)
+    {
+        if ($supportRequest->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        if ($supportRequest->statut === 'en_cours') {
+            $supportRequest->update(['statut' => 'ouvert']);
+        }
+
+        return back()->with('success', 'Marqué comme lu.');
     }
 }
