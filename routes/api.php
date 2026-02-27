@@ -101,6 +101,7 @@ Route::prefix('user')->group(function () {
         Route::get('/support/reservations', [SupportApiController::class, 'getReservations']);
         Route::get('/support', [SupportApiController::class, 'index']);
         Route::post('/support', [SupportApiController::class, 'store']);
+        Route::post('/support/{supportRequest}/repondre', [SupportApiController::class, 'repondre']);
 
         // Statistiques
         Route::get('/stats', [StatistiqueApiController::class, 'index']);

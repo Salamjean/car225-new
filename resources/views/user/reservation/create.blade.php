@@ -2056,7 +2056,7 @@ async function showDepartureSchedulesModal(program, departureDate, isAllerRetour
                 },
                 preConfirm: () => {
                     if (!window.selectedReturnTime) {
-                        Swal.showValidationMessage('Veuillez sÃ©lectionner une heure de retour');
+                        Swal.showValidationMessage('Veuillez sélectionner une heure de retour');
                         return false;
                     }
                     return window.selectedReturnTime;
@@ -2590,7 +2590,7 @@ function onAllerRetourChoiceChange() {
                 if (currentSelectedProgram.type_programmation === 'recurrent') {
                     const returnDate = document.getElementById('returnDateSelect').value;
                     if (!returnDate) {
-                        Swal.fire({ icon: 'warning', text: 'Veuillez sÃ©lectionner une date de retour.' });
+                        Swal.fire({ icon: 'warning', text: 'Veuillez sélectionner une date de retour.' });
                         return;
                     }
                     window.selectedReturnDate = returnDate;
@@ -3317,7 +3317,7 @@ function onAllerRetourChoiceChange() {
                     Swal.fire({
                         icon: 'warning',
                         title: 'Limite atteinte',
-                        text: `Vous ne pouvez sÃ©lectionner que ${selectedNumberOfPlaces} place(s). désélectionnez d'abord une place si vous voulez en choisir une autre.`,
+                        text: `Vous ne pouvez sélectionner que ${selectedNumberOfPlaces} place(s). désélectionnez d'abord une place si vous voulez en choisir une autre.`,
                         confirmButtonColor: '#e94f1b',
                     });
                     return;
@@ -3456,7 +3456,7 @@ async function loadRetourSeatsSelection() {
 
     Swal.fire({
         title: 'Chargement...',
-        text: 'RÃ©cupÃ©ration des places disponibles pour le retour',
+        text: 'Récupération des places disponibles pour le retour',
         allowOutsideClick: false,
         didOpen: () => { Swal.showLoading(); }
     });

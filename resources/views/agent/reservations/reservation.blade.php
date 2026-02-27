@@ -198,15 +198,15 @@
                 <!-- En-tête décoratif -->
                 <div class="mb-4">
                     <span class="badge badge-pill badge-light text-muted px-3 py-2">
-                        <i class="material-icons" style="font-size: 14px; vertical-align: middle;">verified_user</i> 
-                        Zone Contrôleur
+                        <i class="material-icons" style="font-size: 14px; vertical-align: middle;"></i> 
+                        Scanner le code qr
                     </span>
                 </div>
 
                 <!-- Icone animée -->
                 <div class="icon-container">
                     <div class="pulse-ring"></div>
-                    <i class="material-icons text-primary" style="font-size: 50px;">qr_code_scanner</i>
+                    <i class="material-icons text-primary" style="font-size: 50px;"></i>
                 </div>
 
                 <!-- Textes -->
@@ -218,7 +218,7 @@
 
                 <!-- Gros bouton d'action -->
                 <button type="button" class="btn-scanner-hero" id="openVehicleSelectBtn">
-                    <i class="material-icons mr-3">photo_camera</i>
+                    <i class="material-icons mr-3"></i>
                     Commencer le Scan
                 </button>
                 

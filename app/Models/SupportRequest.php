@@ -28,4 +28,9 @@ class SupportRequest extends Model
     {
         return $this->belongsTo(Reservation::class);
     }
+
+    public function messages()
+    {
+        return $this->hasMany(SupportMessage::class);
+    }
 }

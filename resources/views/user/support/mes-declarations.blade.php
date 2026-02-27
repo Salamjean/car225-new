@@ -147,12 +147,16 @@
                                     <div class="p-6 pb-4">
                                         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                                             <div class="flex-1 min-w-0">
-                                                <div class="flex items-center gap-2 mb-2">
+                                                <div class="flex items-center gap-2 mb-2 flex-wrap">
                                                     <span class="inline-flex items-center gap-1.5 {{ $statutCfg['class'] }} text-xs font-bold px-3 py-1 rounded-full">
                                                         <span class="w-1.5 h-1.5 {{ $statutCfg['dot'] }} rounded-full"></span>
                                                         {{ $statutCfg['label'] }}
                                                     </span>
-                                                    @if($declaration->reponse)
+                                                    @if($declaration->statut === 'en_cours')
+                                                        <span class="inline-flex items-center gap-1.5 bg-[#e94f1b] text-white text-xs font-bold px-3 py-1 rounded-full animate-pulse shadow-sm shadow-[#e94f1b]/30">
+                                                            <i class="fas fa-envelope text-[9px]"></i> Nouveau message
+                                                        </span>
+                                                    @elseif($declaration->reponse)
                                                         <span class="inline-flex items-center gap-1.5 bg-[#e94f1b]/10 text-[#e94f1b] text-xs font-bold px-3 py-1 rounded-full">
                                                             <i class="fas fa-reply text-[9px]"></i> Répondu
                                                         </span>
@@ -196,32 +200,77 @@
                                                 </p>
                                             </div>
 
-                                            {{-- Réponse admin --}}
-                                            @if($declaration->reponse)
-                                                <div>
-                                                    <p class="text-xs font-bold text-[#e94f1b] uppercase tracking-widest mb-1.5">
-                                                        <i class="fas fa-headset mr-1"></i> Réponse de l'administrateur
-                                                    </p>
-                                                    <div class="bg-gradient-to-br from-[#e94f1b]/5 to-[#e94f1b]/10 border border-[#e94f1b]/20 rounded-2xl p-4">
-                                                        <p class="text-sm text-gray-800 leading-relaxed">{{ $declaration->reponse }}</p>
+                                            {{-- Chat / Échanges --}}
+                                            <div class="space-y-4">
+                                                @if($declaration->reponse && $declaration->messages->isEmpty())
+                                                    <div>
+                                                        <p class="text-xs font-bold text-[#e94f1b] uppercase tracking-widest mb-1.5">
+                                                            <i class="fas fa-headset mr-1"></i> Réponse de l'administrateur
+                                                        </p>
+                                                        <div class="bg-gradient-to-br from-[#e94f1b]/5 to-[#e94f1b]/10 border border-[#e94f1b]/20 rounded-2xl p-4">
+                                                            <p class="text-sm text-gray-800 leading-relaxed">{{ $declaration->reponse }}</p>
+                                                        </div>
                                                     </div>
-                                                    @if($declaration->statut === 'ferme')
-                                                        <div class="mt-3 inline-flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-2 text-xs text-green-700 font-bold">
-                                                            <i class="fas fa-check-circle text-green-500"></i>
-                                                            Votre demande a été traitée et clôturée
+                                                @endif
+
+                                                {{-- Affichage des messages --}}
+                                                @foreach($declaration->messages as $msg)
+                                                    @if($msg->sender_type == 'admin')
+                                                        <div>
+                                                            <p class="text-xs font-bold text-[#e94f1b] uppercase tracking-widest mb-1.5 flex justify-between">
+                                                                <span><i class="fas fa-headset mr-1"></i> Administrateur</span>
+                                                                <span class="text-gray-400 font-normal">{{ $msg->created_at->format('d/m/Y H:i') }}</span>
+                                                            </p>
+                                                            <div class="bg-gradient-to-br from-[#e94f1b]/5 to-[#e94f1b]/10 border border-[#e94f1b]/20 rounded-2xl p-4">
+                                                                <p class="text-sm text-gray-800 leading-relaxed">{{ $msg->message }}</p>
+                                                            </div>
+                                                        </div>
+                                                    @else
+                                                        <div>
+                                                            <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 flex justify-between">
+                                                                <span><i class="fas fa-user mr-1"></i> Moi</span>
+                                                                <span class="text-gray-400 font-normal">{{ $msg->created_at->format('d/m/Y H:i') }}</span>
+                                                            </p>
+                                                            <div class="bg-gray-50 border border-gray-200 rounded-2xl p-4">
+                                                                <p class="text-sm text-gray-700 leading-relaxed">{{ $msg->message }}</p>
+                                                            </div>
                                                         </div>
                                                     @endif
-                                                </div>
-                                            @else
-                                                <div class="flex items-center gap-3 bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3">
-                                                    <div class="w-7 h-7 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                                                        <i class="fas fa-hourglass-half text-amber-500 text-xs"></i>
+                                                @endforeach
+
+                                                @if($declaration->statut === 'ferme')
+                                                    <div class="mt-3 inline-flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-2 text-xs text-green-700 font-bold w-full justify-center">
+                                                        <i class="fas fa-check-circle text-green-500"></i>
+                                                        Votre demande a été traitée et clôturée
                                                     </div>
-                                                    <p class="text-xs text-amber-700 font-medium">
-                                                        En attente de réponse — notre équipe reviendra vers vous prochainement.
-                                                    </p>
-                                                </div>
-                                            @endif
+                                                @else
+                                                    @if(!$declaration->reponse && $declaration->messages->isEmpty())
+                                                        <div class="flex items-center gap-3 bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3">
+                                                            <div class="w-7 h-7 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                                                <i class="fas fa-hourglass-half text-amber-500 text-xs"></i>
+                                                            </div>
+                                                            <p class="text-xs text-amber-700 font-medium">
+                                                                En attente de réponse — notre équipe reviendra vers vous prochainement.
+                                                            </p>
+                                                        </div>
+                                                    @endif
+                                                    
+                                                    {{-- Formulaire pour répondre --}}
+                                                    <div class="pt-4 border-t border-gray-100 mt-4">
+                                                        <form action="{{ route('user.support.repondre', $declaration->id) }}" method="POST">
+                                                            @csrf
+                                                            <div class="flex flex-col gap-3">
+                                                                <textarea name="reponse" rows="2" class="w-full bg-white border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#e94f1b] focus:ring-1 focus:ring-[#e94f1b] transition-all resize-none" placeholder="Saisissez votre réponse..." required></textarea>
+                                                                <div class="flex justify-end">
+                                                                    <button type="submit" class="bg-[#e94f1b] text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-[#c73d12] transition-all shadow-sm flex items-center gap-2">
+                                                                        <i class="fas fa-paper-plane text-xs"></i> Envoyer
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                @endif
+                                            </div>
 
                                         </div>
                                     </div>

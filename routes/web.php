@@ -491,6 +491,7 @@ Route::middleware('auth')->prefix('user')->group(function () {
         Route::get('/mes-declarations', [App\Http\Controllers\User\SupportController::class, 'mesDeclarations'])->name('user.support.mes-declarations');
         Route::get('/create', [App\Http\Controllers\User\SupportController::class, 'create'])->name('user.support.create');
         Route::post('/store', [App\Http\Controllers\User\SupportController::class, 'store'])->name('user.support.store');
+        Route::post('/{supportRequest}/repondre', [App\Http\Controllers\User\SupportController::class, 'repondre'])->name('user.support.repondre');
     });
 
     // Notifications
