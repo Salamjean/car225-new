@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $this->call([
+            BakayokoUserSeeder::class,
             SpecificCompagniesSeeder::class,
             SpecificVehiculesSeeder::class,
             SpecificPersonnelSeeder::class,
