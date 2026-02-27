@@ -240,6 +240,10 @@ Route::middleware('compagnie')->prefix('company')->group(function () {
     Route::prefix('signalements')->group(function () {
         Route::get('/', [CompagnieSignalementController::class, 'index'])->name('compagnie.signalements.index');
         Route::get('/{id}', [CompagnieSignalementController::class, 'show'])->name('compagnie.signalements.show');
+        Route::post('/{id}/alert-gare', [CompagnieSignalementController::class, 'alertGare'])->name('compagnie.signalements.alert-gare');
+        Route::post('/{id}/alert-pompier', [CompagnieSignalementController::class, 'alertPompier'])->name('compagnie.signalements.alert-pompier');
+        Route::patch('/{id}/mark-traite', [CompagnieSignalementController::class, 'markAsTraite'])->name('compagnie.signalements.mark-traite');
+        Route::patch('/{id}/mark-read', [CompagnieSignalementController::class, 'markAsRead'])->name('compagnie.signalements.mark-read');
     });
 
     // Routes de gestion des gares
@@ -492,6 +496,7 @@ Route::middleware('auth')->prefix('user')->group(function () {
         Route::get('/create', [App\Http\Controllers\User\SupportController::class, 'create'])->name('user.support.create');
         Route::post('/store', [App\Http\Controllers\User\SupportController::class, 'store'])->name('user.support.store');
         Route::post('/{supportRequest}/repondre', [App\Http\Controllers\User\SupportController::class, 'repondre'])->name('user.support.repondre');
+        Route::post('/{supportRequest}/mark-read', [App\Http\Controllers\User\SupportController::class, 'markAsRead'])->name('user.support.mark-read');
     });
 
     // Notifications
@@ -521,15 +526,16 @@ Route::prefix('sapeur-pompier')->group(function () {
         Route::put('/profile', [App\Http\Controllers\SapeurPompier\SapeurPompierDashboard::class, 'updateProfile'])->name('sapeur-pompier.profile.update');
 
         Route::get('/dashboard', function (\Illuminate\Http\Request $request) {
-            $query = Signalement::where('sapeur_pompier_id', Auth::guard('sapeur_pompier')->id());
+            $query = Signalement::where('sapeur_pompier_id', Auth::guard('sapeur_pompier')->id())
+                ->with(['user', 'personnel', 'compagnie', 'programme.compagnie']);
 
             if ($request->has('status')) {
                 $query->where('statut', $request->status);
                 $filterTitle = $request->status == 'nouveau' ? 'Nouveaux Signalements' : 'Signalements Traités';
             } else {
-                // Par défaut : Seulement les accidents non traités
-                $query->where('type', 'accident')->where('statut', 'nouveau');
-                $filterTitle = 'Accidents en cours (Non traités)';
+                // Par défaut : Tous les signalements non traités
+                $query->where('statut', 'nouveau');
+                $filterTitle = 'Nouveaux Signalements';
             }
 
             $signalements = $query->latest()->get();
@@ -564,6 +570,7 @@ Route::prefix('sapeur-pompier')->group(function () {
             if ($signalement->sapeur_pompier_id !== Auth::guard('sapeur_pompier')->id()) {
                 abort(403);
             }
+            $signalement->load(['user', 'personnel', 'compagnie', 'programme.compagnie', 'programme.gareDepart', 'vehicule']);
             return view('sapeur_pompier.signalement.show', compact('signalement'));
         })->name('sapeur-pompier.signalement.show');
 

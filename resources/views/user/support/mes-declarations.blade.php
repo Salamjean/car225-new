@@ -153,9 +153,17 @@
                                                         {{ $statutCfg['label'] }}
                                                     </span>
                                                     @if($declaration->statut === 'en_cours')
-                                                        <span class="inline-flex items-center gap-1.5 bg-[#e94f1b] text-white text-xs font-bold px-3 py-1 rounded-full animate-pulse shadow-sm shadow-[#e94f1b]/30">
-                                                            <i class="fas fa-envelope text-[9px]"></i> Nouveau message
-                                                        </span>
+                                                        <div class="flex items-center gap-2">
+                                                            <span class="inline-flex items-center gap-1.5 bg-[#e94f1b] text-white text-xs font-bold px-3 py-1 rounded-full animate-pulse shadow-sm shadow-[#e94f1b]/30">
+                                                                <i class="fas fa-envelope text-[9px]"></i> Nouveau message
+                                                            </span>
+                                                            <form action="{{ route('user.support.mark-read', $declaration->id) }}" method="POST" class="inline">
+                                                                @csrf
+                                                                <button type="submit" class="w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center text-gray-400 hover:text-[#e94f1b] hover:border-[#e94f1b] transition-all shadow-sm" title="Marquer comme vu">
+                                                                    <i class="fas fa-check text-[10px]"></i>
+                                                                </button>
+                                                            </form>
+                                                        </div>
                                                     @elseif($declaration->reponse)
                                                         <span class="inline-flex items-center gap-1.5 bg-[#e94f1b]/10 text-[#e94f1b] text-xs font-bold px-3 py-1 rounded-full">
                                                             <i class="fas fa-reply text-[9px]"></i> Répondu

@@ -126,4 +126,17 @@ class SupportController extends Controller
 
         return back()->with('success', 'Votre réponse a été envoyée.');
     }
+
+    public function markAsRead(\App\Models\SupportRequest $supportRequest)
+    {
+        if ($supportRequest->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        if ($supportRequest->statut === 'en_cours') {
+            $supportRequest->update(['statut' => 'ouvert']);
+        }
+
+        return back()->with('success', 'Marqué comme lu.');
+    }
 }
