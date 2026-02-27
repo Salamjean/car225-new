@@ -117,6 +117,12 @@ class Reservation extends Model
         return $this->belongsTo(Vehicule::class, 'embarquement_vehicule_id');
     }
 
+    public function voyageRetour()
+    {
+        return $this->hasOne(Voyage::class, 'programme_id', 'programme_retour_id')
+                    ->whereDate('date_voyage', $this->date_retour);
+    }
+
     /**
      * Relation avec le voyage (mission spécifique du jour)
      * Note: Utiliser ->mission pour un accès fiable avec eager loading
@@ -128,7 +134,7 @@ class Reservation extends Model
     }
 
     /**
-     * Accesseur pour récupérer la mission d'aujourd'hui
+     * Accesseur pour récupérer la mission d'aujourd'hui (Aller)
      * Supporte l'eager loading via programme.voyages
      */
     public function getMissionAttribute()
@@ -147,9 +153,22 @@ class Reservation extends Model
                 return $vDate === $targetDate;
             });
         }
-
         // Sinon fallback sur la relation classique
         return $this->voyage;
+    }
+
+    /**
+     * Accesseur pour récupérer la mission de retour
+     */
+    public function getMissionRetourAttribute()
+    {
+        $targetDate = $this->date_retour instanceof \Carbon\Carbon 
+            ? $this->date_retour->toDateString() 
+            : $this->date_retour;
+
+        if (!$targetDate) return null;
+
+        return $this->voyageRetour;
     }
 
     // ========================================

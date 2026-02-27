@@ -304,7 +304,6 @@
                         </div>
                     </div>
 
-                    {{-- ============== ACTION BUTTONS SECTION (AFTER content) ============== --}}
                     @if($signalement->statut !== 'traite' && in_array($signalement->type, ['accident', 'panne', 'retard']))
                     <div class="mt-10 bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl border border-amber-200 p-6">
                         <div class="flex items-center gap-3 mb-5">
@@ -395,6 +394,109 @@
                                     </div>
                                 @endif
                             </div>
+                            @endif
+                        </div>
+                    </div>
+                    @endif
+
+                    {{-- ============== LOGISTIC ACTIONS SECTION (DECISION MAKING) ============== --}}
+                    @if($signalement->statut !== 'traite')
+                    <div class="mt-8 bg-white rounded-3xl border border-gray-100 shadow-xl p-8 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-gray-50 rounded-full -mr-16 -mt-16 opacity-50"></div>
+                        
+                        <div class="flex items-center gap-4 mb-8">
+                            <div class="w-12 h-12 bg-gray-900 rounded-2xl flex items-center justify-center shadow-lg shadow-gray-200">
+                                <i class="fas fa-gavel text-white text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-black text-gray-900 uppercase tracking-tight">Logistique & Décision finale</h3>
+                                <p class="text-sm text-gray-500 font-medium">Prenez une décision pour clore cet incident</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-6">
+                            {{-- CASE: ACCIDENT --}}
+                            @if($signalement->type === 'accident')
+                            <div class="bg-red-50 rounded-2xl p-6 border border-red-100">
+                                <h4 class="font-black text-red-700 uppercase tracking-wider text-xs mb-4 flex items-center gap-2">
+                                    <i class="fas fa-exclamation-circle text-red-500"></i> Procédure d'interruption (Accident)
+                                </h4>
+                                <p class="text-xs text-red-600 mb-6 font-medium leading-relaxed">
+                                    Cette action marquera le voyage comme <span class="font-bold">interrompu</span>. 
+                                    Le chauffeur sera mis au repos forcé et le véhicule sera immobilisé pour le reste de la journée conformément aux règles de sécurité.
+                                </p>
+                                <form action="{{ route('compagnie.signalements.interrupt', $signalement->id) }}" method="POST">
+                                    @csrf
+                                    <button type="submit" 
+                                        onclick="return confirm('Êtes-vous sûr de vouloir interrompre ce voyage ? Cela immobilisera le chauffeur et le car pour la journée.')"
+                                        class="w-full py-4 bg-red-600 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-xl shadow-red-200 hover:bg-red-700 transform hover:-translate-y-1 transition-all flex items-center justify-center gap-2">
+                                        <i class="fas fa-times-circle text-sm"></i> Confirmer l'interruption du voyage
+                                    </button>
+                                </form>
+                            </div>
+                            @endif
+
+                            {{-- CASE: PANNE --}}
+                            @if($signalement->type === 'panne')
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {{-- Reprendre la route --}}
+                                <div class="bg-green-50 rounded-2xl p-6 border border-green-100 flex flex-col justify-between">
+                                    <div>
+                                        <h4 class="font-black text-green-700 uppercase tracking-wider text-xs mb-3">La panne est réparée</h4>
+                                        <p class="text-[11px] text-green-600 mb-6 leading-relaxed">Le chauffeur confirme que le car peut reprendre sa route normalement.</p>
+                                    </div>
+                                    <form action="{{ route('compagnie.signalements.resume', $signalement->id) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="w-full py-4 bg-green-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-green-700 transition-all shadow-lg shadow-green-100">
+                                            Reprendre la route
+                                        </button>
+                                    </form>
+                                </div>
+
+                                {{-- Transbordement --}}
+                                <div class="bg-blue-50 rounded-2xl p-6 border border-blue-100 shadow-inner">
+                                    <h4 class="font-black text-blue-700 uppercase tracking-wider text-xs mb-3">Transbordement (Changement de car)</h4>
+                                    <p class="text-[11px] text-blue-600 mb-4 leading-relaxed">Envoyez un autre véhicule disponible pour récupérer les passagers.</p>
+                                    
+                                    <form action="{{ route('compagnie.signalements.transbordement', $signalement->id) }}" method="POST">
+                                        @csrf
+                                        <div class="space-y-3">
+                                            <select name="new_vehicule_id" required 
+                                                class="w-full px-4 py-3 bg-white border border-blue-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500">
+                                                <option value="" disabled selected>Choisir un car disponible...</option>
+                                                @forelse($availableVehicles ?? [] as $v)
+                                                    <option value="{{ $v->id }}">{{ $v->immatriculation }} — {{ $v->modele ?? 'Standard' }} ({{ $v->nombre_place }} places)</option>
+                                                @empty
+                                                    <option value="" disabled>Aucun car disponible au dépôt</option>
+                                                @endforelse
+                                            </select>
+                                            <button type="submit" 
+                                                class="w-full py-4 bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-100">
+                                                Assigner le nouveau car
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <div class="pt-4 border-t border-gray-100">
+                                <form action="{{ route('compagnie.signalements.interrupt', $signalement->id) }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="text-gray-400 hover:text-red-500 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 mx-auto">
+                                        <i class="fas fa-trash"></i> Ou alors annuler définitivement le voyage
+                                    </button>
+                                </form>
+                            </div>
+                            @endif
+
+                            {{-- CASE: OTHER (Default marquer traité) --}}
+                            @if(!in_array($signalement->type, ['accident', 'panne']))
+                            <form action="{{ route('compagnie.signalements.mark-traite', $signalement->id) }}" method="POST">
+                                @csrf
+                                <button type="submit" class="w-full py-5 bg-gray-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-gray-200">
+                                    Marquer comme incident résolu
+                                </button>
+                            </form>
                             @endif
                         </div>
                     </div>

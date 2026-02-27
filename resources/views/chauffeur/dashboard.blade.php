@@ -88,9 +88,23 @@
                                     </p>
                                 </div>
                                 <div class="flex sm:flex-col items-center sm:items-end gap-2">
-                                    <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full uppercase">
-                                        {{ $voyage->statut }}
-                                    </span>
+                                    @if($voyage->statut === 'interrompu')
+                                        <span class="px-3 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full uppercase flex items-center gap-1">
+                                            🚨 Interrompu
+                                        </span>
+                                    @elseif($voyage->statut === 'en_cours')
+                                        <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-full uppercase animate-pulse">
+                                            En cours
+                                        </span>
+                                    @elseif($voyage->statut === 'terminé')
+                                        <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full uppercase">
+                                            Terminé
+                                        </span>
+                                    @else
+                                        <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full uppercase">
+                                            {{ $voyage->statut }}
+                                        </span>
+                                    @endif
                                 </div>
                             </a>
                         @endforeach

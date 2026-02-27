@@ -16,9 +16,18 @@ class ChauffeurController extends Controller
     {
         $chauffeur = Auth::guard('chauffeur')->user();
         
+        // Un voyage interrompu reste visible 1h, puis disparaît du dashboard
+        $interruptionCutoff = Carbon::now()->subHour();
+
         $todayVoyages = Voyage::where('personnel_id', $chauffeur->id)
             ->whereDate('date_voyage', Carbon::today())
             ->where('statut', '!=', 'terminé') // On ne cache que les terminés
+            ->where(function ($q) use ($interruptionCutoff) {
+                // Garder tous les voyages qui ne sont pas interrompus
+                // OU les interrompus depuis moins d'1h
+                $q->where('statut', '!=', 'interrompu')
+                  ->orWhere('updated_at', '>=', $interruptionCutoff);
+            })
             ->with(['programme', 'vehicule', 'gareDepart', 'gareArrivee'])
             ->get();
 
