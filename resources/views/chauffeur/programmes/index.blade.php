@@ -126,6 +126,11 @@
                                     <i class="fas fa-spinner fa-spin"></i>
                                     En cours
                                 </span>
+                            @elseif($voyage->statut === 'interrompu')
+                                <span class="px-4 py-2 bg-red-100 text-red-700 rounded-xl font-semibold text-sm flex items-center gap-2">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    Interrompu
+                                </span>
                             @else
                                 <span class="px-4 py-2 bg-green-100 text-green-700 rounded-xl font-semibold text-sm flex items-center gap-2">
                                     <i class="fas fa-check-circle"></i>
@@ -267,6 +272,16 @@
                                     <i class="fas fa-exclamation-triangle text-xl"></i>
                                     Signaler un problème
                                 </a>
+                            </div>
+                        @elseif($voyage->statut === 'interrompu')
+                            <div class="bg-red-50 border border-red-200 p-4 rounded-xl">
+                                <div class="flex items-center gap-3">
+                                    <i class="fas fa-exclamation-circle text-red-500 text-2xl"></i>
+                                    <div>
+                                        <p class="text-red-700 font-semibold">Voyage interrompu</p>
+                                        <p class="text-red-500 text-sm mt-0.5">Ce voyage a été interrompu en raison d'un incident (accident ou panne). Aucune action n'est requise de votre part.</p>
+                                    </div>
+                                </div>
                             </div>
                         @else
                             <div class="bg-green-50 border border-green-200 p-4 rounded-xl text-center">

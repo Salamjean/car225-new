@@ -244,6 +244,11 @@ Route::middleware('compagnie')->prefix('company')->group(function () {
         Route::post('/{id}/alert-pompier', [CompagnieSignalementController::class, 'alertPompier'])->name('compagnie.signalements.alert-pompier');
         Route::patch('/{id}/mark-traite', [CompagnieSignalementController::class, 'markAsTraite'])->name('compagnie.signalements.mark-traite');
         Route::patch('/{id}/mark-read', [CompagnieSignalementController::class, 'markAsRead'])->name('compagnie.signalements.mark-read');
+        
+        // Actions de gestion de voyage
+        Route::post('/{id}/interrupt', [CompagnieSignalementController::class, 'interruptVoyage'])->name('compagnie.signalements.interrupt');
+        Route::post('/{id}/resume', [CompagnieSignalementController::class, 'resumeVoyage'])->name('compagnie.signalements.resume');
+        Route::post('/{id}/transbordement', [CompagnieSignalementController::class, 'transbordement'])->name('compagnie.signalements.transbordement');
     });
 
     // Routes de gestion des gares

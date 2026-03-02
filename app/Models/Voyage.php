@@ -90,6 +90,10 @@ class Voyage extends Model
      */
     public function getTempsRestantAttribute()
     {
+        if ($this->statut === 'interrompu') {
+            return "🚨 Voyage interrompu";
+        }
+
         if ($this->statut !== 'en_cours' || !$this->programme) {
             return null;
         }

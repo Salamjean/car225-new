@@ -90,8 +90,26 @@ class SignalementController extends Controller
         if (!$sapeurPompier && $signalement->latitude && $signalement->longitude) {
             $sapeurPompier = $this->findNearestSapeurPompier($signalement->latitude, $signalement->longitude);
         }
+        // Récupérer les véhicules disponibles pour un éventuel transbordement
+        // On filtre par la gare de départ ET le même nombre de places/type
+        $availableVehicles = collect();
+        if ($signalement->programme && $signalement->programme->gare_depart_id) {
+            $currentVehicule = $signalement->vehicule ?? $signalement->programme->vehicule;
+            
+            $query = \App\Models\Vehicule::where('gare_id', $signalement->programme->gare_depart_id)
+                ->where('statut', 'disponible')
+                ->where('is_active', true);
 
-        return view('compagnie.signalements.show', compact('signalement', 'gareDepart', 'sapeurPompier'));
+            // On s'assure que le nouveau car a au moins les mêmes caractéristiques
+            if ($currentVehicule) {
+                $query->where('nombre_place', $currentVehicule->nombre_place)
+                      ->where('type_range', $currentVehicule->type_range);
+            }
+
+            $availableVehicles = $query->get();
+        }
+
+        return view('compagnie.signalements.show', compact('signalement', 'gareDepart', 'sapeurPompier', 'availableVehicles'));
     }
 
     /**
@@ -259,6 +277,95 @@ class SignalementController extends Controller
         $signalement->save();
 
         return back()->with('success', 'Le signalement a été marqué comme traité.');
+    }
+
+    /**
+     * Action d'urgence : Interrompre le voyage suite à un accident.
+     * Libère le chauffeur et immobilise le véhicule pour la journée.
+     */
+    public function interruptVoyage($id)
+    {
+        $compagnieId = Auth::guard('compagnie')->id();
+
+        $signalement = Signalement::whereHas('programme', function ($q) use ($compagnieId) {
+            $q->where('compagnie_id', $compagnieId);
+        })->with(['voyage', 'vehicule', 'personnel'])->findOrFail($id);
+
+        // 1. Marquer le voyage comme interrompu (pour l'affichage utilisateur)
+        if ($signalement->voyage) {
+            $signalement->voyage->statut = 'interrompu';
+            $signalement->voyage->save();
+        }
+
+        // 2. Immobiliser le véhicule pour la journée (Accident)
+        if ($signalement->vehicule) {
+            $signalement->vehicule->statut = 'indisponible';
+            $signalement->vehicule->motif = 'Immobilisé suite à un accident';
+            $signalement->vehicule->is_active = false;
+            $signalement->vehicule->save();
+        }
+
+        // 3. Libérer le chauffeur mais le mettre au repos (Inapte pour aujourd'hui)
+        if ($signalement->personnel) {
+            $signalement->personnel->statut = 'indisponible'; // Ne pourra pas être repris aujourd'hui
+            $signalement->personnel->save();
+        }
+
+        // 4. Marquer le signalement comme traité
+        $signalement->statut = 'traite';
+        $signalement->save();
+
+        return back()->with('success', 'Le voyage a été interrompu. Le car et le chauffeur ont été mis hors service pour la journée.');
+    }
+
+    /**
+     * Action Panne : Reprendre la route (La panne a été réparée)
+     */
+    public function resumeVoyage($id)
+    {
+        $compagnieId = Auth::guard('compagnie')->id();
+        $signalement = Signalement::whereHas('programme', function ($q) use ($compagnieId) {
+            $q->where('compagnie_id', $compagnieId);
+        })->findOrFail($id);
+
+        $signalement->statut = 'traite';
+        $signalement->save();
+
+        return back()->with('success', 'Signalement de panne classé. Le voyage continue son cours.');
+    }
+
+    /**
+     * Action Panne : Transbordement (Changement de véhicule)
+     */
+    public function transbordement(Request $request, $id)
+    {
+        $compagnieId = Auth::guard('compagnie')->id();
+        $request->validate(['new_vehicule_id' => 'required|exists:vehicules,id']);
+
+        $signalement = Signalement::whereHas('programme', function ($q) use ($compagnieId) {
+            $q->where('compagnie_id', $compagnieId);
+        })->with(['voyage', 'vehicule'])->findOrFail($id);
+
+        if (!$signalement->voyage) {
+            return back()->with('error', 'Aucun voyage actif trouvé pour ce signalement.');
+        }
+
+        // 1. L'ancien véhicule passe en panne (donc indisponible)
+        if ($signalement->vehicule) {
+            $signalement->vehicule->statut = 'indisponible';
+            $signalement->vehicule->motif = 'Panne sur route - En attente de dépannage';
+            $signalement->vehicule->save();
+        }
+
+        // 2. Assigner le nouveau véhicule au voyage
+        $signalement->voyage->vehicule_id = $request->new_vehicule_id;
+        $signalement->voyage->save();
+
+        // 3. Clôre le signalement
+        $signalement->statut = 'traite';
+        $signalement->save();
+
+        return back()->with('success', 'Transbordement effectué. Un nouveau car a été assigné au voyage.');
     }
 
     /**

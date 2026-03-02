@@ -252,37 +252,55 @@
                     </td>
 
                     <td class="px-6 py-5 text-center">
-                        @if($reservation->statut == 'confirmee')
+                        @php
+                            $missionAller = $reservation->mission;
+                            $missionRetour = $reservation->mission_retour;
+                            
+                            $voyageActif = null;
+                            // Priorité au retour si l'aller est déjà fait ou si le retour est en cours
+                            if ($missionRetour && $missionRetour->statut === 'en_cours') {
+                                $voyageActif = $missionRetour;
+                            } elseif ($missionAller && $missionAller->statut === 'en_cours') {
+                                $voyageActif = $missionAller;
+                            }
+                        @endphp
+
+                        @if($voyageActif && $voyageActif->statut !== 'interrompu')
+                            <div class="flex flex-col items-center">
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 text-blue-700 text-[10px] font-black rounded-lg uppercase tracking-widest border border-blue-200 mb-1 shadow-sm">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span> En voyage
+                                </span>
+                                @php
+                                    $progMission = $voyageActif->programme;
+                                    $hArr = $progMission->heure_arrive;
+                                    $dVoy = $voyageActif->date_voyage instanceof \Carbon\Carbon ? $voyageActif->date_voyage->format('Y-m-d') : $voyageActif->date_voyage;
+                                    $targetArr = \Carbon\Carbon::parse($dVoy . ' ' . $hArr);
+                                    if (\Carbon\Carbon::parse($hArr)->lt(\Carbon\Carbon::parse($progMission->heure_depart))) {
+                                        $targetArr->addDay();
+                                    }
+                                @endphp
+                                <span class="text-[10px] font-mono font-black text-blue-600 bg-white border border-blue-100 px-2 py-0.5 rounded shadow-sm timer-display" 
+                                      data-arrival="{{ $targetArr->toIso8601String() }}">
+                                    --:--:--
+                                </span>
+                            </div>
+                        @elseif(($missionAller && $missionAller->statut === 'interrompu') || ($missionRetour && $missionRetour->statut === 'interrompu'))
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-100 text-red-700 text-[10px] font-black rounded-lg uppercase tracking-widest border border-red-200">
+                                <span class="w-1.5 h-1.5 rounded-full bg-red-600"></span> 🚨 Interrompu
+                            </span>
+                        @elseif($reservation->statut == 'confirmee')
                             <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-green-100">
                                 <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Confirmé
                             </span>
                         @elseif($reservation->statut == 'terminee')
                             @php
-                                $voyage = $reservation->mission;
-                                $voyageStatut = $voyage ? $voyage->statut : null;
+                                // Pour afficher "Arrivé" si tout est fini
+                                $isAllerDone = $reservation->statut_aller === 'terminee';
+                                $isRetourDone = !$reservation->is_aller_retour || $reservation->statut_retour === 'terminee';
+                                $mainMission = $reservation->is_aller_retour && $isAllerDone ? $missionRetour : $missionAller;
                             @endphp
-                            
-                            @if($voyageStatut === 'en_cours')
-                                <div class="flex flex-col items-center">
-                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-blue-100 mb-1">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span> En voyage
-                                    </span>
-                                    @if($voyage && $voyage->statut === 'en_cours')
-                                        @php
-                                            $dateV = \Carbon\Carbon::parse($reservation->date_voyage)->format('Y-m-d');
-                                            $arrTime = \Carbon\Carbon::parse($dateV . ' ' . $reservation->programme->heure_arrive);
-                                            // Handle cross-day arrival
-                                            if (\Carbon\Carbon::parse($reservation->programme->heure_arrive)->lt(\Carbon\Carbon::parse($reservation->programme->heure_depart))) {
-                                                $arrTime->addDay();
-                                            }
-                                        @endphp
-                                        <span class="text-[10px] font-mono font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded shadow-sm timer-display" 
-                                              data-arrival="{{ $arrTime->toIso8601String() }}">
-                                            --:--:--
-                                        </span>
-                                    @endif
-                                </div>
-                            @elseif($voyageStatut === 'terminé')
+
+                            @if($isAllerDone && $isRetourDone)
                                 <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-green-100">
                                     <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Arrivé
                                 </span>
