@@ -56,4 +56,10 @@ return [
        'redirect' => env('GOOGLE_REDIRECT_URL'),
     ],
 
+    'yellika' => [
+        'api_url' => env('YELLIKA_API_URL', 'http://app.1smsafrica.com/api/v3/'),
+        'api_key' => env('YELLIKA_API_KEY'),
+        'sender_id' => env('YELLIKA_SENDER_ID', 'Plateau app'),
+    ],
+
 ];

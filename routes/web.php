@@ -429,6 +429,9 @@ Route::prefix('user')->group(function () {
     Route::post('/login', [UserAuthenticate::class, 'handleLogin'])->name('user.handleLogin');
     Route::get('/register', [UserAuthenticate::class, 'register'])->name('user.register');
     Route::post('/register', [UserAuthenticate::class, 'handleRegister'])->name('user.handleRegister');
+    Route::get('/verify-otp', [UserAuthenticate::class, 'showVerifyOtp'])->name('user.verify-otp');
+    Route::post('/verify-otp', [UserAuthenticate::class, 'handleVerifyOtp'])->name('user.verify-otp.submit');
+    Route::post('/resend-otp', [UserAuthenticate::class, 'resendOtp'])->name('user.resend-otp');
 
   
     // Password Reset Routes
@@ -445,6 +448,7 @@ Route::middleware('auth')->prefix('user')->group(function () {
 
     // Wallet Routes
     Route::get('/compte', [WalletController::class, 'index'])->name('user.wallet.index');
+    Route::get('/compte/recharges', [WalletController::class, 'rechargeHistory'])->name('user.wallet.recharges');
     Route::post('/compte/recharge', [WalletController::class, 'recharge'])->name('user.wallet.recharge');
     Route::post('/compte/retrait', [WalletController::class, 'withdraw'])->name('user.wallet.withdraw');
     Route::post('/compte/verify', [WalletController::class, 'verifyRecharge'])->name('user.wallet.verify');

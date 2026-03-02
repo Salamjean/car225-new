@@ -83,12 +83,26 @@
             </div>
         </div>
 
-        <!-- Historique -->
+        {{-- ===== HISTORIQUE ===== --}}
         <div class="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
-            <div class="p-6 border-b border-gray-50 bg-gray-50 flex justify-between items-center">
-                <h3 class="text-lg font-black text-gray-900">Historique des transactions</h3>
+
+            {{-- Header du bloc avec bouton "Voir tout" --}}
+            <div class="px-6 py-5 border-b border-gray-100 flex flex-row items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-list text-gray-500 text-sm"></i>
+                    </div>
+                    <h3 class="text-lg font-black text-gray-900">Historique des transactions</h3>
+                    <span class="text-xs font-bold text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full">5 dernières</span>
+                </div>
+                <a href="{{ route('user.wallet.recharges') }}"
+                   style="display:inline-flex; align-items:center; gap:8px; background:#e94f1b; color:white; padding:8px 16px; border-radius:12px; font-weight:700; font-size:13px; text-decoration:none;">
+                    <i class="fas fa-history"></i>
+                    Voir tout
+                    <i class="fas fa-arrow-right"></i>
+                </a>
             </div>
-            
+
             <div class="overflow-x-auto">
                 <table class="w-full">
                     <thead class="bg-gray-50">
@@ -109,8 +123,8 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">
                                 {{ $transaction->reference }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                {{ $transaction->description }}
+                            <td class="px-6 py-4 text-sm text-gray-700">
+                                {{ Str::limit($transaction->description, 50) }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-black {{ $transaction->type == 'credit' ? 'text-green-600' : 'text-red-600' }}">
                                 {{ $transaction->type == 'credit' ? '+' : '-' }} {{ number_format($transaction->amount, 0, ',', ' ') }} FCFA
@@ -128,7 +142,7 @@
                         @empty
                         <tr>
                             <td colspan="5" class="px-6 py-12 text-center text-gray-400">
-                                <i class="fas fa-inbox text-4xl mb-3"></i>
+                                <i class="fas fa-inbox text-4xl mb-3 block"></i>
                                 <p>Aucune transaction pour le moment</p>
                             </td>
                         </tr>
@@ -136,12 +150,15 @@
                     </tbody>
                 </table>
             </div>
-            
-            @if($transactions->hasPages())
-            <div class="p-4 border-t border-gray-50">
-                {{ $transactions->links() }}
+
+            {{-- Pied du tableau avec lien "Voir tout l'historique" --}}
+            <div class="px-6 py-4 border-t border-gray-100 bg-gray-50/50 text-center">
+                <a href="{{ route('user.wallet.recharges') }}"
+                   class="text-sm font-bold text-[#e94f1b] hover:underline">
+                    → Voir l'historique complet avec filtres et recherche
+                </a>
             </div>
-            @endif
+
         </div>
 
     </div>

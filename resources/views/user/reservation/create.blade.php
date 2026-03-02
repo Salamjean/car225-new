@@ -3985,10 +3985,10 @@ function proceedToPassengerInfoFromRetour() {
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                                <input type="email" name="passenger_${seat}_email" required
+                                <input type="email" name="passenger_${seat}_email"
                                     value="${defaultEmail}"
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all"
-                                    placeholder="email@exemple.com">
+                                    placeholder="email@exemple.com (optionnel)">
                             </div>
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Contact d'urgence (Nom & Tél)</label>
@@ -4086,7 +4086,7 @@ function proceedToPassengerInfoFromRetour() {
                 const email = emailEl ? emailEl.value.trim() : '';
                 const urgence = urgenceEl ? urgenceEl.value.trim() : '';
 
-                if (!nom || !prenom || !telephone || !email || !urgence) {
+                if (!nom || !prenom || !telephone || !urgence) {
                     isValid = false;
                 }
 
@@ -4198,7 +4198,7 @@ function proceedToPassengerInfoFromRetour() {
                          showCancelButton: true,
                          showDenyButton: true,
                          confirmButtonText: `<i class="fas fa-wallet mr-2"></i>Mon Compte Solde`,
-                         denyButtonText: `<i class="fas fa-mobile-alt mr-2"></i>Mobile Money (CinetPay)`,
+                         denyButtonText: `<i class="fas fa-mobile-alt mr-2"></i>Mobile Money`,
                          confirmButtonColor: '#e94f1b',
                          denyButtonColor: '#2dce89',
                          cancelButtonText: 'Annuler',

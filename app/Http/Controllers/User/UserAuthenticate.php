@@ -4,6 +4,7 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\SmsService;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -15,6 +16,13 @@ use Laravel\Socialite\Facades\Socialite;
 
 class UserAuthenticate extends Controller
 {
+    protected SmsService $smsService;
+
+    public function __construct(SmsService $smsService)
+    {
+        $this->smsService = $smsService;
+    }
+
     public function login()
     {
         if (auth('web')->check()) {
@@ -39,6 +47,28 @@ class UserAuthenticate extends Controller
             ])->withInput($request->except('password'));
         }
 
+        $user = Auth::user();
+
+        // Vérifier si le numéro de téléphone est vérifié
+        if (!$user->phone_verified_at && $user->contact) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            // Envoyer un nouveau code OTP
+            $this->smsService->sendOtp($user->contact, $user->prenom, $user->name);
+
+            // Stocker le contact et le nom en session pour la page de vérification
+            session([
+                'otp_contact' => $user->contact,
+                'otp_prenom' => $user->prenom,
+                'otp_nom' => $user->name,
+            ]);
+
+            return redirect()->route('user.verify-otp')
+                ->with('info', 'Veuillez vérifier votre numéro de téléphone pour continuer.');
+        }
+
         $request->session()->regenerate();
 
         return redirect()->intended(route('reservation.create', absolute: false))->with('success', 'Bienvenue sur votre page!');
@@ -52,13 +82,27 @@ class UserAuthenticate extends Controller
 
     public function handleRegister(Request $request): RedirectResponse
     {
+        // Supprimer les comptes non vérifiés avec le même contact (permet la re-inscription)
+        if ($request->input('contact')) {
+            User::where('contact', $request->input('contact'))
+                ->whereNull('phone_verified_at')
+                ->whereNull('google_id') // Protéger les comptes Google existants
+                ->delete();
+        }
+        if ($request->input('email')) {
+            User::where('email', $request->input('email'))
+                ->whereNull('phone_verified_at')
+                ->whereNull('google_id') // Protéger les comptes Google existants
+                ->delete();
+        }
+
         $validated = $request->validate(
             [
                 'name' => 'required|string|max:255',
                 'prenom' => 'required|string|max:255',
-                'email' => 'required|email|unique:users,email',
+                'email' => 'nullable|email|unique:users,email',
                 'password' => 'required|min:8|confirmed',
-                'contact' => 'required|string|max:255',
+                'contact' => 'required|string|max:255|unique:users,contact',
                 'photo_profile' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             ],
             [
@@ -73,7 +117,6 @@ class UserAuthenticate extends Controller
                 'prenom.max' => 'Le prénom ne doit pas dépasser 255 caractères.',
 
                 // Email
-                'email.required' => 'L\'adresse email est obligatoire.',
                 'email.email' => 'Veuillez saisir une adresse email valide.',
                 'email.unique' => 'Cette adresse email est déjà utilisée.',
 
@@ -86,6 +129,7 @@ class UserAuthenticate extends Controller
                 'contact.required' => 'Le numéro de contact est obligatoire.',
                 'contact.string' => 'Le contact doit être une chaîne de caractères.',
                 'contact.max' => 'Le contact ne doit pas dépasser 255 caractères.',
+                'contact.unique' => 'Ce numéro de téléphone est déjà utilisé par un compte vérifié.',
 
                 // Photo de profil
                 'photo_profile.image' => 'Le fichier doit être une image.',
@@ -112,11 +156,26 @@ class UserAuthenticate extends Controller
                 $userData['photo_profile_path'] = $photoPath;
             }
 
-            // Création de l'utilisateur
+            // Création de l'utilisateur (phone_verified_at reste null)
             User::create($userData);
 
-            return redirect()->route('login')
-                ->with('success', 'Votre compte a été créé avec succès. Vous pouvez vous connecter.');
+            // Envoyer le code OTP par SMS
+            $result = $this->smsService->sendOtp($validated['contact'], $validated['prenom'], $validated['name']);
+
+            // Stocker le contact et le nom en session pour la page de vérification
+            session([
+                'otp_contact' => $validated['contact'],
+                'otp_prenom' => $validated['prenom'],
+                'otp_nom' => $validated['name'],
+            ]);
+
+            if ($result['success']) {
+                return redirect()->route('user.verify-otp')
+                    ->with('success', 'Votre compte a été créé ! Un code de vérification a été envoyé au ' . $this->maskPhone($validated['contact']) . '.');
+            } else {
+                return redirect()->route('user.verify-otp')
+                    ->with('warning', 'Votre compte a été créé mais l\'envoi du SMS a échoué. Vous pouvez renvoyer le code.');
+            }
         } catch (\Exception $e) {
             // Log l'erreur pour le débogage
             Log::error('Erreur lors de la création du compte: ' . $e->getMessage());
@@ -125,6 +184,98 @@ class UserAuthenticate extends Controller
                 ->with('error', 'Une erreur est survenue lors de la création du compte. Veuillez réessayer.')
                 ->withInput();
         }
+    }
+
+    /**
+     * Afficher la page de vérification OTP
+     */
+    public function showVerifyOtp()
+    {
+        $contact = session('otp_contact');
+
+        if (!$contact) {
+            return redirect()->route('user.register')
+                ->with('error', 'Veuillez d\'abord vous inscrire.');
+        }
+
+        $maskedPhone = $this->maskPhone($contact);
+
+        return view('user.auth.verify-otp', compact('maskedPhone', 'contact'));
+    }
+
+    /**
+     * Vérifier le code OTP
+     */
+    public function handleVerifyOtp(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'otp' => 'required|string|size:6',
+        ], [
+            'otp.required' => 'Le code de vérification est obligatoire.',
+            'otp.size' => 'Le code doit contenir exactement 6 chiffres.',
+        ]);
+
+        $contact = session('otp_contact');
+
+        if (!$contact) {
+            return redirect()->route('user.register')
+                ->with('error', 'Session expirée. Veuillez vous réinscrire.');
+        }
+
+        if ($this->smsService->verifyOtp($contact, $request->input('otp'))) {
+            // Mettre à jour le champ phone_verified_at
+            User::where('contact', $contact)->update([
+                'phone_verified_at' => now(),
+            ]);
+
+            // Nettoyer la session
+            session()->forget('otp_contact');
+
+            // Supprimer les OTP
+            $this->smsService->deleteOtp($contact);
+
+            return redirect()->route('login')
+                ->with('success', 'Votre numéro a été vérifié avec succès ! Vous pouvez maintenant vous connecter.');
+        }
+
+        return redirect()->back()
+            ->withErrors(['otp' => 'Code de vérification invalide ou expiré.']);
+    }
+
+    /**
+     * Renvoyer le code OTP
+     */
+    public function resendOtp(): RedirectResponse
+    {
+        $contact = session('otp_contact');
+
+        if (!$contact) {
+            return redirect()->route('user.register')
+                ->with('error', 'Session expirée. Veuillez vous réinscrire.');
+        }
+
+        $prenom = session('otp_prenom', '');
+        $nom = session('otp_nom', '');
+        $result = $this->smsService->sendOtp($contact, $prenom, $nom);
+
+        if ($result['success']) {
+            return redirect()->back()
+                ->with('success', 'Un nouveau code a été envoyé au ' . $this->maskPhone($contact) . '.');
+        }
+
+        return redirect()->back()
+            ->with('error', 'Échec de l\'envoi du SMS. Veuillez réessayer.');
+    }
+
+    /**
+     * Masquer le numéro de téléphone (ex: 07****88)
+     */
+    protected function maskPhone(string $phone): string
+    {
+        $length = strlen($phone);
+        if ($length <= 4) return $phone;
+
+        return substr($phone, 0, 2) . str_repeat('*', $length - 4) . substr($phone, -2);
     }
 
     public function redirectToGoogle()
@@ -172,6 +323,8 @@ class UserAuthenticate extends Controller
         }
         
         // Création d'un nouvel utilisateur
+        $contact = !empty($googleUser->user['phone_number']) ? $googleUser->user['phone_number'] : null;
+        
         $user = User::create([
             'name' => $googleUser->user['family_name'] ?? $googleUser->name,
             'prenom' => $googleUser->user['given_name'] ?? '',
@@ -179,8 +332,9 @@ class UserAuthenticate extends Controller
             'google_id' => $googleUser->id,
             'photo_profile_path' => $photoProfilePath,
             'email_verified_at' => now(),
+            'phone_verified_at' => now(), // Considérer auto-vérifié via Google
             'password' => Hash::make(Str::random(24)),
-            'contact' => $googleUser->user['phone_number'] ?? null,
+            'contact' => $contact,
         ]);
 
         Auth::login($user);
@@ -189,7 +343,7 @@ class UserAuthenticate extends Controller
 
     } catch (\Exception $e) {
         Log::error('Erreur Google Login: ' . $e->getMessage());
-        return redirect()->route('login')->with('error', 'Erreur lors de la connexion avec Google.');
+        return redirect()->route('login')->with('error', 'Erreur lors de la connexion avec Google. ' . $e->getMessage());
     }
 }
 }

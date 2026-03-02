@@ -1542,7 +1542,7 @@ class ReservationApiController extends Controller
                 'passagers' => 'required|array',
                 'passagers.*.nom' => 'required|string',
                 'passagers.*.prenom' => 'required|string',
-                'passagers.*.email' => 'required|email',
+                'passagers.*.email' => 'nullable|email',
                 'passagers.*.telephone' => 'required|string',
                 'passagers.*.urgence' => 'required|string',
                 'passagers.*.seat_number' => 'required|integer',
@@ -1939,6 +1939,20 @@ class ReservationApiController extends Controller
                     }
                 }
 
+                // Envoyer un SMS de confirmation au client
+                try {
+                    $smsService = app(\App\Services\SmsService::class);
+                    $smsService->sendReservationSms(
+                        $createdReservations,
+                        $programme,
+                        Auth::user(),
+                        $isAllerRetour,
+                        $dateRetour
+                    );
+                } catch (\Exception $e) {
+                    Log::error('Erreur envoi SMS réservation API wallet: ' . $e->getMessage());
+                }
+
                 // Réponse pour paiement Wallet (PAS DE LIEN DE PAIEMENT)
                 return response()->json([
                     'success' => true,
@@ -2304,6 +2318,23 @@ class ReservationApiController extends Controller
                             $reservation->is_aller_retour ? 'ALLER-RETOUR' : 'ALLER SIMPLE'
                         );
 
+                        // Envoyer SMS de confirmation
+                        try {
+                            $smsService = app(\App\Services\SmsService::class);
+                            $user = $reservation->user ?? \App\Models\User::find($reservation->user_id);
+                            if ($user) {
+                                $smsService->sendReservationSms(
+                                    [$reservation],
+                                    $reservation->programme,
+                                    $user,
+                                    $reservation->is_aller_retour ?? false,
+                                    $reservation->date_retour
+                                );
+                            }
+                        } catch (\Exception $e) {
+                            Log::error('Erreur envoi SMS réservation webhook: ' . $e->getMessage());
+                        }
+
                         Log::info('Email envoyé pour réservation:', ['id' => $reservation->id]);
 
                     } catch (\Exception $e) {
@@ -2589,6 +2620,23 @@ class ReservationApiController extends Controller
                             $reservation->seat_number,
                             $reservation->is_aller_retour ? 'ALLER-RETOUR' : 'ALLER SIMPLE'
                         );
+
+                        // Envoyer SMS de confirmation
+                        try {
+                            $smsService = app(\App\Services\SmsService::class);
+                            $user = $reservation->user ?? \App\Models\User::find($reservation->user_id);
+                            if ($user) {
+                                $smsService->sendReservationSms(
+                                    [$reservation],
+                                    $reservation->programme,
+                                    $user,
+                                    $reservation->is_aller_retour ?? false,
+                                    $reservation->date_retour
+                                );
+                            }
+                        } catch (\Exception $e2) {
+                            Log::error('Erreur envoi SMS vérification paiement: ' . $e2->getMessage());
+                        }
 
                     } catch (\Exception $e) {
                         Log::error("Erreur confirmation réservation {$reservation->id}: " . $e->getMessage());
