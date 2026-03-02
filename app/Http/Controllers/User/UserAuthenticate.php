@@ -86,11 +86,13 @@ class UserAuthenticate extends Controller
         if ($request->input('contact')) {
             User::where('contact', $request->input('contact'))
                 ->whereNull('phone_verified_at')
+                ->whereNull('google_id') // Protéger les comptes Google existants
                 ->delete();
         }
         if ($request->input('email')) {
             User::where('email', $request->input('email'))
                 ->whereNull('phone_verified_at')
+                ->whereNull('google_id') // Protéger les comptes Google existants
                 ->delete();
         }
 
@@ -321,6 +323,8 @@ class UserAuthenticate extends Controller
         }
         
         // Création d'un nouvel utilisateur
+        $contact = !empty($googleUser->user['phone_number']) ? $googleUser->user['phone_number'] : null;
+        
         $user = User::create([
             'name' => $googleUser->user['family_name'] ?? $googleUser->name,
             'prenom' => $googleUser->user['given_name'] ?? '',
@@ -328,8 +332,9 @@ class UserAuthenticate extends Controller
             'google_id' => $googleUser->id,
             'photo_profile_path' => $photoProfilePath,
             'email_verified_at' => now(),
+            'phone_verified_at' => now(), // Considérer auto-vérifié via Google
             'password' => Hash::make(Str::random(24)),
-            'contact' => $googleUser->user['phone_number'] ?? null,
+            'contact' => $contact,
         ]);
 
         Auth::login($user);
@@ -338,7 +343,7 @@ class UserAuthenticate extends Controller
 
     } catch (\Exception $e) {
         Log::error('Erreur Google Login: ' . $e->getMessage());
-        return redirect()->route('login')->with('error', 'Erreur lors de la connexion avec Google.');
+        return redirect()->route('login')->with('error', 'Erreur lors de la connexion avec Google. ' . $e->getMessage());
     }
 }
 }

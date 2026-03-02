@@ -718,7 +718,7 @@ class ReservationController extends Controller
             'passagers' => 'required|array',
             'passagers.*.nom' => 'required|string',
             'passagers.*.prenom' => 'required|string',
-            'passagers.*.email' => 'required|email',
+            'passagers.*.email' => 'nullable|email',
             'passagers.*.telephone' => 'required|string',
             'passagers.*.urgence' => 'required|string',
             'passagers.*.seat_number' => 'required|integer',
@@ -1298,8 +1298,21 @@ $dateAller = $request->date_voyage;
                          ]);
                      }
                  }
-             }
+              }
 
+              // Envoyer un SMS de confirmation au client
+              try {
+                  $smsService = app(\App\Services\SmsService::class);
+                  $smsService->sendReservationSms(
+                      $createdReservations,
+                      $programme,
+                      Auth::user(),
+                      $isAllerRetour,
+                      $dateRetour
+                  );
+              } catch (\Exception $e) {
+                  Log::error('Erreur envoi SMS réservation: ' . $e->getMessage());
+              }
              // Real-time update for Seat Map (Wallet)
              try {
                 $dateVoyageStr = $dateVoyage instanceof \Carbon\Carbon ? $dateVoyage->format('Y-m-d') : $dateVoyage;

@@ -4,15 +4,24 @@ namespace App\Http\Controllers\Api\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\SmsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Carbon\Carbon;
 
 class AuthController extends Controller
 {
+    protected SmsService $smsService;
+
+    public function __construct(SmsService $smsService)
+    {
+        $this->smsService = $smsService;
+    }
     /**
      * Connexion utilisateur
      */
@@ -42,6 +51,19 @@ class AuthController extends Controller
                     'login' => ['Les identifiants fournis sont incorrects.']
                 ]
             ], 422);
+        }
+
+        // Vérifier si le numéro de téléphone est vérifié
+        if (!$user->phone_verified_at && $user->contact) {
+            // Envoyer un nouveau code OTP
+            $this->smsService->sendOtp($user->contact, $user->prenom, $user->name);
+
+            return response()->json([
+                'success' => true,
+                'requires_otp' => true,
+                'message' => 'Votre numéro de téléphone n\'est pas encore vérifié. Un code OTP a été envoyé.',
+                'contact' => $user->contact,
+            ], 200);
         }
 
         // Vérifier si le compte est désactivé
@@ -131,42 +153,45 @@ class AuthController extends Controller
      */
     public function register(Request $request)
     {
+        // Supprimer les comptes non vérifiés avec le même contact (permet la re-inscription)
+        if ($request->input('contact')) {
+            User::where('contact', $request->input('contact'))
+                ->whereNull('phone_verified_at')
+                ->whereNull('google_id') // Protéger les comptes Google existants
+                ->delete();
+        }
+        if ($request->input('email')) {
+            User::where('email', $request->input('email'))
+                ->whereNull('phone_verified_at')
+                ->whereNull('google_id') // Protéger les comptes Google existants
+                ->delete();
+        }
+
         $validated = $request->validate(
             [
                 'name' => 'required|string|max:255',
                 'prenom' => 'required|string|max:255',
-                'email' => 'required|email|unique:users,email',
+                'email' => 'nullable|email|unique:users,email',
                 'password' => 'required|min:8|confirmed',
-                'contact' => 'required|string|max:255',
+                'contact' => 'required|string|max:255|unique:users,contact',
                 'photo_profile' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             ],
             [
-                // Nom
                 'name.required' => 'Le nom est obligatoire.',
                 'name.string' => 'Le nom doit être une chaîne de caractères.',
                 'name.max' => 'Le nom ne doit pas dépasser 255 caractères.',
-
-                // Prénom
                 'prenom.required' => 'Le prénom est obligatoire.',
                 'prenom.string' => 'Le prénom doit être une chaîne de caractères.',
                 'prenom.max' => 'Le prénom ne doit pas dépasser 255 caractères.',
-
-                // Email
-                'email.required' => 'L\'adresse email est obligatoire.',
                 'email.email' => 'Veuillez saisir une adresse email valide.',
                 'email.unique' => 'Cette adresse email est déjà utilisée.',
-
-                // Mot de passe
                 'password.required' => 'Le mot de passe est obligatoire.',
                 'password.min' => 'Le mot de passe doit contenir au moins 8 caractères.',
                 'password.confirmed' => 'Les mots de passe ne correspondent pas.',
-
-                // Contact
                 'contact.required' => 'Le numéro de contact est obligatoire.',
                 'contact.string' => 'Le contact doit être une chaîne de caractères.',
                 'contact.max' => 'Le contact ne doit pas dépasser 255 caractères.',
-
-                // Photo de profil
+                'contact.unique' => 'Ce numéro de téléphone est déjà utilisé par un compte vérifié.',
                 'photo_profile.image' => 'Le fichier doit être une image.',
                 'photo_profile.mimes' => 'L\'image doit être au format : jpeg, png, jpg ou gif.',
                 'photo_profile.max' => 'L\'image ne doit pas dépasser 2 Mo.',
@@ -177,7 +202,7 @@ class AuthController extends Controller
             $userData = [
                 'name' => $validated['name'],
                 'prenom' => $validated['prenom'],
-                'email' => $validated['email'],
+                'email' => $validated['email'] ?? null,
                 'contact' => $validated['contact'],
                 'password' => Hash::make($validated['password']),
             ];
@@ -190,14 +215,20 @@ class AuthController extends Controller
                 $userData['photo_profile_path'] = $photoPath;
             }
 
+            // Créer l'utilisateur (phone_verified_at reste null)
             $user = User::create($userData);
 
-            // Créer un token pour l'utilisateur
-            $token = $user->createToken('mobile-app')->plainTextToken;
+            // Envoyer le code OTP par SMS
+            $result = $this->smsService->sendOtp($validated['contact'], $validated['prenom'], $validated['name']);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Inscription réussie',
+                'requires_otp' => true,
+                'message' => $result['success']
+                    ? 'Inscription réussie ! Un code de vérification a été envoyé à votre numéro.'
+                    : 'Inscription réussie mais l\'envoi du SMS a échoué. Vous pouvez renvoyer le code.',
+                'sms_sent' => $result['success'],
+                'contact' => $validated['contact'],
                 'user' => [
                     'id' => $user->id,
                     'code_id' => $user->code_id,
@@ -207,18 +238,133 @@ class AuthController extends Controller
                     'contact' => $user->contact,
                     'photo_profile_path' => $user->photo_profile_path ? 'storage/' . $user->photo_profile_path : null,
                 ],
-                'token' => $token,
-                'token_type' => 'Bearer',
             ], 201);
 
         } catch (\Exception $e) {
-            Log::error('Erreur lors de l\'inscription: ' . $e->getMessage());
+            Log::error('Erreur lors de l\'inscription API: ' . $e->getMessage());
             
             return response()->json([
                 'success' => false,
                 'message' => 'Une erreur est survenue lors de l\'inscription.',
             ], 500);
         }
+    }
+
+    /**
+     * Vérifier le code OTP du téléphone (inscription/login)
+     */
+    public function verifyPhoneOtp(Request $request)
+    {
+        $request->validate([
+            'contact' => 'required|string',
+            'otp' => 'required|string|size:6',
+        ], [
+            'contact.required' => 'Le numéro de contact est obligatoire.',
+            'otp.required' => 'Le code OTP est obligatoire.',
+            'otp.size' => 'Le code OTP doit contenir exactement 6 chiffres.',
+        ]);
+
+        // Vérifier le code OTP
+        $otpRecord = DB::table('user_otp_codes')
+            ->where('contact', $request->contact)
+            ->where('verified', false)
+            ->first();
+
+        if (!$otpRecord) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Aucun code OTP trouvé pour ce numéro. Veuillez en demander un nouveau.',
+            ], 422);
+        }
+
+        // Vérifier l'expiration
+        if (Carbon::parse($otpRecord->expires_at)->isPast()) {
+            DB::table('user_otp_codes')->where('id', $otpRecord->id)->delete();
+            return response()->json([
+                'success' => false,
+                'message' => 'Le code OTP a expiré. Veuillez en demander un nouveau.',
+            ], 422);
+        }
+
+        // Vérifier le code
+        if ($otpRecord->code !== $request->otp) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Le code OTP est incorrect.',
+            ], 422);
+        }
+
+        // Marquer le code comme vérifié
+        DB::table('user_otp_codes')->where('id', $otpRecord->id)->update(['verified' => true]);
+
+        // Marquer le téléphone comme vérifié
+        $user = User::where('contact', $request->contact)->first();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Utilisateur introuvable.',
+            ], 404);
+        }
+
+        $user->phone_verified_at = now();
+        $user->save();
+
+        // Créer le token d'authentification
+        $token = $user->createToken('mobile-app')->plainTextToken;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Numéro de téléphone vérifié avec succès !',
+            'user' => [
+                'id' => $user->id,
+                'code_id' => $user->code_id,
+                'name' => $user->name,
+                'prenom' => $user->prenom,
+                'email' => $user->email,
+                'contact' => $user->contact,
+                'photo_profile_path' => $user->photo_profile_path ? 'storage/' . $user->photo_profile_path : null,
+                'phone_verified_at' => $user->phone_verified_at,
+            ],
+            'token' => $token,
+            'token_type' => 'Bearer',
+        ]);
+    }
+
+    /**
+     * Renvoyer le code OTP
+     */
+    public function resendPhoneOtp(Request $request)
+    {
+        $request->validate([
+            'contact' => 'required|string',
+        ], [
+            'contact.required' => 'Le numéro de contact est obligatoire.',
+        ]);
+
+        $user = User::where('contact', $request->contact)->first();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Aucun compte trouvé avec ce numéro.',
+            ], 404);
+        }
+
+        if ($user->phone_verified_at) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ce numéro est déjà vérifié.',
+            ], 422);
+        }
+
+        $result = $this->smsService->sendOtp($request->contact, $user->prenom, $user->name);
+
+        return response()->json([
+            'success' => $result['success'],
+            'message' => $result['success']
+                ? 'Un nouveau code OTP a été envoyé à votre numéro.'
+                : 'Échec de l\'envoi du SMS. Veuillez réessayer.',
+        ]);
     }
 
     /**

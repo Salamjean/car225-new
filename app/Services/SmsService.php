@@ -29,6 +29,10 @@ class SmsService
             // Formater le numéro au format international ivoirien si nécessaire
             $to = $this->formatPhoneNumber($to);
 
+            // Convertir le message en ASCII pur (pas d'accents/Unicode)
+            // L'API 1SMS Africa ne supporte pas les SMS Unicode
+            $message = $this->stripAccents($message);
+
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $this->apiKey,
                 'Accept' => 'application/json',
@@ -170,5 +174,160 @@ class SmsService
 
         // Sinon, ajouter +225 devant le numéro complet (garder le 0)
         return '+225' . $phone;
+    }
+
+    /**
+     * Supprimer les accents et caractères Unicode d'un texte
+     * Nécessaire car l'API 1SMS Africa ne supporte pas les SMS Unicode
+     */
+    protected function stripAccents(string $text): string
+    {
+        $search  = ['à','á','â','ã','ä','å','æ','ç','è','é','ê','ë','ì','í','î','ï','ð','ñ','ò','ó','ô','õ','ö','ù','ú','û','ü','ý','ÿ',
+                    'À','Á','Â','Ã','Ä','Å','Æ','Ç','È','É','Ê','Ë','Ì','Í','Î','Ï','Ð','Ñ','Ò','Ó','Ô','Õ','Ö','Ù','Ú','Û','Ü','Ý',
+                    '→','←','✅','❌','📱','🔒','ø','Ø','œ','Œ'];
+        $replace = ['a','a','a','a','a','a','ae','c','e','e','e','e','i','i','i','i','d','n','o','o','o','o','o','u','u','u','u','y','y',
+                    'A','A','A','A','A','A','AE','C','E','E','E','E','I','I','I','I','D','N','O','O','O','O','O','U','U','U','U','Y',
+                    '->','<-','','','','','o','O','oe','OE'];
+
+        $text = str_replace($search, $replace, $text);
+
+        // Supprimer tout caractère non-ASCII restant (emojis, symboles spéciaux)
+        $text = preg_replace('/[^\x20-\x7E\n]/', '', $text);
+
+        return $text;
+    }
+
+    /**
+     * Envoyer des SMS de confirmation de reservation
+     * Envoie 2 SMS separes pour les aller-retour (1 pour aller, 1 pour retour)
+     */
+    public function sendReservationSms(
+        array $reservations,
+        $programme,
+        $user,
+        bool $isAllerRetour = false,
+        ?string $dateRetour = null
+    ): bool {
+        try {
+            // Determiner le numero du destinataire
+            $phone = $user->contact ?? null;
+            if (!$phone && !empty($reservations)) {
+                $phone = $reservations[0]->passager_telephone ?? null;
+            }
+
+            if (!$phone) {
+                Log::warning('SMS Reservation: aucun numero de telephone disponible', [
+                    'user_id' => $user->id ?? null,
+                ]);
+                return false;
+            }
+
+            // Nom du client
+            $clientName = trim(($user->prenom ?? '') . ' ' . ($user->name ?? ''));
+            if (empty($clientName) && !empty($reservations)) {
+                $clientName = trim(($reservations[0]->passager_prenom ?? '') . ' ' . ($reservations[0]->passager_nom ?? ''));
+            }
+
+            // Charger les infos gare (nom_gare est le champ du modele Gare)
+            $gareDepart = '';
+            $gareArrivee = '';
+            $gareDepartId = $reservations[0]->gare_depart_id ?? ($programme->gare_depart_id ?? null);
+            $gareArriveeId = $reservations[0]->gare_arrivee_id ?? ($programme->gare_arrivee_id ?? null);
+
+            if ($gareDepartId) {
+                $gare = \App\Models\Gare::find($gareDepartId);
+                $gareDepart = $gare ? $gare->nom_gare : '';
+            }
+            if ($gareArriveeId) {
+                $gare = \App\Models\Gare::find($gareArriveeId);
+                $gareArrivee = $gare ? $gare->nom_gare : '';
+            }
+
+            // Heure de depart
+            $heureDepart = $programme->heure_depart ? substr($programme->heure_depart, 0, 5) : 'N/A';
+
+            // Separer les reservations aller et retour par reference
+            $allerReservations = [];
+            $retourReservations = [];
+
+            foreach ($reservations as $reservation) {
+                if (str_contains(strtoupper($reservation->reference ?? ''), '-RET-')) {
+                    $retourReservations[] = $reservation;
+                } else {
+                    $allerReservations[] = $reservation;
+                }
+            }
+
+            $result = true;
+
+            // ======== SMS ALLER ========
+            if (!empty($allerReservations)) {
+                $allerSeats = [];
+                $allerRefs = [];
+                foreach ($allerReservations as $res) {
+                    if ($res->seat_number) $allerSeats[] = $res->seat_number;
+                    if ($res->reference && !in_array($res->reference, $allerRefs)) {
+                        $allerRefs[] = $res->reference;
+                    }
+                }
+
+                $dateAller = $allerReservations[0]->date_voyage ?? null;
+                $dateAllerFormatted = $dateAller ? date('d/m/Y', strtotime($dateAller)) : 'N/A';
+
+                $msg = "Bonjour {$clientName}, votre reservation sur Car225 est confirmee !\n";
+                $msg .= "Ref: " . ($allerRefs[0] ?? 'N/A') . "\n";
+                $msg .= "Trajet: {$programme->point_depart} -> {$programme->point_arrive}\n";
+
+                if ($gareDepart || $gareArrivee) {
+                    $msg .= "Gare: {$gareDepart} -> {$gareArrivee}\n";
+                }
+
+                $msg .= "Date: {$dateAllerFormatted} a {$heureDepart}\n";
+                $msg .= "Siege(s): " . implode(', ', $allerSeats) . "\n";
+                $msg .= "Type: ALLER" . ($isAllerRetour ? " (Aller-Retour)" : " Simple") . "\n";
+                $msg .= "Bon voyage avec Car225 !";
+
+                $result = $this->sendSms($phone, $msg) && $result;
+            }
+
+            // ======== SMS RETOUR (separe) ========
+            if (!empty($retourReservations) && $isAllerRetour) {
+                $retourSeats = [];
+                $retourRefs = [];
+                foreach ($retourReservations as $res) {
+                    if ($res->seat_number) $retourSeats[] = $res->seat_number;
+                    if ($res->reference && !in_array($res->reference, $retourRefs)) {
+                        $retourRefs[] = $res->reference;
+                    }
+                }
+
+                $dateRetourFormatted = $dateRetour ? date('d/m/Y', strtotime($dateRetour)) : 'N/A';
+
+                $msg = "Bonjour {$clientName}, voici votre billet RETOUR Car225 !\n";
+                $msg .= "Ref: " . ($retourRefs[0] ?? 'N/A') . "\n";
+                // Le retour est dans le sens inverse
+                $msg .= "Trajet: {$programme->point_arrive} -> {$programme->point_depart}\n";
+
+                if ($gareDepart || $gareArrivee) {
+                    // Gares inversees pour le retour
+                    $msg .= "Gare: {$gareArrivee} -> {$gareDepart}\n";
+                }
+
+                $msg .= "Date: {$dateRetourFormatted}\n";
+                $msg .= "Siege(s): " . implode(', ', $retourSeats) . "\n";
+                $msg .= "Type: RETOUR\n";
+                $msg .= "Bon voyage avec Car225 !";
+
+                $result = $this->sendSms($phone, $msg) && $result;
+            }
+
+            return $result;
+
+        } catch (\Exception $e) {
+            Log::error('Erreur SMS Reservation: ' . $e->getMessage(), [
+                'user_id' => $user->id ?? null,
+            ]);
+            return false;
+        }
     }
 }

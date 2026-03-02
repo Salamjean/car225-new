@@ -47,6 +47,10 @@ Route::prefix('user')->group(function () {
     Route::post('/password/verify-otp', [UserAuthController::class, 'verifyOtp']);
     Route::post('/password/reset', [UserAuthController::class, 'resetPassword']);
     
+    // Vérification OTP téléphone (inscription/login)
+    Route::post('/verify-phone-otp', [UserAuthController::class, 'verifyPhoneOtp']);
+    Route::post('/resend-phone-otp', [UserAuthController::class, 'resendPhoneOtp']);
+    
     // Routes protégées (authentification requise)
     Route::middleware('auth:sanctum')->group(function () {
         // Authentification

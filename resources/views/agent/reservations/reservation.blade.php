@@ -376,6 +376,35 @@
                 <div class="position-absolute w-100 h-100 d-flex align-items-center justify-content-center" style="top: 0; left: 0; pointer-events: none;">
                     <div style="width: 250px; height: 250px; border: 2px solid rgba(255,255,255,0.5); border-radius: 20px; box-shadow: 0 0 0 9999px rgba(0,0,0,0.5);"></div>
                 </div>
+
+                <!-- Séparateur OU -->
+                <div style="display: flex; align-items: center; padding: 12px 24px; background: #1a202c;">
+                    <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.2);"></div>
+                    <span style="color: rgba(255,255,255,0.5); font-size: 0.75rem; font-weight: 700; padding: 0 12px; text-transform: uppercase; letter-spacing: 1px;">ou saisir la référence</span>
+                    <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.2);"></div>
+                </div>
+
+                <!-- Saisie manuelle de la référence -->
+                <div style="padding: 16px 24px; background: #2d3748;">
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" 
+                               id="manualReferenceInput" 
+                               class="form-control" 
+                               placeholder="Ex: TX-WAL-XXXXXX-5 ou RES-2026..." 
+                               style="flex: 1; border-radius: 10px; border: 2px solid #4a5568; background: #1a202c; color: white; padding: 12px 16px; font-size: 0.9rem; font-weight: 600; font-family: monospace; letter-spacing: 0.5px;"
+                               autocomplete="off">
+                        <button type="button" id="manualSearchBtn" 
+                                class="btn btn-primary px-4" 
+                                style="border-radius: 10px; font-weight: 700; white-space: nowrap; background: linear-gradient(135deg, #3182ce, #2b6cb0); border: none; box-shadow: 0 4px 12px rgba(49,130,206,0.3);">
+                            <i class="material-icons" style="font-size: 18px; vertical-align: middle;">search</i>
+                            Chercher
+                        </button>
+                    </div>
+                    <p style="color: rgba(255,255,255,0.4); font-size: 0.72rem; margin: 8px 0 0; text-align: center;">
+                        <i class="material-icons" style="font-size: 12px; vertical-align: middle;">info</i>
+                        Saisissez la référence du billet si le QR Code est illisible
+                    </p>
+                </div>
             </div>
             <div class="modal-footer border-0 bg-dark justify-content-center">
                 <button type="button" class="btn btn-outline-light rounded-pill px-4" data-dismiss="modal">
@@ -695,6 +724,31 @@
             });
             $('#qrScannerModal').on('hidden.bs.modal', function () {
                 stopCamera();
+            });
+
+            // === Recherche manuelle par référence (dans le modal scanner) ===
+            $(document).on('click', '#manualSearchBtn', function() {
+                var ref = $('#manualReferenceInput').val().trim();
+                if (!ref) {
+                    $('#manualReferenceInput').focus();
+                    return;
+                }
+                stopCamera();
+                $('#qrScannerModal').modal('hide');
+                searchReservation(ref);
+            });
+
+            // Support Enter dans l'input référence
+            $(document).on('keypress', '#manualReferenceInput', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    $('#manualSearchBtn').click();
+                }
+            });
+
+            // Vider l'input quand on rouvre le modal scanner
+            $('#qrScannerModal').on('show.bs.modal', function() {
+                $('#manualReferenceInput').val('');
             });
         });
 

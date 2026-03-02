@@ -172,6 +172,23 @@ class PaymentController extends Controller
 
             Log::info('Finalisation réservation terminée avec succès (Email envoyé)', ['id' => $reservation->id]);
 
+            // 6. Envoi SMS de confirmation
+            try {
+                $smsService = app(\App\Services\SmsService::class);
+                $user = $reservation->user ?? \App\Models\User::find($reservation->user_id);
+                if ($user) {
+                    $smsService->sendReservationSms(
+                        [$reservation],
+                        $reservation->programme,
+                        $user,
+                        $reservation->is_aller_retour ?? false,
+                        $reservation->date_retour
+                    );
+                }
+            } catch (\Exception $e) {
+                Log::error('Erreur envoi SMS réservation CinetPay: ' . $e->getMessage());
+            }
+
             // Real-time update for Seat Map
             try {
                 $allReserved = Reservation::where('programme_id', $reservation->programme_id)
