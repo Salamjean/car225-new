@@ -429,6 +429,9 @@ Route::prefix('user')->group(function () {
     Route::post('/login', [UserAuthenticate::class, 'handleLogin'])->name('user.handleLogin');
     Route::get('/register', [UserAuthenticate::class, 'register'])->name('user.register');
     Route::post('/register', [UserAuthenticate::class, 'handleRegister'])->name('user.handleRegister');
+    Route::get('/verify-otp', [UserAuthenticate::class, 'showVerifyOtp'])->name('user.verify-otp');
+    Route::post('/verify-otp', [UserAuthenticate::class, 'handleVerifyOtp'])->name('user.verify-otp.submit');
+    Route::post('/resend-otp', [UserAuthenticate::class, 'resendOtp'])->name('user.resend-otp');
 
   
     // Password Reset Routes
