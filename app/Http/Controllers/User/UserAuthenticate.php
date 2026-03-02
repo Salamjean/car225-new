@@ -56,7 +56,7 @@ class UserAuthenticate extends Controller
             [
                 'name' => 'required|string|max:255',
                 'prenom' => 'required|string|max:255',
-                'email' => 'required|email|unique:users,email',
+                'email' => 'nullable|email|unique:users,email',
                 'password' => 'required|min:8|confirmed',
                 'contact' => 'required|string|max:255',
                 'photo_profile' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -73,7 +73,6 @@ class UserAuthenticate extends Controller
                 'prenom.max' => 'Le prénom ne doit pas dépasser 255 caractères.',
 
                 // Email
-                'email.required' => 'L\'adresse email est obligatoire.',
                 'email.email' => 'Veuillez saisir une adresse email valide.',
                 'email.unique' => 'Cette adresse email est déjà utilisée.',
 

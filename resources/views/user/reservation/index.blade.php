@@ -263,9 +263,17 @@
                             } elseif ($missionAller && $missionAller->statut === 'en_cours') {
                                 $voyageActif = $missionAller;
                             }
+
+                            // Vérification prioritaire : le voyage est-il interrompu ?
+                            $voyageInterrompu = ($missionAller && $missionAller->statut === 'interrompu')
+                                            || ($missionRetour && $missionRetour->statut === 'interrompu');
                         @endphp
 
-                        @if($voyageActif && $voyageActif->statut !== 'interrompu')
+                        @if($voyageInterrompu)
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-100 text-red-700 text-[10px] font-black rounded-lg uppercase tracking-widest border border-red-200">
+                                <span class="w-1.5 h-1.5 rounded-full bg-red-600"></span> 🚨 Interrompu
+                            </span>
+                        @elseif($voyageActif)
                             <div class="flex flex-col items-center">
                                 <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 text-blue-700 text-[10px] font-black rounded-lg uppercase tracking-widest border border-blue-200 mb-1 shadow-sm">
                                     <span class="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span> En voyage
@@ -284,10 +292,6 @@
                                     --:--:--
                                 </span>
                             </div>
-                        @elseif(($missionAller && $missionAller->statut === 'interrompu') || ($missionRetour && $missionRetour->statut === 'interrompu'))
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-100 text-red-700 text-[10px] font-black rounded-lg uppercase tracking-widest border border-red-200">
-                                <span class="w-1.5 h-1.5 rounded-full bg-red-600"></span> 🚨 Interrompu
-                            </span>
                         @elseif($reservation->statut == 'confirmee')
                             <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-green-100">
                                 <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Confirmé

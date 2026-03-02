@@ -452,10 +452,10 @@
                         <!-- Email / Contact -->
                         <div class="form-row">
                             <div class="input-group">
-                                <label for="email">Adresse email</label>
+                                <label for="email">Adresse email <span style="color: var(--text-muted); font-weight: 400;">(optionnel)</span></label>
                                 <div class="input-wrapper">
                                     <input type="email" id="email" name="email" class="input-field"
-                                        value="{{ old('email') }}" required placeholder="votre@email.com">
+                                        value="{{ old('email') }}" placeholder="votre@email.com">
                                     <i class="fas fa-envelope field-icon"></i>
                                 </div>
                                 @error('email') <span class="error-msg">{{ $message }}</span> @enderror

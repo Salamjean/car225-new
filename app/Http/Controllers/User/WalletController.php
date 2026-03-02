@@ -192,7 +192,7 @@ class WalletController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $transactions = $user->walletTransactions()->orderBy('created_at', 'desc')->paginate(5);
+        $transactions = $user->walletTransactions()->orderBy('created_at', 'desc')->take(5)->get();
         
         // Configuration CinetPay pour le frontend (si nécessaire à l'initialisation)
         $cinetpay_site_id = config('services.cinetpay.site_id');
@@ -200,6 +200,63 @@ class WalletController extends Controller
         // En mode seamless, la clé publique/site_id est souvent requise.
 
         return view('user.wallet.index', compact('user', 'transactions', 'cinetpay_site_id'));
+    }
+
+    /**
+     * Historique des rechargements de l'utilisateur (type credit uniquement)
+     * avec recherche et filtre, pages de 10.
+     */
+    public function rechargeHistory(Request $request)
+    {
+        $user = Auth::user();
+
+        $query = WalletTransaction::where('user_id', $user->id)
+            ->where('type', 'credit')
+            ->latest();
+
+        // Recherche texte (référence ou méthode de paiement)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('reference', 'like', "%{$search}%")
+                  ->orWhere('payment_method', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        // Filtre par statut
+        if ($request->filled('statut') && in_array($request->statut, ['pending', 'completed', 'failed', 'cancelled'])) {
+            $query->where('status', $request->statut);
+        }
+
+        // Filtre par période
+        if ($request->filled('date_debut')) {
+            $query->whereDate('created_at', '>=', $request->date_debut);
+        }
+        if ($request->filled('date_fin')) {
+            $query->whereDate('created_at', '<=', $request->date_fin);
+        }
+
+        $transactions = $query->paginate(10)->withQueryString();
+
+        // Statistiques rapides
+        $totalRecharge = WalletTransaction::where('user_id', $user->id)
+            ->where('type', 'credit')
+            ->where('status', 'completed')
+            ->sum('amount');
+
+        $totalCount = WalletTransaction::where('user_id', $user->id)
+            ->where('type', 'credit')
+            ->count();
+
+        $pendingCount = WalletTransaction::where('user_id', $user->id)
+            ->where('type', 'credit')
+            ->where('status', 'pending')
+            ->count();
+
+        return view('user.wallet.recharges', compact(
+            'user', 'transactions', 'totalRecharge', 'totalCount', 'pendingCount'
+        ));
     }
 
     public function recharge(Request $request)

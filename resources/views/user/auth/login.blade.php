@@ -538,7 +538,7 @@
 
             <div class="form-card">
                 <div class="form-header">
-                    <h1>Bon retour 👋</h1>
+                    <h1>Bienvenue 👋</h1>
                     <p>Connectez-vous à votre compte</p>
                 </div>
 

@@ -4198,7 +4198,7 @@ function proceedToPassengerInfoFromRetour() {
                          showCancelButton: true,
                          showDenyButton: true,
                          confirmButtonText: `<i class="fas fa-wallet mr-2"></i>Mon Compte Solde`,
-                         denyButtonText: `<i class="fas fa-mobile-alt mr-2"></i>Mobile Money (CinetPay)`,
+                         denyButtonText: `<i class="fas fa-mobile-alt mr-2"></i>Mobile Money`,
                          confirmButtonColor: '#e94f1b',
                          denyButtonColor: '#2dce89',
                          cancelButtonText: 'Annuler',
