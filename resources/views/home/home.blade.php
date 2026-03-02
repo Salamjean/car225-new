@@ -91,7 +91,7 @@
         <div class="container">
             <div class="trust-content text-center" data-aos="fade-up">
                 <h2 class="trust-title text-[#1a1a1a] font-black md:text-3xl text-2xl mx-auto mb-8" style="line-height: 1.4; max-width: 900px;">
-                    Avec plus de <span class="counter-highlight text-[#008000] text-4xl inline-block mx-1" data-target="{{ $usersCount ?? 0 }}">0</span>personnes, <br class="hidden md:block">
+                    Avec plus de <span class="counter-highlight text-[#008000] text-4xl inline-block mx-1" data-target="{{ $usersCount ?? 0 }}">0</span>utilisateurs, <br class="hidden md:block">
                     <span class="text-[#e94e1a]">Car225</span> est le partenaire de confiance pour vos trajets en Côte d’Ivoire.
                 </h2>
                 
