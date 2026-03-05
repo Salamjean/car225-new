@@ -62,9 +62,15 @@
     border-bottom: 1px solid #f3f4f6;
   }
 
+  .mdc-drawer .mdc-drawer__header .brand-logo {
+    display: flex !important;
+    justify-content: center !important;
+    width: 100%;
+  }
+
   .mdc-drawer .mdc-drawer__header .brand-logo img {
-    width: 55% !important;
-    margin-left: 30px !important;
+    width: 60% !important;
+    height: auto !important;
   }
 
   /* Drawer content - scrollable */
@@ -170,25 +176,54 @@
   /* ============================================
      MAIN CONTENT AREA - Offset by sidebar
      ============================================ */
+  /* ============================================
+     MAIN CONTENT AREA - Offset by sidebar
+     ============================================ */
   .body-wrapper {
     display: flex;
     min-height: 100vh;
-  }
-
-  .mdc-drawer.mdc-drawer--open:not(.mdc-drawer--closing) + .mdc-drawer-app-content {
-    margin-left: 250px !important;
+    overflow-x: hidden;
   }
 
   .main-wrapper.mdc-drawer-app-content {
     flex: 1;
     min-width: 0;
-    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 100%;
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  /* Navbar - offset by sidebar on desktop */
-  .mdc-drawer.mdc-drawer--open:not(.mdc-drawer--closing) + .mdc-drawer-app-content .mdc-top-app-bar {
-    margin-left: 250px;
-    width: calc(100% - 250px) !important;
+  /* Desktop Push / Sidebar Always Open Style */
+  @media (min-width: 992px) {
+    .mdc-drawer.mdc-drawer--open:not(.mdc-drawer--closing) ~ .mdc-drawer-app-content {
+      margin-left: 250px !important;
+      width: calc(100% - 250px) !important;
+      flex: none;
+    }
+    
+    .mdc-drawer.mdc-drawer--open:not(.mdc-drawer--closing) ~ .mdc-drawer-app-content .mdc-top-app-bar {
+      left: 250px !important;
+      width: calc(100% - 250px) !important;
+    }
+
+    /* If for some reason the above ~ selector still fails, our base main-wrapper should have it */
+    .body-wrapper > .mdc-drawer--open ~ .mdc-drawer-app-content {
+      margin-left: 250px !important;
+    }
+  }
+
+  /* Navbar Default */
+  .mdc-top-app-bar {
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    z-index: 998 !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .mdc-toolbar-fixed-adjust {
+    padding-top: 64px !important;
   }
 
   /* ============================================
@@ -225,17 +260,16 @@
     }
 
     /* Content takes full width on mobile */
-    .mdc-drawer.mdc-drawer--open:not(.mdc-drawer--closing) + .mdc-drawer-app-content {
-      margin-left: 0 !important;
-    }
-
-    .mdc-drawer.mdc-drawer--open:not(.mdc-drawer--closing) + .mdc-drawer-app-content .mdc-top-app-bar {
+    .mdc-drawer--open ~ .mdc-drawer-app-content,
+    .main-wrapper.mdc-drawer-app-content {
       margin-left: 0 !important;
       width: 100% !important;
     }
 
-    .main-wrapper.mdc-drawer-app-content {
-      margin-left: 0 !important;
+    .mdc-drawer--open ~ .mdc-drawer-app-content .mdc-top-app-bar,
+    .mdc-top-app-bar {
+      left: 0 !important;
+      width: 100% !important;
     }
   }
 

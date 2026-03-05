@@ -1,8 +1,7 @@
 <aside class="mdc-drawer mdc-drawer--dismissible mdc-drawer--open">
   <div class="mdc-drawer__header">
     <a href="{{route('admin.dashboard')}}" class="brand-logo">
-      <img src="{{asset('assetsPoster/assets/images/logo_car225.png')}}" style="width: 50%; margin-left: 50px"
-        alt="logo">
+      <img src="{{asset('assetsPoster/assets/images/logo_car225.png')}}" alt="logo">
     </a>
   </div>
   <div class="mdc-drawer__content">

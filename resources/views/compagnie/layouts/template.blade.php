@@ -62,63 +62,75 @@
            z-index: 1000;
        }
 
-       /* Ensure main content is pushed by the sidebar width on desktop */
-       .mdc-drawer-app-content {
-           margin-left: 250px;
-           width: calc(100% - 250px);
-           min-height: 100vh;
-           transition: margin-left 0.2s cubic-bezier(0.4, 0, 0.2, 1), width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-       }
-       
-       .mdc-top-app-bar {
-           width: calc(100% - 250px) !important;
-           left: 250px !important;
-           transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-       }
+        /* Ensure main content is pushed by the sidebar width on desktop */
+        .mdc-drawer-app-content {
+            margin-left: 250px !important;
+            width: calc(100% - 250px) !important;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: margin-left 0.2s cubic-bezier(0.4, 0, 0.2, 1), width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Navbar positioning */
+        .mdc-top-app-bar {
+            position: fixed !important;
+            top: 0 !important;
+            right: 0 !important;
+            left: 250px !important;
+            width: calc(100% - 250px) !important;
+            z-index: 998 !important;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
 
-       /* Sidebar Backdrop Overlay default state (hidden) */
-       .sidebar-backdrop {
-           position: fixed;
-           top: 0;
-           left: 0;
-           width: 100vw;
-           height: 100vh;
-           background: rgba(0, 0, 0, 0.5);
-           z-index: 999;
-           opacity: 0;
-           visibility: hidden;
-           transition: opacity 0.3s ease, visibility 0.3s ease;
-       }
-       .sidebar-backdrop.active {
-           opacity: 1;
-           visibility: visible;
-       }
+        /* Fix gap above content adjustment */
+        .mdc-toolbar-fixed-adjust {
+            padding-top: 64px !important; /* Standard height of MDC top app bar */
+        }
 
-       /* Mobile / Tablet Overlay Behavior */
-       @media (max-width: 991px) {
-           /* Sidebar is hidden by default and acts as an overlay */
-           .mdc-drawer {
-               transform: translateX(-100%);
-               transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-               box-shadow: 4px 0 24px rgba(0,0,0,0.1) !important;
-           }
-           /* When open, it slides in */
-           .mdc-drawer.mdc-drawer--open {
-               transform: translateX(0);
-           }
-           
-           /* Main content takes full width */
-           .mdc-drawer-app-content {
-               margin-left: 0 !important;
-               width: 100% !important;
-           }
-           
-           /* Navbar takes full width */
-           .mdc-top-app-bar {
-               width: 100% !important;
-               left: 0 !important;
-           }
-       }
+        /* Sidebar Backdrop Overlay default state (hidden) */
+        .sidebar-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1001; /* Above drawer and navbar */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .sidebar-backdrop.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Mobile / Tablet Overlay Behavior */
+        @media (max-width: 991px) {
+            /* Sidebar is hidden by default and acts as an overlay */
+            .mdc-drawer {
+                transform: translateX(-100%);
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: 4px 0 24px rgba(0,0,0,0.1) !important;
+            }
+            /* When open, it slides in */
+            .mdc-drawer.mdc-drawer--open {
+                transform: translateX(0);
+            }
+            
+            /* Main content takes full width */
+            .mdc-drawer-app-content {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+            
+            /* Navbar takes full width */
+            .mdc-top-app-bar {
+                width: 100% !important;
+                left: 0 !important;
+            }
+        }
 
        /* =========================================
           Premium Styles (Moved from sidebar)
