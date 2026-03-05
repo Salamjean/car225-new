@@ -241,8 +241,7 @@
     </div>
 </div>
 
-{{-- Script CinetPay --}}
-<script src="https://cdn.cinetpay.com/seamless/main.js"></script>
+{{-- SweetAlert2 CDN --}}
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
@@ -251,7 +250,6 @@
         const modal = document.getElementById('withdrawModal');
         const content = document.getElementById('withdrawModalContent');
         modal.classList.remove('hidden');
-        // Animation d'entrée
         setTimeout(() => {
             content.classList.add('scale-100', 'opacity-100');
             content.classList.remove('scale-95', 'opacity-0');
@@ -270,9 +268,7 @@
         }, 200);
     }
 
-    // ============ RECHARGE ============
-    window.lastTransactionId = null;
-
+    // ============ RECHARGE (Nouvelle API v1 - Redirection) ============
     document.getElementById('rechargeForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
@@ -281,8 +277,13 @@
         const amount = document.getElementById('amount').value;
         const csrfToken = document.querySelector('input[name="_token"]').value;
 
+        if (!amount || amount < 100) {
+            Swal.fire('Erreur', 'Le montant minimum est de 100 FCFA', 'warning');
+            return;
+        }
+
         btn.disabled = true;
-        btnText.innerText = 'Initialisation...';
+        btnText.innerText = 'Initialisation du paiement...';
         btn.classList.add('opacity-75');
 
         try {
@@ -297,88 +298,49 @@
 
             const data = await response.json();
 
-            if (!response.ok) throw new Error(data.message || 'Erreur lors de l\'initialisation');
+            if (!response.ok) {
+                throw new Error(data.message || 'Erreur lors de l\'initialisation du paiement');
+            }
 
-            window.lastTransactionId = data.checkout_data.transaction_id;
-
-            CinetPay.setConfig(data.cinetpay_config);
-            CinetPay.getCheckout(data.checkout_data);
-
-            CinetPay.waitResponse(function(data) {
-                console.log('CinetPay Response:', data);
-                
-                if (data.status === "ACCEPTED") {
+            // Nouvelle API v1: Redirection vers la page de paiement CinetPay
+            if (data.payment_url) {
+                Swal.fire({
+                    title: 'Redirection vers CinetPay',
+                    html: 'Vous allez être redirigé vers la page de paiement sécurisée...',
+                    icon: 'info',
+                    timer: 2000,
+                    timerProgressBar: true,
+                    showConfirmButton: false,
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                }).then(() => {
+                    // Rediriger vers la page de paiement CinetPay
+                    window.location.href = data.payment_url;
+                });
+            } else {
+                // Si pas de payment_url mais statut OK (ex: paiement direct)
+                if (data.details && data.details.status === 'SUCCESS') {
                     Swal.fire({
-                        title: 'Paiement en cours de validation',
-                        text: 'Veuillez patienter...',
-                        icon: 'info',
-                        allowOutsideClick: false,
-                        didOpen: () => {
-                            Swal.showLoading();
-                        }
+                        title: 'Succès !',
+                        text: 'Votre paiement a été effectué avec succès.',
+                        icon: 'success',
+                        timer: 3000
+                    }).then(() => {
+                        window.location.reload();
                     });
-                    checkStatus(window.lastTransactionId);
-                } 
-                else if (data.status === "REFUSED") {
-                    Swal.fire('Erreur', 'Le paiement a été refusé.', 'error');
-                    resetBtn();
+                } else {
+                    throw new Error('URL de paiement non disponible. Veuillez réessayer.');
                 }
-            });
-
-            CinetPay.onError(function(data) {
-                console.error('CinetPay Error:', data);
-                Swal.fire('Erreur', 'Une erreur est survenue lors du paiement.', 'error');
-                resetBtn();
-            });
-
-            CinetPay.onClose(function(data) {
-                console.log('Modal fermé');
-                resetBtn();
-            });
+            }
 
         } catch (error) {
-            console.error(error);
+            console.error('Recharge Error:', error);
             Swal.fire('Erreur', error.message, 'error');
             resetBtn();
         }
     });
-
-    async function checkStatus(transactionId) {
-        if(!transactionId) return;
-
-        try {
-            const csrfToken = document.querySelector('input[name="_token"]').value;
-            const response = await fetch("{{ route('user.wallet.verify') }}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken
-                },
-                body: JSON.stringify({ transaction_id: transactionId })
-            });
-            const result = await response.json();
-
-            if (result.status === 'success') {
-                Swal.fire({
-                    title: 'Succès !',
-                    text: 'Votre solde a été mis à jour.',
-                    icon: 'success',
-                    timer: 3000
-                }).then(() => {
-                    window.location.reload();
-                });
-            } else if (result.status === 'pending') {
-                 Swal.fire('En attente', 'Votre paiement est en cours de traitement par l\'opérateur. Votre solde sera mis à jour automatiquement.', 'info')
-                 .then(() => window.location.reload());
-            } else {
-                 Swal.fire('Echec', 'La vérification du paiement a échoué.', 'error');
-                 resetBtn();
-            }
-        } catch(e) {
-            console.error(e);
-            resetBtn();
-        }
-    }
 
     function resetBtn() {
         const btn = document.getElementById('btnRecharge');
@@ -446,5 +408,24 @@
             btn.classList.remove('opacity-75');
         }
     });
+
+    // ============ MESSAGES FLASH (après retour de CinetPay) ============
+    @if(session('success'))
+        Swal.fire({
+            title: 'Succès !',
+            text: "{{ session('success') }}",
+            icon: 'success',
+            timer: 5000,
+            timerProgressBar: true,
+        });
+    @endif
+
+    @if(session('error'))
+        Swal.fire({
+            title: 'Erreur',
+            text: "{{ session('error') }}",
+            icon: 'error',
+        });
+    @endif
 </script>
 @endsection

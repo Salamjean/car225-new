@@ -193,13 +193,8 @@ class WalletController extends Controller
     {
         $user = Auth::user();
         $transactions = $user->walletTransactions()->orderBy('created_at', 'desc')->take(5)->get();
-        
-        // Configuration CinetPay pour le frontend (si nécessaire à l'initialisation)
-        $cinetpay_site_id = config('services.cinetpay.site_id');
-        $cinetpay_api_key = config('services.cinetpay.api_key'); // Attention à ne pas exposer si sensible, mais site_id est public
-        // En mode seamless, la clé publique/site_id est souvent requise.
 
-        return view('user.wallet.index', compact('user', 'transactions', 'cinetpay_site_id'));
+        return view('user.wallet.index', compact('user', 'transactions'));
     }
 
     /**
@@ -267,7 +262,9 @@ class WalletController extends Controller
 
         $user = Auth::user();
         $amount = $request->amount;
-        $transactionId = 'W-RECH-' . time() . '-' . Str::random(5);
+        // merchant_transaction_id doit être unique et max 30 caractères
+        $transactionId = 'WRECH' . time() . Str::random(4);
+        $transactionId = substr($transactionId, 0, 30);
 
         // Créer la transaction locale en attente
         $transaction = WalletTransaction::create([
@@ -283,33 +280,53 @@ class WalletController extends Controller
             ]
         ]);
 
-        // Préparer les données pour le SDK CinetPay (Frontend)
-        $checkoutData = [
-            'transaction_id' => $transactionId,
+        // Appeler la nouvelle API CinetPay v1 pour initialiser le paiement
+        $paymentData = [
+            'merchant_transaction_id' => $transactionId,
             'amount' => (int) $amount,
             'currency' => 'XOF',
-            'description' => 'Rechargement Compte ' . config('app.name'),
-            'customer_name' => $user->name ?? 'Client',
-            'customer_surname' => $user->prenom ?? 'Client', // Adapter selon modèle User
-            'customer_email' => $user->email,
-            'customer_phone_number' => $user->contact ?? '0000000000', // Adapter selon modèle User (contact ou phone)
-            'customer_address' => $user->adresse ?? 'Abidjan',
-            'customer_city' => $user->adresse ?? 'Abidjan',
-            'customer_country' => 'CI',
-            'customer_state' => 'CI',
-            'customer_zip_code' => '00225',
+            'lang' => 'fr',
+            'designation' => 'Rechargement Compte ' . config('app.name'),
+            'client_email' => $user->email,
+            'client_first_name' => $user->prenom ?? $user->name ?? 'Client',
+            'client_last_name' => $user->name ?? 'Client',
+            'client_phone_number' => $user->contact ? ('+225' . ltrim($user->contact, '+225')) : null,
+            'success_url' => route('user.wallet.payment.success', ['transaction_id' => $transactionId]),
+            'failed_url' => route('user.wallet.payment.failed', ['transaction_id' => $transactionId]),
+            'notify_url' => route('cinetpay.notify'),
         ];
 
-        return response()->json([
-            'message' => 'Initialisation réussie',
-            'checkout_data' => $checkoutData,
-            'cinetpay_config' => [
-                'apikey' => config('services.cinetpay.api_key'),
-                'site_id' => config('services.cinetpay.site_id'),
-                'notify_url' => route('cinetpay.notify'), // Route existante ou à créer pour webhook global
-                'mode' => app()->environment('local') ? 'TEST' : 'PRODUCTION'
-            ]
-        ]);
+        $result = $this->cinetPayService->initiatePayment($paymentData);
+
+        if ($result['success']) {
+            // Sauvegarder le notify_token et transaction_id CinetPay
+            $transaction->update([
+                'external_transaction_id' => $result['transaction_id'] ?? null,
+                'metadata' => array_merge($transaction->metadata ?? [], [
+                    'payment_token' => $result['payment_token'] ?? null,
+                    'notify_token' => $result['notify_token'] ?? null,
+                    'cinetpay_transaction_id' => $result['transaction_id'] ?? null,
+                    'details' => $result['details'] ?? null,
+                ])
+            ]);
+
+            // Vérifier si on doit rediriger l'utilisateur
+            $mustRedirect = $result['details']['must_be_redirected'] ?? true;
+
+            return response()->json([
+                'message' => 'Initialisation réussie',
+                'payment_url' => $result['payment_url'],
+                'must_be_redirected' => $mustRedirect,
+                'details' => $result['details'] ?? null,
+            ]);
+        } else {
+            // Échec de l'initialisation, marquer comme échoué
+            $transaction->update(['status' => 'failed']);
+
+            return response()->json([
+                'message' => $result['message'] ?? 'Erreur lors de l\'initialisation du paiement',
+            ], 500);
+        }
     }
 
     public function verifyRecharge(Request $request)
@@ -326,132 +343,181 @@ class WalletController extends Controller
         }
 
         if ($transaction->status === 'completed') {
-             return response()->json(['message' => 'Transaction déjà validée', 'new_balance' => Auth::user()->solde]);
+             return response()->json([
+                 'message' => 'Transaction déjà validée',
+                 'status' => 'success',
+                 'new_balance' => Auth::user()->solde,
+             ]);
         }
 
-        // Vérification via CinetPayService
-        $paymentStatus = $this->cinetPayService->checkPaymentStatus($transactionId);
+        // Vérification via CinetPayService (nouvelle API v1)
+        $cinetpayTransactionId = $transaction->external_transaction_id ?? $transactionId;
+        $paymentStatus = $this->cinetPayService->checkPaymentStatus($cinetpayTransactionId);
         
-        // Log pour debug
         Log::info('Verify Recharge Result:', ['id' => $transactionId, 'result' => $paymentStatus]);
 
-        if ($paymentStatus && isset($paymentStatus['data']['status']) && $paymentStatus['data']['status'] === 'ACCEPTED') {
-            
-            DB::beginTransaction();
-            try {
-                // Verrouiller la transaction pour éviter double traitement
-                $transaction = WalletTransaction::where('id', $transaction->id)->lockForUpdate()->first();
+        // Nouvelle API: le statut peut être SUCCESS, FAILED, INITIATED, PENDING
+        $detailStatus = $paymentStatus['details']['status'] ?? $paymentStatus['data']['status'] ?? null;
 
-                if ($transaction->status !== 'completed') {
-                    // Update Transaction
-                    $transaction->update([
-                        'status' => 'completed',
-                        'external_transaction_id' => $paymentStatus['data']['operator_id'] ?? null,
-                        'payment_method' => $paymentStatus['data']['payment_method'] ?? 'cinetpay',
-                        'metadata' => array_merge($transaction->metadata ?? [], ['payment_response' => $paymentStatus['data']])
-                    ]);
-
-                    // Credit User Wallet
-                    $user = $transaction->user;
-                    $user->solde += $transaction->amount;
-                    $user->save();
-                    
-                    DB::commit();
-
-                    return response()->json([
-                        'message' => 'Rechargement confirmé avec succès', 
-                        'status' => 'success',
-                        'new_balance' => $user->solde
-                    ]);
-                } else {
-                    DB::commit();
-                    return response()->json(['message' => 'Transaction déjà validée', 'status' => 'success', 'new_balance' => $transaction->user->solde]);
-                }
-
-            } catch (\Exception $e) {
-                DB::rollBack();
-                Log::error('Error processing wallet credit', ['error' => $e->getMessage()]);
-                return response()->json(['message' => 'Erreur lors de la mise à jour du solde'], 500);
-            }
-
+        if ($detailStatus === 'SUCCESS' || $detailStatus === 'ACCEPTED') {
+            return $this->creditWalletTransaction($transaction, $paymentStatus);
         } else {
-             // Si échoué ou annulé
-             $status = 'failed';
-             if (isset($paymentStatus['data']['status']) && $paymentStatus['data']['status'] === 'PENDING') {
-                 $status = 'pending';
-             }
-             
-             $transaction->update(['status' => $status]);
-             
-             return response()->json([
-                 'message' => 'Paiement non validé ou en attente', 
-                 'status' => $status,
-                 'cinetpay_status' => $paymentStatus['data']['status'] ?? 'UNKNOWN'
-             ]);
+            $status = 'failed';
+            if (in_array($detailStatus, ['PENDING', 'INITIATED'])) {
+                $status = 'pending';
+            }
+            
+            $transaction->update(['status' => $status]);
+            
+            return response()->json([
+                'message' => 'Paiement non validé ou en attente', 
+                'status' => $status,
+                'cinetpay_status' => $detailStatus ?? 'UNKNOWN',
+            ]);
+        }
+    }
+
+    /**
+     * Pages de retour après paiement CinetPay (success/failed)
+     */
+    public function paymentSuccess(Request $request)
+    {
+        $transactionId = $request->transaction_id;
+        return redirect()->route('user.wallet.index')
+            ->with('success', 'Votre paiement est en cours de validation. Votre solde sera mis à jour automatiquement.');
+    }
+
+    public function paymentFailed(Request $request)
+    {
+        $transactionId = $request->transaction_id;
+        
+        // Marquer la transaction comme échouée
+        $transaction = WalletTransaction::where('reference', $transactionId)->first();
+        if ($transaction && $transaction->status === 'pending') {
+            $transaction->update(['status' => 'failed']);
+        }
+
+        return redirect()->route('user.wallet.index')
+            ->with('error', 'Le paiement a échoué ou a été annulé.');
+    }
+
+    /**
+     * Créditer le wallet après vérification du paiement
+     */
+    protected function creditWalletTransaction($transaction, $paymentData = [])
+    {
+        DB::beginTransaction();
+        try {
+            $transaction = WalletTransaction::where('id', $transaction->id)->lockForUpdate()->first();
+
+            if ($transaction->status !== 'completed') {
+                $transaction->update([
+                    'status' => 'completed',
+                    'payment_method' => $paymentData['details']['payment_method'] ?? $paymentData['data']['payment_method'] ?? 'cinetpay',
+                    'metadata' => array_merge($transaction->metadata ?? [], ['payment_response' => $paymentData]),
+                ]);
+
+                $user = $transaction->user;
+                $user->solde += $transaction->amount;
+                $user->save();
+                
+                DB::commit();
+
+                Log::info("Wallet user {$user->id} credited. Amount: {$transaction->amount}. New balance: {$user->solde}");
+
+                return response()->json([
+                    'message' => 'Rechargement confirmé avec succès',
+                    'status' => 'success',
+                    'new_balance' => $user->solde,
+                ]);
+            } else {
+                DB::commit();
+                return response()->json([
+                    'message' => 'Transaction déjà validée',
+                    'status' => 'success',
+                    'new_balance' => $transaction->user->solde,
+                ]);
+            }
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error processing wallet credit', ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'Erreur lors de la mise à jour du solde'], 500);
         }
     }
     /**
-     * Webhook CinetPay pour la notification de rechargement
+     * Webhook CinetPay pour la notification de paiement (Nouvelle API v1)
+     * CinetPay envoie: notify_token, merchant_transaction_id, transaction_id, user{}
      */
     public function notify(Request $request)
     {
-        Log::info('CinetPay Wallet Notification Received', $request->all());
+        Log::info('CinetPay v1 Notification Received', $request->all());
 
-        // Validation basique
-        if (!$request->has('cpm_trans_id')) {
-             return response()->json(['message' => 'Transaction ID missing'], 400);
+        // Nouvelle API v1: utilise merchant_transaction_id
+        // Fallback sur cpm_trans_id pour compatibilité ancien format
+        $merchantTransactionId = $request->merchant_transaction_id ?? $request->cpm_trans_id;
+        $notifyToken = $request->notify_token;
+        $cinetpayTransactionId = $request->transaction_id;
+
+        if (!$merchantTransactionId) {
+            Log::warning('CinetPay Notification: Missing transaction ID');
+            return response()->json(['message' => 'Transaction ID missing'], 400);
         }
 
-        $transactionId = $request->cpm_trans_id;
-        
         // 1. Essayer de trouver une transaction Wallet
-        $transaction = WalletTransaction::where('reference', $transactionId)->first();
+        $transaction = WalletTransaction::where('reference', $merchantTransactionId)->first();
 
-        // 2. Si pas de transaction Wallet, essayer de trouver un Paiement (Réservation CinetPay)
+        // 2. Si pas de transaction Wallet, essayer de trouver un Paiement (Réservation)
         if (!$transaction) {
-            // Check Paiement with prefix fallback logic if needed, but usually exact match
-            // Sometimes CinetPay appends timestamp, check if splitting needed
-            $reference = explode('_', $transactionId)[0];
-            $paiement = \App\Models\Paiement::where('transaction_id', $reference)->first();
+            $paiement = \App\Models\Paiement::where('transaction_id', $merchantTransactionId)->first();
 
             if ($paiement) {
-                return $this->handleReservationPaymentNotification($paiement, $transactionId);
+                return $this->handleReservationPaymentNotification($paiement, $cinetpayTransactionId ?? $merchantTransactionId);
             }
 
-            Log::error('Transaction nor Paiement not found for notify:', ['id' => $transactionId]);
+            Log::error('Transaction not found for notify:', ['id' => $merchantTransactionId]);
             return response()->json(['message' => 'Transaction not found'], 404);
         }
 
         // Si déjà traité
         if ($transaction->status === 'completed') {
-            Log::info('Transaction already completed:', ['id' => $transactionId]);
+            Log::info('Transaction already completed:', ['id' => $merchantTransactionId]);
             return response()->json(['message' => 'Already processed'], 200);
         }
 
-        // Vérification API CinetPay
-        $paymentStatus = $this->cinetPayService->checkPaymentStatus($transactionId);
+        // Valider le notify_token (sécurité)
+        $storedNotifyToken = $transaction->metadata['notify_token'] ?? null;
+        if ($storedNotifyToken && $notifyToken && $storedNotifyToken !== $notifyToken) {
+            Log::warning('CinetPay Notification: notify_token mismatch', [
+                'expected' => $storedNotifyToken,
+                'received' => $notifyToken,
+            ]);
+            // On continue quand même pour ne pas bloquer un paiement légitime
+        }
 
-        if ($paymentStatus && isset($paymentStatus['data']['status']) && $paymentStatus['data']['status'] === 'ACCEPTED') {
-            
+        // Vérifier le statut via l'API CinetPay
+        $checkId = $cinetpayTransactionId ?? $transaction->external_transaction_id ?? $merchantTransactionId;
+        $paymentStatus = $this->cinetPayService->checkPaymentStatus($checkId);
+
+        $detailStatus = $paymentStatus['details']['status'] ?? $paymentStatus['data']['status'] ?? null;
+
+        if ($detailStatus === 'SUCCESS' || $detailStatus === 'ACCEPTED') {
             DB::beginTransaction();
             try {
-                // Lock
                 $transaction = WalletTransaction::where('id', $transaction->id)->lockForUpdate()->first();
 
                 if ($transaction->status !== 'completed') {
                     $transaction->update([
                         'status' => 'completed',
-                        'external_transaction_id' => $paymentStatus['data']['operator_id'] ?? null,
-                        'payment_method' => $paymentStatus['data']['payment_method'] ?? 'cinetpay',
-                        'metadata' => array_merge($transaction->metadata ?? [], ['notify_response' => $paymentStatus['data']])
+                        'external_transaction_id' => $cinetpayTransactionId,
+                        'payment_method' => $paymentStatus['details']['payment_method'] ?? $paymentStatus['data']['payment_method'] ?? 'cinetpay',
+                        'metadata' => array_merge($transaction->metadata ?? [], ['notify_response' => $paymentStatus]),
                     ]);
 
-                    // Créditer le wallet de l'utilisateur (ATTENTION: ne pas utiliser Auth::user())
                     $user = $transaction->user;
                     if ($user) {
                         $user->solde += $transaction->amount;
                         $user->save();
-                        Log::info("Wallet user {$user->id} credited via notify. Amount: {$transaction->amount}");
+                        Log::info("Wallet user {$user->id} credited via notify. Amount: {$transaction->amount}. New balance: {$user->solde}");
                     } else {
                         Log::error("User not found for transaction {$transaction->id}");
                     }
@@ -460,22 +526,20 @@ class WalletController extends Controller
                 } else {
                     DB::commit();
                 }
-                
-                return response()->json(['message' => 'Success'], 200);
 
+                return response()->json(['message' => 'Success'], 200);
             } catch (\Exception $e) {
                 DB::rollBack();
                 Log::error('Error processing notify wallet credit', ['error' => $e->getMessage()]);
                 return response()->json(['message' => 'Error processing'], 500);
             }
         } else {
-            // Mise à jour statut échec/attente
             $status = 'failed';
-            if (isset($paymentStatus['data']['status']) && $paymentStatus['data']['status'] === 'PENDING') {
+            if (in_array($detailStatus, ['PENDING', 'INITIATED'])) {
                 $status = 'pending';
             }
             $transaction->update(['status' => $status]);
-            return response()->json(['message' => 'Payment failed or pending'], 200);
+            return response()->json(['message' => 'Payment ' . $status], 200);
         }
     }
 
