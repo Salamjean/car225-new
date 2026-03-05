@@ -5,6 +5,7 @@ namespace App\Services;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Http\Client\PendingRequest;
 
 class CinetPayService
 {
@@ -17,6 +18,20 @@ class CinetPayService
         $this->apiKey = config('services.cinetpay.api_key');
         $this->apiPassword = config('services.cinetpay.api_password');
         $this->baseUrl = config('services.cinetpay.base_url', 'https://api.cinetpay.net');
+    }
+
+    /**
+     * Créer un client HTTP qui force IPv4
+     * Nécessaire car le serveur Infomaniak envoie en IPv6 par défaut
+     * mais CinetPay n'a que l'IPv4 en liste blanche.
+     */
+    protected function httpClient()
+    {
+        return Http::withoutVerifying()
+            ->timeout(30)
+            ->withOptions([
+                'force_ip_resolve' => 'v4',
+            ]);
     }
 
     // =============================================
@@ -37,8 +52,7 @@ class CinetPayService
         }
 
         try {
-            $response = Http::withoutVerifying()
-                ->timeout(30)
+            $response = $this->httpClient()
                 ->asJson()
                 ->post("{$this->baseUrl}/v1/oauth/login", [
                     'api_key' => $this->apiKey,
@@ -131,8 +145,7 @@ class CinetPayService
                 $payload['otp_code'] = $data['otp_code'];
             }
 
-            $response = Http::withoutVerifying()
-                ->timeout(30)
+            $response = $this->httpClient()
                 ->withToken($token)
                 ->asJson()
                 ->post("{$this->baseUrl}/v1/payment", $payload);
@@ -192,8 +205,7 @@ class CinetPayService
 
             // Nouvelle API: GET ou POST pour vérifier le statut
             // On essaie avec l'endpoint de vérification
-            $response = Http::withoutVerifying()
-                ->timeout(30)
+            $response = $this->httpClient()
                 ->withToken($token)
                 ->asJson()
                 ->post("{$this->baseUrl}/v1/payment/check", [
@@ -244,8 +256,7 @@ class CinetPayService
 
             Log::info('CinetPay Transfer Login attempt (fallback)');
 
-            $response = Http::withoutVerifying()
-                ->timeout(30)
+            $response = $this->httpClient()
                 ->asForm()
                 ->post('https://client.cinetpay.com/v1/auth/login', $formData);
 
@@ -282,8 +293,7 @@ class CinetPayService
 
             $url = 'https://client.cinetpay.com/v1/transfer/contact?token=' . $token;
 
-            $response = Http::withoutVerifying()
-                ->timeout(30)
+            $response = $this->httpClient()
                 ->asJson()
                 ->post($url, $payload);
 
@@ -329,8 +339,7 @@ class CinetPayService
 
             Log::info('CinetPay SendMoney Request', ['url' => $url, 'payload' => $payload]);
 
-            $response = Http::withoutVerifying()
-                ->timeout(30)
+            $response = $this->httpClient()
                 ->asJson()
                 ->post($url, $payload);
 
@@ -406,8 +415,7 @@ class CinetPayService
         try {
             $url = 'https://client.cinetpay.com/v1/transfer/check/money?token=' . $token;
 
-            $response = Http::withoutVerifying()
-                ->timeout(30)
+            $response = $this->httpClient()
                 ->asJson()
                 ->post($url, [
                     'client_transaction_id' => $clientTransactionId,
@@ -442,8 +450,7 @@ class CinetPayService
         try {
             $url = 'https://client.cinetpay.com/v1/transfer/check/balance?token=' . $token;
 
-            $response = Http::withoutVerifying()
-                ->timeout(30)
+            $response = $this->httpClient()
                 ->get($url);
 
             if ($response->successful()) {
