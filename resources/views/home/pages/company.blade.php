@@ -26,7 +26,7 @@
     <div class="container mx-auto px-4 max-w-[1000px]">
         <div class="text-center mb-10">
             <h1 class="text-[2.5rem] md:text-5xl font-black text-slate-900 mb-4 tracking-tight">
-                Nos <span class="text-[#0e743a]">Compagnies</span>
+                Les <span class="text-[#0e743a]">Compagnies Partenaires</span>
             </h1>
             <p class="text-slate-700 text-[15px] font-medium">
                 Découvrez les meilleures compagnies de transport partenaires
