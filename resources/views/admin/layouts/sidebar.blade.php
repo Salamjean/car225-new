@@ -1,4 +1,4 @@
-<aside class="mdc-drawer mdc-drawer--dismissible mdc-drawer--open" style="background-color: red">
+<aside class="mdc-drawer mdc-drawer--dismissible mdc-drawer--open">
   <div class="mdc-drawer__header">
     <a href="{{route('admin.dashboard')}}" class="brand-logo">
       <img src="{{asset('assetsPoster/assets/images/logo_car225.png')}}" style="width: 50%; margin-left: 50px"
@@ -18,24 +18,6 @@
             Tableau de bord
           </a>
         </div>
-        {{-- <div class="mdc-list-item mdc-drawer-item">
-          <a class="mdc-drawer-link" href="#">
-            <i class="material-icons mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true">save</i>
-            Demandes
-          </a>
-        </div> --}}
-        {{-- <div class="mdc-list-item mdc-drawer-item">
-          <a class="mdc-drawer-link" href="{{route('admin.permanent-personnel.create')}}">
-            <i class="material-icons mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true">dashboard</i>
-            Personnel permanent
-          </a>
-        </div> --}}
-        {{-- <div class="mdc-list-item mdc-drawer-item">
-          <a class="mdc-drawer-link" href="#">
-            <i class="material-icons mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true">dashboard</i>
-            Historiques des visites
-          </a>
-        </div> --}}
         <div class="mdc-list-item mdc-drawer-item">
           <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel" data-target="ui-sub-perso">
             <i class="fas fa-building mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
@@ -52,7 +34,7 @@
               @if(\App\Models\Setting::isTicketSystemEnabled())
               <div class="mdc-list-item mdc-drawer-item">
                 <a class="mdc-drawer-link" href="{{route('compagnie.recharge.index')}}">
-                   Recharger
+                   Rechargeur
                 </a>
               </div>
               @endif
@@ -61,11 +43,6 @@
                   Liste
                 </a>
               </div>
-              {{-- <div class="mdc-list-item mdc-drawer-item">
-                <a class="mdc-drawer-link" href="#">
-                  Structure desactivées
-                </a>
-              </div> --}}
             </nav>
           </div>
         </div>
@@ -148,5 +125,9 @@
             Paramètres
           </a>
         </div>
+      </nav>
     </div>
+  </div>
 </aside>
+<!-- Sidebar backdrop for mobile -->
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
