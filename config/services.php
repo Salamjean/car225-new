@@ -41,7 +41,8 @@ return [
 
     'cinetpay' => [
         'api_key' => env('CINETPAY_API_KEY'),
-        'site_id' => env('CINETPAY_SITE_ID'),
+        'api_password' => env('CINETPAY_API_PASSWORD'),
+        'base_url' => env('CINETPAY_BASE_URL', 'https://api.cinetpay.net'),
         'secret_key' => env('CINETPAY_SECRET_KEY'),
         'transfer_password' => env('CINETPAY_TRANSFER_PASSWORD'),
     ],

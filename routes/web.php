@@ -452,6 +452,8 @@ Route::middleware('auth')->prefix('user')->group(function () {
     Route::post('/compte/recharge', [WalletController::class, 'recharge'])->name('user.wallet.recharge');
     Route::post('/compte/retrait', [WalletController::class, 'withdraw'])->name('user.wallet.withdraw');
     Route::post('/compte/verify', [WalletController::class, 'verifyRecharge'])->name('user.wallet.verify');
+    Route::get('/compte/payment/success', [WalletController::class, 'paymentSuccess'])->name('user.wallet.payment.success');
+    Route::get('/compte/payment/failed', [WalletController::class, 'paymentFailed'])->name('user.wallet.payment.failed');
 
     // Profile Routes
     Route::get('/profile', [ProfileController::class, 'index'])->name('user.profile');
