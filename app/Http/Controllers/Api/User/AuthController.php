@@ -12,15 +12,18 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use App\Services\FcmService;
 use Carbon\Carbon;
 
 class AuthController extends Controller
 {
     protected SmsService $smsService;
+    protected FcmService $fcmService;
 
-    public function __construct(SmsService $smsService)
+    public function __construct(SmsService $smsService, FcmService $fcmService)
     {
         $this->smsService = $smsService;
+        $this->fcmService = $fcmService;
     }
     /**
      * Connexion utilisateur
@@ -56,7 +59,22 @@ class AuthController extends Controller
         // Vérifier si le numéro de téléphone est vérifié
         if (!$user->phone_verified_at && $user->contact) {
             // Envoyer un nouveau code OTP
-            $this->smsService->sendOtp($user->contact, $user->prenom, $user->name);
+            $result = $this->smsService->sendOtp($user->contact, $user->prenom, $user->name);
+
+            // Envoi de la notification push OTP
+            $fcmToken = $request->fcm_token ?? $user->fcm_token;
+            if ($fcmToken && isset($result['code'])) {
+                try {
+                    $this->fcmService->sendNotification(
+                        $fcmToken,
+                        'Code de vérification Car225',
+                        "Votre code de vérification est : {$result['code']}. Ce code expire dans 10 minutes.",
+                        ['type' => 'otp']
+                    );
+                } catch (\Exception $e) {
+                    Log::error('Erreur lors de l\'envoi de la notification push OTP au login: ' . $e->getMessage());
+                }
+            }
 
             return response()->json([
                 'success' => true,
@@ -175,6 +193,7 @@ class AuthController extends Controller
                 'password' => 'required|min:8|confirmed',
                 'contact' => 'required|string|max:255|unique:users,contact',
                 'photo_profile' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'fcm_token' => 'nullable|string',
             ],
             [
                 'name.required' => 'Le nom est obligatoire.',
@@ -205,6 +224,7 @@ class AuthController extends Controller
                 'email' => $validated['email'] ?? null,
                 'contact' => $validated['contact'],
                 'password' => Hash::make($validated['password']),
+                'fcm_token' => $request->input('fcm_token'),
             ];
 
             // Gestion de l'upload de la photo de profil
@@ -220,6 +240,21 @@ class AuthController extends Controller
 
             // Envoyer le code OTP par SMS
             $result = $this->smsService->sendOtp($validated['contact'], $validated['prenom'], $validated['name']);
+
+            // Mettre à jour le fcm_token si fourni (déjà fait à la création, mais on garde fcmToken sous la main)
+            $fcmToken = $request->input('fcm_token');
+            if ($fcmToken && isset($result['code'])) {
+                try {
+                    $this->fcmService->sendNotification(
+                        $fcmToken,
+                        'Code de vérification Car225',
+                        "Votre code de vérification est : {$result['code']}. Ce code expire dans 10 minutes.",
+                        ['type' => 'otp']
+                    );
+                } catch (\Exception $e) {
+                    Log::error('Erreur lors de l\'envoi de la notification push OTP: ' . $e->getMessage());
+                }
+            }
 
             return response()->json([
                 'success' => true,
@@ -337,6 +372,7 @@ class AuthController extends Controller
     {
         $request->validate([
             'contact' => 'required|string',
+            'fcm_token' => 'nullable|string',
         ], [
             'contact.required' => 'Le numéro de contact est obligatoire.',
         ]);
@@ -358,6 +394,20 @@ class AuthController extends Controller
         }
 
         $result = $this->smsService->sendOtp($request->contact, $user->prenom, $user->name);
+
+        $fcmToken = $request->fcm_token ?? $user->fcm_token;
+        if ($fcmToken && isset($result['code'])) {
+            try {
+                $this->fcmService->sendNotification(
+                    $fcmToken,
+                    'Code de vérification Car225',
+                    "Votre code de vérification est : {$result['code']}. Ce code expire dans 10 minutes.",
+                    ['type' => 'otp']
+                );
+            } catch (\Exception $e) {
+                Log::error('Erreur lors de l\'envoi de la notification push OTP au renvoi: ' . $e->getMessage());
+            }
+        }
 
         return response()->json([
             'success' => $result['success'],

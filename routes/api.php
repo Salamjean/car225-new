@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\Agent\AuthController as AgentAuthController;
 use App\Http\Controllers\Api\Agent\AgentController;
 use App\Http\Controllers\Api\Agent\ReservationApiController as AgentReservationController;
 use App\Http\Controllers\Api\UnifiedAuthController;
+use App\Http\Controllers\Api\PublicSignalementController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -226,6 +227,15 @@ Route::prefix('chauffeur')->group(function () {
         Route::post('/messages', [\App\Http\Controllers\Api\Chauffeur\MessageApiController::class, 'store']);
         Route::get('/messages/{id}', [\App\Http\Controllers\Api\Chauffeur\MessageApiController::class, 'show']);
     });
+});
+
+// ============================================================================
+// PUBLIC ROUTES (sans authentification - accessible depuis l'app)
+// ============================================================================
+
+Route::prefix('public')->group(function () {
+    // Signalement d'accident anonyme (pas besoin d'être connecté)
+    Route::post('/signalement-accident', [PublicSignalementController::class, 'store']);
 });
 
 // ============================================================================
