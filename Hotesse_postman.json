@@ -1,0 +1,582 @@
+{
+    "info": {
+        "_postman_id": "aa123b45-6c78-9d01-e234-5f6789012345",
+        "name": "Car225 - Hôtesse API",
+        "description": "Collection pour tester les endpoints de l'Hôtesse.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Auth",
+            "item": [
+                {
+                    "name": "Login",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = pm.response.json();",
+                                    "if(jsonData.token) {",
+                                    "    pm.collectionVariables.set(\"hotesse_token\", jsonData.token);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"test@hotesse.com\",\n    \"password\": \"password\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/hotesse/login",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "hotesse",
+                                "login"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Verify OTP",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = pm.response.json();",
+                                    "if(jsonData.setup_token) {",
+                                    "    pm.collectionVariables.set(\"setup_token\", jsonData.setup_token);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"test@hotesse.com\",\n    \"otp_code\": \"123456\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/hotesse/verify-otp",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "hotesse",
+                                "verify-otp"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Resend OTP",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"test@hotesse.com\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/hotesse/resend-otp",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "hotesse",
+                                "resend-otp"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Setup Password",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{setup_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"password\": \"newpassword123\",\n    \"password_confirmation\": \"newpassword123\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/hotesse/setup-password",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "hotesse",
+                                "setup-password"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Logout",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/hotesse/logout",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "hotesse",
+                                "logout"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Mot de passe oublié (Reset)",
+            "item": [
+                {
+                    "name": "1. Send Password Reset OTP",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"test@hotesse.com\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/hotesse/password/send-otp",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "hotesse",
+                                "password",
+                                "send-otp"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "2. Verify Password Reset OTP",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"test@hotesse.com\",\n    \"otp\": \"123456\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/hotesse/password/verify-otp",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "hotesse",
+                                "password",
+                                "verify-otp"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "3. Reset Password",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"test@hotesse.com\",\n    \"otp\": \"123456\",\n    \"password\": \"newpassword123\",\n    \"password_confirmation\": \"newpassword123\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/hotesse/password/reset",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "hotesse",
+                                "password",
+                                "reset"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Profile",
+            "item": [
+                {
+                    "name": "Get Profile",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/hotesse/profile",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "hotesse",
+                                "profile"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Profile",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Doe\",\n    \"prenom\": \"Jane\",\n    \"contact\": \"0102030405\",\n    \"cas_urgence\": \"0504030201\",\n    \"commune\": \"Cocody\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/hotesse/profile",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "hotesse",
+                                "profile"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Change Password",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"current_password\": \"12345678\",\n    \"new_password\": \"password\",\n    \"new_password_confirmation\": \"password\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/hotesse/change-password",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "hotesse",
+                                "change-password"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Dashboard & Ventes",
+            "item": [
+                {
+                    "name": "Dashboard",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/hotesse/dashboard",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "hotesse",
+                                "dashboard"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Historique des Ventes",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/hotesse/ventes?date_debut=2023-01-01&statut=confirmee",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "hotesse",
+                                "ventes"
+                            ],
+                            "query": [
+                                {
+                                    "key": "date_debut",
+                                    "value": "2023-01-01"
+                                },
+                                {
+                                    "key": "statut",
+                                    "value": "confirmee"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Reservation Details",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/hotesse/reservations/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "hotesse",
+                                "reservations",
+                                "1"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Billetterie",
+            "item": [
+                {
+                    "name": "Search Programmes (Vendre Ticket)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/hotesse/vendre-ticket?date_depart=2024-03-06",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "hotesse",
+                                "vendre-ticket"
+                            ],
+                            "query": [
+                                {
+                                    "key": "date_depart",
+                                    "value": "2024-03-06"
+                                },
+                                {
+                                    "key": "point_depart",
+                                    "value": "Abidjan",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "point_arrive",
+                                    "value": "Yamoussoukro",
+                                    "disabled": true
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Submit Ticket Sale",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"programme_id\": 1,\n    \"date_voyage\": \"2024-03-10\",\n    \"heure_depart\": \"08:00\",\n    \"nombre_passagers\": 1,\n    \"passenger_details\": [\n        {\n            \"nom\": \"Doe\",\n            \"prenom\": \"John\",\n            \"telephone\": \"0102030405\"\n        }\n    ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/hotesse/vendre-ticket",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "hotesse",
+                                "vendre-ticket"
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+    ],
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "token",
+                "value": "{{hotesse_token}}",
+                "type": "string"
+            }
+        ]
+    },
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    ""
+                ]
+            }
+        },
+        {
+            "listen": "test",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    ""
+                ]
+            }
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:8000/api",
+            "type": "string"
+        },
+        {
+            "key": "hotesse_token",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "setup_token",
+            "value": "",
+            "type": "string"
+        }
+    ]
+}
