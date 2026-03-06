@@ -214,6 +214,7 @@ class AuthController extends Controller
                 'photo_profile.image' => 'Le fichier doit être une image.',
                 'photo_profile.mimes' => 'L\'image doit être au format : jpeg, png, jpg ou gif.',
                 'photo_profile.max' => 'L\'image ne doit pas dépasser 2 Mo.',
+                'photo_profile.uploaded' => 'L\'image est trop lourde pour le serveur (elle dépasse très probablement la limite de 2 Mo) ou le fichier est invalide. Veuillez compresser l\'image avant de l\'envoyer.',
             ]
         );
 

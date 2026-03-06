@@ -32,7 +32,7 @@
         </div>
 
         <!-- Row 1: Main Stats -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-5 mb-6">
             <!-- Scans Today Card -->
             <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-5 shadow-xl text-white transform hover:-translate-y-1 transition-all">
                 <div class="flex items-center justify-between mb-3">
@@ -47,23 +47,6 @@
                 <h3 class="text-3xl font-black mt-1">{{ $scansToday }}</h3>
                 <p class="mt-3 text-xs text-white/70 font-medium">
                     Total: {{ $totalScans }} scans effectués par moi
-                </p>
-            </div>
-
-            <!-- Passagers Embarqués Today Card (Station Scope) -->
-            <div class="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-5 shadow-xl text-white transform hover:-translate-y-1 transition-all">
-                <div class="flex items-center justify-between mb-3">
-                    <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                        <i class="fas fa-users text-xl"></i>
-                    </div>
-                    <span class="px-2 py-1 bg-white/20 rounded-lg text-xs font-bold uppercase tracking-tighter">
-                        Gare aujourd'hui
-                    </span>
-                </div>
-                <p class="text-sm font-bold text-white/80 uppercase tracking-wider">Passagers embarqués</p>
-                <h3 class="text-3xl font-black mt-1">{{ $passagersEmbarquesToday }}</h3>
-                <p class="mt-3 text-xs text-white/70 font-medium tracking-tight">
-                    Confirmés au départ de cette gare
                 </p>
             </div>
 
@@ -105,7 +88,7 @@
         </div>
 
         <!-- Row 3: Tables -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 gap-6">
             <!-- Recent Scans -->
             <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-50 bg-gradient-to-r from-blue-50 to-white flex items-center justify-between">
@@ -158,50 +141,7 @@
                 </div>
             </div>
 
-            <!-- Programmes du jour -->
-            <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-50 bg-gradient-to-r from-orange-50 to-white">
-                    <h3 class="text-lg font-black text-orange-900 uppercase tracking-tight">
-                        <i class="fas fa-calendar-day mr-2"></i>Programmes du jour
-                    </h3>
-                </div>
-                <div class="overflow-x-auto max-h-80">
-                    @if($programmesDuJour->count() > 0)
-                    <table class="w-full text-left">
-                        <thead class="bg-gray-50 text-xs uppercase font-bold text-gray-500 sticky top-0">
-                            <tr>
-                                <th class="px-4 py-3">Heure</th>
-                                <th class="px-4 py-3">Trajet</th>
-                                <th class="px-4 py-3">Véhicule</th>
-                            </tr>
-                        </thead>
-                        <tbody class="text-sm divide-y divide-gray-100">
-                            @foreach($programmesDuJour as $prog)
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-4 py-3">
-                                    <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-bold">
-                                        {{ $prog->heure_depart }}
-                                    </span>
-                                </td>
-                                <td class="px-4 py-3">
-                                    <div class="font-bold text-gray-900">{{ $prog->point_depart }} → {{ $prog->point_arrive }}</div>
-                                    <div class="text-xs text-gray-400">{{ number_format($prog->prix, 0, ',', ' ') }} FCFA</div>
-                                </td>
-                                <td class="px-4 py-3 text-gray-600">
-                                    {{ $prog->vehicule->immatriculation ?? '-' }}
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                    @else
-                    <div class="p-8 text-center text-gray-400">
-                        <i class="fas fa-calendar-times text-3xl mb-2"></i>
-                        <p>Aucun programme prévu aujourd'hui</p>
-                    </div>
-                    @endif
-                </div>
-            </div>
+
         </div>
 
         <!-- Quick Action Button (Mobile) -->

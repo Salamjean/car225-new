@@ -230,6 +230,48 @@ Route::prefix('chauffeur')->group(function () {
 });
 
 // ============================================================================
+// HOTESSE API ROUTES
+// ============================================================================
+
+Route::prefix('hotesse')->group(function () {
+    
+    // Routes publiques (sans authentification)
+    Route::post('/login', [\App\Http\Controllers\Api\Hotesse\HotesseAuthController::class, 'login']);
+    Route::post('/verify-otp', [\App\Http\Controllers\Api\Hotesse\HotesseAuthController::class, 'verifyOtp']);
+    Route::post('/resend-otp', [\App\Http\Controllers\Api\Hotesse\HotesseAuthController::class, 'resendOtp']);
+    
+    // Setup Password requires a specific ability 'setup-password' issued by verifyOtp
+    Route::middleware('auth:sanctum')->post('/setup-password', [\App\Http\Controllers\Api\Hotesse\HotesseAuthController::class, 'setupPassword']);
+    
+    // Mot de passe oublié
+    Route::post('/password/send-otp', [\App\Http\Controllers\Api\Hotesse\PasswordResetController::class, 'sendOtp']);
+    Route::post('/password/verify-otp', [\App\Http\Controllers\Api\Hotesse\PasswordResetController::class, 'verifyOtp']);
+    Route::post('/password/reset', [\App\Http\Controllers\Api\Hotesse\PasswordResetController::class, 'resetPassword']);
+    
+    // Routes protégées (authentification requise)
+    Route::middleware('auth:sanctum')->group(function () {
+        // Authentification
+        Route::post('/logout', [\App\Http\Controllers\Api\Hotesse\HotesseAuthController::class, 'logout']);
+        
+        // Profil
+        Route::get('/profile', [\App\Http\Controllers\Api\Hotesse\HotesseController::class, 'profile']);
+        Route::post('/profile', [\App\Http\Controllers\Api\Hotesse\HotesseController::class, 'updateProfile']); // Using POST for file uploads
+        Route::post('/change-password', [\App\Http\Controllers\Api\Hotesse\HotesseController::class, 'updatePassword']);
+        
+        // Dashboard
+        Route::get('/dashboard', [\App\Http\Controllers\Api\Hotesse\HotesseController::class, 'dashboard']);
+        
+        // Ventes et Billetterie
+        Route::get('/ventes', [\App\Http\Controllers\Api\Hotesse\HotesseController::class, 'ventes']);
+        Route::get('/vendre-ticket', [\App\Http\Controllers\Api\Hotesse\HotesseController::class, 'vendreTicket']);
+        Route::post('/vendre-ticket', [\App\Http\Controllers\Api\Hotesse\HotesseController::class, 'vendreTicketSubmit']);
+        
+        // Détails réservation (par ex. pour imprimer)
+        Route::get('/reservations/{id}', [\App\Http\Controllers\Api\Hotesse\HotesseController::class, 'showReservation']);
+    });
+});
+
+// ============================================================================
 // PUBLIC ROUTES (sans authentification - accessible depuis l'app)
 // ============================================================================
 
