@@ -323,6 +323,11 @@ class UserAuthenticate extends Controller
         // Si l'utilisateur existe déjà avec Google, on le connecte
         if ($existingUserByGoogleId) {
             Auth::login($existingUserByGoogleId);
+            
+            if (empty($existingUserByGoogleId->contact)) {
+                return redirect()->route('user.complete-profile')->with('info', 'Bienvenue ! Veuillez renseigner votre numéro de téléphone.');
+            }
+            
             return redirect()->intended(route('reservation.create'))->with('success', 'Bienvenue ' . $existingUserByGoogleId->prenom . ' !');
         }
         
@@ -358,11 +363,41 @@ class UserAuthenticate extends Controller
 
         Auth::login($user);
 
+        if (empty($user->contact)) {
+            return redirect()->route('user.complete-profile')
+                ->with('info', 'Bienvenue ! Veuillez renseigner votre numéro de téléphone pour finaliser votre compte.');
+        }
+
         return redirect()->intended(route('reservation.create'))->with('success', 'Bienvenue ' . $user->prenom . ' !');
 
     } catch (\Exception $e) {
         Log::error('Erreur Google Login: ' . $e->getMessage());
         return redirect()->route('login')->with('error', 'Erreur lors de la connexion avec Google. ' . $e->getMessage());
     }
+}
+
+public function showCompleteProfile()
+{
+    return view('user.auth.complete-profile');
+}
+
+public function updateContact(Request $request)
+{
+    $request->validate([
+        'contact' => 'required|string|regex:/^[0-9]+$/|min:10|unique:users,contact,' . Auth::id(),
+    ], [
+        'contact.required' => 'Le numéro de téléphone est obligatoire.',
+        'contact.regex' => 'Le format du numéro de téléphone est invalide.',
+        'contact.min' => 'Le numéro de téléphone doit contenir au moins 10 chiffres.',
+        'contact.unique' => 'Ce numéro de téléphone est déjà utilisé.',
+    ]);
+
+    $user = Auth::user();
+    $user->update([
+        'contact' => $request->contact,
+        'phone_verified_at' => now(), // On considère que s'il vient de Google, le contact est valide ou on peut ajouter une vérification OTP ici si besoin
+    ]);
+
+    return redirect()->route('reservation.create')->with('success', 'Profil mis à jour avec succès !');
 }
 }

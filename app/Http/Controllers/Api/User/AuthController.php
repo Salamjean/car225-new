@@ -716,6 +716,7 @@ class AuthController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Authentification Google réussie',
+                'requires_contact' => empty($user->contact),
                 'user' => [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -738,5 +739,36 @@ class AuthController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Mettre à jour le contact (obligatoire pour Google users)
+     */
+    public function updateContact(Request $request)
+    {
+        $request->validate([
+            'contact' => 'required|string|regex:/^[0-9]+$/|min:10|unique:users,contact,' . $request->user()->id,
+        ], [
+            'contact.required' => 'Le numéro de téléphone est obligatoire.',
+            'contact.regex' => 'Le format du numéro de téléphone est invalide.',
+            'contact.min' => 'Le numéro de téléphone doit contenir au moins 10 chiffres.',
+            'contact.unique' => 'Ce numéro de téléphone est déjà utilisé.',
+        ]);
+
+        $user = $request->user();
+        $user->update([
+            'contact' => $request->contact,
+            'phone_verified_at' => now(), // Auto-vérifié pour Google, ou on peut forcer la verif OTP si besoin
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Numéro de téléphone mis à jour avec succès.',
+            'user' => [
+                'id' => $user->id,
+                'contact' => $user->contact,
+                'name' => $user->name,
+            ]
+        ]);
     }
 }

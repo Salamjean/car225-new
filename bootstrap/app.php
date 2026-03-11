@@ -28,6 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'hotesse' => \App\Http\Middleware\HotesseMiddleware::class,
             'chauffeur' => \App\Http\Middleware\ChauffeurMiddleware::class,
             'gare' => \App\Http\Middleware\GareMiddleware::class,
+            'check_contact' => \App\Http\Middleware\CheckUserContact::class,
         ]);
 
         $middleware->web(append: [
