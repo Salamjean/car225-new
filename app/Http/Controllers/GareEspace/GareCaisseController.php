@@ -82,6 +82,7 @@ class GareCaisseController extends Controller
                         'name' => $caisse->name,
                         'prenom' => $caisse->prenom,
                         'email' => $caisse->email,
+                        'code_id' => $caisse->code_id,
                     ],
                     $otpCode,
                     $compagnie->name ?? 'Compagnie'

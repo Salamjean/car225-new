@@ -16,21 +16,23 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'login' => 'required|string',
             'password' => 'required|min:8',
             'fcm_token' => 'nullable|string',
         ], [
-            'email.required' => 'L\'adresse email est obligatoire.',
-            'email.email' => 'Veuillez saisir une adresse email valide.',
+            'login.required' => 'L\'identifiant (Contact ou Code ID) est obligatoire.',
             'password.required' => 'Le mot de passe est obligatoire.',
             'password.min' => 'Le mot de passe doit contenir au moins 8 caractères.',
         ]);
 
-        $agent = Agent::where('email', $request->email)->first();
+        $loginValue = $request->login;
+        $agent = Agent::where('contact', $loginValue)
+            ->orWhere('code_id', $loginValue)
+            ->first();
 
         if (!$agent) {
             throw ValidationException::withMessages([
-                'email' => ['Cette adresse email n\'existe pas.'],
+                'login' => ['Cet identifiant n\'existe pas.'],
             ]);
         }
 

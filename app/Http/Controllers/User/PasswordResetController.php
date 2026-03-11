@@ -10,9 +10,17 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class PasswordResetController extends Controller
 {
+    protected $smsService;
+
+    public function __construct(\App\Services\SmsService $smsService)
+    {
+        $this->smsService = $smsService;
+    }
+
     /**
      * Afficher la page de réinitialisation (3 steps)
      */
@@ -22,29 +30,36 @@ class PasswordResetController extends Controller
     }
 
     /**
-     * Step 1: Envoyer le code OTP par email
+     * Step 1: Envoyer le code OTP par email et SMS
      */
     public function sendOtp(Request $request)
     {
         $request->validate([
-            'email' => 'required|email'
+            'identity' => 'required'
         ]);
 
-        $email = $request->email;
-        $user = User::where('email', $email)->first();
+        $identity = $request->identity;
+        
+        // Trouver l'utilisateur par email, contact ou code_id
+        $user = User::where('email', $identity)
+            ->orWhere('contact', $identity)
+            ->orWhere('code_id', $identity)
+            ->first();
+
         if (!$user) {
             return response()->json([
                 'success' => false,
-                'message' => 'Aucun compte n\'existe avec cette adresse email.'
+                'message' => 'Aucun compte n\'existe avec ces informations.'
             ]);
         }
 
-        $email = $request->email;
+        $email = $user->email ?? $user->contact ?? $user->code_id;
+        $contact = $user->contact;
         
         // Générer un code OTP à 6 chiffres
         $otpCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         
-        // Supprimer les anciens codes OTP pour cet email
+        // Supprimer les anciens codes OTP pour cet identifiant
         DB::table('password_reset_tokens')
             ->where('email', $email)
             ->delete();
@@ -52,29 +67,55 @@ class PasswordResetController extends Controller
         // Enregistrer le nouveau code OTP
         DB::table('password_reset_tokens')->insert([
             'email' => $email,
-            'token' => Hash::make($otpCode), // On stocke le code OTP hashé dans la colonne 'token'
+            'token' => Hash::make($otpCode),
             'created_at' => now()
         ]);
 
-        // Envoyer l'email avec le code OTP
-        try {
-            Mail::send('emails.otp', ['otp' => $otpCode], function ($message) use ($email) {
-                $message->to($email)
-                    ->subject('Code de réinitialisation de mot de passe - Car225');
-            });
+        $successMail = false;
+        $successSms = false;
+
+        // Envoyer l'email si disponible
+        if ($user->email) {
+            try {
+                Mail::send('emails.otp', ['otp' => $otpCode], function ($message) use ($user) {
+                    $message->to($user->email)
+                        ->subject('Code de réinitialisation de mot de passe - Car225');
+                });
+                $successMail = true;
+            } catch (\Exception $e) {
+                Log::error('Erreur envoi Email reset password: ' . $e->getMessage());
+            }
+        }
+
+        // Envoyer le SMS si disponible
+        if ($contact) {
+            try {
+                $message = "Votre code de reinitialisation Car225 est : {$otpCode}. Il expire dans 10 minutes.";
+                $successSms = $this->smsService->sendSms($contact, $message);
+            } catch (\Exception $e) {
+                Log::error('Erreur envoi SMS reset password: ' . $e->getMessage());
+            }
+        }
+
+        if ($successMail || $successSms) {
+            $msg = 'Un code OTP a été envoyé';
+            if ($successMail && $successSms) $msg .= ' par email et SMS.';
+            elseif ($successMail) $msg .= ' par email.';
+            elseif ($successSms) $msg .= ' par SMS.';
 
             return response()->json([
                 'success' => true,
-                'message' => 'Un code OTP a été envoyé à votre adresse email.',
-                'email' => $email
+                'message' => $msg,
+                'email' => $email // Cet identifiant sera utilisé pour les étapes suivantes
             ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de l\'envoi de l\'email. Veuillez réessayer.'
-            ], 500);
         }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Erreur lors de l\'envoi du code. Aucun moyen d\'envoi disponible.'
+        ], 500);
     }
+
 
     /**
      * Step 2: Vérifier le code OTP
@@ -82,7 +123,7 @@ class PasswordResetController extends Controller
     public function verifyOtp(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'email' => 'required',
             'otp' => 'required|string|size:6'
         ]);
 
@@ -131,7 +172,7 @@ class PasswordResetController extends Controller
     public function resetPassword(Request $request)
     {
         $request->validate([
-            'email' => 'required|email|exists:users,email',
+            'email' => 'required',
             'otp' => 'required|string|size:6',
             'password' => 'required|min:8|confirmed'
         ], [
@@ -165,7 +206,11 @@ class PasswordResetController extends Controller
         }
 
         // Mettre à jour le mot de passe
-        $user = User::where('email', $email)->first();
+        $user = User::where('email', $email)
+            ->orWhere('contact', $email)
+            ->orWhere('code_id', $email)
+            ->first();
+            
         $user->update([
             'password' => Hash::make($request->password)
         ]);

@@ -26,11 +26,14 @@ class HotesseAuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'login' => 'required|string',
             'password' => 'required|string',
         ]);
 
-        $hotesse = Hotesse::where('email', $request->email)->first();
+        $loginValue = $request->login;
+        $hotesse = Hotesse::where('contact', $loginValue)
+            ->orWhere('code_id', $loginValue)
+            ->first();
 
         if (!$hotesse) {
             return response()->json([

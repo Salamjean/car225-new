@@ -9,6 +9,7 @@ use App\Services\HotesseOtpService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use App\Mail\HotesseCreatedMail;
 
 class HotesseAuthController extends Controller
@@ -121,40 +122,57 @@ class HotesseAuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'login' => 'required',
             'password' => 'required|string',
+        ], [
+            'login.required' => 'L\'identifiant ou l\'email est obligatoire.',
+            'password.required' => 'Le mot de passe est obligatoire.',
         ]);
 
-        $credentials = $request->only('email', 'password');
+        $loginValue = $request->input('login');
 
-        // Check if hotesse exists
-        $hotesse = Hotesse::where('email', $credentials['email'])->first();
+        // Check if hotesse exists by email or code_id
+        $hotesse = Hotesse::where('email', $loginValue)
+            ->orWhere('code_id', $loginValue)
+            ->first();
 
         if (!$hotesse) {
-            return back()->withErrors(['email' => 'Email non reconnu.'])->withInput();
+            return back()->withErrors(['login' => 'Identifiant non reconnu.'])->withInput($request->except('password'));
         }
 
         // Check if hotesse is archived
         if ($hotesse->isArchived()) {
-            return back()->withErrors(['email' => 'Votre compte a été archivé. Contactez votre compagnie.'])->withInput();
+            return back()->withErrors(['login' => 'Votre compte a été archivé. Contactez votre compagnie.'])->withInput($request->except('password'));
         }
         
-        // Check if password looks like temporary password
-        if (str_starts_with($hotesse->password, Hash::make('temporary_password_')) || 
-            Hash::check('temporary_password_' . $hotesse->created_at->timestamp, $hotesse->password)) {
-            return redirect()->route('hotesse.auth.verify-otp', ['email' => $hotesse->email])
-                ->with('info', 'Veuillez d\'abord configurer votre mot de passe en utilisant le code OTP reçu par email.');
+        // Check for temporary password (using a more reliable check)
+        // If it was recently created and they are using the default temporary password logic
+        if (Hash::check('temporary_password_' . $hotesse->created_at->timestamp, $hotesse->password)) {
+            return redirect()->route('hotesse.auth.verify-otp', ['email' => $hotesse->email ?? $hotesse->contact ?? $hotesse->code_id])
+                ->with('info', 'Veuillez d\'abord configurer votre mot de passe en utilisant le code OTP reçu.');
         }
 
-        // Attempt login
+        // Determine which field to use for authentication
+        $field = 'email';
+        if ($hotesse->contact === $loginValue) {
+            $field = 'contact';
+        } elseif ($hotesse->code_id === $loginValue) {
+            $field = 'code_id';
+        }
 
-        // Attempt login
-        if (Auth::guard('hotesse')->attempt($credentials, $request->filled('remember'))) {
+        if (Auth::guard('hotesse')->attempt([$field => $loginValue, 'password' => $request->password], $request->filled('remember'))) {
             $request->session()->regenerate();
-            return redirect()->intended(route('hotesse.dashboard'));
+            
+            // Si on a été redirigé vers hotesse/login à cause d'un manque d'accès, on va au dashboard au lieu de 'intended' (qui pourrait être une page user)
+            $intended = session()->get('url.intended');
+            if ($intended && str_contains($intended, '/hotesse/')) {
+                return redirect()->intended(route('hotesse.dashboard'));
+            }
+            
+            return redirect()->route('hotesse.dashboard')->with('success', 'Bienvenue sur votre espace hôtesse!');
         }
 
-        return back()->withErrors(['password' => 'Mot de passe incorrect.'])->withInput();
+        return back()->withErrors(['password' => 'Mot de passe incorrect.'])->withInput($request->except('password'));
     }
 
     /**

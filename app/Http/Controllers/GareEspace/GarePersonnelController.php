@@ -99,7 +99,7 @@ class GarePersonnelController extends Controller
                         'otp_code' => $otp->otp
                     ]);
 
-                    Mail::to($personnel->email)->send(new ChauffeurOtpMail($otp->otp, $personnel->name . ' ' . $personnel->prenom, $personnel->email));
+                    Mail::to($personnel->email)->send(new ChauffeurOtpMail($otp->otp, $personnel->name . ' ' . $personnel->prenom, $personnel->email, $personnel->code_id));
 
                     \Illuminate\Support\Facades\Log::info('SUCCESS: Chauffeur Creation Email Sent', [
                         'email' => $personnel->email

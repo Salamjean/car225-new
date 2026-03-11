@@ -62,6 +62,7 @@
                         <tr class="bg-gray-50 border-b border-gray-200">
                             <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Photo</th>
                             <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Nom & Prénom</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Code ID</th>
                             <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Type</th>
                             <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Contact</th>
                             <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Statut</th>
@@ -82,6 +83,9 @@
                                 <td class="px-6 py-4">
                                     <p class="font-semibold text-gray-900">{{ $personnel->name }}</p>
                                     <p class="text-sm text-gray-500">{{ $personnel->prenom }}</p>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded-md font-mono text-xs">{{ $personnel->code_id ?? 'N/A' }}</span>
                                 </td>
                                 <td class="px-6 py-4">
                                     @if($personnel->type_personnel === 'Chauffeur')

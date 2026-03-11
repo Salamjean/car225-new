@@ -358,15 +358,15 @@
             </div>
 
             <div class="reset-body">
-                <!-- Step 1: Email -->
+                <!-- Step 1: Identity -->
                 <div class="step-content active" id="step-1">
                     <div class="info-text">
-                        <p>Entrez votre adresse email pour recevoir un code de vérification.</p>
+                        <p>Entrez votre adresse email, votre numéro de téléphone ou votre Code ID pour recevoir un code de vérification.</p>
                     </div>
-                    <form id="emailForm">
+                    <form id="identityForm">
                         <div class="form-group">
-                            <label for="email"><i class="fas fa-envelope"></i> Adresse Email</label>
-                            <input type="email" id="email" class="form-control" placeholder="votre@email.com" required>
+                            <label for="identity"><i class="fas fa-user-circle"></i> Email, Contact ou Code ID</label>
+                            <input type="text" id="identity" class="form-control" placeholder="votre@email.com, 07xxxxxxxx ou USR-XXXXXX" required>
                         </div>
                         <button type="submit" class="btn btn-primary" id="sendOtpBtn">
                             <i class="fas fa-paper-plane"></i> Envoyer le code
@@ -380,7 +380,7 @@
                 <!-- Step 2: OTP Verification -->
                 <div class="step-content" id="step-2">
                     <div class="info-text">
-                        <p>Un code à 6 chiffres a été envoyé à votre email.</p>
+                        <p>Un code à 6 chiffres a été envoyé par email et/ou SMS.</p>
                     </div>
                     <form id="otpForm">
                         <div class="otp-inputs">
@@ -437,10 +437,10 @@
         let otpCode = '';
 
         // Step 1: Send OTP
-        document.getElementById('emailForm').addEventListener('submit', async function(e) {
+        document.getElementById('identityForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const email = document.getElementById('email').value;
+            const identity = document.getElementById('identity').value;
             const btn = document.getElementById('sendOtpBtn');
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Envoi en cours...';
@@ -453,18 +453,18 @@
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
-                    body: JSON.stringify({ email })
+                    body: JSON.stringify({ identity })
                 });
 
                 const data = await response.json();
 
                 if (data.success) {
-                    userEmail = email;
+                    userEmail = data.email; // Recupere l'email reel depuis le serveur pour la suite
                     Swal.fire({
                         icon: 'success',
                         title: 'Code envoyé !',
                         text: data.message,
-                        timer: 2000,
+                        timer: 3000,
                         showConfirmButton: false
                     });
                     goToStep(2);

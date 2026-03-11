@@ -15,15 +15,17 @@ class ChauffeurOtpMail extends Mailable
     public $otp;
     public $chauffeurName;
     public $chauffeurEmail;
+    public $codeId;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(string $otp, string $chauffeurName, string $chauffeurEmail)
+    public function __construct(string $otp, string $chauffeurName, string $chauffeurEmail, string $codeId = null)
     {
         $this->otp = $otp;
         $this->chauffeurName = $chauffeurName;
         $this->chauffeurEmail = $chauffeurEmail;
+        $this->codeId = $codeId;
     }
 
     /**
@@ -43,6 +45,12 @@ class ChauffeurOtpMail extends Mailable
     {
         return new Content(
             view: 'emails.chauffeur-otp',
+            with: [
+                'otp' => $this->otp,
+                'chauffeurName' => $this->chauffeurName,
+                'chauffeurEmail' => $this->chauffeurEmail,
+                'codeId' => $this->codeId,
+            ],
         );
     }
 

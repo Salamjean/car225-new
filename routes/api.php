@@ -146,6 +146,11 @@ Route::prefix('agent')->group(function () {
     
     // Routes publiques (sans authentification)
     Route::post('/login', [AgentAuthController::class, 'login']);
+
+    // Mot de passe oublié
+    Route::post('/password/send-otp', [\App\Http\Controllers\Api\Agent\PasswordResetController::class, 'sendOtp']);
+    Route::post('/password/verify-otp', [\App\Http\Controllers\Api\Agent\PasswordResetController::class, 'verifyOtp']);
+    Route::post('/password/reset', [\App\Http\Controllers\Api\Agent\PasswordResetController::class, 'resetPassword']);
     
     // Routes protégées (authentification requise)
     Route::middleware('auth:sanctum')->group(function () {
@@ -187,6 +192,11 @@ Route::prefix('chauffeur')->group(function () {
 
     // Routes publiques (sans authentification)
     Route::post('/login', [\App\Http\Controllers\Api\Chauffeur\AuthController::class, 'login']);
+    
+    // Mot de passe oublié
+    Route::post('/password/send-otp', [\App\Http\Controllers\Api\Chauffeur\PasswordResetController::class, 'sendOtp']);
+    Route::post('/password/verify-otp', [\App\Http\Controllers\Api\Chauffeur\PasswordResetController::class, 'verifyOtp']);
+    Route::post('/password/reset', [\App\Http\Controllers\Api\Chauffeur\PasswordResetController::class, 'resetPassword']);
 
     // Routes protégées (authentification requise)
     Route::middleware('auth:sanctum')->group(function () {
@@ -268,6 +278,24 @@ Route::prefix('hotesse')->group(function () {
         
         // Détails réservation (par ex. pour imprimer)
         Route::get('/reservations/{id}', [\App\Http\Controllers\Api\Hotesse\HotesseController::class, 'showReservation']);
+    });
+});
+
+// ============================================================================
+// CAISSE API ROUTES
+// ============================================================================
+Route::prefix('caisse')->group(function () {
+    // Routes publiques
+    Route::post('/login', [\App\Http\Controllers\Api\Caisse\AuthController::class, 'login']);
+    
+    // Mot de passe oublié
+    Route::post('/password/send-otp', [\App\Http\Controllers\Api\Caisse\PasswordResetController::class, 'sendOtp']);
+    Route::post('/password/verify-otp', [\App\Http\Controllers\Api\Caisse\PasswordResetController::class, 'verifyOtp']);
+    Route::post('/password/reset', [\App\Http\Controllers\Api\Caisse\PasswordResetController::class, 'resetPassword']);
+
+    // Routes protégées
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/logout', [\App\Http\Controllers\Api\Caisse\AuthController::class, 'logout']);
     });
 });
 

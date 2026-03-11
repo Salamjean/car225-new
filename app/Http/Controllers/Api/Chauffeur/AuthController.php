@@ -16,18 +16,22 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'login' => 'required',
             'password' => 'required|min:6',
             'fcm_token' => 'nullable|string',
         ]);
 
-        $chauffeur = Personnel::where('email', $request->email)
-            ->where('role', 'chauffeur')
+        $loginValue = $request->login;
+        $chauffeur = Personnel::where(function($query) use ($loginValue) {
+                $query->where('contact', $loginValue)
+                      ->orWhere('code_id', $loginValue);
+            })
+            ->where('type_personnel', 'Chauffeur')
             ->first();
 
         if (!$chauffeur) {
             throw ValidationException::withMessages([
-                'email' => ['Cette adresse email n\'existe pas ou ne correspond pas à un chauffeur.'],
+                'login' => ['Cet identifiant n\'existe pas ou ne correspond pas à un chauffeur.'],
             ]);
         }
 

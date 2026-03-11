@@ -317,7 +317,7 @@
 
 <body>
     <form class="form-container animate__animated animate__fadeIn" method="POST"
-        action="{{ route('admin.handleLogin') }}">
+        action="{{ route('admin.handleLogin') }}" novalidate>
         <div class="form-header">
             <img src="{{ asset('assetsPoster/assets/images/logo_car225.png') }}" class="auth-logo floating"
                 alt="Logo" style="height:80px"><br>
@@ -339,13 +339,13 @@
             </div>
         @endif
 
-        <!-- Email Field -->
+        <!-- Login Field -->
         <div class="input-group">
-            <i class="fas fa-envelope input-icon"></i>
-            <input class="input-field" type="email" name="email" placeholder=" " value="{{ old('email') }}"
+            <i class="fas fa-user input-icon"></i>
+            <input class="input-field" type="text" name="login" placeholder=" " value="{{ old('login') }}"
                 required />
-            <label class="input-label" for="email">Adresse Email</label>
-            @error('email')
+            <label class="input-label" for="login">Email ou Code ID</label>
+            @error('login')
                 <div class="error-message">
                     <i class="fas fa-exclamation-circle"></i> {{ $message }}
                 </div>
