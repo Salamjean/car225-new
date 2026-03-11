@@ -20,16 +20,18 @@ class UnifiedAuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'code_id' => 'required|string',
+            'login' => 'required_without:code_id|string',
+            'code_id' => 'required_without:login|string',
             'password' => 'required|string',
             'fcm_token' => 'nullable|string',
             'nom_device' => 'nullable|string|max:255',
         ], [
-            'code_id.required' => 'Le code d\'identification est obligatoire.',
+            'login.required_without' => 'L\'identifiant (Email, Contact ou Code ID) est obligatoire.',
+            'code_id.required_without' => 'L\'identifiant (Email, Contact ou Code ID) est obligatoire.',
             'password.required' => 'Le mot de passe est obligatoire.',
         ]);
 
-        $codeId = $request->code_id;
+        $loginValue = $request->login ?? $request->code_id;
         $password = $request->password;
 
         // Rechercher dans chaque table par ordre de priorité
@@ -42,7 +44,19 @@ class UnifiedAuthController extends Controller
         ];
 
         foreach ($searchOrder as $search) {
-            $entity = $search['model']::where('code_id', $codeId)->first();
+            $query = $search['model']::where('code_id', $loginValue);
+
+            if ($search['role'] === 'user') {
+                // Pour l'utilisateur : contact ou code_id
+                $query->orWhere('contact', $loginValue);
+            } else {
+                // Pour caisse, hotesse, personnel et agent : mail ou code_id
+                $query->orWhere('email', $loginValue);
+                // Optionnellement on peut aussi garder le contact pour la flexibilité si besoin, 
+                // mais la consigne dit "mail et code_id"
+            }
+
+            $entity = $query->first();
 
             if ($entity) {
                 return $this->attemptLogin($entity, $password, $search['role'], $request);
@@ -51,9 +65,9 @@ class UnifiedAuthController extends Controller
 
         return response()->json([
             'success' => false,
-            'message' => 'Code d\'identification invalide.',
+            'message' => 'Identifiant invalide.',
             'errors' => [
-                'code_id' => ['Aucun compte trouvé avec ce code d\'identification.']
+                'login' => ['Aucun compte trouvé avec cet identifiant.']
             ]
         ], 422);
     }

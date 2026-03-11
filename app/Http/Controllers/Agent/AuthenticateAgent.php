@@ -7,6 +7,7 @@ use App\Models\Agent;
 use App\Models\ResetCodePasswordAgent;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -87,26 +88,33 @@ class AuthenticateAgent extends Controller
     {
         // Validation des champs du formulaire
         $request->validate([
-            'email' => 'required|exists:agents,email',
+            'login' => 'required',
             'password' => 'required|min:8',
             'nom_device' => 'nullable|string|max:255',
         ], [
-            'email.required' => 'Le mail est obligatoire.',
-            'email.exists' => 'Cette adresse mail n\'existe pas.',
+            'login.required' => 'L\'identifiant ou l\'email est obligatoire.',
             'password.required' => 'Le mot de passe est obligatoire.',
             'password.min' => 'Le mot de passe doit avoir au moins 8 caractères.',
         ]);
 
         try {
-            // Récupérer l'agent par son email
-            $agent = Agent::where('email', $request->email)->first();
+            $loginValue = $request->input('login');
+            
+            // Récupérer l'agent par son email ou code_id
+            $agent = Agent::where('email', $loginValue)
+                ->orWhere('code_id', $loginValue)
+                ->first();
+
+            if (!$agent) {
+                return redirect()->back()->with('error', 'Cet identifiant n\'existe pas.')->withInput($request->except('password'));
+            }
 
             // Vérifier si l'agent est archivé
-            if ($agent && $agent->archived_at !== null) {
+            if ($agent->archived_at !== null) {
                 return redirect()->back()->with('error', 'Votre compte a été supprimé. Vous ne pouvez pas vous connecter.');
             }
 
-            if (auth('agent')->attempt($request->only('email', 'password'))) {
+            if (Auth::guard('agent')->attempt(['id' => $agent->id, 'password' => $request->password])) {
                 // Mettre à jour le nom de l'appareil si fourni
                 if ($request->filled('nom_device')) {
                     $agent->update(['nom_device' => $request->nom_device]);
@@ -114,9 +122,10 @@ class AuthenticateAgent extends Controller
                 
                 return redirect()->route('agent.dashboard')->with('success', 'Bienvenue sur la page des demandes en attente');
             } else {
-                return redirect()->back()->with('error', 'Votre mot de passe est incorrect.');
+                return redirect()->back()->with('error', 'Votre mot de passe est incorrect.')->withInput($request->except('password'));
             }
         } catch (Exception $e) {
+            Log::error('Login error: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Une erreur s\'est produite lors de la connexion.');
         }
     }

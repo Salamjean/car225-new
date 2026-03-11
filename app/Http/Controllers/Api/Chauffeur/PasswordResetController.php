@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Controllers\Api\Hotesse;
+namespace App\Http\Controllers\Api\Chauffeur;
 
 use App\Http\Controllers\Controller;
-use App\Models\Hotesse;
+use App\Models\Personnel;
+use App\Models\OtpVerification;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
@@ -23,49 +23,50 @@ class PasswordResetController extends Controller
         ]);
 
         $identity = $request->identity;
-        $hotesse = Hotesse::where('email', $identity)
-            ->orWhere('contact', $identity)
-            ->orWhere('code_id', $identity)
+        $personnel = Personnel::where(function($query) use ($identity) {
+                $query->where('email', $identity)
+                      ->orWhere('contact', $identity)
+                      ->orWhere('code_id', $identity);
+            })
+            ->where('type_personnel', 'Chauffeur')
             ->first();
 
-        if (!$hotesse) {
+        if (!$personnel) {
             return response()->json([
                 'success' => false,
-                'message' => 'Aucune hôtesse n\'existe avec cet identifiant.'
+                'message' => 'Aucun chauffeur n\'existe avec cet identifiant.'
             ], 404);
         }
 
-        $identifier = $hotesse->email ?? $hotesse->contact ?? $hotesse->code_id;
-        $otpCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $identifier = $personnel->email ?? $personnel->contact ?? $personnel->code_id;
         
-        DB::table('password_reset_tokens')->where('email', $identifier)->delete();
-        DB::table('password_reset_tokens')->insert([
-            'email' => $identifier,
-            'token' => Hash::make($otpCode),
-            'created_at' => now()
-        ]);
+        // Criar OTP (usando o sistema existente de OtpVerification se disponível, senão fallback manual)
+        // Note: Chauffeur web uses OtpVerification::createOtp
+        $otpRecord = OtpVerification::createOtp($identifier, 'password_reset_chauffeur');
 
         $successMail = false;
         $successSms = false;
 
-        if ($hotesse->email) {
+        if ($personnel->email) {
             try {
-                Mail::send('emails.otp', ['otp' => $otpCode], function ($message) use ($hotesse) {
-                    $message->to($hotesse->email)->subject('Code de réinitialisation Hôtesse - Car225');
-                });
+                Mail::to($personnel->email)->send(new \App\Mail\ChauffeurResetPasswordMail(
+                    $otpRecord->otp,
+                    $personnel->prenom . ' ' . $personnel->name,
+                    $personnel->email
+                ));
                 $successMail = true;
             } catch (\Exception $e) {
-                Log::error('Erreur API envoi Email reset password Hotesse: ' . $e->getMessage());
+                Log::error('Erreur API envoi Email reset password Chauffeur: ' . $e->getMessage());
             }
         }
 
-        if ($hotesse->contact) {
+        if ($personnel->contact) {
             try {
                 $smsService = app(\App\Services\SmsService::class);
-                $messageSms = "Votre code de reinitialisation Car225 Hôtesse est : {$otpCode}.";
-                $successSms = $smsService->sendSms($hotesse->contact, $messageSms);
+                $messageSms = "Votre code de reinitialisation Car225 Chauffeur est : {$otpRecord->otp}.";
+                $successSms = $smsService->sendSms($personnel->contact, $messageSms);
             } catch (\Exception $e) {
-                Log::error('Erreur API envoi SMS reset password Hotesse: ' . $e->getMessage());
+                Log::error('Erreur API envoi SMS reset password Chauffeur: ' . $e->getMessage());
             }
         }
 
@@ -89,7 +90,7 @@ class PasswordResetController extends Controller
     }
 
     /**
-     * Verify OTP for password reset
+     * Verify OTP
      */
     public function verifyOtp(Request $request)
     {
@@ -98,19 +99,12 @@ class PasswordResetController extends Controller
             'otp' => 'required|string|size:6'
         ]);
 
-        $resetRecord = DB::table('password_reset_tokens')->where('email', $request->email)->first();
+        $isValid = OtpVerification::verify($request->email, $request->otp, 'password_reset_chauffeur');
 
-        if (!$resetRecord || Carbon::parse($resetRecord->created_at)->addMinutes(10)->isPast()) {
+        if (!$isValid) {
             return response()->json([
                 'success' => false, 
-                'message' => 'OTP expiré ou introuvable.'
-            ], 422);
-        }
-
-        if (!Hash::check($request->otp, $resetRecord->token)) {
-            return response()->json([
-                'success' => false, 
-                'message' => 'OTP incorrect.'
+                'message' => 'OTP incorrect ou expiré.'
             ], 422);
         }
 
@@ -131,32 +125,32 @@ class PasswordResetController extends Controller
             'password' => 'required|min:8|confirmed'
         ]);
 
-        $resetRecord = DB::table('password_reset_tokens')->where('email', $request->email)->first();
-        if (!$resetRecord || !Hash::check($request->otp, $resetRecord->token)) {
+        $isValid = OtpVerification::verify($request->email, $request->otp, 'password_reset_chauffeur');
+        if (!$isValid) {
             return response()->json([
                 'success' => false, 
                 'message' => 'OTP invalide.'
             ], 422);
         }
 
-        // Trouver l'hôtesse par l'identifiant (email, contact ou code_id)
-        $hotesse = Hotesse::where('email', $request->email)
-            ->orWhere('contact', $request->email)
-            ->orWhere('code_id', $request->email)
+        $chauffeur = Personnel::where(function($query) use ($request) {
+                $query->where('email', $request->email)
+                      ->orWhere('contact', $request->email)
+                      ->orWhere('code_id', $request->email);
+            })
+            ->where('type_personnel', 'Chauffeur')
             ->first();
 
-        if (!$hotesse) {
+        if (!$chauffeur) {
             return response()->json([
                 'success' => false,
-                'message' => 'Hotesse introuvable.'
+                'message' => 'Chauffeur introuvable.'
             ], 404);
         }
 
-        $hotesse->update([
+        $chauffeur->update([
             'password' => Hash::make($request->password)
         ]);
-        
-        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
 
         return response()->json([
             'success' => true, 

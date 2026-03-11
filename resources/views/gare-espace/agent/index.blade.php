@@ -77,6 +77,7 @@
                     <thead>
                         <tr>
                             <th>Agent</th>
+                            <th>Code ID</th>
                             <th>Email</th>
                             <th>Contact</th>
                             <th>Commune</th>
@@ -103,6 +104,7 @@
                                     </div>
                                 </div>
                             </td>
+                            <td><span class="badge bg-secondary-light text-secondary-custom">{{ $agent->code_id ?? 'N/A' }}</span></td>
                             <td><span class="text-muted-custom">{{ $agent->email }}</span></td>
                             <td><span class="text-muted-custom">{{ $agent->contact }}</span></td>
                             <td><span class="text-muted-custom">{{ $agent->commune }}</span></td>
@@ -319,6 +321,17 @@
     color: var(--text-muted);
     font-size: 0.85rem;
     font-weight: 500;
+}
+
+.bg-secondary-light {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+}
+
+.text-secondary-custom {
+    color: #475569;
+    font-size: 0.85rem;
+    font-weight: 700;
 }
 
 .badge-status {

@@ -36,15 +36,15 @@ class AuthController extends Controller
             'fcm_token' => 'nullable|string',
             'nom_device' => 'nullable|string|max:255',
         ], [
-            'login.required' => 'L\'identifiant (email ou contact) est obligatoire.',
+            'login.required' => 'L\'identifiant (Code ID ou contact) est obligatoire.',
             'password.required' => 'Le mot de passe est obligatoire.',
             'password.min' => 'Le mot de passe doit contenir au moins 8 caractères.',
         ]);
 
         $loginValue = $request->login;
-        $field = filter_var($loginValue, FILTER_VALIDATE_EMAIL) ? 'email' : 'contact';
-
-        $user = User::where($field, $loginValue)->first();
+        $user = User::where('contact', $loginValue)
+            ->orWhere('code_id', $loginValue)
+            ->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
@@ -437,46 +437,86 @@ class AuthController extends Controller
     public function sendOtp(Request $request)
     {
         $request->validate([
-            'email' => 'required|email|exists:users,email'
-        ], [
-            'email.exists' => 'Aucun compte n\'existe avec cette adresse email.'
+            'identity' => 'required'
         ]);
 
-        $email = $request->email;
+        $identity = $request->identity;
+        
+        // Trouver l'utilisateur par email, contact ou code_id
+        $user = User::where('email', $identity)
+            ->orWhere('contact', $identity)
+            ->orWhere('code_id', $identity)
+            ->first();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Aucun compte n\'existe avec ces informations.'
+            ], 404);
+        }
+
+        // Utiliser l'email comme identifiant principal pour le token, ou le contact/code_id si absent
+        $identifier = $user->email ?? $user->contact ?? $user->code_id;
         
         // Générer un code OTP à 6 chiffres
         $otpCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         
-        // Supprimer les anciens codes OTP pour cet email
+        // Supprimer les anciens codes OTP pour cet identifiant
         \Illuminate\Support\Facades\DB::table('password_reset_tokens')
-            ->where('email', $email)
+            ->where('email', $identifier)
             ->delete();
         
         // Enregistrer le nouveau code OTP
         \Illuminate\Support\Facades\DB::table('password_reset_tokens')->insert([
-            'email' => $email,
+            'email' => $identifier,
             'token' => Hash::make($otpCode), // Hashé pour sécurité
             'created_at' => now()
         ]);
 
-        // Envoyer l'email avec le code OTP
-        try {
-            \Illuminate\Support\Facades\Mail::send('emails.otp', ['otp' => $otpCode], function ($message) use ($email) {
-                $message->to($email)
-                    ->subject('Code de réinitialisation de mot de passe - Car225');
-            });
+        $emailIdentifier = $user->email ?? $user->contact ?? $user->code_id;
+        $successMail = false;
+        $successSms = false;
+
+        // Envoyer l'email si disponible
+        if ($user->email) {
+            try {
+                \Illuminate\Support\Facades\Mail::send('emails.otp', ['otp' => $otpCode], function ($message) use ($user) {
+                    $message->to($user->email)
+                        ->subject('Code de réinitialisation de mot de passe - Car225');
+                });
+                $successMail = true;
+            } catch (\Exception $e) {
+                Log::error('Erreur API envoi Email reset password: ' . $e->getMessage());
+            }
+        }
+
+        // Envoyer le SMS si disponible
+        if ($user->contact) {
+            try {
+                $messageSms = "Votre code de reinitialisation Car225 est : {$otpCode}. Il expire dans 10 minutes.";
+                $successSms = $this->smsService->sendSms($user->contact, $messageSms);
+            } catch (\Exception $e) {
+                Log::error('Erreur API envoi SMS reset password: ' . $e->getMessage());
+            }
+        }
+
+        if ($successMail || $successSms) {
+            $msg = 'Un code OTP a été envoyé';
+            if ($successMail && $successSms) $msg .= ' par email et SMS.';
+            elseif ($successMail) $msg .= ' par email.';
+            else $msg .= ' par SMS.';
 
             return response()->json([
                 'success' => true,
-                'message' => 'Un code OTP a été envoyé à votre adresse email.',
-                'email' => $email
+                'message' => $msg,
+                'email' => $emailIdentifier
             ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de l\'envoi de l\'email. Veuillez réessayer.'
-            ], 500);
         }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Erreur lors de l\'envoi du code. Aucun moyen d\'envoi disponible.'
+        ], 500);
     }
 
     /**
@@ -485,7 +525,7 @@ class AuthController extends Controller
     public function verifyOtp(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'email' => 'required',
             'otp' => 'required|string|size:6'
         ]);
 
@@ -534,7 +574,7 @@ class AuthController extends Controller
     public function resetPassword(Request $request)
     {
         $request->validate([
-            'email' => 'required|email|exists:users,email',
+            'email' => 'required',
             'otp' => 'required|string|size:6',
             'password' => 'required|min:8|confirmed'
         ], [
@@ -568,7 +608,18 @@ class AuthController extends Controller
         }
 
         // Mettre à jour le mot de passe
-        $user = User::where('email', $email)->first();
+        $user = User::where('email', $email)
+            ->orWhere('contact', $email)
+            ->orWhere('code_id', $email)
+            ->first();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Utilisateur introuvable.'
+            ], 404);
+        }
+
         $user->update([
             'password' => Hash::make($request->password)
         ]);

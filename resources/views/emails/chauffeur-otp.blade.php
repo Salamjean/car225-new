@@ -56,6 +56,8 @@
             
             <p>Bienvenue chez <strong>CAR225</strong> ! Votre compte chauffeur a été créé avec succès.</p>
             
+            <p><strong>Identifiant personnel (Code ID) :</strong> {{ $codeId }}</p>
+
             <p>Voici votre code de vérification pour activer votre compte :</p>
             
             <div class="otp-code">

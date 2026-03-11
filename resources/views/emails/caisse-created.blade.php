@@ -94,7 +94,9 @@
             
             <div class="info-box">
                 <strong>📧 Votre email de connexion:</strong><br>
-                {{ $caisseData['email'] }}
+                {{ $caisseData['email'] }}<br><br>
+                <strong>🆔 Votre Code ID:</strong><br>
+                <span style="font-family: monospace; font-weight: bold; color: #e94e1a;">{{ $caisseData['code_id'] }}</span>
             </div>
             
             <p>Pour activer votre compte et définir votre mot de passe, veuillez utiliser le code OTP ci-dessous:</p>

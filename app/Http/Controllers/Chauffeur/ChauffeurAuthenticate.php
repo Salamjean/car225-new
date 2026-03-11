@@ -19,19 +19,37 @@ class ChauffeurAuthenticate extends Controller
 
     public function handleLogin(Request $request)
     {
-        $credentials = $request->validate([
-            'email' => 'required|email',
+        $request->validate([
+            'login' => 'required',
             'password' => 'required',
+        ], [
+            'login.required' => 'L\'identifiant ou l\'email est obligatoire.',
+            'password.required' => 'Le mot de passe est obligatoire.',
         ]);
 
-        if (Auth::guard('chauffeur')->attempt($credentials)) {
+        $loginValue = $request->input('login');
+
+        // Find Personnel (Chauffeur) by email or code_id
+        $chauffeur = \App\Models\Personnel::where('email', $loginValue)
+            ->orWhere('code_id', $loginValue)
+            ->first();
+
+        if (!$chauffeur) {
+            return back()->withErrors([
+                'login' => 'Les informations d\'identification fournies ne correspondent pas à nos enregistrements.',
+            ])->withInput($request->except('password'));
+        }
+
+        $field = $chauffeur->email === $loginValue ? 'email' : 'code_id';
+
+        if (Auth::guard('chauffeur')->attempt([$field => $loginValue, 'password' => $request->password])) {
             $request->session()->regenerate();
             return redirect()->intended(route('chauffeur.dashboard'));
         }
 
         return back()->withErrors([
-            'email' => 'Les informations d\'identification fournies ne correspondent pas à nos enregistrements.',
-        ])->onlyInput('email');
+            'password' => 'Le mot de passe fourni est incorrect.',
+        ])->withInput($request->except('password'));
     }
 
     public function logout(Request $request)

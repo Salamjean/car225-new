@@ -94,7 +94,7 @@ class GareAgentController extends Controller
             ]);
 
             Notification::route('mail', $agent->email)
-                ->notify(new SendEmailToAgentAfterRegistrationNotification($code, $agent->email));
+                ->notify(new SendEmailToAgentAfterRegistrationNotification($code, $agent->email, $agent->code_id));
 
             DB::commit();
 

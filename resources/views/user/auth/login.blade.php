@@ -552,14 +552,14 @@
                 </div>
 
                 <div class="form-body">
-                    <form method="POST" action="{{ route('user.handleLogin') }}">
+                    <form method="POST" action="{{ route('user.handleLogin') }}" novalidate>
                         @csrf
 
                         <div class="input-group">
-                            <label for="login">Email ou Contact</label>
+                            <label for="login">Contact ou Code ID</label>
                             <div class="input-wrapper">
                                 <input type="text" id="login" name="login" class="input-field"
-                                    value="{{ old('login') }}" required autofocus placeholder="email@exemple.com ou 07xxxxxxxx">
+                                    value="{{ old('login') }}" required autofocus placeholder="07xxxxxxxx ou Code ID">
                                 <i class="fas fa-user field-icon"></i>
                             </div>
                         </div>
@@ -618,6 +618,31 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            const loginInput = document.getElementById('login');
+            
+            if (loginInput) {
+                // Bloquer la touche @
+                loginInput.addEventListener('keypress', function(e) {
+                    if (e.key === '@') {
+                        e.preventDefault();
+                        return false;
+                    }
+                });
+
+                // Bloquer le collage d'email
+                loginInput.addEventListener('input', function(e) {
+                    if (this.value.includes('@')) {
+                        this.value = this.value.replace(/@/g, '');
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Format invalide',
+                            text: 'La connexion par email n\'est pas autorisée ici. Utilisez votre numéro de téléphone ou votre Code ID.',
+                            confirmButtonColor: '#e94f1b'
+                        });
+                    }
+                });
+            }
+
             @if (session('success'))
                 Swal.fire({
                     icon: 'success',

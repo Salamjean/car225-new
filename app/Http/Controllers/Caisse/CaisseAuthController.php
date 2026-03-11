@@ -120,22 +120,27 @@ class CaisseAuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'login' => 'required',
             'password' => 'required|string',
+        ], [
+            'login.required' => 'L\'identifiant ou l\'email est obligatoire.',
+            'password.required' => 'Le mot de passe est obligatoire.',
         ]);
 
-        $credentials = $request->only('email', 'password');
+        $loginValue = $request->input('login');
 
-        // Check if caisse exists
-        $caisse = Caisse::where('email', $credentials['email'])->first();
+        // Check if caisse exists by email or code_id
+        $caisse = Caisse::where('email', $loginValue)
+            ->orWhere('code_id', $loginValue)
+            ->first();
 
         if (!$caisse) {
-            return back()->withErrors(['email' => 'Email non reconnu.'])->withInput();
+            return back()->withErrors(['login' => 'Identifiant non reconnu.'])->withInput($request->except('password'));
         }
 
         // Check if caisse is archived
         if ($caisse->isArchived()) {
-            return back()->withErrors(['email' => 'Votre compte a été archivé. Contactez votre compagnie.'])->withInput();
+            return back()->withErrors(['login' => 'Votre compte a été archivé. Contactez votre compagnie.'])->withInput($request->except('password'));
         }
 
         // Check if password looks like temporary password
@@ -145,13 +150,15 @@ class CaisseAuthController extends Controller
                 ->with('info', 'Veuillez d\'abord configurer votre mot de passe en utilisant le code OTP reçu par email.');
         }
 
-        // Attempt login
-        if (auth('caisse')->attempt($credentials, $request->filled('remember'))) {
+        // Attempt login using the correct field
+        $field = $caisse->email === $loginValue ? 'email' : 'code_id';
+
+        if (Auth::guard('caisse')->attempt([$field => $loginValue, 'password' => $request->password], $request->filled('remember'))) {
             $request->session()->regenerate();
             return redirect()->intended(route('caisse.dashboard'));
         }
 
-        return back()->withErrors(['password' => 'Mot de passe incorrect.'])->withInput();
+        return back()->withErrors(['password' => 'Mot de passe incorrect.'])->withInput($request->except('password'));
     }
 
     /**

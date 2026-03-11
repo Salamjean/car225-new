@@ -69,7 +69,7 @@
             <div class="steps-progress">
                 <div class="step-item active" id="step-indicator-1">
                     <div class="step-number">1</div>
-                    <div class="step-label">Email</div>
+                    <div class="step-label">Identifiant</div>
                 </div>
                 <div class="step-item" id="step-indicator-2">
                     <div class="step-number">2</div>
@@ -84,8 +84,8 @@
                 <div class="step-content active" id="step-1">
                     <form id="emailForm">
                         <div class="form-group">
-                            <label for="email">Email Caissier</label>
-                            <input type="email" id="email" class="form-control" placeholder="Entrez votre email" required>
+                            <label for="identity">Contact ou Code ID</label>
+                            <input type="text" id="identity" class="form-control" placeholder="Entrez votre Contact ou Code ID" required>
                         </div>
                         <button type="submit" class="btn btn-primary" id="sendOtpBtn">Recevoir le code</button>
                     </form>
@@ -137,7 +137,7 @@
             }
         }
         document.getElementById('emailForm').addEventListener('submit', async function(e) {
-            e.preventDefault(); const email = document.getElementById('email').value;
+            e.preventDefault(); const identity = document.getElementById('identity').value;
             const btn = document.getElementById('sendOtpBtn'); btn.disabled = true; btn.innerHTML = '...';
             try {
                 const response = await fetch('{{ route("caisse.password.sendOtp") }}', {
@@ -146,10 +146,10 @@
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}' 
                     },
-                    body: JSON.stringify({ email })
+                    body: JSON.stringify({ identity })
                 });
                 const data = await response.json();
-                if (data.success) { userEmail = email; goToStep(2); } 
+                if (data.success) { userEmail = data.email; goToStep(2); } 
                 else { Swal.fire({ icon: 'error', text: data.message }); }
             } catch (e) { Swal.fire({ icon: 'error', text: 'Erreur technique.' }); }
             btn.disabled = false; btn.innerHTML = 'Recevoir le code';

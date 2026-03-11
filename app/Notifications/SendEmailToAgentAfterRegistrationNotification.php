@@ -16,12 +16,14 @@ class SendEmailToAgentAfterRegistrationNotification extends Notification
      */
     public $code;
     public $email;
+    public $codeId;
     public $logoUrl;
 
-    public function __construct($codeToSend, $sendToemail)
+    public function __construct($codeToSend, $sendToemail, $codeId = null)
     {
         $this->code = $codeToSend;
         $this->email = $sendToemail;
+        $this->codeId = $codeId;
         $this->logoUrl = asset('assetsPoster/assets/images/logo_car225.png'); 
     }
 
@@ -46,6 +48,7 @@ class SendEmailToAgentAfterRegistrationNotification extends Notification
             ->view('emails.agent_registration', [
                 'code' => $this->code,
                 'email' => $this->email,
+                'code_id' => $this->codeId,
                 'logoUrl' => $this->logoUrl,
             ]);
     }

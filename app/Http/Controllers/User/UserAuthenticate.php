@@ -33,45 +33,64 @@ class UserAuthenticate extends Controller
 
     public function handleLogin(Request $request): RedirectResponse
     {
-        $loginValue = $request->input('login');
-        $field = filter_var($loginValue, FILTER_VALIDATE_EMAIL) ? 'email' : 'contact';
+        $request->validate([
+            'login' => 'required|string',
+            'password' => 'required|string',
+        ]);
 
-        $credentials = [
-            $field => $loginValue,
-            'password' => $request->input('password'),
+        $loginValue = $request->input('login');
+        $password = $request->input('password');
+
+        // Order of priority for search
+        $searchOrder = [
+            ['model' => \App\Models\User::class, 'role' => 'user', 'guard' => 'web', 'dashboard' => 'reservation.create'],
+            ['model' => \App\Models\Agent::class, 'role' => 'agent', 'guard' => 'agent', 'dashboard' => 'agent.dashboard'],
+            ['model' => \App\Models\Hotesse::class, 'role' => 'hotesse', 'guard' => 'hotesse', 'dashboard' => 'hotesse.dashboard'],
+            ['model' => \App\Models\Caisse::class, 'role' => 'caisse', 'guard' => 'caisse', 'dashboard' => 'caisse.dashboard'], // Assumé
+            ['model' => \App\Models\Personnel::class, 'role' => 'chauffeur', 'guard' => 'chauffeur', 'dashboard' => 'chauffeur.dashboard'],
         ];
 
-        if (!Auth::attempt($credentials, $request->filled('remember'))) {
-            return redirect()->route('login')->withErrors([
-                'login' => 'Les identifiants sont incorrects.',
-            ])->withInput($request->except('password'));
+        foreach ($searchOrder as $search) {
+            $entity = $search['model']::where('contact', $loginValue)
+                ->orWhere('code_id', $loginValue)
+                ->first();
+
+            if ($entity && Hash::check($password, $entity->password)) {
+                // Check if archived for staff roles
+                if (in_array($search['role'], ['agent', 'hotesse', 'caisse'])) {
+                    if ($entity->archived_at) {
+                        return back()->withErrors(['login' => 'Votre compte est archivé.'])->withInput($request->except('password'));
+                    }
+                }
+
+                // Log in with the appropriate guard
+                Auth::guard($search['guard'])->login($entity, $request->filled('remember'));
+
+                // User specific check for phone verification
+                if ($search['role'] === 'user') {
+                    if (!$entity->phone_verified_at && $entity->contact) {
+                        Auth::guard('web')->logout();
+                        $this->smsService->sendOtp($entity->contact, $entity->prenom, $entity->name);
+                        session([
+                            'otp_contact' => $entity->contact,
+                            'otp_prenom' => $entity->prenom,
+                            'otp_nom' => $entity->name,
+                        ]);
+                        return redirect()->route('user.verify-otp')
+                            ->with('info', 'Veuillez vérifier votre numéro de téléphone.');
+                    }
+                }
+
+                $request->session()->regenerate();
+
+                // Redirect to the correct dashboard
+                return redirect()->route($search['dashboard'])->with('success', 'Bienvenue sur votre espace ' . $search['role'] . '!');
+            }
         }
 
-        $user = Auth::user();
-
-        // Vérifier si le numéro de téléphone est vérifié
-        if (!$user->phone_verified_at && $user->contact) {
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-
-            // Envoyer un nouveau code OTP
-            $this->smsService->sendOtp($user->contact, $user->prenom, $user->name);
-
-            // Stocker le contact et le nom en session pour la page de vérification
-            session([
-                'otp_contact' => $user->contact,
-                'otp_prenom' => $user->prenom,
-                'otp_nom' => $user->name,
-            ]);
-
-            return redirect()->route('user.verify-otp')
-                ->with('info', 'Veuillez vérifier votre numéro de téléphone pour continuer.');
-        }
-
-        $request->session()->regenerate();
-
-        return redirect()->intended(route('reservation.create', absolute: false))->with('success', 'Bienvenue sur votre page!');
+        return redirect()->route('login')->withErrors([
+            'login' => 'Les identifiants sont incorrects.',
+        ])->withInput($request->except('password'));
     }
 
 
@@ -315,7 +334,7 @@ class UserAuthenticate extends Controller
                 $imageContent = file_get_contents($googleUser->avatar);
                 $imageName = 'google_profile_' . time() . '_' . Str::random(10) . '.jpg';
                 $imagePath = 'users/profiles/' . $imageName;
-                \Storage::disk('public')->put($imagePath, $imageContent);
+                Storage::disk('public')->put($imagePath, $imageContent);
                 $photoProfilePath = $imagePath;
             } catch (\Exception $e) {
                 Log::warning('Impossible de télécharger l\'image de profil Google: ' . $e->getMessage());
