@@ -164,15 +164,21 @@
     </section>
 
     <!-- ============================================ -->
-    <!-- SECTION VIDEO -->
+    <!-- SECTION VIDEO (Carte Orange Étirée Compacte) -->
     <!-- ============================================ -->
     <section id="video-presentation" class="py-4 bg-white">
-        <div class="container max-w-[512px] mx-auto px-4 relative z-10" data-aos="fade-up">
-            <div class="relative rounded-3xl overflow-hidden shadow-2xl border-[6px] border-white bg-gray-100 ring-1 ring-gray-200 flex items-center justify-center">
-                <video autoplay loop muted playsinline class="w-full h-auto object-cover max-h-[512px]">
-                    <source src="{{ asset('assets/images/VideoCar225.mp4') }}" type="video/mp4">
-                    Votre navigateur ne supporte pas la vidéo.
-                </video>
+        <div class="container mx-auto px-4" data-aos="fade-up">
+            <!-- Carte orange étirée : le fond fusionne avec la vidéo -->
+            <div class="w-full relative rounded-3xl overflow-hidden border-[6px] border-white shadow-2xl flex items-center justify-center py-6" 
+                 style="background-color: #D36A1C;">
+                
+                <!-- Vidéo incrustée : scale augmenté à 1.05 pour masquer totalement les lignes de compression aux bords du fichier -->
+                <div class="w-full max-w-[512px] overflow-hidden rounded-2xl">
+                    <video autoplay loop muted playsinline class="w-full h-auto block scale-[1.05] transform-gpu origin-center" style="border: none; outline: none; box-shadow: none;">
+                        <source src="{{ asset('assets/images/VideoCar225.mp4') }}" type="video/mp4">
+                        Votre navigateur ne supporte pas la vidéo.
+                    </video>
+                </div>
             </div>
         </div>
     </section>
