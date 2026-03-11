@@ -648,7 +648,7 @@ class ReservationController extends Controller
         $heureDepart = $request->get('heure_depart'); // ✅ AJOUT
 
         if (!$dateVoyage) {
-            \Log::warning('Date non fournie pour getReservedSeats');
+            Log::warning('Date non fournie pour getReservedSeats');
             return response()->json([
                 'success' => true,
                 'reservedSeats' => []
@@ -665,7 +665,7 @@ class ReservationController extends Controller
             ], 404);
         }
 
-        \Log::info('Récupération places réservées pour:', [
+        Log::info('Récupération places réservées pour:', [
             'programme_id' => $programId,
             'date_voyage' => $formattedDate,
             'heure_depart' => $heureDepart
@@ -682,7 +682,7 @@ class ReservationController extends Controller
 
         $reservedSeats = $query->pluck('seat_number')->toArray();
 
-        \Log::info('Places réservées trouvées:', $reservedSeats);
+        Log::info('Places réservées trouvées:', $reservedSeats);
 
         return response()->json([
             'success' => true,
@@ -690,7 +690,7 @@ class ReservationController extends Controller
             'heure_depart' => $heureDepart
         ]);
     } catch (\Exception $e) {
-        \Log::error('Erreur getReservedSeats:', [
+        Log::error('Erreur getReservedSeats:', [
             'error' => $e->getMessage(),
             'programId' => $programId
         ]);
@@ -1629,6 +1629,8 @@ $dateAller = $request->date_voyage;
                 // Pour les programmes récurrents, filtrer par date_voyage
                 $query->where('date_voyage', $dateVoyage);
             }
+
+            $totalReservedSeats = $query->count();
 
             $vehicule = $programme->getVehiculeForDate($dateVoyage ?: $programme->date_depart);
             $totalPlaces = $vehicule ? $vehicule->nombre_place : 70;
