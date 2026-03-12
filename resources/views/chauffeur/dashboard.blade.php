@@ -7,8 +7,16 @@
     <div class="mx-auto" style="width: 90%">
         <!-- Header Summary -->
         <div class="bg-gradient-to-r from-orange-600 to-red-600 rounded-2xl p-6 text-white shadow-lg mb-8">
-            <h2 class="text-2xl font-bold">Bonjour, {{ Auth::guard('chauffeur')->user()->prenom }} !</h2>
-            <p class="opacity-90 mt-1">Prêt pour la route ?</p>
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold">Bonjour, {{ Auth::guard('chauffeur')->user()->prenom }} !</h2>
+                    <p class="opacity-90 mt-1">Prêt pour la route ?</p>
+                </div>
+                <div class="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/20">
+                    <span class="text-xs uppercase font-black tracking-widest opacity-70 block">Votre Code ID</span>
+                    <span class="text-xl font-black tracking-tighter">{{ Auth::guard('chauffeur')->user()->code_id ?? 'N/A' }}</span>
+                </div>
+            </div>
             
             <div class="mt-8 grid grid-cols-2 gap-4">
                 <div class="bg-white/20 backdrop-blur rounded-xl p-4 border border-white/30">

@@ -7,8 +7,11 @@
         <!-- Header -->
         <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-                <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">
+                <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight flex items-center gap-3">
                     Bienvenue, {{ $agent->prenom ?? $agent->name }} 👋
+                    <span class="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded-lg border border-blue-200 uppercase tracking-wider">
+                        Code ID: {{ $agent->code_id ?? 'N/A' }}
+                    </span>
                 </h1>
                 <p class="text-gray-500 mt-1">
                     Agent de <span class="font-semibold text-red-600">{{ $agent->compagnie->name ?? 'Compagnie' }}</span>

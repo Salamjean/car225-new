@@ -167,7 +167,7 @@
                         data-target="ui-sub-caisses">
                         <i class="fas fa-cash-register mdc-list-item__start-detail mdc-drawer-item-icon"
                             aria-hidden="true"></i>
-                        Gestion Caissières
+                         Caisse
                         <i class="mdc-drawer-arrow material-icons">chevron_right</i>
                     </a>
                     <div class="mdc-expansion-panel" id="ui-sub-caisses">
