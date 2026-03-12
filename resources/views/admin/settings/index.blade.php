@@ -22,6 +22,7 @@
         @php
             $maintenanceMode = $settings->where('key', 'maintenance_mode')->first();
             $maintenanceMessage = $settings->where('key', 'maintenance_message')->first();
+            $maintenanceBypass = $settings->where('key', 'maintenance_bypass_token')->first();
         @endphp
 
         <div class="mb-8 bg-white rounded-2xl shadow-xl overflow-hidden border {{ $maintenanceMode && $maintenanceMode->value == '1' ? 'border-red-300 ring-2 ring-red-200' : 'border-gray-100' }}">
@@ -77,15 +78,28 @@
                     </div>
 
                     <!-- Message de maintenance -->
-                    <div class="p-6 bg-gray-50 rounded-xl border border-gray-200">
-                        <label class="block text-base font-bold text-gray-900 mb-2">
-                            <i class="fas fa-comment-alt text-gray-400 mr-2"></i>
-                            Message de maintenance
-                        </label>
-                        <p class="text-sm text-gray-500 mb-3">Ce message sera affiché aux visiteurs quand le site est en maintenance.</p>
-                        <textarea name="maintenance_message" rows="3" 
-                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-400 focus:border-transparent resize-none text-sm"
-                            placeholder="Ex: Notre site est en maintenance pour amélioration...">{{ $maintenanceMessage->value ?? '' }}</textarea>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="p-6 bg-gray-50 rounded-xl border border-gray-200">
+                            <label class="block text-base font-bold text-gray-900 mb-2">
+                                <i class="fas fa-comment-alt text-gray-400 mr-2"></i>
+                                Message de maintenance
+                            </label>
+                            <p class="text-sm text-gray-500 mb-3">Affiché aux visiteurs quand le site est bloqué.</p>
+                            <textarea name="maintenance_message" rows="3" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-400 focus:border-transparent resize-none text-sm"
+                                placeholder="Ex: Notre site est en maintenance...">{{ $maintenanceMessage->value ?? '' }}</textarea>
+                        </div>
+
+                        <div class="p-6 bg-gray-50 rounded-xl border border-gray-200">
+                            <label class="block text-base font-bold text-gray-900 mb-2">
+                                <i class="fas fa-key text-gray-400 mr-2"></i>
+                                Code Secret (Bypass)
+                            </label>
+                            <p class="text-sm text-gray-500 mb-3">Utilisez <code class="bg-gray-200 px-1 rounded">?maintenance_bypass=votre_code</code> pour accéder au site.</p>
+                            <input type="text" name="maintenance_bypass_token" value="{{ $maintenanceBypass->value ?? '' }}"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-400 focus:border-transparent text-sm"
+                                placeholder="Ex: dev2024">
+                        </div>
                     </div>
                 </div>
 
@@ -115,7 +129,7 @@
             <form action="{{ route('admin.settings.update') }}" method="POST" class="divide-y divide-gray-100">
                 @csrf
                 
-                @foreach($settings->whereNotIn('key', ['maintenance_mode', 'maintenance_message']) as $setting)
+                @foreach($settings->whereNotIn('key', ['maintenance_mode', 'maintenance_message', 'maintenance_bypass_token']) as $setting)
                 <div class="p-8 hover:bg-gray-50 transition-colors duration-200">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                         <div class="flex-1">

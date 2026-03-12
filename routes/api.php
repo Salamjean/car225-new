@@ -274,7 +274,9 @@ Route::prefix('hotesse')->group(function () {
         
         // Ventes et Billetterie
         Route::get('/ventes', [\App\Http\Controllers\Api\Hotesse\HotesseController::class, 'ventes']);
+        Route::get('/programmes', [\App\Http\Controllers\Api\Hotesse\HotesseController::class, 'indexProgrammes']);
         Route::get('/vendre-ticket', [\App\Http\Controllers\Api\Hotesse\HotesseController::class, 'vendreTicket']);
+        Route::post('/search-programmes', [\App\Http\Controllers\Api\Hotesse\HotesseController::class, 'searchProgrammes']);
         Route::post('/vendre-ticket', [\App\Http\Controllers\Api\Hotesse\HotesseController::class, 'vendreTicketSubmit']);
         
         // Détails réservation (par ex. pour imprimer)

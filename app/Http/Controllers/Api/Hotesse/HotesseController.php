@@ -71,6 +71,11 @@ class HotesseController extends Controller
     public function profile(Request $request)
     {
         $hotesse = $request->user()->load('compagnie');
+
+        if ($hotesse->profile_picture && !str_starts_with($hotesse->profile_picture, 'storage/')) {
+            $hotesse->profile_picture = 'storage/' . $hotesse->profile_picture;
+        }
+
         return response()->json([
             'success' => true,
             'hotesse' => $hotesse
@@ -105,10 +110,15 @@ class HotesseController extends Controller
 
         $hotesse->update($data);
 
+        $hotesse = $hotesse->fresh()->load('compagnie');
+        if ($hotesse->profile_picture && !str_starts_with($hotesse->profile_picture, 'storage/')) {
+            $hotesse->profile_picture = 'storage/' . $hotesse->profile_picture;
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Profil mis à jour avec succès',
-            'hotesse' => $hotesse->fresh()
+            'hotesse' => $hotesse
         ]);
     }
 
@@ -167,6 +177,30 @@ class HotesseController extends Controller
 
         $ventes = $query->latest()->paginate($request->input('per_page', 10));
 
+        $ventes->getCollection()->transform(function ($rv) {
+            $formattedStatut = 'En attente';
+            if ($rv->statut === 'confirmee') $formattedStatut = 'Confirmé';
+            elseif ($rv->statut === 'annulee') $formattedStatut = 'Annulé';
+            elseif ($rv->statut === 'terminee') $formattedStatut = 'Terminé';
+
+            $ticketNo = 'TK-' . str_pad($rv->id, 3, '0', STR_PAD_LEFT);
+
+            return [
+                'id' => $rv->id,
+                'ticket_no' => $ticketNo,
+                'reference' => $rv->reference,
+                'passager' => $rv->passager_prenom . ' ' . $rv->passager_nom,
+                'trajet' => $rv->programme ? ($rv->programme->point_depart . ' → ' . $rv->programme->point_arrive) : 'N/A',
+                'prix' => number_format($rv->montant, 0, ',', ' ') . ' FCFA',
+                'date' => $rv->date_voyage ? $rv->date_voyage->format('d M Y') : '',
+                'heure' => substr($rv->heure_depart, 0, 5),
+                'date_heure' => ($rv->date_voyage ? $rv->date_voyage->format('d M Y') : '') . ' • ' . substr($rv->heure_depart, 0, 5),
+                'siege' => 'Place ' . $rv->seat_number,
+                'statut' => $formattedStatut,
+                'created_at' => $rv->created_at->format('d/m/Y H:i')
+            ];
+        });
+
         return response()->json([
             'success' => true,
             'ventes' => $ventes,
@@ -175,6 +209,139 @@ class HotesseController extends Controller
                 'total_revenu' => $totalRevenu,
                 'total_annulations' => $totalAnnulations
             ]
+        ]);
+    }
+
+    /**
+     * Voir tous les programmes de la compagnie
+     */
+    public function indexProgrammes(Request $request)
+    {
+        $hotesse = $request->user();
+        
+        $programmes = Programme::with(['itineraire', 'compagnie'])
+            ->where('compagnie_id', $hotesse->compagnie_id)
+            ->where('statut', 'actif')
+            ->orderBy('date_depart', 'asc')
+            ->orderBy('heure_depart', 'asc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'programmes' => $programmes
+        ]);
+    }
+
+    /**
+     * Recherche de programmes pour vente de ticket (POST)
+     */
+    public function searchProgrammes(Request $request)
+    {
+        $hotesse = $request->user();
+        
+        $query = Programme::with(['compagnie'])
+            ->where('compagnie_id', $hotesse->compagnie_id)
+            ->where('statut', 'actif');
+
+        // Filtre Point de Départ
+        if ($request->filled('point_depart')) {
+            $term = trim(explode(',', $request->point_depart)[0]);
+            $query->where(function($q) use ($term) {
+                $q->where('point_depart', 'LIKE', '%' . $term . '%')
+                  ->orWhereHas('itineraire', function($subQ) use ($term) {
+                      $subQ->where('point_depart', 'LIKE', '%' . $term . '%');
+                  });
+            });
+        }
+
+        // Filtre Point d'Arrivée
+        if ($request->filled('point_arrive')) {
+            $term = trim(explode(',', $request->point_arrive)[0]);
+            $query->where(function($q) use ($term) {
+                $q->where('point_arrive', 'LIKE', '%' . $term . '%')
+                  ->orWhereHas('itineraire', function($subQ) use ($term) {
+                      $subQ->where('point_arrive', 'LIKE', '%' . $term . '%');
+                  });
+            });
+        }
+
+        // Filtre Date
+        $searchDateRequested = $request->input('date_voyage', $request->input('date_depart', date('Y-m-d')));
+        if ($request->filled('date_voyage') || $request->filled('date_depart')) {
+            $searchDate = $searchDateRequested;
+            $query->where(function($q) use ($searchDate) {
+                $q->whereDate('date_depart', '=', $searchDate)
+                  ->orWhere(function($sub) use ($searchDate) {
+                      $sub->whereDate('date_depart', '<=', $searchDate)
+                          ->whereDate('date_fin', '>=', $searchDate);
+                  });
+            });
+        } else {
+            $today = now()->format('Y-m-d');
+            $query->where(function($q) use ($today) {
+                $q->whereDate('date_depart', '>=', $today)
+                  ->orWhereDate('date_fin', '>=', $today);
+            });
+        }
+
+        $programmes = $query->orderBy('date_depart')->orderBy('heure_depart')->get();
+
+        // Grouping logic (même que vendreTicket)
+        $groupedRoutes = $programmes->groupBy(function($item) {
+            return strtolower(trim($item->point_depart)) . '-' . strtolower(trim($item->point_arrive));
+        })->map(function ($progs) use ($request, $searchDateRequested) {
+            $first = $progs->first();
+            $now = now();
+            $todayStr = $now->format('Y-m-d');
+            $currentTime = $now->format('H:i');
+
+            $allerHoraires = $progs->filter(function($p) use ($todayStr, $currentTime) {
+                if ($p->date_depart == $todayStr && $p->heure_depart < $currentTime) {
+                    return false; 
+                }
+                return true;
+            })->values()->map(function($p) use ($searchDateRequested) {
+                $reservedCount = $p->getPlacesReserveesForDate($searchDateRequested);
+                $totalSeats = $p->getTotalSeats($searchDateRequested);
+                $vehicule = $p->getVehiculeForDate($searchDateRequested);
+
+                return [
+                    'id' => $p->id,
+                    'heure_depart' => $p->heure_depart,
+                    'heure_arrive' => $p->heure_arrive,
+                    'date_depart' => $p->date_depart,
+                    'vehicule' => $vehicule ? $vehicule->type_range : 'Standard',
+                    'vehicule_id' => $vehicule ? $vehicule->id : 0,
+                    'reserved_count' => $reservedCount,
+                    'total_seats' => $totalSeats
+                ];
+            });
+
+            $hasRetour = Programme::where('point_depart', $first->point_arrive)
+                ->where('point_arrive', $first->point_depart)
+                ->where('compagnie_id', $first->compagnie_id)
+                ->where('statut', 'actif')
+                ->whereDate('date_depart', '>=', $first->date_depart)
+                ->exists();
+
+            return [
+                'id_group' => $first->id,
+                'compagnie' => collect($first->compagnie)->only(['id', 'name', 'path_logo']),
+                'point_depart' => $first->point_depart,
+                'point_arrive' => $first->point_arrive,
+                'montant_billet' => $first->montant_billet,
+                'durer_parcours' => $first->durer_parcours,
+                'aller_horaires' => $allerHoraires,
+                'has_retour' => $hasRetour,
+                'default_date' => $searchDateRequested
+            ];
+        })->filter(function($route) {
+            return count($route['aller_horaires']) > 0;
+        })->values();
+
+        return response()->json([
+            'success' => true,
+            'routes' => $groupedRoutes
         ]);
     }
 
@@ -488,15 +655,35 @@ class HotesseController extends Controller
         $reservation = Reservation::with('programme.compagnie')
             ->where('id', $id)
             ->where(function($q) use ($hotesse) {
-                // Hotesse can view reservations they created or belonging to their company
                 $q->where('hotesse_id', $hotesse->id)
                   ->orWhere('compagnie_id', $hotesse->compagnie_id);
             })
             ->firstOrFail();
 
+        $formattedStatut = 'En attente';
+        if ($reservation->statut === 'confirmee') $formattedStatut = 'Confirmé';
+        elseif ($reservation->statut === 'annulee') $formattedStatut = 'Annulé';
+        elseif ($reservation->statut === 'terminee') $formattedStatut = 'Terminé';
+
+        $ticketNo = 'TK-' . str_pad($reservation->id, 3, '0', STR_PAD_LEFT);
+
+        $formattedReservation = [
+            'id' => $reservation->id,
+            'ticket_no' => $ticketNo,
+            'reference' => $reservation->reference,
+            'passager' => $reservation->passager_prenom . ' ' . $reservation->passager_nom,
+            'trajet' => $reservation->programme ? ($reservation->programme->point_depart . ' → ' . $reservation->programme->point_arrive) : 'N/A',
+            'date' => $reservation->date_voyage ? $reservation->date_voyage->format('d M Y') : '',
+            'heure' => substr($reservation->heure_depart, 0, 5),
+            'place' => $reservation->seat_number,
+            'montant_total' => number_format($reservation->montant, 0, ',', ' ') . ' FCFA',
+            'statut' => $formattedStatut,
+            'created_at' => $reservation->created_at->format('d/m/Y H:i')
+        ];
+
         return response()->json([
             'success' => true,
-            'reservation' => $reservation
+            'reservation' => $formattedReservation
         ]);
     }
 

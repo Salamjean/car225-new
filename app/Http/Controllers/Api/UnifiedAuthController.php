@@ -191,7 +191,7 @@ class UnifiedAuthController extends Controller
                 break;
 
             case 'hotesse':
-                $base['profile_picture'] = $entity->profile_picture ? asset('storage/' . $entity->profile_picture) : null;
+                $base['profile_picture'] = $entity->profile_picture ? 'storage/' . $entity->profile_picture : null;
                 $base['compagnie_id'] = $entity->compagnie_id;
                 $base['tickets'] = $entity->tickets ?? 0;
                 break;
