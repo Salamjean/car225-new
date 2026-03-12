@@ -442,7 +442,14 @@ Route::prefix('user')->group(function () {
 });
 
 Route::middleware('auth')->prefix('user')->group(function () {
-    Route::get('/dashboard', [UserController::class, 'dashboard'])->name('user.dashboard');
+    // Routes pour finaliser le profil (Accessibles même sans contact)
+    Route::get('/complete-profile', [UserAuthenticate::class, 'showCompleteProfile'])->name('user.complete-profile');
+    Route::post('/complete-profile', [UserAuthenticate::class, 'updateContact'])->name('user.update-contact');
+    Route::get('/logout', [UserController::class, 'logout'])->name('user.logout');
+
+    // Routes protégées qui nécessitent un numéro de téléphone
+    Route::middleware('check_contact')->group(function () {
+        Route::get('/dashboard', [UserController::class, 'dashboard'])->name('user.dashboard');
     Route::get('/tracking/location', [UserController::class, 'getTrackingLocation'])->name('user.tracking.location');
     Route::get('/logout', [UserController::class, 'logout'])->name('user.logout');
 
@@ -513,6 +520,7 @@ Route::middleware('auth')->prefix('user')->group(function () {
     // Notifications
     Route::post('/notifications/mark-read', [UserController::class, 'markNotificationRead'])->name('user.notifications.mark-read');
     Route::post('/notifications/mark-all-read', [UserController::class, 'markAllNotificationsRead'])->name('user.notifications.mark-all-read');
+    });
 });
 
 // Paiement CinetPay (Hors Auth pour le webhook)

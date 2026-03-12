@@ -339,13 +339,13 @@
             </div>
         @endif
 
-        <!-- Login Field -->
+        <!-- Email Field -->
         <div class="input-group">
             <i class="fas fa-user input-icon"></i>
-            <input class="input-field" type="text" name="login" placeholder=" " value="{{ old('login') }}"
+            <input class="input-field" type="email" name="email" placeholder=" " value="{{ old('email') }}"
                 required />
-            <label class="input-label" for="login">Email ou Code ID</label>
-            @error('login')
+            <label class="input-label" for="email">Email</label>
+            @error('email')
                 <div class="error-message">
                     <i class="fas fa-exclamation-circle"></i> {{ $message }}
                 </div>

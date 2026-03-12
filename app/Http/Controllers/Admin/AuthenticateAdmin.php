@@ -32,7 +32,7 @@ class AuthenticateAdmin extends Controller
         try {
             if(auth('admin')->attempt($request->only('email', 'password')))
             {
-                return redirect()->route('admin.dashboard')->with('Bienvenu sur votre page ');
+                return redirect()->route('admin.dashboard')->with('success', 'Bienvenu sur votre page ');
             }else{
                 return redirect()->back()->with('error', 'Votre mot de passe est incorrect.');
             }

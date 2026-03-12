@@ -38,6 +38,10 @@
                                 <span class="text-sm text-gray-600">Statut</span>
                                 <span class="font-bold text-green-600">{{ $caisse->isArchived() ? 'Archivé' : 'Actif' }}</span>
                             </div>
+                            <div class="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                                <span class="text-sm text-gray-600">Code ID</span>
+                                <span class="font-bold text-gray-800">{{ $caisse->code_id ?? 'N/A' }}</span>
+                            </div>
                         </div>
                     </div>
                 </div>

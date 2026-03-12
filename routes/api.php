@@ -56,6 +56,7 @@ Route::prefix('user')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         // Authentification
         Route::post('/logout', [UserAuthController::class, 'logout']);
+        Route::post('/update-contact', [UserAuthController::class, 'updateContact']);
         
         // Profil utilisateur
         Route::get('/profile', [UserController::class, 'profile']);
