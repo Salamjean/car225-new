@@ -269,12 +269,7 @@ class HotesseController extends Controller
                 $todayStr = $now->format('Y-m-d');
                 $currentTime = $now->format('H:i');
 
-                $allerHoraires = $progs->filter(function($p) use ($todayStr, $currentTime) {
-                    if ($p->date_depart == $todayStr && $p->heure_depart < $currentTime) {
-                        return false; 
-                    }
-                    return true;
-                })->values()->map(function($p) use ($searchDateRequested) {
+                $allerHoraires = $progs->values()->map(function($p) use ($searchDateRequested) {
                     $reservedCount = $p->getPlacesReserveesForDate($searchDateRequested);
                     $totalSeats = $p->getTotalSeats($searchDateRequested);
                     $vehicule = $p->getVehiculeForDate($searchDateRequested);
@@ -343,6 +338,19 @@ class HotesseController extends Controller
             'date_retour' => 'nullable|required_with:programme_retour_id|date',
             'heure_retour' => 'nullable|required_with:programme_retour_id',
         ]);
+
+        // Vérification de sécurité : l'heure de départ ne doit pas être passée
+        $now = now();
+        $dateVoyage = $request->date_voyage;
+        $heureDepart = $request->heure_depart;
+        $voyageDateTime = \Carbon\Carbon::parse("$dateVoyage $heureDepart");
+        
+        if ($voyageDateTime->isPast()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Impossible de vendre un ticket pour un trajet dont l\'heure de départ est déjà passée.'
+            ], 400);
+        }
 
         $programmeAller = Programme::with(['compagnie'])->findOrFail($request->programme_id);
         $nombrePassagers = $request->nombre_passagers;

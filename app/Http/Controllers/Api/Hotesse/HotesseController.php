@@ -295,8 +295,8 @@ class HotesseController extends Controller
             $todayStr = $now->format('Y-m-d');
             $currentTime = $now->format('H:i');
 
-            $allerHoraires = $progs->filter(function($p) use ($todayStr, $currentTime) {
-                if ($p->date_depart == $todayStr && $p->heure_depart < $currentTime) {
+            $allerHoraires = $progs->filter(function($p) use ($searchDateRequested, $todayStr, $currentTime) {
+                if ($searchDateRequested == $todayStr && $p->heure_depart < $currentTime) {
                     return false; 
                 }
                 return true;
@@ -408,8 +408,8 @@ class HotesseController extends Controller
             $todayStr = $now->format('Y-m-d');
             $currentTime = $now->format('H:i');
 
-            $allerHoraires = $progs->filter(function($p) use ($todayStr, $currentTime) {
-                if ($p->date_depart == $todayStr && $p->heure_depart < $currentTime) {
+            $allerHoraires = $progs->filter(function($p) use ($searchDateRequested, $todayStr, $currentTime) {
+                if ($searchDateRequested == $todayStr && $p->heure_depart < $currentTime) {
                     return false; 
                 }
                 return true;
@@ -481,6 +481,15 @@ class HotesseController extends Controller
             'date_retour' => 'nullable|required_with:programme_retour_id|date',
             'heure_retour' => 'nullable|required_with:programme_retour_id',
         ]);
+
+        // Sécurité : l'heure de départ ne doit pas être passée
+        $voyageDateTime = \Carbon\Carbon::parse($request->date_voyage . ' ' . $request->heure_depart);
+        if ($voyageDateTime->isPast()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'L\'heure de départ de ce trajet est déjà passée.'
+            ], 400);
+        }
 
         $programmeAller = Programme::with(['compagnie'])->findOrFail($request->programme_id);
         $nombrePassagers = (int) $request->nombre_passagers;
