@@ -556,10 +556,10 @@
                         @csrf
 
                         <div class="input-group">
-                            <label for="login">Contact ou Code ID</label>
+                            <label for="login">Identifiant ou Contact</label>
                             <div class="input-wrapper">
                                 <input type="text" id="login" name="login" class="input-field"
-                                    value="{{ old('login') }}" required autofocus placeholder="07xxxxxxxx ou Code ID">
+                                    value="{{ old('login') }}" required autofocus placeholder="07xxxxxxxx ou USR-XXXXX">
                                 <i class="fas fa-user field-icon"></i>
                             </div>
                         </div>
