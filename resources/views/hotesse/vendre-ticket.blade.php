@@ -65,6 +65,7 @@
                         <div class="relative">
                             <input type="date" name="date_depart" 
                                 value="{{ $searchParams['date_depart'] ?? date('Y-m-d') }}"
+                                min="{{ date('Y-m-d') }}"
                                 class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 pl-10">
                             <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                                 <i class="fas fa-calendar"></i>
@@ -131,28 +132,44 @@
         $totalSeats = $horaire['total_seats'] ?? 70;
         $reservedCount = $horaire['reserved_count'] ?? 0;
         $occupancyRate = ($totalSeats > 0) ? ($reservedCount / $totalSeats) * 100 : 0;
-        $statusClass = $reservedCount >= $totalSeats ? 'bg-red-50 border-red-200 text-red-700' : 
-                      ($occupancyRate > 80 ? 'bg-orange-50 border-orange-200 text-orange-700' : 'bg-green-50 border-green-200 text-green-700');
+        
+        // Vérification si l'heure est passée
+        $searchDate = $searchParams['date_depart'] ?? date('Y-m-d');
+        $isToday = $searchDate === date('Y-m-d');
+        $isPassed = false;
+        if ($isToday) {
+            $currentTime = date('H:i');
+            $departureTime = substr($horaire['heure_depart'], 0, 5);
+            if ($departureTime < $currentTime) {
+                $isPassed = true;
+            }
+        } elseif ($searchDate < date('Y-m-d')) {
+            $isPassed = true;
+        }
+
+        if ($isPassed) {
+            $statusClass = 'bg-gray-100 border-gray-200 text-gray-400 opacity-50 cursor-not-allowed';
+        } else {
+            $statusClass = $reservedCount >= $totalSeats ? 'bg-red-50 border-red-200 text-red-700' : 
+                          ($occupancyRate > 80 ? 'bg-orange-50 border-orange-200 text-orange-700' : 'bg-green-50 border-green-200 text-green-700');
+        }
     @endphp
     
-    <!-- MODIFICATION ICI : On retire l'onclick du conteneur principal -->
-    <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl border {{ $statusClass }} transition-all hover:scale-105 active:scale-95 shadow-sm cursor-pointer group hover:shadow-md">
+    <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl border {{ $statusClass }} transition-all {{ !$isPassed ? 'hover:scale-105 active:scale-95 cursor-pointer hover:shadow-md' : '' }} shadow-sm group">
           
-          <!-- Zone 1 : Clic sur l'heure (Déclenche la vente) -->
-          <div onclick="selectSpecificHoraire(this, '{{ $horaire['id'] }}', '{{ $horaire['heure_depart'] }}')" 
+          <!-- Zone 1 : Clic sur l'heure -->
+          <div @if(!$isPassed) onclick="selectSpecificHoraire(this, '{{ $horaire['id'] }}', '{{ $horaire['heure_depart'] }}')" @endif 
                class="flex-grow flex items-center gap-2"
-               title="Sélectionner cet horaire">
+               title="{{ $isPassed ? 'Heure passée' : 'Sélectionner cet horaire' }}">
               <span class="font-black text-sm">{{ substr($horaire['heure_depart'], 0, 5) }}</span>
           </div>
 
-          <!-- Séparateur visuel -->
           <div class="w-px h-3 bg-current opacity-20"></div>
 
-          <!-- Zone 2 : Clic sur les places (Déclenche le plan du bus) -->
-          <!-- On garde event.stopPropagation() par sécurité, mais la séparation des divs fait le travail -->
-          <div class="flex items-center gap-1 hover:text-[#e94f1b] transition-colors p-1" 
-               onclick="openSeatMap(event, '{{ $horaire['vehicule_id'] }}', '{{ $horaire['id'] }}', '{{ $searchParams['date_depart'] ?? date('Y-m-d') }}')"
-               title="Voir le plan des places">
+          <!-- Zone 2 : Clic sur les places -->
+          <div class="flex items-center gap-1 {{ !$isPassed ? 'hover:text-[#e94f1b]' : '' }} transition-colors p-1" 
+               @if(!$isPassed) onclick="openSeatMap(event, '{{ $horaire['vehicule_id'] }}', '{{ $horaire['id'] }}', '{{ $searchDate }}')" @endif
+               title="{{ $isPassed ? 'Indisponible' : 'Voir le plan des places' }}">
               <i class="fas fa-couch text-[10px]"></i>
               <span class="text-[10px] font-black">{{ $reservedCount }}/{{ $totalSeats }}</span>
           </div>
@@ -554,6 +571,11 @@
     // Etape 2 : Heure Aller
     function askDepartureTime() {
         const horaires = currentBooking.route.aller_horaires;
+        const now = new Date();
+        const today = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+        const currentTime = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+        const isToday = currentBooking.dateAller === today;
+
         let html = `
             <div class="mb-4 text-gray-600">
                 Trajet : <strong>${currentBooking.route.point_depart}</strong> vers <strong>${currentBooking.route.point_arrive}</strong><br>
@@ -562,11 +584,22 @@
             <div class="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto p-1">`;
         
         horaires.forEach(h => {
-            html += `
-                <button onclick="selectTimeAller('${h.id}', '${h.heure_depart}')" class="p-4 border rounded-lg hover:bg-green-50 hover:border-green-500 text-left transition">
-                    <div class="font-bold text-lg text-green-700">${h.heure_depart}</div>
-                    <div class="text-xs text-gray-500">Arrivée estimée: ${h.heure_arrive}</div>
-                </button>`;
+            const departureTime = h.heure_depart.substring(0, 5);
+            const isPassed = (currentBooking.dateAller < today) || (isToday && departureTime < currentTime);
+
+            if (isPassed) {
+                html += `
+                    <div class="p-4 border rounded-lg bg-gray-50 text-gray-400 cursor-not-allowed opacity-60">
+                        <div class="font-bold text-lg">${departureTime}</div>
+                        <div class="text-xs">Déjà passé</div>
+                    </div>`;
+            } else {
+                html += `
+                    <button onclick="selectTimeAller('${h.id}', '${h.heure_depart}')" class="p-4 border rounded-lg hover:bg-green-50 hover:border-green-500 text-left transition group">
+                        <div class="font-bold text-lg text-green-700 group-hover:scale-110 transition-transform">${departureTime}</div>
+                        <div class="text-xs text-gray-500">Arrivée estimée: ${h.heure_arrive.substring(0, 5)}</div>
+                    </button>`;
+            }
         });
         html += `</div>
             <div class="mt-6 flex justify-between gap-3 pt-4 border-t">

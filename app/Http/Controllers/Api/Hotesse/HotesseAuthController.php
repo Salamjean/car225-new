@@ -73,6 +73,10 @@ class HotesseAuthController extends Controller
         // Authenticate using Sanctum
         $token = $hotesse->createToken('HotesseApiToken')->plainTextToken;
 
+        if ($hotesse->profile_picture && !str_starts_with($hotesse->profile_picture, 'storage/')) {
+            $hotesse->profile_picture = 'storage/' . $hotesse->profile_picture;
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Connexion réussie',
@@ -163,6 +167,10 @@ class HotesseAuthController extends Controller
 
         // Automatically log them in by issuing a real auth token
         $token = $hotesse->createToken('HotesseApiToken')->plainTextToken;
+
+        if ($hotesse->profile_picture && !str_starts_with($hotesse->profile_picture, 'storage/')) {
+            $hotesse->profile_picture = 'storage/' . $hotesse->profile_picture;
+        }
 
         return response()->json([
             'success' => true,

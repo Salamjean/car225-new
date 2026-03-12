@@ -38,5 +38,14 @@ class SettingSeeder extends Seeder
                 'label' => 'Message affiché aux visiteurs pendant la maintenance'
             ]
         );
+
+        \App\Models\Setting::updateOrCreate(
+            ['key' => 'maintenance_bypass_token'],
+            [
+                'value' => 'test' . rand(1000, 9999),
+                'type' => 'string',
+                'label' => 'Code secret pour accéder au site en mode maintenance'
+            ]
+        );
     }
 }

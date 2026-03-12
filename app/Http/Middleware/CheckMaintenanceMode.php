@@ -11,8 +11,22 @@ class CheckMaintenanceMode
 {
     public function handle(Request $request, Closure $next)
     {
+        // 1. Vérifier si un bypass est demandé via l'URL (?bypass=...)
+        $bypassToken = Setting::where('key', 'maintenance_bypass_token')->first()->value ?? null;
+        
+        if ($request->has('maintenance_bypass') && $bypassToken && $request->maintenance_bypass === $bypassToken) {
+            session(['maintenance_authorized' => true]);
+            return redirect()->to($request->url()); // Rediriger pour nettoyer l'URL
+        }
+
         // Si le mode maintenance est activé
         if (Setting::isMaintenanceMode()) {
+            
+            // 2. Laisser passer si la session est autorisée (Bypass)
+            if (session('maintenance_authorized')) {
+                return $next($request);
+            }
+
             // Laisser passer les admins
             if (Auth::guard('admin')->check()) {
                 return $next($request);
