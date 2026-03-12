@@ -82,6 +82,7 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Caissière</th>
+                            <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Code ID</th>
                             <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Contact</th>
                             <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Commune</th>
 
@@ -116,6 +117,13 @@
                                             <div class="text-sm text-gray-500">{{ $caisse->email }}</div>
                                         </div>
                                     </div>
+                                </td>
+
+                                <!-- Code ID -->
+                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs font-bold rounded">
+                                        {{ $caisse->code_id ?? 'N/A' }}
+                                    </span>
                                 </td>
 
                                 <!-- Contact -->

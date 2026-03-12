@@ -143,6 +143,9 @@
                                     Personnel</th>
                                 <th
                                     class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    Code ID</th>
+                                <th
+                                    class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                     Type</th>
                                 <th
                                     class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
@@ -191,6 +194,13 @@
                                                 <div class="text-sm text-gray-500">{{ $personnel->email }}</div>
                                             </div>
                                         </div>
+                                    </td>
+
+                                    <!-- Code ID -->
+                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                        <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs font-bold rounded">
+                                            {{ $personnel->code_id ?? 'N/A' }}
+                                        </span>
                                     </td>
 
                                     <!-- Type de personnel -->

@@ -78,6 +78,7 @@
                 <thead>
                     <tr>
                         <th class="col-agent">AGENT</th>
+                        <th class="col-code-id">CODE ID</th>
                         <th class="col-contact">COORDONNÉES</th>
                         <th class="col-gare">AFFECTATION</th>
                         <th class="col-status">STATUT</th>
@@ -103,6 +104,11 @@
                                     <span class="name">{{ $agent->name }} {{ $agent->prenom }}</span>
                                     <span class="id">#{{ str_pad($agent->id, 4, '0', STR_PAD_LEFT) }}</span>
                                 </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="code-id-box">
+                                <span class="badge-code-id">{{ $agent->code_id ?? 'N/A' }}</span>
                             </div>
                         </td>
                         <td>
@@ -597,6 +603,19 @@ body {
 .btn-icon-modern.edit:hover { background: #e2e8f0; }
 .btn-icon-modern.message:hover { background: #dbeafe; }
 .btn-icon-modern.delete:hover { background: #fee2e2; }
+
+.badge-code-id {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem 0.75rem;
+    background: #f1f5f9;
+    color: #475569;
+    border-radius: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    border: 1px solid #e2e8f0;
+}
 
 /* Pagination Footer */
 .pagination-footer {
