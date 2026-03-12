@@ -38,6 +38,10 @@
                                 <span class="text-sm text-gray-600">Contact</span>
                                 <span class="font-bold text-gray-800">{{ $user->contact ?? 'N/A' }}</span>
                             </div>
+                            <div class="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                                <span class="text-sm text-gray-600">Code ID</span>
+                                <span class="font-bold text-gray-800">{{ $user->code_id ?? 'N/A' }}</span>
+                            </div>
                             <!-- Formulaire caché pour upload photo -->
                             <form id="photoForm" enctype="multipart/form-data">
                                 @csrf
