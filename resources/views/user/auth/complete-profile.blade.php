@@ -90,7 +90,11 @@
                 <label for="contact">Numéro de téléphone</label>
                 <div class="input-wrapper">
                     <i class="fas fa-phone icon"></i>
-                    <input type="text" name="contact" id="contact" class="input-field" placeholder="Ex: 0707070707" required value="{{ old('contact') }}">
+                    <input type="text" name="contact" id="contact" class="input-field" 
+                        placeholder="Ex: 0707070707" required 
+                        maxlength="10"
+                        oninput="this.value = this.value.replace(/[^0-9]/g, '');"
+                        value="{{ old('contact') }}">
                 </div>
                 @error('contact')
                     <span style="color: red; font-size: 12px; margin-top: 5px; display: block;">{{ $message }}</span>

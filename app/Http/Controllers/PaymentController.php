@@ -57,17 +57,19 @@ class PaymentController extends Controller
      */
     public function waveNotify(Request $request)
     {
-        Log::info('Wave Notification Received', [
-            'headers' => $request->headers->all(),
-            'body' => $request->all()
-        ]);
+        $payload = $request->getContent();
+        Log::info('Wave Webhook Raw Payload', ['payload' => $payload]);
 
         if (!$this->validateWaveSignature($request)) {
-            Log::warning('Webhook Wave: Signature invalide');
+            Log::warning('Webhook Wave: Signature invalide', [
+                'received' => $request->header('wave-signature'),
+                'content' => $payload
+            ]);
             return response()->json(['message' => 'Signature invalide'], 401);
         }
 
         $eventType = $request->input('type');
+        Log::info("Webhook Wave: Type reçu ({$eventType})");
 
         if ($eventType !== 'checkout.session.completed') {
             Log::info("Webhook Wave: Événement ignoré ({$eventType})");
@@ -80,6 +82,8 @@ class PaymentController extends Controller
         }
 
         $clientReference = $checkoutData['client_reference'] ?? null;
+        Log::info('Webhook Wave: Client Reference', ['ref' => $clientReference]);
+        
         if (!$clientReference) {
             Log::warning('Webhook Wave: client_reference manquant');
             return response()->json(['message' => 'Client reference manquant'], 200);
@@ -87,6 +91,7 @@ class PaymentController extends Controller
 
         // Récupérer le paiement
         $paiement = \App\Models\Paiement::where('transaction_id', $clientReference)->first();
+        Log::info('Webhook Wave: Recherche Paiement', ['trouvé' => !!$paiement, 'id' => $clientReference]);
 
         if (!$paiement) {
             Log::error('Paiement non trouvé pour la référence:', ['id' => $clientReference]);
@@ -172,28 +177,39 @@ class PaymentController extends Controller
             }
 
             // 4. Envoi Email
-            // Assurez-vous que cette méthode est PUBLIQUE dans ReservationController
             $resController->sendReservationEmail(
                 $reservation,
                 $reservation->programme, // Programme Aller
                 $qrCodeData['base64'],   // QR Code Aller
                 $reservation->passager_email,
-                $reservation->passager_prenom . ' ' . $reservation->passager_nom, // Concaténation sûre
+                $reservation->passager_prenom . ' ' . $reservation->passager_nom,
                 $reservation->seat_number,
                 $reservation->is_aller_retour ? 'ALLER-RETOUR' : 'ALLER SIMPLE',
-                $qrCodeRetour,          // QR Code Retour (si applicable)
-                $programmeRetour        // Programme Retour (si applicable)
+                $qrCodeRetour,
+                $programmeRetour
             );
 
-            // 5. Mise à jour places occupées
-            // Assurez-vous que cette méthode est PUBLIQUE dans ReservationController
+            // 5. Envoi SMS
+            try {
+                $smsService = app(\App\Services\SmsService::class);
+                $smsService->sendReservationSms(
+                    [$reservation], // On envoie pour cette réservation spécifique
+                    $reservation->programme,
+                    $reservation->user, // Auth::user() est nul en webhook
+                    $reservation->is_aller_retour,
+                    $reservation->date_retour
+                );
+            } catch (\Exception $e) {
+                Log::error('Erreur envoi SMS via Webhook: ' . $e->getMessage());
+            }
+
+            // 6. Mise à jour places occupées
             $resController->updateProgramStatus(
                 $reservation->programme,
                 $dateVoyageStr
             );
 
             // --- DEDUCTION TICKETS ---
-            // Charger la compagnie si nécessaire
             if (!$reservation->relationLoaded('programme')) {
                 $reservation->load('programme.compagnie');
             } elseif (!$reservation->programme->relationLoaded('compagnie')) {
@@ -201,8 +217,7 @@ class PaymentController extends Controller
             }
 
             if ($reservation->programme && $reservation->programme->compagnie) {
-                  // Déduction du solde financier au lieu de la quantité
-                  $reservation->programme->compagnie->deductTickets($reservation->montant, "Réservation #{$reservation->reference} (CinetPay)");
+                  $reservation->programme->compagnie->deductTickets($reservation->montant, "Réservation #{$reservation->reference} (Wave)");
             } else {
                  \Illuminate\Support\Facades\Log::error("PaymentController: IMPOSSIBLE DE DÉDUIRE - Compagnie introuvable", [
                     'reservation_id' => $reservation->id,
