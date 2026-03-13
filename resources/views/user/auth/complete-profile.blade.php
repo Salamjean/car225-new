@@ -20,6 +20,9 @@
             --shadow-lg: 0 20px 40px -12px rgba(0,0,0,0.12);
             --transition: all 0.25s ease;
         }
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
         body {
             font-family: 'Inter', sans-serif;
             background: var(--bg-secondary);
