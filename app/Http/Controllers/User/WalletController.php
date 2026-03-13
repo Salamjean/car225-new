@@ -14,10 +14,12 @@ use Illuminate\Support\Str;
 class WalletController extends Controller
 {
     protected $cinetPayService;
+    protected $waveService;
 
-    public function __construct(CinetPayService $cinetPayService)
+    public function __construct(CinetPayService $cinetPayService, \App\Services\WaveService $waveService)
     {
         $this->cinetPayService = $cinetPayService;
+        $this->waveService = $waveService;
     }
 
     public function withdraw(Request $request)
@@ -262,71 +264,177 @@ class WalletController extends Controller
 
         $user = Auth::user();
         $amount = $request->amount;
-        // merchant_transaction_id doit être unique et max 30 caractères
-        $transactionId = 'WRECH' . time() . Str::random(4);
-        $transactionId = substr($transactionId, 0, 30);
+        
+        // La référence Wave doit être unique. Format: W-RECH-[TIMESTAMP]-[RANDOM]
+        $transactionId = 'W-RECH-' . time() . '-' . Str::random(4);
 
         // Créer la transaction locale en attente
         $transaction = WalletTransaction::create([
             'user_id' => $user->id,
             'amount' => $amount,
             'type' => 'credit',
-            'description' => 'Rechargement portefeuille',
+            'description' => 'Rechargement portefeuille via Wave',
             'reference' => $transactionId,
             'status' => 'pending',
-            'payment_method' => 'cinetpay',
+            'payment_method' => 'wave',
             'metadata' => [
                 'initiated_at' => now()->toDateTimeString(),
+                'platform' => 'web'
             ]
         ]);
 
-        // Appeler la nouvelle API CinetPay v1 pour initialiser le paiement
-        $paymentData = [
-            'merchant_transaction_id' => $transactionId,
-            'amount' => (int) $amount,
-            'currency' => 'XOF',
-            'lang' => 'fr',
-            'designation' => 'Rechargement Compte ' . config('app.name'),
-            'client_email' => $user->email,
-            'client_first_name' => $user->prenom ?? $user->name ?? 'Client',
-            'client_last_name' => $user->name ?? 'Client',
-            'client_phone_number' => $user->contact ? ('+225' . ltrim($user->contact, '+225')) : null,
-            'success_url' => route('user.wallet.payment.success', ['transaction_id' => $transactionId]),
-            'failed_url' => route('user.wallet.payment.failed', ['transaction_id' => $transactionId]),
-            'notify_url' => route('cinetpay.notify'),
-        ];
+        // Appel Wave Service avec URLs sécurisées (HTTPS obligatoire)
+        $appUrl = rtrim(config('app.url'), '/');
+        
+        $successUrl = str_starts_with($appUrl, 'https://') 
+            ? $appUrl . route('wallet.wave.return', ['transaction_id' => $transactionId], false)
+            : str_replace('http://', 'https://', route('wallet.wave.return', ['transaction_id' => $transactionId]));
+            
+        $errorUrl = str_starts_with($appUrl, 'https://') 
+            ? $appUrl . route('wallet.wave.cancel', ['transaction_id' => $transactionId], false)
+            : str_replace('http://', 'https://', route('wallet.wave.cancel', ['transaction_id' => $transactionId]));
 
-        $result = $this->cinetPayService->initiatePayment($paymentData);
+        $waveSession = $this->waveService->createCheckoutSession(
+            $amount,
+            'XOF',
+            $successUrl,
+            $errorUrl,
+            $transactionId
+        );
 
-        if ($result['success']) {
-            // Sauvegarder le notify_token et transaction_id CinetPay
+        if ($waveSession && isset($waveSession['wave_launch_url'])) {
             $transaction->update([
-                'external_transaction_id' => $result['transaction_id'] ?? null,
+                'external_transaction_id' => $waveSession['id'] ?? null,
                 'metadata' => array_merge($transaction->metadata ?? [], [
-                    'payment_token' => $result['payment_token'] ?? null,
-                    'notify_token' => $result['notify_token'] ?? null,
-                    'cinetpay_transaction_id' => $result['transaction_id'] ?? null,
-                    'details' => $result['details'] ?? null,
+                    'wave_id' => $waveSession['id'] ?? null,
+                    'wave_launch_url' => $waveSession['wave_launch_url'],
                 ])
             ]);
 
-            // Vérifier si on doit rediriger l'utilisateur
-            $mustRedirect = $result['details']['must_be_redirected'] ?? true;
-
             return response()->json([
                 'message' => 'Initialisation réussie',
-                'payment_url' => $result['payment_url'],
-                'must_be_redirected' => $mustRedirect,
-                'details' => $result['details'] ?? null,
+                'payment_url' => $waveSession['wave_launch_url'],
+                'must_be_redirected' => true
             ]);
         } else {
-            // Échec de l'initialisation, marquer comme échoué
             $transaction->update(['status' => 'failed']);
-
             return response()->json([
-                'message' => $result['message'] ?? 'Erreur lors de l\'initialisation du paiement',
+                'message' => 'Erreur lors de l\'initialisation du paiement Wave',
             ], 500);
         }
+    }
+
+    /**
+     * Webhook Wave pour le rechargement du Wallet
+     */
+    public function waveNotify(Request $request)
+    {
+        $payload = $request->getContent();
+        Log::info('Wave Wallet Webhook Received', ['payload' => $payload]);
+
+        // Validation Signature (On réutilise la logique de PaymentController si possible ou on la duplique ici)
+        // Pour simplifier, on va injecter ou appeler la validation
+        if (!$this->validateWaveSignature($request)) {
+             Log::warning('Wave Wallet Webhook: Signature invalide');
+             return response()->json(['message' => 'Signature invalide'], 401);
+        }
+
+        $data = json_decode($payload, true);
+        $eventType = $data['type'] ?? null;
+
+        if ($eventType !== 'checkout.session.completed') {
+            return response()->json(['message' => 'Ignored event'], 200);
+        }
+
+        $sessionData = $data['data'] ?? [];
+        $clientReference = $sessionData['client_reference'] ?? null;
+
+        if (!$clientReference) {
+             return response()->json(['message' => 'Missing reference'], 200);
+        }
+
+        $transaction = WalletTransaction::where('reference', $clientReference)->first();
+
+        if (!$transaction) {
+             Log::error('Wave Wallet: Transaction non trouvée', ['ref' => $clientReference]);
+             return response()->json(['message' => 'Not found'], 200);
+        }
+
+        if ($transaction->status === 'completed') {
+             return response()->json(['message' => 'Already done'], 200);
+        }
+
+        // Succès ! On crédite le wallet
+        DB::beginTransaction();
+        try {
+            $transaction = WalletTransaction::where('id', $transaction->id)->lockForUpdate()->first();
+            
+            if ($transaction->status !== 'completed') {
+                $transaction->update([
+                    'status' => 'completed',
+                    'payment_date' => now(),
+                    'metadata' => array_merge($transaction->metadata ?? [], ['wave_confirm' => $sessionData])
+                ]);
+
+                $user = $transaction->user;
+                $user->solde += $transaction->amount;
+                $user->save();
+
+                Log::info("Wave Wallet: Compte rechargé pour l'utilisateur {$user->id}. Montant: {$transaction->amount}");
+            }
+            DB::commit();
+            return response()->json(['message' => 'Success'], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Wave Wallet: Erreur crédit', ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'Error'], 500);
+        }
+    }
+
+    /**
+     * Confirmation de signature Wave
+     */
+    protected function validateWaveSignature(Request $request)
+    {
+        $signature = $request->header('wave-signature');
+        $payload = $request->getContent();
+        $secret = config('services.wave.webhook_secret');
+
+        if (!$signature || !$secret) return false;
+
+        $parts = explode(',', $signature);
+        $timestamp = null;
+        $signatures = [];
+
+        foreach ($parts as $part) {
+            if (strpos($part, 't=') === 0) $timestamp = substr($part, 2);
+            if (strpos($part, 'v1=') === 0) $signatures[] = substr($part, 3);
+        }
+
+        if (!$timestamp || empty($signatures)) return false;
+
+        $signedPayload = $timestamp . $payload;
+        $expectedSignature = hash_hmac('sha256', $signedPayload, $secret);
+
+        return in_array($expectedSignature, $signatures);
+    }
+
+    /**
+     * Retour de l'utilisateur après paiement Wave
+     */
+    public function waveReturn(Request $request)
+    {
+        return redirect()->route('user.wallet.index')
+            ->with('success', 'Votre rechargement Wave est en cours de traitement. Votre solde sera mis à jour dans quelques instants.');
+    }
+
+    /**
+     * Annulation de l'utilisateur Wave
+     */
+    public function waveCancel(Request $request)
+    {
+        return redirect()->route('user.wallet.index')
+            ->with('error', 'Le rechargement Wave a été annulé.');
     }
 
     public function verifyRecharge(Request $request)

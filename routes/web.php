@@ -530,11 +530,16 @@ Route::middleware('auth')->prefix('user')->group(function () {
 
 // Paiement Wave (Hors Auth pour le webhook)
 Route::prefix('user')->group(function () {
-    Route::post('/payment/wave/notify', [App\Http\Controllers\PaymentController::class, 'waveNotify'])->name('payment.notify'); // Garde le même nom de route pour la compatibilité interne si nécessaire, ou on renomme dans create.blade.php
-    Route::post('/compte/notify', [App\Http\Controllers\User\WalletController::class, 'notify'])->name('cinetpay.notify');
-    Route::match(['get', 'post'], '/payment/notify/transfer', [App\Http\Controllers\User\WalletController::class, 'notifyTransfer'])->name('wallet.notify.transfer');
+    Route::post('/payment/wave/notify', [App\Http\Controllers\PaymentController::class, 'waveNotify'])->name('payment.notify');
     Route::get('/payment/wave/return', [App\Http\Controllers\PaymentController::class, 'waveReturn'])->name('payment.return');
     Route::get('/payment/wave/cancel', [App\Http\Controllers\PaymentController::class, 'waveCancel'])->name('payment.cancel');
+
+    // Wallet Wave
+    Route::get('/compte/wave/return', [App\Http\Controllers\User\WalletController::class, 'waveReturn'])->name('wallet.wave.return');
+    Route::get('/compte/wave/cancel', [App\Http\Controllers\User\WalletController::class, 'waveCancel'])->name('wallet.wave.cancel');
+
+    Route::post('/compte/notify', [App\Http\Controllers\User\WalletController::class, 'notify'])->name('cinetpay.notify');
+    Route::match(['get', 'post'], '/payment/notify/transfer', [App\Http\Controllers\User\WalletController::class, 'notifyTransfer'])->name('wallet.notify.transfer');
 });
 
 
