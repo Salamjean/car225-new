@@ -29,7 +29,7 @@ class ProfileController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'prenom' => 'nullable|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
+            'email' => 'nullable|email|unique:users,email,' . $user->id,
             'contact' => 'nullable|string|digits:10',
             'nom_urgence' => 'nullable|string|max:255',
             'lien_parente_urgence' => 'nullable|string|max:255',
@@ -41,6 +41,11 @@ class ProfileController extends Controller
         ]);
 
         try {
+            // Empêcher la modification de l'email pour les utilisateurs Google
+            if ($user->google_id) {
+                unset($validated['email']);
+            }
+
             // Since we merged nom and prenom into nom_urgence, we force prenom_urgence to null
             $validated['prenom_urgence'] = null;
             $user->update($validated);

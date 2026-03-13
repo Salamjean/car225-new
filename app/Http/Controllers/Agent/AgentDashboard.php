@@ -8,6 +8,8 @@ use App\Models\Programme;
 use App\Models\Vehicule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 
 class AgentDashboard extends Controller
@@ -79,5 +81,69 @@ class AgentDashboard extends Controller
     {
         Auth::guard('agent')->logout();
         return redirect()->route('agent.login');
+    }
+
+    /**
+     * Voir le profil de l'agent
+     */
+    public function profile()
+    {
+        $agent = Auth::guard('agent')->user();
+        $agent->load(['compagnie', 'gare']);
+        return view('agent.profile', compact('agent'));
+    }
+
+    /**
+     * Mettre à jour le profil
+     */
+    public function updateProfile(Request $request)
+    {
+        $agent = Auth::guard('agent')->user();
+        
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'prenom' => 'required|string|max:255',
+            'contact' => 'required|string|max:20',
+            'cas_urgence' => 'nullable|string|max:20',
+            'commune' => 'nullable|string|max:255',
+            'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+        ]);
+
+        $data = $request->only(['name', 'prenom', 'contact', 'cas_urgence', 'commune']);
+
+        if ($request->hasFile('profile_picture')) {
+            if ($agent->profile_picture) {
+                Storage::disk('public')->delete($agent->profile_picture);
+            }
+            $path = $request->file('profile_picture')->store('agent_profiles', 'public');
+            $data['profile_picture'] = $path;
+        }
+
+        $agent->update($data);
+
+        return back()->with('success', 'Profil mis à jour avec succès !');
+    }
+
+    /**
+     * Changer le mot de passe
+     */
+    public function updatePassword(Request $request)
+    {
+        $agent = Auth::guard('agent')->user();
+
+        $request->validate([
+            'current_password' => 'required',
+            'new_password' => 'required|string|min:8|confirmed',
+        ]);
+
+        if (!Hash::check($request->current_password, $agent->password)) {
+            return back()->withErrors(['current_password' => 'Le mot de passe actuel ne correspond pas.']);
+        }
+
+        $agent->update([
+            'password' => Hash::make($request->new_password)
+        ]);
+
+        return back()->with('success', 'Mot de passe mis à jour avec succès !');
     }
 }

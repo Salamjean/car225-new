@@ -55,7 +55,7 @@
                             </div>
                             <div class="ms-3">
                                 <h6 class="mb-0 fw-bold">Email</h6>
-                                <p class="mb-0 text-muted small">support@car225.ci</p>
+                                <p class="mb-0 text-muted small">contact@car225.com</p>
                             </div>
                         </div>
 

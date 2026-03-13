@@ -160,7 +160,7 @@ Route::prefix('agent')->group(function () {
         
         // Profil agent
         Route::get('/profile', [AgentController::class, 'profile']);
-        Route::put('/profile', [AgentController::class, 'updateProfile']);
+        Route::post('/profile', [AgentController::class, 'updateProfile']);
         Route::post('/change-password', [AgentController::class, 'changePassword']);
         Route::post('/fcm-token', [AgentController::class, 'updateFcmToken']);
         Route::post('/test-notification', [AgentController::class, 'testNotification']);
@@ -206,7 +206,7 @@ Route::prefix('chauffeur')->group(function () {
 
         // Profil chauffeur
         Route::get('/profile', [\App\Http\Controllers\Api\Chauffeur\ChauffeurApiController::class, 'profile']);
-        Route::put('/profile', [\App\Http\Controllers\Api\Chauffeur\ChauffeurApiController::class, 'updateProfile']);
+        Route::post('/profile', [\App\Http\Controllers\Api\Chauffeur\ChauffeurApiController::class, 'updateProfile']);
         Route::post('/change-password', [\App\Http\Controllers\Api\Chauffeur\ChauffeurApiController::class, 'changePassword']);
         Route::post('/fcm-token', [\App\Http\Controllers\Api\Chauffeur\ChauffeurApiController::class, 'updateFcmToken']);
 
@@ -299,6 +299,11 @@ Route::prefix('caisse')->group(function () {
     // Routes protégées
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [\App\Http\Controllers\Api\Caisse\AuthController::class, 'logout']);
+        
+        // Profil caisse
+        Route::get('/profile', [\App\Http\Controllers\Api\Caisse\CaisseController::class, 'profile']);
+        Route::post('/profile', [\App\Http\Controllers\Api\Caisse\CaisseController::class, 'updateProfile']);
+        Route::post('/change-password', [\App\Http\Controllers\Api\Caisse\CaisseController::class, 'changePassword']);
     });
 });
 

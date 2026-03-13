@@ -48,6 +48,11 @@
                         <p class="text-sm font-semibold text-gray-900">{{ $gare->responsable_prenom }} {{ $gare->responsable_nom }}</p>
                         <p class="text-xs text-gray-500">{{ $gare->email }}</p>
                     </div>
+                    <a href="{{ route('gare-espace.profile') }}" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors">
+                        <i class="fas fa-user-circle"></i>
+                        Mon Profil
+                    </a>
+                    <div class="border-t border-gray-50 mt-1"></div>
                     <form action="{{ route('gare-espace.logout') }}" method="POST">
                         @csrf
                         <button type="submit" class="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">

@@ -105,13 +105,13 @@
                                 <div class="text-xs text-slate-500">+225 01 02 03 04 (24/24)</div>
                             </div>
                         </a>
-                        <a href="mailto:support@car225.ci" class="flex items-center gap-4 bg-white p-4 rounded-2xl border border-white hover:border-blue-200 hover:shadow-md transition-all group">
+                        <a href="mailto:contact@car225.com" class="flex items-center gap-4 bg-white p-4 rounded-2xl border border-white hover:border-blue-200 hover:shadow-md transition-all group">
                             <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center group-hover:bg-blue-100 transition-colors">
                                 <i class="bi bi-envelope text-blue-600 text-xl"></i>
                             </div>
                             <div>
                                 <div class="text-sm font-bold text-slate-800">Email</div>
-                                <div class="text-xs text-slate-500">support@car225.ci</div>
+                                <div class="text-xs text-slate-500">contact@car225.com</div>
                             </div>
                         </a>
                     </div>

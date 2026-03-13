@@ -18,62 +18,91 @@ class ChauffeurApiController extends Controller
     public function profile(Request $request)
     {
         $chauffeur = $request->user();
+        $chauffeur->load(['compagnie', 'gare']);
 
         return response()->json([
             'success' => true,
             'chauffeur' => [
                 'id' => $chauffeur->id,
                 'code_id' => $chauffeur->code_id,
-                'nom' => $chauffeur->nom,
+                'name' => $chauffeur->name,
                 'prenom' => $chauffeur->prenom,
                 'email' => $chauffeur->email,
-                'telephone' => $chauffeur->telephone,
-                'role' => $chauffeur->role,
+                'contact' => $chauffeur->contact,
+                'contact_urgence' => $chauffeur->contact_urgence,
+                'role' => $chauffeur->type_personnel,
                 'statut' => $chauffeur->statut,
                 'commune' => $chauffeur->commune,
+                'profile_picture' => $chauffeur->profile_image ? 'storage/' . $chauffeur->profile_image : null,
+                'profile_picture_url' => $chauffeur->profile_image 
+                    ? 'storage/' . $chauffeur->profile_image 
+                    : null,
                 'compagnie' => $chauffeur->compagnie ? [
                     'id' => $chauffeur->compagnie->id,
                     'name' => $chauffeur->compagnie->name,
-                    'logo' => $chauffeur->compagnie->logo,
+                    'logo' => $chauffeur->compagnie->logo ? 'storage/' . $chauffeur->compagnie->logo : null,
                 ] : null,
                 'gare' => $chauffeur->gare ? [
                     'id' => $chauffeur->gare->id,
                     'nom_gare' => $chauffeur->gare->nom_gare,
-                    'ville' => $chauffeur->gare->ville,
                 ] : null,
             ],
         ]);
     }
 
-    /**
-     * Mettre à jour le profil
-     */
     public function updateProfile(Request $request)
     {
         $chauffeur = $request->user();
 
         $request->validate([
-            'nom' => 'nullable|string|max:255',
+            'name' => 'nullable|string|max:255',
             'prenom' => 'nullable|string|max:255',
-            'telephone' => 'nullable|string|max:20',
+            'contact' => 'nullable|string|max:20',
+            'contact_urgence' => 'nullable|string|max:20',
             'commune' => 'nullable|string|max:255',
             'profile_picture' => 'nullable|image|max:2048',
         ]);
 
-        $data = $request->only(['nom', 'prenom', 'telephone', 'commune']);
+        $data = $request->only(['name', 'prenom', 'contact', 'contact_urgence', 'commune']);
 
         if ($request->hasFile('profile_picture')) {
-            if ($chauffeur->profile_picture) {
-                Storage::disk('public')->delete($chauffeur->profile_picture);
+            if ($chauffeur->profile_image) {
+                Storage::disk('public')->delete($chauffeur->profile_image);
             }
-            $data['profile_picture'] = $request->file('profile_picture')->store('chauffeurs/profiles', 'public');
+            $data['profile_image'] = $request->file('profile_picture')->store('chauffeurs/profiles', 'public');
         }
 
         $chauffeur->update(array_filter($data));
+        $chauffeur->load(['compagnie', 'gare']);
 
         return response()->json([
             'success' => true,
             'message' => 'Profil mis à jour avec succès.',
+            'chauffeur' => [
+                'id' => $chauffeur->id,
+                'code_id' => $chauffeur->code_id,
+                'name' => $chauffeur->name,
+                'prenom' => $chauffeur->prenom,
+                'email' => $chauffeur->email,
+                'contact' => $chauffeur->contact,
+                'contact_urgence' => $chauffeur->contact_urgence,
+                'role' => $chauffeur->type_personnel,
+                'statut' => $chauffeur->statut,
+                'commune' => $chauffeur->commune,
+                'profile_picture' => $chauffeur->profile_image ? 'storage/' . $chauffeur->profile_image : null,
+                'profile_picture_url' => $chauffeur->profile_image 
+                    ? 'storage/' . $chauffeur->profile_image 
+                    : null,
+                'compagnie' => $chauffeur->compagnie ? [
+                    'id' => $chauffeur->compagnie->id,
+                    'name' => $chauffeur->compagnie->name,
+                    'logo' => $chauffeur->compagnie->logo ? 'storage/' . $chauffeur->compagnie->logo : null,
+                ] : null,
+                'gare' => $chauffeur->gare ? [
+                    'id' => $chauffeur->gare->id,
+                    'nom_gare' => $chauffeur->gare->nom_gare,
+                ] : null,
+            ],
         ]);
     }
 

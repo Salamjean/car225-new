@@ -39,12 +39,10 @@ return [
         'key' => env('GOOGLE_MAPS_API_KEY'),
     ],
 
-    'cinetpay' => [
-        'api_key' => env('CINETPAY_API_KEY'),
-        'api_password' => env('CINETPAY_API_PASSWORD'),
-        'base_url' => env('CINETPAY_BASE_URL', 'https://api.cinetpay.net'),
-        'secret_key' => env('CINETPAY_SECRET_KEY'),
-        'transfer_password' => env('CINETPAY_TRANSFER_PASSWORD'),
+    'wave' => [
+        'api_key' => env('WAVE_API_KEY'),
+        'webhook_secret' => env('WAVE_WEBHOOK_SECRET'),
+        'base_url' => env('WAVE_BASE_URL', 'https://api.wave.com/v1/checkout/sessions'),
     ],
 
     'fcm' => [

@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
              '/payment/callback', // <--- AJOUTER CETTE LIGNE
             '/api/*', // Exclu toutes les routes API du CSRF (pour mobile app)
             '/user/payment/notify',
+            '/user/payment/wave/notify', // Route correcte d'après artisan route:list
         ]);
 
         $middleware->alias([

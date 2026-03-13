@@ -3,80 +3,121 @@
 namespace App\Http\Controllers;
 
 use App\Models\Reservation;
-use App\Services\CinetPayService;
+use App\Services\WaveService;
 use Illuminate\Http\Request;
 use App\Models\Programme; // <--- AJOUTER CECI
 use Illuminate\Support\Facades\Log;
 
 class PaymentController extends Controller
 {
-    protected $cinetPayService;
+    protected $waveService;
 
-    public function __construct(CinetPayService $cinetPayService)
+    public function __construct(WaveService $waveService)
     {
-        $this->cinetPayService = $cinetPayService;
+        $this->waveService = $waveService;
     }
 
     /**
-     * Webhook CinetPay pour la notification de paiement
+     * Valide la signature transmise par Wave.
      */
-    public function notify(Request $request)
+    private function validateWaveSignature(Request $request): bool
     {
-        Log::info('CinetPay Notification Received', $request->all());
+        $waveSignature = $request->header('wave-signature');
+        $waveWebhookSecret = config('services.wave.webhook_secret');
 
-        if (!$request->has('cpm_trans_id')) {
-            Log::warning('CinetPay Notification: Missing transaction ID');
-            return response()->json(['message' => 'Missing transaction ID'], 400);
+        if (!$waveWebhookSecret || !$waveSignature) {
+            return true; // Si pas de secret ou signature, on passe (environnement de test)
         }
 
-        $transactionId = $request->cpm_trans_id;
+        $timestamp = null;
+        $signatures = [];
+
+        $parts = explode(',', (string) $waveSignature);
+        foreach ($parts as $part) {
+            list($prefix, $value) = array_pad(explode('=', trim($part), 2), 2, null);
+            if ($prefix === 't') {
+                $timestamp = $value;
+            } elseif ($prefix === 'v1') {
+                $signatures[] = $value;
+            }
+        }
+
+        if (!$timestamp || empty($signatures)) {
+            return false;
+        }
+
+        $payload = $timestamp . $request->getContent();
+        $expectedSignature = hash_hmac('sha256', $payload, $waveWebhookSecret);
+
+        return in_array($expectedSignature, $signatures);
+    }
+
+    /**
+     * Webhook Wave pour la notification de paiement
+     */
+    public function waveNotify(Request $request)
+    {
+        Log::info('Wave Notification Received', [
+            'headers' => $request->headers->all(),
+            'body' => $request->all()
+        ]);
+
+        if (!$this->validateWaveSignature($request)) {
+            Log::warning('Webhook Wave: Signature invalide');
+            return response()->json(['message' => 'Signature invalide'], 401);
+        }
+
+        $eventType = $request->input('type');
+
+        if ($eventType !== 'checkout.session.completed') {
+            Log::info("Webhook Wave: Événement ignoré ({$eventType})");
+            return response()->json(['message' => 'Événement ignoré'], 200);
+        }
+
+        $checkoutData = $request->input('data');
+        if (!$checkoutData) {
+            return response()->json(['message' => 'Données de session manquantes'], 400);
+        }
+
+        $clientReference = $checkoutData['client_reference'] ?? null;
+        if (!$clientReference) {
+            Log::warning('Webhook Wave: client_reference manquant');
+            return response()->json(['message' => 'Client reference manquant'], 200);
+        }
 
         // Récupérer le paiement
-        $paiement = \App\Models\Paiement::where('transaction_id', $transactionId)->first();
+        $paiement = \App\Models\Paiement::where('transaction_id', $clientReference)->first();
 
         if (!$paiement) {
-            Log::error('Paiement non trouvé pour la transaction:', ['id' => $transactionId]);
+            Log::error('Paiement non trouvé pour la référence:', ['id' => $clientReference]);
             return response()->json(['message' => 'Paiement non trouvé'], 404);
         }
 
-        // Vérifier le statut du paiement auprès de CinetPay
-        $statusInfo = $this->cinetPayService->checkPaymentStatus($transactionId);
+        Log::info('Wave Payment Confirmed', ['transaction_id' => $clientReference]);
 
-        if ($statusInfo && isset($statusInfo['code']) && $statusInfo['code'] == '00') {
-            Log::info('CinetPay Payment Confirmed', ['transaction_id' => $transactionId]);
+        // Mettre à jour le paiement
+        $paiement->update([
+            'status' => 'success',
+            'payment_method' => 'wave',
+            'payment_date' => isset($checkoutData['when_completed']) ? \Carbon\Carbon::parse($checkoutData['when_completed']) : now(),
+            'payment_details' => array_merge($paiement->payment_details ?? [], $checkoutData)
+        ]);
 
-            // Mettre à jour le paiement
-            $paiement->update([
-                'status' => 'success',
-                'payment_method' => $statusInfo['data']['payment_method'] ?? null,
-                'payment_date' => now(),
-                'payment_details' => array_merge($paiement->payment_details ?? [], $statusInfo)
-            ]);
+        // Mettre à jour les réservations et générer les billets
+        $reservations = $paiement->reservations;
 
-            // Mettre à jour les réservations et générer les billets
-            $reservations = $paiement->reservations;
+        foreach ($reservations as $reservation) {
+            if ($reservation->statut !== 'confirmee') {
+                $reservation->update(['statut' => 'confirmee']);
 
-            foreach ($reservations as $reservation) {
-                if ($reservation->statut !== 'confirmee') {
-                    $reservation->update(['statut' => 'confirmee']);
+                // Appeler la logique de génération de billet
+                $this->finalizeReservation($reservation);
 
-                    // Appeler la logique de génération de billet
-                    $this->finalizeReservation($reservation);
-
-                    Log::info('Reservation confirmed and ticket generated', ['id' => $reservation->id]);
-                }
+                Log::info('Reservation confirmed and ticket generated', ['id' => $reservation->id]);
             }
-
-            return response()->json(['message' => 'Success'], 200);
-        } else {
-            $paiement->update([
-                'status' => 'failed',
-                'payment_details' => array_merge($paiement->payment_details ?? [], $statusInfo ?? ['error' => 'No info from CinetPay'])
-            ]);
         }
 
-        Log::warning('CinetPay Payment Not Confirmed or Failed', ['status' => $statusInfo]);
-        return response()->json(['message' => 'Payment failed or pending'], 200);
+        return response()->json(['message' => 'Success'], 200);
     }
 
     /**
@@ -213,33 +254,16 @@ class PaymentController extends Controller
     /**
      * Page de retour après le paiement
      */
-    public function return(Request $request)
+    public function waveReturn(Request $request)
     {
-        $transactionId = $request->transaction_id;
-        Log::info('User returned from CinetPay', ['transaction_id' => $transactionId]);
+        $sessionId = $request->input('session_id'); // Wave passes session_id in the url query
+        Log::info('User returned from Wave', ['session_id' => $sessionId]);
 
-        // Vérifier le statut une dernière fois
-        $statusInfo = $this->cinetPayService->checkPaymentStatus($transactionId);
-
-        if ($statusInfo && isset($statusInfo['code']) && $statusInfo['code'] == '00') {
-            // S'assurer que les réservations sont confirmées au cas où notify n'est pas encore passé
-            $paiement = \App\Models\Paiement::where('transaction_id', $transactionId)->first();
-            if ($paiement && $paiement->status !== 'success') {
-                $paiement->update(['status' => 'success']);
-                foreach ($paiement->reservations as $reservation) {
-                    if ($reservation->statut !== 'confirmee') {
-                        $reservation->update(['statut' => 'confirmee']);
-                        $this->finalizeReservation($reservation);
-                    }
-                }
-            }
-
-            return redirect()->route('reservation.index')
-                ->with('success', 'Votre paiement a été validé avec succès ! Vos billets sont disponibles.');
-        }
-
-        return redirect()->route('reservation.index')
-            ->with('info', 'Votre paiement est en cours de traitement ou a été annulé par vos soins.');
+        return view('payment.success', ['sessionId' => $sessionId]);
+    }
+    
+    public function waveCancel(Request $request) {
+        return view('payment.cancel');
     }
 
 }

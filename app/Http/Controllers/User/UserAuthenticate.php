@@ -43,17 +43,27 @@ class UserAuthenticate extends Controller
 
         // Order of priority for search
         $searchOrder = [
-            ['model' => \App\Models\User::class, 'role' => 'user', 'guard' => 'web', 'dashboard' => 'reservation.create'],
-            ['model' => \App\Models\Agent::class, 'role' => 'agent', 'guard' => 'agent', 'dashboard' => 'agent.dashboard'],
-            ['model' => \App\Models\Hotesse::class, 'role' => 'hotesse', 'guard' => 'hotesse', 'dashboard' => 'hotesse.dashboard'],
-            ['model' => \App\Models\Caisse::class, 'role' => 'caisse', 'guard' => 'caisse', 'dashboard' => 'caisse.dashboard'], // Assumé
-            ['model' => \App\Models\Personnel::class, 'role' => 'chauffeur', 'guard' => 'chauffeur', 'dashboard' => 'chauffeur.dashboard'],
+            ['model' => \App\Models\User::class, 'role' => 'user', 'guard' => 'web', 'dashboard' => 'reservation.create', 'fields' => ['contact', 'code_id']],
+            ['model' => \App\Models\Agent::class, 'role' => 'agent', 'guard' => 'agent', 'dashboard' => 'agent.dashboard', 'fields' => ['contact', 'code_id']],
+            ['model' => \App\Models\Hotesse::class, 'role' => 'hotesse', 'guard' => 'hotesse', 'dashboard' => 'hotesse.dashboard', 'fields' => ['contact', 'code_id']],
+            ['model' => \App\Models\Caisse::class, 'role' => 'caisse', 'guard' => 'caisse', 'dashboard' => 'caisse.dashboard', 'fields' => ['email', 'code_id']], // Assumé
+            ['model' => \App\Models\Personnel::class, 'role' => 'chauffeur', 'guard' => 'chauffeur', 'dashboard' => 'chauffeur.dashboard', 'fields' => ['contact', 'code_id']],
         ];
 
         foreach ($searchOrder as $search) {
-            $entity = $search['model']::where('contact', $loginValue)
-                ->orWhere('code_id', $loginValue)
-                ->first();
+            $query = $search['model']::query();
+            
+            $query->where(function ($q) use ($search, $loginValue) {
+                foreach ($search['fields'] as $index => $field) {
+                    if ($index === 0) {
+                        $q->where($field, $loginValue);
+                    } else {
+                        $q->orWhere($field, $loginValue);
+                    }
+                }
+            });
+
+            $entity = $query->first();
 
             if ($entity && Hash::check($password, $entity->password)) {
                 // Check if archived for staff roles
