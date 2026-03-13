@@ -63,6 +63,7 @@ class CaisseController extends Controller
     public function profile()
     {
         $caisse = Auth::guard('caisse')->user();
+        $caisse->load(['compagnie', 'gare']);
         return view('caisse.profile', compact('caisse'));
     }
 

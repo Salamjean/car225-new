@@ -49,7 +49,12 @@
                         <p class="dropdown-user-role">Chauffeur</p>
                     </div>
                     <div class="dropdown-divider"></div>
-                    <a href="{{ route('chauffeur.logout') }}" class="dropdown-item">
+                    <a href="{{ route('chauffeur.profile') }}" class="dropdown-item">
+                        <i class="fas fa-user-circle"></i>
+                        Mon Profil
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a href="{{ route('chauffeur.logout') }}" class="dropdown-item logout-item">
                         <i class="fas fa-sign-out-alt"></i>
                         Déconnexion
                     </a>

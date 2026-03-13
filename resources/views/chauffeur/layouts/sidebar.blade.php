@@ -76,14 +76,6 @@
             <span>Signalements</span>
         </a>
     </nav>
-
-    {{-- Logout --}}
-    <div class="sidebar-footer">
-        <a href="{{ route('chauffeur.logout') }}" class="nav-link logout-link">
-            <div class="nav-icon"><i class="fas fa-sign-out-alt"></i></div>
-            <span>Déconnexion</span>
-        </a>
-    </div>
 </aside>
 
 {{-- Overlay mobile --}}

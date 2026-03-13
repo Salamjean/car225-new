@@ -8,6 +8,8 @@ use App\Models\Vehicule;
 use App\Models\Voyage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 
 class ChauffeurController extends Controller
@@ -50,5 +52,69 @@ class ChauffeurController extends Controller
             ->paginate(10);
 
         return view('chauffeur.voyages.history', compact('voyages'));
+    }
+
+    /**
+     * Voir le profil du chauffeur
+     */
+    public function profile()
+    {
+        $chauffeur = Auth::guard('chauffeur')->user();
+        $chauffeur->load(['compagnie', 'gare']);
+        return view('chauffeur.profile', compact('chauffeur'));
+    }
+
+    /**
+     * Mettre à jour le profil
+     */
+    public function updateProfile(Request $request)
+    {
+        $chauffeur = Auth::guard('chauffeur')->user();
+        
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'prenom' => 'required|string|max:255',
+            'contact' => 'required|string|max:20',
+            'contact_urgence' => 'nullable|string|max:20',
+            'commune' => 'nullable|string|max:255',
+            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+        ]);
+
+        $data = $request->only(['name', 'prenom', 'contact', 'contact_urgence', 'commune']);
+
+        if ($request->hasFile('profile_image')) {
+            if ($chauffeur->profile_image) {
+                Storage::disk('public')->delete($chauffeur->profile_image);
+            }
+            $path = $request->file('profile_image')->store('chauffeur_profiles', 'public');
+            $data['profile_image'] = $path;
+        }
+
+        $chauffeur->update($data);
+
+        return back()->with('success', 'Profil mis à jour avec succès !');
+    }
+
+    /**
+     * Changer le mot de passe
+     */
+    public function updatePassword(Request $request)
+    {
+        $chauffeur = Auth::guard('chauffeur')->user();
+
+        $request->validate([
+            'current_password' => 'required',
+            'new_password' => 'required|string|min:8|confirmed',
+        ]);
+
+        if (!Hash::check($request->current_password, $chauffeur->password)) {
+            return back()->withErrors(['current_password' => 'Le mot de passe actuel ne correspond pas.']);
+        }
+
+        $chauffeur->update([
+            'password' => Hash::make($request->new_password)
+        ]);
+
+        return back()->with('success', 'Mot de passe mis à jour avec succès !');
     }
 }

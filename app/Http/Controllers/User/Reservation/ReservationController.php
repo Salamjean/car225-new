@@ -721,6 +721,7 @@ class ReservationController extends Controller
             'passagers.*.email' => 'nullable|email',
             'passagers.*.telephone' => 'required|string',
             'passagers.*.urgence' => 'required|string',
+            'passagers.*.nom_urgence' => 'required|string',
             'passagers.*.seat_number' => 'required|integer',
             'heure_depart' => 'nullable|string', // AJOUTÉ
             'heure_depart_retour' => 'nullable|string', // AJOUTÉ
@@ -1009,6 +1010,7 @@ $dateAller = $request->date_voyage;
                     'passager_email' => $passager['email'],
                     'passager_telephone' => $passager['telephone'],
                     'passager_urgence' => $passager['urgence'],
+                    'nom_passager_urgence' => $passager['nom_urgence'],
                     'is_aller_retour' => $isAllerRetour,
                     'montant' => $prixUnitaire + ($fraisChoixSiege / (count($request->passagers) * ($isAllerRetour ? 2 : 1))),
                     'statut' => $reservationStatus,
@@ -1076,6 +1078,7 @@ $dateAller = $request->date_voyage;
                                 'passager_email' => $passager['email'],
                                 'passager_telephone' => $passager['telephone'],
                                 'passager_urgence' => $passager['urgence'],
+                                'nom_passager_urgence' => $passager['nom_urgence'],
                                 'is_aller_retour' => $isAllerRetour,
                                 'montant' => $prixUnitaire + ($fraisChoixSiege / (count($request->passagers) * ($isAllerRetour ? 2 : 1))),
                                 'statut' => $reservationStatus,
@@ -1127,6 +1130,7 @@ $dateAller = $request->date_voyage;
                                     'passager_email' => $passager['email'],
                                     'passager_telephone' => $passager['telephone'],
                                     'passager_urgence' => $passager['urgence'],
+                                    'nom_passager_urgence' => $passager['nom_urgence'],
                                     'is_aller_retour' => $isAllerRetour,
                                     'montant' => $prixUnitaire + ($fraisChoixSiege / (count($request->passagers) * ($isAllerRetour ? 2 : 1))),
                                     'statut' => $reservationStatus,
@@ -1168,6 +1172,7 @@ $dateAller = $request->date_voyage;
                     'passager_email' => $passager['email'],
                     'passager_telephone' => $passager['telephone'],
                     'passager_urgence' => $passager['urgence'],
+                    'nom_passager_urgence' => $passager['nom_urgence'],
                     'is_aller_retour' => $isAllerRetour,
                     'montant' => $prixUnitaire + ($fraisChoixSiege / (count($request->passagers) * ($isAllerRetour ? 2 : 1))),
                     'statut' => $reservationStatus,
@@ -1338,25 +1343,51 @@ $dateAller = $request->date_voyage;
             ]);
         }
 
-        // Retour CinetPay
-        return response()->json([
-            'success' => true,
-            'message' => 'Réservations initialisées.',
-            'payment_url' => true,
-            'transaction_id' => $transactionId,
-            'amount' => (int) $montantTotal,
-            'currency' => 'XOF',
-            'description' => 'Réservation ' . $request->nombre_places . ' place(s)',
-            'customer_name' => Auth::user()->name,
-            'customer_surname' => Auth::user()->prenom ?? '',
-            'customer_email' => Auth::user()->email,
-            'customer_phone_number' => Auth::user()->phone ?? '00000000',
-            'customer_address' => 'Abidjan',
-            'customer_city' => 'Abidjan',
-            'customer_country' => 'CI',
-            'customer_state' => 'CI',
-            'customer_zip_code' => '00225',
-        ]);
+        // Initialisation de la session Wave
+        try {
+            $waveService = app(\App\Services\WaveService::class);
+            // Wave exige une URL en HTTPS. 
+            // Si on teste en local sur 127.0.0.1, on utilise l'URL de ngrok (APP_URL) configurée dans le .env
+            $appUrl = rtrim(config('app.url'), '/');
+            $cheminRetour = route('payment.return', [], false);
+            $cheminCancel = route('payment.cancel', [], false);
+
+            $successUrl = str_starts_with($appUrl, 'https://') 
+                ? $appUrl . $cheminRetour 
+                : str_replace('http://', 'https://', route('payment.return'));
+                
+            $errorUrl = str_starts_with($appUrl, 'https://') 
+                ? $appUrl . $cheminCancel 
+                : str_replace('http://', 'https://', route('payment.cancel'));
+            
+            $waveSession = $waveService->createCheckoutSession(
+                (int) $montantTotal,
+                'XOF',
+                $successUrl,
+                $errorUrl,
+                $transactionId
+            );
+
+            if ($waveSession && isset($waveSession['wave_launch_url'])) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Réservations initialisées. Redirection vers Wave...',
+                    'payment_url' => true,
+                    'checkout_url' => $waveSession['wave_launch_url'],
+                    'transaction_id' => $transactionId
+                ]);
+            } else {
+                throw new \Exception("Impossible d'initialiser le paiement avec Wave.");
+            }
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Erreur Wave Init: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur technique lors de l\'initialisation du paiement: ' . $e->getMessage()
+            ], 500);
+        }
 
     } catch (\Exception $e) {
         DB::rollBack(); // ANNULATION TOTALE EN CAS D'ERREUR

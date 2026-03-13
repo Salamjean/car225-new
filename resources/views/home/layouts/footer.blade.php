@@ -19,7 +19,7 @@
                 <ul style="list-style: none; padding: 0; margin: 0;">
                     <li style="margin-bottom: 12px;"><a href="{{ route('home') }}" style="color: #ffffff; text-decoration: none; font-size: 14px;">Accueil</a></li>
                     <li style="margin-bottom: 12px;"><a href="{{ route('home.compagny') }}" style="color: #ffffff; text-decoration: none; font-size: 14px;">Nos compagnies</a></li>
-                    <li style="margin-bottom: 12px;"><a href="{{ route('reservation.index') }}" style="color: #ffffff; text-decoration: none; font-size: 14px;">Mes billets</a></li>
+                    <li style="margin-bottom: 12px;"><a href="{{ route('home.reservations') }}" style="color: #ffffff; text-decoration: none; font-size: 14px;">Mes billets</a></li>
                 </ul>
             </div>
 
@@ -29,7 +29,7 @@
                 <ul style="list-style: none; padding: 0; margin: 0;">
                     <li style="margin-bottom: 12px;"><a href="{{ route('home.contact') }}" style="color: #ffffff; text-decoration: none; font-size: 14px;">Contact Téléphone</a></li>
                     <li style="margin-bottom: 12px;"><a href="{{ route('home.contact') }}" style="color: #ffffff; text-decoration: none; font-size: 14px;">Chat WhatsApp</a></li>
-                    <li style="margin-bottom: 12px;"><a href="{{ route('home.infos') }}" style="color: #ffffff; text-decoration: none; font-size: 14px;">FAQ</a></li>
+                    <li style="margin-bottom: 12px;"><a href="#" style="color: #ffffff; text-decoration: none; font-size: 14px;">FAQ</a></li>
                 </ul>
             </div>
 
@@ -39,7 +39,7 @@
                 <div style="font-size: 14px; line-height: 2;">
                     <p style="margin: 0;">+225 01 02 03 04</p>
                     <p style="margin: 0;">WhatsApp</p>
-                    <p style="margin: 0;">support@car225.ci</p>
+                    <p style="margin: 0;">contact@car225.com</p>
                 </div>
             </div>
         </div>

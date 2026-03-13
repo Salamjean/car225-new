@@ -38,10 +38,12 @@
                                 <span class="text-sm text-gray-600">Contact</span>
                                 <span class="font-bold text-gray-800">{{ $user->contact ?? 'N/A' }}</span>
                             </div>
+                            @if(!$user->google_id)
                             <div class="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                                 <span class="text-sm text-gray-600">Code ID</span>
                                 <span class="font-bold text-gray-800">{{ $user->code_id ?? 'N/A' }}</span>
                             </div>
+                            @endif
                             <!-- Formulaire caché pour upload photo -->
                             <form id="photoForm" enctype="multipart/form-data">
                                 @csrf
@@ -82,9 +84,10 @@
                             </div>
 
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Email *</label>
-                                <input type="email" id="email" name="email" value="{{ $user->email }}" required
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+                                <input type="email" id="email" name="email" value="{{ $user->email }}"
+                                    @if($user->google_id) readonly @endif
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent @if($user->google_id) bg-gray-100 cursor-not-allowed @endif">
                                 <div class="invalid-feedback text-red-500 text-sm mt-1"></div>
                             </div>
 

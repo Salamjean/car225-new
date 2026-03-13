@@ -49,7 +49,12 @@
                         <p class="dropdown-user-role">Agent</p>
                     </div>
                     <div class="dropdown-divider"></div>
-                    <a href="{{ route('agent.logout') }}" class="dropdown-item">
+                    <a href="{{ route('agent.profile') }}" class="dropdown-item">
+                        <i class="fas fa-user-circle"></i>
+                        Mon Profil
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a href="{{ route('agent.logout') }}" class="dropdown-item logout-item">
                         <i class="fas fa-sign-out-alt"></i>
                         Déconnexion
                     </a>

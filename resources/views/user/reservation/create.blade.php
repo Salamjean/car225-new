@@ -1,4 +1,4 @@
-﻿@extends('user.layouts.template')
+@extends('user.layouts.template')
 @section('content')
 
 @push('styles')
@@ -1010,9 +1010,35 @@ var currentRetourProgramId = null;
         var selectedReturnDate = null; // Date de retour sÃ©lectionnÃ©e pour Aller-Retour
 
 
-        window.currentUser = @json(Auth::user()); // Injecter l'utilisateur connectÃ©
+        window.currentUser = @json(Auth::user()); // Injecter l'utilisateur connecté
         window.handleReservationClick = function(button) {
             console.log("Bouton réserver cliqué"); // Debug
+            
+            // Vérification si le profil est rempli
+            const user = window.currentUser;
+            const isProfileComplete = user && 
+                                    user.contact && user.contact.trim() !== "" && 
+                                    user.nom_urgence && user.nom_urgence.trim() !== "" && 
+                                    user.contact_urgence && user.contact_urgence.trim() !== "";
+
+            if (!isProfileComplete) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Profil incomplet',
+                    text: 'Veuillez remplir vos informations de contact et personne à contacter d\'urgence dans votre profil avant de réserver.',
+                    showCancelButton: true,
+                    confirmButtonText: 'Aller au profil',
+                    cancelButtonText: 'Plus tard',
+                    confirmButtonColor: '#e94f1b',
+                    cancelButtonColor: '#cbd5e0',
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = "{{ route('user.profile') }}";
+                    }
+                });
+                return;
+            }
+
             try {
                 const routeDataJson = button.getAttribute('data-route');
                 const dateDepartInitial = button.getAttribute('data-date');
@@ -3990,11 +4016,17 @@ function proceedToPassengerInfoFromRetour() {
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all"
                                     placeholder="email@exemple.com (optionnel)">
                             </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Contact d'urgence (Nom & Tél)</label>
-                                <input type="text" name="passenger_${seat}_urgence" required
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nom urgence</label>
+                                <input type="text" name="passenger_${seat}_nom_urgence" required
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all"
-                                    placeholder="Ex: Jean Dupont - 0500000000"  maxlength="10" minlength="10" pattern="[0-9]{10}"
+                                    placeholder="Nom de la personne à contacter">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tél d'urgence</label>
+                                <input type="tel" name="passenger_${seat}_urgence" required
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all"
+                                    placeholder="Ex: 0500000000"  maxlength="10" minlength="10" pattern="[0-9]{10}"
                                     oninput="this.value = this.value.replace(/[^0-9]/g, '').substring(0, 10)">
                             </div>
                         </div>
@@ -4038,9 +4070,12 @@ function proceedToPassengerInfoFromRetour() {
                 { name: 'email', value: user.email || '' }
             ];
             
-            // Si l'utilisateur a un contact d'urgence (Ã  vÃ©rifier si dispo dans le modÃ¨le User)
+            // Si l'utilisateur a un contact d'urgence
             if (user.contact_urgence) {
                 fields.push({ name: 'urgence', value: user.contact_urgence });
+            }
+            if (user.nom_urgence) {
+                fields.push({ name: 'nom_urgence', value: user.nom_urgence });
             }
 
             fields.forEach(field => {
@@ -4079,20 +4114,22 @@ function proceedToPassengerInfoFromRetour() {
                 const telephoneEl = document.querySelector(`[name="passenger_${seat}_telephone"]`);
                 const emailEl = document.querySelector(`[name="passenger_${seat}_email"]`);
                 const urgenceEl = document.querySelector(`[name="passenger_${seat}_urgence"]`);
+                const nomUrgenceEl = document.querySelector(`[name="passenger_${seat}_nom_urgence"]`);
 
                 const nom = nomEl ? nomEl.value.trim() : '';
                 const prenom = prenomEl ? prenomEl.value.trim() : '';
                 const telephone = telephoneEl ? telephoneEl.value.trim() : '';
                 const email = emailEl ? emailEl.value.trim() : '';
                 const urgence = urgenceEl ? urgenceEl.value.trim() : '';
+                const nom_urgence = nomUrgenceEl ? nomUrgenceEl.value.trim() : '';
 
-                if (!nom || !prenom || !telephone || !urgence) {
+                if (!nom || !prenom || !telephone || !urgence || !nom_urgence) {
                     isValid = false;
                 }
 
                 passengers.push({
                     seat_number: seat,
-                    nom, prenom, telephone, email, urgence
+                    nom, prenom, telephone, email, urgence, nom_urgence
                 });
             });
 
@@ -4198,7 +4235,7 @@ function proceedToPassengerInfoFromRetour() {
                          showCancelButton: true,
                          showDenyButton: true,
                          confirmButtonText: `<i class="fas fa-wallet mr-2"></i>Mon Compte Solde`,
-                         denyButtonText: `<i class="fas fa-mobile-alt mr-2"></i>Mobile Money`,
+                         denyButtonText: `<i class="fas fa-mobile-alt mr-2"></i>Mobile Money (Wave)`,
                          confirmButtonColor: '#e94f1b',
                          denyButtonColor: '#2dce89',
                          cancelButtonText: 'Annuler',
@@ -4251,36 +4288,8 @@ function proceedToPassengerInfoFromRetour() {
                         if (data.success) {
                             if (data.wallet_payment) {
                                 window.location.href = data.redirect_url;
-                            } else if (data.payment_url) {
-                                CinetPay.setConfig({
-                                    apikey: '{{ $cinetpay_api_key }}',
-                                    site_id: '{{ $cinetpay_site_id }}',
-                                    notify_url: '{{ route("payment.notify") }}',
-                                    mode: '{{ $cinetpay_mode }}'
-                                });
-                                CinetPay.getCheckout({
-                                    transaction_id: data.transaction_id,
-                                    amount: data.amount,
-                                    currency: data.currency,
-                                    channels: 'ALL',
-                                    description: data.description,
-                                    customer_name: data.customer_name,
-                                    customer_surname: data.customer_surname,
-                                    customer_email: data.customer_email,
-                                    customer_phone_number: data.customer_phone_number,
-                                    customer_address: 'Abidjan',
-                                    customer_city: 'Abidjan',
-                                    customer_country: 'CI',
-                                    customer_state: 'Abidjan',
-                                    customer_zip_code: '00225',
-                                });
-                                CinetPay.waitResponse(function (response) {
-                                    if (response.status === "ACCEPTED") {
-                                        window.location.href = "{{ route('payment.return') }}?transaction_id=" + data.transaction_id;
-                                    } else {
-                                        window.location.reload();
-                                    }
-                                });
+                            } else if (data.payment_url && data.checkout_url) {
+                                window.location.href = data.checkout_url;
                             }
                         } else {
                             throw new Error(data.message || 'Erreur');

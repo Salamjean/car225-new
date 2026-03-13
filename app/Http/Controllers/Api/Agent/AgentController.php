@@ -18,7 +18,7 @@ class AgentController extends Controller
     public function profile(Request $request)
     {
         $agent = $request->user();
-        $agent->load('compagnie');
+        $agent->load(['compagnie', 'gare']);
 
         return response()->json([
             'success' => true,
@@ -28,17 +28,22 @@ class AgentController extends Controller
                 'prenom' => $agent->prenom,
                 'email' => $agent->email,
                 'contact' => $agent->contact,
+                'code_id' => $agent->code_id,
                 'commune' => $agent->commune,
                 'cas_urgence' => $agent->cas_urgence,
                 'profile_picture' => $agent->profile_picture ? 'storage/' . $agent->profile_picture : null,
                 'profile_picture_url' => $agent->profile_picture 
-                    ? asset('storage/' . $agent->profile_picture) 
+                    ? 'storage/' . $agent->profile_picture 
                     : null,
                 'nom_device' => $agent->nom_device,
                 'compagnie' => $agent->compagnie ? [
                     'id' => $agent->compagnie->id,
                     'name' => $agent->compagnie->name,
-                    'logo' => $agent->compagnie->logo,
+                    'logo' => $agent->compagnie->logo ? 'storage/' . $agent->compagnie->logo : null,
+                ] : null,
+                'gare' => $agent->gare ? [
+                    'id' => $agent->gare->id,
+                    'nom_gare' => $agent->gare->nom_gare,
                 ] : null,
             ],
         ]);
@@ -52,6 +57,8 @@ class AgentController extends Controller
         $agent = $request->user();
 
         $validated = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'prenom' => 'sometimes|string|max:255',
             'contact' => 'sometimes|string|max:20',
             'cas_urgence' => 'sometimes|string|max:20',
             'commune' => 'sometimes|string|max:255',
@@ -70,6 +77,7 @@ class AgentController extends Controller
         }
 
         $agent->update($validated);
+        $agent->load(['compagnie', 'gare']);
 
         return response()->json([
             'success' => true,
@@ -80,8 +88,23 @@ class AgentController extends Controller
                 'prenom' => $agent->prenom,
                 'email' => $agent->email,
                 'contact' => $agent->contact,
+                'code_id' => $agent->code_id,
                 'commune' => $agent->commune,
+                'cas_urgence' => $agent->cas_urgence,
                 'profile_picture' => $agent->profile_picture ? 'storage/' . $agent->profile_picture : null,
+                'profile_picture_url' => $agent->profile_picture 
+                    ? 'storage/' . $agent->profile_picture 
+                    : null,
+                'nom_device' => $agent->nom_device,
+                'compagnie' => $agent->compagnie ? [
+                    'id' => $agent->compagnie->id,
+                    'name' => $agent->compagnie->name,
+                    'logo' => $agent->compagnie->logo ? 'storage/' . $agent->compagnie->logo : null,
+                ] : null,
+                'gare' => $agent->gare ? [
+                    'id' => $agent->gare->id,
+                    'nom_gare' => $agent->gare->nom_gare,
+                ] : null,
             ],
         ]);
     }

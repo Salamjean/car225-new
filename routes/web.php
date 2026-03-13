@@ -392,6 +392,11 @@ Route::middleware('agent')->prefix('agent')->name('agent.')->group(function () {
     Route::get('/dashboard', [AgentDashboard::class, 'dashboard'])->name('dashboard');
     Route::get('/logout', [AgentDashboard::class, 'logout'])->name('logout');
 
+    // Profile routes
+    Route::get('/profile', [AgentDashboard::class, 'profile'])->name('profile');
+    Route::post('/profile/update', [AgentDashboard::class, 'updateProfile'])->name('profile.update');
+    Route::post('/profile/password', [AgentDashboard::class, 'updatePassword'])->name('profile.password');
+
     // Gestion des réservations
     Route::prefix('reservations')->name('reservations.')->group(function () {
         Route::get('/', [AgentReservationController::class, 'index'])->name('index');
@@ -523,12 +528,13 @@ Route::middleware('auth')->prefix('user')->group(function () {
     });
 });
 
-// Paiement CinetPay (Hors Auth pour le webhook)
+// Paiement Wave (Hors Auth pour le webhook)
 Route::prefix('user')->group(function () {
-    Route::post('/payment/notify', [App\Http\Controllers\PaymentController::class, 'notify'])->name('payment.notify');
+    Route::post('/payment/wave/notify', [App\Http\Controllers\PaymentController::class, 'waveNotify'])->name('payment.notify'); // Garde le même nom de route pour la compatibilité interne si nécessaire, ou on renomme dans create.blade.php
     Route::post('/compte/notify', [App\Http\Controllers\User\WalletController::class, 'notify'])->name('cinetpay.notify');
     Route::match(['get', 'post'], '/payment/notify/transfer', [App\Http\Controllers\User\WalletController::class, 'notifyTransfer'])->name('wallet.notify.transfer');
-    Route::get('/payment/return', [App\Http\Controllers\PaymentController::class, 'return'])->name('payment.return');
+    Route::get('/payment/wave/return', [App\Http\Controllers\PaymentController::class, 'waveReturn'])->name('payment.return');
+    Route::get('/payment/wave/cancel', [App\Http\Controllers\PaymentController::class, 'waveCancel'])->name('payment.cancel');
 });
 
 
@@ -666,6 +672,11 @@ Route::prefix('gare-espace')->name('gare-espace.')->group(function () {
         Route::get('/dashboard', [App\Http\Controllers\GareEspace\GareDashboardController::class, 'index'])->name('dashboard');
         Route::post('/logout', [App\Http\Controllers\GareEspace\AuthenticateGare::class, 'logout'])->name('logout');
 
+        // Profile routes
+        Route::get('/profile', [App\Http\Controllers\GareEspace\GareDashboardController::class, 'profile'])->name('profile');
+        Route::post('/profile/update', [App\Http\Controllers\GareEspace\GareDashboardController::class, 'updateProfile'])->name('profile.update');
+        Route::post('/profile/password', [App\Http\Controllers\GareEspace\GareDashboardController::class, 'updatePassword'])->name('profile.password');
+
         // Voyages
         Route::prefix('voyages')->name('voyages.')->group(function () {
             Route::get('/', [App\Http\Controllers\GareEspace\GareVoyageController::class, 'index'])->name('index');
@@ -759,7 +770,6 @@ Route::match(['get', 'post'], '/payment/callback', function (Request $request) {
 Route::prefix('chauffeur')->name('chauffeur.')->group(function () {
     Route::get('/login', [ChauffeurAuthenticate::class, 'login'])->name('login');
     Route::post('/login', [ChauffeurAuthenticate::class, 'handleLogin'])->name('login.submit');
-    Route::get('/logout', [ChauffeurAuthenticate::class, 'logout'])->name('logout');
     
     // OTP Verification routes
     Route::get('/verify-otp', [\App\Http\Controllers\Chauffeur\OtpVerificationController::class, 'showVerifyForm'])->name('verify-otp');
@@ -773,7 +783,13 @@ Route::prefix('chauffeur')->name('chauffeur.')->group(function () {
 
     Route::middleware('chauffeur')->group(function () {
         Route::get('/dashboard', [ChauffeurController::class, 'dashboard'])->name('dashboard');
+        Route::get('/logout', [ChauffeurAuthenticate::class, 'logout'])->name('logout');
         Route::get('/voyages-history', [ChauffeurController::class, 'myVoyages'])->name('voyages.history');
+
+        // Profil routes
+        Route::get('/profile', [ChauffeurController::class, 'profile'])->name('profile');
+        Route::post('/profile/update', [ChauffeurController::class, 'updateProfile'])->name('profile.update');
+        Route::post('/profile/password', [ChauffeurController::class, 'updatePassword'])->name('profile.password');
         
         // Voyage management routes
         Route::prefix('voyages')->name('voyages.')->group(function () {

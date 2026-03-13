@@ -80,7 +80,7 @@ class AccueilController extends Controller
         ];
 
         // Envoyer la notification par email (optionnel, pour alerter l'admin immédiatement)
-        Notification::route('mail', env('MAIL_FROM_ADDRESS', 'support@car225.ci'))
+        Notification::route('mail', env('MAIL_FROM_ADDRESS', 'contact@car225.com'))
             ->notify(new ContactFormNotification($contactData));
 
         return back()->with('success', 'Votre signalement a bien été envoyé. Notre équipe le traitera dans les plus brefs délais.');
