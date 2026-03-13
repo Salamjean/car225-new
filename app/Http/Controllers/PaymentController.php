@@ -89,16 +89,53 @@ class PaymentController extends Controller
             return response()->json(['message' => 'Client reference manquant'], 200);
         }
 
-        // Récupérer le paiement
+        // --- CAS 1 : RECHARGEMENT PORTEFEUILLE (W-RECH-...) ---
+        if (str_starts_with($clientReference, 'W-RECH-')) {
+            $transaction = \App\Models\WalletTransaction::where('reference', $clientReference)->first();
+            Log::info('Webhook Wave Wallet: Recherche', ['trouvé' => !!$transaction, 'id' => $clientReference]);
+
+            if (!$transaction) {
+                Log::error('WalletTransaction non trouvé:', ['id' => $clientReference]);
+                return response()->json(['message' => 'Transaction introuvable'], 404);
+            }
+
+            if ($transaction->status === 'completed') {
+                return response()->json(['message' => 'Déjà traité'], 200);
+            }
+
+            \Illuminate\Support\Facades\DB::beginTransaction();
+            try {
+                $transaction->update([
+                    'status' => 'completed',
+                    'payment_date' => now(),
+                    'metadata' => array_merge($transaction->metadata ?? [], ['wave_confirm' => $checkoutData])
+                ]);
+
+                $user = $transaction->user;
+                if ($user) {
+                    $user->solde += $transaction->amount;
+                    $user->save();
+                    Log::info("Wave Wallet: Compte rechargé via Central Webhook. User: {$user->id}, Montant: {$transaction->amount}");
+                }
+                \Illuminate\Support\Facades\DB::commit();
+                return response()->json(['message' => 'Wallet recharge success'], 200);
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\DB::rollBack();
+                Log::error('Wave Wallet Error:', ['error' => $e->getMessage()]);
+                return response()->json(['message' => 'Error'], 500);
+            }
+        }
+
+        // --- CAS 2 : RÉSERVATION DE BILLET (Défaut) ---
         $paiement = \App\Models\Paiement::where('transaction_id', $clientReference)->first();
-        Log::info('Webhook Wave: Recherche Paiement', ['trouvé' => !!$paiement, 'id' => $clientReference]);
+        Log::info('Webhook Wave Reservation: Recherche', ['trouvé' => !!$paiement, 'id' => $clientReference]);
 
         if (!$paiement) {
             Log::error('Paiement non trouvé pour la référence:', ['id' => $clientReference]);
             return response()->json(['message' => 'Paiement non trouvé'], 404);
         }
 
-        Log::info('Wave Payment Confirmed', ['transaction_id' => $clientReference]);
+        Log::info('Wave Reservation Payment Confirmed', ['id' => $clientReference]);
 
         // Mettre à jour le paiement
         $paiement->update([

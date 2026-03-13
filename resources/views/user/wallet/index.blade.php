@@ -52,7 +52,7 @@
 
                     <div class="flex items-center gap-4 text-sm text-gray-500 font-medium bg-gray-50 p-4 rounded-xl border border-gray-100">
                         <i class="fas fa-shield-alt text-xl text-gray-400"></i>
-                        <p>Paiement sécurisé via CinetPay (Orange Money, MTN Money, Wave, etc.)</p>
+                        <p>Paiement sécurisé via Wave</p>
                     </div>
                 </div>
             </div>
@@ -234,7 +234,7 @@
 
                 <div class="flex items-center gap-3 text-xs text-gray-400 font-medium">
                     <i class="fas fa-shield-alt"></i>
-                    <p>Transfert sécurisé via CinetPay. Vous recevrez l'argent instantanément.</p>
+                    <p>Transfert sécurisé. Vous recevrez l'argent instantanément.</p>
                 </div>
             </form>
         </div>
@@ -302,10 +302,10 @@
                 throw new Error(data.message || 'Erreur lors de l\'initialisation du paiement');
             }
 
-            // Nouvelle API v1: Redirection vers la page de paiement CinetPay
+            // Redirection vers la page de paiement Wave
             if (data.payment_url) {
                 Swal.fire({
-                    title: 'Redirection vers CinetPay',
+                    title: 'Redirection vers Wave',
                     html: 'Vous allez être redirigé vers la page de paiement sécurisée...',
                     icon: 'info',
                     timer: 2000,
@@ -316,7 +316,7 @@
                         Swal.showLoading();
                     }
                 }).then(() => {
-                    // Rediriger vers la page de paiement CinetPay
+                    // Rediriger vers la page de paiement Wave
                     window.location.href = data.payment_url;
                 });
             } else {
