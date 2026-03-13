@@ -4017,7 +4017,7 @@ function proceedToPassengerInfoFromRetour() {
                                     placeholder="email@exemple.com (optionnel)">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Nom urgence</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nom et prenom de la personne à contacter en cas d'urgence</label>
                                 <input type="text" name="passenger_${seat}_nom_urgence" required
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all"
                                     placeholder="Nom de la personne à contacter">
