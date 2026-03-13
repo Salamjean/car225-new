@@ -213,31 +213,34 @@ class PaymentController extends Controller
                 $qrCodeRetour = $qrCodeData['base64']; 
             }
 
-            // 4. Envoi Email
-            $resController->sendReservationEmail(
-                $reservation,
-                $reservation->programme, // Programme Aller
-                $qrCodeData['base64'],   // QR Code Aller
-                $reservation->passager_email,
-                $reservation->passager_prenom . ' ' . $reservation->passager_nom,
-                $reservation->seat_number,
-                $reservation->is_aller_retour ? 'ALLER-RETOUR' : 'ALLER SIMPLE',
-                $qrCodeRetour,
-                $programmeRetour
-            );
-
-            // 5. Envoi SMS
-            try {
-                $smsService = app(\App\Services\SmsService::class);
-                $smsService->sendReservationSms(
-                    [$reservation], // On envoie pour cette réservation spécifique
-                    $reservation->programme,
-                    $reservation->user, // Auth::user() est nul en webhook
-                    $reservation->is_aller_retour,
-                    $reservation->date_retour
+            // 4. Envoi Email & SMS (Uniquement pour la partie Aller pour éviter les doublons)
+            if (!str_contains($reservation->reference, '-RET-')) {
+                // Envoi Email
+                $resController->sendReservationEmail(
+                    $reservation,
+                    $reservation->programme, // Programme Aller
+                    $qrCodeData['base64'],   // QR Code Aller
+                    $reservation->passager_email,
+                    $reservation->passager_prenom . ' ' . $reservation->passager_nom,
+                    $reservation->seat_number,
+                    $reservation->is_aller_retour ? 'ALLER-RETOUR' : 'ALLER SIMPLE',
+                    $qrCodeRetour,
+                    $programmeRetour
                 );
-            } catch (\Exception $e) {
-                Log::error('Erreur envoi SMS via Webhook: ' . $e->getMessage());
+
+                // 5. Envoi SMS
+                try {
+                    $smsService = app(\App\Services\SmsService::class);
+                    $smsService->sendReservationSms(
+                        [$reservation], 
+                        $reservation->programme,
+                        $reservation->user, 
+                        $reservation->is_aller_retour,
+                        $reservation->date_retour
+                    );
+                } catch (\Exception $e) {
+                    Log::error('Erreur envoi SMS via Webhook: ' . $e->getMessage());
+                }
             }
 
             // 6. Mise à jour places occupées
