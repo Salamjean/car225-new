@@ -23,6 +23,7 @@ use Illuminate\Support\Str;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
 use Illuminate\Support\Facades\DB;
+use App\Services\WaveService;
 
 
 class ReservationApiController extends Controller
@@ -1528,12 +1529,38 @@ class ReservationApiController extends Controller
         Log::info('=== DEBUT RESERVATION API (MOBILE) ===');
         Log::info('User ID:', ['id' => Auth::id()]);
         Log::info('Données reçues:', $request->all());
+        
+        // Auto-remplissage des sièges si absent mais présent dans passagers
+        if (!$request->has('seats') && $request->has('passagers') && is_array($request->passagers)) {
+            $seats = [];
+            foreach ($request->passagers as $passager) {
+                if (isset($passager['seat_number'])) {
+                    $seats[] = $passager['seat_number'];
+                }
+            }
+            if (!empty($seats)) {
+                $request->merge(['seats' => $seats]);
+            }
+        }
+
+        // Auto-remplissage des sièges retour si absent mais présent dans passagers
+        if (!$request->has('seats_retour') && $request->has('passagers') && is_array($request->passagers)) {
+            $seatsRetour = [];
+            foreach ($request->passagers as $passager) {
+                if (isset($passager['return_seat_number'])) {
+                    $seatsRetour[] = $passager['return_seat_number'];
+                }
+            }
+            if (!empty($seatsRetour)) {
+                $request->merge(['seats_retour' => $seatsRetour]);
+            }
+        }
 
         try {
             $request->validate([
                 'programme_id' => 'required|exists:programmes,id',
-                'programme_retour_id' => 'nullable|exists:programmes,id', // AJOUTÉ
-                'seats' => 'required|array',
+                'programme_retour_id' => 'nullable|exists:programmes,id',
+                'seats' => 'nullable|array',
                 'nombre_places' => 'required|integer|min:1',
                 'date_voyage' => 'required|date',
                 'date_retour' => 'nullable|date|after_or_equal:date_voyage',
@@ -1545,11 +1572,12 @@ class ReservationApiController extends Controller
                 'passagers.*.email' => 'nullable|email',
                 'passagers.*.telephone' => 'required|string',
                 'passagers.*.urgence' => 'required|string',
+                'passagers.*.nom_passager_urgence' => 'nullable|string',
                 'passagers.*.seat_number' => 'required|integer',
                 'passagers.*.return_seat_number' => 'nullable|integer',
                 'seats_retour' => 'nullable|array',
                 'seats_retour.*' => 'nullable|integer',
-                'payment_method' => 'required|in:wallet,cinetpay',
+                'payment_method' => 'required|in:wallet,cinetpay,wave',
                 'frais_choix_siege' => 'nullable|integer|min:0',
             ]);
 
@@ -1832,6 +1860,7 @@ class ReservationApiController extends Controller
                         'passager_email' => $passager['email'],
                         'passager_telephone' => $passager['telephone'],
                         'passager_urgence' => $passager['urgence'],
+                        'nom_passager_urgence' => $passager['nom_passager_urgence'] ?? null,
                         'is_aller_retour' => $isAllerRetour,
                         'montant' => $prixUnitaire + ($fraisChoixSiege / (count($request->passagers) * ($isAllerRetour ? 2 : 1))),
                         'statut' => 'confirmee', // CONFIRMÉ pour wallet
@@ -1983,7 +2012,7 @@ class ReservationApiController extends Controller
                     ]
                 ], 201);
 
-            } else {
+            } elseif ($paymentMethod === 'cinetpay') {
                 // =====================================================
                 // === PAIEMENT CINETPAY : LIEN DE PAIEMENT GÉNÉRÉ ===
                 // =====================================================
@@ -2017,6 +2046,7 @@ class ReservationApiController extends Controller
                         'passager_email' => $passager['email'],
                         'passager_telephone' => $passager['telephone'],
                         'passager_urgence' => $passager['urgence'],
+                        'nom_passager_urgence' => $passager['nom_passager_urgence'] ?? null,
                         'is_aller_retour' => $isAllerRetour,
                         'montant' => $prixUnitaire + ($fraisChoixSiege / (count($request->passagers) * ($isAllerRetour ? 2 : 1))),
                         'statut' => 'en_attente', // EN ATTENTE pour CinetPay
@@ -2193,6 +2223,167 @@ class ReservationApiController extends Controller
                     return response()->json([
                         'success' => false,
                         'message' => 'Erreur technique lors de la génération du lien: ' . $e->getMessage()
+                    ], 500);
+                }
+            } elseif ($paymentMethod === 'wave') {
+                // =====================================================
+                // === PAIEMENT WAVE : LIEN DE PAIEMENT GÉNÉRÉ ===
+                // =====================================================
+                
+                $transactionId = 'TRANS-' . date('YmdHis') . '-' . strtoupper(Str::random(5));
+                
+                // Création paiement (en attente)
+                $paiement = Paiement::create([
+                    'user_id' => Auth::id(),
+                    'amount' => $montantTotal,
+                    'transaction_id' => $transactionId,
+                    'status' => 'pending',
+                    'currency' => 'XOF',
+                    'payment_method' => 'wave',
+                    'payment_date' => null,
+                ]);
+
+                // Création réservations (EN ATTENTE pour Wave)
+                foreach ($passagers as $index => $passager) {
+                    $seatNumber = $passager['seat_number'];
+                    $reference = $transactionId . '-' . $seatNumber;
+
+                    $reservationData = [
+                        'paiement_id' => $paiement->id,
+                        'payment_transaction_id' => $transactionId,
+                        'user_id' => Auth::id(),
+                        'programme_id' => $request->programme_id,
+                        'seat_number' => $seatNumber,
+                        'passager_nom' => $passager['nom'],
+                        'passager_prenom' => $passager['prenom'],
+                        'passager_email' => $passager['email'],
+                        'passager_telephone' => $passager['telephone'],
+                        'passager_urgence' => $passager['urgence'],
+                        'nom_passager_urgence' => $passager['nom_passager_urgence'] ?? null,
+                        'is_aller_retour' => $isAllerRetour,
+                        'montant' => $prixUnitaire + ($fraisChoixSiege / (count($request->passagers) * ($isAllerRetour ? 2 : 1))),
+                        'statut' => 'en_attente',
+                        'statut_aller' => 'en_attente',
+                        'reference' => $reference,
+                        'date_voyage' => $dateVoyage,
+                        'heure_depart' => $programme->heure_depart,
+                        'heure_arrive' => $programme->heure_arrive,
+                        'qr_code' => null
+                    ];
+
+                    if ($isAllerRetour && $dateRetour) {
+                        $reservationData['date_retour'] = $dateRetour;
+                        $reservationData['statut_retour'] = 'en_attente';
+                        if ($returnProgram) {
+                            $reservationData['programme_retour_id'] = $returnProgram->id;
+                        }
+                    }
+
+                    $res = Reservation::create($reservationData);
+                    $createdReservations[] = $res;
+
+                    // Création automatique du retour si aller-retour
+                    if ($isAllerRetour && $dateRetour) {
+                        if ($returnProgram) {
+                            $usedSeats = Reservation::where('programme_id', $returnProgram->id)
+                                ->where('date_voyage', $dateRetour)
+                                ->whereIn('statut', ['confirmee', 'en_attente'])
+                                ->pluck('seat_number')
+                                ->toArray();
+
+                            $capacity = $returnProgram->vehicule ? intval($returnProgram->vehicule->nombre_place) : 30;
+                            $returnSeat = null;
+
+                            if (isset($passager['return_seat_number'])) {
+                                $returnSeat = $passager['return_seat_number'];
+                            } elseif (isset($request->seats_retour[$index])) {
+                                $returnSeat = $request->seats_retour[$index];
+                            }
+
+                            if (!$returnSeat || in_array($returnSeat, $usedSeats)) {
+                                $returnSeat = null;
+                                for ($s = 1; $s <= $capacity; $s++) {
+                                    if (!in_array($s, $usedSeats)) {
+                                        $returnSeat = $s;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if ($returnSeat) {
+                                $reservationDataRetour = $reservationData;
+                                $reservationDataRetour['programme_id'] = $returnProgram->id;
+                                $reservationDataRetour['date_voyage'] = $dateRetour;
+                                $reservationDataRetour['heure_depart'] = $returnProgram->heure_depart;
+                                $reservationDataRetour['heure_arrive'] = $returnProgram->heure_arrive;
+                                $reservationDataRetour['seat_number'] = $returnSeat;
+                                $reservationDataRetour['reference'] = $transactionId . '-RET-' . $seatNumber;
+                                $reservationDataRetour['qr_code'] = null;
+
+                                $resRetour = Reservation::create($reservationDataRetour);
+                                $createdReservations[] = $resRetour;
+                            }
+                        }
+                    }
+                }
+
+                DB::commit();
+
+                // === GÉNÉRATION DU LIEN WAVE ===
+                try {
+                    $waveService = app(WaveService::class);
+                    $appUrl = rtrim(config('app.url'), '/');
+                    
+                    // Pour le mobile, on peut utiliser des liens de retour spécifiques ou Deep Links
+                    // Mais Wave exige HTTPS. On utilise les routes web qui feront le pont.
+                    $successUrl = str_replace('http://', 'https://', route('payment.return'));
+                    $errorUrl = str_replace('http://', 'https://', route('payment.cancel'));
+                    
+                    $waveSession = $waveService->createCheckoutSession(
+                        (int) $montantTotal,
+                        'XOF',
+                        $successUrl,
+                        $errorUrl,
+                        $transactionId
+                    );
+
+                    if ($waveSession && isset($waveSession['wave_launch_url'])) {
+                        return response()->json([
+                            'success' => true,
+                            'message' => 'Réservations initialisées. Veuillez finaliser votre paiement Wave.',
+                            'requires_payment' => true,
+                            'wallet_payment' => false,
+                            'payment_details' => [
+                                'payment_url' => $waveSession['wave_launch_url'], // URL Wave
+                                'transaction_id' => $transactionId,
+                                'payment_method' => 'wave'
+                            ],
+                            'data' => [
+                                'reservations' => collect($createdReservations)->map(function($r) {
+                                    return [
+                                        'id' => $r->id,
+                                        'reference' => $r->reference,
+                                        'seat_number' => $r->seat_number,
+                                        'statut' => $r->statut
+                                    ];
+                                }),
+                                'total_amount' => $montantTotal
+                            ]
+                        ], 201);
+                    } else {
+                        throw new \Exception("Impossible d'initialiser le paiement avec Wave.");
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Erreur Wave API Store: ' . $e->getMessage());
+                    
+                    // Annuler les réservations
+                    foreach ($createdReservations as $res) {
+                        $res->update(['statut' => 'annulee']);
+                    }
+                    
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Erreur technique lors de la génération du lien Wave: ' . $e->getMessage()
                     ], 500);
                 }
             }
