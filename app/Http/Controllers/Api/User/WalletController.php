@@ -14,10 +14,12 @@ use Illuminate\Support\Str;
 class WalletController extends Controller
 {
     protected $cinetPayService;
+    protected $waveService;
 
-    public function __construct(CinetPayService $cinetPayService)
+    public function __construct(CinetPayService $cinetPayService, \App\Services\WaveService $waveService)
     {
         $this->cinetPayService = $cinetPayService;
+        $this->waveService = $waveService;
     }
 
     /**
@@ -47,10 +49,12 @@ class WalletController extends Controller
     {
         $request->validate([
             'amount' => 'required|numeric|min:100',
+            'payment_method' => 'nullable|string|in:cinetpay,wave'
         ]);
 
         $user = $request->user();
         $amount = $request->amount;
+        $paymentMethod = $request->input('payment_method', 'cinetpay');
         $transactionId = 'W-RECH-' . time() . '-' . Str::random(5);
 
         // Créer la transaction locale en attente
@@ -61,14 +65,18 @@ class WalletController extends Controller
             'description' => 'Rechargement portefeuille',
             'reference' => $transactionId,
             'status' => 'pending',
-            'payment_method' => 'cinetpay',
+            'payment_method' => $paymentMethod,
             'metadata' => [
                 'initiated_at' => now()->toDateTimeString(),
                 'source' => 'mobile_api'
             ]
         ]);
 
-        // Générer le lien CinetPay (Server-side initialization)
+        if ($paymentMethod === 'wave') {
+            return $this->processWaveRecharge($transaction);
+        }
+
+        // Par défaut: CinetPay
         $paymentLinkResult = $this->generateCinetPayLink($transaction, 'Rechargement Compte ' . config('app.name'));
 
         if (!$paymentLinkResult['success']) {
@@ -345,6 +353,58 @@ class WalletController extends Controller
                  'status' => $status,
                  'cinetpay_status' => $cinetpayStatus
              ]);
+        }
+    }
+
+    /**
+     * Traiter le rechargement via Wave
+     */
+    private function processWaveRecharge(WalletTransaction $transaction)
+    {
+        try {
+            $baseUrl = config('app.url');
+            
+            // URLs de retour (compatibles schémas mobiles)
+            $successUrl = $baseUrl . "/user/wallet?success=true&transactionId=" . $transaction->reference;
+            $errorUrl = $baseUrl . "/user/wallet?success=false&transactionId=" . $transaction->reference;
+
+            $session = $this->waveService->createCheckoutSession(
+                $transaction->amount,
+                'XOF',
+                $successUrl,
+                $errorUrl,
+                $transaction->reference
+            );
+
+            if (!$session || !isset($session['wave_launch_url'])) {
+                Log::error('Erreur Wave Wallet Initialisation', ['session' => $session]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Erreur initialisation Wave'
+                ], 500);
+            }
+
+            // Mettre à jour avec l'ID de session Wave
+            $transaction->update([
+                'metadata' => array_merge($transaction->metadata ?? [], [
+                    'wave_id' => $session['id'] ?? null,
+                    'wave_launch_url' => $session['wave_launch_url']
+                ])
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Initialisation Wave réussie',
+                'payment_url' => $session['wave_launch_url'],
+                'transaction_id' => $transaction->reference
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Exception processWaveRecharge: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur technique Wave'
+            ], 500);
         }
     }
 }
