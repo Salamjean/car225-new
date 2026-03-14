@@ -70,6 +70,7 @@
                             <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Point d'arrivée</th>
                             <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Durée</th>
                             <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Date de création</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
@@ -96,10 +97,26 @@
                                 <td class="px-6 py-4 text-sm text-gray-500">
                                     {{ $itineraire->created_at->format('d/m/Y') }}
                                 </td>
+                                <td class="px-6 py-4 text-center">
+                                    <div class="flex justify-center items-center space-x-3">
+                                        <a href="{{ route('gare-espace.itineraire.edit', $itineraire) }}" 
+                                           class="text-blue-600 hover:text-blue-900 transition-colors duration-200"
+                                           title="Modifier">
+                                            <i class="fas fa-edit text-lg"></i>
+                                        </a>
+                                        <button type="button" 
+                                                class="text-red-600 hover:text-red-900 transition-colors duration-200 delete-itineraire-btn"
+                                                data-itineraire-id="{{ $itineraire->id }}"
+                                                data-itineraire-name="{{ $itineraire->point_depart }} → {{ $itineraire->point_arrive }}"
+                                                title="Supprimer">
+                                            <i class="fas fa-trash text-lg"></i>
+                                        </button>
+                                    </div>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="px-6 py-12 text-center">
+                                <td colspan="5" class="px-6 py-12 text-center">
                                     <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
                                         <i class="fas fa-route text-gray-300 text-3xl"></i>
                                     </div>
@@ -124,25 +141,77 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-@if(session('success'))
-    Swal.fire({
-        icon: 'success',
-        title: 'Succès!',
-        text: "{{ session('success') }}",
-        confirmButtonColor: '#e94f1b',
-        timer: 5000,
-        showConfirmButton: true
-    });
-@endif
+document.addEventListener('DOMContentLoaded', function() {
+    // Gestion du bouton Supprimer avec SweetAlert
+    const deleteButtons = document.querySelectorAll('.delete-itineraire-btn');
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const itineraireId = this.getAttribute('data-itineraire-id');
+            const itineraireName = this.getAttribute('data-itineraire-name');
 
-@if(session('error'))
-    Swal.fire({
-        icon: 'error',
-        title: 'Erreur',
-        text: "{{ session('error') }}",
-        confirmButtonColor: '#e94f1b'
+            Swal.fire({
+                title: 'Êtes-vous sûr ?',
+                html: `
+                    <div class="text-center">
+                        <p class="text-gray-700 mb-2">Vous êtes sur le point de supprimer l'itinéraire :</p>
+                        <p class="font-semibold text-lg text-gray-900">${itineraireName}</p>
+                        <p class="text-red-600 text-sm mt-2">Cette action est irréversible !</p>
+                    </div>
+                `,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Oui, supprimer !',
+                cancelButtonText: 'Annuler',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = `/gare-espace/itineraire/${itineraireId}`;
+                    form.style.display = 'none';
+
+                    const csrfToken = document.createElement('input');
+                    csrfToken.type = 'hidden';
+                    csrfToken.name = '_token';
+                    csrfToken.value = '{{ csrf_token() }}';
+
+                    const methodField = document.createElement('input');
+                    methodField.type = 'hidden';
+                    methodField.name = '_method';
+                    methodField.value = 'DELETE';
+
+                    form.appendChild(csrfToken);
+                    form.appendChild(methodField);
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            });
+        });
     });
-@endif
+
+    @if(session('success'))
+        Swal.fire({
+            icon: 'success',
+            title: 'Succès!',
+            text: "{{ session('success') }}",
+            confirmButtonColor: '#e94f1b',
+            timer: 5000,
+            showConfirmButton: true
+        });
+    @endif
+
+    @if(session('error'))
+        Swal.fire({
+            icon: 'error',
+            title: 'Erreur',
+            text: "{{ session('error') }}",
+            confirmButtonColor: '#e94f1b'
+        });
+    @endif
+});
 </script>
 @endsection

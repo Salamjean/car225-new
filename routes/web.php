@@ -34,6 +34,7 @@ use App\Http\Controllers\Agent\PasswordResetController as AgentPasswordResetCont
 use App\Http\Controllers\Caisse\PasswordResetController as CaissePasswordResetController;
 use App\Http\Controllers\Hotesse\PasswordResetController as HotessePasswordResetController;
 use App\Models\Vehicule;
+use App\Models\Paiement;
 use App\Http\Controllers\SignalementController;
 use App\Http\Controllers\SapeurPompier\SapeurPompierController;
 use App\Http\Controllers\SapeurPompier\SapeurPompierAuthenticate;
@@ -723,6 +724,9 @@ Route::prefix('gare-espace')->name('gare-espace.')->group(function () {
             Route::get('/', [App\Http\Controllers\GareEspace\GareItineraireController::class, 'index'])->name('index');
             Route::get('/create', [App\Http\Controllers\GareEspace\GareItineraireController::class, 'create'])->name('create');
             Route::post('/', [App\Http\Controllers\GareEspace\GareItineraireController::class, 'store'])->name('store');
+            Route::get('/{itineraire}/edit', [App\Http\Controllers\GareEspace\GareItineraireController::class, 'edit'])->name('edit');
+            Route::put('/{itineraire}', [App\Http\Controllers\GareEspace\GareItineraireController::class, 'update'])->name('update');
+            Route::delete('/{itineraire}', [App\Http\Controllers\GareEspace\GareItineraireController::class, 'destroy'])->name('destroy');
         });
 
         // Messages (Boîte de réception)
