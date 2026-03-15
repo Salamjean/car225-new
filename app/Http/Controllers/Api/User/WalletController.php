@@ -110,9 +110,9 @@ class WalletController extends Controller
             $returnUrl = "car225://wallet?success=true&transactionId={$reference}";
             $cancelUrl = "car225://wallet?success=false&transactionId={$reference}";
             
-            // Fallback Web
-            $fallbackReturnUrl = $baseUrl . "/user/wallet?transactionId=" . urlencode($reference);
-            $fallbackCancelUrl = $baseUrl . "/user/wallet?cancel=1&transactionId=" . urlencode($reference);
+            // Fallback Web - Utilise la nouvelle route publique (Forcé en HTTPS pour Wave/CinetPay)
+            $fallbackReturnUrl = secure_url(route('wallet.payment.result', ['transactionId' => $reference, 'success' => 'true'], false));
+            $fallbackCancelUrl = secure_url(route('wallet.payment.result', ['transactionId' => $reference, 'success' => 'false', 'cancel' => 1], false));
             
             // Webhook URL (API)
             $notifyUrl = $baseUrl . "/api/user/wallet/notify";
@@ -364,9 +364,9 @@ class WalletController extends Controller
         try {
             $baseUrl = config('app.url');
             
-            // URLs de retour (compatibles schémas mobiles)
-            $successUrl = $baseUrl . "/user/wallet?success=true&transactionId=" . $transaction->reference;
-            $errorUrl = $baseUrl . "/user/wallet?success=false&transactionId=" . $transaction->reference;
+            // URLs de retour (utilisant la route publique pour mobile/web) - Toujours en HTTPS pour Wave
+            $successUrl = secure_url(route('wallet.payment.result', ['transactionId' => $transaction->reference, 'success' => 'true'], false));
+            $errorUrl = secure_url(route('wallet.payment.result', ['transactionId' => $transaction->reference, 'success' => 'false'], false));
 
             $session = $this->waveService->createCheckoutSession(
                 $transaction->amount,

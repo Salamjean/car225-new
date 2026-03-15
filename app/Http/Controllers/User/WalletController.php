@@ -286,13 +286,8 @@ class WalletController extends Controller
         // Appel Wave Service avec URLs sécurisées (HTTPS obligatoire)
         $appUrl = rtrim(config('app.url'), '/');
         
-        $successUrl = str_starts_with($appUrl, 'https://') 
-            ? $appUrl . route('wallet.wave.return', ['transaction_id' => $transactionId], false)
-            : str_replace('http://', 'https://', route('wallet.wave.return', ['transaction_id' => $transactionId]));
-            
-        $errorUrl = str_starts_with($appUrl, 'https://') 
-            ? $appUrl . route('wallet.wave.cancel', ['transaction_id' => $transactionId], false)
-            : str_replace('http://', 'https://', route('wallet.wave.cancel', ['transaction_id' => $transactionId]));
+        $successUrl = secure_url(route('wallet.wave.return', ['transaction_id' => $transactionId], false));
+        $errorUrl = secure_url(route('wallet.wave.cancel', ['transaction_id' => $transactionId], false));
 
         $waveSession = $this->waveService->createCheckoutSession(
             $amount,
@@ -734,5 +729,30 @@ class WalletController extends Controller
              $paiement->update(['status' => 'failed']);
              return response()->json(['message' => 'Payment failed'], 200);
         }
+    }
+
+    /**
+     * Page de résultat de paiement pour le wallet (Public)
+     */
+    public function paymentResult(Request $request)
+    {
+        $transactionId = $request->transactionId ?? $request->transaction_id;
+        
+        // On détermine le succès en fonction de plusieurs paramètres possibles selon la passerelle
+        $success = true;
+        
+        if ($request->has('success') && $request->success === 'false') {
+            $success = false;
+        }
+        
+        if ($request->has('cancel') && $request->cancel == 1) {
+            $success = false;
+        }
+        
+        if ($request->has('status') && in_array($request->status, ['failed', 'cancel'])) {
+            $success = false;
+        }
+
+        return view('user.wallet.payment_result', compact('transactionId', 'success'));
     }
 }

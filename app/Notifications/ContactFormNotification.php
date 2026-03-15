@@ -38,7 +38,7 @@ class ContactFormNotification extends Notification
     {
         return (new MailMessage)
             ->subject('Nouveau message de contact - CAR 225')
-            ->from('contact@maelysimo.com', 'Système CAR 225')
+            ->from('contact@car225.com', 'Système CAR 225')
             ->view('emails.contact', [
                 'name' => $this->data['name'],
                 'email' => $this->data['email'],
