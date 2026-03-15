@@ -47,7 +47,7 @@ class ReservationConfirmeeNotification extends Notification
      */
     public function via($notifiable): array
     {
-        return ['mail', 'database', 'broadcast'];
+        return ['mail', 'database'];
     }
 
     /**
@@ -94,7 +94,7 @@ class ReservationConfirmeeNotification extends Notification
         // Envoyer l'email
         $mail = (new MailMessage)
             ->subject('CAR 225 : Confirmation de votre réservation N°' . $this->reservation->reference)
-            ->from('contact@maelysimo.com', 'CAR 225')
+            ->from('contact@car225.com', 'CAR 225')
             ->view('emails.reservation_confirmee', $emailData);
 
         // Attacher le PDF Aller

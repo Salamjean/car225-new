@@ -438,7 +438,9 @@ Route::prefix('user')->group(function () {
     Route::get('/verify-otp', [UserAuthenticate::class, 'showVerifyOtp'])->name('user.verify-otp');
     Route::post('/verify-otp', [UserAuthenticate::class, 'handleVerifyOtp'])->name('user.verify-otp.submit');
     Route::post('/resend-otp', [UserAuthenticate::class, 'resendOtp'])->name('user.resend-otp');
-
+    
+    // Route publique pour le retour de paiement Wallet (Mobile & Web)
+    Route::get('/wallet', [\App\Http\Controllers\User\WalletController::class, 'paymentResult'])->name('wallet.payment.result');
   
     // Password Reset Routes
     Route::get('/password/reset', [PasswordResetController::class, 'showResetForm'])->name('password.request');
@@ -538,6 +540,9 @@ Route::prefix('user')->group(function () {
     // Wallet Wave
     Route::get('/compte/wave/return', [App\Http\Controllers\User\WalletController::class, 'waveReturn'])->name('wallet.wave.return');
     Route::get('/compte/wave/cancel', [App\Http\Controllers\User\WalletController::class, 'waveCancel'])->name('wallet.wave.cancel');
+    
+    // Route publique pour le retour de paiement Réservation (Mobile & Web)
+    Route::get('/reservation/payment-result', [App\Http\Controllers\PaymentController::class, 'paymentResult'])->name('reservation.payment.result');
 
     Route::post('/compte/notify', [App\Http\Controllers\User\WalletController::class, 'notify'])->name('cinetpay.notify');
     Route::match(['get', 'post'], '/payment/notify/transfer', [App\Http\Controllers\User\WalletController::class, 'notifyTransfer'])->name('wallet.notify.transfer');

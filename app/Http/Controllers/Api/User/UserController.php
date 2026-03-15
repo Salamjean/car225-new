@@ -31,6 +31,7 @@ class UserController extends Controller
                 'nom_urgence' => $user->nom_urgence,
                 'lien_parente_urgence' => $user->lien_parente_urgence,
                 'contact_urgence' => $user->contact_urgence,
+                'code_id' => $user->code_id,
                 'pays' => $user->pays,
                 'photo_profile_path' => $user->photo_profile_path ? 'storage/' . $user->photo_profile_path : null,
                 'photo_profile_url' => $user->photo_profile_path 

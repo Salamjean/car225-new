@@ -47,7 +47,7 @@ class ReservationModifiedNotification extends Notification
      */
     public function via($notifiable): array
     {
-        return ['mail', 'database', 'broadcast'];
+        return ['mail', 'database'];
     }
 
     /**
@@ -90,7 +90,7 @@ class ReservationModifiedNotification extends Notification
 
         $mail = (new MailMessage)
             ->subject('CAR 225 : Modification de votre réservation N°' . $this->reservation->reference)
-            ->from('contact@maelysimo.com', 'CAR 225')
+            ->from('contact@car225.com', 'CAR 225')
             ->view('emails.reservation_modified', $emailData);
 
         $mail->attachData($pdfAller, 'Billet_MODIFIE_ALLER_' . $this->reservation->reference . '.pdf', [

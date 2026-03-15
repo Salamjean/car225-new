@@ -91,11 +91,21 @@ class PaymentController extends Controller
 
         // --- CAS 1 : RECHARGEMENT PORTEFEUILLE (W-RECH-...) ---
         if (str_starts_with($clientReference, 'W-RECH-')) {
+            $clientReference = trim($clientReference);
             $transaction = \App\Models\WalletTransaction::where('reference', $clientReference)->first();
-            Log::info('Webhook Wave Wallet: Recherche', ['trouvé' => !!$transaction, 'id' => $clientReference]);
+            
+            Log::info('Webhook Wave Wallet: Recherche', [
+                'trouvé' => !!$transaction, 
+                'id' => $clientReference,
+                'sql_match' => \App\Models\WalletTransaction::where('reference', $clientReference)->toSql(),
+                'last_5_refs' => \App\Models\WalletTransaction::latest()->take(5)->pluck('reference')->toArray()
+            ]);
 
             if (!$transaction) {
-                Log::error('WalletTransaction non trouvé:', ['id' => $clientReference]);
+                Log::error('WalletTransaction non trouvé:', [
+                    'id' => $clientReference,
+                    'reference_length' => strlen($clientReference)
+                ]);
                 return response()->json(['message' => 'Transaction introuvable'], 404);
             }
 
@@ -302,6 +312,32 @@ class PaymentController extends Controller
     
     public function waveCancel(Request $request) {
         return view('payment.cancel');
+    }
+
+    /**
+     * Page de résultat de paiement pour les réservations (Mobile & Web)
+     */
+    public function paymentResult(Request $request)
+    {
+        Log::info('Reservation payment result hit:', $request->all());
+        $transactionId = $request->transactionId ?? $request->transaction_id ?? $request->session_id;
+        
+        // Détermination du succès
+        $success = true;
+        
+        if ($request->has('success') && ($request->success === 'false' || $request->success === false)) {
+            $success = false;
+        }
+        
+        if ($request->has('cancel') && $request->cancel == 1) {
+            $success = false;
+        }
+        
+        if ($request->has('status') && in_array($request->status, ['failed', 'cancel'])) {
+            $success = false;
+        }
+
+        return view('payment.reservation_result', compact('transactionId', 'success'));
     }
 
 }

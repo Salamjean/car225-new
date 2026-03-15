@@ -106,13 +106,13 @@ class WalletController extends Controller
             $reference = $transaction->reference;
             
             // Deep links et URLs (A ajuster selon vos besoins deep link vs web)
-            // Pour le wallet, on peut définir des deep links spécifiques ou utiliser les mêmes
-            $returnUrl = "car225://wallet?success=true&transactionId={$reference}";
-            $cancelUrl = "car225://wallet?success=false&transactionId={$reference}";
+            // Pour le wallet, on utilise car225://payment avec type=wallet pour la cohérence
+            $returnUrl = "car225://payment?success=true&transactionId={$reference}&type=wallet&method=cinetpay";
+            $cancelUrl = "car225://payment?success=false&transactionId={$reference}&type=wallet&method=cinetpay";
             
-            // Fallback Web
-            $fallbackReturnUrl = $baseUrl . "/user/wallet?transactionId=" . urlencode($reference);
-            $fallbackCancelUrl = $baseUrl . "/user/wallet?cancel=1&transactionId=" . urlencode($reference);
+            // Fallback Web - Utilise la nouvelle route publique (Forcé en HTTPS pour Wave/CinetPay)
+            $fallbackReturnUrl = secure_url(route('wallet.payment.result', ['transactionId' => $reference, 'success' => 'true'], false));
+            $fallbackCancelUrl = secure_url(route('wallet.payment.result', ['transactionId' => $reference, 'success' => 'false', 'cancel' => 1], false));
             
             // Webhook URL (API)
             $notifyUrl = $baseUrl . "/api/user/wallet/notify";
@@ -364,9 +364,9 @@ class WalletController extends Controller
         try {
             $baseUrl = config('app.url');
             
-            // URLs de retour (compatibles schémas mobiles)
-            $successUrl = $baseUrl . "/user/wallet?success=true&transactionId=" . $transaction->reference;
-            $errorUrl = $baseUrl . "/user/wallet?success=false&transactionId=" . $transaction->reference;
+            // URLs de retour (utilisant la route publique pour mobile/web) - Toujours en HTTPS pour Wave
+            $successUrl = secure_url(route('wallet.payment.result', ['transactionId' => $transaction->reference, 'success' => 'true'], false));
+            $errorUrl = secure_url(route('wallet.payment.result', ['transactionId' => $transaction->reference, 'success' => 'false'], false));
 
             $session = $this->waveService->createCheckoutSession(
                 $transaction->amount,
@@ -396,7 +396,15 @@ class WalletController extends Controller
                 'success' => true,
                 'message' => 'Initialisation Wave réussie',
                 'payment_url' => $session['wave_launch_url'],
-                'transaction_id' => $transaction->reference
+                'transaction_id' => $transaction->reference,
+                'payment_details' => [
+                    'checkout_url' => $session['wave_launch_url'],
+                    'wave_id' => $session['id'] ?? null,
+                    'return_url_deep_link' => "car225://payment?success=true&transactionId={$transaction->reference}&type=wallet&method=wave",
+                    'cancel_url_deep_link' => "car225://payment?success=false&transactionId={$transaction->reference}&type=wallet&method=wave",
+                    'return_url_web_fallback' => $successUrl,
+                    'cancel_url_web_fallback' => $errorUrl,
+                ]
             ]);
 
         } catch (\Exception $e) {

@@ -2123,8 +2123,8 @@ class ReservationApiController extends Controller
                     $baseUrl = config('app.url');
                     $returnUrl = "car225://payment?cinetpay=true&transactionId={$transactionId}";
                     $cancelUrl = "car225://payment?cinetpay=false&transactionId={$transactionId}";
-                    $fallbackReturnUrl = $baseUrl . "/reservation/paiement/redirect-to-app?transactionId=" . urlencode($transactionId);
-                    $fallbackCancelUrl = $baseUrl . "/reservation/paiement/redirect-to-app?cancel=1&transactionId=" . urlencode($transactionId);
+                    $fallbackReturnUrl = secure_url(route('reservation.payment.result', ['success' => 'true', 'transactionId' => $transactionId], false));
+                    $fallbackCancelUrl = secure_url(route('reservation.payment.result', ['success' => 'false', 'transactionId' => $transactionId], false));
                     $notifyUrl = $baseUrl . "/api/user/payment/notify";
 
                     $cinetpayApiKey = config('services.cinetpay.api_key');
@@ -2332,12 +2332,20 @@ class ReservationApiController extends Controller
                 // === GÉNÉRATION DU LIEN WAVE ===
                 try {
                     $waveService = app(WaveService::class);
-                    $appUrl = rtrim(config('app.url'), '/');
                     
-                    // Pour le mobile, on peut utiliser des liens de retour spécifiques ou Deep Links
-                    // Mais Wave exige HTTPS. On utilise les routes web qui feront le pont.
-                    $successUrl = str_replace('http://', 'https://', route('payment.return'));
-                    $errorUrl = str_replace('http://', 'https://', route('payment.cancel'));
+                    // Pour le mobile, on utilise la nouvelle route result qui gère le deep linking
+                    $successUrl = route('reservation.payment.result', ['success' => 'true', 'transactionId' => $transactionId], true);
+                    $errorUrl = route('reservation.payment.result', ['success' => 'false', 'transactionId' => $transactionId], true);
+                    
+                    // S'assurer que c'est bien du HTTPS (requis par Wave)
+                    if (str_starts_with($successUrl, 'http://') && !app()->environment('local')) {
+                        $successUrl = str_replace('http://', 'https://', $successUrl);
+                        $errorUrl = str_replace('http://', 'https://', $errorUrl);
+                    } else if (app()->environment('local') && str_contains($successUrl, 'ngrok-free.dev')) {
+                         // Force HTTPS pour ngrok même en local
+                        $successUrl = str_replace('http://', 'https://', $successUrl);
+                        $errorUrl = str_replace('http://', 'https://', $errorUrl);
+                    }
                     
                     $waveSession = $waveService->createCheckoutSession(
                         (int) $montantTotal,
@@ -2354,9 +2362,13 @@ class ReservationApiController extends Controller
                             'requires_payment' => true,
                             'wallet_payment' => false,
                             'payment_details' => [
-                                'payment_url' => $waveSession['wave_launch_url'], // URL Wave
+                                'payment_url' => $waveSession['wave_launch_url'],
                                 'transaction_id' => $transactionId,
-                                'payment_method' => 'wave'
+                                'payment_method' => 'wave',
+                                'return_url_deep_link' => "car225://payment?success=true&transactionId={$transactionId}&method=wave",
+                                'cancel_url_deep_link' => "car225://payment?success=false&transactionId={$transactionId}&method=wave",
+                                'return_url_web_fallback' => $successUrl,
+                                'cancel_url_web_fallback' => $errorUrl,
                             ],
                             'data' => [
                                 'reservations' => collect($createdReservations)->map(function($r) {
