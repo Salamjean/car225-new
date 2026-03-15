@@ -76,7 +76,7 @@
 
         <div class="space-y-4">
             <!-- Bouton Deep Link Mobile -->
-            <a href="car225://wallet?success={{ $success ? 'true' : 'false' }}&transactionId={{ $transactionId }}" 
+            <a href="car225://payment?success={{ $success ? 'true' : 'false' }}&transactionId={{ $transactionId }}&type=wallet" 
                class="btn-primary block w-full text-white font-bold py-4 px-6 rounded-2xl shadow-lg flex items-center justify-center text-lg">
                 <i class="fas fa-mobile-alt mr-3"></i> Retourner dans l'application
             </a>
@@ -95,11 +95,9 @@
 
     <script>
         // Tentative de redirection automatique après 3 secondes vers l'app
-        @if($success)
         setTimeout(function() {
-            window.location.href = "car225://wallet?success=true&transactionId={{ $transactionId }}";
+            window.location.href = "car225://payment?success={{ $success ? 'true' : 'false' }}&transactionId={{ $transactionId }}&type=wallet";
         }, 3000);
-        @endif
     </script>
 
 </body>
