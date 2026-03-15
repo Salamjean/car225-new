@@ -1,32 +1,32 @@
 @extends('compagnie.layouts.template')
 
 @section('content')
-<div class="space-y-8">
+<div class="p-4 md:p-8 space-y-8">
     <!-- Header -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+    <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6 pt-4">
         <div>
-            <h1 class="text-3xl font-black text-[#1A1D1F] tracking-tight flex items-center gap-3 uppercase">
+            <h1 class="text-2xl md:text-3xl font-black text-[#1A1D1F] tracking-tight flex items-center gap-3 uppercase">
                 <i class="fas fa-exclamation-triangle text-red-500"></i>
                 Gestion des <span class="text-red-500">Signalements</span>
             </h1>
-            <p class="text-gray-500 font-medium">Suivez et traitez les incidents signalés sur vos trajets</p>
+            <p class="text-sm md:text-base text-gray-500 font-medium mt-1">Suivez et traitez les incidents signalés sur vos trajets</p>
         </div>
         <div class="flex items-center gap-3">
-            <span class="px-5 py-2.5 bg-red-500 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg shadow-red-500/20">
+            <span class="px-5 py-2.5 bg-red-500 text-white rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-wider shadow-lg shadow-red-500/20">
                 {{ $stats['total'] }} signalement(s)
             </span>
         </div>
     </div>
 
     <!-- Stats Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
         <!-- New -->
         <div class="bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group">
             <div class="flex items-center justify-between mb-4">
                 <div class="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-600 transition-colors group-hover:bg-red-600 group-hover:text-white">
                     <i class="fas fa-bell text-xl"></i>
                 </div>
-                <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Nouveaux</span>
+                <span class="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4 text-right">Nouveaux</span>
             </div>
             <h3 class="text-3xl font-black text-gray-900">{{ $stats['nouveaux'] }}</h3>
         </div>
@@ -37,7 +37,7 @@
                 <div class="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center text-green-600 transition-colors group-hover:bg-green-600 group-hover:text-white">
                     <i class="fas fa-check-circle text-xl"></i>
                 </div>
-                <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Traités</span>
+                <span class="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4 text-right">Traités</span>
             </div>
             <h3 class="text-3xl font-black text-gray-900">{{ $stats['traites'] }}</h3>
         </div>
@@ -48,7 +48,7 @@
                 <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white">
                     <i class="fas fa-id-badge text-xl"></i>
                 </div>
-                <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Chauffeurs</span>
+                <span class="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4 text-right">Chauffeurs</span>
             </div>
             <h3 class="text-3xl font-black text-gray-900">{{ $stats['from_chauffeurs'] }}</h3>
         </div>
@@ -59,7 +59,7 @@
                 <div class="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-600 transition-colors group-hover:bg-purple-600 group-hover:text-white">
                     <i class="fas fa-user text-xl"></i>
                 </div>
-                <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Passagers</span>
+                <span class="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4 text-right">Passagers</span>
             </div>
             <h3 class="text-3xl font-black text-gray-900">{{ $stats['from_users'] }}</h3>
         </div>
@@ -67,16 +67,16 @@
 
     <!-- Filters Section -->
     <div class="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden">
-        <button id="toggleFilters" class="w-full px-8 py-5 flex items-center justify-between hover:bg-gray-50 transition-colors">
+        <button id="toggleFilters" class="w-full px-6 md:px-8 py-5 flex items-center justify-between hover:bg-gray-50 transition-colors text-left">
             <div class="flex items-center gap-3">
-                <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-gray-500">
+                <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-gray-500 flex-shrink-0">
                     <i class="fas fa-filter text-xs"></i>
                 </div>
                 <span class="text-sm font-black text-gray-700 uppercase tracking-wider">Filtres de recherche</span>
             </div>
             <i class="fas fa-chevron-down text-gray-400 transition-transform duration-300" id="filterChevron"></i>
         </button>
-        <div id="filtersSection" class="hidden border-t border-gray-50 p-8">
+        <div id="filtersSection" class="hidden border-t border-gray-50 p-6 md:p-8">
             <form method="GET" action="{{ route('compagnie.signalements.index') }}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <!-- Source -->
                 <div class="space-y-2">
@@ -126,8 +126,8 @@
 
     <!-- Signalements Table -->
     <div class="bg-white rounded-[32px] border border-gray-100 shadow-xl shadow-gray-200/40 overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
+        <div class="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-200">
+            <table class="w-full text-left border-collapse min-w-[1100px]">
                 <thead>
                     <tr class="bg-gray-50/80 border-b border-gray-100">
                         <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-8">Source</th>

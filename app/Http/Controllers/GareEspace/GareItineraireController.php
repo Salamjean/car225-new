@@ -67,4 +67,69 @@ class GareItineraireController extends Controller
                 ->withInput();
         }
     }
+
+    public function edit(Itineraire $itineraire)
+    {
+        $gare = Auth::guard('gare')->user();
+        
+        // Vérifier que l'itinéraire appartient à la gare connectée
+        if ($itineraire->gare_id !== $gare->id) {
+            abort(403, 'Accès non autorisé.');
+        }
+
+        return view('gare-espace.itineraire.edit', compact('itineraire'));
+    }
+
+    public function update(Request $request, Itineraire $itineraire)
+    {
+        $gare = Auth::guard('gare')->user();
+        
+        // Vérifier que l'itinéraire appartient à la gare connectée
+        if ($itineraire->gare_id !== $gare->id) {
+            abort(403, 'Accès non autorisé.');
+        }
+
+        $validated = $request->validate([
+            'point_depart' => 'required|string|max:255',
+            'point_arrive' => 'required|string|max:255',
+            'durer_parcours' => 'required|string|max:50',
+        ], [
+            'point_depart.required' => 'Le point de départ est obligatoire.',
+            'point_arrive.required' => 'Le point d\'arrivée est obligatoire.',
+            'durer_parcours.required' => 'La durée du parcours est obligatoire.',
+        ]);
+
+        try {
+            $itineraire->update($validated);
+
+            return redirect()->route('gare-espace.itineraire.index')
+                ->with('success', 'Itinéraire mis à jour avec succès!');
+
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Erreur lors de la mise à jour: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
+
+    public function destroy(Itineraire $itineraire)
+    {
+        $gare = Auth::guard('gare')->user();
+        
+        // Vérifier que l'itinéraire appartient à la gare connectée
+        if ($itineraire->gare_id !== $gare->id) {
+            abort(403, 'Accès non autorisé.');
+        }
+
+        try {
+            $itineraire->delete();
+
+            return redirect()->route('gare-espace.itineraire.index')
+                ->with('success', 'Itinéraire supprimé avec succès!');
+
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Erreur lors de la suppression: ' . $e->getMessage());
+        }
+    }
 }

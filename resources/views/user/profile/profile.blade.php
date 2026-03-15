@@ -72,14 +72,16 @@
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Nom *</label>
                                 <input type="text" id="name" name="name" value="{{ $user->name }}" required
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
+                                    @if($user->google_id) readonly @endif
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent @if($user->google_id) bg-gray-100 cursor-not-allowed @endif">
                                 <div class="invalid-feedback text-red-500 text-sm mt-1"></div>
                             </div>
 
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Prénom</label>
                                 <input type="text" id="prenom" name="prenom" value="{{ $user->prenom }}"
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
+                                    @if($user->google_id) readonly @endif
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent @if($user->google_id) bg-gray-100 cursor-not-allowed @endif">
                                 <div class="invalid-feedback text-red-500 text-sm mt-1"></div>
                             </div>
 
