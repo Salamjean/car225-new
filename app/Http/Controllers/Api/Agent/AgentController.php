@@ -195,94 +195,89 @@ class AgentController extends Controller
     /**
      * Dashboard - Statistiques agent
      */
+    /**
+     * Dashboard - Statistiques agent
+     */
     public function dashboard(Request $request)
     {
         $agent = $request->user();
-
-        // Statistiques des réservations de la compagnie
         $today = Carbon::today();
+        $currentTime = Carbon::now()->format('H:i');
 
-        $reservationsToday = Reservation::whereHas('programme', function($query) use ($agent) {
+        // BILLETS SCANNÉS: Réservations terminées (scannées) pour aujourd'hui
+        $billetsScannes = Reservation::whereHas('programme', function($query) use ($agent) {
             $query->where('compagnie_id', $agent->compagnie_id);
         })
-        ->whereDate('date_voyage', $today)
+        ->whereNotNull('embarquement_scanned_at')
+        ->whereDate('embarquement_scanned_at', $today)
         ->count();
 
-        $reservationsConfirmees = Reservation::whereHas('programme', function($query) use ($agent) {
+        // À SCANNER: Réservations confirmées mais non scannées pour aujourd'hui
+        $aScanner = Reservation::whereHas('programme', function($query) use ($agent) {
             $query->where('compagnie_id', $agent->compagnie_id);
         })
         ->where('statut', 'confirmee')
-        ->whereDate('date_voyage', $today)
-        ->count();
-
-        $reservationsTerminees = Reservation::whereHas('programme', function($query) use ($agent) {
-            $query->where('compagnie_id', $agent->compagnie_id);
+        ->where(function($q) use ($today) {
+            $q->whereDate('date_voyage', $today)
+              ->orWhereDate('date_retour', $today);
         })
-        ->where('statut', 'terminee')
-        ->whereDate('date_voyage', $today)
         ->count();
 
         // Programmes du jour
-        $programmesDuJour = Programme::where('compagnie_id', $agent->compagnie_id)
-            ->where(function($query) use ($today) {
-                // Programmes ponctuels
-                $query->where(function($q) use ($today) {
-                    $q->where('type_programmation', 'ponctuel')
-                      ->whereDate('date_depart', $today);
-                })
-                // Programmes récurrents
-                ->orWhere(function($q) use ($today) {
-                    $joursFrancais = [
-                        'monday' => 'lundi',
-                        'tuesday' => 'mardi',
-                        'wednesday' => 'mercredi',
-                        'thursday' => 'jeudi',
-                        'friday' => 'vendredi',
-                        'saturday' => 'samedi',
-                        'sunday' => 'dimanche'
-                    ];
-                    $jourSemaine = $joursFrancais[strtolower($today->format('l'))];
-                    
-                    $q->where('type_programmation', 'recurrent')
-                      ->whereDate('date_depart', '<=', $today)
-                      ->where(function($dateCheck) use ($today) {
-                          $dateCheck->whereNull('date_fin_programmation')
-                                   ->orWhereDate('date_fin_programmation', '>=', $today);
-                      })
-                      ->where(function($dayCheck) use ($jourSemaine) {
-                          $dayCheck->whereJsonContains('jours_recurrence', $jourSemaine)
-                                   ->orWhere('jours_recurrence', 'like', "%{$jourSemaine}%");
+        $programmesQuery = Programme::where('compagnie_id', $agent->compagnie_id)
+            ->where('statut', 'actif')
+            ->where(function ($query) use ($today) {
+                $query->whereDate('date_depart', $today)
+                      ->orWhere(function ($q) use ($today) {
+                          $q->where('date_depart', '<=', $today)
+                            ->where('date_fin', '>=', $today);
                       });
-                });
             })
-            ->with('vehicule')
-            ->orderBy('heure_depart')
-            ->get()
-            ->map(function($programme) {
-                return [
-                    'id' => $programme->id,
-                    'point_depart' => $programme->point_depart,
-                    'point_arrive' => $programme->point_arrive,
-                    'heure_depart' => $programme->heure_depart,
-                    'vehicule' => $programme->vehicule ? [
-                        'id' => $programme->vehicule->id,
-                        'marque' => $programme->vehicule->marque,
-                        'modele' => $programme->vehicule->modele,
-                        'immatriculation' => $programme->vehicule->immatriculation,
-                    ] : null,
-                ];
-            });
+            ->with(['gareDepart', 'gareArrivee', 'voyages' => function($q) use ($today) {
+                $q->whereDate('date_voyage', $today)->with(['vehicule', 'chauffeur']);
+            }])
+            ->orderBy('heure_depart');
+
+        $programmes = $programmesQuery->get()->map(function($p) use ($today) {
+            $voyage = $p->voyages->first();
+            $vehicule = $voyage ? $voyage->vehicule : $p->getVehiculeAttribute();
+            $chauffeur = $voyage ? $voyage->chauffeur : null;
+            
+            $placesReservees = $p->getPlacesReserveesForDate($today);
+            $totalPlaces = $p->getTotalSeats($today);
+
+            return [
+                'id' => $p->id,
+                'num_car' => $vehicule ? '#' . $vehicule->immatriculation : '#---',
+                'point_depart' => $p->point_depart,
+                'point_arrivee' => $p->point_arrive,
+                'heure_depart' => $p->heure_depart,
+                'heure_arrivee' => $p->heure_arrive,
+                'gare_depart' => $p->gareDepart ? $p->gareDepart->nom_gare : 'N/A',
+                'gare_arrivee' => $p->gareArrivee ? $p->gareArrivee->nom_gare : 'N/A',
+                'chauffeur' => $chauffeur ? $chauffeur->prenom . ' ' . $chauffeur->name : 'Non assigné',
+                'occupation' => $placesReservees . ' / ' . $totalPlaces . ' Places',
+                'places_reservees' => $placesReservees,
+                'total_places' => $totalPlaces,
+                'statut' => $voyage ? 'ASSIGNÉ' : 'EN ATTENTE',
+                'immatriculation' => $vehicule ? $vehicule->immatriculation : 'N/A',
+            ];
+        });
 
         return response()->json([
             'success' => true,
-            'date' => $today->format('Y-m-d'),
             'stats' => [
-                'reservations_today' => $reservationsToday,
-                'reservations_confirmees' => $reservationsConfirmees,
-                'reservations_terminees' => $reservationsTerminees,
-                'programmes_today' => $programmesDuJour->count(),
+                'billets_scannes' => $billetsScannes,
+                'a_scanner' => $aScanner,
+                'total_programmes' => $programmes->count(),
             ],
-            'programmes_du_jour' => $programmesDuJour,
+            'programmes_du_jour' => $programmes,
+            'agent' => [
+                'id' => $agent->id,
+                'name' => $agent->name,
+                'role' => 'AGENT ' . ($agent->compagnie ? $agent->compagnie->name : ''),
+                'is_online' => true,
+            ]
         ]);
     }
 }

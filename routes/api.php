@@ -174,6 +174,7 @@ Route::prefix('agent')->group(function () {
         Route::post('/reservations/confirm', [AgentReservationController::class, 'confirm']);
         Route::post('/reservations/search-by-reference', [AgentReservationController::class, 'searchByReference']);
         Route::get('/reservations/historique', [AgentReservationController::class, 'historique']);
+        Route::get('/reservations/scan-history', [AgentReservationController::class, 'scanHistory']);
         
         // Véhicules et Programmes
         Route::get('/vehicles', [AgentReservationController::class, 'getVehicles']);
