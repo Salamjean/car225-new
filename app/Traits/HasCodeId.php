@@ -33,6 +33,7 @@ trait HasCodeId
             'Hotesse'   => 'HTS',
             'Caisse'    => 'CSS',
             'Personnel' => 'CHF',
+            'Gare'      => 'GAR',
         ];
 
         $className = class_basename(static::class);

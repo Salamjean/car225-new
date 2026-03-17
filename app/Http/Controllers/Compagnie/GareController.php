@@ -95,7 +95,8 @@ class GareController extends Controller
             Mail::to($gare->email)->send(new GareOtpMail(
                 $otp->otp,
                 $gare->responsable_nom . ' ' . $gare->responsable_prenom,
-                $gare->email
+                $gare->email,
+                $gare->code_id
             ));
 
             return redirect()
@@ -176,7 +177,8 @@ class GareController extends Controller
                 Mail::to($validated['email'])->send(new GareOtpMail(
                     $otp->otp,
                     $validated['responsable_nom'] . ' ' . $validated['responsable_prenom'],
-                    $validated['email']
+                    $validated['email'],
+                    $gare->code_id
                 ));
 
                 // Store pending data in session

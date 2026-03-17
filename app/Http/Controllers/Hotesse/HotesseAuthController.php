@@ -101,11 +101,11 @@ class HotesseAuthController extends Controller
         // Clear session
         session()->forget('hotesse_email_verified');
 
-        // Auto login
-        Auth::guard('hotesse')->login($hotesse);
+        // Auto login (optionnel, on redirige vers le portail pour forcer la connexion unifiée si demandé)
+        // Auth::guard('hotesse')->login($hotesse);
 
-        return redirect()->route('hotesse.dashboard')
-            ->with('success', 'Votre mot de passe a été défini avec succès ! Bienvenue.');
+        return redirect()->route('portail.login')
+            ->with('success', 'Votre mot de passe a été défini avec succès ! Veuillez vous connecter.');
     }
 
     /**
@@ -184,7 +184,7 @@ class HotesseAuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('hotesse.auth.login')
+        return redirect()->route('portail.login')
             ->with('success', 'Vous avez été déconnecté avec succès.');
     }
 

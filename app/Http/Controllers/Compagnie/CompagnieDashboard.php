@@ -104,7 +104,7 @@ class CompagnieDashboard extends Controller
     public function logout()
     {
         Auth::guard('compagnie')->logout();
-        return redirect()->route('compagnie.login');
+        return redirect()->route('portail.login');
     }
 
     public function profile()

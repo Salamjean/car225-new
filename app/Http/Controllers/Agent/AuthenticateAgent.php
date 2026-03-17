@@ -67,7 +67,7 @@ class AuthenticateAgent extends Controller
                     }
                 }
 
-                return redirect()->route('agent.login')->with('success', 'Compte mis à jour avec succès');
+                return redirect()->route('portail.login')->with('success', 'Compte mis à jour avec succès');
             } else {
                 return redirect()->route('agent.login')->with('error', 'Email inconnu');
             }

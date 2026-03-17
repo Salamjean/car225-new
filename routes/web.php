@@ -43,6 +43,7 @@ use App\Http\Controllers\Chauffeur\ChauffeurController;
 use App\Http\Controllers\Chauffeur\ChauffeurAuthenticate;
 use App\Http\Controllers\Chauffeur\VoyageController as ChauffeurVoyageController;
 use App\Http\Controllers\Chauffeur\ChauffeurReservationController;
+use App\Http\Controllers\PortailAuthController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -71,6 +72,12 @@ Route::prefix('/')->group(function () {
     Route::get('/home/mes-reservations', [AccueilController::class, 'mesReservations'])->name('home.reservations');
     Route::get('/home/mes-reservations/download/{reservation}', [AccueilController::class, 'downloadTicket'])->name('home.reservations.download');
     Route::post('/home/contact/store', [AccueilController::class, 'storeContact'])->name('home.contact.store');
+});
+
+// Route de Connexion Unifiée
+Route::prefix('portail')->group(function () {
+    Route::get('/login', [PortailAuthController::class, 'showLogin'])->name('portail.login');
+    Route::post('/login', [PortailAuthController::class, 'login'])->name('portail.login.submit');
 });
 
 //Les routes de gestion du @admin

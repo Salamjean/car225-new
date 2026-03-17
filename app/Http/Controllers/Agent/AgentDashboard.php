@@ -80,7 +80,7 @@ class AgentDashboard extends Controller
     public function logout()
     {
         Auth::guard('agent')->logout();
-        return redirect()->route('agent.login');
+        return redirect()->route('portail.login');
     }
 
     /**

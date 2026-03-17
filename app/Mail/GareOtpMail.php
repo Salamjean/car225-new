@@ -16,15 +16,17 @@ class GareOtpMail extends Mailable
     public $otp;
     public $gareName;
     public $gareEmail;
+    public $codeId;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(string $otp, string $gareName, string $gareEmail)
+    public function __construct(string $otp, string $gareName, string $gareEmail, string $codeId)
     {
         $this->otp = $otp;
         $this->gareName = $gareName;
         $this->gareEmail = $gareEmail;
+        $this->codeId = $codeId;
     }
 
     /**
@@ -49,6 +51,7 @@ class GareOtpMail extends Mailable
                 'otp' => $this->otp,
                 'gareName' => $this->gareName,
                 'gareEmail' => $this->gareEmail,
+                'codeId' => $this->codeId,
             ],
         );
     }

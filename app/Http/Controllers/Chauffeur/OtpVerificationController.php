@@ -77,11 +77,11 @@ class OtpVerificationController extends Controller
         $personnel->statut = 'disponible';
         $personnel->save();
 
-        // Connecter l'utilisateur
-        \Illuminate\Support\Facades\Auth::guard('chauffeur')->login($personnel);
+        // Connecter l'utilisateur (Optionnel : On redirige vers le portail pour uniformiser)
+        // \Illuminate\Support\Facades\Auth::guard('chauffeur')->login($personnel);
 
-        return redirect()->route('chauffeur.dashboard')
-            ->with('success', 'Compte vérifié et mot de passe défini avec succès ! Bienvenue.');
+        return redirect()->route('portail.login')
+            ->with('success', 'Compte vérifié et mot de passe défini avec succès ! Veuillez vous connecter.');
     }
 
     /**

@@ -49,7 +49,7 @@ class CompagnieAuthenticate extends Controller
                 }
                 }
 
-                return redirect()->route('compagnie.login')->with('success', 'Compte mis à jour avec succès');
+                return redirect()->route('portail.login')->with('success', 'Compte mis à jour avec succès');
             } else {
                 return redirect()->route('compagnie.login')->with('error', 'Email inconnu');
             }

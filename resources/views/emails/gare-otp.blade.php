@@ -56,7 +56,10 @@
             
             <p>Bienvenue chez <strong>CAR225</strong> ! Votre compte responsable de gare a été créé avec succès.</p>
             
-            <p>Voici votre code de vérification pour activer votre compte :</p>
+            <p>Voici vos identifiants pour accéder à votre espace :</p>
+            
+            <p style="margin-bottom: 5px;"><strong>Votre Code ID :</strong> <span style="color: #e94e1a; font-weight: bold;">{{ $codeId }}</span></p>
+            <p style="margin-top: 5px;"><strong>Votre code de vérification OTP :</strong></p>
             
             <div class="otp-code">
                 {{ $otp }}

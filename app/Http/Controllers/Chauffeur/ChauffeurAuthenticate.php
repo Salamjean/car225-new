@@ -57,6 +57,6 @@ class ChauffeurAuthenticate extends Controller
         Auth::guard('chauffeur')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        return redirect()->route('chauffeur.login');
+        return redirect()->route('portail.login');
     }
 }

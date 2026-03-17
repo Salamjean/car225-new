@@ -126,7 +126,7 @@ class AuthenticateGare extends Controller
                     ResetCodePasswordGare::where('email', $gare->email)->delete();
                 }
 
-                return redirect()->route('gare-espace.login')->with('success', 'Compte configuré avec succès ! Connectez-vous maintenant.');
+                return redirect()->route('portail.login')->with('success', 'Compte configuré avec succès ! Connectez-vous maintenant.');
             } else {
                 return redirect()->route('gare-espace.login')->with('error', 'Email inconnu');
             }
@@ -179,6 +179,6 @@ class AuthenticateGare extends Controller
     public function logout()
     {
         auth('gare')->logout();
-        return redirect()->route('gare-espace.login')->with('success', 'Déconnexion réussie.');
+        return redirect()->route('portail.login')->with('success', 'Déconnexion réussie.');
     }
 }
