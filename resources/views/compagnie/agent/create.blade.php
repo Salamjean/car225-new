@@ -30,12 +30,7 @@
                     <div class="step-indicator">
                         <div class="step active">
                             <span class="step-num">1</span>
-                            <span class="step-text">Profil & Identité</span>
-                        </div>
-                        <div class="step-line"></div>
-                        <div class="step">
-                            <span class="step-num">2</span>
-                            <span class="step-text">Accès & Sécurité</span>
+                            <span class="step-text">Profil & Identité de l'Agent</span>
                         </div>
                     </div>
                 </div>
@@ -62,10 +57,7 @@
                                 </div>
                                 <div class="upload-guidelines">
                                     <p class="upload-hint"><i class="fas fa-info-circle me-1"></i> Formats acceptés : JPG, PNG (Max. 2Mo)</p>
-                                    <ul class="mini-checklist">
-                                        <li><i class="fas fa-check"></i> Fond neutre</li>
-                                        <li><i class="fas fa-check"></i> Visage centré</li>
-                                    </ul>
+                                  
                                 </div>
                             </div>
                         </div>
@@ -151,14 +143,47 @@
                                     </div>
                                 </div>
 
+                                <div class="col-md-6">
+                                    <div class="form-group-modern">
+                                        <label>Nom de la personne à contacter <span class="required">*</span></label>
+                                        <div class="input-with-icon">
+                                            <i class="fas fa-user-shield"></i>
+                                            <input type="text" name="nom_urgence" value="{{ old('nom_urgence') }}" required placeholder="Ex: Mme Bakayoko">
+                                        </div>
+                                        @error('nom_urgence') <span class="error-msg">{{ $message }}</span> @enderror
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="form-group-modern">
+                                        <label>Lien de parenté <span class="required">*</span></label>
+                                        <div class="input-with-icon">
+                                            <i class="fas fa-users"></i>
+                                            <select name="lien_parente_urgence" required>
+                                                <option value="">Sélectionner le lien</option>
+                                                <option value="Conjoint(e)" {{ old('lien_parente_urgence') == 'Conjoint(e)' ? 'selected' : '' }}>Conjoint(e)</option>
+                                                <option value="Père" {{ old('lien_parente_urgence') == 'Père' ? 'selected' : '' }}>Père</option>
+                                                <option value="Mère" {{ old('lien_parente_urgence') == 'Mère' ? 'selected' : '' }}>Mère</option>
+                                                <option value="Frère" {{ old('lien_parente_urgence') == 'Frère' ? 'selected' : '' }}>Frère</option>
+                                                <option value="Sœur" {{ old('lien_parente_urgence') == 'Sœur' ? 'selected' : '' }}>Sœur</option>
+                                                <option value="Oncle" {{ old('lien_parente_urgence') == 'Oncle' ? 'selected' : '' }}>Oncle</option>
+                                                <option value="Tante" {{ old('lien_parente_urgence') == 'Tante' ? 'selected' : '' }}>Tante</option>
+                                                <option value="Ami(e)" {{ old('lien_parente_urgence') == 'Ami(e)' ? 'selected' : '' }}>Ami(e)</option>
+                                                <option value="Autre" {{ old('lien_parente_urgence') == 'Autre' ? 'selected' : '' }}>Autre</option>
+                                            </select>
+                                        </div>
+                                        @error('lien_parente_urgence') <span class="error-msg">{{ $message }}</span> @enderror
+                                    </div>
+                                </div>
+
                                 <div class="col-12">
                                     <div class="form-group-modern">
-                                        <label>Contact d'urgence</label>
+                                        <label>Numéro de téléphone d'urgence <span class="required">*</span></label>
                                         <div class="input-with-icon">
                                             <i class="fas fa-ambulance"></i>
-                                            <input type="text" name="cas_urgence" value="{{ old('cas_urgence') }}" placeholder="Nom et numéro du proche (Ex: Marie 0101010101)">
+                                            <input type="text" name="cas_urgence" value="{{ old('cas_urgence') }}" required placeholder="Ex: 01 01 01 01 01" maxlength="10">
                                         </div>
-                                        <small class="form-hint">Important pour la sécurité de l'agent en déplacement.</small>
+                                        <small class="form-hint">Important pour la sécurité de l'agent.</small>
                                         @error('cas_urgence') <span class="error-msg">{{ $message }}</span> @enderror
                                     </div>
                                 </div>

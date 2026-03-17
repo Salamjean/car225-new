@@ -53,7 +53,7 @@
         /* ─── LEFT PANEL ─── */
         .brand-panel {
             display: none;
-            width: 42%;
+            width: 50%;
             background: linear-gradient(145deg, var(--primary) 0%, var(--primary-dark) 50%, #1a1a2e 100%);
             position: fixed;
             left: 0;
@@ -62,7 +62,7 @@
             overflow: hidden;
             padding: 60px;
             flex-direction: column;
-            justify-content: space-between;
+            justify-content: center;
         }
 
         .brand-video {
@@ -72,99 +72,111 @@
             height: 100%;
             object-fit: cover;
             z-index: 0;
+            opacity: 0.6;
         }
 
         .brand-panel::before {
             content: '';
             position: absolute;
             inset: 0;
-            background: linear-gradient(145deg, rgba(233,79,27,0.85) 0%, rgba(196,61,16,0.88) 50%, rgba(26,26,46,0.92) 100%);
+            background: linear-gradient(to bottom right, rgba(233,79,27,0.7) 0%, rgba(196,61,16,0.8) 100%);
             z-index: 1;
         }
 
-        .brand-content { position: relative; z-index: 2; }
+        .brand-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            margin-bottom: 40px;
+        }
 
         .logo-wrapper {
-            width: 72px;
-            height: 72px;
-            background: rgba(255,255,255,0.95);
-            border-radius: 18px;
-            display: flex;
+            width: 80px;
+            height: 80px;
+            background: #ffffff;
+            border-radius: 20px;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 36px;
+            margin-bottom: 30px;
             box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-            backdrop-filter: blur(10px);
             transition: var(--transition);
         }
 
         .logo-wrapper:hover {
             transform: scale(1.05);
-            background: #ffffff;
             box-shadow: 0 12px 32px rgba(0,0,0,0.2);
         }
 
         .brand-logo {
-            width: 50px;
-            height: 50px;
+            width: 55px;
+            height: 55px;
         }
 
         .brand-title {
-            font-size: 36px;
+            font-size: 46px;
             font-weight: 800;
             color: white;
-            line-height: 1.15;
-            margin-bottom: 16px;
+            line-height: 1.1;
+            margin-bottom: 20px;
             letter-spacing: -0.02em;
         }
 
         .brand-subtitle {
-            font-size: 15px;
-            color: rgba(255,255,255,0.7);
+            font-size: 16px;
+            color: rgba(255,255,255,0.9);
             line-height: 1.7;
-            max-width: 360px;
+            max-width: 450px;
+            margin: 0 auto;
         }
 
         .brand-features {
             position: relative;
             z-index: 2;
             display: flex;
-            flex-direction: column;
-            gap: 18px;
+            flex-direction: row;
+            justify-content: center;
+            gap: 20px;
         }
 
         .feature-item {
             display: flex;
+            flex-direction: column;
             align-items: center;
             gap: 16px;
-            color: rgba(255,255,255,0.85);
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: var(--radius-lg);
+            padding: 24px 20px;
+            color: white;
             font-size: 14px;
             font-weight: 500;
+            text-align: center;
+            width: 160px;
+            backdrop-filter: blur(4px);
+            transition: var(--transition);
+        }
+
+        .feature-item:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-5px);
         }
 
         .feature-icon {
-            width: 42px;
-            height: 42px;
-            background: rgba(255,255,255,0.12);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 17px;
+            font-size: 32px;
             color: white;
-            flex-shrink: 0;
-            backdrop-filter: blur(10px);
+            margin-bottom: 8px;
         }
 
         .decoration-circle {
             position: absolute;
             border-radius: 50%;
-            background: rgba(255,255,255,0.05);
+            background: rgba(255,255,255,0.03);
             z-index: 0;
         }
-        .decoration-circle:nth-child(1) { width: 300px; height: 300px; top: -100px; right: -80px; }
-        .decoration-circle:nth-child(2) { width: 200px; height: 200px; bottom: -50px; left: -60px; }
-        .decoration-circle:nth-child(3) { width: 120px; height: 120px; top: 50%; right: 20%; }
+        .decoration-circle:nth-child(1) { width: 400px; height: 400px; top: -150px; right: -100px; }
+        .decoration-circle:nth-child(2) { width: 250px; height: 250px; bottom: -80px; left: -80px; }
+        .decoration-circle:nth-child(3) { width: 150px; height: 150px; top: 40%; right: 10%; }
 
         /* ─── RIGHT PANEL (form) ─── */
         .form-panel {
@@ -259,14 +271,17 @@
         /* Photo upload */
         .photo-upload-area {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 16px;
-            padding: 16px;
+            justify-content: center;
+            gap: 12px;
+            padding: 24px;
             border: 2px dashed var(--border);
             border-radius: var(--radius-md);
             cursor: pointer;
             transition: var(--transition);
             background: var(--bg-input);
+            text-align: center;
         }
         .photo-upload-area:hover {
             border-color: var(--primary);
@@ -286,9 +301,8 @@
             width: 100%; height: 100%; object-fit: cover; display: none;
         }
 
-        .photo-upload-text { flex: 1; }
-        .photo-upload-text span { display: block; font-size: 13px; font-weight: 600; color: var(--primary); }
-        .photo-upload-text small { font-size: 12px; color: var(--text-muted); }
+        .photo-upload-text span { display: block; font-size: 14px; font-weight: 600; color: var(--primary); margin-bottom: 2px; }
+        .photo-upload-text small { font-size: 12px; color: var(--text-secondary); }
 
         .photo-upload-area input[type="file"] {
             position: absolute; width: 0; height: 0; opacity: 0;
@@ -356,7 +370,7 @@
         /* ─── Responsive ─── */
         @media (min-width: 1024px) {
             .brand-panel { display: flex; }
-            .form-panel { width: 58%; margin-left: 42%; padding: 40px 60px; }
+            .form-panel { width: 50%; margin-left: 50%; padding: 40px 60px; }
             .mobile-logo { display: none; }
         }
 
@@ -387,7 +401,7 @@
                 </div>
             </a>
             <h2 class="brand-title">Créez votre<br>compte en<br>quelques clics.</h2>
-            <p class="brand-subtitle">Rejoignez la première plateforme de réservation de transport en Côte d'Ivoire. Simple, rapide et sécurisé.</p>
+            <p class="brand-subtitle" style="color: #fff;">Rejoignez la première plateforme de réservation de transport en Côte d'Ivoire. Simple, rapide et sécurisé.</p>
         </div>
 
         <div class="brand-features">

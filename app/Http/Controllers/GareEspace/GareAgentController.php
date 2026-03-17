@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class GareAgentController extends Controller
 {
@@ -40,6 +41,8 @@ class GareAgentController extends Controller
             'contact' => 'required|string|max:15',
             'commune' => 'required|string|max:255',
             'cas_urgence' => 'required|string|max:15',
+            'nom_urgence' => 'required|string|max:255',
+            'lien_parente_urgence' => 'required|string|max:100',
             'profile_picture' => 'nullable|image|max:2048',
         ], [
             'name.required' => 'Le nom est obligatoire.',
@@ -52,6 +55,8 @@ class GareAgentController extends Controller
             'contact.required' => 'Le contact est obligatoire.',
             'commune.required' => 'La commune est obligatoire.',
             'cas_urgence.required' => 'Le contact d\'urgence est obligatoire.',
+            'nom_urgence.required' => 'Le nom de la personne à contacter est obligatoire.',
+            'lien_parente_urgence.required' => 'Le lien de parenté est obligatoire.',
             'profile_picture.image' => 'Le fichier doit être une image.',
             'profile_picture.max' => 'L\'image ne doit pas dépasser 2 Mo.',
         ]);
@@ -71,7 +76,9 @@ class GareAgentController extends Controller
             $agent->email = $request->email;
             $agent->contact = $this->formatPhoneNumber($request->contact);
             $agent->cas_urgence = $this->formatPhoneNumber($request->cas_urgence);
-            $agent->password = Hash::make('default');
+            $agent->nom_urgence = $request->nom_urgence;
+            $agent->lien_parente_urgence = $request->lien_parente_urgence;
+            $agent->password = Hash::make(Str::random(16));
 
             if ($request->hasFile('profile_picture')) {
                 $agent->profile_picture = $request->file('profile_picture')->store('profile_pictures', 'public');

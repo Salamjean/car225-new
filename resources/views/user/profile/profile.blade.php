@@ -220,12 +220,10 @@
     }
 
     // Mise à jour du profil
-    $('#profileForm').on('submit', function(e) {
+    $('#profileForm').on('submit', async function(e) {
         e.preventDefault();
         const form = $(this);
         clearErrors(form);
-        
-        const formData = new FormData(this);
         
         // Validation additionnelle côté client
         const contact = $('#contact').val();
@@ -249,6 +247,88 @@
             return;
         }
         
+        // 1. Demander à vérifier la sécurité
+        try {
+            // Afficher un loader
+            Swal.fire({
+                title: 'Vérification...',
+                text: 'Veuillez patienter',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // Requête pour savoir s'il faut demander un MDP ou générer un OTP
+            const checkRes = await $.ajax({
+                url: '{{ route("user.profile.request_update") }}',
+                method: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    contact: contact
+                }
+            });
+
+            Swal.close();
+
+            if (checkRes.type === 'password') {
+                const { value: password } = await Swal.fire({
+                    title: 'Confirmer la modification',
+                    text: 'Veuillez entrer votre mot de passe actuel pour continuer.',
+                    input: 'password',
+                    inputPlaceholder: 'Votre mot de passe',
+                    showCancelButton: true,
+                    confirmButtonText: 'Confirmer',
+                    cancelButtonText: 'Annuler',
+                    confirmButtonColor: '#e94e1a',
+                    inputAttributes: {
+                        autocapitalize: 'off',
+                        autocorrect: 'off'
+                    }
+                });
+
+                if (!password) return; // Annulé ou vide
+                
+                submitFinalProfile(form, { confirm_password: password });
+
+            } else if (checkRes.type === 'otp') {
+                const { value: otp } = await Swal.fire({
+                    title: 'Code de sécurité',
+                    text: checkRes.message,
+                    input: 'text',
+                    inputPlaceholder: 'Code à 6 chiffres',
+                    showCancelButton: true,
+                    confirmButtonText: 'Vérifier',
+                    cancelButtonText: 'Annuler',
+                    confirmButtonColor: '#e94e1a'
+                });
+
+                if (!otp) return;
+                
+                submitFinalProfile(form, { otp_code: otp });
+            }
+        } catch(xhr) {
+             Swal.fire({
+                 icon: 'error',
+                 title: 'Erreur!',
+                 text: xhr.responseJSON?.message || 'Une erreur est survenue lors de la vérification.',
+                 confirmButtonColor: '#e94e1a'
+             });
+        }
+    });
+
+    function submitFinalProfile(form, extraData) {
+        let formData = new FormData(form[0]);
+        for (const [key, val] of Object.entries(extraData)) {
+            formData.append(key, val);
+        }
+
+        Swal.fire({
+            title: 'Mise à jour...',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
+
         $.ajax({
             url: '{{ route("user.profile.update") }}',
             method: 'POST',
@@ -270,6 +350,16 @@
             error: function(xhr) {
                 if (xhr.status === 422) {
                     showErrors(xhr.responseJSON.errors);
+                    if (xhr.responseJSON.errors.otp_code || xhr.responseJSON.errors.confirm_password) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Erreur',
+                            text: xhr.responseJSON.errors.otp_code ? xhr.responseJSON.errors.otp_code[0] : xhr.responseJSON.errors.confirm_password[0],
+                            confirmButtonColor: '#e94e1a'
+                        });
+                    } else {
+                        Swal.close();
+                    }
                 } else {
                     Swal.fire({
                         icon: 'error',
@@ -280,7 +370,7 @@
                 }
             }
         });
-    });
+    }
 
     // Changement de mot de passe
     $('#passwordForm').on('submit', function(e) {

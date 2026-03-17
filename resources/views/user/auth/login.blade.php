@@ -541,7 +541,6 @@
             <a href="{{ route('home') }}" style="text-decoration: none; display: block;">
                 <div class="mobile-logo">
                     <img src="{{ asset('assetsPoster/assets/images/logo_car225.png') }}" alt="Car225">
-                    <div class="mobile-logo-text">Car225</div>
                 </div>
             </a>
 

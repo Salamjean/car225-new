@@ -54,6 +54,7 @@ Route::get('/auth/google/callback', [UserAuthenticate::class, 'handleGoogleCallb
 Route::prefix('/')->group(function () {
     Route::get('/', [HomeController::class, 'home'])->name('home');
     Route::get('/itineraires/search', [HomeController::class, 'search'])->name('programmes.search');
+    Route::get('/api/locations', [HomeController::class, 'getLocations'])->name('api.locations');
     Route::get('/itineraires', [HomeController::class, 'all'])->name('programmes.all');
     Route::get('/itineraires/{itineraire}', [HomeController::class, 'show'])->name('programmes.show');
     Route::get('/vehicule/details/{id}', [HomeController::class, 'getVehicleDetails'])->name('home.vehicle.details');
@@ -472,6 +473,7 @@ Route::middleware('auth')->prefix('user')->group(function () {
 
     // Profile Routes
     Route::get('/profile', [ProfileController::class, 'index'])->name('user.profile');
+    Route::post('/profile/request-update', [ProfileController::class, 'requestUpdate'])->name('user.profile.request_update');
     Route::post('/profile/update', [ProfileController::class, 'update'])->name('user.profile.update');
     Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('user.profile.password');
     Route::post('/profile/photo', [ProfileController::class, 'updatePhoto'])->name('user.profile.photo');
@@ -708,6 +710,9 @@ Route::prefix('gare-espace')->name('gare-espace.')->group(function () {
             Route::get('/', [App\Http\Controllers\GareEspace\GareVehiculeController::class, 'index'])->name('index');
             Route::get('/create', [App\Http\Controllers\GareEspace\GareVehiculeController::class, 'create'])->name('create');
             Route::post('/', [App\Http\Controllers\GareEspace\GareVehiculeController::class, 'store'])->name('store');
+            Route::get('/{vehicule}/edit', [App\Http\Controllers\GareEspace\GareVehiculeController::class, 'edit'])->name('edit');
+            Route::put('/{vehicule}', [App\Http\Controllers\GareEspace\GareVehiculeController::class, 'update'])->name('update');
+            Route::delete('/{vehicule}', [App\Http\Controllers\GareEspace\GareVehiculeController::class, 'destroy'])->name('destroy');
         });
 
         // Caisse (CRUD)

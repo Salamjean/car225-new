@@ -128,10 +128,18 @@ class GareVoyageController extends Controller
             return back()->with('error', 'Ce véhicule n\'est pas disponible.');
         }
 
-        // Verify vehicle capacity matches programme capacity
+        // Vérifier la capacité du véhicule
         $requiredCapacity = $programme->getTotalSeats();
-        if ((int)$vehicule->nombre_place !== (int)$requiredCapacity) {
-            return back()->with('error', "La capacité du véhicule ({$vehicule->nombre_place} places) ne correspond pas à la capacité requise par le programme ({$requiredCapacity} places).");
+        $actualReservationsCount = $programme->getPlacesReserveesForDate($validated['date_voyage']);
+        
+        // 1. Ne doit pas être inférieur aux réservations déjà faites
+        if ((int)$vehicule->nombre_place < $actualReservationsCount) {
+            return back()->with('error', "Le véhicule sélectionné ({$vehicule->nombre_place} places) possède une capacité insuffisante pour les {$actualReservationsCount} réservations déjà effectuées à cette date.");
+        }
+
+        // 2. Ne doit pas excéder la capacité du programme (selon demande utilisateur)
+        if ((int)$vehicule->nombre_place > (int)$requiredCapacity) {
+             return back()->with('error', "Le véhicule sélectionné ({$vehicule->nombre_place} places) excède la capacité maximale autorisée pour ce programme ({$requiredCapacity} places).");
         }
 
         // Check if voyage already exists

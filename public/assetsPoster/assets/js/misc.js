@@ -63,12 +63,14 @@
       })
     });
 
-    //Applying perfect scrollbar to sidebar
+    //Applying perfect scrollbar to sidebar (Commented out to avoid double scrollbars with native CSS styling)
+    /*
     if (!body.hasClass("rtl")) {
       if ($('.mdc-drawer .mdc-drawer__content').length) {
         const chatsScroll = new PerfectScrollbar('.mdc-drawer .mdc-drawer__content');
       }
     }
+    */
 
   });
 })(jQuery);

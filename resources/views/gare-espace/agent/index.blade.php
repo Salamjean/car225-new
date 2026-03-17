@@ -7,7 +7,6 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
 
 <div class="content-wrapper-modern">
-    <!-- Header -->
     <div class="action-header animate__animated animate__fadeIn">
         <div class="header-left">
             <h1 class="main-title">Agents</h1>
@@ -21,44 +20,49 @@
         </div>
     </div>
 
-    <!-- Stats Cards -->
+
+   <!-- Stats Cards (Format identique à la page Véhicules) -->
     <div class="row g-4 mb-4">
+        <!-- Carte Total Agents -->
         <div class="col-md-4 animate__animated animate__fadeInUp">
-            <div class="stat-card">
-                <div class="stat-icon bg-primary-light">
-                    <i class="fas fa-users"></i>
+            <div class="agent-stat-card">
+                <div class="agent-stat-info">
+                    <span class="agent-stat-label">TOTAL AGENTS</span>
+                    <h3 class="agent-stat-value">{{ $agents->count() }}</h3>
                 </div>
-                <div class="stat-info">
-                    <p class="stat-label">Total Agents</p>
-                    <h3 class="stat-value">{{ $agents->count() }}</h3>
+                <div class="agent-stat-icon bg-purple-light">
+                    <i class="fas fa-user-friends text-purple"></i>
                 </div>
             </div>
         </div>
+
+        <!-- Carte Agents Actifs -->
         <div class="col-md-4 animate__animated animate__fadeInUp" style="animation-delay: 0.1s">
-            <div class="stat-card">
-                <div class="stat-icon bg-success-light">
-                    <i class="fas fa-check-circle"></i>
+            <div class="agent-stat-card">
+                <div class="agent-stat-info">
+                    <span class="agent-stat-label">AGENTS ACTIFS</span>
+                    <h3 class="agent-stat-value">{{ $agents->where('archived_at', null)->count() }}</h3>
                 </div>
-                <div class="stat-info">
-                    <p class="stat-label">Agents Actifs</p>
-                    <h3 class="stat-value">{{ $agents->where('archived_at', null)->count() }}</h3>
+                <div class="agent-stat-icon bg-green-light">
+                    <i class="fas fa-user-check text-green"></i>
                 </div>
             </div>
         </div>
+
+        <!-- Carte Agents Archivés -->
         <div class="col-md-4 animate__animated animate__fadeInUp" style="animation-delay: 0.2s">
-            <div class="stat-card">
-                <div class="stat-icon bg-warning-light">
-                    <i class="fas fa-archive"></i>
+            <div class="agent-stat-card">
+                <div class="agent-stat-info">
+                    <span class="agent-stat-label">AGENTS ARCHIVÉS</span>
+                    <h3 class="agent-stat-value">{{ $agents->whereNotNull('archived_at')->count() }}</h3>
                 </div>
-                <div class="stat-info">
-                    <p class="stat-label">Agents Archivés</p>
-                    <h3 class="stat-value">{{ $agents->whereNotNull('archived_at')->count() }}</h3>
+                <div class="agent-stat-icon bg-orange-light">
+                    <i class="fas fa-box-archive text-orange"></i>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Agents Table -->
     <div class="main-card-modern animate__animated animate__fadeInUp" style="animation-delay: 0.3s">
         @if($agents->isEmpty())
             <div class="empty-state">
@@ -192,56 +196,69 @@
     box-shadow: 0 6px 18px rgba(233, 79, 27, 0.3);
 }
 
-/* Stats Cards */
-.stat-card {
-    background: white;
-    border-radius: 1.25rem;
-    padding: 1.5rem;
-    border: 1px solid var(--border-color);
+/* --- DESIGN DES CARTES FORMAT "CUBE" --- */
+.stat-card-v2 {
+    background: #ffffff;
+    border-radius: 1.25rem; /* Un poil plus arrondi */
+    padding: 2.25rem 1.5rem; /* Beaucoup plus de padding vertical pour créer l'effet cube */
     display: flex;
     align-items: center;
-    gap: 1.25rem;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    justify-content: space-between;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+    border: 1px solid #f8fafc;
+    transition: all 0.3s ease;
+    min-height: 150px; /* C'est cette ligne qui force la forme de cube (carrée) */
+    height: 100%; /* S'assure que toutes les cartes ont la même taille */
 }
 
-.stat-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 1rem;
+.stat-card-v2:hover {
+    transform: translateY(-5px); /* Animation un peu plus marquée au survol */
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+}
+
+.stat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-info .stat-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #64748b;
+    margin-bottom: 0.5rem; /* Légèrement plus d'espace */
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.stat-info .stat-value {
+    font-size: 2.25rem; /* Taille du chiffre plus imposante */
+    font-weight: 800;
+    color: #1e293b;
+    margin: 0;
+    line-height: 1;
+}
+
+.stat-icon-box {
+    width: 60px; /* Rendu légèrement plus grand comme sur la photo 2 */
+    height: 60px;
+    border-radius: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.25rem;
+    font-size: 1.6rem;
+    flex-shrink: 0;
 }
 
-.bg-primary-light {
-    background: rgba(233, 79, 27, 0.1);
-    color: var(--primary);
-}
+/* Couleurs mappées depuis l'image 2 */
+.bg-purple-light { background: #f3e8ff; }
+.text-purple-primary { color: #8b5cf6; }
 
-.bg-success-light {
-    background: rgba(16, 185, 129, 0.1);
-    color: #10b981;
-}
+.bg-green-light { background: #dcfce7; }
+.text-green-primary { color: #10b981; }
 
-.bg-warning-light {
-    background: rgba(245, 158, 11, 0.1);
-    color: #f59e0b;
-}
-
-.stat-label {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    font-weight: 600;
-    margin: 0;
-}
-
-.stat-value {
-    font-size: 1.75rem;
-    font-weight: 800;
-    color: var(--text-main);
-    margin: 0;
-}
+.bg-orange-light { background: #fef3c7; }
+.text-orange-primary { color: #f59e0b; }
+/* ----------------------------------------------- */
 
 /* Table Card */
 .main-card-modern {
@@ -363,7 +380,62 @@
     padding: 4rem 2rem;
     text-align: center;
 }
+/* --- DESIGN DES CARTES (Style identique à "Véhicules") --- */
+.agent-stat-card {
+    background: #ffffff;
+    border-radius: 1rem; /* Bords arrondis de la carte */
+    padding: 1.5rem; /* Espace interne */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03); /* Ombre douce */
+    border: 1px solid #f1f5f9;
+    height: 100%;
+}
 
+.agent-stat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.agent-stat-info .agent-stat-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.agent-stat-info .agent-stat-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+    line-height: 1;
+}
+
+.agent-stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 0.75rem; /* Carré avec bords arrondis */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+/* Couleurs des icônes de la page Agents */
+.bg-purple-light { background-color: #f3e8ff; }
+.text-purple { color: #9333ea; }
+
+.bg-green-light { background-color: #dcfce7; }
+.text-green { color: #16a34a; }
+
+.bg-orange-light { background-color: #fef3c7; }
+.text-orange { color: #d97706; }
+/* -------------------------------------------------------- */
 .empty-icon {
     width: 80px;
     height: 80px;

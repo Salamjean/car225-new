@@ -29,8 +29,15 @@
                             </div>
                             <div class="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full">
                                 <i class="fas fa-calendar text-blue-500 text-sm"></i>
-                                <span class="text-sm">{{ date('d/m/Y', strtotime($searchParams['date_depart'])) }}</span>
+                                <span class="text-xs font-bold">{{ date('d/m/Y', strtotime($searchParams['date_depart'])) }}</span>
                             </div>
+                            @if($searchParams['is_aller_retour'] && $searchParams['date_retour'])
+                            <i class="fas fa-exchange-alt text-blue-400 mx-1"></i>
+                            <div class="flex items-center gap-2 bg-blue-100 px-3 py-1 rounded-full">
+                                <i class="fas fa-calendar-check text-blue-600 text-sm"></i>
+                                <span class="text-xs font-bold">{{ date('d/m/Y', strtotime($searchParams['date_retour'])) }}</span>
+                            </div>
+                            @endif
                         </div>
 
                         <!-- Bouton mobile -->
@@ -62,8 +69,15 @@
                                     </div>
                                     <div class="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full">
                                         <i class="fas fa-calendar text-blue-500"></i>
-                                        <span>{{ date('d/m/Y', strtotime($searchParams['date_depart'])) }}</span>
+                                        <span class="font-bold">{{ date('d/m/Y', strtotime($searchParams['date_depart'])) }}</span>
                                     </div>
+                                    @if($searchParams['is_aller_retour'] && $searchParams['date_retour'])
+                                    <i class="fas fa-exchange-alt text-blue-300"></i>
+                                    <div class="flex items-center gap-2 bg-blue-100 px-3 py-1 rounded-full border border-blue-200">
+                                        <i class="fas fa-calendar-check text-blue-600 font-bold"></i>
+                                        <span class="font-black text-blue-700">{{ date('d/m/Y', strtotime($searchParams['date_retour'])) }}</span>
+                                    </div>
+                                    @endif
                                 </div>
                             </div>
                             <div class="flex items-center gap-4">
@@ -82,285 +96,111 @@
             </div>
 
             <!-- Résultats en liste -->
-            @if ($programmes->count() > 0)
-                <div class="w-full mb-6 sm:mb-8">
-                    <!-- En-tête de la liste (version desktop) -->
-                    <div class="hidden md:block mb-4 md:px-2">
-                        <div class="grid grid-cols-12 gap-4 px-3 py-2 text-xs font-black uppercase tracking-widest text-gray-400">
-                            <div class="col-span-3 pl-2">Compagnie & Trajet</div>
-                            <div class="col-span-2 text-center">Départ</div>
-                            <div class="col-span-2 text-center">Tarif</div>
-                            <div class="col-span-2 text-center">Disponibilité</div>
-                            <div class="col-span-3 text-right pr-2">Action</div>
-                        </div>
-                    </div>
+            @php
+                $isAllerRetour = $searchParams['is_aller_retour'];
+            @endphp
 
-                    <!-- Liste des programmes -->
-                    <div class="space-y-4">
-                        @foreach ($programmes as $programme)
-                            <div class="w-full bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden group">
-                                <!-- Version Mobile -->
-                                <div class="block md:hidden">
-                                    <div class="p-4">
-                                        <!-- En-tête mobile -->
-                                        <div class="flex justify-between items-start mb-3">
-                                            <div class="flex items-center gap-2">
-                                                <div class="w-10 h-10 bg-gradient-to-r from-[#e94e1a] to-orange-500 rounded-full flex items-center justify-center">
-                                                    <i class="fas fa-bus text-white"></i>
-                                                </div>
-                                                <div>
-                                                    <h3 class="font-bold text-gray-900 leading-tight">{{ $programme->compagnie->slogan ?: ($programme->compagnie->name ?? 'Compagnie') }}</h3>
-                                                    @if ($programme->is_aller_retour)
-                                                        <span class="text-xs text-blue-600 font-semibold block mt-0.5">
-                                                            <i class="fas fa-exchange-alt"></i> Aller-Retour
-                                                        </span>
-                                                    @endif
-                                                    @if ($programme->compagnie)
-                                                        <span class="text-xs text-green-600 font-semibold block mt-0.5">
-                                                            <i class="fas fa-check-circle"></i> Vérifié
-                                                        </span>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                            <div class="text-right">
-                                                <div class="text-lg font-bold text-[#e94e1a]">
-                                                    {{ number_format($programme->montant_billet, 0, ',', ' ') }} FCFA
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Trajet mobile -->
-                                        <div class="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-100">
-                                            <div class="flex items-center justify-between mb-1">
-                                                <div class="text-center flex-1">
-                                                    <div class="font-black text-gray-900 text-base leading-tight">{{ $programme->point_depart }}</div>
-                                                    <div class="text-[10px] text-blue-600 font-bold uppercase mt-1 bg-blue-50/50 px-1.5 py-0.5 border border-blue-100 rounded inline-flex items-start gap-1 max-w-full text-left"><i class="fas fa-map-marker-alt mt-0.5 flex-shrink-0"></i><span class="whitespace-normal leading-tight">{{ $programme->gareDepart->nom_gare ?? 'Gare Départ' }}</span></div>
-                                                </div>
-                                                <div class="mx-3 text-gray-300"><i class="fas fa-long-arrow-alt-right text-lg"></i></div>
-                                                <div class="text-center flex-1">
-                                                    <div class="font-black text-gray-900 text-base leading-tight">{{ $programme->point_arrive }}</div>
-                                                    <div class="text-[10px] text-green-600 font-bold uppercase mt-1 bg-green-50/50 px-1.5 py-0.5 border border-green-100 rounded inline-flex items-start gap-1 max-w-full text-left"><i class="fas fa-map-marker-alt mt-0.5 flex-shrink-0"></i><span class="whitespace-normal leading-tight">{{ $programme->gareArrivee->nom_gare ?? 'Gare Arrivée' }}</span></div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Informations mobile -->
-                                        <div class="grid grid-cols-2 gap-3 mb-4">
-                                            <div class="bg-green-50 p-2 rounded-lg">
-                                                <div class="flex items-center gap-2 mb-1">
-                                                    <i class="fas fa-clock text-green-500"></i>
-                                                    <span class="text-sm font-semibold">Heures</span>
-                                                </div>
-                                                <div class="text-xs">{{ substr($programme->heure_depart, 0, 5) }} - {{ substr($programme->heure_arrive, 0, 5) }}</div>
-                                            </div>
-                                            <div class="bg-purple-50 p-2 rounded-lg">
-                                                <div class="flex items-center gap-2 mb-1">
-                                                    <i class="fas fa-hourglass-half text-purple-500"></i>
-                                                    <span class="text-sm font-semibold">Durée</span>
-                                                </div>
-                                                <div class="text-xs">{{ $programme->durer_parcours }}</div>
-                                            </div>
-                                            <div class="bg-red-50 p-2 rounded-lg">
-                                                <div class="flex items-center gap-2 mb-1">
-                                                    <i class="fas fa-chair text-red-500"></i>
-                                                    <span class="text-sm font-semibold">Statut</span>
-                                                </div>
-                                                <div class="text-xs">
-                                                    @php
-                                                        $statusTexts = ['disponible' => 'Disponible', 'presque_complet' => 'Presque complet', 'complet' => 'Complet'];
-                                                        $totalSeats = $programme->getTotalSeats($searchParams['date_depart']);
-                                                        $reservedSeatsCount = $programme->getPlacesReserveesForDate($searchParams['date_depart']);
-                                                        $statusKey = $programme->getStatutPlacesForDate($searchParams['date_depart']);
-                                                        $isToday = \Carbon\Carbon::parse($searchParams['date_depart'])->isToday();
-                                                    @endphp
-                                                    <span class="{{ $statusKey == 'complet' ? 'text-red-600' : ($statusKey == 'presque_complet' ? 'text-yellow-600' : 'text-green-600') }} font-bold">
-                                                        {{ $totalSeats - $reservedSeatsCount }} restantes
-                                                    </span>
-                                                    <span class="text-[10px] text-gray-500 ml-1">({{ $statusTexts[$statusKey] ?? '' }})</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                         <!-- Actions mobile -->
-                                         <div class="flex gap-2">
-                                             @if ($programme->statut_places != 'complet' && !$isToday)
-                                                 <a href="{{ route('reservation.create', [
-                                                         'point_depart' => $programme->point_depart,
-                                                         'point_arrive' => $programme->point_arrive,
-                                                         'date_depart' => $searchParams['date_depart'],
-                                                         'auto_reserve' => $programme->id
-                                                     ]) }}"
-                                                     class="flex-1 bg-[#e94e1a] text-white text-center py-2 rounded-lg font-bold hover:bg-[#d14316] shadow-sm hover:shadow-md transition-all duration-300 flex items-center justify-center gap-2 text-sm">
-                                                     <i class="fas fa-ticket-alt"></i> <span>Réserver</span>
-                                                 </a>
-                                             @elseif($isToday)
-                                                 <button class="flex-1 bg-gray-400 text-white text-center py-2 rounded-lg font-bold cursor-not-allowed flex items-center justify-center gap-2 text-sm" disabled title="Les réservations doivent être faites au moins 24h à l'avance">
-                                                     <i class="fas fa-clock"></i> <span>Fermé (Jour J)</span>
-                                                 </button>
-                                             @else
-                                                 <button class="flex-1 bg-gray-400 text-white text-center py-2 rounded-lg font-bold cursor-not-allowed flex items-center justify-center gap-2 text-sm" disabled>
-                                                     <i class="fas fa-times-circle"></i> <span>Complet</span>
-                                                 </button>
-                                             @endif
-                                            
-                                            <!-- BOUTON DÉTAILS MOBILE -->
-                                            <button 
-                                                onclick="showVehicleDetails({{ optional($programme->getVehiculeForDate($searchParams['date_depart']))->id ?? 'null' }}, '{{ $searchParams['date_depart'] }}', {{ $programme->id }})"
-                                                class="px-3 bg-white text-gray-600 border border-gray-200 text-center py-2 rounded-lg font-bold hover:bg-gray-50 transition-all duration-300 flex items-center justify-center gap-1.5 vehicle-details-btn text-xs hover:text-gray-900">
-                                                <i class="fas fa-info-circle"></i> Détails
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Version Desktop -->
-                                <div class="hidden md:block">
-                                    <div class="grid grid-cols-12 gap-4 p-5 items-center">
-                                        <!-- Compagnie & Trajet -->
-                                        <div class="col-span-3">
-                                            <div class="flex items-center gap-4">
-                                                <div class="w-14 h-14 bg-gray-50 border border-gray-100 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm overflow-hidden p-1">
-                                                    @if($programme->compagnie->path_logo ?? false)
-                                                        <img src="{{ asset('storage/' . $programme->compagnie->path_logo) }}" class="w-full h-full object-contain" alt="Logo">
-                                                    @else
-                                                        <i class="fas fa-bus text-gray-400 text-2xl"></i>
-                                                    @endif
-                                                </div>
-                                                <div class="flex-1 min-w-0 flex flex-col justify-center">
-                                                    <div class="flex items-center gap-2 mb-2">
-                                                        <h3 class="font-black text-gray-900 text-sm whitespace-normal leading-tight line-clamp-2 max-w-[180px]">{{ $programme->compagnie->sigle ?: ($programme->compagnie->name ?? 'Compagnie') }}</h3>
-                                                        @if ($programme->is_aller_retour)
-                                                            <span class="bg-blue-50 text-blue-600 border border-blue-100 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider"><i class="fas fa-exchange-alt"></i></span>
-                                                        @endif
-                                                        @if ($programme->compagnie)
-                                                            <span class="bg-green-50 text-green-600 border border-green-100 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider"><i class="fas fa-check-circle"></i></span>
-                                                        @endif
-                                                    </div>
-                                                    <div class="flex items-start gap-2 text-xs">
-                                                        <div class="flex flex-col">
-                                                            <div class="font-bold text-gray-800 leading-none">{{ $programme->point_depart }}</div>
-                                                            <div class="text-[9px] text-blue-600 font-bold uppercase mt-1 flex items-start gap-1 max-w-[120px]"><i class="fas fa-map-marker-alt mt-0.5"></i><span class="whitespace-normal leading-tight text-left">{{ $programme->gareDepart->nom_gare ?? 'Gare' }}</span></div>
-                                                        </div>
-                                                        <div class="flex flex-col justify-center translate-y-0.5">
-                                                            <i class="fas fa-long-arrow-alt-right text-gray-300"></i>
-                                                        </div>
-                                                        <div class="flex flex-col">
-                                                            <div class="font-bold text-gray-800 leading-none">{{ $programme->point_arrive }}</div>
-                                                            <div class="text-[9px] text-green-600 font-bold uppercase mt-1 flex items-start gap-1 max-w-[120px]"><i class="fas fa-map-marker-alt mt-0.5"></i><span class="whitespace-normal leading-tight text-left">{{ $programme->gareArrivee->nom_gare ?? 'Gare' }}</span></div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Date & Heure -->
-                                        <div class="col-span-2 flex flex-col items-center justify-center border-l border-gray-100 h-full">
-                                            <div class="flex items-center gap-2 text-xs font-bold text-gray-800 mb-1">
-                                                <i class="fas fa-calendar-day text-gray-400"></i>
-                                                <span>{{ date('d/m/Y', strtotime($searchParams['date_depart'])) }}</span>
-                                            </div>
-                                            <div class="flex items-center gap-2 text-xs font-semibold text-gray-500 bg-gray-50 px-2.5 py-1 rounded-md">
-                                                <i class="fas fa-clock text-gray-400"></i>
-                                                <span>{{ substr($programme->heure_depart, 0, 5) }} &rarr; {{ substr($programme->heure_arrive, 0, 5) }}</span>
-                                            </div>
-                                        </div>
-
-                                        <!-- Durée & Prix -->
-                                        <div class="col-span-2 flex justify-center flex-col items-center border-l border-gray-100 h-full">
-                                            <div class="flex items-center gap-1.5 text-[11px] font-bold text-gray-500 mb-1">
-                                                <i class="fas fa-hourglass-half"></i>
-                                                <span>{{ $programme->durer_parcours }}</span>
-                                            </div>
-                                            <div class="text-lg font-black text-[#e94e1a]">
-                                                {{ number_format($programme->montant_billet, 0, ',', ' ') }} <span class="text-[10px] font-bold text-gray-500">FCFA</span>
-                                            </div>
-                                        </div>
-
-                                        <!-- Statut -->
-                                        <div class="col-span-2 flex justify-center border-l border-gray-100 h-full">
-                                            @php
-                                                $totalSeats = $programme->getTotalSeats($searchParams['date_depart']);
-                                                $reservedSeatsCount = $programme->getPlacesReserveesForDate($searchParams['date_depart']);
-                                                $statusKey = $programme->getStatutPlacesForDate($searchParams['date_depart']);
-                                            @endphp
-                                            <div class="flex flex-col items-center">
-                                                <div class="flex items-center gap-2 bg-gray-50 px-3 py-1 rounded-lg border border-gray-100 mb-1.5">
-                                                    <div class="w-2.5 h-2.5 rounded-full {{ $statusKey == 'disponible' ? 'bg-green-500 animate-pulse' : ($statusKey == 'presque_complet' ? 'bg-yellow-500' : 'bg-red-500') }}"></div>
-                                                    <span class="font-black text-sm {{ $statusKey == 'disponible' ? 'text-green-600' : ($statusKey == 'presque_complet' ? 'text-yellow-600' : 'text-red-600') }}">
-                                                        {{ $totalSeats - $reservedSeatsCount }} <span class="text-[10px] font-bold text-gray-500 uppercase">rest.</span>
-                                                    </span>
-                                                </div>
-                                                <span class="text-[9px] uppercase font-black tracking-widest text-gray-400">
-                                                    {{ $statusTexts[$statusKey] ?? '' }}
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        <!-- Actions -->
-                                        <div class="col-span-3 flex items-center justify-end gap-2 text-right">
-                                            <button
-                                                onclick="showVehicleDetails({{ optional($programme->getVehiculeForDate($searchParams['date_depart']))->id ?? 'null' }}, '{{ $searchParams['date_depart'] }}', {{ $programme->id }})"
-                                                class="px-4 py-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-gray-900 border border-gray-200 transition-colors flex items-center justify-center font-bold text-xs gap-2" title="Détails du véhicule">
-                                                <i class="fas fa-info-circle text-base"></i> Détails
-                                            </button>
-
-                                            @if($statusKey != 'complet' && !$isToday)
-                                                <a href="{{ route('reservation.create', [
-                                                        'point_depart' => $programme->point_depart,
-                                                        'point_arrive' => $programme->point_arrive,
-                                                        'date_depart' => $searchParams['date_depart'],
-                                                        'auto_reserve' => $programme->id
-                                                    ]) }}"
-                                                    class="flex-1 max-w-[140px] bg-[#e94e1a] text-white px-4 py-2.5 rounded-xl font-bold hover:bg-[#d14316] shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2 text-sm">
-                                                    <i class="fas fa-ticket-alt"></i> Réserver
-                                                </a>
-                                            @elseif($isToday)
-                                                <button class="flex-1 max-w-[140px] bg-gray-100 text-gray-400 px-4 py-2.5 rounded-xl font-bold cursor-not-allowed justify-center flex items-center gap-2 text-sm" disabled title="Les réservations doivent être faites au moins 24h à l'avance">
-                                                    <i class="fas fa-clock text-gray-300"></i> Jour J
-                                                </button>
-                                            @else
-                                                <button class="flex-1 max-w-[140px] bg-gray-100 text-gray-400 px-4 py-2.5 rounded-xl font-bold cursor-not-allowed justify-center flex items-center gap-2 text-sm" disabled>
-                                                    <i class="fas fa-times-circle text-gray-300"></i> Complet
-                                                </button>
-                                            @endif
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
+            <!-- Titre des sections -->
+            <div class="flex flex-col sm:flex-row gap-4 mb-8">
+                <div class="flex-1 py-4 px-6 rounded-2xl font-black text-lg shadow-sm bg-white text-[#e94e1a] flex items-center justify-center gap-3 border-2 border-orange-100">
+                    <i class="fas fa-arrow-right"></i>
+                    <span>TRAJETS ALLER</span>
                 </div>
+                @if($isAllerRetour)
+                <div class="flex-1 py-4 px-6 rounded-2xl font-black text-lg shadow-sm bg-white text-blue-600 flex items-center justify-center gap-3 border-2 border-blue-100">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>TRAJETS RETOUR</span>
+                </div>
+                @endif
+            </div>
 
-                <!-- Pagination -->
-                @if ($programmes->hasPages())
-                    <div class="w-full bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
-                        <div class="w-full flex justify-center">
-                            <div class="w-full pagination-wrapper">
-                                {{ $programmes->links() }}
+            <!-- Résultats Aller -->
+            <div id="section-aller" class="trip-section">
+                @if ($programmes_aller->count() > 0)
+                    <div class="w-full mb-8">
+                        @if($isAllerRetour)
+                        <div class="inline-flex items-center gap-2 bg-orange-100 text-[#e94e1a] px-4 py-2 rounded-lg font-black text-xs uppercase tracking-widest mb-4">
+                            <i class="fas fa-plane-departure"></i> Sélectionner votre trajet aller : {{ $searchParams['point_depart'] }} &rarr; {{ $searchParams['point_arrive'] }}
+                        </div>
+                        @else
+                         <div class="inline-flex items-center gap-2 bg-orange-100 text-[#e94e1a] px-4 py-2 rounded-lg font-black text-xs uppercase tracking-widest mb-4">
+                            <i class="fas fa-bus"></i> Voyages disponibles
+                        </div>
+                        @endif
+
+                        <div class="hidden md:block mb-4 md:px-2">
+                            <div class="grid grid-cols-12 gap-4 px-3 py-2 text-xs font-black uppercase tracking-widest text-gray-400">
+                                <div class="col-span-3 pl-2">Compagnie & Trajet</div>
+                                <div class="col-span-2 text-center">Date & Heure</div>
+                                <div class="col-span-2 text-center">Tarif</div>
+                                <div class="col-span-2 text-center">Disponibilité</div>
+                                <div class="col-span-3 text-right pr-2">Action</div>
                             </div>
                         </div>
+
+                        <div class="space-y-4">
+                            @foreach ($programmes_aller->groupBy('compagnie_id') as $compId => $group)
+                                @php $programme = $group->first(); @endphp
+                                <div class="relative">
+                                    <div class="absolute -left-2 top-4 bottom-4 w-1 bg-[#e94e1a] rounded-full z-10 hidden md:block"></div>
+                                    @include('home.programmes.partials.card', ['programme' => $programme, 'searchDate' => $searchParams['date_depart'], 'is_aller' => true])
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @else
+                    <div class="w-full bg-white rounded-2xl shadow-lg p-12 text-center border border-gray-100 mb-8">
+                        <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-route text-2xl text-gray-300"></i>
+                        </div>
+                        <h3 class="font-bold text-gray-900">Aucun départ trouvé pour l'aller</h3>
+                        <p class="text-gray-500 text-sm mt-1">Désolé, aucun voyage trouvé de {{ $searchParams['point_depart'] }}.</p>
                     </div>
                 @endif
-            @else
-                <!-- Aucun résultat -->
-                <div class="w-full bg-white rounded-xl sm:rounded-2xl shadow-lg p-6 sm:p-8 lg:p-12 text-center border border-gray-100">
-                    <div class="w-full max-w-4xl mx-auto">
-                        <div class="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-gradient-to-br from-orange-100 to-green-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
-                            <i class="fas fa-route text-2xl sm:text-3xl lg:text-4xl text-[#e94e1a]"></i>
+            </div>
+
+            <!-- Résultats Retour -->
+            @if($isAllerRetour)
+            <div id="section-retour" class="trip-section">
+                @if ($programmes_retour->count() > 0)
+                    <div class="w-full mb-8">
+                        <div class="inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-lg font-black text-xs uppercase tracking-widest mb-4">
+                            <i class="fas fa-plane-arrival"></i> Sélectionner votre trajet retour : {{ $searchParams['point_arrive'] }} &rarr; {{ $searchParams['point_depart'] }}
                         </div>
-                        <h3 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">Aucun programme trouvé</h3>
-                        <p class="text-gray-600 mb-6 sm:mb-8 leading-relaxed text-sm sm:text-base max-w-2xl mx-auto">
-                            Désolé, nous n'avons trouvé aucun programme correspondant à votre recherche pour la date du
-                            {{ date('d/m/Y', strtotime($searchParams['date_depart'])) }}.
-                        </p>
-                        <div class="w-full flex flex-col sm:flex-row gap-3 justify-center">
-                            <a href="{{ url('/') }}#search-form" class="bg-[#e94e1a] text-white px-4 sm:px-6 py-3 rounded-lg sm:rounded-xl font-bold hover:bg-orange-600 transition-all duration-300 transform hover:-translate-y-0.5 shadow-md flex items-center justify-center gap-2 text-sm sm:text-base">
-                                <i class="fas fa-search"></i> Modifier la recherche
-                            </a>
+
+                        <div class="hidden md:block mb-4 md:px-2">
+                            <div class="grid grid-cols-12 gap-4 px-3 py-2 text-xs font-black uppercase tracking-widest text-gray-400">
+                                <div class="col-span-3 pl-2">Compagnie & Trajet</div>
+                                <div class="col-span-2 text-center">Date & Heure</div>
+                                <div class="col-span-2 text-center">Tarif</div>
+                                <div class="col-span-2 text-center">Disponibilité</div>
+                                <div class="col-span-3 text-right pr-2">Action</div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            @foreach ($programmes_retour->groupBy('compagnie_id') as $compId => $group)
+                                @php $programme = $group->first(); @endphp
+                                <div class="relative">
+                                    <div class="absolute -left-2 top-4 bottom-4 w-1 bg-blue-500 rounded-full z-10 hidden md:block"></div>
+                                    @include('home.programmes.partials.card', ['programme' => $programme, 'searchDate' => $searchParams['date_retour'], 'is_retour' => true])
+                                </div>
+                            @endforeach
                         </div>
                     </div>
-                </div>
+                @else
+                    <div class="w-full bg-white rounded-2xl shadow-lg p-12 text-center border border-gray-100 mb-8">
+                        <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-route text-2xl text-gray-300"></i>
+                        </div>
+                        <h3 class="font-bold text-gray-900">Aucun départ trouvé pour le retour</h3>
+                        <p class="text-gray-500 text-sm mt-1">Désolé, aucun voyage trouvé de {{ $searchParams['point_arrive'] }}.</p>
+                    </div>
+                @endif
+            </div>
             @endif
+
+
         </div>
     </div>
 
@@ -407,13 +247,36 @@
 
                 const vehicle = data.vehicule;
                 const reservedSeats = (data.reservedSeats || []).map(seat => parseInt(seat));
+                const otherHours = data.otherHours || [];
                 const formattedDate = new Date(dateVoyage).toLocaleDateString('fr-FR');
+                
                 let vehicleTitle = 'Détails du véhicule';
                 if(vehicle.marque && vehicle.marque !== 'Bus') {
                      vehicleTitle = `${vehicle.marque} ${vehicle.modele ?? ''}`.trim();
                 }
 
                 const visualizationHTML = generatePlacesVisualization(vehicle, reservedSeats);
+
+                // Génération HTML pour les horaires
+                let hoursHTML = `
+                    <div class="flex flex-wrap gap-2 mt-4 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                        <p class="w-full text-[10px] font-black uppercase text-gray-400 mb-1 tracking-widest"><i class="fas fa-clock mr-1"></i> Autres Horaires Disponibles</p>
+                `;
+                
+                if (otherHours.length > 0) {
+                    otherHours.forEach(h => {
+                        const isActive = h.id == programId;
+                        hoursHTML += `
+                            <button onclick="window.updateModalContent(${h.vehicule_id}, '${dateVoyage}', ${h.id})" 
+                                class="px-3 py-1.5 rounded-lg text-sm font-bold transition-all border-2 ${isActive ? 'bg-[#e94e1a] text-white border-[#e94e1a] shadow-md scale-105' : 'bg-white text-gray-600 border-gray-100 hover:border-orange-200'}">
+                                ${h.heure}
+                            </button>
+                        `;
+                    });
+                } else {
+                    hoursHTML += `<p class="text-xs text-gray-500 italic">Aucun autre horaire</p>`;
+                }
+                hoursHTML += '</div>';
 
                 Swal.update({
                     title: `
@@ -447,19 +310,12 @@
                                         <p class="text-base font-bold text-gray-800 capitalize">${formattedDate}</p>
                                     </div>
                                 </div>
-                                <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-gray-200">
-                                    <label for="modal-date-picker" class="text-xs font-semibold text-gray-600">Changer :</label>
-                                    <input type="date" id="modal-date-picker" value="${dateVoyage}" 
-                                        class="border-none focus:ring-0 text-gray-800 font-bold bg-transparent p-0 text-sm cursor-pointer"
-                                        onchange="window.updateModalContent(${safeVehicleId}, this.value, ${programId})"
-                                    >
-                                </div>
+                               
                             </div>
                             
+                            ${hoursHTML}
+
                             <div class="flex gap-4 mt-3 pt-3 border-t border-blue-100/50 text-sm">
-                                ${!vehicle.is_default && vehicle.immatriculation !== 'N/A' ? `
-                               
-                                ` : ''}
                                 <div class="flex items-center gap-2">
                                     <span class="text-gray-500">Places :</span>
                                     <span class="font-bold text-gray-800">
@@ -473,7 +329,7 @@
                         <div class="p-4 bg-white min-h-[300px]">
                             <h3 class="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
                                 <span class="w-1 h-5 bg-[#e94e1a] rounded-full block"></span>
-                                Disposition
+                                Occupation du véhicule (${formattedDate})
                             </h3>
                             ${visualizationHTML}
                         </div>

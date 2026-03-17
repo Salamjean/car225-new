@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class CaisseController extends Controller
 {
@@ -43,17 +44,16 @@ class CaisseController extends Controller
         return view('compagnie.caisse.create', compact('gares'));
     }
 
-    /**
-     * Store a newly created cashier
-     */
     public function store(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:191',
             'prenom' => 'required|string|max:191',
             'email' => 'required|email|unique:caisses,email',
-            'contact' => 'required|string|max:191',
-            'cas_urgence' => 'nullable|string|max:191',
+            'contact' => 'required|string|max:15',
+            'cas_urgence' => 'required|string|max:15',
+            'nom_urgence' => 'required|string|max:255',
+            'lien_parente_urgence' => 'required|string|max:100',
             'commune' => 'nullable|string|max:191',
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'gare_id' => 'required|exists:gares,id',
@@ -61,51 +61,71 @@ class CaisseController extends Controller
 
         $compagnie = Auth::guard('compagnie')->user();
 
-        // Handle profile picture upload
-        $profilePicturePath = null;
-        if ($request->hasFile('profile_picture')) {
-            $profilePicturePath = $request->file('profile_picture')->store('caisse_profiles', 'public');
+        // Check if phone numbers are same
+        if ($request->contact === $request->cas_urgence) {
+            return back()->withErrors(['cas_urgence' => 'Le contact d\'urgence doit être différent du contact principal.'])->withInput();
         }
 
-        // Create caisse with temporary password (will be changed after OTP verification)
-        $caisse = Caisse::create([
-            'name' => $request->name,
-            'prenom' => $request->prenom,
-            'email' => $request->email,
-            'contact' => $request->contact,
-            'cas_urgence' => $request->cas_urgence,
-            'commune' => $request->commune,
-            'password' => Hash::make('temporary_password_' . time()),
-            'profile_picture' => $profilePicturePath,
-            'compagnie_id' => $compagnie->id,
-            'gare_id' => $request->gare_id,
-        ]);
-
-        // Generate and store OTP
-        $otpCode = $this->otpService->generateCode();
-        $this->otpService->storeOtp($caisse->email, $otpCode);
-
-        // Send email with OTP
+        \Illuminate\Support\Facades\DB::beginTransaction();
         try {
+            // Handle profile picture upload
+            $profilePicturePath = null;
+            if ($request->hasFile('profile_picture')) {
+                $profilePicturePath = $request->file('profile_picture')->store('caisse_profiles', 'public');
+            }
+
+            // Create caisse
+            $caisse = Caisse::create([
+                'name' => $request->name,
+                'prenom' => $request->prenom,
+                'email' => $request->email,
+                'contact' => $this->formatPhoneNumber($request->contact),
+                'cas_urgence' => $this->formatPhoneNumber($request->cas_urgence),
+                'nom_urgence' => $request->nom_urgence,
+                'lien_parente_urgence' => $request->lien_parente_urgence,
+                'commune' => $request->commune,
+                'password' => Hash::make(Str::random(16)),
+                'profile_picture' => $profilePicturePath,
+                'compagnie_id' => $compagnie->id,
+                'gare_id' => $request->gare_id,
+            ]);
+
+            // Generate and store OTP
+            $otpCode = $this->otpService->generateCode();
+            $this->otpService->storeOtp($caisse->email, $otpCode);
+
+            // Send email with OTP
             Mail::to($caisse->email)->send(
                 new CaisseCreatedMail(
                     [
                         'name' => $caisse->name,
                         'prenom' => $caisse->prenom,
                         'email' => $caisse->email,
+                        'code_id' => $caisse->code_id,
                     ],
                     $otpCode,
                     $compagnie->name
                 )
             );
 
+            \Illuminate\Support\Facades\DB::commit();
+
             return redirect()->route('compagnie.caisse.index')
                 ->with('success', 'Caissière créée avec succès. Un email avec le code OTP a été envoyé à ' . $caisse->email);
+
         } catch (\Exception $e) {
-            // If email fails, delete the caisse and show error
-            $caisse->delete();
-            return back()->withInput()->with('error', 'Erreur lors de l\'envoi de l\'email: ' . $e->getMessage());
+            \Illuminate\Support\Facades\DB::rollBack();
+            return back()->withInput()->with('error', 'Erreur lors de la création : ' . $e->getMessage());
         }
+    }
+
+    private function formatPhoneNumber($number)
+    {
+        $number = preg_replace('/[^0-9]/', '', $number);
+        if (strlen($number) === 10 && !str_starts_with($number, '225')) {
+            return '225' . $number;
+        }
+        return $number;
     }
 
 
@@ -156,15 +176,20 @@ class CaisseController extends Controller
             'name' => 'required|string|max:191',
             'prenom' => 'required|string|max:191',
             'email' => 'required|email|max:191|unique:caisses,email,' . $caisse->id,
-            'contact' => 'required|string|max:191|unique:caisses,contact,' . $caisse->id,
-            'cas_urgence' => 'nullable|string|max:191',
+            'contact' => 'required|string|max:15|unique:caisses,contact,' . $caisse->id,
+            'cas_urgence' => 'nullable|string|max:15',
+            'nom_urgence' => 'nullable|string|max:255',
+            'lien_parente_urgence' => 'nullable|string|max:100',
             'commune' => 'nullable|string|max:191',
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'gare_id' => 'required|exists:gares,id',
         ]);
 
         try {
-            $data = $request->only(['name', 'prenom', 'email', 'contact', 'cas_urgence', 'commune', 'gare_id']);
+            $data = $request->only(['name', 'prenom', 'email', 'contact', 'cas_urgence', 'nom_urgence', 'lien_parente_urgence', 'commune', 'gare_id']);
+            
+            if (isset($data['contact'])) $data['contact'] = $this->formatPhoneNumber($data['contact']);
+            if (isset($data['cas_urgence'])) $data['cas_urgence'] = $this->formatPhoneNumber($data['cas_urgence']);
 
             if ($request->hasFile('profile_picture')) {
                 if ($caisse->profile_picture) {

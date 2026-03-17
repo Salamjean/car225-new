@@ -21,6 +21,8 @@ class Agent extends Authenticatable
         'profile_picture',
         'commune', 
         'cas_urgence', 
+        'nom_urgence',
+        'lien_parente_urgence',
         'compagnie_id',
         'gare_id',
         'archived_at',

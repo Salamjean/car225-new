@@ -24,6 +24,8 @@ class Caisse extends Authenticatable
         'email',
         'contact',
         'cas_urgence',
+        'nom_urgence',
+        'lien_parente_urgence',
         'commune',
         'password',
         'profile_picture',

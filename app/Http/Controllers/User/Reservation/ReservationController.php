@@ -1094,11 +1094,25 @@ $dateAller = $request->date_voyage;
                                 'gare_depart_id' => $gareArriveeId, // INVERSÉ
                                 'gare_arrivee_id' => $gareDepartId, // INVERSÉ
                             ];
+
+                            // Générer un vrai QR Code pour le retour également
+                            try {
+                                $qrCodeDataResult = $this->generateAndSaveQRCode(
+                                    $reservationDataRetour['reference'],
+                                    0, // Temporaire
+                                    $dateRetour instanceof \Carbon\Carbon ? $dateRetour->format('Y-m-d') : $dateRetour,
+                                    Auth::id()
+                                );
+                                $reservationDataRetour['qr_code'] = $qrCodeDataResult['base64'];
+                                $reservationDataRetour['qr_code_path'] = $qrCodeDataResult['path'];
+                            } catch (\Exception $e) {
+                                Log::error('Erreur QR Retour Wallet: ' . $e->getMessage());
+                            }
                             
                             $resRetour = Reservation::create($reservationDataRetour);
                             $createdReservations[] = $resRetour;
                         } 
-                        // 2. Cas Fallback (Assignation Auto) - LE ELSE EST ICI, CORRECTEMENT PLACÉ
+                        // 2. Cas Fallback (Assignation Auto)
                         else {
                             $seatNumberAller = $passager['seat_number'];
                             
@@ -1143,9 +1157,23 @@ $dateAller = $request->date_voyage;
                                     'reference' => $transactionId . '-RET-' . $seatNumberAller,
                                     'qr_code' => Str::random(32),
                                     'qr_code_path' => 'qrcodes/' . $transactionId . '-RET-' . $seatNumberAller . '.png',
-                                    'gare_depart_id' => $request->gare_arrivee_id,
-                                    'gare_arrivee_id' => $request->gare_depart_id,
+                                    'gare_depart_id' => $gareArriveeId,
+                                    'gare_arrivee_id' => $gareDepartId,
                                 ];
+
+                                // Générer le QR code pour le fallback aussi
+                                try {
+                                    $qrCodeDataResult = $this->generateAndSaveQRCode(
+                                        $reservationDataRetour['reference'],
+                                        0,
+                                        $dateRetour instanceof \Carbon\Carbon ? $dateRetour->format('Y-m-d') : $dateRetour,
+                                        Auth::id()
+                                    );
+                                    $reservationDataRetour['qr_code'] = $qrCodeDataResult['base64'];
+                                    $reservationDataRetour['qr_code_path'] = $qrCodeDataResult['path'];
+                                } catch (\Exception $e) {
+                                    Log::error('Erreur QR Retour Wallet (Fallback): ' . $e->getMessage());
+                                }
                                 
                                 $resRetour = Reservation::create($reservationDataRetour);
                                 $createdReservations[] = $resRetour;
@@ -1283,12 +1311,12 @@ $dateAller = $request->date_voyage;
                          // Envoyer l'email au passager de cette réservation
                          $this->sendReservationEmail(
                              $reservation,
-                             $programme,
+                             $reservation->programme ?? $programme,
                              $qrCodeBase64,
                              $reservation->passager_email,
                              $reservation->passager_prenom . ' ' . $reservation->passager_nom,
                              $reservation->seat_number,
-                             ($reservation->is_aller_retour) ? 'ALLER-RETOUR' : 'ALLER SIMPLE'
+                             ($reservation->is_aller_retour) ? ($reservation->programme_id == $programme->id ? 'ALLER (AR)' : 'RETOUR') : 'ALLER SIMPLE'
                          );
                          
                          Log::info('Email envoyé avec succès pour réservation wallet:', [

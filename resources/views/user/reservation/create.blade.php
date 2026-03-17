@@ -98,12 +98,30 @@
         {{-- ============================================ --}}
         <div class="hero-search rounded-b-3xl sm:rounded-b-[2.5rem] shadow-2xl px-4 sm:px-6 lg:px-8 pt-6 pb-10 sm:pt-8 sm:pb-14 relative z-10">
             <div class="relative z-20 max-w-6xl mx-auto">
-                {{-- Title --}}
-                <div class="mb-6 sm:mb-8 text-center sm:text-left">
-                    <h1 class="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight">
-                        Où allez-vous <span class="text-[#e94f1b]">?</span>
-                    </h1>
-                    <p class="text-blue-200/70 text-sm sm:text-base mt-1 font-medium">Trouvez le meilleur trajet au meilleur prix</p>
+                {{-- Title & Wallet --}}
+                <div class="flex flex-col md:flex-row justify-between items-center md:items-start mb-6 sm:mb-8 gap-4">
+                    <div class="text-center md:text-left">
+                        <h1 class="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight">
+                            Où allez-vous <span class="text-[#e94f1b]">?</span>
+                        </h1>
+                        <p class="text-blue-200/70 text-sm sm:text-base mt-1 font-medium">Trouvez le meilleur trajet au meilleur prix</p>
+                    </div>
+
+                    {{-- Wallet Balance --}}
+                    <div class="flex items-center gap-4 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl px-6 py-4 shadow-2xl transition-all hover:bg-white/15 cursor-default group">
+                        <div class="w-12 h-12 bg-gradient-to-br from-[#e94f1b] to-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/30 group-hover:scale-110 transition-transform duration-300">
+                            <i class="fas fa-wallet text-white text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-black text-blue-100/70 uppercase tracking-[0.2em] mb-0.5">Mon Solde CarPay</p>
+                            <div class="flex items-baseline gap-1.5">
+                                <span class="text-2xl font-black text-white leading-none">
+                                    {{ number_format(auth()->user()->solde ?? 0, 0, ',', ' ') }}
+                                </span>
+                                <span class="text-xs font-bold text-[#e94f1b]">FCFA</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {{-- Search Form --}}
@@ -3003,6 +3021,7 @@ function onAllerRetourChoiceChange() {
             const placesParRanger = placesGauche + placesDroite;
             // Utiliser capacite_total ou nombre_place selon ce qui est disponible
             const totalPlaces = parseInt(program.capacity || vehicleDetails.capacite_total || vehicleDetails.nombre_place || 70);
+            window.currentTotalPlacesAller = totalPlaces;
             const nombreRanger = Math.ceil(totalPlaces / placesParRanger);
             
             // On ne montre plus les dÃ©tails du vÃ©hicule selon la demande utilisateur
@@ -3289,7 +3308,7 @@ function onAllerRetourChoiceChange() {
             selectedSeats = [];
             
             // 2. Trouver toutes les places disponibles
-            const totalPlaces = parseInt(vehicleDetails.capacite_total || vehicleDetails.nombre_place || 70);
+            const totalPlaces = window.currentTotalPlacesAller || parseInt(vehicleDetails.capacite_total || vehicleDetails.nombre_place || 70);
             const availableSeats = [];
             
             for (let i = 1; i <= totalPlaces; i++) {
@@ -3595,6 +3614,7 @@ function generateSeatSelectionViewRetour(program) {
     const placesParRanger = placesGauche + placesDroite;
     // Utiliser capacite_total ou nombre_place selon ce qui est disponible
     const totalPlaces = parseInt(program.capacity || vehicleDetailsRetour.capacite_total || vehicleDetailsRetour.nombre_place || 70);
+    window.currentTotalPlacesRetour = totalPlaces;
     const nombreRanger = Math.ceil(totalPlaces / placesParRanger);
     
     // On ne montre plus les dÃ©tails du vÃ©hicule
@@ -3830,7 +3850,7 @@ function updateSelectedSeatsCountRetour() {
 function autoAssignSeatsRetour() {
     selectedSeatsRetour = [];
     
-    const totalPlaces = parseInt(vehicleDetailsRetour.capacite_total || vehicleDetailsRetour.nombre_place || 70);
+    const totalPlaces = window.currentTotalPlacesRetour || parseInt(vehicleDetailsRetour.capacite_total || vehicleDetailsRetour.nombre_place || 70);
     const availableSeats = [];
     
     for (let i = 1; i <= totalPlaces; i++) {
@@ -4102,7 +4122,7 @@ function proceedToPassengerInfoFromRetour() {
         // ============================================
         // FONCTION 11: Confirmer la rÃ©servation
         // ============================================
-    async function confirmReservation() {
+        async function confirmReservation() {
             const passengers = [];
             const sortedSeats = [...selectedSeats].sort((a, b) => a - b);
             let isValid = true;
@@ -4134,15 +4154,17 @@ function proceedToPassengerInfoFromRetour() {
             });
 
             if (!isValid) {
-                Swal.fire({ icon: 'warning', title: 'Informations manquantes', text: 'Veuillez remplir toutes les informations pour chaque passager.', confirmButtonColor: '#e94f1b' });
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Informations manquantes',
+                    text: 'Veuillez remplir toutes les informations pour chaque passager.',
+                    confirmButtonColor: '#e94f1b'
+                });
                 return;
             }
 
-            // --- CORRECTION DATE ICI ---
-            // 1. DÃ©finition de la variable
             let dateVoyageFinal = window.outboundDate || window.currentReservationDate;
 
-            // 2. Tentative de rÃ©cupÃ©ration depuis le HTML si vide
             if (!dateVoyageFinal && document.getElementById('reservationProgramInfo')) {
                 const text = document.getElementById('reservationProgramInfo').innerText;
                 const dateMatch = text.match(/\d{2}\/\d{2}\/\d{4}/);
@@ -4152,162 +4174,150 @@ function proceedToPassengerInfoFromRetour() {
                 }
             }
 
-            console.log("Date finale pour réservation:", dateVoyageFinal);
-            console.log("DEBUG VARIABLES:", {
-                'window.outboundDate': window.outboundDate,
-                'window.currentReservationDate': window.currentReservationDate,
-                'determinedDate': dateVoyageFinal
-            });
-
             if (!dateVoyageFinal) {
-                Swal.fire({ icon: 'error', title: 'Erreur', text: 'Impossible de dÃ©terminer la date du voyage.', confirmButtonColor: '#e94f1b' });
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erreur',
+                    text: 'Impossible de déterminer la date du voyage.',
+                    confirmButtonColor: '#e94f1b'
+                });
                 return;
             }
 
-            Swal.fire({
-                title: 'Confirmer la réservation',
+            let prixUnitaireCalc = 0;
+            if (currentSelectedProgram && currentSelectedProgram.montant_billet) {
+                prixUnitaireCalc = parseInt(currentSelectedProgram.montant_billet);
+            } else if (window.currentProgramPrice) {
+                prixUnitaireCalc = window.currentProgramPrice;
+                if(window.userChoseAllerRetour) {
+                    prixUnitaireCalc = prixUnitaireCalc / 2;
+                }
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erreur',
+                    text: 'Erreur technique: Prix introuvable. Veuillez rafraîchir la page.'
+                });
+                return;
+            }
+
+            const multiplier = window.userChoseAllerRetour ? 2 : 1;
+            const baseTotal = prixUnitaireCalc * parseInt(selectedNumberOfPlaces) * multiplier;
+            const extraCostAller = window.seatSelectionExtraCost || 0;
+            const extraCostRetour = window.seatSelectionExtraCostRetour || 0;
+            const totalExtraCost = extraCostAller + extraCostRetour;
+            const montantTotal = baseTotal + totalExtraCost;
+            
+            const userSolde = {{ auth()->check() ? (auth()->user()->solde ?? 0) : 0 }};
+            let paymentMethod = 'cinetpay';
+
+            let extraCostHtml = '';
+            if(totalExtraCost > 0) {
+                extraCostHtml = `<p class="text-sm text-gray-500 mb-2">Inclut <span class="font-semibold text-orange-500">${new Intl.NumberFormat('fr-FR').format(totalExtraCost)} FCFA</span> de frais de choix de sièges.</p>`;
+            }
+
+            const choiceResult = await Swal.fire({
+                title: 'Mode de paiement',
                 html: `
-                    <div class="text-left">
-                        <p class="mb-3">Voulez-vous confirmer la réservation de <strong>${selectedNumberOfPlaces} place(s)</strong> ?</p>
-                        <div class="bg-gray-50 p-4 rounded-lg mb-4">
-                            <!-- CORRECTION ICI : utilisation de dateVoyageFinal au lieu de dateVoyage -->
-                            <p class="font-semibold mb-2">Date Aller : <span class="text-blue-600">${new Date(dateVoyageFinal).toLocaleDateString('fr-FR')}</span></p>
-                            <p class="font-semibold mb-2">Places Aller : <span class="text-[#e94f1b]">${sortedSeats.join(', ')}</span></p>
-                            ${window.userChoseAllerRetour && selectedSeatsRetour.length > 0 ? `
-                            <hr class="my-2 border-gray-200">
-                            <p class="font-semibold mb-2">Date Retour : <span class="text-blue-600">${new Date(window.selectedReturnDate).toLocaleDateString('fr-FR')}</span></p>
-                            <p class="font-semibold mb-2">Places Retour : <span class="text-[#e94f1b]">${[...selectedSeatsRetour].sort((a,b) => a-b).join(', ')}</span></p>
-                            ` : ''}
+                    <div class="flex flex-col gap-4 text-center">
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <p class="text-gray-600 text-sm mb-1">Total à payer</p>
+                            ${extraCostHtml}
+                            <p class="text-3xl font-black text-[#e94f1b]">${new Intl.NumberFormat('fr-FR').format(montantTotal)} FCFA</p>
                         </div>
+                        <div class="text-sm text-gray-500">Votre solde: <span class="font-bold">${new Intl.NumberFormat('fr-FR').format(userSolde)} FCFA</span></div>
                     </div>
                 `,
-                icon: 'question',
+                icon: 'info',
                 showCancelButton: true,
+                showDenyButton: true,
+                confirmButtonText: `<i class="fas fa-wallet mr-2"></i>Mon Compte Solde`,
+                denyButtonText: `<i class="fas fa-mobile-alt mr-2"></i>Mobile Money (Wave)`,
                 confirmButtonColor: '#e94f1b',
-                confirmButtonText: 'Oui, continuer',
-                cancelButtonText: 'Non'
-            }).then(async (result) => {
-                if (result.isConfirmed) {
-                    
-                    let prixUnitaireCalc = 0;
-
-                    if (currentSelectedProgram && currentSelectedProgram.montant_billet) {
-                        prixUnitaireCalc = parseInt(currentSelectedProgram.montant_billet);
-                    } 
-                    else if (window.currentProgramPrice) {
-                        prixUnitaireCalc = window.currentProgramPrice;
-                        if(window.userChoseAllerRetour) {
-                             prixUnitaireCalc = prixUnitaireCalc / 2;
-                        }
-                    } else {
-                        Swal.fire({icon: 'error', title: 'Erreur', text: 'Erreur technique: Prix introuvable. Veuillez rafraÃ®chir la page.'});
-                        return;
-                    }
-
-                    const multiplier = window.userChoseAllerRetour ? 2 : 1;
-                    const baseTotal = prixUnitaireCalc * parseInt(selectedNumberOfPlaces) * multiplier;
-                    const extraCostAller = window.seatSelectionExtraCost || 0;
-                    const extraCostRetour = window.seatSelectionExtraCostRetour || 0;
-                    const totalExtraCost = extraCostAller + extraCostRetour;
-                    const montantTotal = baseTotal + totalExtraCost;
-                    
-                    const userSolde = {{ auth()->check() ? (auth()->user()->solde ?? 0) : 0 }};
-                    let paymentMethod = 'cinetpay';
-
-                    let extraCostHtml = '';
-                    if(totalExtraCost > 0) {
-                        extraCostHtml = `<p class="text-sm text-gray-500 mb-2">Inclut <span class="font-semibold text-orange-500">${new Intl.NumberFormat('fr-FR').format(totalExtraCost)} FCFA</span> de frais de choix de sièges.</p>`;
-                    }
-
-                    const choiceResult = await Swal.fire({
-                         title: 'Mode de paiement',
-                         html: `
-                             <div class="flex flex-col gap-4 text-center">
-                                 <div class="bg-gray-50 p-3 rounded-lg">
-                                     <p class="text-gray-600 text-sm mb-1">Total à payer</p>
-                                     ${extraCostHtml}
-                                     <p class="text-3xl font-black text-[#e94f1b]">${new Intl.NumberFormat('fr-FR').format(montantTotal)} FCFA</p>
-                                 </div>
-                                 <div class="text-sm text-gray-500">Votre solde: <span class="font-bold">${new Intl.NumberFormat('fr-FR').format(userSolde)} FCFA</span></div>
-                             </div>
-                         `,
-                         icon: 'info',
-                         showCancelButton: true,
-                         showDenyButton: true,
-                         confirmButtonText: `<i class="fas fa-wallet mr-2"></i>Mon Compte Solde`,
-                         denyButtonText: `<i class="fas fa-mobile-alt mr-2"></i>Mobile Money (Wave)`,
-                         confirmButtonColor: '#e94f1b',
-                         denyButtonColor: '#2dce89',
-                         cancelButtonText: 'Annuler',
-                         didOpen: () => {
-                             if (userSolde < montantTotal) {
-                                  const confirmBtn = Swal.getConfirmButton();
-                                  confirmBtn.disabled = true;
-                                  confirmBtn.style.opacity = 0.5;
-                                  confirmBtn.innerHTML += '<br><span class="text-xs font-normal">(Solde insuffisant)</span>';
-                             }
-                         }
-                    });
-
-                    if (choiceResult.isConfirmed) paymentMethod = 'wallet';
-                    else if (choiceResult.isDenied) paymentMethod = 'cinetpay';
-                    else return;
-
-                    Swal.fire({ title: 'Traitement...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-                  try {
-        const response = await fetch("{{ route('reservation.store') }}", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            body: JSON.stringify({
-                programme_id: currentProgramId,
-                seats: sortedSeats,
-                seats_retour: selectedSeatsRetour.length > 0 ? selectedSeatsRetour.sort((a, b) => a - b) : [],
-                nombre_places: selectedNumberOfPlaces,
-                date_voyage: dateVoyageFinal,
-                is_aller_retour: window.userChoseAllerRetour,
-                date_retour: window.selectedReturnDate,
-                passagers: passengers,
-                payment_method: paymentMethod,
-                frais_choix_siege: totalExtraCost,
-                // CORRECTION: Ajouter les IDs de gares
-                gare_depart_id: window.selectedGareDepartId || null,
-                gare_arrivee_id: window.selectedGareArriveeId || null,
-                // CORRECTION IMPORTANTE: Ajouter l'heure de départ
-                heure_depart: window.selectedDepartureTime || null
-            })
-        });
-
-                        const data = await response.json();
-
-                        if (data.success) {
-                            if (data.wallet_payment) {
-                                window.location.href = data.redirect_url;
-                            } else if (data.payment_url && data.checkout_url) {
-                                window.location.href = data.checkout_url;
-                            }
-                        } else {
-                            throw new Error(data.message || 'Erreur');
-                        }
-                    } catch (error) {
-                        if (error.message && error.message.toLowerCase().includes('csrf')) {
-                            Swal.fire({ 
-                                icon: 'error', 
-                                title: 'Session expirée', 
-                                text: 'Votre session a expiré. Veuillez rafraîchir la page (F5) et réessayer.',
-                                confirmButtonColor: '#e94f1b'
-                            });
-                        } else {
-                            Swal.fire({ icon: 'error', title: 'Erreur', text: error.message });
-                        }
+                denyButtonColor: '#2dce89',
+                cancelButtonText: 'Annuler',
+                didOpen: () => {
+                    if (userSolde < montantTotal) {
+                        const confirmBtn = Swal.getConfirmButton();
+                        confirmBtn.disabled = true;
+                        confirmBtn.style.opacity = 0.5;
+                        confirmBtn.innerHTML += '<br><span class="text-xs font-normal">(Solde insuffisant)</span>';
                     }
                 }
             });
+
+            if (choiceResult.isConfirmed) paymentMethod = 'wallet';
+            else if (choiceResult.isDenied) paymentMethod = 'cinetpay';
+            else return;
+
+            Swal.fire({
+                title: 'Traitement...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            try {
+                const response = await fetch("{{ route('reservation.store') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        programme_id: currentProgramId,
+                        seats: sortedSeats,
+                        seats_retour: selectedSeatsRetour.length > 0 ? selectedSeatsRetour.sort((a, b) => a - b) : [],
+                        nombre_places: selectedNumberOfPlaces,
+                        date_voyage: dateVoyageFinal,
+                        is_aller_retour: window.userChoseAllerRetour,
+                        date_retour: window.selectedReturnDate,
+                        passagers: passengers,
+                        payment_method: paymentMethod,
+                        frais_choix_siege: totalExtraCost,
+                        gare_depart_id: window.selectedGareDepartId || null,
+                        gare_arrivee_id: window.selectedGareArriveeId || null,
+                        heure_depart: window.selectedDepartureTime || null
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    if (data.wallet_payment) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Réservation confirmée !',
+                            text: 'Votre réservation a été effectuée avec succès.',
+                            showConfirmButton: false,
+                            timer: 2000,
+                            willClose: () => {
+                                window.location.href = data.redirect_url;
+                            }
+                        });
+                    } else if (data.payment_url && data.checkout_url) {
+                        window.location.href = data.checkout_url;
+                    }
+                } else {
+                    throw new Error(data.message || 'Erreur');
+                }
+            } catch (error) {
+                if (error.message && error.message.toLowerCase().includes('csrf')) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Session expirée',
+                        text: 'Votre session a expiré. Veuillez rafraîchir la page (F5) et réessayer.',
+                        confirmButtonColor: '#e94f1b'
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erreur',
+                        text: error.message
+                    });
+                }
+            }
         }
 
         // ============================================
@@ -5223,7 +5233,109 @@ function proceedToPassengerInfoFromRetour() {
     }
 
     // Auto-reservation logic
+    // --- SMART AUTOCOMPLETE ---
+    function setupLocalAutocomplete(inputId) {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+
+        const container = document.createElement('div');
+        container.className = 'absolute left-0 right-0 z-[100] bg-white border border-gray-100 rounded-xl shadow-2xl mt-2 max-h-60 overflow-y-auto hidden';
+        
+        const parentDiv = input.parentElement;
+        if (parentDiv) {
+            if (!getComputedStyle(parentDiv).position || getComputedStyle(parentDiv).position === 'static') {
+                parentDiv.style.position = 'relative';
+            }
+            parentDiv.appendChild(container);
+        }
+
+        let currentIndex = -1;
+
+        function fetchLocations(query = '') {
+            fetch(`/api/locations?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    renderSuggestions(data);
+                });
+        }
+
+        function renderSuggestions(data) {
+            container.innerHTML = '';
+            currentIndex = -1;
+            
+            if (data.length > 0) {
+                data.forEach((location, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item px-4 py-3 hover:bg-orange-50 cursor-pointer text-gray-800 font-bold transition-all border-b border-gray-50 last:border-0 flex items-center justify-between group';
+                    div.dataset.index = index;
+                    div.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-map-marker-alt text-[#e94f1b] text-xs opacity-40 group-hover:opacity-100"></i>
+                            <span class="text-sm">${location}</span>
+                        </div>
+                        <i class="fas fa-arrow-right text-[10px] text-gray-300 opacity-0 group-hover:opacity-100 transition-all"></i>
+                    `;
+                    div.addEventListener('click', () => {
+                        input.value = location;
+                        container.classList.add('hidden');
+                        input.dispatchEvent(new Event('change'));
+                        // Optional: trigger search button
+                    });
+                    container.appendChild(div);
+                });
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        input.addEventListener('input', function() { fetchLocations(this.value); });
+        input.addEventListener('focus', function() { fetchLocations(this.value); });
+
+        input.addEventListener('keydown', function(e) {
+            const items = container.querySelectorAll('.suggestion-item');
+            if (container.classList.contains('hidden') || !items.length) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                currentIndex = (currentIndex + 1) % items.length;
+                updateHighlight(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                currentIndex = (currentIndex - 1 + items.length) % items.length;
+                updateHighlight(items);
+            } else if (e.key === 'Enter' && currentIndex >= 0) {
+                e.preventDefault();
+                items[currentIndex].click();
+            } else if (e.key === 'Escape') {
+                container.classList.add('hidden');
+            }
+        });
+
+        function updateHighlight(items) {
+            items.forEach((item, index) => {
+                if (index === currentIndex) {
+                    item.classList.add('bg-orange-50');
+                    item.scrollIntoView({ block: 'nearest' });
+                } else {
+                    item.classList.remove('bg-orange-50');
+                }
+            });
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!parentDiv.contains(e.target)) {
+                container.classList.add('hidden');
+            }
+        });
+    }
+
+    // Initialize autocompletes
     document.addEventListener('DOMContentLoaded', function() {
+        setupLocalAutocomplete("point_depart");
+        setupLocalAutocomplete("point_arrive");
+
+        // Auto-reservation logic
         const urlParams = new URLSearchParams(window.location.search);
         const autoReserveId = urlParams.get('auto_reserve');
         
@@ -5262,6 +5374,8 @@ function proceedToPassengerInfoFromRetour() {
                 }
             }, 800);
         }
+    });
+    // --- END SMART AUTOCOMPLETE ---
     });
 </script>
 @endpush

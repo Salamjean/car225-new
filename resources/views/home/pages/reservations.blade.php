@@ -21,16 +21,13 @@
                     <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#94a3b8" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.44 1.16a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/></svg>
                     </div>
-                    <input type="text" id="searchInput" name="reference" value="{{ $searchRef ?? '' }}" class="bg-white text-slate-900 text-[15px] rounded-xl block w-full pl-11 pr-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 border-0" placeholder="Entrez la référence de votre billet (ex: TX-WAL-FPFXCVCBPE-1)">
+                    <input type="text" id="searchInput" name="reference" value="{{ $searchRef ?? '' }}" class="bg-white text-slate-900 text-[15px] rounded-xl block w-full pl-11 pr-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-[#e94e1a] border-0" placeholder="Entrez la référence de votre billet (ex: TX-WAL-FPFXCVCBPE)">
                 </div>
-                <!-- Filters -->
-                <div class="flex items-center gap-2">
-                    <span class="text-sm font-bold text-slate-600 hidden sm:block">Statut:</span>
-                    @php $currentStatut = request('statut', 'all'); @endphp
-                    <button type="submit" name="statut" value="all" class="px-4 py-2.5 text-[13px] font-bold rounded-lg transition-colors {{ $currentStatut === 'all' ? 'bg-[#0e743a] text-white' : 'bg-[#dadbdf] text-slate-800 hover:bg-slate-300' }}">Tous</button>
-                    <button type="submit" name="statut" value="confirmee" class="px-4 py-2.5 text-[13px] font-bold rounded-lg transition-colors {{ $currentStatut === 'confirmee' ? 'bg-[#0e743a] text-white' : 'bg-[#dadbdf] text-slate-800 hover:bg-slate-300' }}">Confirmé</button>
-                    <button type="submit" name="statut" value="terminee" class="px-4 py-2.5 text-[13px] font-bold rounded-lg transition-colors {{ $currentStatut === 'terminee' ? 'bg-[#0e743a] text-white' : 'bg-[#dadbdf] text-slate-800 hover:bg-slate-300' }}">Passé</button>
-                </div>
+                <!-- Search Button -->
+                <button type="submit" class="bg-[#e94e1a] text-white px-8 py-3.5 rounded-xl font-bold hover:bg-[#d14316] shadow-sm hover:shadow-md transition-all duration-300 flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.44 1.16a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/></svg>
+                    <span>Rechercher</span>
+                </button>
             </div>
         </form>
     </div>
@@ -351,21 +348,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const input = document.getElementById('searchInput');
-    const form = document.getElementById('searchForm');
-    let debounceTimer;
-
-    if (input && form) {
-        input.addEventListener('input', function() {
-            clearTimeout(debounceTimer);
-            const val = this.value.trim();
-            if (val.length >= 5) {
-                debounceTimer = setTimeout(function() {
-                    form.submit();
-                }, 800);
-            }
-        });
-    }
+    // Le formulaire se soumettra naturellement via le bouton de type submit
 });
 </script>
 

@@ -42,7 +42,7 @@
                         <div class="flex bg-gray-100 p-1 rounded-xl">
                             <label class="relative flex items-center px-6 py-2 cursor-pointer rounded-lg transition-all has-[:checked]:bg-[#e94e1a] text-gray-500 has-[:checked]:text-white font-bold text-xs uppercase tracking-wider">
                                 <input type="radio" name="is_aller_retour" value="0" class="peer absolute opacity-0" {{ request('is_aller_retour') != '1' ? 'checked' : '' }}>
-                                Simple
+                                Aller
                             </label>
                             <label class="relative flex items-center px-6 py-2 cursor-pointer rounded-lg transition-all has-[:checked]:bg-[#e94e1a] text-gray-500 has-[:checked]:text-white font-bold text-xs uppercase tracking-wider">
                                 <input type="radio" name="is_aller_retour" value="1" class="peer absolute opacity-0" {{ request('is_aller_retour') == '1' ? 'checked' : '' }}>
@@ -66,7 +66,7 @@
                                     <i class="fas fa-location-dot text-[#e94e1a]"></i>
                                     <input type="text" name="point_depart" id="point_depart" 
                                            class="w-full bg-transparent border-none focus:ring-0 p-0 font-bold text-gray-800 placeholder:text-gray-300 text-lg" 
-                                           placeholder="Ville de départ..." value="{{ old('point_depart') }}" required>
+                                           placeholder="Ville de départ..." value="{{ old('point_depart') }}" required autocomplete="off">
                                 </div>
                             </div>
 
@@ -83,7 +83,7 @@
                                     <i class="fas fa-map-marker-alt text-[#e94e1a]"></i>
                                     <input type="text" name="point_arrive" id="point_arrive" 
                                            class="w-full bg-transparent border-none focus:ring-0 p-0 font-bold text-gray-800 placeholder:text-gray-300 text-lg" 
-                                           placeholder="Destination..." value="{{ old('point_arrive') }}" required>
+                                           placeholder="Destination..." value="{{ old('point_arrive') }}" required autocomplete="off">
                                 </div>
                             </div>
                         </div>
@@ -123,28 +123,118 @@
     </div>
 </section>
 
-<!-- Intégration Google Maps Autocomplete -->
-<script
-    src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google_maps.key') }}&libraries=places&loading=async&callback=initAutocomplete"
-    async defer></script>
-
+<!-- Custom Autocomplete to replace Google Maps -->
 <script>
-    function initAutocomplete() {
-        const options = {
-            componentRestrictions: { country: "ci" }, // Restreindre à la Côte d'Ivoire
-            fields: ["formatted_address", "geometry", "name"],
-        };
+    document.addEventListener('DOMContentLoaded', function() {
+        setupLocalAutocomplete("point_depart");
+        setupLocalAutocomplete("point_arrive");
+    });
 
-        const inputDepart = document.getElementById("point_depart");
-        const inputArrive = document.getElementById("point_arrive");
+    function setupLocalAutocomplete(inputId) {
+        const input = document.getElementById(inputId);
+        if (!input) return;
 
-        if (inputDepart) {
-            new google.maps.places.Autocomplete(inputDepart, options);
+        // Container suggestions setup
+        const container = document.createElement('div');
+        container.className = 'absolute left-0 right-0 z-[100] bg-white border border-gray-100 rounded-xl shadow-2xl mt-2 max-h-60 overflow-y-auto hidden';
+        
+        // Find the parent div with relative positioning
+        // In carrousel.blade.php, it's .bg-gray-50
+        const parentDiv = input.closest('.bg-gray-50') || input.parentElement;
+        if (parentDiv) {
+            if (!getComputedStyle(parentDiv).position || getComputedStyle(parentDiv).position === 'static') {
+                parentDiv.style.position = 'relative';
+            }
+            parentDiv.appendChild(container);
         }
 
-        if (inputArrive) {
-            new google.maps.places.Autocomplete(inputArrive, options);
+        let locations = [];
+        let currentIndex = -1;
+
+        // Fetch all locations once
+        function fetchLocations(query = '') {
+            fetch(`/api/locations?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    renderSuggestions(data);
+                });
         }
+
+        function renderSuggestions(data) {
+            container.innerHTML = '';
+            currentIndex = -1;
+            
+            if (data.length > 0) {
+                data.forEach((location, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item px-4 py-3 hover:bg-orange-50 cursor-pointer text-gray-700 font-bold transition-colors border-b border-gray-50 last:border-0 flex items-center justify-between group';
+                    div.dataset.index = index;
+                    div.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-map-marker-alt text-[#e94e1a] text-xs opacity-50 group-hover:opacity-100"></i>
+                            <span>${location}</span>
+                        </div>
+                        <i class="fas fa-chevron-right text-[10px] text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                    `;
+                    div.addEventListener('click', () => {
+                        input.value = location;
+                        container.classList.add('hidden');
+                        input.dispatchEvent(new Event('change'));
+                    });
+                    container.appendChild(div);
+                });
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        input.addEventListener('input', function() {
+            fetchLocations(this.value);
+        });
+
+        input.addEventListener('focus', function() {
+            fetchLocations(this.value);
+        });
+
+        // Keyboard navigation
+        input.addEventListener('keydown', function(e) {
+            const items = container.querySelectorAll('.suggestion-item');
+            if (container.classList.contains('hidden') || !items.length) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                currentIndex = (currentIndex + 1) % items.length;
+                updateHighlight(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                currentIndex = (currentIndex - 1 + items.length) % items.length;
+                updateHighlight(items);
+            } else if (e.key === 'Enter' && currentIndex >= 0) {
+                e.preventDefault();
+                items[currentIndex].click();
+            } else if (e.key === 'Escape') {
+                container.classList.add('hidden');
+            }
+        });
+
+        function updateHighlight(items) {
+            items.forEach((item, index) => {
+                if (index === currentIndex) {
+                    item.classList.add('bg-orange-50');
+                    item.scrollIntoView({ block: 'nearest' });
+                } else {
+                    item.classList.remove('bg-orange-50');
+                }
+            });
+        }
+
+        // Close on outside click
+        document.addEventListener('click', function(e) {
+            if (!parentDiv.contains(e.target)) {
+                container.classList.add('hidden');
+            }
+        });
     }
 
     document.getElementById('swapCoordinates')?.addEventListener('click', function() {
@@ -169,7 +259,10 @@
     const returnDateInput = document.getElementById('date_retour');
 
     function toggleReturnDate() {
-        const isRoundTrip = document.querySelector('input[name="is_aller_retour"]:checked').value === '1';
+        const checkedRadio = document.querySelector('input[name="is_aller_retour"]:checked');
+        if (!checkedRadio) return;
+        
+        const isRoundTrip = checkedRadio.value === '1';
         if (isRoundTrip) {
             returnDateWrapper.classList.remove('hidden');
             returnDateInput.setAttribute('required', 'required');

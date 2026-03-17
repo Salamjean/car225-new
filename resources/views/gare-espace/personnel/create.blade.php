@@ -162,38 +162,87 @@
                             @enderror
                         </div>
 
-                        <!-- Contact d'urgence -->
-                        <div class="space-y-2">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">
-                                <span>Contact d'urgence</span>
-                                <span class="text-red-500 ml-1">*</span>
-                            </label>
-                            <div class="flex gap-3">
-                                <div class="w-32">
-                                    <select name="country_code_urgence" required
-                                        class="w-full px-3 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
-                                        <option value="+225" selected>🇨🇮 +225</option>
-                                        <option value="+33">🇫🇷 +33</option>
-                                        <option value="+1">🇺🇸 +1</option>
-                                        <option value="+44">🇬🇧 +44</option>
-                                    </select>
+                        <!-- Personne à contacter d'urgence -->
+                        <div class="lg:col-span-3 pt-6 border-t border-gray-100 mt-4">
+                            <h3 class="text-lg font-bold text-gray-800 mb-6 flex items-center">
+                                <i class="fas fa-life-ring mr-2 text-red-500"></i>
+                                Personne à contacter d'urgence
+                            </h3>
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                <div class="lg:col-span-3 space-y-2">
+                                    <label class="flex items-center text-sm font-semibold text-gray-700">
+                                        Nom et prénom de la personne à contacter <span class="text-red-500 ml-1">*</span>
+                                    </label>
+                                    <div class="relative">
+                                        <input type="text" name="nom_urgence" value="{{ old('nom_urgence') }}" required
+                                            class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
+                                            placeholder="Ex: Awa Sanogo">
+                                        <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                                            <i class="fas fa-user-shield text-gray-400"></i>
+                                        </div>
+                                    </div>
+                                    @error('nom_urgence')
+                                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                    @enderror
                                 </div>
-                                <div class="flex-1">
-                                    <input type="text" 
-                                           name="contact_urgence" 
-                                           value="{{ old('contact_urgence') }}"
-                                           required
-                                           maxlength="10"
-                                           oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"
-                                           class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
-                                           placeholder="Ex: 0100000000">
+
+                                <div class="space-y-2">
+                                    <label class="flex items-center text-sm font-semibold text-gray-700">
+                                        Lien de parenté <span class="text-red-500 ml-1">*</span>
+                                    </label>
+                                    <div class="relative">
+                                        <select name="lien_parente_urgence" required
+                                            class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
+                                            <option value="">Sélectionner</option>
+                                            <option value="Père" {{ old('lien_parente_urgence') == 'Père' ? 'selected' : '' }}>Père</option>
+                                            <option value="Mère" {{ old('lien_parente_urgence') == 'Mère' ? 'selected' : '' }}>Mère</option>
+                                            <option value="Frère" {{ old('lien_parente_urgence') == 'Frère' ? 'selected' : '' }}>Frère</option>
+                                            <option value="Sœur" {{ old('lien_parente_urgence') == 'Sœur' ? 'selected' : '' }}>Sœur</option>
+                                            <option value="Oncle" {{ old('lien_parente_urgence') == 'Oncle' ? 'selected' : '' }}>Oncle</option>
+                                            <option value="Tante" {{ old('lien_parente_urgence') == 'Tante' ? 'selected' : '' }}>Tante</option>
+                                            <option value="Conjoint(e)" {{ old('lien_parente_urgence') == 'Conjoint(e)' ? 'selected' : '' }}>Conjoint(e)</option>
+                                            <option value="Autre" {{ old('lien_parente_urgence') == 'Autre' ? 'selected' : '' }}>Autre</option>
+                                        </select>
+                                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                            <i class="fas fa-chevron-down text-gray-400"></i>
+                                        </div>
+                                    </div>
+                                    @error('lien_parente_urgence')
+                                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                <div class="lg:col-span-2 space-y-2">
+                                    <label class="flex items-center text-sm font-semibold text-gray-700">
+                                        Contact d'urgence <span class="text-red-500 ml-1">*</span>
+                                    </label>
+                                    <div class="flex gap-3">
+                                        <div class="w-32">
+                                            <select name="country_code_urgence" required
+                                                class="w-full px-3 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
+                                                <option value="+225" selected>🇨🇮 +225</option>
+                                                <option value="+33">🇫🇷 +33</option>
+                                                <option value="+1">🇺🇸 +1</option>
+                                                <option value="+44">🇬🇧 +44</option>
+                                            </select>
+                                        </div>
+                                        <div class="flex-1">
+                                            <input type="text" 
+                                                   name="contact_urgence" 
+                                                   value="{{ old('contact_urgence') }}"
+                                                   required
+                                                   maxlength="10"
+                                                   oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"
+                                                   class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
+                                                   placeholder="Ex: 0100000000">
+                                        </div>
+                                    </div>
+                                    <p class="text-[10px] text-gray-500 italic">Doit être différent de votre contact personnel.</p>
+                                    @error('contact_urgence')
+                                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                    @enderror
                                 </div>
                             </div>
-                            <p class="text-xs text-gray-500">Personne à contacter en cas d'urgence</p>
-                            <p id="error-contact-same" class="text-red-500 text-xs mt-1 hidden">Le contact d'urgence doit être différent du contact personnel.</p>
-                            @error('contact_urgence')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
                         </div>
                     </div>
                 </div>

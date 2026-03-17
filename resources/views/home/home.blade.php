@@ -95,18 +95,7 @@
                     <span class="text-[#e94e1a]">Car225</span> est le partenaire de confiance pour vos trajets en Côte d’Ivoire.
                 </h2>
                 
-                @if(isset($compagnies) && $compagnies->count() > 0)
-                <!-- COMPANY LOGOS -->
-                <div class="partner-logos-container mt-12 mb-12 max-w-4xl mx-auto flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-60">
-                    @foreach($compagnies->take(4) as $comp)
-                        @if($comp->path_logo)
-                            <img src="{{ asset('storage/' . $comp->path_logo) }}" alt="{{ $comp->nom_compagnie ?? 'Compagnie' }}" class="h-12 md:h-16 object-contain grayscale opacity-80 hover:grayscale-0 hover:opacity-100 transition-all duration-300">
-                        @else
-                            <span class="text-2xl font-black text-gray-400 uppercase tracking-widest hover:text-gray-800 transition-colors duration-300">{{ $comp->nom_compagnie ?? 'CAR225' }}</span>
-                        @endif
-                    @endforeach
-                </div>
-                @endif
+
                 
                 <!-- DESTINATION BANNER (Orange Theme) -->
                 <div class="destination-promo mt-8 w-full relative rounded-2xl overflow-hidden flex flex-col md:flex-row items-center border border-[#ffedd5]" style="background: linear-gradient(135deg, #fff6f0 0%, #ffedd5 100%); min-height: 360px; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
@@ -160,6 +149,27 @@
                         </div>
                     </div>
                 </div>
+        </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- SECTION NOS PARTENAIRES -->
+    <!-- ============================================ -->
+    <section id="nos-partenaires" class="py-16 bg-white">
+        <div class="container mx-auto px-4 text-center" data-aos="fade-up">
+            <h2 class="trajets-section-title !mb-12">Nos Partenaires</h2>
+            
+            @if(isset($compagnies) && $compagnies->count() > 0)
+            <div class="flex flex-wrap justify-center items-center gap-12 md:gap-24 opacity-50 hover:opacity-100 transition-opacity duration-500">
+                @foreach($compagnies->take(6) as $comp)
+                    @if($comp->path_logo)
+                        <img src="{{ asset('storage/' . $comp->path_logo) }}" alt="{{ $comp->nom_compagnie ?? 'Compagnie' }}" class="h-10 md:h-14 object-contain grayscale hover:grayscale-0 transition-all duration-300">
+                    @else
+                        <span class="text-xl font-black text-gray-300 uppercase tracking-widest hover:text-gray-800 transition-colors duration-300">{{ $comp->nom_compagnie ?? 'CAR225' }}</span>
+                    @endif
+                @endforeach
+            </div>
+            @endif
         </div>
     </section>
 

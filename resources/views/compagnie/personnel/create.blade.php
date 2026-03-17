@@ -203,14 +203,13 @@
                             @enderror
                         </div>
 
-                        <!-- Contact d'urgence -->
+                        <!-- Contact d'urgence (Numéro) -->
                         <div class="space-y-2">
                             <label class="flex items-center text-sm font-semibold text-gray-700">
-                                <span>Contact d'urgence</span>
+                                <span>Numéro d'urgence</span>
                                 <span class="text-red-500 ml-1">*</span>
                             </label>
                             <div class="flex gap-3">
-                                <!-- Code Pays -->
                                 <div class="w-32">
                                     <select name="country_code_urgence" required
                                         class="w-full px-3 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
@@ -220,7 +219,6 @@
                                         <option value="+44">🇬🇧 +44</option>
                                     </select>
                                 </div>
-                                <!-- Numéro de téléphone -->
                                 <div class="flex-1">
                                     <input type="text" 
                                            name="contact_urgence" 
@@ -232,9 +230,58 @@
                                            placeholder="Ex: 0100000000">
                                 </div>
                             </div>
-                            <p class="text-xs text-gray-500">Personne à contacter en cas d'urgence</p>
                             <p id="error-contact-same" class="text-red-500 text-xs mt-1 hidden">Le contact d'urgence doit être différent du contact personnel.</p>
                             @error('contact_urgence')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- Nom d'urgence -->
+                        <div class="space-y-2">
+                            <label class="flex items-center text-sm font-semibold text-gray-700">
+                                <span>Nom du contact d'urgence</span>
+                                <span class="text-red-500 ml-1">*</span>
+                            </label>
+                            <div class="relative">
+                                <input type="text" 
+                                       name="nom_urgence" 
+                                       value="{{ old('nom_urgence') }}"
+                                       required
+                                       class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
+                                       placeholder="Ex: Mme Bakayoko">
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            @error('nom_urgence')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- Lien de parenté d'urgence -->
+                        <div class="space-y-2">
+                            <label class="flex items-center text-sm font-semibold text-gray-700">
+                                <span>Lien de parenté</span>
+                                <span class="text-red-500 ml-1">*</span>
+                            </label>
+                            <div class="relative">
+                                <select name="lien_parente_urgence" required
+                                        class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
+                                    <option value="" disabled {{ old('lien_parente_urgence') ? '' : 'selected' }}>-- Sélectionnez le lien --</option>
+                                    <option value="Conjoint(e)" {{ old('lien_parente_urgence') == 'Conjoint(e)' ? 'selected' : '' }}>Conjoint(e)</option>
+                                    <option value="Père" {{ old('lien_parente_urgence') == 'Père' ? 'selected' : '' }}>Père</option>
+                                    <option value="Mère" {{ old('lien_parente_urgence') == 'Mère' ? 'selected' : '' }}>Mère</option>
+                                    <option value="Frère" {{ old('lien_parente_urgence') == 'Frère' ? 'selected' : '' }}>Frère</option>
+                                    <option value="Sœur" {{ old('lien_parente_urgence') == 'Sœur' ? 'selected' : '' }}>Sœur</option>
+                                    <option value="Oncle" {{ old('lien_parente_urgence') == 'Oncle' ? 'selected' : '' }}>Oncle</option>
+                                    <option value="Tante" {{ old('lien_parente_urgence') == 'Tante' ? 'selected' : '' }}>Tante</option>
+                                    <option value="Ami(e)" {{ old('lien_parente_urgence') == 'Ami(e)' ? 'selected' : '' }}>Ami(e)</option>
+                                    <option value="Autre" {{ old('lien_parente_urgence') == 'Autre' ? 'selected' : '' }}>Autre</option>
+                                </select>
+                            </div>
+                            @error('lien_parente_urgence')
                                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                             @enderror
                         </div>
