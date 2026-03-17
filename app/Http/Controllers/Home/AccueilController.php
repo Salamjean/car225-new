@@ -108,20 +108,19 @@ class AccueilController extends Controller
             $query = \App\Models\Reservation::with(['programme.compagnie', 'programme.gareDepart', 'programme.gareArrivee', 'programme.itineraire', 'programme.voyages'])
                 ->whereHas('programme')
                 ->where(function($q) use ($searchRef, $baseRef) {
-                    $q->where('reference', 'like', '%' . $searchRef . '%')
-                      ->orWhere('reference', 'like', '%' . $baseRef . '%')
-                      ->orWhere('payment_transaction_id', 'like', '%' . $searchRef . '%');
+                    // Match exacte pour la référence ou l'ID de transaction
+                    $q->where('reference', $searchRef)
+                      ->orWhere('payment_transaction_id', $searchRef);
+
+                    // On ne permet la recherche élargie (pour trouver les autres sièges) 
+                    // que si la référence de base est suffisamment longue (min 12 caractères)
+                    // Cela évite que "TX-WAL-" n'affiche toutes les réservations.
+                    if (strlen($baseRef) >= 12) {
+                        $q->orWhere('reference', 'like', $baseRef . '-%');
+                    }
                 })
                 ->where('statut', '!=', 'en_attente')
                 ->orderBy('created_at', 'desc');
-
-            if ($request->filled('statut') && $request->statut !== 'all') {
-                if ($request->statut === 'confirmee') {
-                    $query->where('statut', 'confirmee');
-                } elseif ($request->statut === 'terminee') {
-                    $query->where('statut', 'terminee');
-                }
-            }
 
             $reservations = $query->get();
 

@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 use App\Models\CompanyMessage;
 use App\Notifications\NewInternalMessageNotification;
@@ -106,7 +107,9 @@ class AgentController extends Controller
             $agent->email = $request->email;
             $agent->contact = $this->formatPhoneNumber($request->contact);
             $agent->cas_urgence = $this->formatPhoneNumber($request->cas_urgence);
-            $agent->password = Hash::make('default');
+            $agent->nom_urgence = $request->nom_urgence;
+            $agent->lien_parente_urgence = $request->lien_parente_urgence;
+            $agent->password = Hash::make(Str::random(16));
 
             if ($request->hasFile('profile_picture')) {
                 $agent->profile_picture = $request->file('profile_picture')->store('profile_pictures', 'public');
@@ -231,15 +234,16 @@ class AgentController extends Controller
 
     private function formatPhoneNumber($number)
     {
-        // Enlever tout ce qui n'est pas un chiffre
-        $number = preg_replace('/[^0-9]/', '', $number);
+        $number = preg_replace('/[^0-9+]/', '', $number);
 
-        // Si le numéro commence déjà par 225, on ajoute juste le +
-        if (strpos($number, '225') === 0) {
-            return '+' . $number;
+        if (substr($number, 0, 2) === '00') {
+            $number = '+' . substr($number, 2);
         }
 
-        // Sinon on ajoute +225 au début
-        return '+225' . $number;
+        if (substr($number, 0, 1) !== '+') {
+            $number = '+225' . $number;
+        }
+
+        return $number;
     }
 }

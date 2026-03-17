@@ -7,6 +7,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ProfileUpdateOtpMail;
 
 class ProfileController extends Controller
 {
@@ -17,6 +20,37 @@ class ProfileController extends Controller
     {
         $user = auth()->user();
         return view('user.profile.profile', compact('user'));
+    }
+
+    /**
+     * Demander la mise à jour (envoi OTP si Google, sinon demande de mot de passe)
+     */
+    public function requestUpdate(Request $request)
+    {
+        $user = auth()->user();
+
+        // Validation basique des contacts avant l'envoi
+        if ($request->contact && strlen($request->contact) !== 10) {
+            return response()->json(['success' => false, 'message' => 'Le contact doit comporter exactement 10 chiffres.', 'errors' => ['contact' => ['Le contact doit comporter exactement 10 chiffres.']]], 422);
+        }
+
+        if ($user->google_id) {
+            $otp = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
+            Cache::put('profile_update_otp_' . $user->id, $otp, now()->addMinutes(10));
+            Mail::to($user->email)->send(new ProfileUpdateOtpMail($otp, $user->name));
+            
+            return response()->json([
+                'success' => true,
+                'type' => 'otp',
+                'message' => 'Un code de confirmation a été envoyé à votre adresse email.'
+            ]);
+        } else {
+            return response()->json([
+                'success' => true,
+                'type' => 'password',
+                'message' => 'Veuillez entrer votre mot de passe pour continuer.'
+            ]);
+        }
     }
 
     /**
@@ -39,6 +73,29 @@ class ProfileController extends Controller
             'contact_urgence.digits' => 'Le contact d\'urgence doit comporter exactement 10 chiffres.',
             'contact_urgence.different' => 'Le contact d\'urgence doit être différent de votre contact principal.',
         ]);
+
+        // Vérification de sécurité
+        if ($user->google_id) {
+            $otp = $request->input('otp_code');
+            $cachedOtp = Cache::get('profile_update_otp_' . $user->id);
+            if (!$otp || $otp !== $cachedOtp) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Code de vérification invalide ou expiré.',
+                    'errors' => ['otp_code' => ['Code de vérification invalide ou expiré.']]
+                ], 422);
+            }
+            Cache::forget('profile_update_otp_' . $user->id);
+        } else {
+            $password = $request->input('confirm_password');
+            if (!$password || !Hash::check($password, $user->password)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Mot de passe incorrect.',
+                    'errors' => ['confirm_password' => ['Mot de passe incorrect.']]
+                ], 422);
+            }
+        }
 
         try {
             // Empêcher la modification de l'email pour les utilisateurs Google

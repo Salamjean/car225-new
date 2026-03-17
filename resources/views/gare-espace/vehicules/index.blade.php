@@ -71,7 +71,7 @@
                         </div>
                         <h3 class="font-bold text-gray-900 text-lg mb-1">{{ $vehicule->immatriculation }}</h3>
                         <p class="text-gray-500 text-sm mb-3">{{ $vehicule->marque }} {{ $vehicule->modele }}</p>
-                        <div class="flex items-center gap-4 text-sm text-gray-500">
+                        <div class="flex items-center gap-4 text-sm text-gray-500 mb-5">
                             <span class="flex items-center gap-1">
                                 <i class="fas fa-chair text-gray-400"></i>
                                 {{ $vehicule->nombre_place }} places
@@ -82,6 +82,23 @@
                                     Clim
                                 </span>
                             @endif
+                        </div>
+
+                        <!-- Actions Buttons -->
+                        <div class="flex items-center gap-3 pt-4 border-t border-gray-100">
+                            <a href="{{ route('gare-espace.vehicules.edit', $vehicule) }}" 
+                               class="flex-1 inline-flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-bold rounded-xl hover:bg-gray-200 transition-colors">
+                                <i class="fas fa-edit mr-2"></i> Modifier
+                            </a>
+                            <form action="{{ route('gare-espace.vehicules.destroy', $vehicule) }}" method="POST" class="flex-1 delete-vehicle-form">
+                                @csrf
+                                @method('DELETE')
+                                <button type="button" 
+                                        onclick="confirmDeleteVehicule(this)"
+                                        class="w-full inline-flex items-center justify-center px-4 py-2 bg-red-50 text-red-600 text-sm font-bold rounded-xl hover:bg-red-100 transition-colors">
+                                    <i class="fas fa-trash-alt mr-2"></i> Supprimer
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -97,4 +114,50 @@
         </div>
     </div>
 </div>
+
+<script>
+    function confirmDeleteVehicule(button) {
+        Swal.fire({
+            title: 'Êtes-vous sûr ?',
+            text: "Cette action est irréversible. Le véhicule sera définitivement supprimé s'il n'est pas utilisé pour un voyage.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#e94f1b',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Oui, supprimer !',
+            cancelButtonText: 'Annuler',
+            background: '#ffffff',
+            borderRadius: '1.25rem',
+            customClass: {
+                title: 'text-gray-900 font-bold',
+                popup: 'rounded-3xl shadow-2xl border border-gray-100'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                button.closest('form').submit();
+            }
+        })
+    }
+
+    @if(session('success'))
+        Swal.fire({
+            icon: 'success',
+            title: 'Succès',
+            text: '{{ session('success') }}',
+            timer: 3000,
+            showConfirmButton: false,
+            toast: true,
+            position: 'top-end'
+        });
+    @endif
+
+    @if(session('error'))
+        Swal.fire({
+            icon: 'error',
+            title: 'Oups...',
+            text: '{{ session('error') }}',
+            confirmButtonColor: '#e94f1b'
+        });
+    @endif
+</script>
 @endsection

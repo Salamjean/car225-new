@@ -27,6 +27,8 @@ class AgentRequest extends FormRequest
            'contact' => 'required|string|max:15',
            'commune' => 'required|string|max:255',
            'cas_urgence' => 'required|string|max:15',
+            'nom_urgence' => 'required|string|max:255',
+            'lien_parente_urgence' => 'required|string|max:100',
            'profile_picture' => 'nullable|image|max:2048',
            'gare_id' => 'required|exists:gares,id',
         ];

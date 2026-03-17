@@ -99,7 +99,7 @@
                             </div>
                             <div class="flex items-baseline gap-2">
                                 <h3 class="text-3xl font-black text-gray-900">{{ $activeReservations }}</h3>
-                                <span class="text-xs font-bold text-green-600">+12%</span>
+                               
                             </div>
                             <p class="mt-4 text-[11px] font-bold text-gray-400 uppercase">Prochains départs gérés</p>
                         </div>

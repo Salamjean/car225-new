@@ -24,7 +24,7 @@ class HomeController extends Controller
         // Trajets populaires - programmes actifs
         $today = Carbon::now()->format('Y-m-d');
         $trajetsPopulaires = Programme::with(['compagnie', 'gareDepart', 'gareArrivee'])
-            ->where('statut', 'actif')
+            ->where('statut', '=', 'actif', 'and')
             ->whereRaw('DATE(date_depart) <= ?', [$today])
             ->whereRaw('DATE(date_fin) >= ?', [$today])
             ->orderBy('montant_billet', 'asc')
@@ -40,47 +40,55 @@ class HomeController extends Controller
             'point_depart' => 'required|string|max:255',
             'point_arrive' => 'required|string|max:255',
             'date_depart' => 'required|date',
+            'is_aller_retour' => 'nullable',
+            'date_retour' => 'required_if:is_aller_retour,1|nullable|date',
         ]);
 
         $point_depart = $request->point_depart;
         $point_arrive = $request->point_arrive;
-        $date_depart_recherche = $request->date_depart;
-        $formattedDate = date('Y-m-d', strtotime($date_depart_recherche));
+        $date_depart = $request->date_depart;
+        $is_aller_retour = $request->is_aller_retour == '1';
+        $date_retour = $request->date_retour;
 
-        Log::info('====== DEBUT RECHERCHE PROGRAMME ======');
+        Log::info('====== DEBUT RECHERCHE PROGRAMME ALLER-RETOUR ======');
 
-        $query = Programme::with(['compagnie', 'itineraire', 'gareDepart', 'gareArrivee'])
-            ->where(function($q) use ($point_depart) {
-                $q->where('point_depart', 'like', "%{$point_depart}%");
-                if (strpos($point_depart, ',') !== false) {
-                    $ville = trim(explode(',', $point_depart)[0]);
-                    $q->orWhere('point_depart', 'like', "{$ville}%");
-                }
-            })
-            ->where(function($q) use ($point_arrive) {
-                $q->where('point_arrive', 'like', "%{$point_arrive}%");
-                if (strpos($point_arrive, ',') !== false) {
-                    $ville = trim(explode(',', $point_arrive)[0]);
-                    $q->orWhere('point_arrive', 'like', "{$ville}%");
-                }
-            })
-            // Vérifie que le programme est valide pour cette date
-            ->whereRaw('DATE(date_depart) <= ?', [$formattedDate])
-            ->whereRaw('DATE(date_fin) >= ?', [$formattedDate])
-            ->where('statut', 'actif');
+        // Fonction locale pour la requête (évite la duplication)
+        $executeQuery = function($from, $to, $date) {
+            $formattedDate = date('Y-m-d', strtotime($date));
+            $fromClean = trim(explode(',', $from)[0]);
+            $toClean = trim(explode(',', $to)[0]);
 
-        $query->orderBy('heure_depart', 'asc');
+            return Programme::with(['compagnie', 'itineraire', 'gareDepart', 'gareArrivee'])
+                ->where(function($q) use ($fromClean) {
+                    $q->where('point_depart', 'like', "%{$fromClean}%", 'and');
+                })
+                ->where(function($q) use ($toClean) {
+                    $q->where('point_arrive', 'like', "%{$toClean}%", 'and');
+                })
+                ->whereRaw('DATE(date_depart) <= ?', [$formattedDate])
+                ->whereRaw('DATE(date_fin) >= ?', [$formattedDate])
+                ->where('statut', '=', 'actif', 'and')
+                ->orderBy('heure_depart', 'asc')
+                ->get();
+        };
 
-        $programmes = $query->paginate(10);
-        $totalResults = $programmes->total();
+        $programmes_aller = $executeQuery($point_depart, $point_arrive, $date_depart);
+        $programmes_retour = $is_aller_retour ? $executeQuery($point_arrive, $point_depart, $date_retour) : collect();
+
+        $totalResults = $programmes_aller->count() + $programmes_retour->count();
 
         $searchParams = [
             'point_depart' => $point_depart,
             'point_arrive' => $point_arrive,
-            'date_depart' => $date_depart_recherche,
+            'date_depart' => $date_depart,
+            'is_aller_retour' => $is_aller_retour,
+            'date_retour' => $date_retour,
         ];
 
-        return view('home.programmes.results', compact('programmes', 'totalResults', 'searchParams'));
+        // Pour la compatibilité avec la vue existante, on passe $programmes qui contient $programmes_aller
+        $programmes = $programmes_aller;
+
+        return view('home.programmes.results', compact('programmes', 'programmes_aller', 'programmes_retour', 'totalResults', 'searchParams'));
     }
 
     /**
@@ -95,7 +103,7 @@ class HomeController extends Controller
         $programmes = Programme::with(['compagnie', 'itineraire', 'gareDepart', 'gareArrivee'])
             ->whereRaw('DATE(date_depart) <= ?', [$today])
             ->whereRaw('DATE(date_fin) >= ?', [$today])
-            ->where('statut', 'actif')
+            ->where('statut', '=', 'actif', 'and')
             ->orderBy('heure_depart', 'asc') // Tri par heure puisque c'est pour la journée courante
             ->paginate(12);
 
@@ -115,36 +123,49 @@ class HomeController extends Controller
     /**
      * Obtenir les détails d'un véhicule avec les places réservées
      */
-     public function getVehicleDetails($id, Request $request)
+    public function getVehicleDetails($id, Request $request)
     {
         try {
             $dateVoyage = $request->get('date') ? date('Y-m-d', strtotime($request->get('date'))) : date('Y-m-d');
             $programmeId = $request->get('programme_id');
             $vehicule = null;
+            $otherHours = [];
 
-             // CORRECTION : On vérifie explicitement si l'ID est valide (> 0)
-        if ($id && $id !== '0' && $id !== 'null' && intval($id) > 0) {
-            $vehicule = Vehicule::find($id);
-        }
+            // 1. Get the current program to find other hours
+            $currentProgramme = Programme::find($programmeId);
+            if ($currentProgramme) {
+                $otherHours = Programme::query()
+                    ->where('point_depart', '=', $currentProgramme->point_depart, 'and')
+                    ->where('point_arrive', '=', $currentProgramme->point_arrive, 'and')
+                    ->whereRaw('DATE(date_depart) <= ?', [$dateVoyage])
+                    ->whereRaw('DATE(date_fin) >= ?', [$dateVoyage])
+                    ->where('statut', '=', 'actif', 'and')
+                    ->orderBy('heure_depart', 'asc')
+                    ->get()
+                    ->map(function($p) {
+                        return [
+                            'id' => $p->id,
+                            'heure' => substr($p->heure_depart, 0, 5),
+                            'vehicule_id' => $p->getVehiculeForDate(date('Y-m-d'))->id ?? 0
+                        ];
+                    });
+            }
 
-            // 2. Si pas d'ID ou véhicule non trouvé, chercher via le programme
-            if (!$vehicule && $programmeId && $programmeId !== 'null') {
-                $programme = Programme::find($programmeId);
-                if ($programme) {
-                    $vehicule = $programme->getVehiculeForDate($dateVoyage);
-                    
-                    // Fallback sur le premier véhicule de la compagnie
-                    if (!$vehicule) {
-                        $vehicule = Vehicule::where('compagnie_id', $programme->compagnie_id)
-                            ->where('is_active', true)
-                            ->first();
-                    }
+            // 2. Original logic for vehicle
+            if ($id && $id !== '0' && $id !== 'null' && intval($id) > 0) {
+                $vehicule = Vehicule::find($id);
+            }
+
+            if (!$vehicule && $currentProgramme) {
+                $vehicule = $currentProgramme->getVehiculeForDate($dateVoyage);
+                if (!$vehicule) {
+                    $vehicule = Vehicule::where('compagnie_id', '=', $currentProgramme->compagnie_id, 'and')
+                        ->where('is_active', '=', true, 'and')
+                        ->first();
                 }
             }
 
             if (!$vehicule) {
-                // FALLBACK: Si aucun véhicule n'est trouvé, on utilise un modèle standard de 70 places
-                // pour permettre l'affichage du plan des sièges (demande utilisateur).
                 $vehicule = (object)[
                     'id' => 0,
                     'marque' => 'Bus',
@@ -154,21 +175,18 @@ class HomeController extends Controller
                     'type_range' => '2x3',
                     'is_default' => true
                 ];
-                Log::info('Véhicule par défaut utilisé pour le popup car aucun véhicule assigné.');
             }
 
             $reservedSeats = [];
-            
             if ($dateVoyage) {
                 $query = Reservation::query();
-                // On compte les places réservées pour ce programme à cette date
-                $query->where('date_voyage', $dateVoyage);
+                $query->where('date_voyage', '=', $dateVoyage, 'and');
                 $query->whereIn('statut', ['confirmee', 'en_attente', 'terminee']);
 
                 if ($programmeId && $programmeId !== 'null') {
-                    $query->where('programme_id', $programmeId);
+                    $query->where('programme_id', '=', $programmeId, 'and');
                 } elseif (isset($vehicule->id) && $vehicule->id > 0) {
-                    $programmeIds = Programme::where('vehicule_id', $vehicule->id)
+                    $programmeIds = Programme::where('vehicule_id', '=', $vehicule->id, 'and')
                         ->whereRaw('DATE(date_depart) <= ?', [$dateVoyage])
                         ->whereRaw('DATE(date_fin) >= ?', [$dateVoyage])
                         ->pluck('id');
@@ -183,12 +201,34 @@ class HomeController extends Controller
                 'success' => true,
                 'vehicule' => $vehicule,
                 'reservedSeats' => $reservedSeats,
-                'date' => $dateVoyage
+                'date' => $dateVoyage,
+                'otherHours' => $otherHours
             ]);
 
         } catch (\Exception $e) {
             Log::error('Erreur getVehicleDetails:', ['error' => $e->getMessage()]);
             return response()->json(['success' => false, 'error' => 'Erreur serveur'], 500);
         }
+    }
+    public function getLocations(Request $request)
+    {
+        $search = $request->get('q');
+        
+        $departures = Programme::where('statut', '=', 'actif', 'and')
+            ->where('point_depart', 'LIKE', "%{$search}%", 'and')
+            ->distinct()
+            ->pluck('point_depart')
+            ->toArray();
+            
+        $arrivals = Programme::where('statut', '=', 'actif', 'and')
+            ->where('point_arrive', 'LIKE', "%{$search}%", 'and')
+            ->distinct()
+            ->pluck('point_arrive')
+            ->toArray();
+            
+        $locations = array_unique(array_merge($departures, $arrivals));
+        sort($locations);
+        
+        return response()->json(array_values($locations));
     }
 }

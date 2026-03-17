@@ -238,6 +238,7 @@
                                 <input type="hidden" name="programme_id" value="{{ $programme->id }}">
                                 <input type="hidden" name="date_voyage" value="{{ $date }}">
                                 <input type="hidden" class="required-capacity" value="{{ $programme->getTotalSeats() }}">
+                                <input type="hidden" class="actual-reservations" value="{{ $programme->getPlacesReserveesForDate($date) }}">
 
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
@@ -324,10 +325,13 @@
                     
                     if (option && option.dataset.capacity) {
                         const vehicleCapacity = parseInt(option.dataset.capacity);
-                        if (vehicleCapacity !== requiredCapacity) {
-                            control.style.borderColor = '#ef4444'; // Red border
+                        if (vehicleCapacity < 1) { // Error
+                            control.style.borderColor = '#ef4444';
                             control.style.backgroundColor = '#fef2f2';
-                        } else {
+                        } else if (vehicleCapacity < requiredCapacity) { // Warn/Allow
+                            control.style.borderColor = '#f59e0b'; // Amber border
+                            control.style.backgroundColor = '#fffbeb';
+                        } else { // Exactly or more (if more allowed)
                             control.style.borderColor = '#10b981'; // Green border
                             control.style.backgroundColor = '#f0fdf4';
                         }
@@ -341,24 +345,38 @@
             // Validation lors de la soumission
             form.addEventListener('submit', function(e) {
                 const selectedOption = vehiculeSelect.options[vehiculeSelect.selectedIndex];
+                const actualReservations = parseInt(form.querySelector('.actual-reservations').value || 0);
                 
                 if (selectedOption && selectedOption.dataset.capacity) {
                     const vehicleCapacity = parseInt(selectedOption.dataset.capacity);
                     
-                    if (vehicleCapacity !== requiredCapacity) {
+                    if (vehicleCapacity < actualReservations) {
                         e.preventDefault();
                         Swal.fire({
                             icon: 'error',
-                            title: 'Capacité non correspondante',
+                            title: 'Capacité insuffisante',
                             html: `
                                 <div class="text-left py-2">
-                                    <p class="mb-3">Ce programme requiert un véhicule de <strong>${requiredCapacity} places</strong>.</p>
-                                    <p class="text-red-600 font-bold">Le véhicule sélectionné possède ${vehicleCapacity} places.</p>
-                                    <p class="mt-4 text-sm text-gray-600 italic">Veuillez choisir un véhicule dont la capacité correspond exactement à celle du programme.</p>
+                                    <p class="mb-3">Il y a déjà <strong>${actualReservations} réservations</strong> confirmées pour ce voyage.</p>
+                                    <p class="text-red-600 font-bold">Le véhicule sélectionné ne possède que ${vehicleCapacity} places.</p>
+                                    <p class="mt-4 text-sm text-gray-600">Veuillez choisir un véhicule plus grand pour accueillir tous les passagers.</p>
                                 </div>
                             `,
-                            confirmButtonColor: '#3b82f6',
-                            confirmButtonText: 'Compris'
+                            confirmButtonColor: '#ef4444'
+                        });
+                    } else if (vehicleCapacity > requiredCapacity) {
+                        e.preventDefault();
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Capacité trop élevée',
+                            html: `
+                                <div class="text-left py-2">
+                                    <p class="mb-3">La capacité maximale pour ce programme est de <strong>${requiredCapacity} places</strong>.</p>
+                                    <p class="text-red-600 font-bold">Le véhicule sélectionné possède ${vehicleCapacity} places.</p>
+                                    <p class="mt-4 text-sm text-gray-600">Veuillez choisir un véhicule dont la capacité n'excède pas celle du programme.</p>
+                                </div>
+                            `,
+                            confirmButtonColor: '#ef4444'
                         });
                     }
                 }

@@ -271,8 +271,11 @@ class SmsService
                     }
                 }
 
-                $dateAller = $allerReservations[0]->date_voyage ?? null;
+                $firstAller = $allerReservations[0];
+                $dateAller = $firstAller->date_voyage ?? null;
                 $dateAllerFormatted = $dateAller ? date('d/m/Y', strtotime($dateAller)) : 'N/A';
+                // Utiliser l'heure de la réservation si dispo, sinon le programme
+                $hAller = ($firstAller->heure_depart) ? substr($firstAller->heure_depart, 0, 5) : $heureDepart;
 
                 $msg = "Bonjour {$clientName}, votre reservation sur Car225 est confirmee !\n";
                 $msg .= "Ref: " . ($allerRefs[0] ?? 'N/A') . "\n";
@@ -282,7 +285,7 @@ class SmsService
                     $msg .= "Gare: {$gareDepart} -> {$gareArrivee}\n";
                 }
 
-                $msg .= "Date: {$dateAllerFormatted} a {$heureDepart}\n";
+                $msg .= "Date: {$dateAllerFormatted} a {$hAller}\n";
                 $msg .= "Siege(s): " . implode(', ', $allerSeats) . "\n";
                 $msg .= "Type: ALLER" . ($isAllerRetour ? " (Aller-Retour)" : " Simple") . "\n";
                 $msg .= "Bon voyage avec Car225 !";
@@ -301,7 +304,11 @@ class SmsService
                     }
                 }
 
-                $dateRetourFormatted = $dateRetour ? date('d/m/Y', strtotime($dateRetour)) : 'N/A';
+                $firstRetour = $retourReservations[0];
+                $dateRetourVal = $firstRetour->date_voyage ?? $dateRetour;
+                $dateRetourFormatted = $dateRetourVal ? date('d/m/Y', strtotime($dateRetourVal)) : 'N/A';
+                // Pour le retour, l'heure peut être différente
+                $hRetour = ($firstRetour->heure_depart) ? substr($firstRetour->heure_depart, 0, 5) : $heureDepart;
 
                 $msg = "Bonjour {$clientName}, voici votre billet RETOUR Car225 !\n";
                 $msg .= "Ref: " . ($retourRefs[0] ?? 'N/A') . "\n";
@@ -313,7 +320,7 @@ class SmsService
                     $msg .= "Gare: {$gareArrivee} -> {$gareDepart}\n";
                 }
 
-                $msg .= "Date: {$dateRetourFormatted}\n";
+                $msg .= "Date: {$dateRetourFormatted} a {$hRetour}\n";
                 $msg .= "Siege(s): " . implode(', ', $retourSeats) . "\n";
                 $msg .= "Type: RETOUR\n";
                 $msg .= "Bon voyage avec Car225 !";

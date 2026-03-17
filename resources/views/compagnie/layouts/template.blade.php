@@ -33,25 +33,34 @@
           ========================================= */
        /* Enable scrolling on the sidebar content */
        .mdc-drawer__content {
-           height: 100%;
+           flex: 1;
+           height: auto;
            overflow-y: auto !important;
            overflow-x: hidden;
        }
 
-       /* Custom Scrollbar for sidebar */
-       .mdc-drawer__content::-webkit-scrollbar {
-           width: 4px;
-       }
-       .mdc-drawer__content::-webkit-scrollbar-track {
-           background: rgba(0, 0, 0, 0); 
-       }
-       .mdc-drawer__content::-webkit-scrollbar-thumb {
-           background: #cbd5e1; 
-           border-radius: 4px;
-       }
-       .mdc-drawer__content::-webkit-scrollbar-thumb:hover {
-           background: #94a3b8; 
-       }
+        /* Custom Scrollbar for sidebar */
+        .mdc-drawer__content {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 0, 0, 0) transparent;
+            transition: scrollbar-color 0.3s ease;
+        }
+        .mdc-drawer__content:hover {
+            scrollbar-color: #cbd5e1 transparent;
+        }
+        .mdc-drawer__content::-webkit-scrollbar {
+            width: 5px;
+        }
+        .mdc-drawer__content::-webkit-scrollbar-track {
+            background: transparent; 
+        }
+        .mdc-drawer__content::-webkit-scrollbar-thumb {
+            background: transparent; 
+            border-radius: 10px;
+        }
+        .mdc-drawer__content:hover::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+        }
 
        /* Fixed positioning for the drawer */
        .mdc-drawer {
@@ -60,6 +69,9 @@
            left: 0;
            height: 100vh !important;
            z-index: 1000;
+           display: flex;
+           flex-direction: column;
+           overflow: hidden !important;
        }
 
         /* Ensure main content is pushed by the sidebar width on desktop */

@@ -172,26 +172,77 @@
                             @enderror
                         </div>
 
+                        <!-- Nom d'urgence -->
+                        <div class="space-y-2">
+                            <label class="flex items-center text-sm font-semibold text-gray-700">
+                                <span>Nom de la personne à contacter</span>
+                                <span class="text-red-500 ml-1">*</span>
+                            </label>
+                            <div class="relative">
+                                <input type="text" 
+                                       name="nom_urgence" 
+                                       value="{{ old('nom_urgence') }}"
+                                       required
+                                       class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
+                                       placeholder="Ex: Mme Bakayoko">
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            @error('nom_urgence')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- Lien de parenté -->
+                        <div class="space-y-2">
+                            <label class="flex items-center text-sm font-semibold text-gray-700">
+                                <span>Lien de parenté</span>
+                                <span class="text-red-500 ml-1">*</span>
+                            </label>
+                            <div class="relative">
+                                <select name="lien_parente_urgence" required
+                                        class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
+                                    <option value="" disabled {{ old('lien_parente_urgence') ? '' : 'selected' }}>-- Sélectionnez le lien --</option>
+                                    <option value="Conjoint(e)" {{ old('lien_parente_urgence') == 'Conjoint(e)' ? 'selected' : '' }}>Conjoint(e)</option>
+                                    <option value="Père" {{ old('lien_parente_urgence') == 'Père' ? 'selected' : '' }}>Père</option>
+                                    <option value="Mère" {{ old('lien_parente_urgence') == 'Mère' ? 'selected' : '' }}>Mère</option>
+                                    <option value="Frère" {{ old('lien_parente_urgence') == 'Frère' ? 'selected' : '' }}>Frère</option>
+                                    <option value="Sœur" {{ old('lien_parente_urgence') == 'Sœur' ? 'selected' : '' }}>Sœur</option>
+                                    <option value="Oncle" {{ old('lien_parente_urgence') == 'Oncle' ? 'selected' : '' }}>Oncle</option>
+                                    <option value="Tante" {{ old('lien_parente_urgence') == 'Tante' ? 'selected' : '' }}>Tante</option>
+                                    <option value="Ami(e)" {{ old('lien_parente_urgence') == 'Ami(e)' ? 'selected' : '' }}>Ami(e)</option>
+                                    <option value="Autre" {{ old('lien_parente_urgence') == 'Autre' ? 'selected' : '' }}>Autre</option>
+                                </select>
+                            </div>
+                            @error('lien_parente_urgence')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
                         <!-- Contact d'urgence -->
                         <div class="space-y-2">
                             <label class="flex items-center text-sm font-semibold text-gray-700">
-                                <span>Contact d'urgence</span>
+                                <span>Numéro d'urgence</span>
+                                <span class="text-red-500 ml-1">*</span>
                             </label>
                             <div class="relative">
                                 <input type="text" 
                                        name="cas_urgence" 
                                        value="{{ old('cas_urgence') }}"
+                                       required
                                        maxlength="10"
                                        oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"
                                        class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
                                        placeholder="Ex: 0100000000">
                                 <div class="absolute inset-y-0 right-0 flex items-center pr-3">
                                     <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
                                     </svg>
                                 </div>
                             </div>
-                            <p class="text-xs text-gray-500">Personne à contacter en cas d'urgence</p>
                             @error('cas_urgence')
                                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                             @enderror
@@ -330,6 +381,44 @@ document.addEventListener('DOMContentLoaded', function() {
             e.target.classList.remove('border-red-300');
         }
     });
+});
+</script>
+
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Success message
+    @if(session('success'))
+        Swal.fire({
+            icon: 'success',
+            title: 'Succès!',
+            text: "{{ session('success') }}",
+            confirmButtonColor: '#e94f1b',
+            timer: 5000,
+            showConfirmButton: true
+        });
+    @endif
+
+    // Error message from session
+    @if(session('error'))
+        Swal.fire({
+            icon: 'error',
+            title: 'Erreur',
+            text: "{{ session('error') }}",
+            confirmButtonColor: '#e94f1b'
+        });
+    @endif
+
+    // Simple validation errors
+    @if($errors->any())
+        Swal.fire({
+            icon: 'error',
+            title: 'Erreur de validation',
+            text: "Veuillez vérifier les informations saisies.",
+            confirmButtonColor: '#e94f1b'
+        });
+    @endif
 });
 </script>
 

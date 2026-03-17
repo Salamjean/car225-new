@@ -26,6 +26,8 @@ class Personnel extends Authenticatable
         'email',
         'contact',
         'contact_urgence',
+        'nom_urgence',
+        'lien_parente_urgence',
         'statut',
         'profile_image',
         'compagnie_id',

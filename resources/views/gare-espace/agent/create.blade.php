@@ -58,20 +58,7 @@
                         <div class="text-center sm:text-left">
                             <p class="font-semibold text-gray-700 mb-1">Choisir une photo</p>
                             <p class="text-sm text-gray-400 mb-3">Formats acceptés : JPG, PNG · Max 2 Mo</p>
-                            <div class="flex flex-wrap gap-2 justify-center sm:justify-start">
-                                <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-green-600 bg-green-50 px-3 py-1 rounded-full">
-                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                                    Fond neutre
-                                </span>
-                                <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-green-600 bg-green-50 px-3 py-1 rounded-full">
-                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                                    Visage centré
-                                </span>
-                                <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-green-600 bg-green-50 px-3 py-1 rounded-full">
-                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                                    Photo récente
-                                </span>
-                            </div>
+                           
                         </div>
                     </div>
 
@@ -207,111 +194,79 @@
                             @enderror
                         </div>
 
-                        {{-- Contact urgence --}}
-                        <div class="space-y-1.5">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">
-                                Contact d'urgence <span class="text-red-500 ml-1">*</span>
-                            </label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-                                    </svg>
+                        {{-- Contact d'urgence --}}
+                        <div class="md:col-span-2 pt-4 border-t border-gray-100 mt-2">
+                            <h3 class="text-sm font-bold text-gray-900 mb-4 flex items-center">
+                                <i class="fas fa-life-ring mr-2 text-red-500"></i>
+                                Personne à contacter en cas d'urgence
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div class="md:col-span-2 space-y-1.5">
+                                    <label class="flex items-center text-sm font-semibold text-gray-700">
+                                        Nom et prénom de la personne à contacter <span class="text-red-500 ml-1">*</span>
+                                    </label>
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                                            <i class="fas fa-user-shield text-gray-400"></i>
+                                        </div>
+                                        <input type="text" name="nom_urgence" value="{{ old('nom_urgence') }}" required
+                                            placeholder="Ex : Awa Sanogo"
+                                            class="w-full pl-10 pr-4 py-3.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-200 text-sm font-medium outline-none @error('nom_urgence') border-red-400 bg-red-50 @enderror">
+                                    </div>
+                                    @error('nom_urgence')
+                                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                    @enderror
                                 </div>
-                                <input type="text" name="cas_urgence" value="{{ old('cas_urgence') }}" required
-                                    placeholder="05 XX XX XX XX" maxlength="10" minlength="10"
-                                    pattern="[0-9]{10}" inputmode="numeric"
-                                    oninput="this.value=this.value.replace(/[^0-9]/g,'')"
-                                    class="w-full pl-10 pr-4 py-3.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-200 text-sm font-medium outline-none @error('cas_urgence') border-red-400 bg-red-50 @enderror">
-                            </div>
-                            <p class="text-xs text-gray-400">Personne à contacter en cas d'incident</p>
-                            @error('cas_urgence')
-                                <p class="text-red-500 text-xs flex items-center gap-1">
-                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
-                                    {{ $message }}
-                                </p>
-                            @enderror
-                        </div>
-                    </div>
-                </div>
 
-                {{-- Accès & Sécurité --}}
-                <div class="p-8 border-b border-gray-100">
-                    <div class="flex items-center mb-6">
-                        <div class="w-2 h-8 bg-blue-500 rounded-full mr-4"></div>
-                        <h2 class="text-xl font-bold text-gray-900">Accès &amp; Sécurité</h2>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        {{-- Mot de passe --}}
-                        <div class="space-y-1.5">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">
-                                Mot de passe <span class="text-red-500 ml-1">*</span>
-                            </label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                                    </svg>
+                                <div class="space-y-1.5">
+                                    <label class="flex items-center text-sm font-semibold text-gray-700">
+                                        Lien de parenté <span class="text-red-500 ml-1">*</span>
+                                    </label>
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                                            <i class="fas fa-users text-gray-400"></i>
+                                        </div>
+                                        <select name="lien_parente_urgence" required
+                                            class="w-full pl-10 pr-4 py-3.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-200 text-sm font-medium outline-none appearance-none @error('lien_parente_urgence') border-red-400 bg-red-50 @enderror">
+                                            <option value="">Sélectionner</option>
+                                            <option value="Père" {{ old('lien_parente_urgence') == 'Père' ? 'selected' : '' }}>Père</option>
+                                            <option value="Mère" {{ old('lien_parente_urgence') == 'Mère' ? 'selected' : '' }}>Mère</option>
+                                            <option value="Frère" {{ old('lien_parente_urgence') == 'Frère' ? 'selected' : '' }}>Frère</option>
+                                            <option value="Sœur" {{ old('lien_parente_urgence') == 'Sœur' ? 'selected' : '' }}>Sœur</option>
+                                            <option value="Oncle" {{ old('lien_parente_urgence') == 'Oncle' ? 'selected' : '' }}>Oncle</option>
+                                            <option value="Tante" {{ old('lien_parente_urgence') == 'Tante' ? 'selected' : '' }}>Tante</option>
+                                            <option value="Conjoint(e)" {{ old('lien_parente_urgence') == 'Conjoint(e)' ? 'selected' : '' }}>Conjoint(e)</option>
+                                            <option value="Autre" {{ old('lien_parente_urgence') == 'Autre' ? 'selected' : '' }}>Autre</option>
+                                        </select>
+                                        <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none">
+                                            <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                                        </div>
+                                    </div>
+                                    @error('lien_parente_urgence')
+                                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                    @enderror
                                 </div>
-                                <input type="password" name="password" id="pwdInput" required
-                                    placeholder="Min. 8 caractères"
-                                    oninput="checkStrength(this.value)"
-                                    class="w-full pl-10 pr-12 py-3.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-200 text-sm font-medium outline-none @error('password') border-red-400 bg-red-50 @enderror">
-                                <button type="button" onclick="togglePwd('pwdInput', this)"
-                                    class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 transition-colors">
-                                    <svg id="eyePwd" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                    </svg>
-                                </button>
-                            </div>
-                            {{-- Force du mot de passe --}}
-                            <div class="flex gap-1 mt-1">
-                                <div id="sb1" class="h-1 flex-1 rounded-full bg-gray-200 transition-all duration-300"></div>
-                                <div id="sb2" class="h-1 flex-1 rounded-full bg-gray-200 transition-all duration-300"></div>
-                                <div id="sb3" class="h-1 flex-1 rounded-full bg-gray-200 transition-all duration-300"></div>
-                                <div id="sb4" class="h-1 flex-1 rounded-full bg-gray-200 transition-all duration-300"></div>
-                            </div>
-                            <p id="strengthLabel" class="text-xs text-gray-400"></p>
-                            @error('password')
-                                <p class="text-red-500 text-xs flex items-center gap-1">
-                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
-                                    {{ $message }}
-                                </p>
-                            @enderror
-                        </div>
 
-                        {{-- Confirmation --}}
-                        <div class="space-y-1.5">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">
-                                Confirmation <span class="text-red-500 ml-1">*</span>
-                            </label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-                                    </svg>
+                                <div class="space-y-1.5">
+                                    <label class="flex items-center text-sm font-semibold text-gray-700">
+                                        Contact d'urgence <span class="text-red-500 ml-1">*</span>
+                                    </label>
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                                            <i class="fas fa-phone-alt text-gray-400"></i>
+                                        </div>
+                                        <input type="text" name="cas_urgence" value="{{ old('cas_urgence') }}" required
+                                            placeholder="05 XX XX XX XX" maxlength="10" minlength="10"
+                                            pattern="[0-9]{10}" inputmode="numeric"
+                                            oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+                                            class="w-full pl-10 pr-4 py-3.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-200 text-sm font-medium outline-none @error('cas_urgence') border-red-400 bg-red-50 @enderror">
+                                    </div>
+                                    <p class="text-[10px] text-gray-400 italic">Doit être différent du contact principal.</p>
+                                    @error('cas_urgence')
+                                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                    @enderror
                                 </div>
-                                <input type="password" name="password_confirmation" id="pwdConfirm" required
-                                    placeholder="Répéter le mot de passe"
-                                    oninput="checkMatch()"
-                                    class="w-full pl-10 pr-12 py-3.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-200 text-sm font-medium outline-none">
-                                <button type="button" onclick="togglePwd('pwdConfirm', this)"
-                                    class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 transition-colors">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                    </svg>
-                                </button>
                             </div>
-                            <p id="matchMsg" class="text-xs hidden"></p>
-                            @error('password_confirmation')
-                                <p class="text-red-500 text-xs flex items-center gap-1">
-                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
-                                    {{ $message }}
-                                </p>
-                            @enderror
                         </div>
                     </div>
                 </div>
@@ -386,24 +341,11 @@ document.addEventListener('DOMContentLoaded', function () {
             preview.src = '';
             preview.classList.add('hidden');
             defaultIcon.classList.remove('hidden');
-            document.getElementById('sb1').className = 'h-1 flex-1 rounded-full bg-gray-200 transition-all duration-300';
-            document.getElementById('sb2').className = 'h-1 flex-1 rounded-full bg-gray-200 transition-all duration-300';
-            document.getElementById('sb3').className = 'h-1 flex-1 rounded-full bg-gray-200 transition-all duration-300';
-            document.getElementById('sb4').className = 'h-1 flex-1 rounded-full bg-gray-200 transition-all duration-300';
-            document.getElementById('strengthLabel').textContent = '';
-            document.getElementById('matchMsg').classList.add('hidden');
         }, 10);
     });
 
     /* ── Submit spinner ── */
     document.getElementById('agentForm').addEventListener('submit', function (e) {
-        const pwd  = document.getElementById('pwdInput').value;
-        const cpwd = document.getElementById('pwdConfirm').value;
-        if (pwd !== cpwd) {
-            e.preventDefault();
-            Swal.fire({ icon: 'error', title: 'Mots de passe différents', text: 'Veuillez saisir deux mots de passe identiques.', confirmButtonColor: '#e94f1b' });
-            return;
-        }
         document.getElementById('submitIcon').classList.add('hidden');
         document.getElementById('submitSpinner').classList.remove('hidden');
     });
@@ -426,60 +368,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     @endif
 });
-
-/* ── Password strength ── */
-function checkStrength(pwd) {
-    const bars  = ['sb1','sb2','sb3','sb4'].map(id => document.getElementById(id));
-    const label = document.getElementById('strengthLabel');
-    const base  = 'h-1 flex-1 rounded-full transition-all duration-300 ';
-    bars.forEach(b => b.className = base + 'bg-gray-200');
-    if (!pwd) { label.textContent = ''; return; }
-    let s = 0;
-    if (pwd.length >= 6) s++;
-    if (pwd.length >= 8) s++;
-    if (/[A-Z]/.test(pwd) && /[a-z]/.test(pwd)) s++;
-    if (/[0-9]/.test(pwd) || /[^A-Za-z0-9]/.test(pwd)) s++;
-    const cfg = [
-        { bg: 'bg-red-400',    txt: 'Très faible', color: '#f87171' },
-        { bg: 'bg-red-400',    txt: 'Faible',       color: '#f87171' },
-        { bg: 'bg-amber-400',  txt: 'Moyen',        color: '#fbbf24' },
-        { bg: 'bg-amber-400',  txt: 'Bien',         color: '#fbbf24' },
-        { bg: 'bg-green-500',  txt: 'Fort 💪',      color: '#22c55e' },
-    ];
-    const { bg, txt, color } = cfg[s];
-    for (let i = 0; i < s; i++) bars[i].className = base + bg;
-    label.textContent = txt;
-    label.style.color = color;
-    checkMatch();
-}
-
-/* ── Password match ── */
-function checkMatch() {
-    const pwd   = document.getElementById('pwdInput').value;
-    const cpwd  = document.getElementById('pwdConfirm').value;
-    const msg   = document.getElementById('matchMsg');
-    if (!cpwd) { msg.classList.add('hidden'); return; }
-    const ok = pwd === cpwd;
-    msg.classList.remove('hidden');
-    msg.textContent = ok ? '✓ Les mots de passe correspondent' : '✗ Les mots de passe ne correspondent pas';
-    msg.style.color = ok ? '#22c55e' : '#ef4444';
-}
-
-/* ── Toggle password visibility ── */
-function togglePwd(inputId, btn) {
-    const input = document.getElementById(inputId);
-    const paths = btn.querySelectorAll('path');
-    if (input.type === 'password') {
-        input.type = 'text';
-        // eye-slash visual
-        btn.style.opacity = '1';
-        btn.querySelectorAll('svg')[0] && (btn.querySelectorAll('svg')[0].style.opacity = '0.5');
-    } else {
-        input.type = 'password';
-        btn.style.opacity = '';
-        btn.querySelectorAll('svg')[0] && (btn.querySelectorAll('svg')[0].style.opacity = '');
-    }
-}
 </script>
 
 @endsection

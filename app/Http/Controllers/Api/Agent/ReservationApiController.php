@@ -468,12 +468,18 @@ class ReservationApiController extends Controller
                     'passager_nom' => $scan->passager_prenom . ' ' . $scan->passager_nom,
                     'passager_telephone' => $scan->passager_telephone,
                     'seat_number' => $scan->seat_number,
+                    'seat_label' => 'SIEGE #' . $scan->seat_number,
+                    'case_label' => 'Case #' . $scan->seat_number,
                     'is_aller_retour' => $scan->is_aller_retour,
                     'statut_aller' => $scan->statut_aller,
                     'statut_retour' => $scan->statut_retour,
                     'embarquement_scanned_at' => $scan->embarquement_scanned_at ? Carbon::parse($scan->embarquement_scanned_at)->format('d/m/Y H:i') : null,
+                    'heure_scan' => $scan->embarquement_scanned_at ? Carbon::parse($scan->embarquement_scanned_at)->format('H:i') : null,
                     'vehicule' => $scan->embarquementVehicule ? $scan->embarquementVehicule->immatriculation : 'N/A',
+                    'num_car' => $scan->embarquementVehicule ? '#' . $scan->embarquementVehicule->immatriculation : 'N/A',
                     'trajet' => $scan->programme ? $scan->programme->point_depart . ' → ' . $scan->programme->point_arrive : '',
+                    'point_depart' => $scan->programme ? $scan->programme->point_depart : '',
+                    'point_arrivee' => $scan->programme ? $scan->programme->point_arrive : '',
                     'heure_depart' => $scan->programme ? $scan->programme->heure_depart : '',
                 ];
             }),
@@ -483,6 +489,64 @@ class ReservationApiController extends Controller
                 'per_page' => $scans->perPage(),
                 'total' => $scans->total(),
             ],
+        ]);
+    }
+
+    /**
+     * Historique des scans optimisé pour l'application mobile (inspiré par les maquettes)
+     */
+    public function scanHistory(Request $request)
+    {
+        $agent = $request->user();
+        $date = $request->get('date');
+
+        // Requête sur les réservations scannées
+        $query = Reservation::with(['programme.gareDepart', 'programme.gareArrivee', 'embarquementVehicule'])
+            ->whereHas('programme', function ($q) use ($agent) {
+                $q->where('compagnie_id', $agent->compagnie_id);
+            })
+            ->whereNotNull('embarquement_scanned_at');
+
+        // Filtre par date de scan (uniquement si spécifié)
+        if ($date) {
+            $query->whereDate('embarquement_scanned_at', $date);
+        }
+
+        // Filtre de recherche par passager ou référence
+        if ($request->filled('q')) {
+            $search = $request->get('q');
+            $query->where(function($q) use ($search) {
+                $q->where('reference', 'like', "%{$search}%")
+                  ->orWhere('passager_nom', 'like', "%{$search}%")
+                  ->orWhere('passager_prenom', 'like', "%{$search}%");
+            });
+        }
+
+        $scans = $query->orderBy('embarquement_scanned_at', 'desc')->get();
+
+        return response()->json([
+            'success' => true,
+            'total_scans' => $scans->count(), // Pour le badge (ex: "4 SCANS")
+            'date_filtre' => $date,
+            'scans' => $scans->map(function($scan) {
+                $scanAt = Carbon::parse($scan->embarquement_scanned_at);
+                return [
+                    'id' => $scan->id,
+                    'reference' => $scan->reference,
+                    'passager_nom' => $scan->passager_prenom . ' ' . $scan->passager_nom,
+                    'passager_telephone' => $scan->passager_telephone,
+                    'seat_number' => $scan->seat_number,
+                    'seat_label' => 'SIEGE #' . $scan->seat_number,
+                    'case_label' => 'Case #' . $scan->seat_number,
+                    'trajet' => $scan->programme ? $scan->programme->point_depart . ' → ' . $scan->programme->point_arrive : '',
+                    'point_depart' => $scan->programme ? $scan->programme->point_depart : '',
+                    'point_arrivee' => $scan->programme ? $scan->programme->point_arrive : '',
+                    'num_car' => $scan->embarquementVehicule ? '#' . $scan->embarquementVehicule->immatriculation : 'N/A',
+                    'heure_scan' => $scanAt->format('H:i'),
+                    'date_heure_scan' => $scanAt->translatedFormat('d M Y à H:i'),
+                    'statut' => 'VALIDE',
+                ];
+            }),
         ]);
     }
 
