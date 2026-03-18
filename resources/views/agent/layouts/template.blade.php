@@ -28,18 +28,40 @@
       padding-top: 64px;
       min-height: 100vh;
       background: #f8fafc;
-      transition: margin-left 0.3s;
+      transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Sidebar réduite → le contenu se décale */
+    body.sidebar-collapsed .agent-main-wrapper {
+      margin-left: 68px;
     }
     
     @media (max-width: 767.98px) {
       .agent-main-wrapper {
-        margin-left: 0;
+        margin-left: 0 !important;
       }
     }
   </style>
   
   @yield('styles')
 </head>
+
+{{-- Script inline : restaurer l'état collapsed AVANT le rendu pour éviter le flash --}}
+<script>
+  (function() {
+    if (localStorage.getItem('sidebarCollapsed') === 'true') {
+      // S'applique dès que possible
+      document.addEventListener('DOMContentLoaded', function() {
+        document.body.classList.add('sidebar-collapsed');
+        var icon = document.getElementById('sidebarCollapseIcon');
+        if (icon) {
+          icon.classList.remove('fa-bars');
+          icon.classList.add('fa-arrow-right');
+        }
+      });
+    }
+  })();
+</script>
 
 <body style="background: #f8fafc;">
   <!-- Sidebar -->

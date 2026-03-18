@@ -10,7 +10,7 @@
                 <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight flex items-center gap-3">
                     Bienvenue, {{ $agent->prenom ?? $agent->name }} 👋
                     <span class="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded-lg border border-blue-200 uppercase tracking-wider">
-                        Code ID: {{ $agent->code_id ?? 'N/A' }}
+                        Identifiant: {{ $agent->code_id ?? 'N/A' }}
                     </span>
                 </h1>
                 <p class="text-gray-500 mt-1">
@@ -43,13 +43,13 @@
                         <i class="fas fa-qrcode text-xl"></i>
                     </div>
                     <span class="px-2 py-1 bg-white/20 rounded-lg text-xs font-bold">
-                        Moi aujourd'hui
+                        Aujourd'hui
                     </span>
                 </div>
-                <p class="text-sm font-bold text-white/80 uppercase tracking-wider">Mes scans effectués</p>
+                <p class="text-sm font-bold text-white/80 uppercase tracking-wider">Mes embarquements effectués</p>
                 <h3 class="text-3xl font-black mt-1">{{ $scansToday }}</h3>
                 <p class="mt-3 text-xs text-white/70 font-medium">
-                    Total: {{ $totalScans }} scans effectués par moi
+                    Total: {{ $totalScans }} Embarquements effectués
                 </p>
             </div>
 

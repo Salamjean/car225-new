@@ -40,7 +40,7 @@
                                     <div class="w-8 h-8 rounded-lg bg-orange-100 text-[#e94e1a] flex items-center justify-center">
                                         <i class="fas fa-id-badge"></i>
                                     </div>
-                                    <span class="text-sm font-medium text-gray-600">Code ID</span>
+                                    <span class="text-sm font-medium text-gray-600">Identifiant</span>
                                 </div>
                                 <span class="font-bold text-gray-900">{{ $agent->code_id ?? 'N/A' }}</span>
                             </div>

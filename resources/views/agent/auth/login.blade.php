@@ -399,7 +399,7 @@
             <i class="fas fa-user input-icon"></i>
             <input class="input-field" type="text" name="login" placeholder=" " value="{{ old('login') }}"
                 required />
-            <label class="input-label" for="login">Email ou Code ID</label>
+            <label class="input-label" for="login">Email ou Identification</label>
             @error('login')
                 <div class="error-message">
                     <i class="fas fa-exclamation-circle"></i> {{ $message }}
