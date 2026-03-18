@@ -41,12 +41,12 @@
     <nav class="sidebar-nav">
         <p class="nav-section-title">Navigation</p>
 
-        <a href="{{ route('agent.dashboard') }}" class="nav-link {{ $currentRoute === 'agent.dashboard' ? 'active' : '' }}">
+        <a href="{{ route('agent.dashboard') }}" class="nav-link {{ $currentRoute === 'agent.dashboard' ? 'active' : '' }}" title="Tableau de bord">
             <div class="nav-icon"><i class="fas fa-th-large"></i></div>
             <span>Tableau de bord</span>
         </a>
 
-        <a href="{{ route('agent.messages.index') }}" class="nav-link {{ str_starts_with($currentRoute, 'agent.messages') ? 'active' : '' }}">
+        <a href="{{ route('agent.messages.index') }}" class="nav-link {{ str_starts_with($currentRoute, 'agent.messages') ? 'active' : '' }}" title="Boîte de réception">
             <div class="nav-icon"><i class="fas fa-envelope"></i></div>
             <span>Boîte de réception</span>
             @if($totalUnread > 0)
@@ -56,32 +56,32 @@
 
         <p class="nav-section-title" style="margin-top: 12px;">Réservations</p>
 
-        <a href="{{ route('agent.reservations.index') }}" class="nav-link {{ $currentRoute === 'agent.reservations.index' ? 'active' : '' }}">
+        <a href="{{ route('agent.reservations.index') }}" class="nav-link {{ $currentRoute === 'agent.reservations.index' ? 'active' : '' }}" title="Scanner">
             <div class="nav-icon"><i class="fas fa-qrcode"></i></div>
             <span>Scanner</span>
         </a>
 
-        <a href="{{ route('agent.reservations.recherche') }}" class="nav-link {{ $currentRoute === 'agent.reservations.recherche' ? 'active' : '' }}">
+        <a href="{{ route('agent.reservations.recherche') }}" class="nav-link {{ $currentRoute === 'agent.reservations.recherche' ? 'active' : '' }}" title="Rechercher">
             <div class="nav-icon"><i class="fas fa-search"></i></div>
             <span>Rechercher</span>
         </a>
 
-        <a href="{{ route('agent.reservations.historique') }}" class="nav-link {{ $currentRoute === 'agent.reservations.historique' ? 'active' : '' }}">
+        <a href="{{ route('agent.reservations.historique') }}" class="nav-link {{ $currentRoute === 'agent.reservations.historique' ? 'active' : '' }}" title="Historique">
             <div class="nav-icon"><i class="fas fa-history"></i></div>
             <span>Historique</span>
         </a>
 
-        <p class="nav-section-title" style="margin-top: 12px;">Autres</p>
+        {{-- <p class="nav-section-title" style="margin-top: 12px;">Autres</p>
 
         <a href="#" class="nav-link {{ str_starts_with($currentRoute, 'agent.signalements') ? 'active' : '' }}">
             <div class="nav-icon"><i class="fas fa-exclamation-triangle"></i></div>
             <span>Signalements</span>
-        </a>
+        </a> --}}
     </nav>
 
     {{-- Logout --}}
     <div class="sidebar-footer">
-        <a href="{{ route('agent.logout') }}" class="nav-link logout-link">
+        <a href="{{ route('agent.logout') }}" class="nav-link logout-link" title="Déconnexion">
             <div class="nav-icon"><i class="fas fa-sign-out-alt"></i></div>
             <span>Déconnexion</span>
         </a>
@@ -223,6 +223,8 @@
     font-weight: 700;
     padding: 0 10px;
     margin: 0 0 6px;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 .nav-link {
@@ -238,6 +240,8 @@
     margin-bottom: 3px;
     transition: all 0.2s ease;
     position: relative;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 .nav-link:hover {
@@ -308,5 +312,54 @@
     }
     .agent-sidebar.open { transform: translateX(0); }
     .sidebar-overlay.open { display: block; }
+}
+
+/* ============ MODE COLLAPSED (bureau) ============ */
+body.sidebar-collapsed .agent-sidebar {
+    width: 68px;
+}
+
+body.sidebar-collapsed .sidebar-brand .brand-text,
+body.sidebar-collapsed .sidebar-profile .profile-info,
+body.sidebar-collapsed .nav-link span:not(.nav-badge),
+body.sidebar-collapsed .nav-section-title {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+body.sidebar-collapsed .sidebar-header {
+    justify-content: center;
+    padding: 20px 0 16px;
+}
+
+body.sidebar-collapsed .sidebar-profile {
+    justify-content: center;
+    padding: 14px 0;
+}
+
+body.sidebar-collapsed .sidebar-nav {
+    padding: 12px 8px 0;
+}
+
+body.sidebar-collapsed .nav-link {
+    justify-content: center;
+    padding: 10px 0;
+    gap: 0;
+}
+
+body.sidebar-collapsed .nav-icon {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+}
+
+body.sidebar-collapsed .sidebar-footer {
+    padding: 12px 8px;
+}
+
+body.sidebar-collapsed .sidebar-footer .nav-link {
+    justify-content: center;
 }
 </style>
