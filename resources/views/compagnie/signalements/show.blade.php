@@ -1,514 +1,344 @@
 @extends('compagnie.layouts.template')
 
+@section('page-title', 'Détails du Signalement')
+@section('page-subtitle', 'Analyse et prise de décision suite à un incident')
+
+@section('styles')
+<style>
+    .details-container { max-width: 1100px; margin: 0 auto; }
+
+    /* Header de l'incident */
+    .incident-header {
+        background: linear-gradient(135deg, var(--red) 0%, #9F1239 100%);
+        border-radius: var(--radius); padding: 24px 32px; color: white; margin-bottom: 24px;
+        position: relative; overflow: hidden; box-shadow: var(--shadow-md);
+        display: flex; flex-direction: column; justify-content: center; min-height: 140px;
+    }
+    .incident-header .bg-icon {
+        position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
+        font-size: 100px; color: rgba(255,255,255,0.1); pointer-events: none;
+    }
+    .incident-title { font-size: 22px; font-weight: 800; margin: 12px 0 8px; line-height: 1.2; }
+    .incident-meta { font-size: 12px; font-weight: 600; opacity: 0.9; margin: 0; }
+
+    .tag-white { background: white; color: var(--red); padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+    .tag-trans { background: rgba(255,255,255,0.2); color: white; padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+    .tag-green { background: var(--emerald); color: white; padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* Blocs d'informations */
+    .info-card {
+        background: var(--surface); border: 1px solid var(--border);
+        border-radius: var(--radius); padding: 20px; margin-bottom: 20px; box-shadow: var(--shadow-sm);
+    }
+    .info-card-title {
+        font-size: 11px; font-weight: 800; color: var(--text-3);
+        text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px;
+        display: flex; align-items: center; gap: 8px;
+    }
+    
+    .desc-box { background: var(--surface-2); padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border); font-size: 14px; color: var(--text-1); font-style: italic; line-height: 1.6; }
+    
+    .photo-box { border-radius: var(--radius-sm); overflow: hidden; border: 4px solid var(--surface-2); cursor: pointer; transition: 0.2s; display: block; text-align: center; background: #000; }
+    .photo-box:hover { border-color: var(--red); }
+    .photo-box img { max-width: 100%; max-height: 350px; object-fit: contain; }
+
+    /* Sidebar Mini-cards */
+    .mini-card { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px; margin-bottom: 16px; }
+    .mini-card h4 { font-size: 10px; font-weight: 800; color: var(--text-3); text-transform: uppercase; margin-bottom: 12px; margin-top: 0; }
+    
+    .avatar-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; flex-shrink: 0; }
+    
+    /* Boutons logistiques */
+    .btn-logistic {
+        width: 100%; padding: 14px; border-radius: var(--radius-sm); font-weight: 800; font-size: 12px;
+        text-transform: uppercase; letter-spacing: 0.5px; border: none; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-logistic.red { background: var(--red); color: white; box-shadow: 0 4px 15px rgba(239,68,68,0.3); }
+    .btn-logistic.red:hover { background: #B91C1C; transform: translateY(-2px); }
+    .btn-logistic.green { background: var(--emerald); color: white; box-shadow: 0 4px 15px rgba(16,185,129,0.3); }
+    .btn-logistic.green:hover { background: #047857; transform: translateY(-2px); }
+    .btn-logistic.blue { background: var(--blue); color: white; box-shadow: 0 4px 15px rgba(59,130,246,0.3); }
+    .btn-logistic.blue:hover { background: #1D4ED8; transform: translateY(-2px); }
+    .btn-logistic.dark { background: var(--text-1); color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+    .btn-logistic.dark:hover { background: black; transform: translateY(-2px); }
+</style>
+@endsection
+
 @section('content')
-    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-red-50 py-8 px-4">
-        <div class="max-w-5xl mx-auto">
+<div class="dashboard-page">
+    <div class="details-container">
 
-            {{-- Flash Messages --}}
-            @if(session('success'))
-                <div class="mb-6 bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center gap-3 animate-fade-in">
-                    <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center text-green-600 flex-shrink-0">
-                        <i class="fas fa-check-circle text-lg"></i>
-                    </div>
-                    <p class="text-green-800 font-semibold text-sm">{{ session('success') }}</p>
-                </div>
+        {{-- Messages --}}
+        @if(session('success'))
+            <div class="alert alert-success d-flex align-items-center" style="border-radius: var(--radius-sm); font-weight: 600; font-size: 13px;">
+                <i class="fas fa-check-circle mr-2" style="font-size: 18px;"></i> {{ session('success') }}
+            </div>
+        @endif
+        @if(session('error'))
+            <div class="alert alert-danger d-flex align-items-center" style="border-radius: var(--radius-sm); font-weight: 600; font-size: 13px;">
+                <i class="fas fa-exclamation-circle mr-2" style="font-size: 18px;"></i> {{ session('error') }}
+            </div>
+        @endif
+
+        {{-- Actions Top --}}
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <a href="{{ route('compagnie.signalements.index') }}" class="btn btn-light btn-sm" style="font-weight: 700; font-size: 12px; border-radius: var(--radius-sm);">
+                <i class="fas fa-arrow-left mr-2"></i> Retour à la liste
+            </a>
+            @if($signalement->statut !== 'traite')
+                <form action="{{ route('compagnie.signalements.mark-traite', $signalement->id) }}" method="POST" class="m-0">
+                    @csrf
+                    @method('PATCH')
+                    <button type="submit" class="btn btn-success btn-sm" style="background: var(--emerald); border: none; font-weight: 700; border-radius: var(--radius-sm); padding: 8px 16px;">
+                        <i class="fas fa-check-circle mr-1"></i> Marquer comme traité
+                    </button>
+                </form>
             @endif
+        </div>
 
-            @if(session('error'))
-                <div class="mb-6 bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center gap-3 animate-fade-in">
-                    <div class="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center text-red-600 flex-shrink-0">
-                        <i class="fas fa-exclamation-circle text-lg"></i>
-                    </div>
-                    <p class="text-red-800 font-semibold text-sm">{{ session('error') }}</p>
+        {{-- HEADER INCIDENT --}}
+        <div class="incident-header">
+            <i class="fas fa-exclamation-triangle bg-icon"></i>
+            <div style="position: relative; z-index: 2;">
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                    <span class="tag-trans">ID #{{ $signalement->id }}</span>
+                    <span class="tag-white">{{ $signalement->type }}</span>
+                    @if($signalement->statut === 'traite')
+                        <span class="tag-green"><i class="fas fa-check mr-1"></i> Traité</span>
+                    @endif
                 </div>
-            @endif
+                <h1 class="incident-title">Détails du Signalement</h1>
+                <p class="incident-meta"><i class="far fa-calendar-alt mr-1"></i> Signalé le {{ $signalement->created_at->format('d/m/Y à H:i') }}</p>
+            </div>
+        </div>
 
-            <!-- Navigation & Actions -->
-            <div class="mb-6 flex justify-between items-center">
-                <a href="{{ route('compagnie.signalements.index') }}"
-                    class="group flex items-center text-gray-500 hover:text-red-600 transition-colors font-medium">
-                    <i class="fas fa-arrow-left mr-2 transform group-hover:-translate-x-1 transition-transform"></i>
-                    Retour à la liste
-                </a>
-                <div class="flex gap-2">
-                    @if($signalement->statut !== 'traite')
-                        <form action="{{ route('compagnie.signalements.mark-traite', $signalement->id) }}" method="POST" class="inline">
+        <div class="row">
+            {{-- COLONNE GAUCHE : DÉTAILS --}}
+            <div class="col-lg-8">
+                
+                {{-- Description --}}
+                <div class="info-card">
+                    <h3 class="info-card-title"><i class="fas fa-align-left" style="color: var(--red);"></i> Description du problème</h3>
+                    <div class="desc-box">
+                        "{{ $signalement->description }}"
+                    </div>
+                </div>
+
+                {{-- Photo --}}
+                @if($signalement->photo_path)
+                <div class="info-card">
+                    <h3 class="info-card-title"><i class="fas fa-camera" style="color: var(--red);"></i> Preuve Visuelle</h3>
+                    <a href="{{ asset($signalement->photo_path) }}" target="_blank" class="photo-box">
+                        <img src="{{ asset($signalement->photo_path) }}" alt="Photo de l'incident" onerror="this.onerror=null; this.src='{{ $signalement->photo_path }}';">
+                    </a>
+                </div>
+                @endif
+
+                {{-- Localisation GPS --}}
+                @if($signalement->latitude && $signalement->longitude)
+                <div class="info-card">
+                    <h3 class="info-card-title"><i class="fas fa-map-marker-alt" style="color: var(--red);"></i> Lieu de l'incident</h3>
+                    <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between" style="background: #EFF6FF; border: 1px solid #BFDBFE; padding: 20px; border-radius: var(--radius-sm); gap: 16px;">
+                        <div class="d-flex align-items-center gap-3">
+                            <div style="width: 40px; height: 40px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--blue); font-size: 16px; box-shadow: var(--shadow-sm); flex-shrink: 0;">
+                                <i class="fas fa-location-arrow"></i>
+                            </div>
+                            <div>
+                                <p style="font-size: 10px; font-weight: 800; color: var(--blue); text-transform: uppercase; margin: 0;">Adresse approximative</p>
+                                <p id="address-display" style="font-size: 13px; font-weight: 800; color: var(--text-1); margin: 4px 0;"><i class="fas fa-spinner fa-spin mr-2"></i>Chargement...</p>
+                                <p style="font-size: 11px; color: var(--text-3); font-family: monospace; margin: 0;">GPS: {{ $signalement->latitude }}, {{ $signalement->longitude }}</p>
+                            </div>
+                        </div>
+                        <a href="https://www.google.com/maps/search/?api=1&query={{ $signalement->latitude }},{{ $signalement->longitude }}" target="_blank" class="btn btn-primary btn-sm" style="background: white; color: var(--blue); border: none; font-weight: 700; box-shadow: var(--shadow-sm); white-space: nowrap;">
+                            <i class="fas fa-external-link-alt mr-1"></i> Ouvrir GPS
+                        </a>
+                    </div>
+                </div>
+                
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const lat = {{ $signalement->latitude }};
+                        const lon = {{ $signalement->longitude }};
+                        const display = document.getElementById('address-display');
+                        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
+                            .then(res => res.json())
+                            .then(data => { display.innerText = (data && data.display_name) ? data.display_name : "Adresse introuvable"; })
+                            .catch(err => { display.innerText = "Erreur de récupération"; });
+                    });
+                </script>
+                @endif
+
+                {{-- LOGISTIQUE / DÉCISIONS --}}
+                @if($signalement->statut !== 'traite')
+                <div class="info-card" style="border: 2px solid var(--orange-mid);">
+                    <h3 class="info-card-title" style="color: var(--text-1); font-size: 14px;"><i class="fas fa-gavel" style="color: var(--orange);"></i> Décision & Logistique</h3>
+                    
+                    {{-- ACCIDENT --}}
+                    @if($signalement->type === 'accident')
+                        <div style="background: #FEF2F2; border: 1px solid #FCA5A5; padding: 16px; border-radius: var(--radius-sm); margin-bottom: 16px;">
+                            <h4 style="font-size: 12px; font-weight: 800; color: #B91C1C; text-transform: uppercase; margin-bottom: 8px;"><i class="fas fa-exclamation-circle"></i> Interruption requise</h4>
+                            <p style="font-size: 12px; color: #DC2626; margin-bottom: 16px; font-weight: 600;">Cette action marquera le voyage comme interrompu. Le véhicule et le chauffeur seront immobilisés.</p>
+                            <form action="{{ route('compagnie.signalements.interrupt', $signalement->id) }}" method="POST">
+                                @csrf
+                                <button type="submit" class="btn-logistic red" onclick="return confirm('Êtes-vous sûr de vouloir interrompre ce voyage ?')">
+                                    <i class="fas fa-times-circle"></i> Confirmer l'interruption
+                                </button>
+                            </form>
+                        </div>
+                    @endif
+
+                    {{-- PANNE --}}
+                    @if($signalement->type === 'panne')
+                        <div class="row">
+                            <div class="col-md-6 mb-3 mb-md-0">
+                                <div style="background: #ECFDF5; border: 1px solid #A7F3D0; padding: 16px; border-radius: var(--radius-sm); height: 100%;">
+                                    <h4 style="font-size: 11px; font-weight: 800; color: #047857; text-transform: uppercase; margin-bottom: 8px;">Panne réparée</h4>
+                                    <p style="font-size: 11px; color: #059669; margin-bottom: 16px; font-weight: 600;">Le car peut reprendre la route.</p>
+                                    <form action="{{ route('compagnie.signalements.resume', $signalement->id) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="btn-logistic green"><i class="fas fa-play"></i> Reprendre la route</button>
+                                    </form>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div style="background: #EFF6FF; border: 1px solid #BFDBFE; padding: 16px; border-radius: var(--radius-sm); height: 100%;">
+                                    <h4 style="font-size: 11px; font-weight: 800; color: #1D4ED8; text-transform: uppercase; margin-bottom: 8px;">Transbordement</h4>
+                                    <p style="font-size: 11px; color: #2563EB; margin-bottom: 12px; font-weight: 600;">Envoyez un autre véhicule.</p>
+                                    <form action="{{ route('compagnie.signalements.transbordement', $signalement->id) }}" method="POST">
+                                        @csrf
+                                        <select name="new_vehicule_id" required class="form-control form-control-sm mb-3" style="font-size: 12px; font-weight: 700; height: 38px;">
+                                            <option value="" disabled selected>Choisir un car...</option>
+                                            @forelse($availableVehicles ?? [] as $v)
+                                                <option value="{{ $v->id }}">{{ $v->immatriculation }} ({{ $v->nombre_place }} pl.)</option>
+                                            @empty
+                                                <option value="" disabled>Aucun car dispo</option>
+                                            @endforelse
+                                        </select>
+                                        <button type="submit" class="btn-logistic blue"><i class="fas fa-exchange-alt"></i> Assigner</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3 text-center">
+                            <form action="{{ route('compagnie.signalements.interrupt', $signalement->id) }}" method="POST">
+                                @csrf
+                                <button type="submit" class="btn btn-link text-danger" style="font-size: 11px; font-weight: 800; text-transform: uppercase; text-decoration: underline;">
+                                    Ou annuler définitivement le voyage
+                                </button>
+                            </form>
+                        </div>
+                    @endif
+
+                    {{-- AUTRE (Default) --}}
+                    @if(!in_array($signalement->type, ['accident', 'panne']))
+                        <form action="{{ route('compagnie.signalements.mark-traite', $signalement->id) }}" method="POST">
                             @csrf
-                            @method('PATCH')
-                            <button type="submit"
-                                class="px-4 py-2 bg-green-600 text-white rounded-xl shadow-lg hover:bg-green-700 transition-all font-bold text-sm flex items-center gap-2">
-                                <i class="fas fa-check-circle"></i> Marquer comme traité
-                            </button>
+                            <button type="submit" class="btn-logistic dark"><i class="fas fa-check-double"></i> Marquer comme incident résolu</button>
                         </form>
                     @endif
                 </div>
+                @endif
             </div>
 
-            <!-- Main Card -->
-            <div class="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
-                <!-- Card Header with Gradient -->
-                <div class="px-8 py-10 bg-gradient-to-r from-red-600 to-red-500 text-white relative">
-                    <div class="relative z-10">
-                        <div class="flex items-center gap-3 mb-4">
-                            <span
-                                class="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold uppercase tracking-wider">
-                                ID #{{ $signalement->id }}
-                            </span>
-                            <span
-                                class="px-3 py-1 bg-white text-red-600 rounded-full text-xs font-bold uppercase tracking-wider">
-                                {{ $signalement->type }}
-                            </span>
-                            @if($signalement->statut === 'traite')
-                                <span class="px-3 py-1 bg-green-500 text-white rounded-full text-xs font-bold uppercase tracking-wider">
-                                    <i class="fas fa-check mr-1"></i> Traité
-                                </span>
-                            @endif
+            {{-- COLONNE DROITE : SIDEBAR --}}
+            <div class="col-lg-4">
+                
+                {{-- Signalé par --}}
+                <div class="mini-card">
+                    <h4>Signalé par</h4>
+                    @php
+                        $isChauffeur = $signalement->personnel_id && !$signalement->user_id;
+                        if ($isChauffeur && $signalement->personnel) {
+                            $rName = $signalement->personnel->name . ' ' . ($signalement->personnel->prenom ?? '');
+                            $rContact = $signalement->personnel->contact ?? 'Sans numéro';
+                            $rInitial = strtoupper(substr($signalement->personnel->name, 0, 1));
+                            $rType = 'Chauffeur';
+                            $avStyle = 'background: #DBEAFE; color: #1E40AF;';
+                        } elseif ($signalement->user) {
+                            $rName = $signalement->user->name . ' ' . ($signalement->user->prenom ?? '');
+                            $rContact = $signalement->user->contact ?? $signalement->user->telephone ?? 'Sans numéro';
+                            $rInitial = strtoupper(substr($signalement->user->name, 0, 1));
+                            $rType = 'Passager';
+                            $avStyle = 'background: #F3E8FF; color: #6B21A8;';
+                        } else {
+                            $rName = 'Inconnu'; $rContact = 'Sans numéro'; $rInitial = '?'; $rType = 'Inconnu';
+                            $avStyle = 'background: var(--border-strong); color: var(--text-2);';
+                        }
+                    @endphp
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="avatar-icon" style="{{ $avStyle }}">{{ $rInitial }}</div>
+                        <div>
+                            <div style="font-weight: 800; font-size: 13px; color: var(--text-1);">{{ trim($rName) }}</div>
+                            <div style="font-size: 11px; font-weight: 600; color: var(--text-3);">{{ $rContact }}</div>
                         </div>
-                        <h1 class="text-3xl font-extrabold mb-2">Détails du Signalement</h1>
-                        <p class="text-red-100 flex items-center gap-2">
-                            <i class="far fa-calendar-alt"></i>
-                            Signalé le {{ $signalement->created_at->format('d/m/Y à H:i') }}
-                        </p>
                     </div>
-                    <!-- Decorative Icon -->
-                    <i
-                        class="fas fa-exclamation-circle absolute right-8 top-1/2 -translate-y-1/2 text-8xl text-white/10"></i>
+                    <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; border: 1px solid var(--border-strong); padding: 2px 8px; border-radius: 4px; display: inline-block;">{{ $rType }}</span>
                 </div>
 
-                <!-- Content Area -->
-                <div class="p-8 sm:p-10">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-
-                        <!-- Left Column: Incident Info -->
-                        <div class="md:col-span-2 space-y-8">
-                            <!-- Description Section -->
-                            <section>
-                                <h3
-                                    class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                    <i class="fas fa-align-left text-red-500"></i> Description du problème
-                                </h3>
-                                <div
-                                    class="bg-gray-50 rounded-2xl p-6 border border-gray-100 italic text-gray-700 leading-relaxed shadow-inner">
-                                    "{{ $signalement->description }}"
-                                </div>
-                            </section>
-
-                            <!-- Visual Evidence -->
-                            @if($signalement->photo_path)
-                                <section>
-                                    <h3
-                                        class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                        <i class="fas fa-camera text-red-500"></i> Preuve Visuelle
-                                    </h3>
-                                    <div class="rounded-2xl overflow-hidden border-4 border-white shadow-xl group relative">
-                                        <img src="{{ asset($signalement->photo_path) }}" alt="Photo de l'incident"
-                                            class="w-full h-auto object-cover max-h-[500px] transition-transform duration-500 group-hover:scale-105"
-                                            onerror="this.onerror=null; this.src='{{ $signalement->photo_path }}';">
-                                        <div
-                                            class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                            <a href="{{ asset($signalement->photo_path) }}" target="_blank"
-                                                class="bg-white text-gray-900 px-6 py-3 rounded-xl font-bold flex items-center gap-2 transform translate-y-4 group-hover:translate-y-0 transition-transform">
-                                                <i class="fas fa-expand"></i> Voir en plein écran
-                                            </a>
-                                        </div>
-                                    </div>
-                                </section>
-                            @endif
-
-                            <!-- Location Section -->
-                        @if($signalement->latitude && $signalement->longitude)
-                        <section>
-                            <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                <i class="fas fa-map-marker-alt text-red-500"></i> Lieu de l'incident
-                            </h3>
-                            <div class="bg-blue-50 rounded-2xl p-6 border border-blue-100 flex items-center justify-between">
-                                <div class="flex items-center gap-4 flex-1">
-                                    <div class="w-12 h-12 bg-white rounded-full flex-shrink-0 flex items-center justify-center shadow-sm">
-                                        <i class="fas fa-location-arrow text-blue-600"></i>
-                                    </div>
-                                    <div class="flex-1">
-                                        <p class="text-xs text-blue-500 font-bold uppercase">Adresse approximative</p>
-                                        <p class="font-bold text-gray-900 text-lg leading-snug" id="address-display">
-                                            <i class="fas fa-spinner fa-spin mr-2"></i>Chargement de l'adresse...
-                                        </p>
-                                        <p class="text-xs text-gray-400 mt-1 font-mono">
-                                            GPS: {{ $signalement->latitude }}, {{ $signalement->longitude }}
-                                        </p>
-                                    </div>
-                                </div>
-                                <a href="https://www.google.com/maps/search/?api=1&query={{ $signalement->latitude }},{{ $signalement->longitude }}" 
-                                   target="_blank"
-                                   class="bg-white text-blue-600 px-4 py-2 rounded-lg shadow-sm font-bold hover:shadow-md transition-all text-sm flex items-center gap-2 flex-shrink-0 ml-4">
-                                    <i class="fas fa-external-link-alt"></i> GPS
-                                </a>
-                            </div>
-                        </section>
-
-                        <script>
-                            document.addEventListener('DOMContentLoaded', function() {
-                                const lat = {{ $signalement->latitude }};
-                                const lon = {{ $signalement->longitude }};
-                                const display = document.getElementById('address-display');
-
-                                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
-                                    .then(response => response.json())
-                                    .then(data => {
-                                        if (data && data.display_name) {
-                                            display.innerText = data.display_name;
-                                        } else {
-                                            display.innerText = "Adresse introuvable";
-                                        }
-                                    })
-                                    .catch(err => {
-                                        console.error(err);
-                                        display.innerText = "Erreur lors de la récupération de l'adresse";
-                                    });
-                            });
-                        </script>
-                        @endif
-                        </div>
-
-                        <!-- Right Column: Sidebar Stats -->
-                        <div class="space-y-6">
-                            <!-- Reporter Card -->
-                            <div class="bg-gray-50 rounded-2xl p-6 border border-gray-100">
-                                <h4 class="text-xs font-bold text-gray-400 uppercase mb-4">Signalé par</h4>
-                                @php
-                                    $isChauffeur = $signalement->personnel_id && !$signalement->user_id;
-                                    if ($isChauffeur && $signalement->personnel) {
-                                        $rName = $signalement->personnel->name . ' ' . ($signalement->personnel->prenom ?? '');
-                                        $rContact = $signalement->personnel->contact ?? 'Sans numéro';
-                                        $rInitial = strtoupper(substr($signalement->personnel->name, 0, 1));
-                                        $rType = 'Chauffeur';
-                                        $rColor = 'blue';
-                                        $rIcon = 'fa-id-badge';
-                                    } elseif ($signalement->user) {
-                                        $rName = $signalement->user->name . ' ' . ($signalement->user->prenom ?? '');
-                                        $rContact = $signalement->user->contact ?? $signalement->user->telephone ?? 'Sans numéro';
-                                        $rInitial = strtoupper(substr($signalement->user->name, 0, 1));
-                                        $rType = 'Passager';
-                                        $rColor = 'purple';
-                                        $rIcon = 'fa-user';
-                                    } else {
-                                        $rName = 'Inconnu';
-                                        $rContact = 'Sans numéro';
-                                        $rInitial = '?';
-                                        $rType = 'Inconnu';
-                                        $rColor = 'gray';
-                                        $rIcon = 'fa-question';
-                                    }
-                                @endphp
-                                <div class="flex items-center gap-3 mb-3">
-                                    <div class="w-12 h-12 bg-{{ $rColor }}-100 rounded-full flex items-center justify-center text-{{ $rColor }}-600 font-bold text-xl border-2 border-{{ $rColor }}-200">
-                                        {{ $rInitial }}
-                                    </div>
-                                    <div>
-                                        <p class="font-bold text-gray-900">{{ trim($rName) }}</p>
-                                        <p class="text-xs text-gray-500">{{ $rContact }}</p>
-                                    </div>
-                                </div>
-                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-{{ $rColor }}-50 text-{{ $rColor }}-700 text-[10px] font-black rounded-lg uppercase tracking-widest border border-{{ $rColor }}-200">
-                                    <i class="fas {{ $rIcon }} text-[9px]"></i> {{ $rType }}
-                                </span>
-                            </div>
-
-                            <!-- Vehicle Card -->
-                            <div class="bg-gray-50 rounded-2xl p-6 border border-gray-100">
-                                <h4 class="text-xs font-bold text-gray-400 uppercase mb-4">Véhicule & Trajet</h4>
-                                <div class="space-y-4">
-                                    <div class="flex items-start gap-3">
-                                        <i class="fas fa-bus text-gray-400 mt-1"></i>
-                                        <div>
-                                            <p class="text-sm font-bold text-gray-900">
-                                                {{ $signalement->vehicule?->immatriculation ?? $signalement->programme?->vehicule?->immatriculation ?? 'Non assigné' }}
-                                            </p>
-                                            <p class="text-xs text-gray-500">
-                                                {{ $signalement->vehicule?->marque ?? $signalement->programme?->vehicule?->marque ?? '' }}
-                                                {{ $signalement->vehicule?->modele ?? $signalement->programme?->vehicule?->modele ?? '' }}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-start gap-3">
-                                        <i class="fas fa-route text-gray-400 mt-1"></i>
-                                        <div>
-                                            <p class="text-sm font-bold text-gray-900">
-                                                {{ $signalement->programme?->point_depart ?? '?' }} →
-                                                {{ $signalement->programme?->point_arrive ?? '?' }}
-                                            </p>
-                                            <p class="text-xs text-gray-500">Trajet via programme
-                                                #{{ $signalement->programme_id }}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {{-- Sapeur Pompier Card (si accident et pompier assigné) --}}
-                            @if($signalement->type === 'accident' && $signalement->sapeurPompier)
-                            <div class="bg-red-50 rounded-2xl p-6 border border-red-100">
-                                <h4 class="text-xs font-bold text-red-400 uppercase mb-4 flex items-center gap-2">
-                                    <i class="fas fa-fire-extinguisher text-red-500"></i> Sapeur Pompier assigné
-                                </h4>
-                                <div class="flex items-center gap-3 mb-2">
-                                    <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center border-2 border-red-200">
-                                        <i class="fas fa-fire-alt text-red-600"></i>
-                                    </div>
-                                    <div>
-                                        <p class="font-bold text-gray-900 text-sm">{{ $signalement->sapeurPompier->name }}</p>
-                                        <p class="text-xs text-gray-500">{{ $signalement->sapeurPompier->commune }}</p>
-                                    </div>
-                                </div>
-                                @if($signalement->sapeurPompier->contact)
-                                    <div class="flex items-center gap-2 mt-2 text-xs text-gray-500">
-                                        <i class="fas fa-phone text-[10px]"></i> {{ $signalement->sapeurPompier->contact }}
-                                    </div>
-                                @endif
-                                @if($signalement->sapeurPompier->email)
-                                    <div class="flex items-center gap-2 mt-1 text-xs text-gray-500">
-                                        <i class="fas fa-envelope text-[10px]"></i> {{ $signalement->sapeurPompier->email }}
-                                    </div>
-                                @endif
-                            </div>
-                            @endif
-
-                            <!-- Status Badge -->
-                            <div class="bg-gray-900 rounded-2xl p-6 text-center">
-                                <h4 class="text-xs font-bold text-gray-500 uppercase mb-3">Statut Actuel</h4>
-                                <span
-                                    class="inline-flex items-center px-4 py-2 rounded-full text-sm font-bold {{ $signalement->statut === 'traite' ? 'bg-green-500 text-white' : 'bg-red-500 text-white animate-pulse' }} shadow-lg">
-                                    {{ ucfirst($signalement->statut) }}
-                                </span>
-                            </div>
-
-                            {{-- Gare de départ --}}
-                            @if(isset($gareDepart) && $gareDepart)
-                            <div class="bg-blue-50 rounded-2xl p-6 border border-blue-100">
-                                <h4 class="text-xs font-bold text-blue-400 uppercase mb-4 flex items-center gap-2">
-                                    <i class="fas fa-warehouse text-blue-500"></i> Gare de départ
-                                </h4>
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center border-2 border-blue-200">
-                                        <i class="fas fa-warehouse text-blue-600 text-sm"></i>
-                                    </div>
-                                    <div>
-                                        <p class="font-bold text-gray-900 text-sm">{{ $gareDepart->nom_gare }}</p>
-                                        <p class="text-xs text-gray-500">{{ $gareDepart->ville ?? $gareDepart->commune ?? '' }}</p>
-                                    </div>
-                                </div>
-                                @if($gareDepart->contact)
-                                    <div class="flex items-center gap-2 mt-3 text-xs text-gray-500">
-                                        <i class="fas fa-phone text-[10px]"></i> {{ $gareDepart->contact }}
-                                    </div>
-                                @endif
-                            </div>
-                            @endif
+                {{-- Véhicule & Trajet --}}
+                <div class="mini-card">
+                    <h4>Véhicule & Trajet</h4>
+                    <div class="d-flex align-items-start gap-2 mb-3">
+                        <i class="fas fa-bus text-muted mt-1"></i>
+                        <div>
+                            <div style="font-weight: 800; font-size: 13px; color: var(--text-1);">{{ $signalement->vehicule?->immatriculation ?? $signalement->programme?->vehicule?->immatriculation ?? 'Non assigné' }}</div>
+                            <div style="font-size: 11px; color: var(--text-3); font-weight: 600;">{{ $signalement->vehicule?->marque ?? $signalement->programme?->vehicule?->marque ?? '' }}</div>
                         </div>
                     </div>
-
-                    @if($signalement->statut !== 'traite' && in_array($signalement->type, ['accident', 'panne', 'retard']))
-                    <div class="mt-10 bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl border border-amber-200 p-6">
-                        <div class="flex items-center gap-3 mb-5">
-                            <div class="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
-                                <i class="fas fa-bolt text-amber-600 text-lg"></i>
+                    <div class="d-flex align-items-start gap-2">
+                        <i class="fas fa-route text-muted mt-1"></i>
+                        <div>
+                            <div style="font-weight: 800; font-size: 12px; color: var(--text-1);">
+                                {{ $signalement->programme?->point_depart ?? '?' }} <i class="fas fa-arrow-right text-muted mx-1" style="font-size: 9px;"></i> {{ $signalement->programme?->point_arrive ?? '?' }}
                             </div>
-                            <div>
-                                <h3 class="text-lg font-black text-gray-900 uppercase tracking-tight">Actions d'urgence</h3>
-                                <p class="text-xs text-gray-500">Alertez les parties concernées rapidement</p>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-{{ $signalement->type === 'accident' ? '2' : '1' }} gap-4">
-                            {{-- ALERTER LA GARE --}}
-                            <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-                                <div class="flex items-center gap-3 mb-4">
-                                    <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                                        <i class="fas fa-warehouse text-blue-600"></i>
-                                    </div>
-                                    <div>
-                                        <h4 class="font-bold text-gray-900 text-sm">Alerter la Gare</h4>
-                                        @if(isset($gareDepart) && $gareDepart)
-                                            <p class="text-[10px] text-gray-400">{{ $gareDepart->nom_gare }} — {{ $gareDepart->email ?? 'pas d\'email' }}</p>
-                                        @else
-                                            <p class="text-[10px] text-red-400">Aucune gare de départ trouvée</p>
-                                        @endif
-                                    </div>
-                                </div>
-
-                                @if(isset($gareDepart) && $gareDepart)
-                                    <form action="{{ route('compagnie.signalements.alert-gare', $signalement->id) }}" method="POST">
-                                        @csrf
-                                        <textarea name="message" rows="2" placeholder="Message personnalisé à la gare (optionnel)..."
-                                            class="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all resize-none mb-3"></textarea>
-                                        <button type="submit"
-                                            class="w-full py-3 bg-blue-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-blue-200 hover:bg-blue-700 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2">
-                                            <i class="fas fa-paper-plane"></i> Envoyer l'alerte à la gare
-                                        </button>
-                                    </form>
-                                @else
-                                    <div class="py-4 px-4 bg-gray-50 rounded-xl text-center text-gray-400 text-xs font-medium">
-                                        <i class="fas fa-info-circle mr-1"></i> Aucune gare de départ assignée à ce programme
-                                    </div>
-                                @endif
-                            </div>
-
-                            {{-- CONTACTER SAPEUR POMPIER (seulement pour les accidents) --}}
-                            @if($signalement->type === 'accident')
-                            <div class="bg-white rounded-2xl border border-red-100 p-5 shadow-sm">
-                                <div class="flex items-center gap-3 mb-4">
-                                    <div class="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
-                                        <i class="fas fa-fire-extinguisher text-red-600"></i>
-                                    </div>
-                                    <div>
-                                        <h4 class="font-bold text-gray-900 text-sm">Contacter Sapeur Pompier</h4>
-                                        @if(isset($sapeurPompier) && $sapeurPompier)
-                                            <p class="text-[10px] text-gray-400">
-                                                {{ $sapeurPompier->name }} — {{ $sapeurPompier->commune }}
-                                                @if($signalement->sapeur_pompier_id)
-                                                    <span class="text-green-500 font-bold">(Déjà assigné)</span>
-                                                @else
-                                                    <span class="text-blue-500">(Le plus proche)</span>
-                                                @endif
-                                            </p>
-                                        @else
-                                            <p class="text-[10px] text-red-400">Aucun pompier disponible à proximité</p>
-                                        @endif
-                                    </div>
-                                </div>
-
-                                @if(isset($sapeurPompier) && $sapeurPompier)
-                                    <form action="{{ route('compagnie.signalements.alert-pompier', $signalement->id) }}" method="POST">
-                                        @csrf
-                                        <textarea name="message" rows="2" placeholder="Instructions supplémentaires (optionnel)..."
-                                            class="w-full px-4 py-2.5 bg-gray-50 border border-red-50 rounded-xl text-sm focus:ring-2 focus:ring-red-500 focus:bg-white outline-none transition-all resize-none mb-3"></textarea>
-                                        <button type="submit"
-                                            class="w-full py-3 bg-red-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-red-200 hover:bg-red-700 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2">
-                                            <i class="fas fa-fire-extinguisher"></i> Contacter le Sapeur Pompier
-                                        </button>
-                                    </form>
-                                @elseif(!$signalement->latitude || !$signalement->longitude)
-                                    <div class="py-4 px-4 bg-red-50 rounded-xl text-center text-red-400 text-xs font-medium">
-                                        <i class="fas fa-map-marker-alt mr-1"></i> Coordonnées GPS manquantes pour localiser un pompier
-                                    </div>
-                                @else
-                                    <div class="py-4 px-4 bg-gray-50 rounded-xl text-center text-gray-400 text-xs font-medium">
-                                        <i class="fas fa-info-circle mr-1"></i> Aucun sapeur pompier actif trouvé à proximité
-                                    </div>
-                                @endif
-                            </div>
-                            @endif
+                            <div style="font-size: 10px; color: var(--text-3); font-weight: 600; margin-top: 2px;">Programme #{{ $signalement->programme_id }}</div>
                         </div>
                     </div>
-                    @endif
-
-                    {{-- ============== LOGISTIC ACTIONS SECTION (DECISION MAKING) ============== --}}
-                    @if($signalement->statut !== 'traite')
-                    <div class="mt-8 bg-white rounded-3xl border border-gray-100 shadow-xl p-8 relative overflow-hidden">
-                        <div class="absolute top-0 right-0 w-32 h-32 bg-gray-50 rounded-full -mr-16 -mt-16 opacity-50"></div>
-                        
-                        <div class="flex items-center gap-4 mb-8">
-                            <div class="w-12 h-12 bg-gray-900 rounded-2xl flex items-center justify-center shadow-lg shadow-gray-200">
-                                <i class="fas fa-gavel text-white text-xl"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-xl font-black text-gray-900 uppercase tracking-tight">Logistique & Décision finale</h3>
-                                <p class="text-sm text-gray-500 font-medium">Prenez une décision pour clore cet incident</p>
-                            </div>
-                        </div>
-
-                        <div class="space-y-6">
-                            {{-- CASE: ACCIDENT --}}
-                            @if($signalement->type === 'accident')
-                            <div class="bg-red-50 rounded-2xl p-6 border border-red-100">
-                                <h4 class="font-black text-red-700 uppercase tracking-wider text-xs mb-4 flex items-center gap-2">
-                                    <i class="fas fa-exclamation-circle text-red-500"></i> Procédure d'interruption (Accident)
-                                </h4>
-                                <p class="text-xs text-red-600 mb-6 font-medium leading-relaxed">
-                                    Cette action marquera le voyage comme <span class="font-bold">interrompu</span>. 
-                                    Le chauffeur sera mis au repos forcé et le véhicule sera immobilisé pour le reste de la journée conformément aux règles de sécurité.
-                                </p>
-                                <form action="{{ route('compagnie.signalements.interrupt', $signalement->id) }}" method="POST">
-                                    @csrf
-                                    <button type="submit" 
-                                        onclick="return confirm('Êtes-vous sûr de vouloir interrompre ce voyage ? Cela immobilisera le chauffeur et le car pour la journée.')"
-                                        class="w-full py-4 bg-red-600 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-xl shadow-red-200 hover:bg-red-700 transform hover:-translate-y-1 transition-all flex items-center justify-center gap-2">
-                                        <i class="fas fa-times-circle text-sm"></i> Confirmer l'interruption du voyage
-                                    </button>
-                                </form>
-                            </div>
-                            @endif
-
-                            {{-- CASE: PANNE --}}
-                            @if($signalement->type === 'panne')
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {{-- Reprendre la route --}}
-                                <div class="bg-green-50 rounded-2xl p-6 border border-green-100 flex flex-col justify-between">
-                                    <div>
-                                        <h4 class="font-black text-green-700 uppercase tracking-wider text-xs mb-3">La panne est réparée</h4>
-                                        <p class="text-[11px] text-green-600 mb-6 leading-relaxed">Le chauffeur confirme que le car peut reprendre sa route normalement.</p>
-                                    </div>
-                                    <form action="{{ route('compagnie.signalements.resume', $signalement->id) }}" method="POST">
-                                        @csrf
-                                        <button type="submit" class="w-full py-4 bg-green-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-green-700 transition-all shadow-lg shadow-green-100">
-                                            Reprendre la route
-                                        </button>
-                                    </form>
-                                </div>
-
-                                {{-- Transbordement --}}
-                                <div class="bg-blue-50 rounded-2xl p-6 border border-blue-100 shadow-inner">
-                                    <h4 class="font-black text-blue-700 uppercase tracking-wider text-xs mb-3">Transbordement (Changement de car)</h4>
-                                    <p class="text-[11px] text-blue-600 mb-4 leading-relaxed">Envoyez un autre véhicule disponible pour récupérer les passagers.</p>
-                                    
-                                    <form action="{{ route('compagnie.signalements.transbordement', $signalement->id) }}" method="POST">
-                                        @csrf
-                                        <div class="space-y-3">
-                                            <select name="new_vehicule_id" required 
-                                                class="w-full px-4 py-3 bg-white border border-blue-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500">
-                                                <option value="" disabled selected>Choisir un car disponible...</option>
-                                                @forelse($availableVehicles ?? [] as $v)
-                                                    <option value="{{ $v->id }}">{{ $v->immatriculation }} — {{ $v->modele ?? 'Standard' }} ({{ $v->nombre_place }} places)</option>
-                                                @empty
-                                                    <option value="" disabled>Aucun car disponible au dépôt</option>
-                                                @endforelse
-                                            </select>
-                                            <button type="submit" 
-                                                class="w-full py-4 bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-100">
-                                                Assigner le nouveau car
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-
-                            <div class="pt-4 border-t border-gray-100">
-                                <form action="{{ route('compagnie.signalements.interrupt', $signalement->id) }}" method="POST">
-                                    @csrf
-                                    <button type="submit" class="text-gray-400 hover:text-red-500 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 mx-auto">
-                                        <i class="fas fa-trash"></i> Ou alors annuler définitivement le voyage
-                                    </button>
-                                </form>
-                            </div>
-                            @endif
-
-                            {{-- CASE: OTHER (Default marquer traité) --}}
-                            @if(!in_array($signalement->type, ['accident', 'panne']))
-                            <form action="{{ route('compagnie.signalements.mark-traite', $signalement->id) }}" method="POST">
-                                @csrf
-                                <button type="submit" class="w-full py-5 bg-gray-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-gray-200">
-                                    Marquer comme incident résolu
-                                </button>
-                            </form>
-                            @endif
-                        </div>
-                    </div>
-                    @endif
-
                 </div>
+
+                {{-- Sapeur Pompier (Si accident) --}}
+                @if($signalement->type === 'accident' && $signalement->sapeurPompier)
+                <div class="mini-card" style="background: #FEF2F2; border-color: #FCA5A5;">
+                    <h4 style="color: #B91C1C;"><i class="fas fa-fire-extinguisher"></i> Sapeur Pompier assigné</h4>
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <div class="avatar-icon" style="background: white; color: #DC2626; border: 1px solid #FCA5A5; width: 36px; height: 36px; font-size: 14px;"><i class="fas fa-fire-alt"></i></div>
+                        <div>
+                            <div style="font-weight: 800; font-size: 13px; color: var(--text-1);">{{ $signalement->sapeurPompier->name }}</div>
+                            <div style="font-size: 11px; color: var(--text-3); font-weight: 600;">{{ $signalement->sapeurPompier->commune }}</div>
+                        </div>
+                    </div>
+                    <div style="font-size: 11px; font-weight: 600; color: var(--text-2); margin-top: 8px;">
+                        <i class="fas fa-phone mr-1"></i> {{ $signalement->sapeurPompier->contact ?? 'Non renseigné' }}
+                    </div>
+                </div>
+                @endif
+
+                {{-- Gare de départ --}}
+                @if(isset($gareDepart) && $gareDepart)
+                <div class="mini-card" style="background: #EFF6FF; border-color: #BFDBFE;">
+                    <h4 style="color: #1D4ED8;"><i class="fas fa-warehouse"></i> Gare concernée</h4>
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <div class="avatar-icon" style="background: white; color: #2563EB; border: 1px solid #BFDBFE; width: 36px; height: 36px; font-size: 14px;"><i class="fas fa-building"></i></div>
+                        <div>
+                            <div style="font-weight: 800; font-size: 13px; color: var(--text-1);">{{ $gareDepart->nom_gare }}</div>
+                            <div style="font-size: 11px; color: var(--text-3); font-weight: 600;">{{ $gareDepart->ville }}</div>
+                        </div>
+                    </div>
+                    
+                    @if($signalement->type === 'accident')
+                    <form action="{{ route('compagnie.signalements.alert-gare', $signalement->id) }}" method="POST" class="mt-3">
+                        @csrf
+                        <textarea name="message" rows="2" class="form-control form-control-sm mb-2" style="font-size: 11px; border-color: #BFDBFE;" placeholder="Message à la gare (optionnel)"></textarea>
+                        <button type="submit" class="btn btn-primary btn-sm w-100" style="font-size: 10px; font-weight: 800; text-transform: uppercase;">
+                            <i class="fas fa-paper-plane mr-1"></i> Alerter la gare
+                        </button>
+                    </form>
+                    @endif
+                </div>
+                @endif
+
             </div>
-
-            <!-- Footer Info -->
-            <p class="text-center text-gray-400 text-xs mt-8">
-                Signalement traité via le système de sécurité CAR225. &copy; {{ date('Y') }}
-            </p>
         </div>
     </div>
+</div>
 @endsection

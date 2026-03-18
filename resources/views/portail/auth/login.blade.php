@@ -1,427 +1,396 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <title>Portail Interne - Car 225</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="shortcut icon" href="{{ asset('assetsPoster/assets/images/logo_car225.png') }}" />
-    <title>Portail - Connexion Unifiée</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="shortcut icon" href="{{asset('assetsPoster/assets/images/logo_car225.png')}}" />
     <style>
         :root {
-            --primary-color: #e94f1b;
-            --secondary-color: #e94f1b;
-            --accent-color: #28a745;
-            --error-color: #dc3545;
-            --success-color: #28a745;
-            --light-color: #f8f9fa;
-            --dark-color: #343a40;
-            --transition-speed: 0.3s;
+            --brand-primary: #e94f1b;
+            --brand-gradient: linear-gradient(135deg, #e94f1b 0%, #ff6b3d 100%);
+            --corporate-dark: #0f172a;
+            --corporate-gray: #1e293b;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --bg-body: #f1f5f9;
+            --bg-card: #ffffff;
+            --border-color: #e2e8f0;
+            --input-bg: #f8fafc;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-            background:
-                linear-gradient(rgba(255, 255, 255, 0.1), rgba(233,79,27, 0.9)),
-                url('{{ asset('assets/assets/img/arrierep.jpg') }}');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
+            /* Changement de l'arrière plan pour un dégradé orange */
+            background: linear-gradient(135deg, #e94f1b 0%, #ff8c42 100%);
+            color: var(--text-main);
             padding: 20px;
         }
 
-        .form-container {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            position: relative;
-            gap: 20px;
-            background-color: rgba(255, 255, 255, 0.95);
-            padding: 40px;
+        .login-wrapper {
             width: 100%;
-            max-width: 500px;
-            border-radius: 16px;
+            max-width: 440px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .back-btn {
+            position: absolute;
+            top: -60px;
+            left: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .back-btn:hover {
+            color: #fff;
+            transform: translateX(-4px);
+        }
+
+        .login-card {
+            background: var(--bg-card);
+            border-radius: 24px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transform-style: preserve-3d;
-            transition: all var(--transition-speed) ease;
+            overflow: hidden;
+            position: relative;
         }
 
-        .form-container:hover {
-            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.3);
-        }
-
-        .form-header {
+        .login-header {
+            padding: 40px 40px 20px;
             text-align: center;
-            margin-bottom: 10px;
+            background: var(--bg-card);
+            position: relative;
+        }
+
+        .logo-container {
+            width: 72px;
+            height: 72px;
+            margin: 0 auto 24px;
+            background: var(--bg-body);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        .logo-container img {
+            width: 45px;
+            height: 45px;
+            object-fit: contain;
         }
 
         .title {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: var(--primary-color);
-            margin-bottom: 5px;
-            background: linear-gradient(to right, #e94f1b, #e94f1b);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            position: relative;
-            display: inline-block;
-        }
-
-        .title::after {
-            content: '';
-            position: absolute;
-            bottom: -5px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 50px;
-            height: 3px;
-            background: linear-gradient(to right, #e94f1b, #e94f1b);
-            border-radius: 3px;
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
         }
 
         .subtitle {
-            color: #6c757d;
-            font-size: 0.95rem;
-            margin-top: 10px;
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 500;
+            line-height: 1.5;
+        }
+
+        .access-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: rgba(233, 79, 27, 0.1);
+            color: var(--brand-primary);
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .login-body {
+            padding: 0 40px 40px;
         }
 
         .input-group {
+            margin-bottom: 24px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 8px;
+        }
+
+        .input-wrapper {
             position: relative;
-            width: 100%;
-            margin-bottom: 20px;
         }
 
         .input-icon {
             position: absolute;
-            left: 15px;
+            left: 16px;
             top: 50%;
             transform: translateY(-50%);
-            color: #28a745;
-            transition: all var(--transition-speed) ease;
-            z-index: 2;
+            color: var(--text-muted);
+            font-size: 16px;
+            transition: var(--transition);
+            pointer-events: none;
         }
 
         .input-field {
             width: 100%;
-            outline: none;
-            border-radius: 10px;
-            height: 50px;
-            border: 2px solid #e9ecef;
-            background: transparent;
-            padding-left: 45px;
-            padding-right: 15px;
-            font-size: 1rem;
-            transition: all var(--transition-speed) ease;
-            color: var(--dark-color);
+            padding: 14px 16px 14px 46px;
+            background: var(--input-bg);
+            border: 2px solid transparent;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-main);
+            transition: var(--transition);
+            font-family: inherit;
         }
+
+        .input-field::placeholder { color: #94a3b8; font-weight: 400; }
 
         .input-field:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+            background: var(--bg-card);
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 4px var(--primary-glow);
+            outline: none;
         }
 
-        .input-field:focus~.input-icon {
-            color: var(--primary-color);
-        }
-
-        .input-label {
-            position: absolute;
-            top: 15px;
-            left: 45px;
-            color: #adb5bd;
-            transition: all var(--transition-speed) ease;
-            pointer-events: none;
-            background-color: transparent;
-            padding: 0 5px;
-            z-index: 1;
-        }
-
-        .input-field:focus~.input-label,
-        .input-field:not(:placeholder-shown)~.input-label {
-            top: -10px;
-            left: 35px;
-            font-size: 0.8rem;
-            color: var(--primary-color);
-            background-color: white;
-            z-index: 3;
+        .input-field:focus ~ .input-icon {
+            color: var(--brand-primary);
         }
 
         .password-toggle {
             position: absolute;
-            right: 15px;
+            right: 16px;
             top: 50%;
             transform: translateY(-50%);
-            color: #adb5bd;
+            color: var(--text-muted);
+            background: none;
+            border: none;
             cursor: pointer;
-            transition: all var(--transition-speed) ease;
-            z-index: 2;
+            padding: 4px;
+            font-size: 16px;
+            transition: var(--transition);
         }
 
-        .password-toggle:hover {
-            color: var(--primary-color);
-        }
+        .password-toggle:hover { color: var(--brand-primary); }
 
         .submit-btn {
-            margin-top: 20px;
-            height: 55px;
-            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
-            border: none;
-            outline: none;
-            color: white;
-            font-size: 1.1rem;
-            font-weight: 600;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all var(--transition-speed) ease;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .submit-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
             width: 100%;
-            height: 100%;
-            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: all 0.6s ease;
+            padding: 16px;
+            background: var(--brand-gradient);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(233, 79, 27, 0.3);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
 
         .submit-btn:hover {
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            background: linear-gradient(135deg, #ff6b3d 0%, #e94f1b 100%);
             transform: translateY(-2px);
-        }
-
-        .submit-btn:hover::before {
-            left: 100%;
+            box-shadow: 0 8px 20px rgba(233, 79, 27, 0.4);
         }
 
         .submit-btn:active {
             transform: translateY(0);
         }
 
-        .error-message {
-            color: var(--error-color);
-            font-size: 0.85rem;
-            margin-top: 5px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            animation: fadeIn var(--transition-speed) ease;
-        }
-
-        .success-message {
-            color: var(--success-color);
+        .corporate-footer {
+            margin-top: 32px;
             text-align: center;
-            margin-bottom: 15px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.85);
             font-weight: 500;
-            animation: fadeIn var(--transition-speed) ease;
         }
 
-        /* Floating animation */
-        .floating {
-            animation: floating 3s ease-in-out infinite;
+        /* Decoration Elements */
+        .card-decoration {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--brand-gradient);
         }
 
-        @keyframes floating {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-            100% { transform: translateY(0px); }
-        }
+        /* SweetAlert */
+        .swal2-popup { font-family: 'Plus Jakarta Sans', sans-serif !important; border-radius: 16px !important; }
+        .swal2-confirm { border-radius: 10px !important; padding: 12px 24px !important; font-weight: 700 !important; }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-5px); }
+            from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        .auth-logo {
-            height: 80px;
-            margin-bottom: 1rem;
-        }
+        .login-wrapper { animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
 
-        .badge-roles {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-top: 15px;
-        }
-
-        .badge-role {
-            font-size: 0.75rem;
-            padding: 4px 10px;
-            border-radius: 20px;
-            background-color: #f1f3f5;
-            color: #6c757d;
-            border: 1px solid #dee2e6;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .back-btn {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all var(--transition-speed) ease;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-            z-index: 10;
-        }
-
-        .back-btn:hover {
-            background: var(--secondary-color);
-            transform: translateX(-3px);
-        }
-
-        @media (max-width: 576px) {
-            .form-container {
-                padding: 30px 20px;
-            }
-
-            .title {
-                font-size: 1.5rem;
-            }
+        @media (max-width: 480px) {
+            .login-header { padding: 32px 24px 20px; }
+            .login-body { padding: 0 24px 32px; }
+            .back-btn { top: -45px; }
         }
     </style>
 </head>
-
 <body>
-    <button class="back-btn" onclick="window.location.href='/'" title="Retour à l'accueil">
-        <i class="fas fa-arrow-left"></i>
-    </button>
 
-    <form class="form-container animate__animated animate__fadeIn" method="POST"
-        action="{{ route('portail.login.submit') }}">
+    <div class="login-wrapper">
+        <a href="{{ url('/') }}" class="back-btn">
+            <i class="fas fa-arrow-left"></i> Retour au site
+        </a>
 
-        <div class="form-header">
-            <img src="{{ asset('assetsPoster/assets/images/logo_car225.png') }}" class="auth-logo floating"
-                alt="Logo" style="margin-bottom:20px"><br>
-            <h1 class="title">Connexion</h1>
-            <p class="subtitle">Connectez-vous avec votre email ou votre identifiant</p>
+        <div class="login-card">
+            <div class="card-decoration"></div>
             
-        </div>
-
-        @csrf
-
-        <!-- Input Field (Email ou Code ID) -->
-        <div class="input-group">
-            <i class="fas fa-user input-icon" id="identifiant-icon"></i>
-            <input class="input-field" type="text" name="identifiant" id="identifiant" placeholder=" " value="{{ old('identifiant') }}"
-                required />
-            <label class="input-label" for="identifiant">Email ou Identifiant</label>
-            @error('identifiant')
-                <div class="error-message">
-                    <i class="fas fa-exclamation-circle"></i> {{ $message }}
+            <div class="login-header">
+                <div class="access-badge">
+                    <i class="fas fa-lock"></i> Accès Restreint
                 </div>
-            @enderror
-        </div>
-
-        <!-- Password Field -->
-        <div class="input-group">
-            <i class="fas fa-key input-icon"></i>
-            <input class="input-field" type="password" name="password" id="password" placeholder=" " required />
-            <label class="input-label" for="password">Mot de passe</label>
-            <i class="fas fa-eye password-toggle" id="togglePassword"></i>
-            @error('password')
-                <div class="error-message">
-                    <i class="fas fa-exclamation-circle"></i> {{ $message }}
+                <div class="logo-container">
+                    <img src="{{ asset('assetsPoster/assets/images/logo_car225.png') }}" alt="Logo Car225">
                 </div>
-            @enderror
+                <h1 class="title">Portail Interne</h1>
+                <p class="subtitle">Espace de gestion réservé aux compagnies et partenaires autorisés.</p>
+            </div>
+
+            <div class="login-body">
+                <form method="POST" action="{{ route('portail.login.submit') }}" novalidate>
+                    @csrf
+
+                    <div class="input-group">
+                        <label for="identifiant">Email professionnel ou Code ID</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="identifiant" name="identifiant" class="input-field" 
+                                value="{{ old('identifiant') }}" required autofocus placeholder="Ex: agence@car225.ci">
+                            <i class="fas fa-user input-icon" id="identifiant-icon"></i>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="password">Mot de passe d'accès</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="password" name="password" class="input-field" required placeholder="••••••••">
+                            <i class="fas fa-key input-icon"></i>
+                            <button type="button" class="password-toggle" onclick="togglePassword(this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn">
+                        Sécuriser la connexion <i class="fas fa-shield-alt"></i>
+                    </button>
+                </form>
+            </div>
         </div>
 
-        <button type="submit" class="submit-btn animate__animated animate__pulse animate__infinite animate__slower">
-            <i class="fas fa-sign-in-alt"></i> Se connecter
-        </button>
-    </form>
+        <div class="corporate-footer">
+            &copy; {{ date('Y') }} Car 225. Système d'Information Administratif.
+        </div>
+    </div>
 
     <script>
+        function togglePassword(btn) {
+            const input = btn.previousElementSibling.previousElementSibling;
+            const icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fas fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fas fa-eye';
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
-            // Password toggle functionality
-            const togglePassword = document.querySelector('#togglePassword');
-            const password = document.querySelector('#password');
-
-            togglePassword.addEventListener('click', function() {
-                const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
-                password.setAttribute('type', type);
-                this.classList.toggle('fa-eye-slash');
-            });
-
-            // SweetAlert notifications
-            @if (Session::has('success'))
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Succès',
-                    text: '{{ Session::get('success') }}',
-                    confirmButtonText: 'OK',
-                    background: 'var(--light-color)',
-                });
-            @endif
-
-            @if (Session::has('error'))
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Erreur',
-                    text: '{{ Session::get('error') }}',
-                    confirmButtonText: 'OK',
-                    background: 'var(--light-color)',
-                });
-            @endif
-
-            // Add floating animation to form on hover
-            const form = document.querySelector('.form-container');
-            form.addEventListener('mouseenter', () => {
-                form.classList.add('animate__animated', 'animate__pulse');
-            });
-
-            form.addEventListener('animationend', () => {
-                form.classList.remove('animate__animated', 'animate__pulse');
-            });
-
-            // Dynamic icon change based on input (Email vs Code ID)
-            const identifiantField = document.querySelector('input[name="identifiant"]');
+            // Dynamic icon change based on input
+            const identifiantField = document.getElementById('identifiant');
             const identifiantIcon = document.getElementById('identifiant-icon');
 
-            identifiantField.addEventListener('input', function(e) {
-                const value = e.target.value;
+            if (identifiantField && identifiantIcon) {
+                identifiantField.addEventListener('input', function(e) {
+                    const value = e.target.value;
+                    if (value.includes('@')) {
+                        identifiantIcon.className = 'fas fa-envelope input-icon';
+                    } else if (value.trim().length > 0) {
+                        identifiantIcon.className = 'fas fa-id-badge input-icon';
+                    } else {
+                        identifiantIcon.className = 'fas fa-user input-icon';
+                    }
+                });
+            }
 
-                if (value.includes('@')) {
-                    identifiantIcon.className = 'fas fa-envelope input-icon'; // Email icon
-                } else if (value.trim().length > 0) {
-                    identifiantIcon.className = 'fas fa-id-card input-icon'; // ID Card icon
-                } else {
-                    identifiantIcon.className = 'fas fa-user input-icon'; // default
-                }
-            });
+            @if (session('success'))
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Vérification Réussie',
+                    text: '{{ session('success') }}',
+                    confirmButtonColor: 'var(--brand-primary)',
+                    customClass: { popup: 'swal2-popup', confirmButton: 'swal2-confirm' }
+                });
+            @endif
+
+            @if (session('error'))
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Accès Refusé',
+                    text: '{{ session('error') }}',
+                    confirmButtonColor: 'var(--corporate-dark)',
+                    customClass: { popup: 'swal2-popup', confirmButton: 'swal2-confirm' }
+                });
+            @endif
+
+            @if ($errors->any())
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Données Invalides',
+                    html: `
+                        <ul style="text-align: left; padding-left: 20px; list-style: none; color: #1e293b; font-size: 14px;">
+                            @foreach ($errors->all() as $error)
+                                <li style="margin-bottom: 6px;"><i class="fas fa-exclamation-triangle" style="color: #e94f1b; margin-right: 6px;"></i> {{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    `,
+                    confirmButtonColor: 'var(--corporate-dark)',
+                    customClass: { popup: 'swal2-popup', confirmButton: 'swal2-confirm' }
+                });
+            @endif
         });
     </script>
 </body>
-
 </html>
+

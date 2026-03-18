@@ -1,0 +1,7 @@
+Checking Gare ID 3 (Gare d'Alepe?)
+Today: 2026-03-18
+Tomorrow: 2026-03-19
+Programmes for today count: 0
+Programmes for tomorrow count: 0
+Sample programmes for this gare:
+- ID: 12, From: Alépé, Côte d'Ivoire, To: Abidjan, Côte d'Ivoire, Date: 2026-02-20

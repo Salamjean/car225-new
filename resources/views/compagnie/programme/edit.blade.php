@@ -1,151 +1,195 @@
 @extends('compagnie.layouts.template')
+
+@section('page-title', 'Modifier le programme')
+@section('page-subtitle', 'Mise à jour des paramètres et horaires')
+
+@section('styles')
+<style>
+    .form-card {
+        background: var(--surface);
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 24px;
+        overflow: hidden;
+    }
+    .form-header {
+        padding: 18px 24px;
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .form-body { padding: 24px; }
+    
+    .input-modern {
+        width: 100%; padding: 10px 14px;
+        border: 1px solid var(--border-strong);
+        border-radius: var(--radius-sm);
+        font-size: 14px; font-weight: 700;
+        background: var(--surface-2); color: var(--text-1);
+        transition: all 0.2s;
+    }
+    .input-modern:focus {
+        outline: none; border-color: var(--orange);
+        background: var(--surface); box-shadow: 0 0 0 3px var(--orange-light);
+    }
+    .form-label {
+        display: block; font-size: 11px; font-weight: 700;
+        color: var(--text-2); text-transform: uppercase; margin-bottom: 6px;
+    }
+
+    /* Radio Cards pour le Statut */
+    .radio-card-wrapper { display: flex; gap: 16px; }
+    .radio-card-label { flex: 1; cursor: pointer; position: relative; }
+    .radio-card-input { position: absolute; opacity: 0; width: 0; height: 0; }
+    .radio-card-content {
+        padding: 16px; border: 2px solid var(--border-strong);
+        border-radius: var(--radius-sm); text-align: center;
+        transition: all 0.2s; background: var(--surface);
+    }
+    .radio-card-content i { font-size: 24px; margin-bottom: 8px; }
+    .radio-card-content .title { font-size: 14px; font-weight: 800; color: var(--text-1); }
+    .radio-card-content .desc { font-size: 11px; color: var(--text-3); }
+
+    .radio-card-input:checked + .radio-card-content.actif {
+        border-color: var(--emerald); background: #ECFDF5;
+    }
+    .radio-card-input:checked + .radio-card-content.actif i { color: var(--emerald); }
+
+    .radio-card-input:checked + .radio-card-content.annule {
+        border-color: var(--red); background: #FEF2F2;
+    }
+    .radio-card-input:checked + .radio-card-content.annule i { color: var(--red); }
+
+    .btn-submit {
+        background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%);
+        color: white; padding: 12px 24px; border-radius: var(--radius-sm);
+        font-weight: 700; border: none; cursor: pointer;
+        box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3); transition: transform 0.2s;
+    }
+    .btn-submit:hover { transform: translateY(-2px); color: white; text-decoration: none; }
+</style>
+@endsection
+
 @section('content')
-<div class="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8 px-4">
-    <div class="max-w-3xl mx-auto">
-        {{-- En-tête --}}
-        <div class="mb-8">
-            <a href="{{ route('programme.index') }}" class="text-sm text-gray-500 hover:text-gray-700 mb-2 inline-flex items-center gap-1">
-                <i class="fas fa-arrow-left"></i> Retour aux programmes
-            </a>
-            <h1 class="text-3xl font-bold text-gray-900">Modifier le programme</h1>
+<div class="dashboard-page" style="max-width: 900px; margin: 0 auto;">
+    
+    <a href="{{ route('programme.index') }}" class="btn btn-link px-0 mb-3" style="color: var(--text-3); font-size: 13px; font-weight: 600; text-decoration: none;">
+        <i class="fas fa-arrow-left mr-1"></i> Retour aux lignes
+    </a>
+
+    {{-- Infos route (lecture seule) --}}
+    <div class="form-card p-4 d-flex align-items-center mb-4" style="gap: 16px;">
+        <div style="width: 50px; height: 50px; border-radius: 12px; background: var(--orange-light); color: var(--orange); display: flex; align-items: center; justify-content: center; font-size: 20px;">
+            <i class="fas fa-route"></i>
         </div>
-
-        {{-- Infos route (lecture seule) --}}
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-6">
-            <div class="flex items-center gap-4">
-                <div class="w-14 h-14 bg-gradient-to-br from-orange-400 to-red-500 rounded-xl flex items-center justify-center text-white shadow-lg">
-                    <i class="fas fa-route text-xl"></i>
-                </div>
-                <div>
-                    <h2 class="text-lg font-bold text-gray-900">
-                        {{ $programme->point_depart }} <i class="fas fa-arrow-right mx-1 text-orange-500"></i> {{ $programme->point_arrive }}
-                    </h2>
-                    <p class="text-sm text-gray-500">
-                        @if($programme->gareDepart)
-                            <i class="fas fa-map-marker-alt text-green-500 mr-1"></i>{{ $programme->gareDepart->nom_gare }}
-                            <i class="fas fa-arrow-right mx-1 text-gray-300"></i>
-                            <i class="fas fa-map-marker-alt text-red-500 mr-1"></i>{{ $programme->gareArrivee->nom_gare ?? 'N/A' }}
-                        @endif
-                        @if($programme->durer_parcours)
-                            <span class="ml-3 text-gray-400">|</span>
-                            <i class="fas fa-clock ml-2 mr-1 text-blue-400"></i>{{ $programme->durer_parcours }}
-                        @endif
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        {{-- Formulaire --}}
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-            <div class="px-6 py-4 bg-gradient-to-r from-gray-800 to-gray-900 text-white">
-                <h3 class="font-bold flex items-center gap-2">
-                    <i class="fas fa-edit"></i> Paramètres du programme
-                </h3>
-            </div>
-
-            <form action="{{ route('programme.update', $programme->id) }}" method="POST" class="p-6">
-                @csrf
-                @method('PUT')
-
-                {{-- Erreurs --}}
-                @if($errors->any())
-                    <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-xl">
-                        <ul class="list-disc list-inside text-sm">
-                            @foreach($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
+        <div>
+            <h2 style="font-size: 18px; font-weight: 800; color: var(--text-1); margin: 0;">
+                {{ $programme->point_depart }} <i class="fas fa-arrow-right mx-2 text-muted" style="font-size: 14px;"></i> {{ $programme->point_arrive }}
+            </h2>
+            <div style="font-size: 12px; color: var(--text-3); font-weight: 600; margin-top: 4px;">
+                @if($programme->gareDepart)
+                    <i class="fas fa-map-marker-alt" style="color: var(--emerald);"></i> {{ $programme->gareDepart->nom_gare }}
+                    <span class="mx-1">&bull;</span>
+                    <i class="fas fa-map-marker-alt" style="color: var(--blue);"></i> {{ $programme->gareArrivee->nom_gare ?? 'N/A' }}
                 @endif
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    {{-- Heure de départ --}}
-                    <div>
-                        <label for="heure_depart" class="block text-sm font-semibold text-gray-700 mb-2">
-                            <i class="fas fa-clock text-green-500 mr-1"></i> Heure de départ
-                        </label>
-                        <input type="time" name="heure_depart" id="heure_depart" 
-                            value="{{ old('heure_depart', \Carbon\Carbon::parse($programme->heure_depart)->format('H:i')) }}" required
-                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg font-bold">
-                    </div>
-
-                    {{-- Heure d'arrivée --}}
-                    <div>
-                        <label for="heure_arrive" class="block text-sm font-semibold text-gray-700 mb-2">
-                            <i class="fas fa-flag-checkered text-red-500 mr-1"></i> Heure d'arrivée
-                        </label>
-                        <input type="time" name="heure_arrive" id="heure_arrive" 
-                            value="{{ old('heure_arrive', \Carbon\Carbon::parse($programme->heure_arrive)->format('H:i')) }}" required
-                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg font-bold">
-                    </div>
-
-                    {{-- Montant du billet --}}
-                    <div>
-                        <label for="montant_billet" class="block text-sm font-semibold text-gray-700 mb-2">
-                            <i class="fas fa-money-bill-wave text-yellow-500 mr-1"></i> Montant du billet (FCFA)
-                        </label>
-                        <input type="number" name="montant_billet" id="montant_billet" 
-                            value="{{ old('montant_billet', intval($programme->montant_billet)) }}" required min="0" step="100"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg font-bold">
-                    </div>
-
-                    {{-- Nombre de places --}}
-                    <div>
-                        <label for="capacity" class="block text-sm font-semibold text-gray-700 mb-2">
-                            <i class="fas fa-chair text-blue-500 mr-1"></i> Nombre de places
-                        </label>
-                        <input type="number" name="capacity" id="capacity" 
-                            value="{{ old('capacity', $programme->capacity ?? 50) }}" required min="1"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg font-bold">
-                        <p class="text-xs text-gray-400 mt-1">Capacité maximale du véhicule pour ce programme</p>
-                    </div>
-
-                    {{-- Statut --}}
-                    <div class="md:col-span-2">
-                        <label for="statut" class="block text-sm font-semibold text-gray-700 mb-2">
-                            <i class="fas fa-toggle-on text-purple-500 mr-1"></i> Statut
-                        </label>
-                        <div class="flex gap-4">
-                            <label class="flex-1 cursor-pointer">
-                                <input type="radio" name="statut" value="actif" class="hidden peer"
-                                    {{ old('statut', $programme->statut) == 'actif' ? 'checked' : '' }}>
-                                <div class="peer-checked:border-green-500 peer-checked:bg-green-50 peer-checked:text-green-700 border-2 border-gray-200 rounded-xl p-4 text-center transition-all hover:border-green-300">
-                                    <i class="fas fa-check-circle text-2xl mb-1"></i>
-                                    <p class="font-bold">Actif</p>
-                                    <p class="text-xs opacity-70">Programme visible et réservable</p>
-                                </div>
-                            </label>
-                            <label class="flex-1 cursor-pointer">
-                                <input type="radio" name="statut" value="annule" class="hidden peer"
-                                    {{ old('statut', $programme->statut) == 'annule' ? 'checked' : '' }}>
-                                <div class="peer-checked:border-red-500 peer-checked:bg-red-50 peer-checked:text-red-700 border-2 border-gray-200 rounded-xl p-4 text-center transition-all hover:border-red-300">
-                                    <i class="fas fa-times-circle text-2xl mb-1"></i>
-                                    <p class="font-bold">Annulé</p>
-                                    <p class="text-xs opacity-70">Programme désactivé</p>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Actions --}}
-                <div class="flex justify-end gap-4 pt-4 border-t border-gray-100">
-                    <a href="{{ route('programme.index') }}" 
-                        class="px-6 py-3 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition">
-                        <i class="fas fa-times mr-1"></i> Annuler
-                    </a>
-                    <button type="submit" 
-                        class="px-8 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold rounded-xl hover:from-orange-600 hover:to-red-600 transform hover:-translate-y-0.5 transition-all duration-200 shadow-lg">
-                        <i class="fas fa-save mr-2"></i> Mettre à jour
-                    </button>
-                </div>
-            </form>
+                @if($programme->durer_parcours)
+                    <span class="mx-2">|</span>
+                    <i class="fas fa-clock"></i> {{ $programme->durer_parcours }}
+                @endif
+            </div>
         </div>
     </div>
-</div>
 
+    {{-- Formulaire --}}
+    <div class="form-card">
+        <div class="form-header">
+            <h3 style="font-size: 15px; font-weight: 800; color: var(--text-1); margin: 0;">
+                <i class="fas fa-edit mr-2" style="color: var(--orange);"></i> Configuration de l'horaire
+            </h3>
+        </div>
+
+        <form action="{{ route('programme.update', $programme->id) }}" method="POST" class="form-body">
+            @csrf
+            @method('PUT')
+
+            @if($errors->any())
+                <div class="alert alert-danger" style="border-radius: var(--radius-sm); font-size: 13px;">
+                    <ul class="mb-0 pl-3">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <label for="heure_depart" class="form-label"><i class="fas fa-clock text-success mr-1"></i> Heure de départ</label>
+                    <input type="time" name="heure_depart" id="heure_depart" 
+                        value="{{ old('heure_depart', \Carbon\Carbon::parse($programme->heure_depart)->format('H:i')) }}" required
+                        class="input-modern">
+                </div>
+
+                <div class="col-md-6 mb-4">
+                    <label for="heure_arrive" class="form-label"><i class="fas fa-flag-checkered text-danger mr-1"></i> Heure d'arrivée estimée</label>
+                    <input type="time" name="heure_arrive" id="heure_arrive" 
+                        value="{{ old('heure_arrive', \Carbon\Carbon::parse($programme->heure_arrive)->format('H:i')) }}" required
+                        class="input-modern" style="background: #F1F5F9; border-style: dashed;" readonly>
+                </div>
+
+                <div class="col-md-6 mb-4">
+                    <label for="montant_billet" class="form-label"><i class="fas fa-money-bill-wave text-warning mr-1"></i> Montant du billet (FCFA)</label>
+                    <input type="number" name="montant_billet" id="montant_billet" 
+                        value="{{ old('montant_billet', intval($programme->montant_billet)) }}" required min="0" step="100"
+                        class="input-modern">
+                </div>
+
+                <div class="col-md-6 mb-4">
+                    <label for="capacity" class="form-label"><i class="fas fa-chair text-primary mr-1"></i> Nombre de places max</label>
+                    <input type="number" name="capacity" id="capacity" 
+                        value="{{ old('capacity', $programme->capacity ?? 50) }}" required min="1"
+                        class="input-modern">
+                </div>
+
+                <div class="col-12 mb-4">
+                    <label class="form-label"><i class="fas fa-toggle-on text-purple mr-1"></i> Statut du programme</label>
+                    <div class="radio-card-wrapper">
+                        <label class="radio-card-label">
+                            <input type="radio" name="statut" value="actif" class="radio-card-input" {{ old('statut', $programme->statut) == 'actif' ? 'checked' : '' }}>
+                            <div class="radio-card-content actif">
+                                <i class="fas fa-check-circle text-muted"></i>
+                                <div class="title">Actif</div>
+                                <div class="desc">Visible et réservable</div>
+                            </div>
+                        </label>
+                        <label class="radio-card-label">
+                            <input type="radio" name="statut" value="annule" class="radio-card-input" {{ old('statut', $programme->statut) == 'annule' ? 'checked' : '' }}>
+                            <div class="radio-card-content annule">
+                                <i class="fas fa-times-circle text-muted"></i>
+                                <div class="title">Annulé</div>
+                                <div class="desc">Désactivé temporairement</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end pt-3 mt-2" style="border-top: 1px solid var(--border); gap: 12px;">
+                <a href="{{ route('programme.index') }}" class="btn btn-light" style="font-weight: 700; font-size: 13px; border-radius: var(--radius-sm);">Annuler</a>
+                <button type="submit" class="btn-submit">
+                    <i class="fas fa-save mr-2"></i> Mettre à jour
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+@endsection
+
+@section('scripts')
 <script>
-    // Parser la durée du parcours
     function parseDuration(str) {
         if (!str) return 90;
         let h = 0, m = 0;

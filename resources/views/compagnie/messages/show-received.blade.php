@@ -3,112 +3,107 @@
 @section('styles')
 <style>
     .message-container { max-width: 900px; margin: 0 auto; }
-    .back-btn { transition: all 0.2s ease; }
-    .back-btn:hover { transform: translateX(-3px); color: #e94f1b; }
     
-    .detail-card {
-        background: white;
-        border-radius: 24px;
-        box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.08);
-        overflow: hidden;
-        border: 1px solid rgba(241, 245, 249, 1);
-    }
+    .btn-back { display: inline-flex; align-items: center; gap: 8px; color: var(--text-3); font-weight: 700; font-size: 13px; text-decoration: none; margin-bottom: 24px; transition: color 0.2s; }
+    .btn-back:hover { color: var(--orange); text-decoration: none; }
+
+    .detail-card { background: var(--surface); border-radius: 24px; border: 1px solid var(--border); box-shadow: var(--shadow-md); overflow: hidden; }
     
-    .meta-section {
-        background: radial-gradient(circle at top right, #f0fdfa 0%, #fff 40%);
-        border-bottom: 1px solid #f1f5f9;
-    }
+    .meta-section { padding: 32px; border-bottom: 1px solid var(--border); background: linear-gradient(135deg, var(--surface-2), var(--surface)); display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
     
-    .sender-avatar {
-        width: 64px; height: 64px;
-        background: white;
-        border: 1px solid #99f6e4;
-        color: #0d9488;
-        border-radius: 20px;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 1.75rem;
-        box-shadow: 0 10px 15px -3px rgba(13, 148, 136, 0.1);
-    }
+    .meta-left { display: flex; gap: 20px; align-items: flex-start; }
+    .sender-avatar { width: 64px; height: 64px; background: white; border: 1px solid #A7F3D0; color: #059669; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: var(--shadow-sm); flex-shrink: 0; }
     
-    .message-body {
-        font-size: 1.125rem; line-height: 1.8;
-        color: #334155; white-space: pre-wrap;
-    }
+    .meta-info { flex: 1; }
+    .meta-tags { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+    .tag-role { background: #ECFDF5; color: #059669; font-size: 9px; font-weight: 800; text-transform: uppercase; padding: 4px 8px; border-radius: 6px; border: 1px solid #A7F3D0; }
+    .meta-date { font-size: 12px; font-weight: 700; color: var(--text-3); }
     
-    .status-badge {
-        display: inline-flex; align-items: center; gap: 0.5rem;
-        padding: 0.5rem 1rem; border-radius: 9999px;
-        font-size: 0.75rem; font-weight: 800;
-        text-transform: uppercase; letter-spacing: 0.05em;
+    .meta-title { font-size: 24px; font-weight: 800; color: var(--text-1); margin-bottom: 4px; line-height: 1.2; }
+    .meta-sender { font-size: 13px; color: var(--text-2); font-weight: 500; }
+    .meta-sender strong { color: var(--text-1); font-weight: 700; }
+
+    .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+    .status-badge.read { background: #ECFDF5; color: #059669; border: 1px solid #A7F3D0; }
+    .status-badge.new { background: #FFF1F2; color: #E11D48; border: 1px solid #FECDD3; animation: pulseRed 2s infinite; }
+
+    .message-body { padding: 40px; background: var(--surface); position: relative; }
+    .quote-icon { position: absolute; top: 30px; left: 30px; font-size: 80px; color: var(--surface-2); opacity: 0.6; z-index: 0; }
+    .message-text { position: relative; z-index: 1; padding-left: 24px; border-left: 4px solid var(--border-strong); font-size: 15px; line-height: 1.8; color: var(--text-1); white-space: pre-wrap; font-weight: 500; }
+
+    .detail-footer { padding: 16px 32px; background: var(--surface-2); border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .msg-id { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-3); letter-spacing: 1px; }
+    .btn-print { background: transparent; border: none; color: var(--text-3); font-size: 16px; cursor: pointer; transition: 0.2s; }
+    .btn-print:hover { color: var(--orange); }
+
+    @keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(225, 29, 72, 0); } 100% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); } }
+
+    @media (max-width: 640px) {
+        .meta-section { padding: 24px; flex-direction: column; }
+        .message-body { padding: 24px; }
+        .message-text { padding-left: 16px; font-size: 14px; }
     }
-    .status-badge.read { background: #f0fdf4; color: #166534; border: 1px solid #dcfce7; }
 </style>
 @endsection
 
 @section('content')
-<div class="container-fluid px-4 py-8">
+<div class="dashboard-page">
     <div class="message-container">
-        <div class="mb-8">
-            <a href="{{ route('compagnie.messages.index') }}" class="back-btn inline-flex items-center text-slate-500 font-bold hover:no-underline gap-2">
-                <i class="fas fa-arrow-left"></i>
-                <span>Retour à la liste</span>
-            </a>
-        </div>
+        <a href="{{ route('compagnie.messages.index') }}" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Retour à la liste
+        </a>
 
         <div class="detail-card">
-            <div class="meta-section p-8 md:p-10">
-                <div class="flex flex-col md:flex-row md:items-start justify-between gap-6">
-                    <div class="flex items-start gap-6">
-                        <div class="sender-avatar flex-shrink-0">
-                            <i class="fas {{ $message->sender_icon ?? 'fa-warehouse' }}"></i>
-                        </div>
-                        <div>
-                            <div class="flex items-center gap-3 mb-2">
-                                <span class="px-2.5 py-0.5 rounded-md bg-teal-100 text-teal-700 text-[10px] font-black uppercase tracking-widest">
-                                    {{ $message->sender_type_label ?? 'Gare' }}
-                                </span>
-                                <span class="text-slate-400 text-xs font-bold">
-                                    {{ $message->created_at->isoFormat('LLLL') }}
-                                </span>
-                            </div>
-                            <h1 class="text-2xl md:text-3xl font-black text-slate-900 leading-tight mb-2">
-                                {{ $message->subject }}
-                            </h1>
-                            <p class="text-slate-500 font-medium text-sm">
-                                De: <span class="text-slate-900">{{ $message->sender_name ?? 'La Gare' }}</span>
-                            </p>
-                        </div>
+            <div class="meta-section">
+                <div class="meta-left">
+                    <div class="sender-avatar">
+                        <i class="fas {{ $message->sender_icon ?? 'fa-warehouse' }}"></i>
                     </div>
-                    
-                    <div>
-                        @if($message->is_read)
-                        <div class="status-badge read shadow-sm">
-                            <i class="fas fa-check-double"></i>
-                            <span>Lu le {{ $message->updated_at->format('d/m/Y') }}</span>
+                    <div class="meta-info">
+                        <div class="meta-tags">
+                            <span class="tag-role">{{ $message->sender_type_label ?? 'Gare' }}</span>
+                            <span class="meta-date">{{ $message->created_at->isoFormat('LLLL') }}</span>
                         </div>
-                        @else
-                        <span class="px-3 py-1 bg-[#fff1f2] text-[#e94f1b] text-xs font-black uppercase tracking-widest rounded-full ring-1 ring-[#e94f1b]/20">
-                            Nouveau
-                        </span>
-                        @endif
+                        <h1 class="meta-title">{{ $message->subject }}</h1>
+                        <div class="meta-sender">De: <strong>{{ $message->sender_name ?? 'La Gare' }}</strong></div>
                     </div>
+                </div>
+                
+                <div class="meta-right">
+                    @if($message->is_read)
+                    <div class="status-badge read">
+                        <i class="fas fa-check-double"></i> Lu le {{ $message->updated_at->format('d/m/Y') }}
+                    </div>
+                    @else
+                    <div class="status-badge new">
+                        Nouveau Message
+                    </div>
+                    @endif
                 </div>
             </div>
 
-            <div class="p-8 md:p-12 bg-white relative">
-                <i class="fas fa-quote-left absolute top-8 left-8 text-slate-100 text-6xl -z-0"></i>
-                <div class="message-body relative z-10 pl-6 border-l-4 border-slate-100 ml-2">
-                    {{ $message->message }}
-                </div>
+            <div class="message-body">
+                <i class="fas fa-quote-left quote-icon"></i>
+                <div class="message-text">{{ $message->message }}</div>
             </div>
 
-            <div class="bg-slate-50 px-8 py-4 border-t border-slate-100 flex justify-between items-center">
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ID: #{{ str_pad($message->id, 5, '0', STR_PAD_LEFT) }}</span>
-                <button class="text-slate-400 hover:text-[#e94f1b] transition-colors" title="Imprimer">
+            <div class="detail-footer print-hide">
+                <span class="msg-id">ID: #{{ str_pad($message->id, 5, '0', STR_PAD_LEFT) }}</span>
+                <button class="btn-print" onclick="window.print()" title="Imprimer le message">
                     <i class="fas fa-print"></i>
                 </button>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    @media print {
+        .dashboard-page { padding: 0 !important; background: white !important; }
+        .btn-back, .topbar, .sidebar, .print-hide { display: none !important; }
+        .detail-card { box-shadow: none !important; border: 1px solid #ddd !important; border-radius: 0 !important; }
+        .quote-icon { display: none !important; }
+        .message-text { border-left: none; padding-left: 0; }
+    }
+</style>
 @endsection

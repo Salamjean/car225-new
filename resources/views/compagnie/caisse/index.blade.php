@@ -1,350 +1,272 @@
 @extends('compagnie.layouts.template')
 
+@section('page-title', 'Gestion des Caisses')
+@section('page-subtitle', 'Supervisez vos encaissements et gérez votre équipe de caisse')
+
+@section('styles')
+<style>
+    /* Avatars dans la table */
+    .caisse-avatar {
+        width: 36px; height: 36px; border-radius: 10px;
+        background: var(--surface-2); border: 1px solid var(--border-strong);
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 800; font-size: 12px; color: var(--orange);
+        object-fit: cover; overflow: hidden;
+    }
+    
+    /* Boutons d'action */
+    .btn-action {
+        width: 32px; height: 32px; border-radius: 8px; border: none;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 12px; transition: all 0.2s; cursor: pointer; text-decoration: none;
+    }
+    .btn-action.edit { background: var(--surface-2); color: var(--text-2); }
+    .btn-action.edit:hover { background: var(--text-1); color: white; }
+    .btn-action.archive { background: #FFF7ED; color: var(--orange-dark); }
+    .btn-action.archive:hover { background: var(--orange); color: white; }
+    .btn-action.delete { background: #FEF2F2; color: var(--red); }
+    .btn-action.delete:hover { background: var(--red); color: white; }
+
+    /* Barre de recherche personnalisée */
+    .search-box { position: relative; max-width: 350px; width: 100%; }
+    .search-box i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-3); font-size: 13px; }
+    .search-box input {
+        width: 100%; padding: 10px 16px 10px 40px;
+        border: 1px solid var(--border); border-radius: var(--radius-sm);
+        font-size: 13px; background: var(--surface); color: var(--text-1); transition: 0.2s;
+    }
+    .search-box input:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px var(--orange-light); }
+</style>
+@endsection
+
 @section('content')
-<div class="min-h-screen bg-gradient-to-br from-gray-50 to-orange-50 py-8 px-4">
-    <div class="mx-auto" style="width: 90%">
-        <!-- En-tête -->
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
-            <div class="mb-6 lg:mb-0">
-                <h1 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-3">Gestion des Caissières</h1>
-                <p class="text-lg text-gray-600">
-                   Gérez vos caissières
-                </p>
-            </div>
+<div class="dashboard-page">
 
-            <!-- Bouton d'ajout -->
-            <a href="{{ route('compagnie.caisse.create') }}"
-                class="inline-flex items-center px-6 py-4 bg-[#e94e1a] text-white font-bold rounded-xl hover:bg-[#d33d0f] transform hover:-translate-y-1 transition-all duration-200 shadow-lg hover:shadow-xl">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
-                Nouvelle Caissière
-            </a>
+    {{-- STATS ROW --}}
+    <div class="metric-grid mb-4">
+        <div class="metric-card">
+            <div class="metric-top">
+                <div class="metric-icon mi-amber"><i class="fas fa-cash-register"></i></div>
+                <span class="metric-tag mt-slate">Effectif</span>
+            </div>
+            <div class="metric-label">Caissières Enregistrées</div>
+            <div class="metric-value">{{ $caisses->count() }}</div>
         </div>
 
-        <!-- Statistiques -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <!-- Total Caissières --><div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-[#e94e1a]">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-600">Total Caissières</p>
-                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ $caisses->count() }}</p>
-                    </div>
-                    <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-                        <svg class="w-6 h-6 text-[#e94e1a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-                        </svg>
-                    </div>
-                </div>
+        <div class="metric-card">
+            <div class="metric-top">
+                <div class="metric-icon mi-green"><i class="fas fa-user-check"></i></div>
+                <span class="metric-tag mt-green">Actives</span>
             </div>
-
-            <!-- Caissières actives -->
-            <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-green-500">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-600">Actives</p>
-                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ $caisses->where('archived_at', null)->count() }}</p>
-                    </div>
-                    <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                        <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-
-
+            <div class="metric-label">En service</div>
+            <div class="metric-value">{{ $caisses->whereNull('archived_at')->count() }}</div>
         </div>
 
-        <!-- Carte principale -->
-        <div class="bg-white rounded-3xl shadow-xl overflow-hidden">
-            <!-- En-tête de la table -->
-            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-                    <h2 class="text-xl font-bold text-gray-900 mb-4 lg:mb-0">Liste des Caissières</h2>
+        <div class="metric-card">
+            <div class="metric-top">
+                <div class="metric-icon mi-rose"><i class="fas fa-user-clock"></i></div>
+                <span class="metric-tag mt-rose">Archives</span>
+            </div>
+            <div class="metric-label">Profils Suspendus</div>
+            <div class="metric-value">{{ $caisses->whereNotNull('archived_at')->count() }}</div>
+        </div>
+    </div>
 
-                    <!-- Barre de recherche -->
-                    <div class="relative">
-                        <input type="text" id="searchInput" placeholder="Rechercher une caissière..."
-                            class="pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300">
-                        <div class="absolute inset-y-0 left-0 flex items-center pl-3">
-                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                        </div>
-                    </div>
+    {{-- ACTION HEADER --}}
+    <div class="dash-card mb-4 p-3 d-flex flex-wrap align-items-center justify-content-between" style="gap: 16px;">
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Filtrer par nom, code ID, contact...">
+        </div>
+        
+        <a href="{{ route('compagnie.caisse.create') }}" class="btn btn-primary" style="background: var(--orange); border: none; font-weight: 700; border-radius: var(--radius-sm); font-size: 13px;">
+            <i class="fas fa-plus mr-2"></i> Enrôler une Caissière
+        </a>
+    </div>
+
+    {{-- TABLE --}}
+    <div class="dash-card">
+        <div class="dash-card-head" style="background: var(--surface-2);">
+            <div class="dash-card-head-left">
+                <div class="dash-card-icon" style="background: var(--text-1); color: white;">
+                    <i class="fas fa-users"></i>
                 </div>
+                <span class="dash-card-title">Répertoire de la Régie</span>
             </div>
+        </div>
 
-            <!-- Tableau -->
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Caissière</th>
-                            <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Code ID</th>
-                            <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Contact</th>
-                            <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Commune</th>
-
-                            <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Statut</th>
-                            <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200" id="caisseTable">
-                        @forelse($caisses as $caisse)
-                            <tr class="hover:bg-gray-50 transition-colors duration-200 caisse-row"
-                                data-search="{{ strtolower($caisse->name . ' ' . $caisse->prenom . ' ' . $caisse->email) }}">
-                                <!-- Photo et informations -->
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="flex items-center justify-center">
-                                        <div class="flex-shrink-0 h-12 w-12">
-                                            @if($caisse->profile_picture)
-                                                <img class="h-12 w-12 rounded-full object-cover border-2 border-gray-200"
-                                                    src="{{ asset('storage/' . $caisse->profile_picture) }}"
-                                                    alt="{{ $caisse->prenom }} {{ $caisse->name }}"
-                                                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                                <div class="h-12 w-12 rounded-full bg-[#e94e1a] flex items-center justify-center text-white font-bold text-sm hidden">
-                                                    {{ substr($caisse->prenom, 0, 1) }}{{ substr($caisse->name, 0, 1) }}
-                                                </div>
-                                            @else
-                                                <div class="h-12 w-12 rounded-full bg-[#e94e1a] flex items-center justify-center text-white font-bold text-sm">
-                                                    {{ substr($caisse->prenom, 0, 1) }}{{ substr($caisse->name, 0, 1) }}
-                                                </div>
-                                            @endif
-                                        </div>
-                                        <div class="ml-4">
-                                            <div class="text-sm font-semibold text-gray-900">{{ $caisse->prenom }} {{ $caisse->name }}</div>
-                                            <div class="text-sm text-gray-500">{{ $caisse->email }}</div>
-                                        </div>
+        <div class="dash-table-wrap">
+            <table class="dash-table">
+                <thead>
+                    <tr>
+                        <th>Identité & Code</th>
+                        <th>Coordonnées</th>
+                        <th>Affectation</th>
+                        <th class="text-center">Statut</th>
+                        <th class="text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="caisseTableBody">
+                    @forelse ($caisses as $caisse)
+                    <tr class="caisse-row">
+                        <td>
+                            <div class="d-flex align-items-center" style="gap: 12px;">
+                                @if($caisse->profile_picture)
+                                    <img src="{{ Storage::url($caisse->profile_picture) }}" alt="Avatar" class="caisse-avatar">
+                                @else
+                                    <div class="caisse-avatar">{{ strtoupper(substr($caisse->name, 0, 1)) }}{{ strtoupper(substr($caisse->prenom, 0, 1)) }}</div>
+                                @endif
+                                <div>
+                                    <div style="font-weight: 800; font-size: 13px; color: var(--text-1); text-transform: uppercase;">{{ $caisse->name }} {{ $caisse->prenom }}</div>
+                                    <div style="font-size: 10px; font-weight: 800; color: var(--text-3); margin-top: 4px; background: var(--surface-2); padding: 2px 6px; border-radius: 4px; display: inline-block;">
+                                        ID: {{ $caisse->code_id ?? 'REG-CASH' }}
                                     </div>
-                                </td>
-
-                                <!-- Code ID -->
-                                <td class="px-6 py-4 whitespace-nowrap text-center">
-                                    <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs font-bold rounded">
-                                        {{ $caisse->code_id ?? 'N/A' }}
-                                    </span>
-                                </td>
-
-                                <!-- Contact -->
-                                <td class="px-6 py-4 whitespace-nowrap text-center">
-                                    <div class="text-sm text-gray-900">{{ $caisse->contact }}</div>
-                                    @if($caisse->cas_urgence)
-                                        <div class="text-xs text-gray-500">Urgence: {{ $caisse->cas_urgence }}</div>
-                                    @endif
-                                </td>
-
-                                <!-- Commune -->
-                                <td class="px-6 py-4 whitespace-nowrap text-center">
-                                    <div class="text-sm text-gray-900">{{ $caisse->commune ?? 'Non renseignée' }}</div>
-                                </td>
-
-
-
-                                <!-- Statut -->
-                                <td class="px-6 py-4 whitespace-nowrap text-center">
-                                    @if($caisse->isArchived())
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                            <span class="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
-                                            Archivée
-                                        </span>
-                                    @else
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                            <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                                            Active
-                                        </span>
-                                    @endif
-                                </td>
-
-                                <!-- Actions -->
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <div class="flex items-center justify-center space-x-3">
-
-
-                                        <!-- Bouton Modifier -->
-                                        <a href="{{ route('compagnie.caisse.edit', $caisse->id) }}"
-                                            class="text-green-600 hover:text-green-900 transition-colors duration-200 p-2 rounded-lg hover:bg-green-50"
-                                            title="Modifier">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                            </svg>
-                                        </a>
-
-                                        <!-- Bouton Archive/Unarchive -->
-                                        <button type="button" onclick="toggleArchive({{ $caisse->id }}, {{ $caisse->isArchived() ? 'true' : 'false' }})"
-                                            class="text-yellow-600 hover:text-yellow-900 transition-colors duration-200 p-2 rounded-lg hover:bg-yellow-50"
-                                            title="{{ $caisse->isArchived() ? 'Réactiver' : 'Archiver' }}">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
-                                            </svg>
-                                        </button>
-
-                                        <!-- Bouton Supprimer -->
-                                        <button type="button" onclick="confirmDelete({{ $caisse->id }}, '{{ $caisse->prenom }} {{ $caisse->name }}')"
-                                            class="text-red-600 hover:text-red-900 transition-colors duration-200 p-2 rounded-lg hover:bg-red-50"
-                                            title="Supprimer">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="6" class="px-6 py-8 text-center">
-                                    <div class="flex flex-col items-center justify-center text-gray-500">
-                                        <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
-                                        </svg>
-                                        <p class="text-lg font-medium mb-2">Aucune caissière trouvée</p>
-                                        <p class="text-sm mb-4">Commencez par ajouter une nouvelle caissière à votre équipe.</p>
-                                        <a href="{{ route('compagnie.caisse.create') }}"
-                                            class="inline-flex items-center px-4 py-2 bg-[#e94e1a] text-white font-semibold rounded-lg hover:bg-[#d33d0f] transition-colors duration-200">
-                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                            </svg>
-                                            Ajouter une caissière
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div style="font-weight: 700; font-size: 12px; color: var(--text-1); font-family: monospace; letter-spacing: 0.5px; margin-bottom: 2px;"><i class="fas fa-mobile-alt mr-1" style="color: var(--text-3);"></i> {{ $caisse->contact }}</div>
+                            <div style="font-size: 11px; color: var(--text-3);"><i class="fas fa-envelope mr-1"></i> {{ $caisse->email }}</div>
+                        </td>
+                        <td>
+                            <div style="font-weight: 800; font-size: 11px; color: var(--blue); text-transform: uppercase; margin-bottom: 2px;"><i class="fas fa-map-marker-alt mr-1"></i> {{ $caisse->commune ?? 'Non définie' }}</div>
+                            @if($caisse->gare)
+                                <div style="font-size: 11px; font-weight: 700; color: var(--orange);"><i class="fas fa-building mr-1"></i> {{ $caisse->gare->nom_gare }}</div>
+                            @endif
+                        </td>
+                        <td class="text-center">
+                            @if($caisse->isArchived())
+                                <span class="metric-tag mt-rose"><i class="fas fa-circle mr-1" style="font-size: 6px;"></i> Archivée</span>
+                            @else
+                                <span class="metric-tag mt-green"><i class="fas fa-circle mr-1" style="font-size: 6px;"></i> Active</span>
+                            @endif
+                        </td>
+                        <td class="text-right">
+                            <div class="d-flex justify-content-end" style="gap: 8px;">
+                                <a href="{{ route('compagnie.caisse.edit', $caisse->id) }}" class="btn-action edit" title="Modifier">
+                                    <i class="fas fa-pen"></i>
+                                </a>
+                                <button type="button" onclick="toggleArchive({{ $caisse->id }}, {{ $caisse->isArchived() ? 'true' : 'false' }})" class="btn-action archive" title="{{ $caisse->isArchived() ? 'Réactiver' : 'Archiver' }}">
+                                    <i class="fas {{ $caisse->isArchived() ? 'fa-undo' : 'fa-archive' }}"></i>
+                                </button>
+                                <button type="button" onclick="confirmDelete({{ $caisse->id }}, '{{ $caisse->prenom }} {{ $caisse->name }}')" class="btn-action delete" title="Supprimer">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="5">
+                            <div class="table-empty py-5">
+                                <i class="fas fa-cash-register table-empty-icon mb-3" style="font-size: 40px; color: var(--border-strong);"></i>
+                                <h3 style="font-size: 14px; font-weight: 800; color: var(--text-1); margin: 0;">Aucune caissière enregistrée</h3>
+                                <p style="font-size: 12px; color: var(--text-3); font-weight: 600; margin-bottom: 16px;">Votre équipe de vente n'a pas encore été configurée.</p>
+                                <a href="{{ route('compagnie.caisse.create') }}" class="btn btn-primary btn-sm" style="background: var(--orange); border: none; font-weight: 700; border-radius: var(--radius-sm);">
+                                    Recruter maintenant
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
 
-<!-- SweetAlert2 -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 <script>
-// Filtrage et recherche
 document.addEventListener('DOMContentLoaded', function() {
+    // Advanced Search Logic
     const searchInput = document.getElementById('searchInput');
-    const caisseRows = document.querySelectorAll('.caisse-row');
+    const tableRows = document.querySelectorAll('.caisse-row');
 
     searchInput.addEventListener('input', function() {
-        const searchValue = this.value.toLowerCase();
-        
-        caisseRows.forEach(row => {
-            const searchData = row.getAttribute('data-search');
-            if (searchData.includes(searchValue)) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
+        const query = this.value.toLowerCase().trim();
+        tableRows.forEach(row => {
+            const text = row.innerText.toLowerCase();
+            row.style.display = text.includes(query) ? '' : 'none';
         });
     });
 });
 
-
-
-// Archive/unarchive
-function toggleArchive(caisseId, isArchived) {
-    const action = isArchived ? 'réactiver' : 'archiver';
+function toggleArchive(id, isArchived) {
+    const action = isArchived ? 'Restauration' : 'Archivage';
+    const message = isArchived ? "Souhaitez-vous réactiver l'accès pour cette caissière ?" : "Cette caissière ne pourra plus se connecter aux terminaux de vente.";
     
     Swal.fire({
-        title: `Voulez-vous ${action} cette caissière?`,
-        icon: 'question',
+        title: action,
+        text: message,
+        icon: 'warning',
         showCancelButton: true,
-        confirmButtonText: 'Oui',
+        confirmButtonText: 'Confirmer',
         cancelButtonText: 'Annuler',
-        confirmButtonColor: '#e94e1a',
-        cancelButtonColor: '#6b7280'
+        confirmButtonColor: 'var(--text-1)',
+        cancelButtonColor: 'var(--text-3)',
+        customClass: { popup: 'rounded-lg border-0 shadow-sm' }
     }).then((result) => {
         if (result.isConfirmed) {
-            fetch(`/company/caisse/${caisseId}/toggle-archive`, {
+            fetch(`/company/caisse/${id}/toggle-archive`, {
                 method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                headers: { 
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Content-Type': 'application/json'
                 }
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    Swal.fire({
-                        title: 'Succès!',
+                    Swal.fire({ 
+                        icon: 'success', 
+                        title: 'Opération réussie', 
                         text: data.message,
-                        icon: 'success',
-                        confirmButtonColor: '#e94e1a'
-                    }).then(() => {
-                        location.reload();
-                    });
+                        timer: 2000,
+                        showConfirmButton: false,
+                        customClass: { popup: 'rounded-lg shadow-sm' }
+                    }).then(() => location.reload());
                 }
             });
         }
     });
 }
 
-// Suppression
-function confirmDelete(caisseId, caisseName) {
+function confirmDelete(id, name) {
     Swal.fire({
-        title: 'Êtes-vous sûr ?',
-        html: `<p>La caissière "<strong>${caisseName}</strong>" sera définitivement supprimée.</p>
-               <p class="text-sm text-red-600 mt-2">Cette action est irréversible !</p>`,
-        icon: 'warning',
+        title: 'Suppression définitive',
+        html: `La caissière <strong>${name}</strong> sera définitivement rayée des effectifs.`,
+        icon: 'error',
         showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#6b7280',
-        confirmButtonText: 'Oui, supprimer !',
-        cancelButtonText: 'Annuler'
+        confirmButtonColor: 'var(--red)',
+        cancelButtonColor: 'var(--text-3)',
+        confirmButtonText: 'Supprimer',
+        cancelButtonText: 'Annuler',
+        customClass: { popup: 'rounded-lg border-0 shadow-sm' }
     }).then((result) => {
         if (result.isConfirmed) {
             const form = document.createElement('form');
             form.method = 'POST';
-            form.action = `/company/caisse/${caisseId}`;
-
-            const csrfToken = document.createElement('input');
-            csrfToken.type = 'hidden';
-            csrfToken.name = '_token';
-            csrfToken.value = '{{ csrf_token() }}';
-
-            const methodField = document.createElement('input');
-            methodField.type = 'hidden';
-            methodField.name = '_method';
-            methodField.value = 'DELETE';
-
-            form.appendChild(csrfToken);
-            form.appendChild(methodField);
+            form.action = `/company/caisse/${id}`;
+            form.innerHTML = `
+                <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="_method" value="DELETE">
+            `;
             document.body.appendChild(form);
             form.submit();
         }
     });
 }
 
-// Messages flash
 @if(session('success'))
-    Swal.fire({
-        title: 'Succès !',
+    Swal.fire({ 
+        icon: 'success', 
+        title: 'Opération Réussie', 
         text: '{{ session('success') }}',
-        icon: 'success',
-        confirmButtonColor: '#e94e1a',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
         timer: 3000,
-        timerProgressBar: true
-    });
-@endif
-
-@if(session('error'))
-    Swal.fire({
-        title: 'Erreur !',
-        text: '{{ session('error') }}',
-        icon: 'error',
-        confirmButtonColor: '#d33'
+        customClass: { popup: 'rounded-lg shadow-sm' }
     });
 @endif
 </script>
-
-<style>
-.caisse-row {
-    transition: all 0.3s ease;
-}
-
-.caisse-row:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-</style>
 @endsection

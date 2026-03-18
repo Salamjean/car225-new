@@ -1,179 +1,137 @@
 @extends('compagnie.layouts.template')
+
+@section('page-title', 'Modifier la Gare')
+@section('page-subtitle', 'Mettre à jour les informations de ' . $gare->nom_gare)
+
+@section('styles')
+<style>
+    .form-container { max-width: 900px; margin: 0 auto; }
+    .form-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow-sm); margin-bottom: 24px; padding: 24px; }
+    
+    .input-group-modern { position: relative; margin-bottom: 20px; }
+    .input-group-modern .form-label { display: block; font-size: 10px; font-weight: 700; color: var(--text-3); text-transform: uppercase; margin-bottom: 6px; }
+    .input-group-modern .input-modern { width: 100%; padding: 12px 16px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface-2); color: var(--text-1); font-size: 13px; font-weight: 600; transition: 0.2s; }
+    .input-group-modern .input-modern:focus { outline: none; border-color: var(--orange); background: var(--surface); box-shadow: 0 0 0 3px var(--orange-light); }
+    
+    .btn-submit { background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%); color: white; padding: 12px 24px; border-radius: var(--radius-sm); font-weight: 700; font-size: 13px; text-transform: uppercase; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(249,115,22,0.3); transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(249,115,22,0.4); color: white; text-decoration: none;}
+    
+    .current-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border); margin-top: 8px; display: block; }
+</style>
+@endsection
+
 @section('content')
-<div class="min-h-screen bg-gradient-to-br from-gray-50 to-green-50 py-8 px-4">
-    <div class="mx-auto" style="width: 80%">
-        <!-- En-tête -->
-        <div class="text-center mb-12">
-            <div class="inline-flex items-center justify-center w-16 h-16 bg-[#e94f1b] rounded-2xl shadow-lg mb-4">
-                <i class="fas fa-edit text-3xl text-white"></i>
-            </div>
-            <h1 class="text-4xl font-bold text-gray-900 mb-3">Modifier la Gare</h1>
-            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
-                Mettre à jour les informations de {{ $gare->nom_gare }}
-            </p>
+<div class="dashboard-page">
+    <div class="form-container">
+
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <a href="{{ route('gare.index') }}" class="btn btn-light btn-sm" style="font-weight: 700; font-size: 12px; border-radius: var(--radius-sm);">
+                <i class="fas fa-arrow-left mr-2"></i> Retour au réseau
+            </a>
         </div>
 
-        <!-- Formulaire -->
-        <div class="bg-white rounded-3xl shadow-xl overflow-hidden">
-            <form action="{{ route('gare.update', $gare->id) }}" method="POST" class="p-8">
-                @csrf
-                @method('PUT')
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                    <!-- Nom de la gare -->
-                    <div class="space-y-2">
-                        <label class="block text-sm font-semibold text-gray-700">Nom de la gare <span class="text-red-500">*</span></label>
-                        <input type="text" name="nom_gare" value="{{ old('nom_gare', $gare->nom_gare) }}" required
-                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent outline-none transition-all bg-gray-50 focus:bg-white"
-                            placeholder="Ex: Gare de Bassam">
-                        @error('nom_gare')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
+        <form action="{{ route('gare.update', $gare->id) }}" method="POST" enctype="multipart/form-data" class="form-card">
+            @csrf
+            @method('PUT')
+            
+            <h4 style="font-size: 14px; font-weight: 800; color: var(--text-1); text-transform: uppercase; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">Informations de la Gare</h4>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="input-group-modern">
+                        <label class="form-label">Nom de la gare <span class="text-danger">*</span></label>
+                        <input type="text" name="nom_gare" value="{{ old('nom_gare', $gare->nom_gare) }}" required class="input-modern">
+                        @error('nom_gare') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
                     </div>
-
-                    <!-- Ville -->
-                    <div class="space-y-2">
-                        <label class="block text-sm font-semibold text-gray-700">Ville <span class="text-red-500">*</span></label>
-                        <select name="ville" required
-                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent outline-none transition-all bg-gray-50 focus:bg-white">
-                            <option value="">Sélectionnez une ville</option>
+                </div>
+                <div class="col-md-6">
+                    <div class="input-group-modern">
+                        <label class="form-label">Ville <span class="text-danger">*</span></label>
+                        <select name="ville" required class="input-modern" style="appearance: auto;">
                             @php
-                                $villes = [
-                                    'Abidjan', 'Abengourou', 'Adzopé', 'Agboville', 'Anyama', 'Bondoukou', 'Bongouanou', 'Bouaflé', 'Bouaké', 
-                                    'Boundiali', 'Bouna', 'Dabou', 'Daloa', 'Divo', 'Duékoué', 'Ferkessédougou', 'Gagnoa', 
-                                    'Grand-Bassam', 'Guiglo', 'Issia', 'Katiola', 'Korhogo', 'Man', 'Odienné', 'Oumé', 
-                                    'San-Pédro', 'Séguéla', 'Sinfra', 'Soubré', 'Tanda', 'Touba', 'Toumodi', 'Vavoua', 
-                                    'Yamoussoukro', 'Zénoula'
-                                ];
+                                $villes = ['Abidjan', 'Abengourou', 'Adzopé', 'Agboville', 'Anyama', 'Bondoukou', 'Bongouanou', 'Bouaflé', 'Bouaké', 'Boundiali', 'Bouna', 'Dabou', 'Daloa', 'Divo', 'Duékoué', 'Ferkessédougou', 'Gagnoa', 'Grand-Bassam', 'Guiglo', 'Issia', 'Katiola', 'Korhogo', 'Man', 'Odienné', 'Oumé', 'San-Pédro', 'Séguéla', 'Sinfra', 'Soubré', 'Tanda', 'Touba', 'Toumodi', 'Vavoua', 'Yamoussoukro', 'Zénoula'];
                                 sort($villes);
                             @endphp
                             @foreach($villes as $ville)
-                                <option value="{{ $ville }}" {{ old('ville', $gare->ville) == $ville ? 'selected' : '' }}>
-                                    {{ $ville }}
-                                </option>
+                                <option value="{{ $ville }}" {{ old('ville', $gare->ville) == $ville ? 'selected' : '' }}>{{ $ville }}</option>
                             @endforeach
                         </select>
-                        @error('ville')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
+                        @error('ville') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
                     </div>
-
-                    <!-- Adresse -->
-                    <div class="space-y-2">
-                        <label class="block text-sm font-semibold text-gray-700">Adresse / Situation Géographique <span class="text-red-500">*</span></label>
-                        <input type="text" name="adresse" value="{{ old('adresse', $gare->adresse) }}" required
-                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent outline-none transition-all bg-gray-50 focus:bg-white"
-                            placeholder="Ex: Rue 12, Face au marché">
-                        @error('adresse')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
+                </div>
+                <div class="col-md-6">
+                    <div class="input-group-modern">
+                        <label class="form-label">Adresse / Situation Géographique <span class="text-danger">*</span></label>
+                        <input type="text" name="adresse" value="{{ old('adresse', $gare->adresse) }}" required class="input-modern">
+                        @error('adresse') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
                     </div>
-
-                    <!-- Commune -->
-                    <div class="space-y-2">
-                        <label class="block text-sm font-semibold text-gray-700">Commune</label>
-                        <input type="text" name="commune" value="{{ old('commune', $gare->commune) }}"
-                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent outline-none transition-all bg-gray-50 focus:bg-white"
-                            placeholder="Ex: Cocody">
-                        @error('commune')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
+                </div>
+                <div class="col-md-6">
+                    <div class="input-group-modern">
+                        <label class="form-label">Commune</label>
+                        <input type="text" name="commune" value="{{ old('commune', $gare->commune) }}" class="input-modern">
+                        @error('commune') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
                     </div>
+                </div>
+            </div>
 
-                    <div class="col-span-full border-t border-gray-100 my-4"></div>
-
-                    <!-- Responsable Nom -->
-                    <div class="space-y-2">
-                        <label class="block text-sm font-semibold text-gray-700">Nom du Responsable <span class="text-red-500">*</span></label>
-                        <input type="text" name="responsable_nom" value="{{ old('responsable_nom', $gare->responsable_nom) }}" required
-                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent outline-none transition-all bg-gray-50 focus:bg-white"
-                            placeholder="Nom du responsable">
-                        @error('responsable_nom')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
+            <h4 style="font-size: 14px; font-weight: 800; color: var(--text-1); text-transform: uppercase; margin-top: 10px; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">Responsable</h4>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="input-group-modern">
+                        <label class="form-label">Nom du Responsable <span class="text-danger">*</span></label>
+                        <input type="text" name="responsable_nom" value="{{ old('responsable_nom', $gare->responsable_nom) }}" required class="input-modern">
+                        @error('responsable_nom') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
                     </div>
-
-                    <!-- Responsable Prénom -->
-                    <div class="space-y-2">
-                        <label class="block text-sm font-semibold text-gray-700">Prénom du Responsable <span class="text-red-500">*</span></label>
-                        <input type="text" name="responsable_prenom" value="{{ old('responsable_prenom', $gare->responsable_prenom) }}" required
-                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent outline-none transition-all bg-gray-50 focus:bg-white"
-                            placeholder="Prénom du responsable">
-                        @error('responsable_prenom')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
+                </div>
+                <div class="col-md-6">
+                    <div class="input-group-modern">
+                        <label class="form-label">Prénom du Responsable <span class="text-danger">*</span></label>
+                        <input type="text" name="responsable_prenom" value="{{ old('responsable_prenom', $gare->responsable_prenom) }}" required class="input-modern">
+                        @error('responsable_prenom') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
                     </div>
-
-                    <!-- Email -->
-                    <div class="space-y-2">
-                        <label class="block text-sm font-semibold text-gray-700">Email <span class="text-red-500">*</span></label>
-                        <input type="email" name="email" value="{{ old('email', $gare->email) }}" required
-                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent outline-none transition-all bg-gray-50 focus:bg-white"
-                            placeholder="email@exemple.com">
-                        <p class="text-xs text-orange-600 mt-1">
-                            <i class="fas fa-info-circle mr-1"></i>
-                            La modification de l'email nécessitera une vérification par code OTP.
-                        </p>
-                        @error('email')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
+                </div>
+                <div class="col-md-6">
+                    <div class="input-group-modern">
+                        <label class="form-label">Email <span class="text-danger">*</span></label>
+                        <input type="email" name="email" value="{{ old('email', $gare->email) }}" required class="input-modern">
+                        <p style="font-size: 10px; color: var(--orange); margin-top: 4px; font-style: italic;"><i class="fas fa-info-circle"></i> La modification de l'email nécessitera une vérification OTP.</p>
+                        @error('email') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
                     </div>
-
-                    <!-- Contact -->
-                    <div class="space-y-2">
-                        <label class="block text-sm font-semibold text-gray-700">Contact <span class="text-red-500">*</span></label>
-                        <input type="text" name="contact" value="{{ old('contact', $gare->contact) }}" required
-                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent outline-none transition-all bg-gray-50 focus:bg-white"
-                            placeholder="Contact principal">
-                        @error('contact')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
+                </div>
+                <div class="col-md-6">
+                    <div class="input-group-modern">
+                        <label class="form-label">Contact principal <span class="text-danger">*</span></label>
+                        <input type="text" name="contact" value="{{ old('contact', $gare->contact) }}" required class="input-modern">
+                        @error('contact') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
                     </div>
-
-                    <!-- Contact Urgence -->
-                    <div class="space-y-2">
-                        <label class="block text-sm font-semibold text-gray-700">Contact d'Urgence</label>
-                        <input type="text" name="contact_urgence" value="{{ old('contact_urgence', $gare->contact_urgence) }}"
-                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent outline-none transition-all bg-gray-50 focus:bg-white"
-                            placeholder="Contact d'urgence">
-                        @error('contact_urgence')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
+                </div>
+                <div class="col-md-6">
+                    <div class="input-group-modern">
+                        <label class="form-label">Contact d'Urgence</label>
+                        <input type="text" name="contact_urgence" value="{{ old('contact_urgence', $gare->contact_urgence) }}" class="input-modern">
+                        @error('contact_urgence') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
                     </div>
-
-                    <!-- Photo de profil (Optionnel) -->
-                     <div class="space-y-2">
-                        <label class="block text-sm font-semibold text-gray-700">Photo de profil</label>
-                        <input type="file" name="profile_image" accept="image/*"
-                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent outline-none transition-all bg-gray-50 focus:bg-white">
+                </div>
+                <div class="col-md-6">
+                    <div class="input-group-modern">
+                        <label class="form-label">Nouvelle photo de profil (Optionnel)</label>
+                        <input type="file" name="profile_image" accept="image/*" class="input-modern" style="padding: 9px 16px;">
                         @if($gare->profile_image)
-                            <div class="mt-2">
-                                <span class="text-xs text-gray-500">Image actuelle:</span>
-                                <img src="{{ asset('storage/' . $gare->profile_image) }}" alt="Profile" class="h-10 w-10 rounded-full object-cover mt-1">
-                            </div>
+                            <img src="{{ asset('storage/' . $gare->profile_image) }}" alt="Profile" class="current-avatar">
                         @endif
-                        @error('profile_image')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
+                        @error('profile_image') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
                     </div>
                 </div>
+            </div>
 
-                <!-- Actions -->
-                <div class="flex flex-col sm:flex-row gap-4 justify-between items-center pt-8 border-t border-gray-100">
-                    <a href="{{ route('gare.index') }}"
-                        class="flex items-center px-8 py-3 text-gray-700 font-semibold rounded-xl border border-gray-300 hover:bg-gray-50 transition-all">
-                        <i class="fas fa-arrow-left mr-2"></i>
-                        Retour
-                    </a>
-
-                    <button type="submit"
-                        class="flex items-center px-8 py-3 bg-[#e94f1b] text-white font-bold rounded-xl hover:bg-[#e89116] transform hover:-translate-y-1 transition-all shadow-lg">
-                        <i class="fas fa-check mr-2"></i>
-                        Mettre à jour
-                    </button>
-                </div>
-            </form>
-        </div>
+            <div class="d-flex justify-content-end mt-4 pt-3" style="border-top: 1px solid var(--border);">
+                <button type="submit" class="btn-submit">
+                    <i class="fas fa-check"></i> Mettre à jour
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 @endsection

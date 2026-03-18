@@ -1,770 +1,296 @@
 @extends('compagnie.layouts.template')
 
-@section('content')
-<!-- Import Google Fonts -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+@section('page-title', 'Gestion de l\'Équipe')
+@section('page-subtitle', 'Supervisez les accès et suivez les performances de vos agents de gare')
 
-<div class="content-wrapper-modern">
-    <!-- Top Stats Bar -->
-    <div class="stats-overview animate__animated animate__fadeInDown">
-        <div class="stat-item">
-            <div class="stat-icon-box bg-gradient-blue shadow-blue">
-                <i class="fas fa-users"></i>
+@section('styles')
+<style>
+    .mi-purple { background: #F3E8FF; color: #9333EA; }
+    
+    .dash-header-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 20px; }
+    .search-wrapper { position: relative; flex: 1; max-width: 400px; }
+    .search-wrapper i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-3); }
+    .search-wrapper input { width: 100%; padding: 12px 16px 12px 36px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); font-size: 13px; font-weight: 600; color: var(--text-1); outline: none; transition: all 0.2s; }
+    .search-wrapper input:focus { background: var(--surface); border-color: var(--orange); box-shadow: 0 0 0 3px var(--orange-light); }
+
+    .btn-primary { background: var(--text-1); color: #fff; padding: 12px 20px; border-radius: 12px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; border: none; cursor: pointer; transition: all 0.2s; }
+    .btn-primary:hover { background: var(--orange); color: #fff; text-decoration: none; transform: translateY(-1px); }
+
+    .agent-row { transition: all 0.2s; }
+    .agent-row:hover { background: var(--surface-2); }
+    .td-avatar-img { width: 44px; height: 44px; border-radius: 12px; object-fit: cover; border: 1px solid var(--border-strong); }
+    .td-avatar-placeholder { width: 44px; height: 44px; border-radius: 12px; background: var(--orange-light); color: var(--orange); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; border: 1px solid var(--orange-mid); }
+    
+    .cell-stack { display: flex; flex-direction: column; gap: 4px; }
+    .text-name { font-size: 13px; font-weight: 800; color: var(--text-1); text-transform: uppercase; }
+    .text-code { font-size: 9px; font-weight: 800; color: var(--orange-dark); background: var(--orange-light); padding: 2px 6px; border-radius: 4px; display: inline-block; width: fit-content; }
+    
+    .info-line { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-2); font-weight: 600; }
+    .info-line i { width: 14px; text-align: center; color: var(--text-3); }
+
+    .status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+    .sp-active { background: #ECFDF5; color: #059669; border: 1px solid #A7F3D0; }
+    .sp-inactive { background: #FEF2F2; color: #DC2626; border: 1px solid #FECDD3; }
+    .status-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+    .actions-group { display: flex; gap: 6px; justify-content: flex-end; }
+    .btn-icon { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text-3); display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+    .btn-icon.edit:hover { background: var(--text-1); color: white; border-color: var(--text-1); }
+    .btn-icon.msg:hover { background: var(--orange); color: white; border-color: var(--orange); }
+    .btn-icon.del:hover { background: #E11D48; color: white; border-color: #E11D48; }
+
+    /* Modal Styling */
+    .modal-content { border-radius: var(--radius); border: none; box-shadow: var(--shadow-md); }
+    .modal-header { border-bottom: 1px solid var(--border); padding: 16px 24px; }
+    .modal-title { font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-1); }
+    .modal-body { padding: 24px; }
+    .modal-footer { border-top: 1px solid var(--border); padding: 16px 24px; }
+    .form-group-modal label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-3); letter-spacing: 0.5px; margin-bottom: 6px; display: block; }
+    .form-control-modal { width: 100%; border: 1px solid var(--border); background: var(--surface-2); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 13px; font-weight: 600; outline: none; transition: 0.2s; }
+    .form-control-modal:focus { border-color: var(--orange); background: var(--surface); box-shadow: 0 0 0 3px var(--orange-light); }
+</style>
+@endsection
+
+@section('content')
+<div class="dashboard-page">
+
+    {{-- TOP STATS --}}
+    <div class="metric-grid mb-4">
+        <div class="metric-card">
+            <div class="metric-top">
+                <div class="metric-icon mi-amber"><i class="fas fa-users"></i></div>
+                <span class="metric-tag mt-slate">Total</span>
             </div>
-            <div class="stat-info">
-                <span class="stat-label">Total Agents</span>
-                <h3 class="stat-number">{{ $totalAgents }}</h3>
-            </div>
+            <div class="metric-label">Agents Enregistrés</div>
+            <div class="metric-value">{{ $totalAgents }}</div>
         </div>
-        <div class="stat-item">
-            <div class="stat-icon-box bg-gradient-green shadow-green">
-                <i class="fas fa-user-check"></i>
+
+        <div class="metric-card">
+            <div class="metric-top">
+                <div class="metric-icon mi-green"><i class="fas fa-user-check"></i></div>
+                <span class="metric-tag mt-green">Actifs</span>
             </div>
-            <div class="stat-info">
-                <span class="stat-label">Actifs</span>
-                <h3 class="stat-number">{{ $activeAgents }}</h3>
-            </div>
+            <div class="metric-label">Opérationnels</div>
+            <div class="metric-value">{{ $activeAgents }}</div>
         </div>
-        <div class="stat-item">
-            <div class="stat-icon-box bg-gradient-orange shadow-orange">
-                <i class="fas fa-user-plus"></i>
+
+        <div class="metric-card">
+            <div class="metric-top">
+                <div class="metric-icon mi-blue"><i class="fas fa-user-plus"></i></div>
+                <span class="metric-tag mt-slate">Hebdo</span>
             </div>
-            <div class="stat-info">
-                <span class="stat-label">Nouveaux (7j)</span>
-                <h3 class="stat-number">{{ $newAgents }}</h3>
-            </div>
+            <div class="metric-label">Nouveaux (7j)</div>
+            <div class="metric-value">+{{ $newAgents }}</div>
         </div>
-        <div class="stat-item d-none d-xl-flex">
-            <div class="stat-icon-box bg-gradient-purple shadow-purple">
-                <i class="fas fa-map-marked-alt"></i>
+
+        <div class="metric-card">
+            <div class="metric-top">
+                <div class="metric-icon mi-purple"><i class="fas fa-map-marked-alt"></i></div>
+                <span class="metric-tag mt-slate">Secteurs</span>
             </div>
-            <div class="stat-info">
-                <span class="stat-label">Communes</span>
-                <h3 class="stat-number">{{ $agents->pluck('commune')->filter()->unique()->count() }}</h3>
-            </div>
+            <div class="metric-label">Zones de Service</div>
+            <div class="metric-value">{{ count(array_unique(array_filter($agents->pluck('commune')->toArray()))) }}</div>
         </div>
     </div>
 
-    <!-- Header Actions -->
-    <div class="action-header animate__animated animate__fadeIn">
-        <div class="header-left">
-            <h1 class="main-title">Gestion de l'équipe</h1>
-            <p class="main-subtitle">Contrôlez les accès et suivez les performances de vos agents</p>
-        </div>
-        <div class="header-right">
+    {{-- ACTIONS HEADER --}}
+    <div class="dash-card mb-4 mt-4">
+        <div class="dash-header-actions">
             <div class="search-wrapper">
                 <i class="fas fa-search"></i>
-                <input type="text" id="agentSearch" placeholder="Rechercher un agent, une commune...">
+                <input type="text" id="agentSearch" placeholder="Filtrer par nom, téléphone, commune...">
             </div>
-            <button class="btn btn-filter" id="toggleFilters">
-                <i class="fas fa-sliders-h"></i>
-                <span>Filtres</span>
-            </button>
-            <a href="{{ route('compagnie.agents.create') }}" class="btn btn-primary-modern">
-                <i class="fas fa-plus-circle"></i>
-                <span>Nouvel Agent</span>
+            
+            <a href="{{ route('compagnie.agents.create') }}" class="btn-primary">
+                <i class="fas fa-plus"></i> Enrôler un Agent
             </a>
         </div>
     </div>
 
-    <!-- Main Content Table -->
-    <div class="main-card-modern animate__animated animate__fadeInUp">
-        <div class="table-container">
-            @if($agents->count() > 0)
-            <table class="premium-table">
+    {{-- TABLE --}}
+    <div class="dash-card">
+        <div class="dash-card-head" style="background: var(--surface-2);">
+            <div class="dash-card-head-left">
+                <div class="dash-card-icon" style="background: var(--text-1); color: white;"><i class="fas fa-users"></i></div>
+                <span class="dash-card-title">Listing des Agents de Gare</span>
+            </div>
+        </div>
+
+        <div class="dash-table-wrap">
+            <table class="dash-table">
                 <thead>
                     <tr>
-                        <th class="col-agent">AGENT</th>
-                        <th class="col-code-id">CODE ID</th>
-                        <th class="col-contact">COORDONNÉES</th>
-                        <th class="col-gare">AFFECTATION</th>
-                        <th class="col-status">STATUT</th>
-                        <th class="col-actions text-end">ACTIONS</th>
+                        <th>Identité & Code</th>
+                        <th>Coordonnées</th>
+                        <th>Affectation</th>
+                        <th class="text-center">Statut</th>
+                        <th class="text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($agents as $index => $agent)
-                    <tr style="--delay: {{ $index * 0.05 }}s" class="agent-row">
+                    @forelse ($agents as $agent)
+                    <tr class="agent-row">
                         <td>
-                            <div class="agent-profile">
-                                <div class="avatar-container">
-                                    @if($agent->profile_picture)
-                                        <img src="{{ Storage::url($agent->profile_picture) }}" alt="{{ $agent->name }}">
-                                    @else
-                                        <div class="avatar-initials">
-                                            {{ substr($agent->name, 0, 1) }}{{ substr($agent->prenom, 0, 1) }}
-                                        </div>
-                                    @endif
-                                    <div class="status-indicator {{ $agent->is_active ? 'active' : 'inactive' }}"></div>
-                                </div>
-                                <div class="profile-meta">
-                                    <span class="name">{{ $agent->name }} {{ $agent->prenom }}</span>
-                                    <span class="id">#{{ str_pad($agent->id, 4, '0', STR_PAD_LEFT) }}</span>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="code-id-box">
-                                <span class="badge-code-id">{{ $agent->code_id ?? 'N/A' }}</span>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="contact-stack">
-                                <a href="tel:{{ $agent->contact }}" class="contact-line">
-                                    <i class="fas fa-phone-alt"></i>
-                                    {{ $agent->contact }}
-                                </a>
-                                <a href="mailto:{{ $agent->email }}" class="contact-line email">
-                                    <i class="fas fa-envelope"></i>
-                                    {{ $agent->email }}
-                                </a>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="assignment-box">
-                                <span class="commune"><i class="fas fa-map-marker-alt"></i> {{ $agent->commune ?? 'Non défini' }}</span>
-                                @if($agent->gare)
-                                    <span class="gare-badge"><i class="fas fa-building"></i> {{ $agent->gare->nom_gare }}</span>
+                            <div class="d-flex align-items-center" style="gap: 12px;">
+                                @if($agent->profile_picture)
+                                    <img src="{{ Storage::url($agent->profile_picture) }}" alt="{{ $agent->name }}" class="td-avatar-img">
                                 @else
-                                    <span class="no-gare">Non affecté</span>
+                                    <div class="td-avatar-placeholder">
+                                        {{ strtoupper(substr($agent->name, 0, 1)) }}{{ strtoupper(substr($agent->prenom, 0, 1)) }}
+                                    </div>
+                                @endif
+                                <div class="cell-stack">
+                                    <span class="text-name">{{ $agent->name }} {{ $agent->prenom }}</span>
+                                    <span class="text-code">{{ $agent->code_id ?? 'PRO-AGENT' }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="cell-stack">
+                                <span class="info-line"><i class="fas fa-mobile-alt"></i> {{ $agent->contact }}</span>
+                                <span class="info-line"><i class="fas fa-envelope"></i> {{ $agent->email }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="cell-stack">
+                                <span class="info-line"><i class="fas fa-map-marker-alt"></i> {{ $agent->commune ?? 'Non définie' }}</span>
+                                @if($agent->gare)
+                                    <span class="info-line" style="color: var(--orange-dark);"><i class="fas fa-building" style="color: var(--orange);"></i> {{ $agent->gare->nom_gare }}</span>
                                 @endif
                             </div>
                         </td>
-                        <td>
+                        <td class="text-center">
                             @if($agent->is_active)
-                                <span class="badge-status success">
-                                    <i class="fas fa-check-circle"></i> Actif
-                                </span>
+                                <span class="status-pill sp-active"><span class="dot"></span> ACTIF</span>
                             @else
-                                <span class="badge-status danger">
-                                    <i class="fas fa-times-circle"></i> Inactif
-                                </span>
+                                <span class="status-pill sp-inactive"><span class="dot"></span> INACTIF</span>
                             @endif
                         </td>
                         <td>
-                            <div class="action-buttons justify-content-end">
-                                <button class="btn-icon-modern edit" title="Modifier" onclick="window.location.href='{{ route('compagnie.agents.edit', $agent->id) }}'">
-                                    <i class="fas fa-pen"></i>
+                            <div class="actions-group">
+                                <a href="{{ route('compagnie.agents.edit', $agent->id) }}" class="btn-icon edit" title="Modifier">
+                                    <i class="fas fa-user-edit"></i>
+                                </a>
+                                <button type="button" class="btn-icon msg" onclick="openMessageModal({{ $agent->id }}, '{{ addslashes($agent->name . ' ' . $agent->prenom) }}')" title="Envoyer Message">
+                                    <i class="fas fa-paper-plane"></i>
                                 </button>
-                                <button class="btn-icon-modern message" title="Message" data-bs-toggle="modal" data-bs-target="#messageModal" 
-                                        data-agent-id="{{ $agent->id }}" data-agent-name="{{ $agent->name }} {{ $agent->prenom }}">
-                                    <i class="fas fa-comment-dots"></i>
-                                </button>
-                                <button class="btn-icon-modern delete" title="Supprimer" onclick="confirmDeleteAgent({{ $agent->id }})">
+                                <button type="button" class="btn-icon del" onclick="confirmDelete({{ $agent->id }}, '{{ addslashes($agent->name) }}')" title="Supprimer">
                                     <i class="fas fa-trash-alt"></i>
                                 </button>
                             </div>
                         </td>
                     </tr>
-                    @endforeach
+                    @empty
+                    <tr>
+                        <td colspan="5">
+                            <div class="table-empty">
+                                <i class="fas fa-user-slash mb-3" style="font-size: 40px;"></i>
+                                <h4 style="font-size: 14px; font-weight: 800; color: var(--text-1); margin: 0;">Aucun agent enregistré</h4>
+                                <p style="font-size: 12px; color: var(--text-3); margin: 8px 0 16px;">Votre équipe d'accueil n'a pas encore été constituée.</p>
+                                <a href="{{ route('compagnie.agents.create') }}" class="btn-primary">Enrôler maintenant</a>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforelse
                 </tbody>
             </table>
-            
-            <!-- Pagination -->
-            <div class="pagination-footer">
-                <div class="pagination-info">
-                    Affichage de <strong>{{ $agents->firstItem() }}</strong> à <strong>{{ $agents->lastItem() }}</strong> sur <strong>{{ $agents->total() }}</strong>
-                </div>
-                <div class="pagination-links">
-                    {{ $agents->links() }}
-                </div>
-            </div>
-            @else
-            <div class="empty-dashboard">
-                <div class="empty-animation">
-                    <i class="fas fa-user-astronaut"></i>
-                </div>
-                <h3>L'équipe est encore vide</h3>
-                <p>Commencez à construire votre réseau d'agents pour gérer vos gares en quelques clics.</p>
-                <a href="{{ route('compagnie.agents.create') }}" class="btn btn-primary-modern">
-                    Ajouter le premier membre
-                </a>
-            </div>
-            @endif
         </div>
+
+        @if($agents->hasPages())
+        <div class="p-3 border-top">
+            {{ $agents->links('pagination::bootstrap-4') }}
+        </div>
+        @endif
     </div>
 </div>
 
-<!-- Message Modal -->
-<div class="modal fade" id="messageModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content glass-modal">
-            <form action="{{ route('compagnie.agents.send-message') }}" method="POST">
+{{-- MESSAGE MODAL --}}
+<div class="modal fade" id="messageModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nouveau Message Interne</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="outline: none; background: transparent; border: none; font-size: 24px;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="{{ route('compagnie.messages.store') }}" method="POST">
                 @csrf
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <span class="icon-circle"><i class="fas fa-paper-plane"></i></span>
-                        Contacter <span id="modalAgentName" class="highlight"></span>
-                    </h5>
-                    <button type="button" class="btn-close-glass" data-bs-dismiss="modal"><i class="fas fa-times"></i></button>
-                </div>
+                <input type="hidden" name="recipient_type" value="agent"> 
+                <input type="hidden" name="recipient_id" id="modal_agent_id">
+                
                 <div class="modal-body">
-                    <input type="hidden" name="agent_id" id="modalAgentId">
-                    <div class="form-group-modern mb-3">
-                        <label>Sujet du message</label>
-                        <input type="text" name="subject" required placeholder="Ex: Modification de planning">
+                    <div class="form-group-modal mb-3">
+                        <label>Destinataire</label>
+                        <input type="text" id="modal_agent_name" class="form-control-modal" readonly style="pointer-events: none; opacity: 0.7;">
                     </div>
-                    <div class="form-group-modern">
-                        <label>Votre message</label>
-                        <textarea name="message" rows="4" required placeholder="Écrivez ici..."></textarea>
+                    <div class="form-group-modal mb-3">
+                        <label>Objet du message <span class="text-danger">*</span></label>
+                        <input type="text" name="subject" class="form-control-modal" required placeholder="Titre...">
+                    </div>
+                    <div class="form-group-modal">
+                        <label>Contenu <span class="text-danger">*</span></label>
+                        <textarea name="message" rows="4" class="form-control-modal" required placeholder="Votre message..."></textarea>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn-link-modern" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" class="btn btn-primary-modern">Envoyer le message</button>
+                <div class="modal-footer" style="display: flex; gap: 10px;">
+                    <button type="button" class="btn btn-light" style="flex: 1; font-weight: 700; border-radius: var(--radius-sm);" data-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary" style="flex: 1; background: var(--orange); border: none;">Envoyer <i class="fas fa-paper-plane"></i></button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+@endsection
 
-<!-- Delete Form (Hidden) -->
-<form id="deleteForm" method="POST" style="display: none;">
-    @csrf
-    @method('DELETE')
-</form>
-
-<style>
-/* Modern CSS Reset & Variables */
-:root {
-    --primary: #e94f1b;
-    --primary-light: #ff6b3d;
-    --primary-dark: #c13e13;
-    --secondary: #10b981;
-    --dark: #121415;
-    --gray-bg: #f5f7fb;
-    --card-bg: #ffffff;
-    --text-main: #1e293b;
-    --text-muted: #64748b;
-    --border-color: #e2e8f0;
-    --font-family: 'Plus Jakarta Sans', sans-serif;
-}
-
-body {
-    background-color: var(--gray-bg);
-}
-
-.content-wrapper-modern {
-    padding: 2rem;
-    font-family: var(--font-family);
-    max-width: 1600px;
-    margin: 0 auto;
-}
-
-/* Stats Overview */
-.stats-overview {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2.5rem;
-}
-
-.stat-item {
-    background: var(--card-bg);
-    padding: 1.5rem;
-    border-radius: 1.25rem;
-    display: flex;
-    align-items: center;
-    gap: 1.25rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-    border: 1px solid var(--border-color);
-    transition: transform 0.3s ease;
-}
-
-.stat-item:hover {
-    transform: translateY(-5px);
-}
-
-.stat-icon-box {
-    width: 56px;
-    height: 56px;
-    border-radius: 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 1.5rem;
-}
-
-.bg-gradient-blue { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
-.bg-gradient-green { background: linear-gradient(135deg, #10b981, #059669); }
-.bg-gradient-orange { background: linear-gradient(135deg, #f97316, #ea580c); }
-.bg-gradient-purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
-
-.stat-info .stat-label {
-    font-size: 0.875rem;
-    color: var(--text-muted);
-    font-weight: 500;
-}
-
-.stat-info .stat-number {
-    font-size: 1.75rem;
-    font-weight: 800;
-    color: var(--text-main);
-    margin: 0;
-}
-
-/* Header & Search */
-.action-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    flex-wrap: wrap;
-    gap: 1.5rem;
-}
-
-.main-title {
-    font-size: 2rem;
-    font-weight: 800;
-    color: var(--text-main);
-    letter-spacing: -0.02em;
-    margin-bottom: 0.25rem;
-}
-
-.main-subtitle {
-    color: var(--text-muted);
-    margin: 0;
-}
-
-.header-right {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-.search-wrapper {
-    position: relative;
-    min-width: 300px;
-}
-
-.search-wrapper i {
-    position: absolute;
-    left: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-muted);
-}
-
-.search-wrapper input {
-    width: 100%;
-    padding: 0.75rem 1rem 0.75rem 2.75rem;
-    border-radius: 0.75rem;
-    border: 1px solid var(--border-color);
-    background: white;
-    font-weight: 500;
-    transition: all 0.2s;
-}
-
-.search-wrapper input:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 4px rgba(233, 79, 27, 0.1);
-    outline: none;
-}
-
-/* Buttons */
-.btn-primary-modern {
-    background: var(--primary);
-    color: white;
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.75rem;
-    font-weight: 700;
-    border: none;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    transition: all 0.2s;
-    box-shadow: 0 4px 6px rgba(233, 79, 27, 0.2);
-}
-
-.btn-primary-modern:hover {
-    background: var(--primary-dark);
-    transform: translateY(-2px);
-    color: white;
-    box-shadow: 0 6px 12px rgba(233, 79, 27, 0.3);
-}
-
-.btn-filter {
-    background: white;
-    border: 1px solid var(--border-color);
-    padding: 0.75rem 1.25rem;
-    border-radius: 0.75rem;
-    font-weight: 600;
-    color: var(--text-main);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-/* Card & Table */
-.main-card-modern {
-    background: white;
-    border-radius: 1.5rem;
-    border: 1px solid var(--border-color);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-}
-
-.premium-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.premium-table thead th {
-    background: #f8fafc;
-    padding: 1.25rem 2rem;
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--text-muted);
-    letter-spacing: 0.05em;
-    border-bottom: 2px solid #f1f5f9;
-}
-
-.agent-row {
-    border-bottom: 1px solid #f1f5f9;
-    transition: background 0.2s;
-    opacity: 0;
-    animation: slideIn 0.5s ease forwards var(--delay);
-}
-
-@keyframes slideIn {
-    from { opacity: 0; transform: translateX(-10px); }
-    to { opacity: 1; transform: translateX(0); }
-}
-
-.agent-row:hover {
-    background: #fcfdfe;
-}
-
-.agent-row td {
-    padding: 1.25rem 2rem;
-    vertical-align: middle;
-}
-
-/* Agent Profile */
-.agent-profile {
-    display: flex;
-    align-items: center;
-    gap: 1.25rem;
-}
-
-.avatar-container {
-    position: relative;
-    width: 52px;
-    height: 52px;
-}
-
-.avatar-container img {
-    width: 100%;
-    height: 100%;
-    border-radius: 1rem;
-    object-fit: cover;
-    background: #f1f5f9;
-}
-
-.avatar-initials {
-    width: 100%;
-    height: 100%;
-    border-radius: 1rem;
-    background: linear-gradient(135deg, #e94f1b, #f97316);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-    font-size: 1.1rem;
-}
-
-.status-indicator {
-    position: absolute;
-    bottom: -3px;
-    right: -3px;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    border: 3px solid white;
-}
-
-.status-indicator.active { background: #10b981; }
-.status-indicator.inactive { background: #ef4444; }
-
-.profile-meta .name {
-    display: block;
-    font-weight: 700;
-    color: var(--text-main);
-    font-size: 1.05rem;
-    line-height: 1.2;
-}
-
-.profile-meta .id {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    font-weight: 600;
-}
-
-/* Contacts */
-.contact-stack {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-}
-
-.contact-line {
-    text-decoration: none !important;
-    color: var(--text-main);
-    font-size: 0.9rem;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    transition: color 0.2s;
-}
-
-.contact-line i { color: var(--primary); font-size: 0.85rem; }
-.contact-line.email i { color: #3b82f6; }
-.contact-line:hover { color: var(--primary); }
-
-/* Assignment */
-.assignment-box {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.commune {
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: var(--text-main);
-}
-
-.commune i { color: #3b82f6; margin-right: 4px; }
-
-.gare-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.35rem 0.75rem;
-    background: #eff6ff;
-    color: #1d4ed8;
-    border-radius: 0.5rem;
-    font-size: 0.8rem;
-    font-weight: 700;
-    width: fit-content;
-}
-
-.no-gare {
-    font-size: 0.8rem;
-    font-style: italic;
-    color: var(--text-muted);
-}
-
-/* Badges */
-.badge-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.5rem 1rem;
-    border-radius: 2rem;
-    font-size: 0.85rem;
-    font-weight: 700;
-}
-
-.badge-status.success { background: #ecfdf5; color: #065f46; }
-.badge-status.danger { background: #fef2f2; color: #991b1b; }
-
-/* Actions */
-.btn-icon-modern {
-    width: 38px;
-    height: 38px;
-    border-radius: 0.75rem;
-    border: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin-left: 0.5rem;
-    transition: all 0.2s;
-    font-size: 0.9rem;
-}
-
-.btn-icon-modern.edit { background: #f1f5f9; color: #475569; }
-.btn-icon-modern.message { background: #eff6ff; color: #1d4ed8; }
-.btn-icon-modern.delete { background: #fef2f2; color: #ef4444; }
-
-.btn-icon-modern:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-}
-
-.btn-icon-modern.edit:hover { background: #e2e8f0; }
-.btn-icon-modern.message:hover { background: #dbeafe; }
-.btn-icon-modern.delete:hover { background: #fee2e2; }
-
-.badge-code-id {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.35rem 0.75rem;
-    background: #f1f5f9;
-    color: #475569;
-    border-radius: 0.5rem;
-    font-size: 0.85rem;
-    font-weight: 700;
-    font-family: 'JetBrains Mono', 'Courier New', monospace;
-    border: 1px solid #e2e8f0;
-}
-
-/* Pagination Footer */
-.pagination-footer {
-    padding: 1.5rem 2rem;
-    background: #f8fafc;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-/* Modals */
-.glass-modal {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border-radius: 1.5rem;
-    border: 1px solid rgba(255, 255, 255, 0.5);
-}
-
-.modal-header {
-    border-bottom: none;
-    padding: 1.5rem 2rem;
-}
-
-.inner-icon {
-    width: 40px;
-    height: 40px;
-    background: var(--primary-light);
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-}
-
-.form-group-modern label {
-    display: block;
-    font-weight: 700;
-    font-size: 0.9rem;
-    margin-bottom: 0.5rem;
-    color: var(--text-main);
-}
-
-.form-group-modern input, .form-group-modern textarea {
-    width: 100%;
-    padding: 0.8rem 1rem;
-    border-radius: 0.75rem;
-    border: 1px solid var(--border-color);
-    background: #f8fafc;
-    font-weight: 500;
-}
-
-.btn-link-modern {
-    background: none;
-    border: none;
-    font-weight: 700;
-    color: var(--text-muted);
-}
-
-/* Empty State */
-.empty-dashboard {
-    padding: 5rem 2rem;
-    text-align: center;
-}
-
-.empty-animation {
-    font-size: 5rem;
-    color: var(--primary);
-    margin-bottom: 2rem;
-    animation: float 3s ease-in-out infinite;
-}
-
-@keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-20px); }
-}
-
-/* Responsive adjustments */
-@media (max-width: 992px) {
-    .content-wrapper-modern { padding: 1rem; }
-    .header-right { width: 100%; }
-    .search-wrapper { flex-grow: 1; }
-    .main-title { font-size: 1.5rem; }
-}
-</style>
-
+@section('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Agent Search Logic
     const searchInput = document.getElementById('agentSearch');
     const tableRows = document.querySelectorAll('.agent-row');
 
-    searchInput.addEventListener('input', function() {
-        const query = this.value.toLowerCase().trim();
-        tableRows.forEach(row => {
-            const text = row.innerText.toLowerCase();
-            row.style.display = text.includes(query) ? '' : 'none';
-        });
-    });
-
-    // Message Modal Setup
-    const messageModal = document.getElementById('messageModal');
-    if (messageModal) {
-        messageModal.addEventListener('show.bs.modal', function(event) {
-            const button = event.relatedTarget;
-            const agentId = button.getAttribute('data-agent-id');
-            const agentName = button.getAttribute('data-agent-name');
-            
-            document.getElementById('modalAgentId').value = agentId;
-            document.getElementById('modalAgentName').innerText = agentName;
+    if(searchInput) {
+        searchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase().trim();
+            tableRows.forEach(row => {
+                const text = row.innerText.toLowerCase();
+                row.style.display = text.includes(query) ? '' : 'none';
+            });
         });
     }
-
-    // Modern Delete Confirmation
-    window.confirmDeleteAgent = function(agentId) {
-        Swal.fire({
-            title: 'Souhaitez-vous vraiment retirer cet agent ?',
-            text: "Cette action désactivera ses accès et supprimera ses données liées.",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#e94f1b',
-            cancelButtonColor: '#64748b',
-            confirmButtonText: 'Oui, supprimer !',
-            cancelButtonText: 'Annuler',
-            customClass: {
-                popup: 'premium-swal-popup',
-                confirmButton: 'premium-swal-confirm'
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                const form = document.getElementById('deleteForm');
-                form.action = `/company/agent/${agentId}`;
-                form.submit();
-            }
-        });
-    }
-
-    // Tost Confirmation (if exists in session)
-    @if(session('success'))
-        Swal.fire({
-            icon: 'success',
-            title: 'Opération réussie',
-            text: '{{ session('success') }}',
-            timer: 3000,
-            showConfirmButton: false,
-            toast: true,
-            position: 'top-end'
-        });
-    @endif
 });
-</script>
 
+function openMessageModal(id, name) {
+    document.getElementById('modal_agent_id').value = id;
+    document.getElementById('modal_agent_name').value = name;
+    $('#messageModal').modal('show');
+}
+
+function confirmDelete(id, name) {
+    Swal.fire({
+        title: 'Suppression définitive',
+        html: `L'agent <strong>${name}</strong> sera définitivement supprimé des effectifs.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--red)',
+        cancelButtonColor: 'var(--text-3)',
+        confirmButtonText: 'Supprimer',
+        cancelButtonText: 'Annuler',
+        customClass: { popup: 'rounded-lg border-0 shadow-sm' }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/company/agents/${id}`; 
+            form.innerHTML = `<input type="hidden" name="_token" value="{{ csrf_token() }}"><input type="hidden" name="_method" value="DELETE">`;
+            document.body.appendChild(form);
+            form.submit();
+        }
+    });
+}
+
+@if(session('success'))
+    Swal.fire({ icon: 'success', title: 'Succès', text: '{{ session('success') }}', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, customClass: { popup: 'rounded-lg shadow-sm' } });
+@endif
+</script>
 @endsection

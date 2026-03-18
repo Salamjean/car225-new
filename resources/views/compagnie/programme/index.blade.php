@@ -1,286 +1,270 @@
 @extends('compagnie.layouts.template')
 
+@section('page-title', 'Lignes de Transport')
+@section('page-subtitle', 'Gérez vos routes et horaires Aller/Retour')
+
+@section('styles')
+<style>
+    .btn-action {
+        width: 32px; height: 32px; border-radius: 8px;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 13px; border: none; transition: transform 0.2s; text-decoration: none;
+    }
+    .btn-action.view { background: #F0F9FF; color: #0EA5E9; }
+    .btn-action.edit { background: #EFF6FF; color: #2563EB; }
+    .btn-action.link { background: #FFF7ED; color: var(--orange-dark); border: 1px solid var(--orange-mid); }
+    .btn-action:hover { transform: translateY(-2px); filter: brightness(0.95); text-decoration: none; }
+
+    .route-item {
+        padding: 20px;
+        border-bottom: 1px solid var(--border);
+        transition: background 0.2s;
+    }
+    .route-item:last-child { border-bottom: none; }
+    .route-item:hover { background: var(--surface-2); }
+    
+    .route-icon-box {
+        width: 50px; height: 50px; border-radius: 12px;
+        background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%);
+        color: white; display: flex; align-items: center; justify-content: center;
+        font-size: 20px; box-shadow: 0 4px 10px rgba(249,115,22,0.3);
+    }
+
+    .counter-box {
+        padding: 10px 16px; background: var(--surface);
+        border: 1px solid var(--border-strong); border-radius: 12px;
+        text-align: center; min-width: 80px; box-shadow: var(--shadow-sm);
+    }
+    .counter-label { font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 4px; }
+    .counter-val { font-size: 18px; font-weight: 800; color: var(--text-1); line-height: 1; }
+</style>
+@endsection
+
 @section('content')
-<!-- Initialisation des données pour le JS -->
-<script>
-    // Les données des gares et véhicules ne sont plus nécessaires globalement ici pour la création de programme
-</script>
+<div class="dashboard-page">
 
-<div class="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8 px-4">
-    <div class="max-w-7xl mx-auto">
-        <!-- En-tête -->
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
-            <div class="mb-6 lg:mb-0">
-                <h1 class="text-3xl font-bold text-gray-900 mb-2">Lignes de Transport</h1>
-                <p class="text-gray-600">Gérez vos routes et horaires Aller/Retour</p>
+    {{-- STATS ROW --}}
+    <div class="metric-grid">
+        <div class="metric-card">
+            <div class="metric-top">
+                <div class="metric-icon mi-amber"><i class="fas fa-route"></i></div>
             </div>
-            <!-- Bouton pour créer une toute nouvelle route -->
-            <a href="{{ route('programme.create') }}"
-                class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold rounded-xl hover:from-orange-600 hover:to-red-600 transform hover:-translate-y-1 transition-all duration-200 shadow-lg">
-                <i class="fas fa-plus mr-2"></i>
-                Nouvelle Route
-            </a>
+            <div class="metric-label">Routes actives</div>
+            <div class="metric-value">{{ $groupedProgrammes->count() }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-top">
+                <div class="metric-icon mi-green"><i class="fas fa-arrow-right"></i></div>
+            </div>
+            <div class="metric-label">Horaires Aller</div>
+            <div class="metric-value">{{ $groupedProgrammes->sum(fn($g) => $g->aller->count()) }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-top">
+                <div class="metric-icon mi-blue"><i class="fas fa-arrow-left"></i></div>
+            </div>
+            <div class="metric-label">Horaires Retour</div>
+            <div class="metric-value">{{ $groupedProgrammes->sum(fn($g) => $g->retour->count()) }}</div>
+        </div>
+        <div class="metric-card metric-featured">
+            <div class="metric-top">
+                <div class="metric-icon mi-white"><i class="fas fa-calendar-alt"></i></div>
+            </div>
+            <div class="metric-label">Total Programmes</div>
+            <div class="metric-value">{{ $programmes->count() }}</div>
+        </div>
+    </div>
+
+    {{-- HEADER ACTION --}}
+    <div class="dash-header mt-4">
+        <div>
+            <h2 class="dash-title" style="font-size: 20px;">Configuration des lignes</h2>
+        </div>
+        <a href="{{ route('programme.create') }}" class="btn btn-primary" style="background: var(--orange); border: none; font-weight: 700; border-radius: var(--radius-sm); padding: 10px 20px;">
+            <i class="fas fa-plus mr-2"></i> Nouvelle Route
+        </a>
+    </div>
+
+    {{-- LISTE DES ROUTES --}}
+    <div class="dash-card">
+        <div class="dash-card-head" style="background: var(--surface-2);">
+            <div class="dash-card-head-left">
+                <div class="dash-card-icon" style="background: var(--text-1); color: white;">
+                    <i class="fas fa-map-marked-alt"></i>
+                </div>
+                <span class="dash-card-title">Routes configurées</span>
+            </div>
+            <span class="dash-card-tag">{{ $groupedProgrammes->count() }} ROUTES</span>
         </div>
 
-        <!-- Statistiques -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <div class="bg-white rounded-xl shadow-md p-5 border-l-4 border-orange-500">
-                <p class="text-sm text-gray-600">Routes</p>
-                <p class="text-2xl font-bold text-gray-900">{{ $groupedProgrammes->count() }}</p>
-            </div>
-            <div class="bg-white rounded-xl shadow-md p-5 border-l-4 border-green-500">
-                <p class="text-sm text-gray-600">Horaires Aller</p>
-                <p class="text-2xl font-bold text-gray-900">{{ $groupedProgrammes->sum(fn($g) => $g->aller->count()) }}</p>
-            </div>
-            <div class="bg-white rounded-xl shadow-md p-5 border-l-4 border-blue-500">
-                <p class="text-sm text-gray-600">Horaires Retour</p>
-                <p class="text-2xl font-bold text-gray-900">{{ $groupedProgrammes->sum(fn($g) => $g->retour->count()) }}</p>
-            </div>
-            <div class="bg-white rounded-xl shadow-md p-5 border-l-4 border-purple-500">
-                <p class="text-sm text-gray-600">Total Programmes</p>
-                <p class="text-2xl font-bold text-gray-900">{{ $programmes->count() }}</p>
-            </div>
-        </div>
-
-        <!-- Messages Flash -->
-        @if(session('success'))
-            <div class="mb-6 p-4 bg-green-100 border-l-4 border-green-500 text-green-700 rounded-r-xl">
-                <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
-            </div>
-        @endif
-
-        @if(session('error'))
-            <div class="mb-6 p-4 bg-red-100 border-l-4 border-red-500 text-red-700 rounded-r-xl">
-                <i class="fas fa-exclamation-circle mr-2"></i>{{ session('error') }}
-            </div>
-        @endif
-
-        <!-- Liste des lignes groupées -->
-        <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
-            <div class="px-6 py-4 bg-gradient-to-r from-gray-800 to-gray-900 text-white">
-                <h2 class="text-lg font-bold flex items-center gap-2">
-                    <i class="fas fa-route"></i>
-                    Routes configurées
-                </h2>
-            </div>
-
-            @if($groupedProgrammes->count() > 0)
-                <div class="divide-y divide-gray-100">
-                    @foreach($groupedProgrammes as $route)
-                        <div class="p-6 hover:bg-gray-50 transition-colors">
-                            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                                <!-- Route Info -->
-                                <div class="flex items-center gap-4 flex-1">
-                                    <div class="w-14 h-14 bg-gradient-to-br from-orange-400 to-red-500 rounded-xl flex items-center justify-center text-white shadow-lg">
-                                        <i class="fas fa-exchange-alt text-xl"></i>
-                                    </div>
-                                    <div>
-                                        <h3 class="text-lg font-bold text-gray-900">
-                                            {{ $route->itineraire->point_depart }} <i class="fas fa-arrow-right mx-1"></i> {{ $route->itineraire->point_arrive }}
-                                            <span class="mx-2">|</span>
-                                            <i class="fas fa-tag mr-1"></i>{{ number_format($route->montant_billet, 0, ',', ' ') }} FCFA
-                                        </h3>
-                                        <p class="text-sm text-gray-500">
-                                            {{ $route->gare_depart?->nom_gare ?? $route->itineraire?->point_depart ?? 'N/A' }} → {{ $route->gare_arrivee?->nom_gare ?? $route->itineraire?->point_arrive ?? 'N/A' }}
-                                        </p>
-                                    </div>
+        @if($groupedProgrammes->count() > 0)
+            <div>
+                @foreach($groupedProgrammes as $route)
+                    <div class="route-item d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+                        
+                        {{-- Infos Route --}}
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="route-icon-box">
+                                <i class="fas fa-exchange-alt"></i>
+                            </div>
+                            <div>
+                                <div class="d-flex align-items-center mb-1" style="gap: 8px;">
+                                    <h3 style="font-size: 15px; font-weight: 800; color: var(--text-1); margin: 0;">
+                                        {{ $route->itineraire->point_depart }} 
+                                        <i class="fas fa-long-arrow-alt-right mx-1 text-muted" style="font-size: 12px;"></i> 
+                                        {{ $route->itineraire->point_arrive }}
+                                    </h3>
+                                    <span class="metric-tag mt-amber">{{ number_format($route->montant_billet, 0, ',', ' ') }} FCFA</span>
                                 </div>
-
-                                <!-- Compteurs Aller/Retour -->
-                                <div class="flex items-center gap-3">
-                                    <div class="text-center px-4 py-2 bg-green-50 rounded-lg">
-                                        <p class="text-xs text-green-600 uppercase font-semibold">Aller</p>
-                                        <p class="text-xl font-bold text-green-700">{{ $route->aller->count() }}</p>
-                                    </div>
-                                    <div class="text-center px-4 py-2 bg-blue-50 rounded-lg">
-                                        <p class="text-xs text-blue-600 uppercase font-semibold">Retour</p>
-                                        <p class="text-xl font-bold text-blue-700">{{ $route->retour->count() }}</p>
-                                    </div>
-                                </div>
-
-                                <!-- Actions -->
-                                <div class="flex items-center gap-2">
-                                    <!-- Bouton Voir (Consultation simple) -->
-                                    <button onclick="showSchedulesPopup({{ json_encode($route) }})" 
-                                       class="p-3 bg-purple-100 text-purple-600 rounded-lg hover:bg-purple-200 transition" title="Voir les horaires">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    
-                                    <!-- BOUTON MODIFIÉ : Ouvre le popup de gestion au lieu d'aller sur create -->
-                                    <button onclick="manageSchedules({{ json_encode($route) }})" 
-                                       class="p-3 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition" title="Ajouter / Gérer horaires">
-                                        <i class="fas fa-plus"></i>
-                                    </button>
+                                <div style="font-size: 11px; font-weight: 700; color: var(--text-3); text-transform: uppercase;">
+                                    {{ $route->gare_depart?->nom_gare ?? $route->itineraire?->point_depart ?? 'N/A' }}
+                                    <span class="mx-1">&bull;</span>
+                                    {{ $route->gare_arrivee?->nom_gare ?? $route->itineraire?->point_arrive ?? 'N/A' }}
                                 </div>
                             </div>
                         </div>
-                    @endforeach
-                </div>
-            @else
-                <div class="p-12 text-center">
-                    <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-route text-3xl text-gray-400"></i>
+
+                        {{-- Stats & Actions --}}
+                        <div class="d-flex align-items-center gap-3 mt-3 mt-lg-0">
+                            <div class="d-flex gap-2">
+                                <div class="counter-box">
+                                    <div class="counter-label" style="color: var(--emerald);">ALLER</div>
+                                    <div class="counter-val">{{ $route->aller->count() }}</div>
+                                </div>
+                                <div class="counter-box">
+                                    <div class="counter-label" style="color: var(--blue);">RETOUR</div>
+                                    <div class="counter-val">{{ $route->retour->count() }}</div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex gap-2 border-left pl-3 ml-2" style="border-color: var(--border) !important;">
+                                <button type="button" onclick="showSchedulesPopup({{ json_encode($route) }})" class="btn-action view" title="Voir les horaires">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button type="button" onclick="manageSchedules({{ json_encode($route) }})" class="btn-action edit" title="Ajouter un horaire">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+
                     </div>
-                    <h3 class="text-xl font-bold text-gray-700 mb-2">Aucune ligne créée</h3>
-                    <p class="text-gray-500 mb-6">Commencez par créer votre première ligne de transport</p>
-                    <a href="{{ route('programme.create') }}" 
-                       class="inline-flex items-center px-6 py-3 bg-orange-500 text-white font-bold rounded-xl hover:bg-orange-600 transition">
-                        <i class="fas fa-plus mr-2"></i>
-                        Créer une ligne
-                    </a>
-                </div>
-            @endif
-        </div>
+                @endforeach
+            </div>
+        @else
+            <div class="table-empty py-5">
+                <i class="fas fa-route table-empty-icon mb-3" style="font-size: 40px; color: var(--border-strong);"></i>
+                <h3 style="font-size: 16px; font-weight: 800; color: var(--text-1); margin: 0;">Aucune ligne créée</h3>
+                <p style="font-size: 12px; color: var(--text-3); font-weight: 600; margin-bottom: 20px;">Commencez par configurer votre première ligne de transport</p>
+                <a href="{{ route('programme.create') }}" class="btn btn-primary" style="background: var(--orange); border: none; font-weight: 700; border-radius: var(--radius-sm);">
+                    <i class="fas fa-plus mr-2"></i> Créer une ligne
+                </a>
+            </div>
+        @endif
     </div>
 </div>
 
-<!-- SweetAlert2 -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<style>
-    /* Animation pour l'ajout de lignes */
-    @keyframes slideDown {
-        from { opacity: 0; transform: translateY(-10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    .animate-slide-down {
-        animation: slideDown 0.3s ease-out;
-    }
-</style>
-
 <script>
-// --- FONCTION 1 : CONSULTATION SIMPLE (Votre ancienne fonction améliorée) ---
+// --- FONCTION 1 : CONSULTATION SIMPLE ---
 function showSchedulesPopup(routeData) {
-    const formatList = (list, colorClass, iconClass) => {
-        if (!list || list.length === 0) return '<p class="text-gray-400 text-center py-2 text-sm">Aucun horaire</p>';
-        return list.map((h, idx) => `
-            <div class="flex items-center justify-between p-2 ${colorClass} rounded mb-1">
-                <div class="flex items-center gap-2">
-                    <span class="font-bold">${h.heure_depart}</span>
-                    <i class="fas fa-arrow-right text-xs opacity-50"></i>
-                    <span>${h.heure_arrive}</span>
+    const formatList = (list, colorHex, label) => {
+        if (!list || list.length === 0) return `<div style="text-align: center; padding: 20px; border: 1px dashed var(--border-strong); border-radius: 8px; font-size: 12px; color: var(--text-3); font-weight: 600; font-style: italic;">Aucun horaire configuré</div>`;
+        return list.map((h) => `
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; background: var(--surface-2);">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="font-weight: 800; font-size: 14px; color: var(--text-1);">${h.heure_depart}</div>
+                    <i class="fas fa-arrow-right" style="color: var(--text-3); font-size: 10px;"></i>
+                    <div style="font-weight: 700; font-size: 14px; color: var(--text-3);">${h.heure_arrive}</div>
                 </div>
-                <!-- Ici on peut ajouter suppression si besoin, mais on le garde pour le mode "Manage" -->
+                <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: ${colorHex};">${label}</div>
             </div>
         `).join('');
     };
 
+    const gareDep = routeData.gare_depart ? routeData.gare_depart.nom_gare : routeData.itineraire.point_depart;
+    const gareArr = routeData.gare_arrivee ? routeData.gare_arrivee.nom_gare : routeData.itineraire.point_arrive;
+
     Swal.fire({
-        title: `Horaires : ${routeData.gare_depart.nom_gare} - ${routeData.gare_arrivee.nom_gare}`,
+        title: `<div style="font-size: 12px; font-weight: 700; color: var(--text-3); text-transform: uppercase;">Consultation des horaires</div><div style="font-size: 18px; font-weight: 800; color: var(--text-1); margin-top: 5px;">${gareDep} - ${gareArr}</div>`,
         html: `
-            <div class="grid grid-cols-2 gap-4 text-left">
-                <div>
-                    <h4 class="font-bold text-green-700 mb-2 border-b border-green-200 pb-1">ALLER</h4>
-                    <div class="max-h-60 overflow-y-auto">${formatList(routeData.aller, 'bg-green-50 text-green-800')}</div>
+            <div class="row text-left mt-3">
+                <div class="col-6">
+                    <h4 style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--emerald); margin-bottom: 12px;"><i class="fas fa-circle mr-1" style="font-size: 6px;"></i> Trajets ALLER</h4>
+                    <div style="max-height: 300px; overflow-y: auto;">
+                        ${formatList(routeData.aller, 'var(--emerald)', 'Aller')}
+                    </div>
                 </div>
-                <div>
-                    <h4 class="font-bold text-blue-700 mb-2 border-b border-blue-200 pb-1">RETOUR</h4>
-                    <div class="max-h-60 overflow-y-auto">${formatList(routeData.retour, 'bg-blue-50 text-blue-800')}</div>
+                <div class="col-6 border-left">
+                    <h4 style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--blue); margin-bottom: 12px;"><i class="fas fa-circle mr-1" style="font-size: 6px;"></i> Trajets RETOUR</h4>
+                    <div style="max-height: 300px; overflow-y: auto;">
+                        ${formatList(routeData.retour, 'var(--blue)', 'Retour')}
+                    </div>
                 </div>
             </div>
         `,
-        width: '600px',
+        width: '700px',
         showConfirmButton: false,
-        showCloseButton: true
+        showCloseButton: true,
+        customClass: { popup: 'rounded-lg border-0 shadow-sm' }
     });
 }
 
-// --- FONCTION 2 : GESTION COMPLETE (Ajout + Visualisation de l'existant) ---
+// --- FONCTION 2 : GESTION COMPLETE (Ajout/Modification/Suppression) ---
 function manageSchedules(routeData) {
-    // On n'a plus besoin des véhicules et chauffeurs ici pour la création de programme
-    window.currentGareDepartId = routeData.gare_depart.id;
-    window.currentGareArriveeId = routeData.gare_arrivee.id;
-
-    // Stocker la durée du parcours pour le calcul automatique
     window.currentDureeMinutes = parseDuration(routeData.durer_parcours);
 
-    // 2. Générer le HTML de la liste EXISTANTE (Lecture seule + boutons edit/delete)
-    const generateExistingList = (list, type) => {
-        if (!list || list.length === 0) return `<p class="text-xs text-gray-400 italic mb-2">Aucun horaire existant.</p>`;
+    const generateExistingList = (list) => {
+        if (!list || list.length === 0) return `<div style="text-align: center; padding: 15px; border: 1px dashed var(--border-strong); border-radius: 8px; font-size: 11px; color: var(--text-3); font-weight: 600; margin-bottom: 10px;">Aucun horaire existant</div>`;
         
         return list.map(h => `
-            <div class="flex items-center justify-between bg-white border border-gray-200 p-2 rounded mb-1 shadow-sm">
-                <div class="text-sm">
-                    <span class="font-bold text-gray-700">${h.heure_depart}</span>
-                    <i class="fas fa-long-arrow-alt-right text-gray-400 mx-1"></i>
-                    <span class="text-gray-600">${h.heure_arrive}</span>
+            <div style="display: flex; align-items: center; justify-content: space-between; background: var(--surface); border: 1px solid var(--border); padding: 10px 14px; border-radius: 8px; margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-weight: 800; font-size: 13px; color: var(--text-1);">${h.heure_depart}</span>
+                    <i class="fas fa-arrow-right" style="color: var(--text-3); font-size: 10px;"></i>
+                    <span style="font-weight: 700; font-size: 13px; color: var(--text-3);">${h.heure_arrive}</span>
                 </div>
-                <div class="flex gap-2">
-                    <a href="/company/programme/${h.id}/edit" target="_blank" class="text-blue-500 hover:text-blue-700" title="Modifier cet horaire">
-                        <i class="fas fa-edit"></i>
+                <div style="display: flex; gap: 8px;">
+                    <a href="/company/programme/${h.id}/edit" class="btn-action link" title="Modifier ce programme complet" style="width: 28px; height: 28px;">
+                        <i class="fas fa-pen" style="font-size: 10px;"></i>
                     </a>
-                    <button type="button" onclick="deleteSchedule(${h.id})" class="text-red-400 hover:text-red-600" title="Supprimer">
-                        <i class="fas fa-trash-alt"></i>
+                    <button type="button" onclick="deleteSchedule(${h.id})" class="btn-action" style="width: 28px; height: 28px; background: #FEF2F2; color: var(--red);" title="Supprimer">
+                        <i class="fas fa-trash" style="font-size: 10px;"></i>
                     </button>
                 </div>
             </div>
         `).join('');
     };
 
-    // 3. Construction de la Modale HTML
     const content = `
-        <div class="text-left">
-            <div class="bg-gray-100 p-3 rounded-lg mb-4 flex justify-between items-center">
-                <div>
-                    <span class="font-bold text-gray-800">${routeData.gare_depart.nom_gare}</span>
-                    <i class="fas fa-arrow-right text-orange-500 mx-2"></i>
-                    <span class="font-bold text-gray-800">${routeData.gare_arrivee.nom_gare}</span>
-                </div>
-                <div class="text-sm text-gray-600">
-                    <i class="fas fa-clock mr-1"></i> ${routeData.durer_parcours || 'N/A'}
-                    <span class="mx-1">|</span>
-                    <i class="fas fa-money-bill-wave mr-1"></i> ${Number(routeData.montant_billet).toLocaleString()} FCFA
-                </div>
-            </div>
-
+        <div style="text-align: left; padding-top: 10px;">
             <form action="{{ route('programme.store') }}" method="POST" id="addScheduleForm">
-                @csrf
+                <input type="hidden" name="_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="itineraire_id" value="${routeData.itineraire_id}">
                 <input type="hidden" name="montant_billet" value="${routeData.montant_billet}">
                 <input type="hidden" name="gare_depart_id" value="${routeData.gare_depart.id}">
                 <input type="hidden" name="gare_arrivee_id" value="${routeData.gare_arrivee.id}">
                 <input type="hidden" name="capacity" value="${routeData.aller && routeData.aller.length > 0 ? (routeData.aller[0].capacity || 50) : 50}">
                 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- COLONNE ALLER -->
-                    <div class="bg-green-50/50 p-3 rounded-xl border border-green-100">
-                        <div class="flex justify-between items-center mb-3">
-                            <h4 class="font-bold text-green-800"><i class="fas fa-arrow-right mr-2"></i>ALLER</h4>
-                            <button type="button" onclick="addNewRow('aller')" class="bg-green-600 text-white text-xs px-2 py-1 rounded hover:bg-green-700 transition shadow">
+                <div class="row">
+                    <div class="col-md-6 mb-4 mb-md-0">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
+                            <h4 style="font-size: 11px; font-weight: 800; color: var(--emerald); text-transform: uppercase; margin: 0;">Horaires Aller</h4>
+                            <button type="button" onclick="addNewRow('aller')" class="btn btn-sm" style="background: #ECFDF5; color: var(--emerald); font-weight: 700; font-size: 10px; padding: 4px 10px; border-radius: 6px;">
                                 <i class="fas fa-plus"></i> Ajouter
                             </button>
                         </div>
-                        
-                        <!-- Liste Existante -->
-                        <div class="mb-4 max-h-40 overflow-y-auto pr-1">
-                            <p class="text-[10px] uppercase text-gray-500 font-bold mb-1">Existants</p>
-                            ${generateExistingList(routeData.aller, 'aller')}
-                        </div>
-
-                        <!-- Zone d'ajout dynamique -->
-                        <div id="new-aller-container" class="space-y-2">
-                            <!-- Les nouvelles lignes s'ajouteront ici -->
-                        </div>
+                        <div style="max-height: 200px; overflow-y: auto;">${generateExistingList(routeData.aller)}</div>
+                        <div id="new-aller-container"></div>
                     </div>
 
-                    <!-- COLONNE RETOUR -->
-                    <div class="bg-blue-50/50 p-3 rounded-xl border border-blue-100">
-                        <div class="flex justify-between items-center mb-3">
-                            <h4 class="font-bold text-blue-800"><i class="fas fa-arrow-left mr-2"></i>RETOUR</h4>
-                            <button type="button" onclick="addNewRow('retour')" class="bg-blue-600 text-white text-xs px-2 py-1 rounded hover:bg-blue-700 transition shadow">
+                    <div class="col-md-6 border-md-left" style="border-color: var(--border) !important;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
+                            <h4 style="font-size: 11px; font-weight: 800; color: var(--blue); text-transform: uppercase; margin: 0;">Horaires Retour</h4>
+                            <button type="button" onclick="addNewRow('retour')" class="btn btn-sm" style="background: #EFF6FF; color: var(--blue); font-weight: 700; font-size: 10px; padding: 4px 10px; border-radius: 6px;">
                                 <i class="fas fa-plus"></i> Ajouter
                             </button>
                         </div>
-
-                        <!-- Liste Existante -->
-                        <div class="mb-4 max-h-40 overflow-y-auto pr-1">
-                            <p class="text-[10px] uppercase text-gray-500 font-bold mb-1">Existants</p>
-                            ${generateExistingList(routeData.retour, 'retour')}
-                        </div>
-
-                        <!-- Zone d'ajout dynamique -->
-                        <div id="new-retour-container" class="space-y-2">
-                            <!-- Les nouvelles lignes s'ajouteront ici -->
-                        </div>
+                        <div style="max-height: 200px; overflow-y: auto;">${generateExistingList(routeData.retour)}</div>
+                        <div id="new-retour-container"></div>
                     </div>
                 </div>
             </form>
@@ -288,33 +272,29 @@ function manageSchedules(routeData) {
     `;
 
     Swal.fire({
-        title: 'Gérer les Horaires',
+        title: `<div style="font-size: 18px; font-weight: 800; color: var(--text-1);">Gestion des horaires</div>`,
         html: content,
-        width: '950px',
+        width: '850px',
         showCancelButton: true,
-        confirmButtonText: '<i class="fas fa-save mr-2"></i>Enregistrer les ajouts',
+        confirmButtonText: 'Enregistrer les ajouts',
         cancelButtonText: 'Fermer',
-        confirmButtonColor: '#ea580c', // Orange
-        cancelButtonColor: '#6b7280',
-        focusConfirm: false,
+        confirmButtonColor: 'var(--orange)',
+        cancelButtonColor: 'var(--text-3)',
+        customClass: { popup: 'rounded-lg border-0 shadow-sm' },
         preConfirm: () => {
-            // Validation simple : vérifier s'il y a des champs ajoutés
-            const allerRows = document.querySelectorAll('#new-aller-container .schedule-row');
-            const retourRows = document.querySelectorAll('#new-retour-container .schedule-row');
-            
+            const allerRows = document.querySelectorAll('#new-aller-container .new-row');
+            const retourRows = document.querySelectorAll('#new-retour-container .new-row');
             if (allerRows.length === 0 && retourRows.length === 0) {
-                Swal.showValidationMessage('Veuillez ajouter au moins un nouvel horaire ou fermer la fenêtre.');
+                Swal.showValidationMessage('Veuillez ajouter au moins un nouvel horaire via le bouton Ajouter.');
                 return false;
             }
-            // Soumettre le formulaire
             document.getElementById('addScheduleForm').submit();
         }
     });
 }
 
-// Parser la durée du parcours (ex: "4 heures 56 min", "2h30", "1 heure 30 minutes")
 function parseDuration(durationStr) {
-    if (!durationStr) return 90; // Fallback 1h30
+    if (!durationStr) return 90;
     let hours = 0, minutes = 0;
     const hMatch = durationStr.match(/(\d+)\s*h/i);
     if (hMatch) hours = parseInt(hMatch[1]);
@@ -323,7 +303,6 @@ function parseDuration(durationStr) {
     return (hours * 60) + minutes || 90;
 }
 
-// Calculer l'heure d'arrivée à partir de l'heure de départ + durée
 function calculateArrivalTime(departureTime, durationMinutes) {
     const [h, m] = departureTime.split(':').map(Number);
     const totalMinutes = h * 60 + m + durationMinutes;
@@ -332,45 +311,36 @@ function calculateArrivalTime(departureTime, durationMinutes) {
     return `${String(arrH).padStart(2, '0')}:${String(arrM).padStart(2, '0')}`;
 }
 
-// Fonction utilitaire pour ajouter une ligne de formulaire
 window.addNewRow = function(type) {
     const container = document.getElementById(`new-${type}-container`);
-    const index = Date.now(); // ID unique pour l'index du tableau
-    const borderColor = type === 'aller' ? 'border-green-400' : 'border-blue-400';
-    const bgColor = type === 'aller' ? 'bg-green-100' : 'bg-blue-100';
+    const index = Date.now();
+    const borderColor = type === 'aller' ? 'var(--emerald)' : 'var(--blue)';
     const inputDepartId = `depart_${type}_${index}`;
     const inputArriveeId = `arrivee_${type}_${index}`;
 
     const rowHtml = `
-        <div class="schedule-row bg-white p-2 rounded shadow-md border-l-4 ${borderColor} relative animate-slide-down">
-            <button type="button" onclick="this.parentElement.remove()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600 z-10">
+        <div class="new-row" style="background: var(--surface-2); padding: 12px; border-radius: 8px; border-left: 3px solid ${borderColor}; margin-bottom: 10px; position: relative;">
+            <button type="button" onclick="this.parentElement.remove()" style="position: absolute; top: -8px; right: -8px; background: var(--red); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
                 <i class="fas fa-times"></i>
             </button>
-            
-            <div class="grid grid-cols-2 gap-2 mb-2">
-                <div>
-                    <label class="text-[10px] uppercase text-gray-500 font-bold">Départ</label>
+            <div class="row">
+                <div class="col-6">
+                    <label style="font-size: 9px; font-weight: 700; color: var(--text-2); text-transform: uppercase;">Départ</label>
                     <input type="time" id="${inputDepartId}" name="${type}_horaires[${index}][heure_depart]" required
-                        class="w-full text-sm border-gray-300 rounded focus:ring-1 focus:ring-orange-500 p-1"
+                        class="form-control form-control-sm" style="font-weight: 700; font-size: 13px;"
                         onchange="autoCalcArrivee('${inputDepartId}', '${inputArriveeId}')">
                 </div>
-                <div>
-                    <label class="text-[10px] uppercase text-gray-500 font-bold">Arrivée <span class="text-green-500">(auto)</span></label>
+                <div class="col-6">
+                    <label style="font-size: 9px; font-weight: 700; color: var(--text-2); text-transform: uppercase;">Arrivée</label>
                     <input type="time" id="${inputArriveeId}" name="${type}_horaires[${index}][heure_arrive]" required
-                        class="w-full text-sm border-gray-300 rounded focus:ring-1 focus:ring-orange-500 p-1 bg-gray-50">
+                        class="form-control form-control-sm" style="background: #F1F5F9; font-weight: 700; font-size: 13px;" readonly>
                 </div>
-            </div>
-            
-            <div class="mt-1 text-center">
-                <span class="text-[10px] ${bgColor} text-gray-600 px-2 rounded-full">Nouveau</span>
             </div>
         </div>
     `;
-    
     container.insertAdjacentHTML('beforeend', rowHtml);
 };
 
-// Auto-calcul de l'heure d'arrivée quand on change l'heure de départ
 function autoCalcArrivee(departId, arriveeId) {
     const departInput = document.getElementById(departId);
     const arriveeInput = document.getElementById(arriveeId);
@@ -379,26 +349,23 @@ function autoCalcArrivee(departId, arriveeId) {
     }
 }
 
-// Fonction de suppression (inchangée)
 function deleteSchedule(programId) {
     Swal.fire({
         title: 'Supprimer cet horaire ?',
-        text: 'Action irréversible',
+        text: 'Cette action est irréversible et annulera les trajets liés.',
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: '#ef4444',
-        cancelButtonColor: '#6b7280',
+        confirmButtonColor: 'var(--red)',
+        cancelButtonColor: 'var(--text-3)',
         confirmButtonText: 'Oui, supprimer',
-        cancelButtonText: 'Annuler'
+        cancelButtonText: 'Annuler',
+        customClass: { popup: 'rounded-lg border-0 shadow-sm' }
     }).then((result) => {
         if (result.isConfirmed) {
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = `/company/programme/${programId}`;
-            form.innerHTML = `
-                @csrf
-                @method('DELETE')
-            `;
+            form.innerHTML = `<input type="hidden" name="_token" value="{{ csrf_token() }}"><input type="hidden" name="_method" value="DELETE">`;
             document.body.appendChild(form);
             form.submit();
         }

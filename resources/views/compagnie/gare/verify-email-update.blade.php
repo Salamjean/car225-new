@@ -1,61 +1,88 @@
 @extends('compagnie.layouts.template')
 
+@section('page-title', 'Vérification Email')
+@section('page-subtitle', 'Vérifiez la modification de votre adresse email')
+
+@section('styles')
+<style>
+    .otp-container {
+        max-width: 450px; margin: 40px auto;
+    }
+    .otp-card {
+        background: var(--surface); border-radius: var(--radius);
+        border: 1px solid var(--border); box-shadow: var(--shadow-md);
+        padding: 32px; text-align: center;
+    }
+    .otp-icon-box {
+        width: 60px; height: 60px; border-radius: 50%;
+        background: var(--orange-light); color: var(--orange);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 24px; margin: 0 auto 20px;
+    }
+    .otp-input {
+        width: 100%; padding: 16px; border: 2px solid var(--border-strong);
+        border-radius: var(--radius-sm); font-size: 24px; font-weight: 800;
+        text-align: center; letter-spacing: 12px; background: var(--surface-2);
+        color: var(--text-1); transition: 0.2s; margin-bottom: 24px;
+    }
+    .otp-input:focus {
+        outline: none; border-color: var(--orange); background: var(--surface);
+        box-shadow: 0 0 0 4px var(--orange-light);
+    }
+    
+    .btn-submit {
+        width: 100%; background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%);
+        color: white; padding: 14px; border-radius: var(--radius-sm);
+        font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;
+        border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(249,115,22,0.3); transition: 0.2s;
+    }
+    .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(249,115,22,0.4); }
+
+    .btn-cancel {
+        width: 100%; display: block; text-align: center; padding: 12px;
+        border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+        background: var(--surface); color: var(--text-2); font-weight: 700;
+        font-size: 13px; text-decoration: none; transition: 0.2s; margin-top: 16px;
+    }
+    .btn-cancel:hover { background: var(--surface-2); color: var(--text-1); text-decoration: none; }
+</style>
+@endsection
+
 @section('content')
-<div class="min-h-screen bg-gradient-to-br from-gray-50 to-green-50 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md mx-auto">
-        <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center w-16 h-16 bg-white rounded-full shadow-lg mb-4">
-                <i class="fas fa-shield-alt text-3xl text-[#e94f1b]"></i>
+<div class="dashboard-page">
+    <div class="otp-container">
+        <div class="otp-card">
+            <div class="otp-icon-box">
+                <i class="fas fa-shield-alt"></i>
             </div>
-            <h2 class="text-3xl font-extrabold text-gray-900">Vérification Email</h2>
-            <p class="mt-2 text-sm text-gray-600">
-                Un code de vérification a été envoyé à 
-                <span class="font-medium text-gray-900">{{ $pendingData['email'] }}</span>
+            <h2 style="font-size: 20px; font-weight: 800; color: var(--text-1); margin-bottom: 10px;">Vérification de Sécurité</h2>
+            <p style="font-size: 13px; color: var(--text-3); font-weight: 600; margin-bottom: 24px;">
+                Un code à 6 chiffres a été envoyé à l'adresse :<br>
+                <strong style="color: var(--text-1);">{{ $pendingData['email'] }}</strong>
             </p>
-        </div>
 
-        <div class="bg-white py-8 px-4 shadow-xl rounded-2xl sm:px-10 border border-gray-100">
-            <form class="space-y-6" action="{{ route('gare.verify-email-update.store', $gare->id) }}" method="POST">
+            <form action="{{ route('gare.verify-email-update.store', $gare->id) }}" method="POST">
                 @csrf
+                <label for="otp" style="font-size: 11px; font-weight: 800; color: var(--text-2); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 10px;">Entrez votre code</label>
+                <input id="otp" name="otp" type="text" maxlength="6" required class="otp-input" placeholder="000000">
                 
-                <div>
-                    <label for="otp" class="block text-sm font-medium text-gray-700 text-center mb-4">
-                        Entrez le code à 6 chiffres
-                    </label>
-                    <div class="mt-1">
-                        <input id="otp" name="otp" type="text" maxlength="6" required
-                            class="appearance-none block w-full px-3 py-4 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#e94f1b] focus:border-[#e94f1b] sm:text-lg text-center tracking-[1em] font-bold"
-                            placeholder="000000">
-                    </div>
-                </div>
+                @error('otp')
+                    <div class="alert alert-danger mb-4" style="font-size: 12px; font-weight: 700; border-radius: var(--radius-sm);">{{ $message }}</div>
+                @enderror
 
-                <div>
-                    <button type="submit"
-                        class="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-[#e94f1b] hover:bg-[#d84617] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e94f1b] transition-all transform hover:-translate-y-0.5">
-                        Valider la modification
-                    </button>
-                </div>
+                <button type="submit" class="btn-submit">
+                    Valider la modification
+                </button>
             </form>
 
-            <div class="mt-6">
-                <div class="relative">
-                    <div class="absolute inset-0 flex items-center">
-                        <div class="w-full border-t border-gray-200"></div>
-                    </div>
-                    <div class="relative flex justify-center text-sm">
-                        <span class="px-2 bg-white text-gray-500">
-                            Ou
-                        </span>
-                    </div>
-                </div>
-
-                <div class="mt-6 grid grid-cols-1 gap-3">
-                    <a href="{{ route('gare.edit', $gare->id) }}"
-                        class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-xl shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                        Annuler la modification
-                    </a>
-                </div>
+            <div style="margin: 20px 0; position: relative;">
+                <hr style="border-color: var(--border);">
+                <span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--surface); padding: 0 10px; font-size: 12px; font-weight: 700; color: var(--text-3);">OU</span>
             </div>
+
+            <a href="{{ route('gare.edit', $gare->id) }}" class="btn-cancel">
+                Annuler la modification
+            </a>
         </div>
     </div>
 </div>
