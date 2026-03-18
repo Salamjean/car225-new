@@ -90,8 +90,8 @@
                 <div class="step-content active" id="step-1">
                     <form id="emailForm">
                         <div class="form-group">
-                            <label for="identity">Contact ou Code ID</label>
-                            <input type="text" id="identity" class="form-control" placeholder="Entrez votre Contact ou Code ID" required>
+                            <label for="identity">Contact ou Identifiant</label>
+                            <input type="text" id="identity" class="form-control" placeholder="Entrez votre Contact ou Identifiant" required>
                         </div>
                         <button type="submit" class="btn btn-primary" id="sendOtpBtn">Recevoir le code</button>
                     </form>

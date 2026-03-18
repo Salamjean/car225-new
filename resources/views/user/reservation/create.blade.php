@@ -91,7 +91,7 @@
 </style>
 @endpush
 
-    <div class="min-h-screen bg-[#f5f6fa]">
+     <div {{--class="min-h-screen"--}} style="margin-top:-20px"> 
 
         {{-- ============================================ --}}
         {{-- HERO SEARCH BAR --}}
@@ -202,7 +202,7 @@
             </div>
         </div>
 
-        <div class="max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 -mt-4 sm:-mt-6 relative z-20">
+        <div class="mx-auto px-3 sm:px-4 lg:px-6 -mt-4 sm:-mt-6 relative z-20" style="width:80%;">
 
             {{-- ============================================ --}}
             {{-- ALERTE HEURE NON DISPONIBLE --}}
@@ -1040,18 +1040,115 @@ var currentRetourProgramId = null;
                                     user.contact_urgence && user.contact_urgence.trim() !== "";
 
             if (!isProfileComplete) {
+                let html = '<div class="text-left space-y-4 p-2">';
+                html += '<p class="text-sm text-gray-600 mb-4">Pour votre sécurité, veuillez renseigner ces informations avant de continuer.</p>';
+                
+                if (!user.contact || user.contact.trim() === "") {
+                    html += `<div>
+                                <label class="block text-xs font-bold text-gray-700 mb-1">Votre numéro de téléphone</label>
+                                <input type="text" id="swal_contact" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94f1b]" value="${user.contact || ''}" placeholder="07XXXXXXXX">
+                             </div>`;
+                }
+
+                if (!user.nom_urgence || user.nom_urgence.trim() === "") {
+                    html += `<div>
+                                <label class="block text-xs font-bold text-gray-700 mb-1">Nom du contact d'urgence</label>
+                                <input type="text" id="swal_nom_urgence" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94f1b]" value="${user.nom_urgence || ''}" placeholder="Nom et Prénom">
+                             </div>`;
+                }
+
+                html += `<div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Lien de parenté</label>
+                            <select id="swal_lien_parente" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94f1b]">
+                                <option value="">Sélectionner</option>
+                                <option value="Père" ${user.lien_parente_urgence == 'Père' ? 'selected' : ''}>Père</option>
+                                <option value="Mère" ${user.lien_parente_urgence == 'Mère' ? 'selected' : ''}>Mère</option>
+                                <option value="Frère" ${user.lien_parente_urgence == 'Frère' ? 'selected' : ''}>Frère</option>
+                                <option value="Sœur" ${user.lien_parente_urgence == 'Sœur' ? 'selected' : ''}>Sœur</option>
+                                <option value="Conjoint(e)" ${user.lien_parente_urgence == 'Conjoint(e)' ? 'selected' : ''}>Conjoint(e)</option>
+                                <option value="Ami(e)" ${user.lien_parente_urgence == 'Ami(e)' ? 'selected' : ''}>Ami(e)</option>
+                                <option value="Autre" ${user.lien_parente_urgence == 'Autre' ? 'selected' : ''}>Autre</option>
+                            </select>
+                         </div>`;
+
+                if (!user.contact_urgence || user.contact_urgence.trim() === "") {
+                    html += `<div>
+                                <label class="block text-xs font-bold text-gray-700 mb-1">Téléphone d'urgence</label>
+                                <input type="text" id="swal_contact_urgence" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94f1b]" value="${user.contact_urgence || ''}" placeholder="01XXXXXXXX">
+                             </div>`;
+                }
+
+                html += '</div>';
+
                 Swal.fire({
-                    icon: 'warning',
-                    title: 'Profil incomplet',
-                    text: 'Veuillez remplir vos informations de contact et personne à contacter d\'urgence dans votre profil avant de réserver.',
+                    icon: 'info',
+                    title: '<span class="text-xl font-black">Complétez votre profil</span>',
+                    html: html,
                     showCancelButton: true,
-                    confirmButtonText: 'Aller au profil',
+                    confirmButtonText: 'Enregistrer et continuer',
                     cancelButtonText: 'Plus tard',
                     confirmButtonColor: '#e94f1b',
                     cancelButtonColor: '#cbd5e0',
+                    customClass: { popup: 'rounded-3xl' },
+                    preConfirm: () => {
+                        const contact = document.getElementById('swal_contact')?.value || user.contact;
+                        const nom_urgence = document.getElementById('swal_nom_urgence')?.value || user.nom_urgence;
+                        const lien_parente = document.getElementById('swal_lien_parente').value;
+                        const contact_urgence = document.getElementById('swal_contact_urgence')?.value || user.contact_urgence;
+
+                        if (!contact || contact.length !== 10) {
+                            Swal.showValidationMessage('Le numéro de téléphone doit comporter 10 chiffres');
+                            return false;
+                        }
+                        if (!nom_urgence || nom_urgence.trim() === "") {
+                            Swal.showValidationMessage('Le nom du contact d\'urgence est requis');
+                            return false;
+                        }
+                        if (!contact_urgence || contact_urgence.length !== 10) {
+                            Swal.showValidationMessage('Le numéro d\'urgence doit comporter 10 chiffres');
+                            return false;
+                        }
+                        if (contact === contact_urgence) {
+                            Swal.showValidationMessage('Le numéro d\'urgence doit être différent du vôtre');
+                            return false;
+                        }
+
+                        return { contact, nom_urgence, lien_parente_urgence: lien_parente, contact_urgence };
+                    }
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        window.location.href = "{{ route('user.profile') }}";
+                        Swal.fire({
+                            title: 'Mise à jour...',
+                            allowOutsideClick: false,
+                            didOpen: () => Swal.showLoading()
+                        });
+
+                        $.ajax({
+                            url: "{{ route('user.profile.update-emergency') }}",
+                            method: "POST",
+                            data: {
+                                ...result.value,
+                                _token: "{{ csrf_token() }}"
+                            },
+                            success: function(response) {
+                                if (response.success) {
+                                    window.currentUser = response.user;
+                                    Swal.close();
+                                    // Continuer le flux de réservation
+                                    const routeDataJson = button.getAttribute('data-route');
+                                    const dateDepartInitial = button.getAttribute('data-date');
+                                    const routeData = JSON.parse(routeDataJson);
+                                    showRouteTripTypeModal(routeData, dateDepartInitial);
+                                }
+                            },
+                            error: function(xhr) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Erreur',
+                                    text: xhr.responseJSON?.message || 'Une erreur est survenue lors de la mise à jour.'
+                                });
+                            }
+                        });
                     }
                 });
                 return;

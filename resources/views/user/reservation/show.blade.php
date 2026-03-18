@@ -8,7 +8,7 @@
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
         <div>
             <nav class="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 mb-4">
-                <a href="{{ route('reservation.index') }}" class="hover:text-[#e94f1b] transition-colors">Mes Réservations</a>
+                <a href="{{ route('user.reservation.group', $reservation->payment_transaction_id) }}" class="hover:text-[#e94f1b] transition-colors">Mes Réservations</a>
                 <i class="fas fa-chevron-right text-[8px]"></i>
                 <span class="text-gray-900">{{ $reservation->reference }}</span>
             </nav>
@@ -25,7 +25,7 @@
                     <i class="fas fa-file-pdf"></i> Télécharger le Billet
                 </a>
             @endif
-            <a href="{{ route('reservation.index') }}" class="px-6 py-3.5 bg-white border border-gray-100 text-gray-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-50 transition-all flex items-center gap-2">
+            <a href="{{ route('user.reservation.group', $reservation->payment_transaction_id) }}" class="px-6 py-3.5 bg-white border border-gray-100 text-gray-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-50 transition-all flex items-center gap-2">
                 <i class="fas fa-arrow-left"></i> Retour
             </a>
         </div>

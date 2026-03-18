@@ -4,6 +4,17 @@
     $totalSeats = $programme->getTotalSeats($searchDate);
     $reservedSeatsCount = $programme->getPlacesReserveesForDate($searchDate);
     $statusTexts = ['disponible' => 'Disponible', 'presque_complet' => 'Presque complet', 'complet' => 'Complet'];
+
+    // Préparation des données pour le JS si plusieurs programmes
+    $groupData = $programmes->map(function($p) use ($searchDate) {
+        return [
+            'id' => $p->id,
+            'heure' => substr($p->heure_depart, 0, 5),
+            'vehicule_id' => optional($p->getVehiculeForDate($searchDate))->id ?? 0
+        ];
+    })->values()->toJson();
+    
+    $hasMultipleHours = $programmes->count() > 1;
 @endphp
 
 <div class="w-full bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden group">
@@ -65,7 +76,13 @@
                         <i class="fas fa-clock text-green-500"></i>
                         <span class="text-sm font-semibold">Heures</span>
                     </div>
-                    <div class="text-xs font-bold">{{ substr($programme->heure_depart, 0, 5) }} - {{ substr($programme->heure_arrive, 0, 5) }}</div>
+                    <div class="flex flex-wrap gap-1">
+                        @foreach($programmes as $p)
+                            <span class="text-[10px] font-bold bg-white px-1.5 py-0.5 rounded border border-green-100">
+                                {{ substr($p->heure_depart, 0, 5) }}
+                            </span>
+                        @endforeach
+                    </div>
                 </div>
                 <div class="bg-red-50 p-2 rounded-lg">
                     <div class="flex items-center gap-2 mb-1">
@@ -83,21 +100,28 @@
             <!-- Actions mobile -->
             <div class="flex gap-2">
                 @if ($statusKey != 'complet' && !$isToday)
-                    <a href="{{ route('reservation.create', [
-                            'point_depart' => $programme->point_depart,
-                            'point_arrive' => $programme->point_arrive,
-                            'date_depart' => $searchDate,
-                            'auto_reserve' => $programme->id
-                        ]) }}"
-                        class="flex-1 bg-[#e94e1a] text-white text-center py-2 rounded-lg font-bold hover:bg-[#d14316] shadow-sm flex items-center justify-center gap-2 text-sm">
-                        <i class="fas fa-ticket-alt"></i> <span>Réserver</span>
-                    </a>
+                    @if($hasMultipleHours)
+                        <button onclick="chooseProgramHour('{{ addslashes($groupData) }}', '{{ $searchDate }}')"
+                            class="flex-1 bg-[#e94e1a] text-white text-center py-2 rounded-lg font-bold hover:bg-[#d14316] shadow-sm flex items-center justify-center gap-2 text-sm">
+                            <i class="fas fa-ticket-alt"></i> <span>Réserver</span>
+                        </button>
+                    @else
+                        <a href="{{ route('reservation.create', [
+                                'point_depart' => $programme->point_depart,
+                                'point_arrive' => $programme->point_arrive,
+                                'date_depart' => $searchDate,
+                                'auto_reserve' => $programme->id
+                            ]) }}"
+                            class="flex-1 bg-[#e94e1a] text-white text-center py-2 rounded-lg font-bold hover:bg-[#d14316] shadow-sm flex items-center justify-center gap-2 text-sm">
+                            <i class="fas fa-ticket-alt"></i> <span>Réserver</span>
+                        </a>
+                    @endif
                 @else
                     <button class="flex-1 bg-gray-400 text-white text-center py-2 rounded-lg font-bold cursor-not-allowed flex items-center justify-center gap-2 text-sm" disabled>
                         <span>{{ $isToday ? 'Fermé (Jour J)' : 'Complet' }}</span>
                     </button>
                 @endif
-                <button onclick="showVehicleDetails({{ optional($programme->getVehiculeForDate($searchDate))->id ?? 'null' }}, '{{ $searchDate }}', {{ $programme->id }})"
+                <button onclick="chooseProgramHour('{{ addslashes($groupData) }}', '{{ $searchDate }}')"
                     class="px-3 bg-white text-gray-600 border border-gray-200 text-center py-2 rounded-lg font-bold hover:bg-gray-50 flex items-center justify-center gap-1.5 text-xs">
                     <i class="fas fa-info-circle"></i> Détails
                 </button>
@@ -143,8 +167,12 @@
 
             <div class="col-span-2 flex flex-col items-center justify-center border-l border-gray-100 h-full">
                 <div class="text-xs font-bold text-gray-800 mb-1">{{ date('d/m/Y', strtotime($searchDate)) }}</div>
-                <div class="text-xs font-semibold text-gray-500 bg-gray-50 px-2.5 py-1 rounded-md">
-                    {{ substr($programme->heure_depart, 0, 5) }} &rarr; {{ substr($programme->heure_arrive, 0, 5) }}
+                <div class="flex flex-wrap justify-center gap-1 max-w-[120px]">
+                    @foreach($programmes as $p)
+                        <span class="text-[10px] font-black text-gray-600 bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded shadow-sm hover:border-orange-300 transition-colors cursor-default" title="Heure de départ">
+                            {{ substr($p->heure_depart, 0, 5) }}
+                        </span>
+                    @endforeach
                 </div>
             </div>
 
@@ -167,20 +195,27 @@
             </div>
 
             <div class="col-span-3 flex items-center justify-end gap-2 text-right">
-                <button onclick="showVehicleDetails({{ optional($programme->getVehiculeForDate($searchDate))->id ?? 'null' }}, '{{ $searchDate }}', {{ $programme->id }})"
-                    class="px-4 py-2 rounded-xl bg-gray-50 text-gray-600 border border-gray-200 font-bold text-xs">
+                <button onclick="chooseProgramHour('{{ addslashes($groupData) }}', '{{ $searchDate }}')"
+                    class="px-4 py-2 rounded-xl bg-gray-50 text-gray-600 border border-gray-200 font-bold text-xs hover:bg-gray-100 transition-colors">
                     Détails
                 </button>
                 @if($statusKey != 'complet' && !$isToday)
-                    <a href="{{ route('reservation.create', [
-                            'point_depart' => $programme->point_depart,
-                            'point_arrive' => $programme->point_arrive,
-                            'date_depart' => $searchDate,
-                            'auto_reserve' => $programme->id
-                        ]) }}"
-                        class="bg-[#e94e1a] text-white px-6 py-2 rounded-xl font-bold hover:bg-[#d14316] text-xs">
-                        Réserver
-                    </a>
+                    @if($hasMultipleHours)
+                        <button onclick="chooseProgramHour('{{ addslashes($groupData) }}', '{{ $searchDate }}')"
+                            class="bg-[#e94e1a] text-white px-6 py-2 rounded-xl font-bold hover:bg-[#d14316] text-xs transition-colors shadow-md shadow-orange-500/10">
+                            Réserver
+                        </button>
+                    @else
+                        <a href="{{ route('reservation.create', [
+                                'point_depart' => $programme->point_depart,
+                                'point_arrive' => $programme->point_arrive,
+                                'date_depart' => $searchDate,
+                                'auto_reserve' => $programme->id
+                            ]) }}"
+                            class="bg-[#e94e1a] text-white px-6 py-2 rounded-xl font-bold hover:bg-[#d14316] text-xs transition-colors shadow-md shadow-orange-500/10">
+                            Réserver
+                        </a>
+                    @endif
                 @else
                     <button class="bg-gray-100 text-gray-400 px-6 py-2 rounded-xl font-bold cursor-not-allowed text-xs" disabled>
                         Complet

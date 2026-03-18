@@ -114,7 +114,7 @@
         </div>
 
         {{-- Caisse --}}
-        <div class="nav-item nav-has-sub {{ request()->routeIs('compagnie.caisse.*') ? 'sub-open' : '' }}"
+        <!-- <div class="nav-item nav-has-sub {{ request()->routeIs('compagnie.caisse.*') ? 'sub-open' : '' }}"
              onclick="toggleNavSub(this)">
             <i class="nav-icon fas fa-cash-register"></i>
             Caisse
@@ -125,7 +125,7 @@
                 <a class="nav-sub-item" href="{{ route('compagnie.caisse.create') }}">Ajouter</a>
                 <a class="nav-sub-item" href="{{ route('compagnie.caisse.index') }}">Liste</a>
             </div>
-        </div>
+        </div> -->
 
         {{-- Ressources --}}
         <div class="nav-section-label">Ressources</div>
@@ -192,16 +192,12 @@
     </nav>
 
     {{-- Footer --}}
-    {{-- <div class="sidebar-footer">
-        <a class="nav-item" href="{{ route('compagnie.profile') }}">
+    <div class="sidebar-footer">
+        <a class="nav-item {{ request()->routeIs('compagnie.profile') ? 'active' : '' }}" href="{{ route('compagnie.profile') }}">
             <i class="nav-icon fas fa-id-card"></i>
             Mon Profil
         </a>
-        <a class="nav-item nav-item-logout" href="{{ route('compagnie.logout') }}">
-            <i class="nav-icon fas fa-sign-out-alt"></i>
-            Déconnexion
-        </a>
-    </div> --}}
+    </div>
 
 </aside>
 

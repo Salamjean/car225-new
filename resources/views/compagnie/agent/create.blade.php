@@ -5,7 +5,7 @@
 
 @section('styles')
 <style>
-    .form-wrapper { max-width: 1000px; margin: 0 auto; }
+    .form-wrapper { width: 75%; margin: 0 auto; }
     
     .btn-back { display: inline-flex; align-items: center; gap: 8px; color: var(--text-3); font-weight: 700; font-size: 13px; text-decoration: none; margin-bottom: 24px; transition: color 0.2s; }
     .btn-back:hover { color: var(--orange); text-decoration: none; }
@@ -211,6 +211,15 @@
                                         <i class="fas fa-chevron-down chevron"></i>
                                     </div>
                                     @error('lien_parente_urgence') <span class="form-error">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Contact d'Urgence (Numéro) <span class="text-danger">*</span></label>
+                                    <div class="input-with-icon">
+                                        <i class="fas fa-phone-alt"></i>
+                                        <input type="text" name="cas_urgence" value="{{ old('cas_urgence') }}" required maxlength="10" class="form-control" placeholder="07 00 00 00 00" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)">
+                                    </div>
+                                    @error('cas_urgence') <span class="form-error">{{ $message }}</span> @enderror
                                 </div>
                             </div>
                         </div>

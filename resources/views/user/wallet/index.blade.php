@@ -1,7 +1,7 @@
 @extends('user.layouts.template')
 
 @section('content')
-<div class="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+<div class="bg-gray-50 py-8 px-4 sm:px-6 lg:px-8" style="margin-top:-20px">
     <div class="mx-auto" style="width: 95%;">
 
         <!-- Header -->
@@ -150,11 +150,7 @@
                     </tbody>
                 </table>
             </div>
-
-           
-
         </div>
-
     </div>
 </div>
 

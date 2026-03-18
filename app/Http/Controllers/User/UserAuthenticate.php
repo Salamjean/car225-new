@@ -80,7 +80,7 @@ class UserAuthenticate extends Controller
                 if ($search['role'] === 'user') {
                     if (!$entity->phone_verified_at && $entity->contact) {
                         Auth::guard('web')->logout();
-                        $this->smsService->sendOtp($entity->contact, $entity->prenom, $entity->name);
+                        $this->smsService->sendOtp($entity->contact, $entity->prenom, $entity->name, $entity->code_id);
                         session([
                             'otp_contact' => $entity->contact,
                             'otp_prenom' => $entity->prenom,
@@ -186,10 +186,10 @@ class UserAuthenticate extends Controller
             }
 
             // Création de l'utilisateur (phone_verified_at reste null)
-            User::create($userData);
+            $user = User::create($userData);
 
-            // Envoyer le code OTP par SMS
-            $result = $this->smsService->sendOtp($validated['contact'], $validated['prenom'], $validated['name']);
+            // Envoyer le code OTP par SMS avec l'identifiant (code_id)
+            $result = $this->smsService->sendOtp($validated['contact'], $validated['prenom'], $validated['name'], $user->code_id);
 
             // Stocker le contact et le nom en session pour la page de vérification
             session([
@@ -299,8 +299,18 @@ class UserAuthenticate extends Controller
     /**
      * Masquer le numéro de téléphone (ex: 07****88)
      */
+    /**
+     * Masquer le numéro de téléphone (ex: 07****88)
+     */
     protected function maskPhone(string $phone): string
     {
+        if (empty($phone)) return '';
+
+        // Supprimer les espaces et caractères spéciaux
+        $phone = preg_replace('/[^0-9+]/', '', $phone);
+
+        if (empty($phone)) return '';
+
         $length = strlen($phone);
         if ($length <= 4) return $phone;
 

@@ -32,22 +32,17 @@ class ReservationApiController extends Controller
                             ->where('date_fin', '>=', $today);
                       });
             })
-            // Suppression du filtre sur l'heure pour voir tous les programmes de la journée
+            ->where('heure_depart', '>', $currentTime)
             ->whereDoesntHave('voyages', function ($q) use ($today) {
                 $q->whereDate('date_voyage', $today)
-                  ->whereIn('statut', ['terminé']); // On garde ceux 'en_cours'
+                  ->whereIn('statut', ['en_cours', 'terminé']);
             })
-            ->with(['gareDepart', 'gareArrivee', 'voyages.vehicule', 'voyages.chauffeur'])
+            ->with(['gareDepart', 'gareArrivee', 'voyages' => function($q) use ($today) {
+                $q->whereDate('date_voyage', $today)->with('vehicule');
+            }])
             ->orderBy('heure_depart')
             ->get()
-            ->map(function($p) use ($today) {
-                $voyageToday = $p->voyages->first(function($v) use ($today) {
-                    return Carbon::parse($v->date_voyage)->toDateString() == $today;
-                });
-                $chauffeur = $voyageToday && $voyageToday->chauffeur 
-                    ? $voyageToday->chauffeur->prenom . ' ' . $voyageToday->chauffeur->name 
-                    : 'Non assigné';
-
+            ->map(function($p) {
                 return [
                     'id' => $p->id,
                     'point_depart' => $p->point_depart,
@@ -57,7 +52,6 @@ class ReservationApiController extends Controller
                     'gare_arrivee' => $p->gareArrivee ? $p->gareArrivee->nom_gare : null,
                     'vehicule_id' => $p->vehicule ? $p->vehicule->id : null,
                     'immatriculation' => $p->vehicule->immatriculation ?? 'N/A',
-                    'chauffeur' => $chauffeur,
                 ];
             });
 
@@ -371,23 +365,15 @@ class ReservationApiController extends Controller
                             ->where('date_fin', '>=', $today);
                       });
             })
-            // Suppression du filtre heure pour permettre les scans même après l'heure officielle si le voyage n'est pas clôturé
+            ->where('heure_depart', '>', $currentTime)
             ->whereDoesntHave('voyages', function ($q) use ($today) {
                 $q->whereDate('date_voyage', $today)
-                  ->whereIn('statut', ['terminé']);
+                  ->whereIn('statut', ['en_cours', 'terminé']);
             })
-            ->with(['gareDepart', 'gareArrivee', 'voyages.vehicule', 'voyages.chauffeur'])
+            ->with(['gareDepart', 'gareArrivee', 'voyages.vehicule'])
             ->orderBy('heure_depart')
             ->get()
-            ->map(function($p) use ($today) {
-                $voyageToday = $p->voyages->first(function($v) use ($today) {
-                    return Carbon::parse($v->date_voyage)->toDateString() == $today;
-                });
-                
-                $chauffeur = $voyageToday && $voyageToday->chauffeur 
-                    ? $voyageToday->chauffeur->prenom . ' ' . $voyageToday->chauffeur->name 
-                    : 'Non assigné';
-
+            ->map(function($p) {
                 return [
                     'id' => $p->id,
                     'point_depart' => $p->point_depart,
@@ -397,7 +383,6 @@ class ReservationApiController extends Controller
                     'gare_arrivee' => $p->gareArrivee ? $p->gareArrivee->nom_gare : null,
                     'vehicule_id' => $p->vehicule ? $p->vehicule->id : null,
                     'immatriculation' => $p->vehicule->immatriculation ?? 'N/A',
-                    'chauffeur' => $chauffeur,
                 ];
             });
 

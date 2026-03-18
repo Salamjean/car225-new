@@ -64,19 +64,15 @@
                     <p class="text-[10px] font-bold text-white/70 uppercase tracking-widest leading-none">Voyageur</p>
                 </div>
                 <div class="mdc-menu-surface--anchor relative">
-                    <button id="profile-dropdown-btn" class="w-11 h-11 rounded-xl bg-white flex items-center justify-center text-[#e94f1b] font-black overflow-hidden shadow-lg transition-transform hover:scale-105 active:scale-95">
+                    <a href="{{ route('user.profile') }}">
+                        <button id="profile-dropdown-btn" class="w-11 h-11 rounded-xl bg-white flex items-center justify-center text-[#e94f1b] font-black overflow-hidden shadow-lg transition-transform hover:scale-105 active:scale-95">
                         @if($user->photo_profile_path)
                             <img src="{{ asset('storage/' . $user->photo_profile_path) }}" alt="Profile" class="w-full h-full object-cover">
                         @else
                             {{ $initials }}
                         @endif
                     </button>
-                    <!-- Dropdown Menu -->
-                    <div id="profile-dropdown" class="absolute right-0 mt-3 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 hidden animate-in fade-in slide-in-from-top-2 duration-200 z-50">
-                        <a href="{{ route('user.profile') }}" class="flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors">
-                            <i class="fas fa-user-circle text-[#e94f1b]"></i> Mon Profil
-                        </a>
-                    </div>
+                    </a>
                 </div>
 
                 <!-- Logout Icon -->

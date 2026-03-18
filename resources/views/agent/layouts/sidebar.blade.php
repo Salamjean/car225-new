@@ -15,7 +15,7 @@
             <div class="brand-icon">
                 <i class="fas fa-user-tie"></i>
             </div>
-            <span class="brand-text">CAR<span style="color: #f97316;">225</span></span>
+            <span class="brand-text">CAR<span style="color: #ff5a1f;">225</span></span>
         </a>
         <button class="sidebar-close-btn d-md-none" onclick="toggleSidebar()">
             <i class="fas fa-times"></i>
@@ -41,12 +41,12 @@
     <nav class="sidebar-nav">
         <p class="nav-section-title">Navigation</p>
 
-        <a href="{{ route('agent.dashboard') }}" class="nav-link {{ $currentRoute === 'agent.dashboard' ? 'active' : '' }}">
+        <a href="{{ route('agent.dashboard') }}" class="nav-link {{ $currentRoute === 'agent.dashboard' ? 'active' : '' }}" title="Tableau de bord">
             <div class="nav-icon"><i class="fas fa-th-large"></i></div>
             <span>Tableau de bord</span>
         </a>
 
-        <a href="{{ route('agent.messages.index') }}" class="nav-link {{ str_starts_with($currentRoute, 'agent.messages') ? 'active' : '' }}">
+        <a href="{{ route('agent.messages.index') }}" class="nav-link {{ str_starts_with($currentRoute, 'agent.messages') ? 'active' : '' }}" title="Boîte de réception">
             <div class="nav-icon"><i class="fas fa-envelope"></i></div>
             <span>Boîte de réception</span>
             @if($totalUnread > 0)
@@ -56,32 +56,32 @@
 
         <p class="nav-section-title" style="margin-top: 12px;">Réservations</p>
 
-        <a href="{{ route('agent.reservations.index') }}" class="nav-link {{ $currentRoute === 'agent.reservations.index' ? 'active' : '' }}">
+        <a href="{{ route('agent.reservations.index') }}" class="nav-link {{ $currentRoute === 'agent.reservations.index' ? 'active' : '' }}" title="Scanner">
             <div class="nav-icon"><i class="fas fa-qrcode"></i></div>
             <span>Scanner</span>
         </a>
 
-        <a href="{{ route('agent.reservations.recherche') }}" class="nav-link {{ $currentRoute === 'agent.reservations.recherche' ? 'active' : '' }}">
+        <a href="{{ route('agent.reservations.recherche') }}" class="nav-link {{ $currentRoute === 'agent.reservations.recherche' ? 'active' : '' }}" title="Rechercher">
             <div class="nav-icon"><i class="fas fa-search"></i></div>
             <span>Rechercher</span>
         </a>
 
-        <a href="{{ route('agent.reservations.historique') }}" class="nav-link {{ $currentRoute === 'agent.reservations.historique' ? 'active' : '' }}">
+        <a href="{{ route('agent.reservations.historique') }}" class="nav-link {{ $currentRoute === 'agent.reservations.historique' ? 'active' : '' }}" title="Historique">
             <div class="nav-icon"><i class="fas fa-history"></i></div>
             <span>Historique</span>
         </a>
 
-        <p class="nav-section-title" style="margin-top: 12px;">Autres</p>
+        {{-- <p class="nav-section-title" style="margin-top: 12px;">Autres</p>
 
         <a href="#" class="nav-link {{ str_starts_with($currentRoute, 'agent.signalements') ? 'active' : '' }}">
             <div class="nav-icon"><i class="fas fa-exclamation-triangle"></i></div>
             <span>Signalements</span>
-        </a>
+        </a> --}}
     </nav>
 
     {{-- Logout --}}
     <div class="sidebar-footer">
-        <a href="{{ route('agent.logout') }}" class="nav-link logout-link">
+        <a href="{{ route('agent.logout') }}" class="nav-link logout-link" title="Déconnexion">
             <div class="nav-icon"><i class="fas fa-sign-out-alt"></i></div>
             <span>Déconnexion</span>
         </a>
@@ -98,7 +98,7 @@
     left: 0;
     width: 260px;
     height: 100vh;
-    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    background: linear-gradient(180deg, #001a41 0%, #002b6b 100%);
     z-index: 1100;
     display: flex;
     flex-direction: column;
@@ -127,14 +127,14 @@
 .brand-icon {
     width: 38px;
     height: 38px;
-    background: linear-gradient(135deg, #e94e1a, #f97316);
+    background: linear-gradient(135deg, #ff5a1f, #e64e16);
     border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
     font-size: 16px;
-    box-shadow: 0 4px 12px rgba(233, 78, 26, 0.3);
+    box-shadow: 0 4px 12px rgba(255, 90, 31, 0.3);
 }
 
 .brand-text {
@@ -174,7 +174,7 @@
     width: 44px;
     height: 44px;
     border-radius: 12px;
-    background: linear-gradient(135deg, #e94e1a, #d33d0f);
+    background: linear-gradient(135deg, #ff5a1f, #e64e16);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -183,7 +183,7 @@
     font-size: 15px;
     flex-shrink: 0;
     overflow: hidden;
-    box-shadow: 0 4px 10px rgba(233,78,26,0.25);
+    box-shadow: 0 4px 10px rgba(255, 90, 31, 0.25);
 }
 .profile-avatar img {
     width: 100%;
@@ -223,6 +223,8 @@
     font-weight: 700;
     padding: 0 10px;
     margin: 0 0 6px;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 .nav-link {
@@ -238,6 +240,8 @@
     margin-bottom: 3px;
     transition: all 0.2s ease;
     position: relative;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 .nav-link:hover {
@@ -246,11 +250,11 @@
 }
 
 .nav-link.active {
-    background: rgba(233, 78, 26, 0.15);
-    color: #f97316 !important;
+    background: rgba(255, 90, 31, 0.15);
+    color: #ff5a1f !important;
     font-weight: 600;
 }
-.nav-link.active .nav-icon { color: #f97316; }
+.nav-link.active .nav-icon { color: #ff5a1f; }
 
 .nav-icon {
     width: 32px;
@@ -266,7 +270,7 @@
 
 .nav-badge {
     margin-left: auto;
-    background: #e94e1a;
+    background: #ff5a1f;
     color: white;
     font-size: 0.65rem;
     font-weight: 700;
@@ -308,5 +312,54 @@
     }
     .agent-sidebar.open { transform: translateX(0); }
     .sidebar-overlay.open { display: block; }
+}
+
+/* ============ MODE COLLAPSED (bureau) ============ */
+body.sidebar-collapsed .agent-sidebar {
+    width: 68px;
+}
+
+body.sidebar-collapsed .sidebar-brand .brand-text,
+body.sidebar-collapsed .sidebar-profile .profile-info,
+body.sidebar-collapsed .nav-link span:not(.nav-badge),
+body.sidebar-collapsed .nav-section-title {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+body.sidebar-collapsed .sidebar-header {
+    justify-content: center;
+    padding: 20px 0 16px;
+}
+
+body.sidebar-collapsed .sidebar-profile {
+    justify-content: center;
+    padding: 14px 0;
+}
+
+body.sidebar-collapsed .sidebar-nav {
+    padding: 12px 8px 0;
+}
+
+body.sidebar-collapsed .nav-link {
+    justify-content: center;
+    padding: 10px 0;
+    gap: 0;
+}
+
+body.sidebar-collapsed .nav-icon {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+}
+
+body.sidebar-collapsed .sidebar-footer {
+    padding: 12px 8px;
+}
+
+body.sidebar-collapsed .sidebar-footer .nav-link {
+    justify-content: center;
 }
 </style>

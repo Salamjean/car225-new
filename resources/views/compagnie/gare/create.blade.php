@@ -6,7 +6,7 @@
 @section('styles')
 <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
 <style>
-    .form-container { max-width: 1000px; margin: 0 auto; }
+    .form-container { width: 75%; margin: 0 auto; }
     
     .form-card {
         background: var(--surface); border-radius: var(--radius);

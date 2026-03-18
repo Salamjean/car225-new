@@ -7,8 +7,13 @@
     <div class="navbar-inner">
         {{-- Left: Menu toggle (mobile) + Page title --}}
         <div class="navbar-left">
+            {{-- Toggle mobile --}}
             <button class="navbar-toggle d-md-none" onclick="toggleSidebar()">
                 <i class="fas fa-bars"></i>
+            </button>
+            {{-- Toggle collapse sidebar (bureau) --}}
+            <button class="navbar-toggle d-none d-md-flex" id="sidebarCollapseBtn" onclick="toggleSidebarCollapse()" title="Réduire la sidebar">
+                <i class="fas fa-bars" id="sidebarCollapseIcon"></i>
             </button>
             <div class="navbar-title d-none d-md-block">
                 @yield('title', 'Espace Agent')
@@ -129,7 +134,7 @@
 }
 .navbar-icon-btn:hover {
     background: #f3f4f6;
-    color: #e94e1a !important;
+    color: #ff5a1f !important;
 }
 
 .notification-dot {
@@ -165,7 +170,7 @@
     width: 32px;
     height: 32px;
     border-radius: 8px;
-    background: linear-gradient(135deg, #e94e1a, #d33d0f);
+    background: linear-gradient(135deg, #ff5a1f, #e64e16);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -238,13 +243,19 @@
     transition: all 0.2s;
 }
 .profile-dropdown .dropdown-item:hover {
-    background: #fef2f2;
-    color: #ef4444 !important;
+    background: #fff7ed;
+    color: #ff5a1f !important;
 }
 
 @media (max-width: 767.98px) {
     .agent-navbar { left: 0; }
 }
+
+/* ---- Sidebar collapsed (bureau) ---- */
+body.sidebar-collapsed .agent-navbar  { left: 68px; }
+body.sidebar-collapsed .main-content,
+body.sidebar-collapsed .content-area,
+body.sidebar-collapsed main           { margin-left: 68px; }
 </style>
 
 <script>
@@ -253,6 +264,19 @@ function toggleSidebar() {
     var overlay = document.getElementById('sidebarOverlay');
     sidebar.classList.toggle('open');
     overlay.classList.toggle('open');
+}
+
+function toggleSidebarCollapse() {
+    document.body.classList.toggle('sidebar-collapsed');
+    var icon = document.getElementById('sidebarCollapseIcon');
+    if (document.body.classList.contains('sidebar-collapsed')) {
+        icon.classList.remove('fa-bars');
+        icon.classList.add('fa-arrow-right');
+    } else {
+        icon.classList.remove('fa-arrow-right');
+        icon.classList.add('fa-bars');
+    }
+    localStorage.setItem('sidebarCollapsed', document.body.classList.contains('sidebar-collapsed'));
 }
 
 function toggleProfileDropdown() {

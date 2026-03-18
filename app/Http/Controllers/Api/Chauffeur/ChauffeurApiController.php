@@ -33,9 +33,9 @@ class ChauffeurApiController extends Controller
                 'role' => $chauffeur->type_personnel,
                 'statut' => $chauffeur->statut,
                 'commune' => $chauffeur->commune,
-                'profile_picture' => $chauffeur->profile_image ? '/storage/' . $chauffeur->profile_image : null,
+                'profile_picture' => $chauffeur->profile_image ? 'storage/' . $chauffeur->profile_image : null,
                 'profile_picture_url' => $chauffeur->profile_image 
-                    ? '/storage/' . $chauffeur->profile_image 
+                    ? 'storage/' . $chauffeur->profile_image 
                     : null,
                 'compagnie' => $chauffeur->compagnie ? [
                     'id' => $chauffeur->compagnie->id,
@@ -210,14 +210,12 @@ class ChauffeurApiController extends Controller
                 'heure_depart' => $voyage->programme->heure_depart,
                 'gare_depart' => optional($voyage->programme->gareDepart)->nom_gare ?? '',
                 'gare_arrivee' => optional($voyage->programme->gareArrivee)->nom_gare ?? '',
-                'tarif' => (double) $voyage->programme->montant_billet,
             ] : null,
             'vehicule' => $voyage->vehicule ? [
                 'id' => $voyage->vehicule->id,
                 'marque' => $voyage->vehicule->marque,
                 'modele' => $voyage->vehicule->modele,
                 'immatriculation' => $voyage->vehicule->immatriculation,
-                'places' => (int) $voyage->vehicule->nombre_place,
             ] : null,
         ];
     }

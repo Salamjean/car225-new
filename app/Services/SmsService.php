@@ -25,9 +25,24 @@ class SmsService
      */
     public function sendSms(string $to, string $message): bool
     {
+        $rawTo = $to;
         try {
             // Formater le numéro au format international ivoirien si nécessaire
             $to = $this->formatPhoneNumber($to);
+
+            // Vérifier si le numéro semble valide (doit être plus long que juste le préfixe +225)
+            if (strlen($to) <= 4) {
+                $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
+                $caller = $backtrace[1] ?? [];
+                Log::warning('SMS non envoye : numero invalide ou vide', [
+                    'raw_to' => $rawTo,
+                    'formatted_to' => $to,
+                    'file' => ($caller['file'] ?? 'unknown'),
+                    'line' => ($caller['line'] ?? 'unknown'),
+                    'function' => ($caller['function'] ?? 'unknown')
+                ]);
+                return false;
+            }
 
             // Convertir le message en ASCII pur (pas d'accents/Unicode)
             // L'API 1SMS Africa ne supporte pas les SMS Unicode
@@ -86,7 +101,7 @@ class SmsService
     /**
      * Stocker et envoyer un OTP par SMS
      */
-    public function sendOtp(string $contact, string $prenom = '', string $nom = ''): array
+    public function sendOtp(string $contact, string $prenom = '', string $nom = '', string $identifier = ''): array
     {
         $code = $this->generateOtpCode();
 
@@ -112,7 +127,8 @@ class SmsService
             $greeting = "Bonjour {$fullName}, ";
         }
 
-        $message = "{$greeting}votre code de verification Car225 est : {$code}. Ce code expire dans 10 minutes. Ne partagez ce code avec personne. Si vous n'etes pas a l'origine de cette demande, ignorez ce message.";
+        $idMsg = $identifier ? " Votre identifiant de connexion est : {$identifier}." : "";
+        $message = "{$greeting}votre code de verification Car225 est : {$code}.{$idMsg} Ce code expire dans 10 minutes. Ne partagez ce code avec personne.";
         $sent = $this->sendSms($contact, $message);
 
         return [
@@ -159,8 +175,12 @@ class SmsService
      */
     protected function formatPhoneNumber(string $phone): string
     {
+        if (empty($phone)) return '';
+
         // Supprimer les espaces et caractères spéciaux
         $phone = preg_replace('/[^0-9+]/', '', $phone);
+
+        if (empty($phone)) return '';
 
         // Si le numéro commence déjà par +225, c'est bon
         if (str_starts_with($phone, '+225')) {

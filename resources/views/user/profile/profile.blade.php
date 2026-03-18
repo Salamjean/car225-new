@@ -3,12 +3,11 @@
 @section('title', 'Mon Profil')
 
 @section('content')
-<div class="min-h-screen bg-gradient-to-br from-gray-50 to-orange-50 py-8 px-4">
-    <div class="mx-auto" style="width: 90%">
+<div class="py-8 px-4" style="margin-top: -20px;">
+    <div class="mx-auto" style="width: 95%">
         <!-- En-tête -->
         <div class="mb-8">
             <h1 class="text-4xl font-bold text-gray-900 mb-2">Mon Profil</h1>
-            <p class="text-lg text-gray-600">Gérez vos informations personnelles</p>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -51,6 +50,14 @@
                             </form>
                         </div>
                     </div>
+                </div>
+
+                <!-- Logo Car225 -->
+                <div class="mt-8 bg-white rounded-3xl shadow-xl p-8 flex flex-col items-center justify-center group hover:bg-orange-50 transition-all duration-300">
+                    <img src="{{ asset('assetsPoster/assets/images/logo_car225.png') }}" 
+                         alt="Logo CAR225" 
+                         class="h-16 object-contain group-hover:scale-110 transition-transform duration-500">
+                    <p class="mt-4 text-[10px] font-black tracking-[0.3em] text-gray-400 uppercase group-hover:text-[#e94e1a] transition-colors">VOTRE PARTENAIRE DE VOYAGE</p>
                 </div>
             </div>
 
@@ -107,9 +114,9 @@
                                     <i class="fas fa-life-ring mr-2 text-red-500"></i>
                                     Personne à contacter d'urgence
                                 </h3>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div class="md:col-span-2">
-                                        <label class="block text-sm font-semibold text-gray-700 mb-2">Nom et prénom de la personne à contacter</label>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 mb-2">Nom et prénom urgence</label>
                                         <input type="text" id="nom_urgence" name="nom_urgence" value="{{ trim($user->nom_urgence . ' ' . $user->prenom_urgence) }}"
                                             class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent">
                                         <div class="invalid-feedback text-red-500 text-sm mt-1"></div>
@@ -165,7 +172,7 @@
                     <form id="passwordForm">
                         @csrf
                         
-                        <div class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Mot de passe actuel *</label>
                                 <input type="password" id="current_password" name="current_password" required

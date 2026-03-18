@@ -1,274 +1,401 @@
 @extends('compagnie.layouts.template')
+@php \Carbon\Carbon::setLocale('fr'); @endphp
 
 @section('page-title', 'Gestion des Réservations')
-@section('page-subtitle', 'Suivez et gérez les réservations de vos voyages')
+@section('page-subtitle', 'Selectionnez un mois pour explorer vos réservations')
+
+@section('styles')
+<style>
+    /* ── BASE & BACKGROUND ── */
+    .dashboard-page {
+        position: relative;
+        min-height: 80vh;
+        z-index: 1;
+        overflow: hidden;
+        border-radius: 30px;
+        padding: 30px;
+        background: #F8F9FB;
+    }
+
+    /* Mesh Gradient Background Elements */
+    .bg-shape {
+        position: absolute;
+        filter: blur(100px);
+        z-index: -1;
+        border-radius: 50%;
+        opacity: 0.4;
+    }
+    .shape-1 { width: 400px; height: 400px; background: rgba(255, 90, 31, 0.2); top: -100px; right: -100px; }
+    .shape-2 { width: 300px; height: 300px; background: rgba(0, 26, 65, 0.1); bottom: -50px; left: -50px; }
+
+    /* ── METRICS (Glass Bubbles) ── */
+    .metric-grid {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 40px;
+    }
+    .glass-metric {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 24px;
+        padding: 24px;
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+        transition: all 0.3s ease;
+    }
+    .glass-metric:hover {
+        transform: translateY(-5px);
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.06);
+    }
+    .metric-icon-box {
+        width: 56px; height: 56px;
+        border-radius: 18px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 24px;
+        background: #ffffff;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+    }
+    .mi-orange { color: #FF5A1F; }
+    .mi-blue { color: #001A41; }
+    .metric-info h4 { font-size: 13px; font-weight: 700; color: #64748B; margin: 0; text-transform: uppercase; letter-spacing: 0.5px; }
+    .metric-info p { font-size: 26px; font-weight: 900; color: #001A41; margin: 0; }
+
+    /* ── MONTH GRID ── */
+    .date-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 30px;
+        padding-top: 20px;
+    }
+
+    .glass-month-card {
+        background: rgba(255, 255, 255, 0.5);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        border-radius: 28px;
+        width: 100%;
+        min-height: 180px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        cursor: pointer;
+        transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.02);
+    }
+
+    .glass-month-card::before {
+        content: '';
+        position: absolute; inset: 0;
+        border-radius: 28px;
+        padding: 2px;
+        background: linear-gradient(135deg, rgba(255,255,255,1), rgba(255,255,255,0.1));
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        pointer-events: none;
+    }
+
+    .month-badge {
+        position: absolute;
+        top: 12px; right: 12px;
+        background: #FF5A1F;
+        color: #ffffff !important;
+        font-size: 14px; font-weight: 900;
+        padding: 5px 14px;
+        border-radius: 14px;
+        box-shadow: 0 4px 12px rgba(255, 90, 31, 0.3);
+        z-index: 2;
+    }
+
+    .month-header {
+        font-size: 14px;
+        font-weight: 800;
+        color: #FF5A1F;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 5px;
+    }
+
+    .month-name {
+        font-size: 38px;
+        font-weight: 950;
+        color: #001A41;
+        line-height: 1;
+        text-transform: uppercase;
+        margin-bottom: 2px;
+    }
+
+    .year-label {
+        font-size: 14px;
+        font-weight: 700;
+        color: #94A3B8;
+    }
+
+    /* ── TABS ── */
+    .premium-tabs {
+        display: inline-flex;
+        background: rgba(255, 255, 255, 0.4);
+        backdrop-filter: blur(10px);
+        padding: 5px;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        margin-bottom: 30px;
+        position: relative;
+        z-index: 10;
+    }
+    .p-tab {
+        padding: 10px 24px;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 800;
+        color: #64748B;
+        text-decoration: none !important;
+        transition: all 0.3s ease;
+    }
+    .p-tab:hover { color: #001A41; }
+    .p-tab.active {
+        background: #ffffff;
+        color: #FF5A1F;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    
+    /* Past Styles */
+    .past-card { filter: contrast(0.8) brightness(0.95); opacity: 0.85; }
+    .past-badge { background: #64748B !important; box-shadow: none !important; }
+    .past-header { color: #64748B !important; }
+
+    /* Animations */
+    @keyframes pulseOrange {
+        0% { box-shadow: 0 0 0 0 rgba(255, 90, 31, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(255, 90, 31, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(255, 90, 31, 0); }
+    }
+    .pulse-badge { animation: pulseOrange 2s infinite; }
+
+    /* Hover */
+    .glass-month-card:hover {
+        transform: translateY(-10px) scale(1.02);
+        background: rgba(255, 255, 255, 0.85);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
+        border-color: rgba(255, 90, 31, 0.3);
+    }
+
+    /* ── HEADERS ── */
+    .dash-section-header {
+        display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 25px;
+    }
+    .header-text h3 {
+        font-size: 22px; font-weight: 900; color: #001A41; margin: 0;
+        display: flex; align-items: center; gap: 12px;
+    }
+    .header-icon {
+        width: 42px; height: 42px;
+        background: #FF5A1F;
+        color: white;
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 18px;
+        box-shadow: 0 4px 15px rgba(255, 90, 31, 0.3);
+    }
+    
+    .btn-premium {
+        background: #001A41;
+        color: white !important;
+        padding: 12px 24px;
+        border-radius: 14px;
+        font-weight: 700; font-size: 14px;
+        text-decoration: none !important;
+        transition: all 0.3s;
+        display: flex; align-items: center; gap: 8px;
+        box-shadow: 0 4px 15px rgba(0, 26, 65, 0.2);
+    }
+    .btn-premium:hover { transform: scale(1.03); background: #002b6b; }
+
+    /* ── SWAL CUSTOM ── */
+    .swal2-glass {
+        background: rgba(255, 255, 255, 0.8) !important;
+        backdrop-filter: blur(20px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.4) !important;
+        border-radius: 32px !important;
+    }
+    .swal2-title { color: #001A41 !important; font-weight: 900 !important; }
+    .swal2-confirm { border-radius: 16px !important; background: #FF5A1F !important; padding: 12px 30px !important; font-weight: 800 !important; }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .stagger { animation: fadeInUp 0.6s ease both; }
+</style>
+@endsection
 
 @section('content')
 <div class="dashboard-page">
+    {{-- Decorative Background Elements --}}
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
 
     {{-- ── STATS ROW ── --}}
-    <div class="metric-grid mb-4">
-        <div class="metric-card">
-            <div class="metric-top">
-                <div class="metric-icon mi-amber"><i class="fas fa-ticket-alt"></i></div>
+    <div style="display:flex; justify-content: space-between; gap: 20px; margin-bottom: 20px;">
+        <div class="glass-metric stagger" style="animation-delay: 0.1s">
+            <div class="metric-icon-box mi-orange">
+                <i class="fas fa-ticket-alt"></i>
             </div>
-            <div class="metric-label">Actives</div>
-            <div class="metric-value">{{ number_format($reservationsEnCours->total(), 0, ',', ' ') }}</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-top">
-                <div class="metric-icon mi-blue"><i class="fas fa-history"></i></div>
+            <div class="metric-info">
+                <h4>Réservations</h4>
+                <p>{{ number_format($reservationsEnCours->total(), 0, ',', ' ') }}</p>
             </div>
-            <div class="metric-label">Historique</div>
-            <div class="metric-value">{{ number_format($reservationsTerminees->total(), 0, ',', ' ') }}</div>
         </div>
-        <div class="metric-card">
-            <div class="metric-top">
-                <div class="metric-icon mi-green"><i class="fas fa-wallet"></i></div>
+        <div class="glass-metric stagger" style="animation-delay: 0.2s">
+            <div class="metric-icon-box mi-blue">
+                <i class="fas fa-wallet"></i>
             </div>
-            <div class="metric-label">Chiffre d'Affaires</div>
-            <div class="metric-value">{{ number_format($reservationsEnCours->sum('montant'), 0, ',', ' ') }} <span class="metric-unit">F</span></div>
+            <div class="metric-info">
+                <h4>Ventes Estimées</h4>
+                <p>{{ number_format($reservationsEnCours->sum('montant'), 0, ',', ' ') }} <span style="font-size: 14px; opacity: 0.6">F</span></p>
+            </div>
         </div>
+    </div>
+
+    {{-- ── TAB SELECTOR ── --}}
+    <div class="premium-tabs stagger" style="animation-delay: 0.25s">
+        <a href="{{ route('company.reservation.index', ['tab' => 'en-cours']) }}" 
+           class="p-tab {{ $tab === 'en-cours' ? 'active' : '' }}">
+           📦 En cours
+        </a>
+        <a href="{{ route('company.reservation.index', ['tab' => 'terminees']) }}" 
+           class="p-tab {{ $tab === 'terminees' ? 'active' : '' }}">
+           🏁 Terminées
+        </a>
     </div>
 
     {{-- ── ACTIONS HEADER ── --}}
-    <div class="dash-card mb-4 mt-4">
-        <div class="dash-header-actions">
-            <div class="tab-modern">
-                <a href="?tab=en-cours" class="tab-item {{ request('tab') == 'en-cours' || !request('tab') ? 'active' : '' }}">
-                    <i class="fas fa-clock"></i> En Cours
-                </a>
-                <a href="?tab=terminees" class="tab-item {{ request('tab') == 'terminees' ? 'active' : '' }}">
-                    <i class="fas fa-check-double"></i> Passées
-                </a>
-            </div>
-            <div class="action-buttons">
-                <a href="{{ route('company.reservation.details') }}" class="btn-action btn-secondary">
-                    <i class="fas fa-chart-line"></i> Analyses
-                </a>
-                <button onclick="window.location.reload();" class="btn-action btn-primary">
-                    <i class="fas fa-sync-alt"></i> Actualiser
-                </button>
-            </div>
+    <div class="dash-section-header stagger" style="animation-delay: 0.3s">
+        <div class="header-text">
+            <h3>
+                <div class="header-icon {{ $tab === 'terminees' ? 'past-badge' : '' }}">
+                    <i class="fas {{ $tab === 'terminees' ? 'fa-history' : 'fa-calendar-day' }}"></i>
+                </div>
+                {{ $tab === 'terminees' ? 'Historique par mois' : 'Calendrier Mensuel' }}
+            </h3>
+        </div>
+        <div class="header-actions">
+            <a href="{{ route('company.reservation.details') }}" class="btn-premium">
+                <i class="fas fa-chart-pie"></i> Statistiques Détaillées
+            </a>
         </div>
     </div>
 
-    {{-- ── TABLE CARD ── --}}
-    <div class="dash-card">
-        <div class="dash-table-wrap">
-            <table class="dash-table">
-                @if(request('tab') == 'terminees')
-                    <thead>
-                        <tr>
-                            <th>Réf & Date</th>
-                            <th>Passager</th>
-                            <th>Trajet</th>
-                            <th class="text-center">Place</th>
-                            <th class="text-right">Montant</th>
-                            <th class="text-center">Statut</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($reservationsTerminees as $reservation)
-                        <tr>
-                            <td>
-                                <div class="cell-stack">
-                                    <span class="text-ref">{{ $reservation->reference }}</span>
-                                    <span class="text-date">{{ \Carbon\Carbon::parse($reservation->date_voyage)->format('d/m/Y') }}</span>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="td-user">
-                                    <div class="td-avatar text-blue">
-                                        {{ substr($reservation->passager_nom, 0, 1) }}
-                                    </div>
-                                    <div class="cell-stack">
-                                        <span class="td-name">{{ $reservation->passager_prenom }} {{ $reservation->passager_nom }}</span>
-                                        <span class="td-phone">{{ $reservation->passager_telephone ?? '---' }}</span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                @if($reservation->programme)
-                                    <div class="cell-stack">
-                                        <div class="route-pill">
-                                            {{ $reservation->programme->point_depart }}
-                                            <i class="fas fa-arrow-right route-arrow"></i>
-                                            {{ $reservation->programme->point_arrive }}
-                                        </div>
-                                        <span class="text-time mt-1">{{ $reservation->programme->heure_depart }}</span>
-                                    </div>
-                                @else
-                                    <span class="text-muted">---</span>
-                                @endif
-                            </td>
-                            <td class="text-center">
-                                <span class="seat-badge">{{ $reservation->seat_number }}</span>
-                            </td>
-                            <td class="text-right">
-                                <span class="td-amount">{{ number_format($reservation->montant, 0, ',', ' ') }} F</span>
-                            </td>
-                            <td class="text-center">
-                                @if($reservation->statut == 'terminee')
-                                    <span class="status-pill sp-success"><span class="dot"></span> Scannée</span>
-                                @elseif($reservation->statut == 'annulee')
-                                    <span class="status-pill sp-danger"><span class="dot"></span> Annulée</span>
-                                @else
-                                    <span class="status-pill sp-gray"><span class="dot"></span> Passée</span>
-                                @endif
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="6">
-                                <div class="table-empty">
-                                    <i class="fas fa-history table-empty-icon"></i>
-                                    <p>Aucun historique de réservation</p>
-                                </div>
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                @else
-                    <thead>
-                        <tr>
-                            <th>Passager & Réf</th>
-                            <th>Trajet & Heure</th>
-                            <th class="text-center">Date</th>
-                            <th class="text-center">Place</th>
-                            <th class="text-right">Montant</th>
-                            <th class="text-center">Statut</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($reservationsEnCours as $reservation)
-                        <tr>
-                            <td>
-                                <div class="td-user">
-                                    <div class="td-avatar text-orange">
-                                        {{ substr($reservation->passager_nom, 0, 1) }}
-                                    </div>
-                                    <div class="cell-stack">
-                                        <span class="td-name">{{ $reservation->passager_prenom }} {{ $reservation->passager_nom }}</span>
-                                        <div class="user-meta">
-                                            <span class="td-phone">{{ $reservation->passager_telephone ?? '---' }}</span>
-                                            <span class="text-ref">{{ $reservation->reference }}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                @if($reservation->programme)
-                                    <div class="cell-stack">
-                                        <div class="route-pill">
-                                            {{ $reservation->programme->point_depart }}
-                                            <i class="fas fa-chevron-right route-arrow"></i>
-                                            {{ $reservation->programme->point_arrive }}
-                                        </div>
-                                        <span class="text-time mt-1">{{ $reservation->programme->heure_depart }}</span>
-                                    </div>
-                                @else
-                                    <span class="text-muted">Trajet inconnu</span>
-                                @endif
-                            </td>
-                            <td class="text-center">
-                                <div class="cell-stack text-center">
-                                    <span class="date-day">{{ \Carbon\Carbon::parse($reservation->date_voyage)->format('d M') }}</span>
-                                    <span class="date-year">{{ \Carbon\Carbon::parse($reservation->date_voyage)->format('Y') }}</span>
-                                </div>
-                            </td>
-                            <td class="text-center">
-                                <span class="seat-badge seat-badge-orange">{{ $reservation->seat_number }}</span>
-                            </td>
-                            <td class="text-right">
-                                <span class="td-amount">{{ number_format($reservation->montant, 0, ',', ' ') }} F</span>
-                            </td>
-                            <td class="text-center">
-                                @php
-                                    $st = match($reservation->statut) {
-                                        'confirmee' => ['class' => 'sp-success', 'label' => 'Confirmée'],
-                                        'en_attente' => ['class' => 'sp-warning', 'label' => 'Attente'],
-                                        default => ['class' => 'sp-blue', 'label' => ucfirst($reservation->statut)]
-                                    };
-                                @endphp
-                                <span class="status-pill {{ $st['class'] }}"><span class="dot"></span> {{ $st['label'] }}</span>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="6">
-                                <div class="table-empty">
-                                    <i class="fas fa-ticket-alt table-empty-icon"></i>
-                                    <p>Aucune réservation active</p>
-                                </div>
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                @endif
-            </table>
-        </div>
+    @php
+        $months = $reservationsEnCours->groupBy(fn($r) => \Carbon\Carbon::parse($r->date_voyage)->format('Y-m'));
+        $monthsData = [];
+        foreach($months as $monthKey => $mRes) {
+            $dates = $mRes->groupBy(fn($r) => \Carbon\Carbon::parse($r->date_voyage)->toDateString());
+            foreach($dates as $date => $dRes) {
+                $monthsData[$monthKey][$date] = [
+                    'formatted' => \Carbon\Carbon::parse($date)->translatedFormat('l d F Y'),
+                    'hours' => $dRes->pluck('programme.heure_depart')->filter()->unique()->sort()->values()->all()
+                ];
+            }
+        }
+    @endphp
 
-        <div class="dash-card-footer">
-            <div class="pagination-info">
-                Page {{ (request('tab') == 'terminees' ? $reservationsTerminees->currentPage() : $reservationsEnCours->currentPage()) }} sur {{ (request('tab') == 'terminees' ? $reservationsTerminees->lastPage() : $reservationsEnCours->lastPage()) }}
+    {{-- ── MONTH GRID ── --}}
+    <div class="date-grid">
+        @forelse ($months as $monthKey => $reservations)
+            @php $delay = (0.4 + ($loop->index * 0.05)); @endphp
+            <div class="glass-month-card stagger {{ $tab === 'terminees' ? 'past-card' : '' }}" 
+                 style="animation-delay: {{ $delay }}s"
+                 onclick="startSequentialSelection('{{ $monthKey }}', '{{ \Carbon\Carbon::parse($monthKey . '-01')->translatedFormat('F Y') }}')">
+                <div class="month-badge {{ $tab === 'terminees' ? 'past-badge' : 'pulse-badge' }}">{{ count($reservations) }}</div>
+                <div class="month-header {{ $tab === 'terminees' ? 'past-header' : '' }}">{{ \Carbon\Carbon::parse($monthKey . '-01')->translatedFormat('F') }}</div>
+                <div class="month-name">{{ \Carbon\Carbon::parse($monthKey . '-01')->translatedFormat('M') }}</div>
+                <div class="year-label">{{ \Carbon\Carbon::parse($monthKey . '-01')->format('Y') }}</div>
             </div>
-            <div class="pagination-wrapper">
-                @if(request('tab') == 'terminees')
-                    {{ $reservationsTerminees->appends(['tab' => 'terminees'])->links('pagination::bootstrap-4') }}
-                @else
-                    {{ $reservationsEnCours->appends(['tab' => 'en-cours'])->links('pagination::bootstrap-4') }}
-                @endif
+        @empty
+            <div class="glass-metric col-12 text-center p-5 stagger">
+                <p class="m-0 text-muted">Aucune réservation {{ $tab === 'terminees' ? 'archivée' : 'active' }} pour le moment.</p>
             </div>
-        </div>
+        @endforelse
+    </div>
+
+    <div class="mt-5 stagger" style="animation-delay: 1s">
+        {{ $reservationsEnCours->links('pagination::bootstrap-4') }}
     </div>
 </div>
 
-<style>
-    /* Headers & Actions */
-    .dash-header-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 20px; }
-    .action-buttons { display: flex; gap: 10px; }
-    .btn-action { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; border: none; text-decoration: none; }
-    .btn-primary { background: var(--orange); color: #fff; }
-    .btn-primary:hover { background: var(--orange-dark); color: #fff; text-decoration: none; }
-    .btn-secondary { background: var(--surface-2); color: var(--text-1); border: 1px solid var(--border); }
-    .btn-secondary:hover { background: var(--border-strong); color: var(--text-1); text-decoration: none; }
+<script>
+const monthsData = @json($monthsData);
 
-    /* Tabs */
-    .tab-modern { display: flex; background: var(--surface-2); padding: 5px; border-radius: 12px; border: 1px solid var(--border); }
-    .tab-item { padding: 8px 20px; border-radius: 8px; font-size: 12px; font-weight: 800; color: var(--text-3); text-decoration: none; display: flex; align-items: center; gap: 8px; transition: all 0.2s; text-transform: uppercase; letter-spacing: 0.5px; }
-    .tab-item:hover { text-decoration: none; color: var(--text-2); }
-    .tab-item.active { background: var(--surface); color: var(--orange); box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+async function startSequentialSelection(monthKey, monthLabel) {
+    const datesForMonth = monthsData[monthKey];
+    if (!datesForMonth) return;
 
-    /* Table Utils */
-    .cell-stack { display: flex; flex-direction: column; gap: 4px; }
-    .text-ref { font-size: 11px; font-weight: 800; color: var(--orange-dark); text-transform: uppercase; letter-spacing: 0.5px; }
-    .text-date { font-size: 12px; font-weight: 600; color: var(--text-3); }
-    .text-time { font-size: 11px; font-weight: 700; color: var(--text-3); text-transform: uppercase; }
-    .text-muted { font-size: 12px; font-style: italic; color: var(--text-3); }
-    .td-avatar.text-blue { background: #EFF6FF; color: #2563EB; }
-    .td-avatar.text-orange { background: var(--orange-light); color: var(--orange); }
-    .user-meta { display: flex; align-items: center; gap: 10px; }
-    
-    .date-day { font-size: 13px; font-weight: 800; color: var(--text-1); text-transform: uppercase; }
-    .date-year { font-size: 11px; font-weight: 700; color: var(--text-3); }
+    let dateOptions = '<option value="full_month">📂 TOUTES LES RÉSERVATIONS DU MOIS</option>';
+    Object.keys(datesForMonth).sort().forEach(date => {
+        dateOptions += `<option value="${date}">📅 ${datesForMonth[date].formatted}</option>`;
+    });
 
-    /* Badges */
-    .seat-badge { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border); font-size: 13px; font-weight: 800; color: var(--text-2); }
-    .seat-badge-orange { background: var(--orange-light); border-color: var(--orange-mid); color: var(--orange-dark); }
-    
-    .status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
-    .sp-success { background: #ECFDF5; color: #059669; }
-    .sp-warning { background: #FFFBEB; color: #D97706; }
-    .sp-danger { background: #FEF2F2; color: #DC2626; }
-    .sp-blue { background: #EFF6FF; color: #2563EB; }
-    .sp-gray { background: var(--surface-2); color: var(--text-2); }
-    .status-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    const { value: selectedDate } = await Swal.fire({
+        title: 'Choisir une date',
+        customClass: { popup: 'swal2-glass' },
+        html: `
+            <p class="text-muted mb-3">Mois de <strong>${monthLabel}</strong></p>
+            <select id="swal-select-date" class="form-control" style="border-radius: 12px; height: 50px; font-weight: 600;">
+                ${dateOptions}
+            </select>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Suivant <i class="fas fa-arrow-right ml-1"></i>',
+        cancelButtonText: 'Annuler',
+        preConfirm: () => document.getElementById('swal-select-date').value
+    });
 
-    /* Footer Pagination */
-    .dash-card-footer { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-top: 1px solid var(--border); }
-    .pagination-info { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-3); letter-spacing: 0.5px; }
-    .pagination-wrapper svg { max-width: 20px; } /* Fixe un bug courant sans Tailwind */
-    .pagination-wrapper p { margin: 0; }
-</style>
+    if (selectedDate) {
+        if (selectedDate === 'full_month') {
+            window.location.href = `{{ route('company.reservation.by_month', ['month' => '__MONTH__']) }}`.replace('__MONTH__', monthKey);
+            return;
+        }
+
+        const dateInfo = datesForMonth[selectedDate];
+        let hourOptions = '<option value="all">🕒 Toutes les heures</option>';
+        dateInfo.hours.forEach(h => {
+            hourOptions += `<option value="${h}">⏰ ${h}</option>`;
+        });
+
+        const { value: selectedHour } = await Swal.fire({
+            title: 'Choisir l\'heure',
+            customClass: { popup: 'swal2-glass' },
+            html: `
+                <p class="text-muted mb-3">Le <strong>${dateInfo.formatted}</strong></p>
+                <select id="swal-select-hour" class="form-control" style="border-radius: 12px; height: 50px; font-weight: 600;">
+                    ${hourOptions}
+                </select>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Voir les réservations',
+            cancelButtonText: 'Retour',
+            preConfirm: () => document.getElementById('swal-select-hour').value
+        });
+
+        if (selectedHour) {
+            let url = `{{ route('company.reservation.by_date', ['date' => '__DATE__']) }}`.replace('__DATE__', selectedDate);
+            if (selectedHour !== 'all') url += `?heure=${selectedHour}`;
+            window.location.href = url;
+        }
+    }
+}
+</script>
 @endsection

@@ -222,17 +222,14 @@ class VoyageApiController extends Controller
                 'point_depart' => $voyage->programme->point_depart,
                 'point_arrive' => $voyage->programme->point_arrive,
                 'heure_depart' => $voyage->programme->heure_depart,
-                'heure_arrive' => $voyage->programme->heure_arrive,
                 'gare_depart' => optional($voyage->programme->gareDepart)->nom_gare ?? '',
                 'gare_arrivee' => optional($voyage->programme->gareArrivee)->nom_gare ?? '',
-                'tarif' => (double) $voyage->programme->montant_billet,
             ] : null,
             'vehicule' => $voyage->vehicule ? [
                 'id' => $voyage->vehicule->id,
                 'marque' => $voyage->vehicule->marque,
                 'modele' => $voyage->vehicule->modele,
                 'immatriculation' => $voyage->vehicule->immatriculation,
-                'places' => (int) $voyage->vehicule->nombre_place,
             ] : null,
         ];
     }
