@@ -211,6 +211,15 @@
                                     </div>
                                     @error('lien_parente_urgence') <span class="form-error">{{ $message }}</span> @enderror
                                 </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Contact d'Urgence (Numéro) <span class="text-danger">*</span></label>
+                                    <div class="input-with-icon">
+                                        <i class="fas fa-phone-alt"></i>
+                                        <input type="text" name="cas_urgence" value="{{ old('cas_urgence', $agent->cas_urgence) }}" required maxlength="10" class="form-control" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)">
+                                    </div>
+                                    @error('cas_urgence') <span class="form-error">{{ $message }}</span> @enderror
+                                </div>
                             </div>
                         </div>
                     </div>

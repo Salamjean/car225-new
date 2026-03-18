@@ -33,8 +33,8 @@
 <div class="dashboard-page">
 
     {{-- STATS ROW --}}
-    <div class="metric-grid mb-4">
-        <div class="metric-card">
+    <div class="mb-4" style="display:flex; justify-content: space-between; gap: 10px;">
+        <div class="metric-card" style="width: 100%;">
             <div class="metric-top">
                 <div class="metric-icon mi-amber"><i class="fas fa-warehouse"></i></div>
                 <span class="metric-tag mt-slate">Réseau</span>
@@ -43,7 +43,7 @@
             <div class="metric-value">{{ $gares->count() }}</div>
         </div>
 
-        <div class="metric-card">
+        <div class="metric-card" style="width: 100%;">
             <div class="metric-top">
                 <div class="metric-icon mi-blue"><i class="fas fa-city"></i></div>
                 <span class="metric-tag mt-blue">Couverture</span>
@@ -52,7 +52,7 @@
             <div class="metric-value">{{ $gares->pluck('ville')->unique()->count() }}</div>
         </div>
 
-        <div class="metric-card">
+        <div class="metric-card" style="width: 100%;">
             <div class="metric-top">
                 <div class="metric-icon" style="background: #F3E8FF; color: #7E22CE;"><i class="fas fa-user-tie"></i></div>
                 <span class="metric-tag" style="background: #F3E8FF; color: #7E22CE;">Encadrement</span>

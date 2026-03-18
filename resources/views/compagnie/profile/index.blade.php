@@ -97,7 +97,6 @@
                     </div>
                     
                     <h3 class="company-name">{{ $compagnie->name }}</h3>
-                    <div class="company-sigle">{{ $compagnie->sigle ?? 'PAS DE SIGLE' }}</div>
                     
                     <div class="mt-4 text-left">
                         <div class="stat-row">
@@ -106,14 +105,6 @@
                                 Solde Tickets
                             </div>
                             <span class="stat-value">{{ number_format($compagnie->tickets, 0, ',', ' ') }}</span>
-                        </div>
-                        
-                        <div class="stat-row">
-                            <div class="stat-label">
-                                <div class="stat-icon blue"><i class="fas fa-id-badge"></i></div>
-                                Identifiant
-                            </div>
-                            <span class="stat-value" style="font-size: 14px;">{{ $compagnie->username }}</span>
                         </div>
                     </div>
 
@@ -164,7 +155,7 @@
                             <div class="col-md-6">
                                 <div class="input-group-modern">
                                     <label class="form-label">Email professionnel *</label>
-                                    <input type="email" name="email" value="{{ old('email', $compagnie->email) }}" required class="input-modern">
+                                    <input type="email" name="email" value="{{ old('email', $compagnie->email) }}" readonly required class="input-modern">
                                     @error('email') <span class="form-error">{{ $message }}</span> @enderror
                                 </div>
                             </div>
@@ -177,7 +168,7 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="input-group-modern">
-                                    <label class="form-label">Sigle (ex: UTB)</label>
+                                    <label class="form-label">Sigle (ex: HTR)</label>
                                     <input type="text" name="sigle" value="{{ old('sigle', $compagnie->sigle) }}" class="input-modern">
                                 </div>
                             </div>

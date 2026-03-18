@@ -134,7 +134,7 @@
 }
 .navbar-icon-btn:hover {
     background: #f3f4f6;
-    color: #e94e1a !important;
+    color: #ff5a1f !important;
 }
 
 .notification-dot {
@@ -170,7 +170,7 @@
     width: 32px;
     height: 32px;
     border-radius: 8px;
-    background: linear-gradient(135deg, #e94e1a, #d33d0f);
+    background: linear-gradient(135deg, #ff5a1f, #e64e16);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -243,8 +243,8 @@
     transition: all 0.2s;
 }
 .profile-dropdown .dropdown-item:hover {
-    background: #fef2f2;
-    color: #ef4444 !important;
+    background: #fff7ed;
+    color: #ff5a1f !important;
 }
 
 @media (max-width: 767.98px) {

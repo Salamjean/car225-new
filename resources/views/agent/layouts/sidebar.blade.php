@@ -15,7 +15,7 @@
             <div class="brand-icon">
                 <i class="fas fa-user-tie"></i>
             </div>
-            <span class="brand-text">CAR<span style="color: #f97316;">225</span></span>
+            <span class="brand-text">CAR<span style="color: #ff5a1f;">225</span></span>
         </a>
         <button class="sidebar-close-btn d-md-none" onclick="toggleSidebar()">
             <i class="fas fa-times"></i>
@@ -98,7 +98,7 @@
     left: 0;
     width: 260px;
     height: 100vh;
-    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    background: linear-gradient(180deg, #001a41 0%, #002b6b 100%);
     z-index: 1100;
     display: flex;
     flex-direction: column;
@@ -127,14 +127,14 @@
 .brand-icon {
     width: 38px;
     height: 38px;
-    background: linear-gradient(135deg, #e94e1a, #f97316);
+    background: linear-gradient(135deg, #ff5a1f, #e64e16);
     border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
     font-size: 16px;
-    box-shadow: 0 4px 12px rgba(233, 78, 26, 0.3);
+    box-shadow: 0 4px 12px rgba(255, 90, 31, 0.3);
 }
 
 .brand-text {
@@ -174,7 +174,7 @@
     width: 44px;
     height: 44px;
     border-radius: 12px;
-    background: linear-gradient(135deg, #e94e1a, #d33d0f);
+    background: linear-gradient(135deg, #ff5a1f, #e64e16);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -183,7 +183,7 @@
     font-size: 15px;
     flex-shrink: 0;
     overflow: hidden;
-    box-shadow: 0 4px 10px rgba(233,78,26,0.25);
+    box-shadow: 0 4px 10px rgba(255, 90, 31, 0.25);
 }
 .profile-avatar img {
     width: 100%;
@@ -250,11 +250,11 @@
 }
 
 .nav-link.active {
-    background: rgba(233, 78, 26, 0.15);
-    color: #f97316 !important;
+    background: rgba(255, 90, 31, 0.15);
+    color: #ff5a1f !important;
     font-weight: 600;
 }
-.nav-link.active .nav-icon { color: #f97316; }
+.nav-link.active .nav-icon { color: #ff5a1f; }
 
 .nav-icon {
     width: 32px;
@@ -270,7 +270,7 @@
 
 .nav-badge {
     margin-left: auto;
-    background: #e94e1a;
+    background: #ff5a1f;
     color: white;
     font-size: 0.65rem;
     font-weight: 700;

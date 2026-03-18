@@ -12,32 +12,74 @@ class ReservationController extends Controller
     public function index(Request $request)
     {
         $compagnie = Auth::guard('compagnie')->user();
+        $tab = request('tab', 'en-cours');
 
-        // Récupérer les réservations liées aux programmes de cette compagnie
+        // Récupérer uniquement les réservations confirmées
         $query = Reservation::whereHas('programme', function ($q) use ($compagnie) {
             $q->where('compagnie_id', $compagnie->id);
-        })->with(['programme', 'user', 'programme.itineraire']);
+        })
+        ->with(['programme'])
+        ->where('statut', 'confirmee');
 
-        // Séparer "En cours" et "Terminées"
-        // En cours: 'en_attente', 'confirmee' ET date_voyage >= aujourd'hui
-        // Terminées: 'terminee', 'annulee', OU date_voyage passée
+        if ($tab === 'terminees') {
+            $query->whereDate('date_voyage', '<', now())
+                  ->orderBy('date_voyage', 'desc');
+        } else {
+            $query->whereDate('date_voyage', '>=', now())
+                  ->orderBy('date_voyage', 'asc');
+        }
 
-        $reservationsEnCours = (clone $query)
-            ->where('statut', 'confirmee')
-            ->whereDate('date_voyage', '>=', now())
-            ->orderBy('date_voyage', 'asc')
-            ->paginate(10, ['*'], 'page_cours');
+        $reservationsEnCours = $query->paginate(500); 
 
-        // Terminées = statut terminee OU statut annulee OU date passée (peu importe le statut)
-        $reservationsTerminees = (clone $query)
-            ->where(function ($q) {
-                $q->whereIn('statut', ['terminee', 'annulee'])
-                    ->orWhereDate('date_voyage', '<', now());
-            })
-            ->orderBy('date_voyage', 'desc')
-            ->paginate(10, ['*'], 'page_terminees');
+        return view('compagnie.reservations.index', compact('reservationsEnCours', 'tab'));
+    }
 
-        return view('compagnie.reservations.index', compact('reservationsEnCours', 'reservationsTerminees'));
+    public function byDate(Request $request, $date)
+    {
+        $compagnie = Auth::guard('compagnie')->user();
+        $heure = $request->query('heure');
+
+        $query = Reservation::whereHas('programme', function ($q) use ($compagnie) {
+            $q->where('compagnie_id', $compagnie->id);
+        })
+        ->whereDate('date_voyage', $date)
+        ->where('statut', 'confirmee')
+        ->with(['programme', 'user', 'programme.itineraire']);
+
+        if ($heure && $heure !== 'all') {
+            $query->whereHas('programme', function($q) use ($heure) {
+                $q->where('heure_depart', $heure);
+            });
+        }
+
+        $reservations = $query->orderBy('created_at', 'desc')->get();
+
+        return view('compagnie.reservations.by_date', compact('reservations', 'date', 'heure'));
+    }
+
+    public function byMonth($month)
+    {
+        $compagnie = Auth::guard('compagnie')->user();
+        
+        // $month est au format YYYY-MM
+        $query = Reservation::whereHas('programme', function ($q) use ($compagnie) {
+            $q->where('compagnie_id', $compagnie->id);
+        })
+        ->where('date_voyage', 'LIKE', "{$month}%")
+        ->where('statut', 'confirmee')
+        ->with(['programme', 'user', 'programme.itineraire']);
+
+        $reservations = $query->orderBy('date_voyage', 'asc')
+                             ->orderBy('created_at', 'desc')
+                             ->get();
+
+        return view('compagnie.reservations.by_date', [
+            'reservations' => $reservations,
+            'date' => $month . '-01', // On passe le premier jour pour Carbon dans la vue
+            'heure' => 'all',
+            'isFullMonth' => true,
+            'monthLabel' => \Carbon\Carbon::parse($month . '-01')->translatedFormat('F Y')
+        ]);
     }
     /**
      * Afficher les détails et statistiques des réservations

@@ -5,9 +5,10 @@
         <!-- Style personnalisé pour cette vue uniquement -->
         <style>
             :root {
-                --primary-brand: #f97316;
-                --primary-gradient: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-                --secondary-brand: #0f172a;
+                --primary-brand: #ff5a1f;
+                --primary-gradient: linear-gradient(135deg, #001a41 0%, #003380 100%);
+                --secondary-brand: #001a41;
+                --orange-brand: #ff5a1f;
                 --bg-soft: #f8fafc;
                 --success-accent: #22c55e;
                 --danger-accent: #ef4444;
@@ -54,7 +55,7 @@
                 position: relative;
                 width: 140px;
                 height: 140px;
-                background: rgba(249, 115, 22, 0.08);
+                background: rgba(255, 90, 31, 0.08);
                 border-radius: 50%;
                 display: flex;
                 align-items: center;
@@ -105,14 +106,14 @@
 
             /* Bouton d'action principal */
             .btn-scanner-hero {
-                background: var(--primary-gradient);
+                background: linear-gradient(135deg, var(--orange-brand) 0%, #e64e16 100%);
                 border: none;
                 color: white !important;
                 padding: 1.25rem 2.5rem;
                 border-radius: 100px;
                 font-weight: 700;
                 font-size: 1.25rem;
-                box-shadow: 0 10px 25px -5px rgba(249, 115, 22, 0.5);
+                box-shadow: 0 10px 25px -5px rgba(255, 90, 31, 0.5);
                 transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                 width: 100%;
                 display: flex;
@@ -125,7 +126,7 @@
 
             .btn-scanner-hero:hover {
                 transform: translateY(-4px);
-                box-shadow: 0 20px 30px -10px rgba(249, 115, 22, 0.6);
+                box-shadow: 0 20px 30px -10px rgba(255, 90, 31, 0.6);
             }
 
             .btn-scanner-hero:active {
@@ -442,8 +443,8 @@
                 <div class="modal-header-premium relative">
                     <div class="relative z-100">
                         <h5 class="modal-title flex items-center gap-3 font-bold text-2xl tracking-tight">
-                            <span class="p-2 bg-orange-500/2 rounded-lg">
-                                <i class="material-icons opacity-100">directions_bus</i>
+                            <span class="p-2 bg-[#ff5a1f]/10 rounded-lg">
+                                <i class="material-icons opacity-100 text-[#ff5a1f]">directions_bus</i>
                             </span>
                             Sélectionner le Trajet
                         </h5>
@@ -547,7 +548,7 @@
                         class="flex-1 py-3 px-4 rounded-2xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
                         data-dismiss="modal">Annuler</button>
                     <button type="button"
-                        class="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-orange-500 shadow-xl shadow-slate-200 disabled:opacity-60 disabled:shadow-none transition-all flex items-center justify-center gap-2"
+                        class="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-[#ff5a1f] shadow-xl shadow-[#ff5a1f]/20 disabled:opacity-60 disabled:shadow-none transition-all flex items-center justify-center gap-2"
                         id="continueToScanBtn" disabled>
                         <span>Valider et Scanner</span>
                         <i class="material-icons">arrow_forward</i>
@@ -629,7 +630,7 @@
                                     placeholder="RÉFÉRENCE BILLET" autocomplete="off">
                             </div>
                             <button type="button" id="manualSearchBtn"
-                                class="w-12 h-12 bg-orange-600 hover:bg-orange-500 text-white rounded-2xl transition-all shadow-lg flex items-center justify-center">
+                                class="w-12 h-12 bg-[#ff5a1f] hover:bg-[#e64e16] text-white rounded-2xl transition-all shadow-lg flex items-center justify-center">
                                 <i class="material-icons">search</i>
                             </button>
                         </div>
@@ -659,7 +660,7 @@
                         Fermer
                     </button>
                     <button type="button"
-                        class="flex-[2] py-4 px-8 font-bold text-white bg-orange-600 rounded-2xl shadow-xl shadow-orange-200 hover:bg-orange-500 hover:-translate-y-1 transition-all flex items-center justify-center gap-3"
+                        class="flex-[2] py-4 px-8 font-bold text-white bg-[#ff5a1f] rounded-2xl shadow-xl shadow-[#ff5a1f]/20 hover:bg-[#e64e16] hover:-translate-y-1 transition-all flex items-center justify-center gap-3"
                         id="confirmEmbarquementBtn">
                         <i class="material-icons">task_alt</i>
                         Confirmer l'embarquement

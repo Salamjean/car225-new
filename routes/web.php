@@ -44,6 +44,7 @@ use App\Http\Controllers\Chauffeur\ChauffeurAuthenticate;
 use App\Http\Controllers\Chauffeur\VoyageController as ChauffeurVoyageController;
 use App\Http\Controllers\Chauffeur\ChauffeurReservationController;
 use App\Http\Controllers\PortailAuthController;
+use App\Http\Controllers\Portail\PortailPasswordResetController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -78,6 +79,12 @@ Route::prefix('/')->group(function () {
 Route::prefix('portail')->group(function () {
     Route::get('/login', [PortailAuthController::class, 'showLogin'])->name('portail.login');
     Route::post('/login', [PortailAuthController::class, 'login'])->name('portail.login.submit');
+
+    // Password Reset
+    Route::get('/password/reset', [PortailPasswordResetController::class, 'showLinkRequestForm'])->name('portail.password.request');
+    Route::post('/password/send-otp', [PortailPasswordResetController::class, 'sendOtpCode'])->name('portail.password.sendOtp');
+    Route::post('/password/verify-otp', [PortailPasswordResetController::class, 'verifyOtpCode'])->name('portail.password.verifyOtp');
+    Route::post('/password/reset', [PortailPasswordResetController::class, 'reset'])->name('portail.password.reset');
 });
 
 //Les routes de gestion du @admin
@@ -241,6 +248,8 @@ Route::middleware('compagnie')->prefix('company')->group(function () {
     //Les routes de gestion des réservations
     Route::prefix('booking')->group(function () {
         Route::get('/all', [CompagnieReservationController::class, 'index'])->name('company.reservation.index');
+        Route::get('/by-date/{date}', [CompagnieReservationController::class, 'byDate'])->name('company.reservation.by_date');
+        Route::get('/by-month/{month}', [CompagnieReservationController::class, 'byMonth'])->name('company.reservation.by_month');
         Route::get('/details', [CompagnieReservationController::class, 'details'])->name('company.reservation.details');
         Route::get('/occupied-seats', [CompagnieReservationController::class, 'getOccupiedSeats'])->name('company.reservation.occupied-seats');
     });

@@ -5,9 +5,10 @@
         <!-- Style personnalisé pour cette vue uniquement -->
         <style>
             :root {
-                --primary-brand: #f97316;
-                --primary-gradient: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-                --secondary-brand: #0f172a;
+                --primary-brand: #ff5a1f;
+                --primary-gradient: linear-gradient(135deg, #001a41 0%, #003380 100%);
+                --secondary-brand: #001a41;
+                --orange-brand: #ff5a1f;
                 --bg-soft: #f8fafc;
                 --success-accent: #22c55e;
                 --danger-accent: #ef4444;
@@ -166,7 +167,7 @@
             }
 
             .btn-premium-search {
-                background: var(--primary-gradient);
+                background: linear-gradient(135deg, var(--orange-brand) 0%, #e64e16 100%);
                 color: white !important;
                 border: none;
                 height: 48px;
@@ -176,14 +177,14 @@
                 display: flex;
                 align-items: center;
                 gap: 0.75rem;
-                box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3);
+                box-shadow: 0 10px 15px -3px rgba(255, 90, 31, 0.3);
                 transition: all 0.3s ease;
                 white-space: nowrap;
             }
 
             .btn-premium-search:hover {
                 transform: translateY(-2px);
-                box-shadow: 0 20px 25px -5px rgba(249, 115, 22, 0.5);
+                box-shadow: 0 20px 25px -5px rgba(255, 90, 31, 0.5);
             }
 
             @keyframes pulse {
@@ -343,9 +344,9 @@
             }
 
             .table-premium thead th {
-                background: #f8fafc;
-                border-bottom: 2px solid #f1f5f9;
-                color: #64748b;
+                background: var(--secondary-brand);
+                border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+                color: white;
                 font-weight: 700;
                 text-transform: uppercase;
                 font-size: 0.75rem;
@@ -400,7 +401,7 @@
                     <div class="row align-items-center">
                         <div class="col-xl-3 text-center d-none d-xl-block">
                             <div class="p-4 bg-orange-50 rounded-full inline-flex align-items-center justify-content-center">
-                                <i class="material-icons text-orange-500" style="font-size: 64px;">manage_search</i>
+                                <i class="material-icons text-[#ff5a1f]" style="font-size: 64px;">manage_search</i>
                             </div>
                         </div>
                         <div class="col-xl-9 col-12">
@@ -449,10 +450,10 @@
                 </div>
 
                 <!-- Historique des scans récents -->
-                <div class="mt-5 mb-5 px-2">
+                <!-- <div class="mt-5 mb-5 px-2">
                     <div class="d-flex align-items-center justify-content-between mb-4">
                         <h5 class="font-bold text-slate-900 m-0 d-flex align-items-center gap-2">
-                            <i class="material-icons text-orange-500">history</i>
+                            <i class="material-icons text-[#ff5a1f]">history</i>
                             Derniers passagers scannés
                         </h5>
                         <span class="badge bg-slate-100 text-slate-600 px-3 py-2 rounded-lg font-bold">Aujourd'hui</span>
@@ -508,7 +509,7 @@
                             </table>
                         </div>
                     </div>
-                </div>
+                </div> -->
 
             </div>
         </div>

@@ -51,42 +51,32 @@ class PortailAuthController extends Controller
             $isEmail = filter_var($identifiant, FILTER_VALIDATE_EMAIL);
             
             if ($isEmail) {
+                // --- UNIQUEMENT Compagnie par Email ---
                 if (Auth::guard('compagnie')->attempt(['email' => $identifiant, 'password' => $password])) {
                     return redirect()->route('compagnie.dashboard')->with('success', 'Bienvenue sur votre tableau de bord Compagnie !');
                 }
             } else {
-                // Tentative avec le contact pour la compagnie (optionnel mais présent dans l'ancien système)
-                if (Auth::guard('compagnie')->attempt(['contact' => $identifiant, 'password' => $password])) {
-                    return redirect()->route('compagnie.dashboard')->with('success', 'Bienvenue sur votre tableau de bord Compagnie !');
+                // --- UNIQUEMENT Autres par Code ID ---
+                
+                // 1. Agent
+                if (Auth::guard('agent')->attempt(['code_id' => $identifiant, 'password' => $password])) {
+                    return redirect()->route('agent.dashboard')->with('success', 'Bienvenue sur votre tableau de bord Agent !');
                 }
-            }
 
-            // --- 2. Vérification côté Agent ---
-            // Les agents peuvent se connecter via code_id ou email
-            $agentCredentials = $isEmail ? ['email' => $identifiant, 'password' => $password] : ['code_id' => $identifiant, 'password' => $password];
-            if (Auth::guard('agent')->attempt($agentCredentials)) {
-                return redirect()->route('agent.dashboard')->with('success', 'Bienvenue sur votre tableau de bord Agent !');
-            }
+                // 2. Hôtesse
+                if (Auth::guard('hotesse')->attempt(['code_id' => $identifiant, 'password' => $password])) {
+                    return redirect()->route('hotesse.dashboard')->with('success', 'Bienvenue sur votre tableau de bord Hôtesse !');
+                }
 
-            // --- 3. Vérification côté Hôtesse ---
-            // Les hôtesses peuvent se connecter via code_id ou email
-            $hotesseCredentials = $isEmail ? ['email' => $identifiant, 'password' => $password] : ['code_id' => $identifiant, 'password' => $password];
-            if (Auth::guard('hotesse')->attempt($hotesseCredentials)) {
-                return redirect()->route('hotesse.dashboard')->with('success', 'Bienvenue sur votre tableau de bord Hôtesse !');
-            }
+                // 3. Chauffeur (Personnel)
+                if (Auth::guard('chauffeur')->attempt(['code_id' => $identifiant, 'password' => $password])) {
+                    return redirect()->route('chauffeur.dashboard')->with('success', 'Bienvenue sur votre tableau de bord Chauffeur !');
+                }
 
-            // --- 4. Vérification côté Chauffeur ---
-            // Les chauffeurs (Personnel) peuvent se connecter via code_id ou email
-            $chauffeurCredentials = $isEmail ? ['email' => $identifiant, 'password' => $password] : ['code_id' => $identifiant, 'password' => $password];
-            if (Auth::guard('chauffeur')->attempt($chauffeurCredentials)) {
-                return redirect()->route('chauffeur.dashboard')->with('success', 'Bienvenue sur votre tableau de bord Chauffeur !');
-            }
-
-            // --- 5. Vérification côté Gare ---
-            // Les gares se connectent avec email ou code_id
-            $gareCredentials = $isEmail ? ['email' => $identifiant, 'password' => $password] : ['code_id' => $identifiant, 'password' => $password];
-            if (Auth::guard('gare')->attempt($gareCredentials)) {
-                return redirect()->route('gare-espace.dashboard')->with('success', 'Bienvenue sur votre espace Gare !');
+                // 4. Gare
+                if (Auth::guard('gare')->attempt(['code_id' => $identifiant, 'password' => $password])) {
+                    return redirect()->route('gare-espace.dashboard')->with('success', 'Bienvenue sur votre espace Gare !');
+                }
             }
 
             // Si aucune correspondance n'est trouvée

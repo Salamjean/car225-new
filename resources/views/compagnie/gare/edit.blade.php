@@ -5,7 +5,7 @@
 
 @section('styles')
 <style>
-    .form-container { max-width: 900px; margin: 0 auto; }
+    .form-container { width: 75%; margin: 0 auto; }
     .form-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow-sm); margin-bottom: 24px; padding: 24px; }
     
     .input-group-modern { position: relative; margin-bottom: 20px; }

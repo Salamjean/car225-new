@@ -5,9 +5,10 @@
         <!-- Style personnalisé pour cette vue uniquement -->
         <style>
             :root {
-                --primary-brand: #f97316;
-                --primary-gradient: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-                --secondary-brand: #0f172a;
+                --primary-brand: #ff5a1f;
+                --primary-gradient: linear-gradient(135deg, #001a41 0%, #003380 100%);
+                --secondary-brand: #001a41;
+                --orange-brand: #ff5a1f;
                 --bg-soft: #f8fafc;
                 --success-accent: #22c55e;
                 --danger-accent: #ef4444;
@@ -279,9 +280,9 @@
             }
 
             .table-premium thead th {
-                background: #f8fafc;
-                border-bottom: 2px solid #f1f5f9;
-                color: #64748b;
+                background: var(--secondary-brand);
+                border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+                color: white;
                 font-weight: 700;
                 text-transform: uppercase;
                 font-size: 0.75rem;
@@ -331,7 +332,7 @@
             }
 
             .seat-badge {
-                background: var(--primary-gradient);
+                background: linear-gradient(135deg, var(--orange-brand) 0%, #e64e16 100%);
                 color: white;
                 font-weight: 800;
                 padding: 6px 12px;
@@ -369,14 +370,14 @@
             }
 
             .btn-action-primary {
-                background: var(--primary-gradient);
+                background: linear-gradient(135deg, var(--orange-brand) 0%, #e64e16 100%);
                 color: white !important;
                 border: none;
-                box-shadow: 0 4px 6px rgba(249, 115, 22, 0.2);
+                box-shadow: 0 4px 6px rgba(255, 90, 31, 0.2);
             }
 
             .btn-action-primary:hover {
-                box-shadow: 0 8px 15px rgba(249, 115, 22, 0.3);
+                box-shadow: 0 8px 15px rgba(255, 90, 31, 0.3);
             }
         </style>
 
