@@ -1,8 +1,8 @@
 @extends('user.layouts.template')
 
 @section('content')
-    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-red-50 py-8 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-3xl mx-auto">
+    <div class="py-8 px-4 sm:px-6 lg:px-8" >
+        <div class="mx-auto" style="width:75%">
             
             <!-- Header Section -->
             <div class="text-center mb-10">

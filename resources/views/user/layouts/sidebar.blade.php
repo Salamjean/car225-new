@@ -20,10 +20,6 @@
                         <i class="fas fa-th-large text-sm {{ request()->routeIs('user.dashboard') ? 'text-[#e94f1b]' : 'group-hover:text-[#1A1D1F]' }}"></i>
                         <span class="text-sm font-bold tracking-tight">Tableau de bord</span>
                     </a>
-                    <a href="{{ route('user.wallet.index') }}" class="flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all group {{ request()->routeIs('user.wallet.*') ? 'bg-[#e94f1b]/5 text-[#e94f1b]' : 'text-[#1A1D1F]/80 hover:bg-gray-50 hover:text-[#1A1D1F]' }}">
-                        <i class="fas fa-wallet text-sm {{ request()->routeIs('user.wallet.*') ? 'text-[#e94f1b]' : 'group-hover:text-[#1A1D1F]' }}"></i>
-                        <span class="text-sm font-bold tracking-tight">Portefeuille</span>
-                    </a>
                     <a href="{{ route('reservation.create') }}" class="flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all group {{ request()->routeIs('reservation.create') ? 'bg-[#e94f1b]/5 text-[#e94f1b]' : 'text-[#1A1D1F]/80 hover:bg-gray-50 hover:text-[#1A1D1F]' }}">
                         <i class="fas fa-plus-circle text-sm {{ request()->routeIs('reservation.create') ? 'text-[#e94f1b]' : 'group-hover:text-[#1A1D1F]' }}"></i>
                         <span class="text-sm font-bold tracking-tight">Réserver un voyage</span>
@@ -31,6 +27,10 @@
                     <a href="{{ route('reservation.index') }}" class="flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all group {{ request()->routeIs('reservation.index') ? 'bg-[#e94f1b]/5 text-[#e94f1b]' : 'text-[#1A1D1F]/80 hover:bg-gray-50 hover:text-[#1A1D1F]' }}">
                         <i class="fas fa-ticket-alt text-sm {{ request()->routeIs('reservation.index') ? 'text-[#e94f1b]' : 'group-hover:text-[#1A1D1F]' }}"></i>
                         <span class="text-sm font-bold tracking-tight">Mes Billets</span>
+                    </a>
+                    <a href="{{ route('user.wallet.index') }}" class="flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all group {{ request()->routeIs('user.wallet.*') ? 'bg-[#e94f1b]/5 text-[#e94f1b]' : 'text-[#1A1D1F]/80 hover:bg-gray-50 hover:text-[#1A1D1F]' }}">
+                        <i class="fas fa-wallet text-sm {{ request()->routeIs('user.wallet.*') ? 'text-[#e94f1b]' : 'group-hover:text-[#1A1D1F]' }}"></i>
+                        <span class="text-sm font-bold tracking-tight">Portefeuille</span>
                     </a>
                 </nav>
             </div>

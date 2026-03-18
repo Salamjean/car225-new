@@ -617,27 +617,34 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            const loginForm = document.querySelector('form');
             const loginInput = document.getElementById('login');
             
-            if (loginInput) {
-                // Bloquer la touche @
-                loginInput.addEventListener('keypress', function(e) {
-                    if (e.key === '@') {
+            if (loginForm && loginInput) {
+                // Validation à la soumission
+                loginForm.addEventListener('submit', function(e) {
+                    const loginValue = loginInput.value.trim();
+                    const phoneRegex = /^[0-9]{10}$/;
+                    const codeIdRegex = /^[A-Z]{3}-[A-Z0-9]+$/i;
+
+                    // Si contient @ ou ne correspond ni au format téléphone ni au Code ID
+                    if (loginValue.includes('@') || (!phoneRegex.test(loginValue) && !codeIdRegex.test(loginValue))) {
                         e.preventDefault();
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Format invalide',
+                            text: 'Format invalide : Utilisez votre numéro de téléphone ou votre identifiant reçu par SMS .',
+                            confirmButtonColor: '#e94f1b'
+                        });
                         return false;
                     }
                 });
 
-                // Bloquer le collage d'email
-                loginInput.addEventListener('input', function(e) {
-                    if (this.value.includes('@')) {
-                        this.value = this.value.replace(/@/g, '');
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Format invalide',
-                            text: 'La connexion par email n\'est pas autorisée ici. Utilisez votre numéro de téléphone ou votre Code ID.',
-                            confirmButtonColor: '#e94f1b'
-                        });
+                // Bloquer la touche @ pour aider l'utilisateur
+                loginInput.addEventListener('keypress', function(e) {
+                    if (e.key === '@') {
+                        e.preventDefault();
+                        return false;
                     }
                 });
             }

@@ -482,6 +482,7 @@ Route::middleware('auth')->prefix('user')->group(function () {
     Route::get('/profile', [ProfileController::class, 'index'])->name('user.profile');
     Route::post('/profile/request-update', [ProfileController::class, 'requestUpdate'])->name('user.profile.request_update');
     Route::post('/profile/update', [ProfileController::class, 'update'])->name('user.profile.update');
+    Route::post('/profile/update-emergency', [ProfileController::class, 'updateEmergencyContact'])->name('user.profile.update-emergency');
     Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('user.profile.password');
     Route::post('/profile/photo', [ProfileController::class, 'updatePhoto'])->name('user.profile.photo');
 
@@ -489,6 +490,7 @@ Route::middleware('auth')->prefix('user')->group(function () {
     //Les routes pour faire une reservation 
     Route::prefix('booking')->group(function () {
         Route::get('/allReserve', [ReservationController::class, 'index'])->name('reservation.index');
+        Route::get('/group/{transaction_id}', [ReservationController::class, 'showGroup'])->name('user.reservation.group');
         Route::get('/reservation', [ReservationController::class, 'create'])->name('reservation.create');
         Route::get('/vehicle/{id}', [ReservationController::class, 'showVehicle'])->name('user.reservation.vehicle');
         Route::get('/program/{id}', [ReservationController::class, 'getProgram'])->name('user.reservation.program');

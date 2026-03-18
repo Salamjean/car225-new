@@ -58,8 +58,8 @@ class AuthController extends Controller
 
         // Vérifier si le numéro de téléphone est vérifié
         if (!$user->phone_verified_at && $user->contact) {
-            // Envoyer un nouveau code OTP
-            $result = $this->smsService->sendOtp($user->contact, $user->prenom, $user->name);
+            // Envoyer un nouveau code OTP avec l'identifiant (code_id)
+            $result = $this->smsService->sendOtp($user->contact, $user->prenom, $user->name, $user->code_id);
 
             // Envoi de la notification push OTP
             $fcmToken = $request->fcm_token ?? $user->fcm_token;
@@ -239,8 +239,8 @@ class AuthController extends Controller
             // Créer l'utilisateur (phone_verified_at reste null)
             $user = User::create($userData);
 
-            // Envoyer le code OTP par SMS
-            $result = $this->smsService->sendOtp($validated['contact'], $validated['prenom'], $validated['name']);
+            // Envoyer le code OTP par SMS avec l'identifiant (code_id)
+            $result = $this->smsService->sendOtp($validated['contact'], $validated['prenom'], $validated['name'], $user->code_id);
 
             // Mettre à jour le fcm_token si fourni (déjà fait à la création, mais on garde fcmToken sous la main)
             $fcmToken = $request->input('fcm_token');
@@ -394,7 +394,8 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $result = $this->smsService->sendOtp($request->contact, $user->prenom, $user->name);
+        // Renvoyer le code OTP avec l'identifiant (code_id)
+        $result = $this->smsService->sendOtp($request->contact, $user->prenom, $user->name, $user->code_id);
 
         $fcmToken = $request->fcm_token ?? $user->fcm_token;
         if ($fcmToken && isset($result['code'])) {

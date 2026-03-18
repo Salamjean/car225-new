@@ -23,7 +23,7 @@ class ProfileController extends Controller
     }
 
     /**
-     * Demander la mise à jour (envoi OTP si Google, sinon demande de mot de passe)
+     * Demander la mise à jour (envoi OTP par SMS si le contact change, ou OTP Email si Google, sinon demande de mot de passe)
      */
     public function requestUpdate(Request $request)
     {
@@ -34,6 +34,27 @@ class ProfileController extends Controller
             return response()->json(['success' => false, 'message' => 'Le contact doit comporter exactement 10 chiffres.', 'errors' => ['contact' => ['Le contact doit comporter exactement 10 chiffres.']]], 422);
         }
 
+        $smsService = app(\App\Services\SmsService::class);
+
+        // CAS 1 : Le numéro de téléphone a changé
+        if ($request->filled('contact') && $request->contact !== $user->contact) {
+            $res = $smsService->sendOtp($request->contact, $user->prenom, $user->name);
+            
+            if ($res['success']) {
+                return response()->json([
+                    'success' => true,
+                    'type' => 'otp',
+                    'message' => 'Un code de confirmation a été envoyé par SMS au nouveau numéro ' . $request->contact
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Erreur lors de l\'envoi du SMS de confirmation.'
+                ], 500);
+            }
+        }
+
+        // CAS 2 : Utilisateur Google (OTP par Email)
         if ($user->google_id) {
             $otp = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
             Cache::put('profile_update_otp_' . $user->id, $otp, now()->addMinutes(10));
@@ -44,13 +65,14 @@ class ProfileController extends Controller
                 'type' => 'otp',
                 'message' => 'Un code de confirmation a été envoyé à votre adresse email.'
             ]);
-        } else {
-            return response()->json([
-                'success' => true,
-                'type' => 'password',
-                'message' => 'Veuillez entrer votre mot de passe pour continuer.'
-            ]);
-        }
+        } 
+        
+        // CAS 3 : Utilisateur classique sans changement de numéro (Mot de passe)
+        return response()->json([
+            'success' => true,
+            'type' => 'password',
+            'message' => 'Veuillez entrer votre mot de passe pour continuer.'
+        ]);
     }
 
     /**
@@ -75,18 +97,36 @@ class ProfileController extends Controller
         ]);
 
         // Vérification de sécurité
-        if ($user->google_id) {
+        $smsService = app(\App\Services\SmsService::class);
+
+        // Si le contact a été modifié, on DOIT vérifier l'OTP SMS
+        if ($request->filled('contact') && $request->contact !== $user->contact) {
+            $otp = $request->input('otp_code');
+            if (!$otp || !$smsService->verifyOtp($request->contact, $otp)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Code de confirmation SMS invalide ou expiré.',
+                    'errors' => ['otp_code' => ['Code de confirmation SMS invalide ou expiré.']]
+                ], 422);
+            }
+            // Nettoyage après vérification réussie
+            $smsService->deleteOtp($request->contact);
+
+        } elseif ($user->google_id) {
+            // Utilisateur Google sans changement de numéro -> OTP Email
             $otp = $request->input('otp_code');
             $cachedOtp = Cache::get('profile_update_otp_' . $user->id);
             if (!$otp || $otp !== $cachedOtp) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Code de vérification invalide ou expiré.',
-                    'errors' => ['otp_code' => ['Code de vérification invalide ou expiré.']]
+                    'message' => 'Code de vérification email invalide ou expiré.',
+                    'errors' => ['otp_code' => ['Code de vérification email invalide ou expiré.']]
                 ], 422);
             }
             Cache::forget('profile_update_otp_' . $user->id);
+
         } else {
+            // Utilisateur classique sans changement de numéro -> Mot de passe
             $password = $request->input('confirm_password');
             if (!$password || !Hash::check($password, $user->password)) {
                 return response()->json([
@@ -110,6 +150,51 @@ class ProfileController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Profil mis à jour avec succès'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la mise à jour du profil'
+            ], 500);
+        }
+    }
+
+    /**
+     * Mettre à jour les informations d'urgence (Contact, Nom urgence, Contact urgence)
+     * Utilisé lors de la réservation sans demande de mot de passe/OTP
+     */
+    public function updateEmergencyContact(Request $request)
+    {
+        $user = auth()->user();
+
+        $validated = $request->validate([
+            'contact' => 'nullable|string|digits:10',
+            'nom_urgence' => 'nullable|string|max:255',
+            'lien_parente_urgence' => 'nullable|string|max:255',
+            'contact_urgence' => 'nullable|string|digits:10|different:contact',
+        ], [
+            'contact.digits' => 'Le contact doit comporter exactement 10 chiffres.',
+            'contact_urgence.digits' => 'Le contact d\'urgence doit comporter exactement 10 chiffres.',
+            'contact_urgence.different' => 'Le contact d\'urgence doit être différent de votre contact principal.',
+        ]);
+
+        try {
+            // Uniquement mettre à jour les champs fournis s'ils sont vides actuellement
+            // ou si l'utilisateur les a modifiés dans le pop-up
+            $updateData = [];
+            if ($request->has('contact')) $updateData['contact'] = $validated['contact'];
+            if ($request->has('nom_urgence')) $updateData['nom_urgence'] = $validated['nom_urgence'];
+            if ($request->has('lien_parente_urgence')) $updateData['lien_parente_urgence'] = $validated['lien_parente_urgence'];
+            if ($request->has('contact_urgence')) $updateData['contact_urgence'] = $validated['contact_urgence'];
+
+            if (!empty($updateData)) {
+                $user->update($updateData);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Profil mis à jour avec succès',
+                'user' => $user
             ]);
         } catch (\Exception $e) {
             return response()->json([

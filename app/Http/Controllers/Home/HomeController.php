@@ -23,7 +23,7 @@ class HomeController extends Controller
         
         // Trajets populaires - programmes actifs
         $today = Carbon::now()->format('Y-m-d');
-        $trajetsPopulaires = Programme::with(['compagnie', 'gareDepart', 'gareArrivee'])
+        $trajetsPopulaires = Programme::with(['compagnie', 'gareDepart', 'gareArrivee', 'itineraire'])
             ->where('statut', '=', 'actif', 'and')
             ->whereRaw('DATE(date_depart) <= ?', [$today])
             ->whereRaw('DATE(date_fin) >= ?', [$today])
@@ -146,7 +146,7 @@ class HomeController extends Controller
                         return [
                             'id' => $p->id,
                             'heure' => substr($p->heure_depart, 0, 5),
-                            'vehicule_id' => $p->getVehiculeForDate(date('Y-m-d'))->id ?? 0
+                            'vehicule_id' => 0 // Sera résolu plus bas via l'ID du programme
                         ];
                     });
             }
@@ -157,7 +157,8 @@ class HomeController extends Controller
             }
 
             if (!$vehicule && $currentProgramme) {
-                $vehicule = $currentProgramme->getVehiculeForDate($dateVoyage);
+               // Nous utilisons maintenant le chargement via les relations Eloquent dans le contrôleur
+            // pour éviter les problèmes d'objets stdClass non typés.
                 if (!$vehicule) {
                     $vehicule = Vehicule::where('compagnie_id', '=', $currentProgramme->compagnie_id, 'and')
                         ->where('is_active', '=', true, 'and')
@@ -195,6 +196,20 @@ class HomeController extends Controller
 
                 $reservedSeats = $query->pluck('seat_number')->toArray();
                 $reservedSeats = array_values(array_unique(array_map('intval', $reservedSeats)));
+            }
+
+            // Si nous avons un programme, nous devons utiliser sa capacité (getTotalSeats)
+            // au lieu de la capacité brute du véhicule.
+            if ($currentProgramme) {
+                // Si vehicule est un objet Eloquent, on le convertit en stdClass pour pouvoir modifier nombre_place
+                // ou on s'assure qu'il est modifiable.
+                if ($vehicule instanceof Model) {
+                    $vehiculeArray = $vehicule->toArray();
+                    $vehiculeArray['nombre_place'] = $currentProgramme->getTotalSeats($dateVoyage);
+                    $vehicule = (object)$vehiculeArray;
+                } else {
+                    $vehicule->nombre_place = $currentProgramme->getTotalSeats($dateVoyage);
+                }
             }
 
             return response()->json([

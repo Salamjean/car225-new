@@ -19,7 +19,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <link rel="shortcut icon" href="{{ asset('assetsPoster/assets/images/Car225_favicon.png') }}" />
-    @vite(['resources/js/app.js'])
+    {{-- @vite(['resources/js/app.js']) --}}
 
     <style>
         body {
@@ -53,23 +53,23 @@
     @include('user.layouts.sidebar')
 
     <!-- Main Content Area -->
-    <div class="md:pl-64 flex flex-col min-h-screen">
+    <div class="md:pl-64 flex flex-col min-h-screen" style="width: 100%;">
         <!-- Navbar -->
         @include('user.layouts.navbar')
 
         <!-- Page Content -->
-        <main class="flex-1 pt-24 pb-12">
-            <div class="container mx-auto px-4 sm:px-8">
+        <main class="flex-1 pt-24 pb-12" style="width: 100%;">
+            <div class="mx-auto px-4 sm:px-8" style="width: 95%;">
                 @yield('content')
             </div>
         </main>
 
         <!-- Footer (Simple) -->
-        <footer class="py-6 px-8 text-center sm:text-left border-t border-gray-100">
+        <!-- <footer class="py-6 px-8 text-center sm:text-left border-t border-gray-100">
             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                 &copy; {{ date('Y') }} CAR225. TOUS DROITS RÉSERVÉS.
             </p>
-        </footer>
+        </footer> -->
     </div>
 
     <!-- Scripts Core -->

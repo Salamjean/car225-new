@@ -37,25 +37,21 @@ class ReservationController extends Controller
     }
 
   
-   public function index(Request $request)
+    public function index(Request $request)
     {
         $user = Auth::user();
 
-        // Récupérer les réservations avec les relations nécessaires
-        $query = Reservation::with(['programme', 'programme.compagnie', 'programme.gareDepart', 'programme.gareArrivee', 'programme.voyages'])
-         ->whereHas('programme') // Exclure les réservations dont le programme a été supprimé
-         ->where('user_id', $user->id)
-         ->where('statut', '!=', 'en_attente')
-            ->orderBy('created_at', 'desc')
-            ->orderBy('payment_transaction_id', 'desc')
-            ->orderBy('seat_number', 'asc');
+        // 1. Construire la requête de base pour les filtres
+        $query = Reservation::where('user_id', $user->id)
+            ->where('statut', '!=', 'en_attente')
+            ->whereHas('programme');
 
-        // Filtres
+        // 2. Appliquer les filtres
         if ($request->filled('reference')) {
             $query->where(function($q) use ($request) {
                 $q->where('reference', 'like', '%' . $request->reference . '%')
                   ->orWhere('payment_transaction_id', 'like', '%' . $request->reference . '%')
-                  ->orWhere('passager_nom', 'like', '%' . $request->reference . '%') // Recherche par nom aussi
+                  ->orWhere('passager_nom', 'like', '%' . $request->reference . '%')
                   ->orWhere('passager_prenom', 'like', '%' . $request->reference . '%');
             });
         }
@@ -74,10 +70,43 @@ class ReservationController extends Controller
             });
         }
 
-        // Pagination
-        $reservations = $query->paginate(10)->withQueryString();
+        // 3. Grouper par transaction et paginer les groupes
+        // On récupère les IDs représentatifs et les agrégats
+        $paginatedGroups = $query->select(
+                'payment_transaction_id',
+                DB::raw('MIN(id) as representative_id'),
+                DB::raw('COUNT(*) as tickets_count'),
+                DB::raw('SUM(montant) as total_group_amount'),
+                DB::raw('MAX(created_at) as latest_created_at')
+            )
+            ->groupBy('payment_transaction_id')
+            ->orderBy('latest_created_at', 'desc')
+            ->paginate(10)
+            ->withQueryString();
 
-        // Statistiques
+        // 4. Récupérer les modèles complets pour les lignes représentatives
+        $representativeIds = $paginatedGroups->pluck('representative_id');
+        $fullReservations = Reservation::with(['programme', 'programme.compagnie', 'programme.gareDepart', 'programme.gareArrivee', 'programme.voyages'])
+            ->whereIn('id', $representativeIds)
+            ->get()
+            ->keyBy('id');
+
+        // 5. Fusionner les données agrégées dans les modèles
+        $reservationsCollection = $paginatedGroups->getCollection()->map(function($group) use ($fullReservations) {
+            if (isset($fullReservations[$group->representative_id])) {
+                $res = $fullReservations[$group->representative_id];
+                $res->tickets_count = $group->tickets_count;
+                $res->total_group_amount = $group->total_group_amount;
+                return $res;
+            }
+            return null;
+        })->filter();
+
+        // 6. Remplacer la collection dans le paginateur
+        $paginatedGroups->setCollection($reservationsCollection);
+        $reservations = $paginatedGroups;
+
+        // Statistiques (globales pour l'utilisateur)
         $stats = [
             'confirmed' => Reservation::where('user_id', $user->id)->where('statut', 'confirmee')->count(),
             'pending' => Reservation::where('user_id', $user->id)->where('statut', 'en_attente')->count(),
@@ -98,6 +127,24 @@ class ReservationController extends Controller
         $reservation->load(['programme', 'programme.compagnie', 'programme.voyages']);
 
         return view('user.reservation.show', compact('reservation'));
+    }
+
+    public function showGroup($transaction_id)
+    {
+        $user = Auth::user();
+
+        // Récupérer toutes les réservations liées à cette transaction id
+        $reservations = Reservation::with(['programme', 'programme.compagnie', 'programme.gareDepart', 'programme.gareArrivee', 'programme.voyages'])
+            ->where('user_id', $user->id)
+            ->where('payment_transaction_id', $transaction_id)
+            ->orderBy('id', 'asc')
+            ->get();
+
+        if ($reservations->isEmpty()) {
+            return redirect()->route('reservation.index')->with('error', 'Aucun billet trouvé pour cette transaction.');
+        }
+
+        return view('user.reservation.group', compact('reservations', 'transaction_id'));
     }
 
     public function download(Reservation $reservation)

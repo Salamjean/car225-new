@@ -1,8 +1,8 @@
 @extends('user.layouts.template')
 
 @section('content')
-<div class="min-h-screen bg-[#F8F9FA] py-8 px-4 sm:px-6 lg:px-8">
-    <div class="mx-auto max-w-[1200px]">
+<div class="py-8 px-4 sm:px-6 lg:px-8">
+    <div class="mx-auto" style="width:75%">
         
         <!-- Header -->
         <div class="mb-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

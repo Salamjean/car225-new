@@ -1,7 +1,7 @@
 @extends('home.layouts.template')
 @section('content')
     <div class="min-h-screen bg-gradient-to-br from-white to-gray-50 pt-28 sm:pt-32 pb-6 sm:pb-8 lg:pb-10">
-        <div class="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+        <div class="mx-auto px-3 sm:px-4 lg:px-6" style="width: 75%;">
             <!-- En-tête des résultats -->
             <div class="mb-6 sm:mb-8">
                 <div class="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
@@ -139,11 +139,18 @@
                         </div>
 
                         <div class="space-y-4">
-                            @foreach ($programmes_aller->groupBy('compagnie_id') as $compId => $group)
-                                @php $programme = $group->first(); @endphp
+                            @foreach ($programmes_aller->groupBy(function($p) { 
+                                return $p->compagnie_id . '-' . $p->point_depart . '-' . $p->point_arrive; 
+                            }) as $groupKey => $group)
+                                @php $firstProgramme = $group->first(); @endphp
                                 <div class="relative">
                                     <div class="absolute -left-2 top-4 bottom-4 w-1 bg-[#e94e1a] rounded-full z-10 hidden md:block"></div>
-                                    @include('home.programmes.partials.card', ['programme' => $programme, 'searchDate' => $searchParams['date_depart'], 'is_aller' => true])
+                                    @include('home.programmes.partials.card', [
+                                        'programme' => $firstProgramme, 
+                                        'programmes' => $group,
+                                        'searchDate' => $searchParams['date_depart'], 
+                                        'is_aller' => true
+                                    ])
                                 </div>
                             @endforeach
                         </div>
@@ -179,11 +186,18 @@
                         </div>
 
                         <div class="space-y-4">
-                            @foreach ($programmes_retour->groupBy('compagnie_id') as $compId => $group)
-                                @php $programme = $group->first(); @endphp
+                            @foreach ($programmes_retour->groupBy(function($p) { 
+                                return $p->compagnie_id . '-' . $p->point_depart . '-' . $p->point_arrive; 
+                            }) as $groupKey => $group)
+                                @php $firstProgramme = $group->first(); @endphp
                                 <div class="relative">
                                     <div class="absolute -left-2 top-4 bottom-4 w-1 bg-blue-500 rounded-full z-10 hidden md:block"></div>
-                                    @include('home.programmes.partials.card', ['programme' => $programme, 'searchDate' => $searchParams['date_retour'], 'is_retour' => true])
+                                    @include('home.programmes.partials.card', [
+                                        'programme' => $firstProgramme, 
+                                        'programmes' => $group,
+                                        'searchDate' => $searchParams['date_retour'], 
+                                        'is_retour' => true
+                                    ])
                                 </div>
                             @endforeach
                         </div>
@@ -259,7 +273,7 @@
 
                 // Génération HTML pour les horaires
                 let hoursHTML = `
-                    <div class="flex flex-wrap gap-2 mt-4 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                    <div class="flex flex-wrap w-full gap-2 mt-4 p-3 bg-gray-50 rounded-xl border border-gray-100">
                         <p class="w-full text-[10px] font-black uppercase text-gray-400 mb-1 tracking-widest"><i class="fas fa-clock mr-1"></i> Autres Horaires Disponibles</p>
                 `;
                 
@@ -355,6 +369,50 @@
                 showConfirmButton: false,
                 showCloseButton: true,
                 didOpen: async () => { await window.updateModalContent(safeVehicleId, dateVoyage, safeProgramId); }
+            });
+        }
+
+        /**
+         * Affiche le premier pop-up pour choisir l'heure
+         */
+        window.chooseProgramHour = function(programsJson, searchDate) {
+            const programs = JSON.parse(programsJson);
+            
+            if (programs.length === 1) {
+                // Si un seul programme, on passe directement aux détails du véhicule
+                const p = programs[0];
+                showVehicleDetails(p.vehicule_id, searchDate, p.id);
+                return;
+            }
+
+            let buttonsHtml = '<div class="grid grid-cols-2 gap-3 p-4">';
+            programs.forEach(p => {
+                buttonsHtml += `
+                    <button onclick="Swal.close(); showVehicleDetails(${p.vehicule_id || 0}, '${searchDate}', ${p.id})" 
+                        class="flex flex-col items-center justify-center p-4 bg-white border-2 border-orange-100 rounded-2xl hover:border-[#e94e1a] hover:bg-orange-50 transition-all group">
+                        <span class="text-2xl font-black text-gray-900 group-hover:text-[#e94e1a]">${p.heure.substring(0, 5)}</span>
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Départ</span>
+                    </button>
+                `;
+            });
+            buttonsHtml += '</div>';
+
+            Swal.fire({
+                title: `
+                    <div class="text-xl font-black text-gray-900 pt-4">
+                        <i class="fas fa-clock text-[#e94e1a] mr-2"></i>CHOISIR L'HEURE
+                    </div>
+                `,
+                html: `
+                    <p class="text-sm text-gray-500 mb-2">Plusieurs départs sont disponibles pour ce trajet.</p>
+                    ${buttonsHtml}
+                `,
+                showConfirmButton: false,
+                showCloseButton: true,
+                customClass: {
+                    popup: 'rounded-3xl border-none shadow-2xl',
+                    closeButton: 'focus:outline-none'
+                }
             });
         }
 

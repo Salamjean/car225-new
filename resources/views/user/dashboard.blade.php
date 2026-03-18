@@ -95,7 +95,7 @@
                                 <div class="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center text-green-600">
                                     <i class="fas fa-bus-alt text-sm"></i>
                                 </div>
-                                <span class="text-xs font-bold uppercase tracking-wider text-gray-400">Voyages Actifs</span>
+                                <span class="text-xs font-bold uppercase tracking-wider text-gray-400">Réservations Actives</span>
                             </div>
                             <div class="flex items-baseline gap-2">
                                 <h3 class="text-3xl font-black text-gray-900">{{ $activeReservations }}</h3>
