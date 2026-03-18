@@ -31,13 +31,13 @@ class ReservationController extends Controller
                             ->where('date_fin', '>=', $today);
                       });
             })
-            ->where('heure_depart', '>', $currentTime) // Disparaît dès que l'heure de départ est atteinte
+            // Retiré le filtre d'heure pour permettre les scans toute la journée
             ->whereDoesntHave('voyages', function ($q) use ($today) {
                 $q->whereDate('date_voyage', $today)
-                  ->whereIn('statut', ['en_cours', 'terminé']);
+                  ->whereIn('statut', ['terminé']);
             })
             ->with(['gareDepart', 'gareArrivee', 'voyages' => function($q) use ($today) {
-                $q->whereDate('date_voyage', $today)->with('vehicule');
+                $q->whereDate('date_voyage', $today)->with(['vehicule', 'chauffeur']);
             }])
             ->orderBy('heure_depart')
             ->get();

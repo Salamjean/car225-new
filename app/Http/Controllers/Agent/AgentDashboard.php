@@ -28,10 +28,16 @@ class AgentDashboard extends Controller
         $totalScans = Reservation::where('embarquement_agent_id', $agent->id)->count();
 
 
-        // Programmes du jour de la GARE
+        // Programmes du jour de la GARE (Logique robuste incluant les plages de dates)
         $programmesQuery = Programme::where('compagnie_id', $compagnieId)
             ->where('gare_depart_id', $agent->gare_id)
-            ->whereDate('date_depart', $today);
+            ->where(function ($query) use ($today) {
+                $query->whereDate('date_depart', $today)
+                      ->orWhere(function ($q) use ($today) {
+                          $q->where('date_depart', '<=', $today)
+                            ->where('date_fin', '>=', $today);
+                      });
+            });
 
         $programmesToday = $programmesQuery->count();
 
