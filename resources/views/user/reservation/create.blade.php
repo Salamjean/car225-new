@@ -4304,41 +4304,68 @@ function proceedToPassengerInfoFromRetour() {
             const extraCostRetour = window.seatSelectionExtraCostRetour || 0;
             const totalExtraCost = extraCostAller + extraCostRetour;
             const montantTotal = baseTotal + totalExtraCost;
+            const commission = Math.round(montantTotal * 0.04);
+            const totalWithCommission = montantTotal + commission;
             
             const userSolde = {{ auth()->check() ? (auth()->user()->solde ?? 0) : 0 }};
             let paymentMethod = 'cinetpay';
-
-            let extraCostHtml = '';
-            if(totalExtraCost > 0) {
-                extraCostHtml = `<p class="text-sm text-gray-500 mb-2">Inclut <span class="font-semibold text-orange-500">${new Intl.NumberFormat('fr-FR').format(totalExtraCost)} FCFA</span> de frais de choix de sièges.</p>`;
-            }
 
             const choiceResult = await Swal.fire({
                 title: 'Mode de paiement',
                 html: `
                     <div class="flex flex-col gap-4 text-center">
-                        <div class="bg-gray-50 p-3 rounded-lg">
-                            <p class="text-gray-600 text-sm mb-1">Total à payer</p>
-                            ${extraCostHtml}
-                            <p class="text-3xl font-black text-[#e94f1b]">${new Intl.NumberFormat('fr-FR').format(montantTotal)} FCFA</p>
+                        <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                            <p class="text-gray-500 text-[10px] uppercase tracking-wider font-extrabold mb-3">Résumé de la commande</p>
+                            
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-gray-600 text-xs">Total Réservation</span>
+                                <span class="font-bold text-gray-800">${new Intl.NumberFormat('fr-FR').format(montantTotal)} FCFA</span>
+                            </div>
+                            
+                            <div class="border-t border-dashed border-gray-200 my-2"></div>
+                            
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-800 font-bold text-sm">Prix (Mon Compte)</span>
+                                <span class="text-xl font-black text-[#e94f1b]">${new Intl.NumberFormat('fr-FR').format(montantTotal)} FCFA</span>
+                            </div>
+                            <div class="text-[10px] text-gray-500 text-right mt-1">Votre solde: <span class="font-bold text-gray-700">${new Intl.NumberFormat('fr-FR').format(userSolde)} FCFA</span></div>
                         </div>
-                        <div class="text-sm text-gray-500">Votre solde: <span class="font-bold">${new Intl.NumberFormat('fr-FR').format(userSolde)} FCFA</span></div>
+
+                        <div class="bg-blue-50 p-3 rounded-xl border border-blue-100 text-left relative overflow-hidden">
+                            <div class="absolute top-0 right-0 bg-blue-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-bl-lg">Frais +4%</div>
+                            <p class="text-blue-800 text-xs font-bold mb-1 flex items-center gap-1">
+                                <i class="fas fa-mobile-alt"></i> Mobile Money (Wave)
+                            </p>
+                            <p class="text-blue-600 text-[10px] leading-tight mb-2">
+                                Un supplément de 4% est appliqué pour les frais de service admin.
+                            </p>
+                            <div class="flex justify-between items-center pt-1 border-t border-blue-200/50">
+                                <span class="text-gray-700 text-xs font-bold">Total à payer :</span>
+                                <span class="text-lg font-black text-blue-700">${new Intl.NumberFormat('fr-FR').format(totalWithCommission)} FCFA</span>
+                            </div>
+                        </div>
                     </div>
                 `,
                 icon: 'info',
                 showCancelButton: true,
                 showDenyButton: true,
-                confirmButtonText: `<i class="fas fa-wallet mr-2"></i>Mon Compte Solde`,
-                denyButtonText: `<i class="fas fa-mobile-alt mr-2"></i>Mobile Money (Wave)`,
+                confirmButtonText: `<i class="fas fa-wallet mr-2"></i>Payer par Mon Solde`,
+                denyButtonText: `<i class="fas fa-mobile-alt mr-2"></i>Payer par Wave (+4%)`,
                 confirmButtonColor: '#e94f1b',
-                denyButtonColor: '#2dce89',
+                denyButtonColor: '#3b82f6',
                 cancelButtonText: 'Annuler',
+                customClass: {
+                    confirmButton: 'mb-2 w-full sm:w-auto',
+                    denyButton: 'mb-2 w-full sm:w-auto',
+                    cancelButton: 'w-full sm:w-auto'
+                },
                 didOpen: () => {
                     if (userSolde < montantTotal) {
                         const confirmBtn = Swal.getConfirmButton();
                         confirmBtn.disabled = true;
                         confirmBtn.style.opacity = 0.5;
-                        confirmBtn.innerHTML += '<br><span class="text-xs font-normal">(Solde insuffisant)</span>';
+                        confirmBtn.classList.add('cursor-not-allowed');
+                        confirmBtn.title = 'Solde insuffisant';
                     }
                 }
             });

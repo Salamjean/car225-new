@@ -38,19 +38,21 @@ class GarePersonnelController extends Controller
     {
         $validatedData = $request->validate([
             'name' => 'required|string|min:3|max:255',
-            'prenom' => 'required|string|min:3|max:255',
+            'prenom' => 'required|string|min:2|max:255',
             'type_personnel' => 'required|string|in:Chauffeur,Convoyeur',
             'email' => 'required|email|unique:personnels,email',
-            'contact' => 'required|string|max:10',
+            'contact' => 'required|string|max:15',
             'country_code' => 'required|string|max:10',
-            'contact_urgence' => 'required|string|max:10',
+            'contact_urgence' => 'required|string|max:15',
             'nom_urgence' => 'required|string|max:255',
             'lien_parente_urgence' => 'required|string|max:100',
             'country_code_urgence' => 'required|string|max:10',
-            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
         ]);
 
         try {
+            \Illuminate\Support\Facades\DB::beginTransaction();
+
             $profileImagePath = null;
             if ($request->hasFile('profile_image')) {
                 $image = $request->file('profile_image');
@@ -84,8 +86,12 @@ class GarePersonnelController extends Controller
                 Mail::to($personnel->email)->send(new ChauffeurOtpMail($otp->otp, $personnel->name . ' ' . $personnel->prenom, $personnel->email, $personnel->code_id));
             }
 
+            \Illuminate\Support\Facades\DB::commit();
+
             return redirect()->route('gare-espace.personnel.index')->with('success', 'Personnel créé avec succès!');
         } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            Log::error('Erreur creation personnel: ' . $e->getMessage());
             return back()->withInput()->with('error', 'Erreur creation: ' . $e->getMessage());
         }
     }

@@ -111,6 +111,29 @@
 
                         <div class="col-12">
                             <div class="input-group-modern mb-0">
+                                <label class="form-label text-orange font-bold mb-2 block">LOCALISATION GPS (FACULTATIF MAIS RECOMMANDÉ POUR LE SUIVI)</label>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="input-group-modern">
+                                            <i class="fas fa-map-pin input-icon"></i>
+                                            <input type="number" step="0.00000001" name="latitude" value="{{ old('latitude') }}" class="input-modern" placeholder="Latitude (ex: 5.3484)">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="input-group-modern">
+                                            <i class="fas fa-map-pin input-icon"></i>
+                                            <input type="number" step="0.00000001" name="longitude" value="{{ old('longitude') }}" class="input-modern" placeholder="Longitude (ex: -4.0305)">
+                                        </div>
+                                    </div>
+                                </div>
+                                <p style="font-size: 10px; color: var(--text-3); margin-top: -10px; font-style: italic;">
+                                    <i class="fas fa-info-circle"></i> Ces coordonnées permettent de calculer l'arrivée estimée en temps réel pour vos chauffeurs.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="col-12 mt-3">
+                            <div class="input-group-modern mb-0">
                                 <label class="form-label">Adresse Complète / Point de Repère <span class="text-danger">*</span></label>
                                 <i class="fas fa-map-marker-alt input-icon"></i>
                                 <input type="text" name="adresse" value="{{ old('adresse') }}" required class="input-modern" placeholder="Ex: Boulevard Lagunaire, face au grand marché">

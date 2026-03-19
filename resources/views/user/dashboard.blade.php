@@ -67,10 +67,9 @@
                                         }
                                     @endphp
                                     
-                                    <div class="text-xl md:text-2xl font-black tracking-tight mb-2 min-h-[1.5em] flex items-center justify-center" 
-                                         id="user-timer-{{ $currentTrip->id }}" 
-                                         data-arrival="{{ $arrivalDateTime->toIso8601String() }}">
-                                        Calcul en cours...
+                                    <div class="text-xl md:text-2xl font-black tracking-tight mb-2 min-h-[1.5em] flex items-center justify-center font-outfit" 
+                                         id="user-timer-{{ $currentTrip->id }}">
+                                        {{ $currentTrip->mission?->temps_restant ?: "Calcul en cours..." }}
                                     </div>
                                     <div class="w-full h-1.5 bg-white/20 rounded-full mt-4 overflow-hidden">
                                         <div class="h-full bg-white rounded-full animate-pulse shadow-[0_0_10px_rgba(255,255,255,0.5)]" style="width: 65%"></div>
@@ -451,43 +450,9 @@
                     }
                 }
             });
-            // Countdown Timer Logic
-            function updateTimers() {
-                const timers = document.querySelectorAll('[data-arrival]');
-                
-                timers.forEach(timer => {
-                    const arrivalTime = new Date(timer.dataset.arrival).getTime();
-                    const now = new Date().getTime();
-                    const distance = arrivalTime - now;
-                    
-                    if (distance < 0) {
-                        timer.innerHTML = "🏁 Destination atteinte";
-                        if (document.getElementById('tracking-time')) {
-                            document.getElementById('tracking-time').innerHTML = `<i class="fas fa-flag-checkered"></i> Arrivé`;
-                        }
-                        return;
-                    }
-                    
-                    const hours = Math.floor(distance / (1000 * 60 * 60));
-                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                    
-                    let timeString = "";
-                    if (hours > 0) {
-                        timeString = `Arrivée dans <strong> ${hours}h ${minutes}min</strong>`;
-                    } else if (minutes > 0) {
-                        timeString = `Arrivée dans <strong> ${minutes}min</strong>`;
-                    } else {
-                        timeString = `Arrivée <strong>imminente</strong>`;
-                    }
-
-                    timer.innerHTML = timeString;
-                    
-                    const trackingTimeEl = document.getElementById('tracking-time');
-                    if (trackingTimeEl) {
-                        trackingTimeEl.innerHTML = `<i class="fas fa-clock"></i> ${timeString}`;
-                    }
-                });
-            }
+            // Le calcul du temps est désormais exclusivement géré par le serveur via la distance GPS.
+            // Nous ne faisons plus de compte à rebours local.
+            function updateTimers() { return; }
 
             if (document.querySelectorAll('[data-arrival]').length > 0) {
                 updateTimers();
@@ -588,13 +553,13 @@
                             isFirstLoad = false;
                         }
 
-                        // NEW: Update timer arrival data
-                        if (loc.estimated_arrival) {
+                        // Update display with server-side distance-based ETA
+                        if (loc.temps_restant) {
                             const timer = document.getElementById('user-timer-{{ $currentTrip->id ?? "" }}');
-                            if (timer) {
-                                timer.setAttribute('data-arrival', loc.estimated_arrival);
-                                updateTimers();
-                            }
+                            const trackingTimeEl = document.getElementById('tracking-time');
+                            
+                            if (timer) timer.innerHTML = loc.temps_restant;
+                            if (trackingTimeEl) trackingTimeEl.innerHTML = `<i class="fas fa-clock"></i> Arrivée dans ${loc.temps_restant}`;
                         }
                     })
                     .catch(err => {

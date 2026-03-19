@@ -20,7 +20,7 @@ class VoyageController extends Controller
         $tab = $request->input('tab', 'active'); // 'active' (default), 'non_effectues', 'effectues'
         $date = $request->input('date', Carbon::today()->toDateString());
         
-        $query = Voyage::where('personnel_id', $chauffeur->id)
+        $query = Voyage::where('personnel_id', '=', $chauffeur->id)
             ->with(['programme.gareDepart', 'programme.gareArrivee', 'vehicule'])
             ->orderBy('date_voyage', 'desc')
             ->orderBy('created_at', 'desc');

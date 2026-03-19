@@ -265,13 +265,20 @@ class WalletController extends Controller
         $user = Auth::user();
         $amount = $request->amount;
         
+        // --- CALCUL COMMISSION (4% additionnel) ---
+        $commissionRate = 4.00;
+        $commissionAmount = round($amount * ($commissionRate / 100));
+        $totalToPay = $amount + $commissionAmount;
+
         // La référence Wave doit être unique. Format: W-RECH-[TIMESTAMP]-[RANDOM]
         $transactionId = 'W-RECH-' . time() . '-' . Str::random(4);
 
         // Créer la transaction locale en attente
         $transaction = WalletTransaction::create([
             'user_id' => $user->id,
-            'amount' => $amount,
+            'amount' => $amount, // Le montant que l'utilisateur recevra réellement
+            'commission_amount' => $commissionAmount,
+            'commission_rate' => $commissionRate,
             'type' => 'credit',
             'description' => 'Rechargement portefeuille via Wave',
             'reference' => $transactionId,
@@ -279,7 +286,8 @@ class WalletController extends Controller
             'payment_method' => 'wave',
             'metadata' => [
                 'initiated_at' => now()->toDateTimeString(),
-                'platform' => 'web'
+                'platform' => 'web',
+                'total_paid' => $totalToPay
             ]
         ]);
 
@@ -290,7 +298,7 @@ class WalletController extends Controller
         $errorUrl = secure_url(route('wallet.wave.cancel', ['transaction_id' => $transactionId], false));
 
         $waveSession = $this->waveService->createCheckoutSession(
-            $amount,
+            $totalToPay,
             'XOF',
             $successUrl,
             $errorUrl,
@@ -374,6 +382,15 @@ class WalletController extends Controller
                 $user = $transaction->user;
                 $user->solde += $transaction->amount;
                 $user->save();
+
+                // --- CRÉDITER LE PORTEFEUILLE ADMIN ---
+                if ($transaction->commission_amount > 0) {
+                    $admin = \App\Models\Admin::first(); // On prend le premier admin par défaut
+                    if ($admin) {
+                        $admin->increment('portefeuille', $transaction->commission_amount);
+                        Log::info("Commission de {$transaction->commission_amount} ajoutée au portefeuille admin via recharge wallet.");
+                    }
+                }
 
                 Log::info("Wave Wallet: Compte rechargé pour l'utilisateur {$user->id}. Montant: {$transaction->amount}");
             }

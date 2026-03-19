@@ -62,15 +62,16 @@ class Voyage extends Model
      */
     public function getOccupancyAttribute()
     {
-        return \App\Models\Reservation::where(function($q) {
+        $date = \Carbon\Carbon::parse($this->date_voyage)->format('Y-m-d');
+        return \App\Models\Reservation::where(function($q) use ($date) {
             $q->where('programme_id', $this->programme_id)
-              ->whereDate('date_voyage', $this->date_voyage)
+              ->whereDate('date_voyage', $date)
               ->where('statut_aller', 'terminee');
-        })->orWhere(function($q) {
+        })->orWhere(function($q) use ($date) {
             $q->whereHas('programme', function($sub) {
                 $sub->where('programme_retour_id', $this->programme_id);
             })
-            ->whereDate('date_retour', $this->date_voyage)
+            ->whereDate('date_retour', $date)
             ->where('statut_retour', 'terminee');
         })->count();
     }
@@ -94,7 +95,7 @@ class Voyage extends Model
     }
 
     /**
-     * Calcule le temps restant pour le voyage en cours
+     * Calcule le temps restant pour le voyage en cours basé sur le GPS ou le temps
      */
     public function getTempsRestantAttribute()
     {
@@ -106,27 +107,65 @@ class Voyage extends Model
             return null;
         }
 
-        // On utilise l'arrivée estimée si elle existe, sinon celle du programme
+        $latestLocation = $this->latestLocation;
+        $arrivalGare = $this->gareArrivee ?: $this->programme->gareArrivee;
+
+        // Si on a les coordonnées du chauffeur et de la destination
+        if ($latestLocation && $arrivalGare && $arrivalGare->latitude && $arrivalGare->longitude) {
+            $dist = $this->calculateDistance(
+                $latestLocation->latitude,
+                $latestLocation->longitude,
+                (float)$arrivalGare->latitude,
+                (float)$arrivalGare->longitude
+            );
+
+            // Seuil d'arrivée imminente (500 mètres)
+            if ($dist < 0.5) {
+                return "Arrivée imminente";
+            }
+
+            // Estimation basée sur la distance
+            // Vitesse moyenne estimée à 50 km/h pour le calcul (évite les fluctuations si le car s'arrête)
+            $speed = 50; 
+            
+            $totalMinutes = round(($dist / $speed) * 60);
+            
+            if ($totalMinutes < 1) return "Arrivée imminente";
+
+            $hours = floor($totalMinutes / 60);
+            $minutes = $totalMinutes % 60;
+
+            if ($hours > 0) {
+                return "{$hours}h {$minutes}min restants";
+            }
+            return "{$minutes}min restants";
+        }
+
+        // --- FALLBACK: Heure prévue (Static) ---
+        // On ne retourne plus "X min restants" car cela diminue à l'arrêt (Now approche Destination).
+        // On affiche l'heure prévue fixe, qui ne diminuera que si le chauffeur bouge réellement via GPS.
         $arrivalDateTime = $this->estimated_arrival_at ?: \Carbon\Carbon::parse($this->date_voyage->format('Y-m-d') . ' ' . $this->programme->heure_arrive);
-        
-        // Si l'arrivée programmée était le lendemain (ex: départ 23h, durée 4h)
-        if (!$this->estimated_arrival_at && \Carbon\Carbon::parse($this->programme->heure_arrive)->lt(\Carbon\Carbon::parse($this->programme->heure_depart))) {
-            $arrivalDateTime->addDay();
-        }
+        return "Prévu vers " . $arrivalDateTime->format('H:i');
+    }
 
-        $now = now();
+    /**
+     * Calcule la distance entre deux points GPS (Haversine formula)
+     * Retourne la distance en KM
+     */
+    private function calculateDistance($lat1, $lon1, $lat2, $lon2)
+    {
+        $earthRadius = 6371; // Rayon de la terre en km
 
-        if ($now->greaterThanOrEqualTo($arrivalDateTime)) {
-            return "Arrivée imminente";
-        }
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
 
-        $diff = $now->diff($arrivalDateTime);
-        
-        if ($diff->h > 0) {
-            return $diff->format('%h h %i min restants');
-        }
+        $a = sin($dLat / 2) * sin($dLat / 2) +
+             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+             sin($dLon / 2) * sin($dLon / 2);
 
-        return $diff->format('%i min restants');
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return $earthRadius * $c;
     }
 
     /**
@@ -136,12 +175,14 @@ class Voyage extends Model
     {
         $this->delay_seconds += $secondsDelay;
         
-        $baseArrival = \Carbon\Carbon::parse($this->date_voyage->format('Y-m-d') . ' ' . $this->programme->heure_arrive);
+        $date = \Carbon\Carbon::parse($this->date_voyage)->format('Y-m-d');
+        $baseArrival = \Carbon\Carbon::parse($date . ' ' . $this->programme->heure_arrive);
+        
         if (\Carbon\Carbon::parse($this->programme->heure_arrive)->lt(\Carbon\Carbon::parse($this->programme->heure_depart))) {
             $baseArrival->addDay();
         }
 
-        $this->estimated_arrival_at = $baseArrival->addSeconds($this->delay_seconds);
+        $this->estimated_arrival_at = $baseArrival->addSeconds((int)$this->delay_seconds);
         $this->save();
     }
 }

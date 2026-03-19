@@ -109,10 +109,9 @@
                                                 }
                                             @endphp
                                             <p class="text-sm font-bold text-blue-600 flex items-center gap-2 mt-2 bg-blue-50 px-3 py-2 rounded-lg border border-blue-100" 
-                                               id="timer-{{ $voyage->id }}" 
-                                               data-arrival="{{ $arrivalDateTime->toIso8601String() }}">
+                                               id="timer-{{ $voyage->id }}">
                                                 <i class="fas fa-clock fa-spin-slow text-blue-500"></i>
-                                                <span class="countdown-text">Calcul de l'arrivée...</span>
+                                                <span class="countdown-text">{{ $voyage->temps_restant ?: "Calcul de l'arrivée..." }}</span>
                                             </p>
  </p>
                                             <!-- GPS Status Indicator -->
@@ -438,8 +437,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Update every minute (more batteries friendly for drivers) but start immediately
-    updateTimers();
-    setInterval(updateTimers, 60000); // Mise à jour toutes les minutes selon demande
+    // Désactivation du countdown JS
+    // updateTimers();
+    // setInterval(updateTimers, 60000); 
 
     // ============================================
     // GPS Location Sharing for active voyages
@@ -527,11 +527,14 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 console.log('GPS position sent successfully for voyage', voyageId);
                 // Update arrival estimation from server response
-                if (data.estimated_arrival) {
+                // Update arrival estimation from server response (strictly distance-based)
+                if (data.temps_restant) {
                     const timer = document.getElementById('timer-' + voyageId);
                     if (timer) {
-                        timer.setAttribute('data-arrival', data.estimated_arrival);
-                        updateTimers(); // Refresh immediately
+                        const textElement = timer.querySelector('.countdown-text');
+                        if (textElement) {
+                            textElement.innerHTML = "Vous arrivez dans <strong>" + data.temps_restant + "</strong>";
+                        }
                     }
                 }
             }

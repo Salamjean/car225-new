@@ -80,6 +80,8 @@ class GareController extends Controller
                 'commune' => $validated['commune'] ?? null,
                 'profile_image' => $profileImagePath,
                 'compagnie_id' => Auth::guard('compagnie')->id(),
+                'latitude' => $validated['latitude'] ?? null,
+                'longitude' => $validated['longitude'] ?? null,
                 'password' => Hash::make(Str::random(12)), // Temporary random password
             ]);
 

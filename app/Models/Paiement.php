@@ -18,6 +18,8 @@ class Paiement extends Model
         'payment_token',
         'payment_method',
         'status',
+        'commission_amount',
+        'commission_rate',
         'payment_details',
         'payment_date',
     ];

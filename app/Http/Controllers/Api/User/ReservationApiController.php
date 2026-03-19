@@ -88,6 +88,7 @@ class ReservationApiController extends Controller
                 // Par défaut, le display_statut = statut DB
                 $reservation->display_statut = $reservation->statut;
                 $reservation->temps_restant = null;
+                $reservation->estimated_arrival_at = null;
 
                 if ($reservation->statut === 'terminee') {
                     $voyage = $reservation->mission;
@@ -95,15 +96,21 @@ class ReservationApiController extends Controller
                     if ($voyage) {
                         if ($voyage->statut === 'en_cours') {
                             $reservation->display_statut = 'en_voyage';
-                            // On ajoute le temps restant si disponible
                             $reservation->temps_restant = $voyage->temps_restant;
-                        } elseif ($voyage->statut === 'termine' || $voyage->statut === 'terminé') {
+                            $reservation->estimated_arrival_at = $voyage->estimated_arrival_at 
+                                ? $voyage->estimated_arrival_at->format('Y-m-d H:i:s') 
+                                : null;
+                                
+                            // Coordonnées pour le mobile
+                            $reservation->lat = $voyage->latitude;
+                            $reservation->lng = $voyage->longitude;
+                            $reservation->occupancy = $voyage->occupancy;
+                        } elseif (in_array($voyage->statut, ['termine', 'terminé'])) {
                             $reservation->display_statut = 'arrive';
                         } else {
                             $reservation->display_statut = 'enregistre';
                         }
                     } else {
-                         // Fallback si pas de voyage trouvé (rare)
                          $reservation->display_statut = 'enregistre';
                     }
                 }
@@ -161,7 +168,14 @@ class ReservationApiController extends Controller
                     if ($voyage->statut === 'en_cours') {
                         $reservation->display_statut = 'en_voyage';
                         $reservation->temps_restant = $voyage->temps_restant;
-                    } elseif ($voyage->statut === 'termine' || $voyage->statut === 'terminé') {
+                        $reservation->estimated_arrival_at = $voyage->estimated_arrival_at 
+                            ? $voyage->estimated_arrival_at->format('Y-m-d H:i:s') 
+                            : null;
+                        
+                        $reservation->lat = $voyage->latitude;
+                        $reservation->lng = $voyage->longitude;
+                        $reservation->occupancy = $voyage->occupancy;
+                    } elseif (in_array($voyage->statut, ['termine', 'terminé'])) {
                         $reservation->display_statut = 'arrive';
                     } else {
                         $reservation->display_statut = 'enregistre';
@@ -1779,6 +1793,16 @@ class ReservationApiController extends Controller
             if ($fraisChoixSiege > 0) {
                 $montantTotal += $fraisChoixSiege;
             }
+
+            // --- CALCUL COMMISSION (4% pour Mobile Money / Wave) ---
+            $commissionAmount = 0;
+            $commissionRate = 0;
+            
+            if ($paymentMethod !== 'wallet') {
+                $commissionRate = 4.00;
+                $commissionAmount = round($montantTotal * ($commissionRate / 100));
+                $montantTotal += $commissionAmount;
+            }
             
             $user = Auth::user();
             $passagers = $request->passagers;
@@ -1833,6 +1857,8 @@ class ReservationApiController extends Controller
                     'status' => 'success', // Wallet = paiement immédiat
                     'currency' => 'XOF',
                     'payment_method' => 'wallet',
+                    'commission_amount' => 0,
+                    'commission_rate' => 0,
                     'payment_date' => now(),
                 ]);
 
@@ -2027,6 +2053,8 @@ class ReservationApiController extends Controller
                     'status' => 'pending',
                     'currency' => 'XOF',
                     'payment_method' => 'cinetpay',
+                    'commission_amount' => $commissionAmount,
+                    'commission_rate' => $commissionRate,
                     'payment_date' => null,
                 ]);
 
@@ -2240,6 +2268,8 @@ class ReservationApiController extends Controller
                     'status' => 'pending',
                     'currency' => 'XOF',
                     'payment_method' => 'wave',
+                    'commission_amount' => $commissionAmount,
+                    'commission_rate' => $commissionRate,
                     'payment_date' => null,
                 ]);
 

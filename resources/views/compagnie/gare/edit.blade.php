@@ -59,11 +59,25 @@
                         @error('ville') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
                     </div>
                 </div>
+                <div class="col-md-12">
+                     <div class="input-group-modern">
+                         <label class="form-label">Adresse / Situation Géographique <span class="text-danger">*</span></label>
+                         <input type="text" name="adresse" value="{{ old('adresse', $gare->adresse) }}" required class="input-modern">
+                         @error('adresse') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
+                     </div>
+                </div>
                 <div class="col-md-6">
                     <div class="input-group-modern">
-                        <label class="form-label">Adresse / Situation Géographique <span class="text-danger">*</span></label>
-                        <input type="text" name="adresse" value="{{ old('adresse', $gare->adresse) }}" required class="input-modern">
-                        @error('adresse') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
+                        <label class="form-label">Latitude GPS</label>
+                        <input type="number" step="0.00000001" name="latitude" value="{{ old('latitude', $gare->latitude) }}" class="input-modern" placeholder="ex: 5.3484">
+                        @error('latitude') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="input-group-modern">
+                        <label class="form-label">Longitude GPS</label>
+                        <input type="number" step="0.00000001" name="longitude" value="{{ old('longitude', $gare->longitude) }}" class="input-modern" placeholder="ex: -4.0305">
+                        @error('longitude') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
                     </div>
                 </div>
                 <div class="col-md-6">

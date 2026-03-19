@@ -101,17 +101,24 @@
             <div class="flex gap-2">
                 @if ($statusKey != 'complet' && !$isToday)
                     @if($hasMultipleHours)
-                        <button onclick="chooseProgramHour('{{ addslashes($groupData) }}', '{{ $searchDate }}')"
-                            class="flex-1 bg-[#e94e1a] text-white text-center py-2 rounded-lg font-bold hover:bg-[#d14316] shadow-sm flex items-center justify-center gap-2 text-sm">
-                            <i class="fas fa-ticket-alt"></i> <span>Réserver</span>
-                        </button>
+                        @guest
+                             <a href="{{ route('login') }}"
+                                class="flex-1 bg-[#e94e1a] text-white text-center py-2 rounded-lg font-bold hover:bg-[#d14316] shadow-sm flex items-center justify-center gap-2 text-sm">
+                                <i class="fas fa-ticket-alt"></i> <span>Réserver</span>
+                            </a>
+                        @else
+                            <button onclick="chooseProgramHour('{{ addslashes($groupData) }}', '{{ $searchDate }}')"
+                                class="flex-1 bg-[#e94e1a] text-white text-center py-2 rounded-lg font-bold hover:bg-[#d14316] shadow-sm flex items-center justify-center gap-2 text-sm">
+                                <i class="fas fa-ticket-alt"></i> <span>Réserver</span>
+                            </button>
+                        @endguest
                     @else
-                        <a href="{{ route('reservation.create', [
+                        <a href="{{ auth()->check() ? route('reservation.create', [
                                 'point_depart' => $programme->point_depart,
                                 'point_arrive' => $programme->point_arrive,
                                 'date_depart' => $searchDate,
                                 'auto_reserve' => $programme->id
-                            ]) }}"
+                            ]) : route('login') }}"
                             class="flex-1 bg-[#e94e1a] text-white text-center py-2 rounded-lg font-bold hover:bg-[#d14316] shadow-sm flex items-center justify-center gap-2 text-sm">
                             <i class="fas fa-ticket-alt"></i> <span>Réserver</span>
                         </a>
@@ -201,17 +208,24 @@
                 </button>
                 @if($statusKey != 'complet' && !$isToday)
                     @if($hasMultipleHours)
-                        <button onclick="chooseProgramHour('{{ addslashes($groupData) }}', '{{ $searchDate }}')"
-                            class="bg-[#e94e1a] text-white px-6 py-2 rounded-xl font-bold hover:bg-[#d14316] text-xs transition-colors shadow-md shadow-orange-500/10">
-                            Réserver
-                        </button>
+                        @guest
+                             <a href="{{ route('login') }}"
+                                class="bg-[#e94e1a] text-white px-6 py-2 rounded-xl font-bold hover:bg-[#d14316] text-xs transition-colors shadow-md shadow-orange-500/10">
+                                Réserver
+                            </a>
+                        @else
+                            <button onclick="chooseProgramHour('{{ addslashes($groupData) }}', '{{ $searchDate }}')"
+                                class="bg-[#e94e1a] text-white px-6 py-2 rounded-xl font-bold hover:bg-[#d14316] text-xs transition-colors shadow-md shadow-orange-500/10">
+                                Réserver
+                            </button>
+                        @endguest
                     @else
-                        <a href="{{ route('reservation.create', [
+                        <a href="{{ auth()->check() ? route('reservation.create', [
                                 'point_depart' => $programme->point_depart,
                                 'point_arrive' => $programme->point_arrive,
                                 'date_depart' => $searchDate,
                                 'auto_reserve' => $programme->id
-                            ]) }}"
+                            ]) : route('login') }}"
                             class="bg-[#e94e1a] text-white px-6 py-2 rounded-xl font-bold hover:bg-[#d14316] text-xs transition-colors shadow-md shadow-orange-500/10">
                             Réserver
                         </a>

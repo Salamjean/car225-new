@@ -11,6 +11,8 @@ use Laravel\Sanctum\HasApiTokens;
 class Agent extends Authenticatable
 {
      use HasFactory, Notifiable, HasApiTokens, HasCodeId;
+    protected $appends = ['nom_complet'];
+
     protected $fillable = [
         'code_id',
         'name',
@@ -34,6 +36,11 @@ class Agent extends Authenticatable
         'password' => 'hashed',
         'archived_at' => 'datetime',
     ];
+
+    public function getNomCompletAttribute()
+    {
+        return $this->prenom . ' ' . $this->name;
+    }
 
     public function getIsActiveAttribute()
     {
