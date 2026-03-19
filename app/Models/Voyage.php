@@ -17,6 +17,14 @@ class Voyage extends Model
         'gare_depart_id',
         'gare_arrivee_id',
         'statut',
+        'estimated_arrival_at',
+        'delay_seconds',
+        'motif_annulation',
+    ];
+
+    protected $casts = [
+        'date_voyage' => 'date',
+        'estimated_arrival_at' => 'datetime',
     ];
 
     public function programme()
@@ -98,25 +106,42 @@ class Voyage extends Model
             return null;
         }
 
-        // On se base sur l'heure d'arrivée prévue du programme
-        $heureArrivee = $this->programme->heure_arrive;
-        $dateVoyage = $this->date_voyage instanceof \Carbon\Carbon 
-            ? $this->date_voyage->toDateString() 
-            : $this->date_voyage;
+        // On utilise l'arrivée estimée si elle existe, sinon celle du programme
+        $arrivalDateTime = $this->estimated_arrival_at ?: \Carbon\Carbon::parse($this->date_voyage->format('Y-m-d') . ' ' . $this->programme->heure_arrive);
+        
+        // Si l'arrivée programmée était le lendemain (ex: départ 23h, durée 4h)
+        if (!$this->estimated_arrival_at && \Carbon\Carbon::parse($this->programme->heure_arrive)->lt(\Carbon\Carbon::parse($this->programme->heure_depart))) {
+            $arrivalDateTime->addDay();
+        }
 
-        $arriveeDateTime = \Carbon\Carbon::parse($dateVoyage . ' ' . $heureArrivee);
         $now = now();
 
-        if ($now->greaterThanOrEqualTo($arriveeDateTime)) {
+        if ($now->greaterThanOrEqualTo($arrivalDateTime)) {
             return "Arrivée imminente";
         }
 
-        $diff = $now->diff($arriveeDateTime);
+        $diff = $now->diff($arrivalDateTime);
         
         if ($diff->h > 0) {
             return $diff->format('%h h %i min restants');
         }
 
         return $diff->format('%i min restants');
+    }
+
+    /**
+     * Helper to update estimation based on delay
+     */
+    public function updateEstimatedArrival($secondsDelay)
+    {
+        $this->delay_seconds += $secondsDelay;
+        
+        $baseArrival = \Carbon\Carbon::parse($this->date_voyage->format('Y-m-d') . ' ' . $this->programme->heure_arrive);
+        if (\Carbon\Carbon::parse($this->programme->heure_arrive)->lt(\Carbon\Carbon::parse($this->programme->heure_depart))) {
+            $baseArrival->addDay();
+        }
+
+        $this->estimated_arrival_at = $baseArrival->addSeconds($this->delay_seconds);
+        $this->save();
     }
 }

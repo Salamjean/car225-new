@@ -34,6 +34,12 @@ class Personnel extends Authenticatable
         'gare_id',
         'password',
         'fcm_token',
+        'archived_at',
+    ];
+
+    protected $casts = [
+        'archived_at' => 'datetime',
+        'password' => 'hashed',
     ];
 
     /**

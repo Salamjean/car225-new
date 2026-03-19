@@ -19,6 +19,7 @@ class Reservation extends Model
         'user_id',
         'caisse_id',
         'programme_id',
+        'voyage_id',
         'seat_number',
         'passager_nom',
         'passager_prenom',
@@ -130,8 +131,7 @@ class Reservation extends Model
      */
     public function voyage()
     {
-        return $this->hasOne(Voyage::class, 'programme_id', 'programme_id')
-                    ->whereDate('date_voyage', $this->date_voyage);
+        return $this->belongsTo(Voyage::class, 'voyage_id');
     }
 
     /**
@@ -140,22 +140,29 @@ class Reservation extends Model
      */
     public function getMissionAttribute()
     {
+        // 1. Priorité au lien direct (si déjà scanné/boardé)
+        if ($this->voyage_id) {
+            return $this->voyage;
+        }
+
         $targetDate = $this->date_voyage instanceof \Carbon\Carbon 
             ? $this->date_voyage->toDateString() 
             : $this->date_voyage;
 
-        // Si programme.voyages est déjà chargé, on cherche dedans (évite les requêtes dynamiques qui cassent l'eager loading)
+        // 2. Si programme.voyages est déjà chargé (eager loading)
         if ($this->relationLoaded('programme') && $this->programme->relationLoaded('voyages')) {
             return $this->programme->voyages->first(function($v) use ($targetDate) {
-                // S'assurer que la comparaison de date est saine
                 $vDate = $v->date_voyage instanceof \Carbon\Carbon 
                     ? $v->date_voyage->toDateString() 
                     : substr($v->date_voyage, 0, 10);
                 return $vDate === $targetDate;
             });
         }
-        // Sinon fallback sur la relation classique
-        return $this->voyage;
+
+        // 3. Fallback recherche manuelle par date
+        return Voyage::where('programme_id', $this->programme_id)
+                    ->whereDate('date_voyage', $targetDate)
+                    ->first();
     }
 
     /**

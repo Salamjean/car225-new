@@ -18,7 +18,7 @@
         </div>
 
         <!-- Stats -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-100">
                 <div class="flex items-center justify-between">
                     <div>
@@ -41,6 +41,17 @@
                     </div>
                 </div>
             </div>
+            <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-100">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 font-medium uppercase">Archivées</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-1">{{ $archivedCount }}</p>
+                    </div>
+                    <div class="w-14 h-14 bg-red-100 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-archive text-red-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Caisse List -->
@@ -55,6 +66,7 @@
                             <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Email</th>
                             <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Contact</th>
                             <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Commune</th>
+                            <th class="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
@@ -79,10 +91,24 @@
                                 <td class="px-6 py-4 text-sm text-gray-600">{{ $caisse->email }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-600">{{ $caisse->contact }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-600">{{ $caisse->commune ?? '-' }}</td>
+                                <td class="px-6 py-4 text-right">
+                                    <div class="flex justify-end gap-2 text-right">
+                                        <a href="{{ route('gare-espace.caisse.edit', $caisse) }}" class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all duration-200" title="Modifier">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all duration-200 archive-caisse" data-id="{{ $caisse->id }}" title="Archiver">
+                                            <i class="fas fa-archive"></i>
+                                        </button>
+                                        <form id="archive-form-{{ $caisse->id }}" action="{{ route('gare-espace.caisse.destroy', $caisse) }}" method="POST" style="display: none;">
+                                            @csrf
+                                            @method('DELETE')
+                                        </form>
+                                    </div>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-6 py-12 text-center">
+                                <td colspan="7" class="px-6 py-12 text-center">
                                     <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
                                         <i class="fas fa-cash-register text-gray-300 text-3xl"></i>
                                     </div>

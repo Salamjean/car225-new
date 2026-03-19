@@ -34,13 +34,15 @@ class SignalementApiController extends Controller
             $reservations = Reservation::with([
                 'programme.compagnie',
                 'programme.voyages',
+                'voyage',
             ])
             ->where('user_id', $user->id)
-            ->where(function($q) use ($today, $yesterday) {
-                $q->whereDate('date_voyage', $today)
-                  ->orWhereDate('date_voyage', $yesterday);
-            })
             ->whereIn('statut', ['confirmee', 'terminee'])
+            ->where(function($q) use ($today) {
+                $q->whereDate('date_voyage', $today)
+                  ->orWhereNotNull('voyage_id'); // On garde celles liées à un voyage (lien direct)
+            })
+            ->latest()
             ->get();
 
             // Enrichir les données pour le mobile (identique à ReservationApiController)

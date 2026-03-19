@@ -28,8 +28,10 @@ class GareCaisseController extends Controller
             ->whereNull('archived_at')
             ->orderBy('created_at', 'desc')
             ->get();
+            
+        $archivedCount = Caisse::where('gare_id', $gare->id)->whereNotNull('archived_at')->count();
 
-        return view('gare-espace.caisse.index', compact('caisses'));
+        return view('gare-espace.caisse.index', compact('caisses', 'archivedCount'));
     }
 
     public function create()
@@ -73,31 +75,61 @@ class GareCaisseController extends Controller
             'gare_id' => $gare->id,
         ]);
 
-        // Generate and store OTP
         $otpCode = $this->otpService->generateCode();
         $this->otpService->storeOtp($caisse->email, $otpCode);
 
-        // Send email with OTP
         try {
-            $compagnie = $gare->compagnie;
-            Mail::to($caisse->email)->send(
-                new CaisseCreatedMail(
-                    [
-                        'name' => $caisse->name,
-                        'prenom' => $caisse->prenom,
-                        'email' => $caisse->email,
-                        'code_id' => $caisse->code_id,
-                    ],
-                    $otpCode,
-                    $compagnie->name ?? 'Compagnie'
-                )
-            );
+            Mail::to($caisse->email)->send(new CaisseCreatedMail([
+                'name' => $caisse->name,
+                'prenom' => $caisse->prenom,
+                'email' => $caisse->email,
+                'code_id' => $caisse->code_id,
+            ], $otpCode, $gare->compagnie->name ?? 'Compagnie'));
 
-            return redirect()->route('gare-espace.caisse.index')
-                ->with('success', 'Caissière créée avec succès. Un email avec le code OTP a été envoyé à ' . $caisse->email);
+            return redirect()->route('gare-espace.caisse.index')->with('success', 'Caissière créée avec succès.');
         } catch (\Exception $e) {
             $caisse->delete();
-            return back()->withInput()->with('error', 'Erreur lors de l\'envoi de l\'email: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Erreur mail: ' . $e->getMessage());
         }
+    }
+
+    public function edit(Caisse $caisse)
+    {
+        return view('gare-espace.caisse.edit', compact('caisse'));
+    }
+
+    public function update(Request $request, Caisse $caisse)
+    {
+        $request->validate([
+            'name' => 'required|string|max:191',
+            'prenom' => 'required|string|max:191',
+            'email' => 'required|email|unique:caisses,email,' . $caisse->id,
+            'contact' => 'required|string|max:191',
+            'cas_urgence' => 'required|string|max:191',
+            'nom_urgence' => 'required|string|max:255',
+            'lien_parente_urgence' => 'required|string|max:100',
+            'commune' => 'nullable|string|max:191',
+            'profile_picture' => 'nullable|image|max:2048',
+        ]);
+
+        try {
+            $caisse->update($request->except('profile_picture'));
+
+            if ($request->hasFile('profile_picture')) {
+                if ($caisse->profile_picture) Storage::disk('public')->delete($caisse->profile_picture);
+                $caisse->profile_picture = $request->file('profile_picture')->store('caisse_profiles', 'public');
+                $caisse->save();
+            }
+
+            return redirect()->route('gare-espace.caisse.index')->with('success', 'Information caisse mise à jour.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Erreur mise à jour: ' . $e->getMessage());
+        }
+    }
+
+    public function destroy(Caisse $caisse)
+    {
+        $caisse->update(['archived_at' => now()]);
+        return redirect()->route('gare-espace.caisse.index')->with('success', 'Caisse archivée avec succès.');
     }
 }

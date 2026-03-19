@@ -90,6 +90,7 @@
                 <thead>
                     <tr>
                         <th>Nom de la Gare</th>
+                        <th>CODE</th>
                         <th>Localisation</th>
                         <th>Adresse</th>
                         <th class="text-right">Actions</th>
@@ -112,6 +113,11 @@
                             </div>
                         </td>
                         <td>
+                            <div style="font-size: 11px; font-weight: 800; color: var(--orange); background: var(--orange-light); padding: 4px 10px; border-radius: 8px; border: 1.5px solid var(--orange-mid); display: inline-block; font-family: monospace;">
+                                {{ $gare->code_id ?? 'N/A' }}
+                            </div>
+                        </td>
+                        <td>
                             <div style="font-weight: 800; font-size: 12px; color: var(--text-1); text-transform: uppercase;"><i class="fas fa-city mr-1 text-muted"></i> {{ $gare->ville }}</div>
                         </td>
                         <td>
@@ -130,7 +136,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="4">
+                        <td colspan="5">
                             <div class="table-empty py-5">
                                 <i class="fas fa-university table-empty-icon mb-3" style="font-size: 40px; color: var(--border-strong);"></i>
                                 <h3 style="font-size: 14px; font-weight: 800; color: var(--text-1); margin: 0;">Aucune gare enregistrée</h3>

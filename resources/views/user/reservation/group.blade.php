@@ -115,7 +115,11 @@
                         </td>
 
                         <td class="px-6 py-5 text-center">
-                            @if($reservation->statut == 'confirmee')
+                            @if(in_array($reservation->statut, ['confirmee', 'terminee']) && $reservation->mission && $reservation->mission->statut == 'en_cours')
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-purple-100 italic">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></span> En voyage
+                                </span>
+                            @elseif($reservation->statut == 'confirmee')
                                 <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-green-100">
                                     <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Confirmé
                                 </span>

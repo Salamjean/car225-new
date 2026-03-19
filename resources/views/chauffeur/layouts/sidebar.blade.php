@@ -46,10 +46,28 @@
             <span>Tableau de bord</span>
         </a>
 
-        <a href="{{ route('chauffeur.voyages.index') }}" class="nav-link {{ str_starts_with($currentRoute, 'chauffeur.voyages.index') ? 'active' : '' }}">
+        <div class="nav-item-header {{ str_starts_with($currentRoute, 'chauffeur.voyages') ? 'active' : '' }}">
             <div class="nav-icon"><i class="fas fa-road"></i></div>
             <span>Voyages</span>
-        </a>
+        </div>
+        
+        <div class="sub-nav">
+            <a href="{{ route('chauffeur.voyages.index', ['tab' => 'active']) }}" 
+               class="sub-nav-link {{ $currentRoute === 'chauffeur.voyages.index' && request('tab', 'active') === 'active' ? 'active' : '' }}">
+                <i class="fas fa-play-circle mr-2" style="font-size: 8px;"></i>
+                <span>Voyages en cours / À venir</span>
+            </a>
+            <a href="{{ route('chauffeur.voyages.index', ['tab' => 'non_effectues']) }}" 
+               class="sub-nav-link {{ $currentRoute === 'chauffeur.voyages.index' && request('tab') === 'non_effectues' ? 'active' : '' }}">
+                <i class="fas fa-circle-notch mr-2" style="font-size: 8px;"></i>
+                <span>Voyages non effectués</span>
+            </a>
+            <a href="{{ route('chauffeur.voyages.index', ['tab' => 'effectues']) }}" 
+               class="sub-nav-link {{ $currentRoute === 'chauffeur.voyages.index' && request('tab') === 'effectues' ? 'active' : '' }}">
+                <i class="fas fa-check-circle mr-2" style="font-size: 8px;"></i>
+                <span>Voyages effectués</span>
+            </a>
+        </div>
 
         <a href="{{ route('chauffeur.reservations.scan') }}" class="nav-link {{ str_starts_with($currentRoute, 'chauffeur.reservations') ? 'active' : '' }}">
             <div class="nav-icon"><i class="fas fa-qrcode"></i></div>
@@ -64,12 +82,6 @@
             @endif
         </a>
 
-        <p class="nav-section-title" style="margin-top: 12px;">Historique</p>
-
-        <a href="{{ route('chauffeur.voyages.history') }}" class="nav-link {{ $currentRoute === 'chauffeur.voyages.history' ? 'active' : '' }}">
-            <div class="nav-icon"><i class="fas fa-history"></i></div>
-            <span>Historique</span>
-        </a>
 
         <a href="{{ route('chauffeur.signalements.index') }}" class="nav-link {{ str_starts_with($currentRoute, 'chauffeur.signalements') ? 'active' : '' }}">
             <div class="nav-icon"><i class="fas fa-exclamation-triangle"></i></div>
@@ -244,6 +256,51 @@
 }
 .nav-link.active .nav-icon {
     color: #f97316;
+}
+
+.nav-item-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    color: rgba(255,255,255,0.7);
+    font-size: 0.88rem;
+    font-weight: 700;
+    margin-top: 5px;
+}
+
+.nav-item-header.active {
+    color: #f97316;
+}
+
+.sub-nav {
+    padding-left: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.sub-nav-link {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 8px;
+    color: rgba(255,255,255,0.5) !important;
+    text-decoration: none !important;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.sub-nav-link:hover {
+    background: rgba(255,255,255,0.05);
+    color: white !important;
+}
+
+.sub-nav-link.active {
+    color: #f97316 !important;
+    font-weight: 700;
 }
 
 .nav-icon {

@@ -17,15 +17,32 @@ class VoyageController extends Controller
     public function index(Request $request)
     {
         $chauffeur = Auth::guard('chauffeur')->user();
+        $tab = $request->input('tab', 'active'); // 'active' (default), 'non_effectues', 'effectues'
         $date = $request->input('date', Carbon::today()->toDateString());
-
-        $voyages = Voyage::where('personnel_id', $chauffeur->id)
-            ->whereDate('date_voyage', $date)
+        
+        $query = Voyage::where('personnel_id', $chauffeur->id)
             ->with(['programme.gareDepart', 'programme.gareArrivee', 'vehicule'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(3);
+            ->orderBy('date_voyage', 'desc')
+            ->orderBy('created_at', 'desc');
 
-        return view('chauffeur.programmes.index', compact('voyages', 'date'));
+        if ($tab === 'effectues') {
+            // Completed
+            $query->whereIn('statut', ['terminé', 'succès']);
+        } elseif ($tab === 'non_effectues') {
+            // Failed
+            $query->whereIn('statut', ['annulé', 'interrompu', 'arrêté', 'non_effectué']);
+            if ($request->filled('date')) {
+                $query->whereDate('date_voyage', $request->date);
+            }
+        } else {
+            // Active / Planned (Default)
+            $query->whereIn('statut', ['en_attente', 'confirmé', 'en_cours'])
+                  ->whereDate('date_voyage', $date);
+        }
+
+        $voyages = $query->paginate(10);
+
+        return view('chauffeur.programmes.index', compact('voyages', 'tab', 'date'));
     }
 
     /**
@@ -62,9 +79,9 @@ class VoyageController extends Controller
             return back()->with('error', 'Ce voyage ne vous appartient pas.');
         }
 
-        // Only allow starting if voyage is confirmed
-        if ($voyage->statut !== 'confirmé') {
-            return back()->with('error', 'Vous devez d\'abord confirmer ce voyage avant de le démarrer.');
+        // Only allow starting if voyage is confirmed or pending
+        if (!in_array($voyage->statut, ['en_attente', 'confirmé'])) {
+            return back()->with('error', 'Ce voyage ne peut pas être démarré.');
         }
 
         if ($voyage->occupancy < 1) {
@@ -100,11 +117,12 @@ class VoyageController extends Controller
         $chauffeur->update(['statut' => 'disponible']);
 
         // Update vehicle status to disponible
-        if ($voyage->vehicule) {
-            $voyage->vehicule->update(['statut' => 'disponible']);
+        if ($voyage->vehicule_id) {
+            \App\Models\Vehicule::where('id', $voyage->vehicule_id)->update(['statut' => 'disponible']);
         }
 
-        return back()->with('success', 'Voyage terminé avec succès. Vous êtes maintenant disponible pour de nouveaux voyages.');
+        return redirect()->route('chauffeur.voyages.index', ['tab' => 'effectues'])
+            ->with('success', 'Voyage terminé avec succès. Vous êtes maintenant disponible.');
     }
 
     /**
@@ -129,6 +147,17 @@ class VoyageController extends Controller
             'heading'   => 'nullable|numeric|between:0,360',
         ]);
 
+        $latestLoc = $voyage->latestLocation;
+        if ($latestLoc) {
+            $elapsedSeconds = now()->diffInSeconds($latestLoc->updated_at);
+            
+            // Si la vitesse est quasi nulle (< 5 km/h) et que la dernière maj est récente (< 10 min)
+            // On considère que le véhicule est à l'arrêt et on accumule du retard
+            if (($request->speed ?? 0) < 5 && $elapsedSeconds < 600) {
+                $voyage->updateEstimatedArrival($elapsedSeconds);
+            }
+        }
+
         \App\Models\DriverLocation::updateOrCreate(
             ['voyage_id' => $voyage->id, 'personnel_id' => $chauffeur->id],
             [
@@ -139,14 +168,22 @@ class VoyageController extends Controller
             ]
         );
 
-        return response()->json(['success' => true]);
+        return response()->json([
+            'success' => true,
+            'estimated_arrival' => $voyage->estimated_arrival_at ? $voyage->estimated_arrival_at->toIso8601String() : null,
+            'temps_restant' => $voyage->temps_restant
+        ]);
     }
 
     /**
      * Annuler un voyage (confirmé ou en_attente -> annulé)
      */
-    public function annuler(Voyage $voyage)
+    public function annuler(Request $request, Voyage $voyage)
     {
+        $request->validate([
+            'reason' => 'required|string|min:5|max:1000',
+        ]);
+
         $chauffeur = Auth::guard('chauffeur')->user();
 
         if ($voyage->personnel_id !== $chauffeur->id) {
@@ -159,14 +196,31 @@ class VoyageController extends Controller
 
         $voyage->update(['statut' => 'annulé']);
 
+        // Envoyer le motif à la gare
+        $gareId = $voyage->gare_depart_id ?? ($voyage->programme ? $voyage->programme->gare_depart_id : null);
+        
+        if ($gareId) {
+            \App\Models\GareMessage::create([
+                'gare_id' => $gareId,
+                'sender_type' => 'App\Models\Personnel',
+                'sender_id' => $chauffeur->id,
+                'recipient_type' => 'App\Models\Gare',
+                'recipient_id' => $gareId,
+                'subject' => 'Annulation de voyage #' . $voyage->id,
+                'message' => "Le chauffeur {$chauffeur->prenom} {$chauffeur->name} a annulé le voyage #{$voyage->id}. \n\nMotif : " . $request->reason,
+                'is_read' => false,
+            ]);
+        }
+
         // Libérer le chauffeur
         $chauffeur->update(['statut' => 'disponible']);
 
         // Libérer le véhicule
-        if ($voyage->vehicule) {
-            $voyage->vehicule->update(['statut' => 'disponible']);
+        if ($voyage->vehicule_id) {
+            \App\Models\Vehicule::where('id', $voyage->vehicule_id)->update(['statut' => 'disponible']);
         }
 
-        return back()->with('success', 'Le voyage a été annulé.');
+        return redirect()->route('chauffeur.voyages.index', ['tab' => 'non_effectues'])
+            ->with('success', 'Le voyage a été annulé et le motif a été transmis à la gare.');
     }
 }

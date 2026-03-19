@@ -721,6 +721,9 @@ Route::prefix('gare-espace')->name('gare-espace.')->group(function () {
             Route::get('/', [App\Http\Controllers\GareEspace\GarePersonnelController::class, 'index'])->name('index');
             Route::get('/create', [App\Http\Controllers\GareEspace\GarePersonnelController::class, 'create'])->name('create');
             Route::post('/', [App\Http\Controllers\GareEspace\GarePersonnelController::class, 'store'])->name('store');
+            Route::get('/{personnel}/edit', [App\Http\Controllers\GareEspace\GarePersonnelController::class, 'edit'])->name('edit');
+            Route::put('/{personnel}', [App\Http\Controllers\GareEspace\GarePersonnelController::class, 'update'])->name('update');
+            Route::delete('/{personnel}', [App\Http\Controllers\GareEspace\GarePersonnelController::class, 'destroy'])->name('destroy');
         });
 
         // Véhicules (CRUD)
@@ -738,6 +741,9 @@ Route::prefix('gare-espace')->name('gare-espace.')->group(function () {
             Route::get('/', [App\Http\Controllers\GareEspace\GareCaisseController::class, 'index'])->name('index');
             Route::get('/create', [App\Http\Controllers\GareEspace\GareCaisseController::class, 'create'])->name('create');
             Route::post('/', [App\Http\Controllers\GareEspace\GareCaisseController::class, 'store'])->name('store');
+            Route::get('/{caisse}/edit', [App\Http\Controllers\GareEspace\GareCaisseController::class, 'edit'])->name('edit');
+            Route::put('/{caisse}', [App\Http\Controllers\GareEspace\GareCaisseController::class, 'update'])->name('update');
+            Route::delete('/{caisse}', [App\Http\Controllers\GareEspace\GareCaisseController::class, 'destroy'])->name('destroy');
         });
 
         // Agents (CRUD)
@@ -745,6 +751,9 @@ Route::prefix('gare-espace')->name('gare-espace.')->group(function () {
             Route::get('/', [App\Http\Controllers\GareEspace\GareAgentController::class, 'index'])->name('index');
             Route::get('/create', [App\Http\Controllers\GareEspace\GareAgentController::class, 'create'])->name('create');
             Route::post('/', [App\Http\Controllers\GareEspace\GareAgentController::class, 'store'])->name('store');
+            Route::get('/{agent}/edit', [App\Http\Controllers\GareEspace\GareAgentController::class, 'edit'])->name('edit');
+            Route::put('/{agent}', [App\Http\Controllers\GareEspace\GareAgentController::class, 'update'])->name('update');
+            Route::delete('/{agent}', [App\Http\Controllers\GareEspace\GareAgentController::class, 'destroy'])->name('destroy');
         });
 
         // Itinéraires (CRUD)

@@ -98,7 +98,7 @@
                                         <i class="fas fa-ticket-alt"></i>
                                     </div>
                                     <div>
-                                        <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">Référence Voyage</p>
+                                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Référence Voyage</p>
                                         <p class="text-sm font-bold text-gray-900">{{ $selectedReservation->programme->point_depart }} → {{ $selectedReservation->programme->point_arrive }}</p>
                                         @if($actualVoyage && $actualVoyage->statut === 'en_cours')
                                             @php
@@ -108,13 +108,15 @@
                                                     $arrTime->addDay();
                                                 }
                                             @endphp
-                                            <p class="text-[10px] font-bold text-blue-500 mt-1 flex items-center gap-1">
-                                                <i class="far fa-clock"></i> Temps restant : 
-                                                <span class="font-mono bg-blue-50 px-2 py-0.5 rounded shadow-sm timer-display" 
+                                            <div class="mt-2 flex items-center gap-2">
+                                                <p class="text-[11px] font-bold text-blue-600 flex items-center gap-1">
+                                                    <i class="far fa-clock"></i> Temps restant : 
+                                                </p>
+                                                <span class="inline-flex items-center font-mono bg-blue-100 text-blue-700 px-3 py-0.5 rounded-full text-[11px] font-black shadow-sm border border-blue-200 timer-display" 
                                                       data-arrival="{{ $arrTime->toIso8601String() }}">
                                                     --:--:--
                                                 </span>
-                                            </p>
+                                            </div>
                                         @endif
                                     </div>
                                 </div>
@@ -430,23 +432,38 @@
 
         function fetchOccupancy(programmeId) {
             const occupancyDisplay = document.getElementById('display-occupancy');
-            occupancyDisplay.textContent = '...';
+            const timer = document.querySelector('.timer-display');
+            
+            if (occupancyDisplay) occupancyDisplay.textContent = '...';
             
             fetch(`/api/program/${programmeId}/occupancy`)
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
-                        occupancyDisplay.textContent = `${data.count} / ${data.total_capacity} passagers à bord`;
+                        if (occupancyDisplay) occupancyDisplay.textContent = `${data.count} / ${data.total_capacity} passagers à bord`;
                         currentPassengers = data.passengers;
-                    } else {
-                        occupancyDisplay.textContent = 'Erreur';
                     }
                 })
-                .catch(err => {
-                    console.error(err);
-                    occupancyDisplay.textContent = 'Calcul impossible';
-                });
+                .catch(err => console.error(err));
+            
+            // Also fetch live tracking for dynamic arrival if possible
+            fetch("{{ route('user.tracking.location') }}")
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success && data.location.estimated_arrival && timer) {
+                        timer.setAttribute('data-arrival', data.location.estimated_arrival);
+                        updateTimers();
+                    }
+                })
+                .catch(err => console.error(err));
         }
+
+        @if($selectedReservation)
+            // Periodic update for signalement page timer (every 10s)
+            @if($actualVoyage && $actualVoyage->statut === 'en_cours')
+                setInterval(() => fetchOccupancy("{{ $selectedReservation->programme_id }}"), 10000);
+            @endif
+        @endif
 
         function showPassengersPopup() {
             if (currentPassengers.length === 0) {

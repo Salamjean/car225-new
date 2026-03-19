@@ -22,11 +22,9 @@ class GareVoyageController extends Controller
         $compagnieId = $gare->compagnie_id;
         $date = $request->input('date', Carbon::today()->toDateString());
 
-        // Get programmes from gare's company that concern this specific gare
-        $programmesQuery = Programme::where('compagnie_id', $compagnieId)
-            ->where(function($query) use ($gare) {
-                $query->where('gare_depart_id', $gare->id);
-            })
+        // Get all active programmes for this specific gare
+        $allProgrammes = Programme::where('compagnie_id', $compagnieId)
+            ->where('gare_depart_id', $gare->id)
             ->where('statut', 'actif')
             ->whereDate('date_depart', '<=', $date)
             ->whereDate('date_fin', '>=', $date)
@@ -35,37 +33,70 @@ class GareVoyageController extends Controller
                       ->where('statut', 'terminé');
             });
 
-        // NOUVEAU: Si la date sélectionnée est aujourd'hui, masquer les programmes passés
+        // Hide past programs if today
         if (Carbon::parse($date)->isToday()) {
             $currentTime = Carbon::now()->format('H:i:s');
-            $programmesQuery->whereTime('heure_depart', '>', $currentTime);
+            $allProgrammes->whereTime('heure_depart', '>', $currentTime);
         }
 
-        $programmesQuery->with(['gareDepart', 'gareArrivee', 'voyages' => function ($query) use ($date) {
-                $query->whereDate('date_voyage', $date);
+        $allProgrammes = $allProgrammes->with(['gareDepart', 'gareArrivee', 'voyages' => function ($query) use ($date) {
+                $query->whereDate('date_voyage', $date)
+                      ->where('statut', '!=', 'annulé');
             }])
-            ->orderBy('heure_depart');
+            ->orderBy('heure_depart')
+            ->get();
 
-        $totalProgrammesCount = $programmesQuery->count();
-        $programmes = $programmesQuery->paginate(5);
+        $totalProgrammesCount = $allProgrammes->count();
 
-        // Get available drivers (rattachés à la gare connectée)
+        // Separate assigned from unassigned
+        $assignedVoyages = $allProgrammes->filter(function($p) {
+            return $p->voyages->count() > 0;
+        });
+        
+        // Allow multiple assignments per program (doubler les bus)
+        $availableProgrammes = $allProgrammes;
+
+        // Enrichment: Get reservations count for each programme for THIS specific date
+        $availableProgrammes->each(function($p) use ($date) {
+            $p->reservations_count = $p->getPlacesReserveesForDate($date);
+            $p->total_seats = $p->getTotalSeats($date);
+        });
+
+        // Unique destinations for the filter with full details
+        $itineraries = $availableProgrammes->map(function($p) {
+            return [
+                'id' => $p->gare_arrivee_id,
+                'name' => $p->gareArrivee?->nom_gare ?? 'Inconnu',
+                'route' => ($p->point_depart ?: $p->gareDepart?->nom_gare) . ' → ' . ($p->point_arrive ?: $p->gareArrivee?->nom_gare),
+                'capacity' => $p->capacity ?: $p->getTotalSeats()
+            ];
+        })->unique('id')->values();
+
+        // Available drivers (station-specific)
         $chauffeurs = Personnel::where('compagnie_id', $compagnieId)
-            ->where('gare_id', $gare->id) // Restreindre à la gare connectée
+            ->where('gare_id', $gare->id)
             ->where('type_personnel', 'Chauffeur')
             ->where('statut', 'disponible')
             ->orderBy('name')
             ->get();
 
-        // Get available vehicles (rattachés à la gare connectée)
+        // Available vehicles (station-specific)
         $vehicules = Vehicule::where('compagnie_id', $compagnieId)
-            ->where('gare_id', $gare->id) // Restreindre à la gare connectée
+            ->where('gare_id', $gare->id)
             ->where('is_active', true)
             ->where('statut', 'disponible')
             ->orderBy('immatriculation')
             ->get();
 
-        return view('gare-espace.voyages.index', compact('programmes', 'chauffeurs', 'vehicules', 'date', 'totalProgrammesCount'));
+        return view('gare-espace.voyages.index', compact(
+            'availableProgrammes', 
+            'assignedVoyages', 
+            'itineraries',
+            'chauffeurs', 
+            'vehicules', 
+            'date', 
+            'totalProgrammesCount'
+        ));
     }
 
     /**
@@ -142,33 +173,34 @@ class GareVoyageController extends Controller
              return back()->with('error', "Le véhicule sélectionné ({$vehicule->nombre_place} places) excède la capacité maximale autorisée pour ce programme ({$requiredCapacity} places).");
         }
 
-        // Check if voyage already exists
+        // Check if active voyage already exists
         $exists = Voyage::where('programme_id', $programme->id)
             ->whereDate('date_voyage', $validated['date_voyage'])
+            ->whereNotIn('statut', ['annulé']) // Allow new assignment if previous was cancelled
             ->exists();
 
         if ($exists) {
-            return back()->with('error', 'Un voyage est déjà assigné pour ce programme à cette date.');
+            return back()->with('error', 'Un voyage actif est déjà assigné pour ce programme à cette date.');
         }
 
-        // Check driver availability
+        // Check driver availability (ignoring cancelled trips)
         $chauffeurBusy = Voyage::where('personnel_id', $chauffeur->id)
             ->whereDate('date_voyage', $validated['date_voyage'])
-            ->where('statut', '!=', 'terminé')
+            ->whereNotIn('statut', ['annulé', 'terminé'])
             ->exists();
 
         if ($chauffeurBusy) {
-            return back()->with('error', 'Ce chauffeur est déjà assigné à un voyage pour cette date.');
+            return back()->with('error', 'Ce chauffeur est déjà occupé par un autre voyage actif pour cette date.');
         }
 
-        // Check vehicle availability
+        // Check vehicle availability (ignoring cancelled trips)
         $vehiculeBusy = Voyage::where('vehicule_id', $vehicule->id)
             ->whereDate('date_voyage', $validated['date_voyage'])
-            ->where('statut', '!=', 'terminé')
+            ->whereNotIn('statut', ['annulé', 'terminé'])
             ->exists();
 
         if ($vehiculeBusy) {
-            return back()->with('error', 'Ce véhicule est déjà assigné à un voyage pour cette date.');
+            return back()->with('error', 'Ce véhicule est déjà utilisé pour un autre voyage actif à cette date.');
         }
 
         // Create voyage

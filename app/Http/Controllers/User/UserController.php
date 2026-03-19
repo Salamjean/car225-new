@@ -144,6 +144,7 @@ class UserController extends Controller
                 'arrivee' => optional($voyage->programme->gareArrivee)->nom_gare ?? $voyage->programme->point_arrive,
                 'heure_depart' => $voyage->programme->heure_depart,
                 'heure_arrivee' => $voyage->programme->heure_arrive,
+                'estimated_arrival' => $voyage->estimated_arrival_at ? $voyage->estimated_arrival_at->toIso8601String() : null,
                 'date_voyage' => \Carbon\Carbon::parse($voyage->date_voyage)->format('d/m/Y'),
                 'temps_restant' => $voyage->temps_restant,
             ]

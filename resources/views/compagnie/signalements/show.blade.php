@@ -168,8 +168,8 @@
                 </script>
                 @endif
 
-                {{-- LOGISTIQUE / DÉCISIONS --}}
-                @if($signalement->statut !== 'traite')
+                {{-- LOGISTIQUE / DÉCISIONS (Seulement si c'est un signalement chauffeur) --}}
+                @if($signalement->statut !== 'traite' && !$signalement->user_id)
                 <div class="info-card" style="border: 2px solid var(--orange-mid);">
                     <h3 class="info-card-title" style="color: var(--text-1); font-size: 14px;"><i class="fas fa-gavel" style="color: var(--orange);"></i> Décision & Logistique</h3>
                     
@@ -325,7 +325,7 @@
                         </div>
                     </div>
                     
-                    @if($signalement->type === 'accident')
+                    @if($signalement->type === 'accident' || $signalement->user_id)
                     <form action="{{ route('compagnie.signalements.alert-gare', $signalement->id) }}" method="POST" class="mt-3">
                         @csrf
                         <textarea name="message" rows="2" class="form-control form-control-sm mb-2" style="font-size: 11px; border-color: #BFDBFE;" placeholder="Message à la gare (optionnel)"></textarea>

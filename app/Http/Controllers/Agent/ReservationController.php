@@ -412,6 +412,19 @@ class ReservationController extends Controller
             $message = "Embarquement RETOUR validé.";
         }
 
+        // --- NOUVEAU : Tentative de liaison avec le Voyage (mission) ---
+        $progIdScan = ($targetScan === 'aller') 
+            ? $reservation->programme_id 
+            : ($reservation->programme->programme_retour_id ?? $request->programme_id);
+
+        $voyage = \App\Models\Voyage::where('programme_id', $progIdScan)
+            ->whereDate('date_voyage', $today)
+            ->first();
+
+        if ($voyage) {
+            $updateData['voyage_id'] = $voyage->id;
+        }
+
         // Mise à jour
         $reservation->update($updateData);
 
