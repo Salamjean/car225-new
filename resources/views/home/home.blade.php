@@ -201,7 +201,7 @@
             <div class="cta-content" data-aos="fade-up">
                 <h2 class="cta-title">Prêt à voyager ?</h2>
                 <p class="cta-subtitle">Réservez votre billet maintenant et économisez jusqu'à 50 % sur vos trajets</p>
-                <a href="{{ route('programmes.all') }}" class="cta-btn">Réserver Maintenant</a>
+                <a href="{{ route('login') }}" class="cta-btn">Réserver Maintenant</a>
             </div>
         </div>
     </section>
