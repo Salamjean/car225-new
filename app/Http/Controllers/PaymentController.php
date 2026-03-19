@@ -155,6 +155,15 @@ class PaymentController extends Controller
             'payment_details' => array_merge($paiement->payment_details ?? [], $checkoutData)
         ]);
 
+        // --- AJOUT COMMISSION DANS LE PORTEFEUILLE ADMIN ---
+        if ($paiement->commission_amount > 0) {
+            $admin = \App\Models\Admin::first();
+            if ($admin) {
+                $admin->increment('portefeuille', $paiement->commission_amount);
+                Log::info("Commission de {$paiement->commission_amount} FCFA ajoutée au portefeuille admin.");
+            }
+        }
+
         // Mettre à jour les réservations et générer les billets
         $reservations = $paiement->reservations;
 
@@ -304,10 +313,69 @@ class PaymentController extends Controller
      */
     public function waveReturn(Request $request)
     {
-        $sessionId = $request->input('session_id'); // Wave passes session_id in the url query
-        Log::info('User returned from Wave', ['session_id' => $sessionId]);
+        $sessionId = $request->input('session_id'); // Wave sometimes passes this
+        $transactionId = $request->input('transaction_id'); // Our internal reference
+        
+        Log::info('User returned from Wave', [
+            'session_id' => $sessionId,
+            'transaction_id' => $transactionId
+        ]);
 
-        return view('payment.success', ['sessionId' => $sessionId]);
+        // Fallback values
+        $ticketReference = 'N/A';
+        $status = 'En Traitement';
+        $clientRef = $transactionId;
+
+        // Si on n'a pas transactionId mais qu'on a sessionId, on interroge Wave
+        if (!$clientRef && $sessionId) {
+            try {
+                $sessionData = $this->waveService->getCheckoutSession($sessionId);
+                if ($sessionData && isset($sessionData['client_reference'])) {
+                    $clientRef = $sessionData['client_reference'];
+                }
+            } catch (\Exception $e) {
+                Log::error('Error fetching Wave session in return: ' . $e->getMessage());
+            }
+        }
+
+        if ($clientRef) {
+            // 1. Chercher le paiement
+            $paiement = \App\Models\Paiement::where('transaction_id', $clientRef)->first();
+            
+            // 2. Chercher la réservation (soit via paiement_id, soit via payment_transaction_id)
+            $reservation = null;
+            if ($paiement) {
+                $reservation = \App\Models\Reservation::where('paiement_id', $paiement->id)->first();
+                if ($paiement->status === 'success') {
+                    $status = 'Payé';
+                }
+            }
+            
+            // Fallback direct sur la réservation si le paiement n'est pas encore en base 
+            // ou si la relation n'a pas été trouvée
+            if (!$reservation) {
+                $reservation = \App\Models\Reservation::where('payment_transaction_id', $clientRef)->first();
+            }
+
+            if ($reservation) {
+                $ticketReference = $reservation->reference;
+                Log::info('Reservation found for success page', ['ref' => $ticketReference]);
+            } else {
+                Log::warning('Aucune réservation trouvée pour clientRef', ['clientRef' => $clientRef]);
+            }
+
+            // Fallback second chance si toujours rien via sessionId (très rare)
+            if (!$ticketReference || $ticketReference === 'N/A') {
+                if ($sessionId && $sessionId !== $clientRef) {
+                     $reservation = \App\Models\Reservation::where('payment_transaction_id', $sessionId)->first();
+                     if ($reservation) {
+                         $ticketReference = $reservation->reference;
+                     }
+                }
+            }
+        }
+
+        return view('payment.success', compact('sessionId', 'ticketReference', 'status'));
     }
     
     public function waveCancel(Request $request) {
@@ -324,20 +392,31 @@ class PaymentController extends Controller
         
         // Détermination du succès
         $success = true;
-        
         if ($request->has('success') && ($request->success === 'false' || $request->success === false)) {
             $success = false;
         }
-        
         if ($request->has('cancel') && $request->cancel == 1) {
             $success = false;
         }
-        
         if ($request->has('status') && in_array($request->status, ['failed', 'cancel'])) {
             $success = false;
         }
 
-        return view('payment.reservation_result', compact('transactionId', 'success'));
+        $ticketReference = 'N/A';
+        if ($transactionId) {
+            $reservation = \App\Models\Reservation::where('payment_transaction_id', $transactionId)
+                ->orWhere('reference', 'LIKE', $transactionId . '%')
+                ->first();
+            if ($reservation) {
+                $ticketReference = $reservation->reference;
+            }
+        }
+
+        return view('payment.reservation_result', [
+            'transactionId' => $transactionId,
+            'ticketReference' => $ticketReference,
+            'success' => $success
+        ]);
     }
 
 }

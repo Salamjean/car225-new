@@ -55,12 +55,20 @@ class WalletController extends Controller
         $user = $request->user();
         $amount = $request->amount;
         $paymentMethod = $request->input('payment_method', 'cinetpay');
+        
+        // --- CALCUL COMMISSION (4% additionnel) ---
+        $commissionRate = 4.00;
+        $commissionAmount = round($amount * ($commissionRate / 100));
+        $totalToPay = $amount + $commissionAmount;
+
         $transactionId = 'W-RECH-' . time() . '-' . Str::random(5);
 
         // Créer la transaction locale en attente
         $transaction = WalletTransaction::create([
             'user_id' => $user->id,
             'amount' => $amount,
+            'commission_amount' => $commissionAmount,
+            'commission_rate' => $commissionRate,
             'type' => 'credit',
             'description' => 'Rechargement portefeuille',
             'reference' => $transactionId,
@@ -68,7 +76,8 @@ class WalletController extends Controller
             'payment_method' => $paymentMethod,
             'metadata' => [
                 'initiated_at' => now()->toDateTimeString(),
-                'source' => 'mobile_api'
+                'source' => 'mobile_api',
+                'total_paid' => $totalToPay
             ]
         ]);
 
@@ -125,7 +134,7 @@ class WalletController extends Controller
                 'apikey' => $cinetpayApiKey,
                 'site_id' => $cinetpaySiteId,
                 'transaction_id' => $cinetpayTransactionId,
-                'amount' => (int)$transaction->amount,
+                'amount' => (int)($transaction->amount + $transaction->commission_amount),
                 'currency' => 'XOF', // Ou dynamique si stocké
                 'description' => $description,
                 'notify_url' => $notifyUrl,
@@ -227,6 +236,15 @@ class WalletController extends Controller
                         $user->solde += $transaction->amount;
                         $user->save();
 
+                        // --- CRÉDITER LE PORTEFEUILLE ADMIN ---
+                        if ($transaction->commission_amount > 0) {
+                            $admin = \App\Models\Admin::first();
+                            if ($admin) {
+                                $admin->increment('portefeuille', $transaction->commission_amount);
+                                Log::info("Commission de {$transaction->commission_amount} ajoutée au portefeuille admin via API notify recharge.");
+                            }
+                        }
+
                         // Notification Database + Broadcast
                         $user->notify(new \App\Notifications\GeneralNotification(
                             'Portefeuille rechargé ✅',
@@ -305,6 +323,15 @@ class WalletController extends Controller
                     $user->solde += $transaction->amount;
                     $user->save();
                     
+                    // --- CRÉDITER LE PORTEFEUILLE ADMIN ---
+                    if ($transaction->commission_amount > 0) {
+                        $admin = \App\Models\Admin::first();
+                        if ($admin) {
+                            $admin->increment('portefeuille', $transaction->commission_amount);
+                            Log::info("Commission de {$transaction->commission_amount} ajoutée au portefeuille admin via API verify recharge.");
+                        }
+                    }
+
                     // Notification Database + Broadcast
                     $user->notify(new \App\Notifications\GeneralNotification(
                         'Portefeuille rechargé ✅',
@@ -369,7 +396,7 @@ class WalletController extends Controller
             $errorUrl = secure_url(route('wallet.payment.result', ['transactionId' => $transaction->reference, 'success' => 'false'], false));
 
             $session = $this->waveService->createCheckoutSession(
-                $transaction->amount,
+                $transaction->amount + $transaction->commission_amount,
                 'XOF',
                 $successUrl,
                 $errorUrl,

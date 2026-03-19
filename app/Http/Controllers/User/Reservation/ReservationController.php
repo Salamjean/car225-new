@@ -910,10 +910,20 @@ $dateAller = $request->date_voyage;
                 ], 422);
             }
         
+        // --- CALCUL COMMISSION (4% pour Mobile Money / Wave) ---
+        $commissionAmount = 0;
+        $commissionRate = 0;
+        
+        if ($paymentMethod !== 'wallet') {
+            $commissionRate = 4.00;
+            $commissionAmount = round($montantTotal * ($commissionRate / 100));
+            $montantTotal += $commissionAmount;
+        }
+
         // 1. DÉMARRER LA TRANSACTION (Sécurité absolue)
         DB::beginTransaction();
 
-        $user = Auth::user(); // On recharge l'user pour avoir le solde à jour
+        $user = Auth::user(); 
         
         // Variables d'état
         $paiementStatus = 'pending';
@@ -951,7 +961,7 @@ $dateAller = $request->date_voyage;
                 'payment_method' => 'wallet',
                 'metadata' => json_encode([
                     'programme_id' => $programme->id,
-                    'passagers' => $request->passagers // Sauvegarde de tous les passagers en JSON
+                    'passagers' => $request->passagers 
                 ])
             ]);
 
@@ -967,14 +977,16 @@ $dateAller = $request->date_voyage;
             $transactionId = 'TRANS-' . date('YmdHis') . '-' . strtoupper(Str::random(5));
         }
 
-        // 2. CRÉATION DU PAIEMENT (Correction : ajout de payment_method)
+        // 2. CRÉATION DU PAIEMENT (Correction : ajout de payment_method et commission)
         $paiement = \App\Models\Paiement::create([
             'user_id' => Auth::id(),
             'amount' => $montantTotal,
             'transaction_id' => $transactionId,
             'status' => $paiementStatus,
             'currency' => 'XOF',
-            'payment_method' => $paymentMethod, // <--- AJOUTÉ POUR CORRESPONDRE AU MODÈLE
+            'payment_method' => $paymentMethod,
+            'commission_amount' => $commissionAmount,
+            'commission_rate' => $commissionRate,
             'payment_date' => now(),
         ]);
 
@@ -1424,16 +1436,14 @@ $dateAller = $request->date_voyage;
             // Wave exige une URL en HTTPS. 
             // Si on teste en local sur 127.0.0.1, on utilise l'URL de ngrok (APP_URL) configurée dans le .env
             $appUrl = rtrim(config('app.url'), '/');
-            $cheminRetour = route('payment.return', [], false);
-            $cheminCancel = route('payment.cancel', [], false);
+            $successUrl = route('payment.return', ['transaction_id' => $transactionId]);
+            $errorUrl = route('payment.cancel', ['transaction_id' => $transactionId]);
 
-            $successUrl = str_starts_with($appUrl, 'https://') 
-                ? $appUrl . $cheminRetour 
-                : str_replace('http://', 'https://', route('payment.return'));
-                
-            $errorUrl = str_starts_with($appUrl, 'https://') 
-                ? $appUrl . $cheminCancel 
-                : str_replace('http://', 'https://', route('payment.cancel'));
+            // Force https if app is configured for it
+            if (isset($appUrl) && str_starts_with($appUrl, 'https://')) {
+                $successUrl = str_replace('http://', 'https://', $successUrl);
+                $errorUrl = str_replace('http://', 'https://', $errorUrl);
+            }
             
             $waveSession = $waveService->createCheckoutSession(
                 (int) $montantTotal,

@@ -43,6 +43,22 @@
                                 <p class="text-xs text-gray-500 mt-2 font-medium">Minimum: 100 FCFA</p>
                             </div>
 
+                            <!-- Affichage de la commission -->
+                            <div id="commissionBox" class="bg-white/50 border border-green-100 rounded-xl p-4 hidden">
+                                <div class="flex justify-between items-center text-sm mb-1">
+                                    <span class="text-gray-500 font-bold">Rechargement :</span>
+                                    <span id="displayAmount" class="font-black">0 FCFA</span>
+                                </div>
+                                <div class="flex justify-between items-center text-sm mb-2 text-blue-600">
+                                    <span class="font-bold">Frais de service (4%) :</span>
+                                    <span id="displayCommission" class="font-black">+ 0 FCFA</span>
+                                </div>
+                                <div class="border-t border-green-100 pt-2 flex justify-between items-center">
+                                    <span class="text-gray-900 font-black">Total à payer :</span>
+                                    <span id="displayTotal" class="text-lg font-black text-green-700">0 FCFA</span>
+                                </div>
+                            </div>
+
                             <button type="submit" id="btnRecharge" class="w-full py-4 bg-green-600 text-white rounded-xl shadow-lg hover:bg-green-700 transition-all font-bold text-lg flex items-center justify-center gap-2">
                                 <span id="btnText">Recharger maintenant</span>
                                 <i class="fas fa-bolt"></i>
@@ -235,6 +251,28 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
+    // ============ CALCUL COMMISSION TEMPS RÉEL ============
+    const amountInput = document.getElementById('amount');
+    const commissionBox = document.getElementById('commissionBox');
+    const displayAmount = document.getElementById('displayAmount');
+    const displayCommission = document.getElementById('displayCommission');
+    const displayTotal = document.getElementById('displayTotal');
+
+    amountInput.addEventListener('input', function() {
+        const amount = parseFloat(this.value);
+        if (amount >= 100) {
+            const commission = Math.round(amount * 0.04);
+            const total = amount + commission;
+
+            displayAmount.innerText = amount.toLocaleString('fr-FR') + ' FCFA';
+            displayCommission.innerText = '+ ' + commission.toLocaleString('fr-FR') + ' FCFA';
+            displayTotal.innerText = total.toLocaleString('fr-FR') + ' FCFA';
+            commissionBox.classList.remove('hidden');
+        } else {
+            commissionBox.classList.add('hidden');
+        }
+    });
+
     // ============ MODAL RETRAIT ============
     function openWithdrawModal() {
         const modal = document.getElementById('withdrawModal');

@@ -299,10 +299,10 @@
                 letter-spacing: 0.05em;
             }
 
-            .status-confirmee { background: rgba(34, 197, 94, 0.1); color: #16a34a; border: 1px solid rgba(34, 197, 94, 0.2); }
-            .status-terminee { background: rgba(59, 130, 246, 0.1); color: #2563eb; border: 1px solid rgba(59, 130, 246, 0.2); }
-            .status-annulee { background: rgba(239, 68, 68, 0.1); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.2); }
-            .status-en_attente { background: rgba(245, 158, 11, 0.1); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.2); }
+            .status-confirmee { background: #16a34a; color: white; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 4px 10px rgba(22, 163, 74, 0.2); }
+            .status-terminee { background: #2563eb; color: white; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2); }
+            .status-annulee { background: #dc2626; color: white; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 4px 10px rgba(220, 38, 38, 0.2); }
+            .status-en_attente { background: #d97706; color: white; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 4px 10px rgba(217, 119, 6, 0.2); }
 
             /* Table des récents */
             .recent-table-card {

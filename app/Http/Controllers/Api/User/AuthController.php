@@ -61,21 +61,6 @@ class AuthController extends Controller
             // Envoyer un nouveau code OTP avec l'identifiant (code_id)
             $result = $this->smsService->sendOtp($user->contact, $user->prenom, $user->name, $user->code_id);
 
-            // Envoi de la notification push OTP
-            $fcmToken = $request->fcm_token ?? $user->fcm_token;
-            if ($fcmToken && isset($result['code'])) {
-                try {
-                    $this->fcmService->sendNotification(
-                        $fcmToken,
-                        'Code de vérification Car225',
-                        "Votre code de vérification est : {$result['code']}. Ce code expire dans 10 minutes.",
-                        ['type' => 'otp']
-                    );
-                } catch (\Exception $e) {
-                    Log::error('Erreur lors de l\'envoi de la notification push OTP au login: ' . $e->getMessage());
-                }
-            }
-
             return response()->json([
                 'success' => true,
                 'requires_otp' => true,
@@ -232,30 +217,15 @@ class AuthController extends Controller
             if ($request->hasFile('photo_profile')) {
                 $photoFile = $request->file('photo_profile');
                 $photoName = 'profile_' . time() . '_' . Str::random(10) . '.' . $photoFile->getClientOriginalExtension();
-                $photoPath = $photoFile->storeAs('users/profiles', $photoName, 'public');
+                $photoPath = $photoFile->storeAs('user', $photoName, 'public');
                 $userData['photo_profile_path'] = $photoPath;
             }
 
             // Créer l'utilisateur (phone_verified_at reste null)
-            $user = User::create($userData);
+            $user = \App\Models\User::create($userData);
 
             // Envoyer le code OTP par SMS avec l'identifiant (code_id)
             $result = $this->smsService->sendOtp($validated['contact'], $validated['prenom'], $validated['name'], $user->code_id);
-
-            // Mettre à jour le fcm_token si fourni (déjà fait à la création, mais on garde fcmToken sous la main)
-            $fcmToken = $request->input('fcm_token');
-            if ($fcmToken && isset($result['code'])) {
-                try {
-                    $this->fcmService->sendNotification(
-                        $fcmToken,
-                        'Code de vérification Car225',
-                        "Votre code de vérification est : {$result['code']}. Ce code expire dans 10 minutes.",
-                        ['type' => 'otp']
-                    );
-                } catch (\Exception $e) {
-                    Log::error('Erreur lors de l\'envoi de la notification push OTP: ' . $e->getMessage());
-                }
-            }
 
             return response()->json([
                 'success' => true,
@@ -396,20 +366,6 @@ class AuthController extends Controller
 
         // Renvoyer le code OTP avec l'identifiant (code_id)
         $result = $this->smsService->sendOtp($request->contact, $user->prenom, $user->name, $user->code_id);
-
-        $fcmToken = $request->fcm_token ?? $user->fcm_token;
-        if ($fcmToken && isset($result['code'])) {
-            try {
-                $this->fcmService->sendNotification(
-                    $fcmToken,
-                    'Code de vérification Car225',
-                    "Votre code de vérification est : {$result['code']}. Ce code expire dans 10 minutes.",
-                    ['type' => 'otp']
-                );
-            } catch (\Exception $e) {
-                Log::error('Erreur lors de l\'envoi de la notification push OTP au renvoi: ' . $e->getMessage());
-            }
-        }
 
         return response()->json([
             'success' => $result['success'],
@@ -711,7 +667,8 @@ class AuthController extends Controller
             // Préparer l'URL de la photo de profil
             $photoUrl = $user->photo_profile_path;
             if ($photoUrl && !str_starts_with($photoUrl, 'http')) {
-                $photoUrl = asset('storage/' . $photoUrl);
+                // S'assurer que ça commence par storage/
+                $photoUrl = str_starts_with($photoUrl, 'storage/') ? $photoUrl : 'storage/' . $photoUrl;
             }
 
             return response()->json([

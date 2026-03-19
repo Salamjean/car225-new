@@ -23,9 +23,9 @@ class GareVoyageController extends Controller
         $date = $request->input('date', Carbon::today()->toDateString());
 
         // Get all active programmes for this specific gare
-        $allProgrammes = Programme::where('compagnie_id', $compagnieId)
-            ->where('gare_depart_id', $gare->id)
-            ->where('statut', 'actif')
+        $allProgrammes = Programme::where('compagnie_id', '=', $compagnieId)
+            ->where('gare_depart_id', '=', $gare->id)
+            ->where('statut', '=', 'actif')
             ->whereDate('date_depart', '<=', $date)
             ->whereDate('date_fin', '>=', $date)
             ->whereDoesntHave('voyages', function ($query) use ($date) {
@@ -73,18 +73,18 @@ class GareVoyageController extends Controller
         })->unique('id')->values();
 
         // Available drivers (station-specific)
-        $chauffeurs = Personnel::where('compagnie_id', $compagnieId)
-            ->where('gare_id', $gare->id)
-            ->where('type_personnel', 'Chauffeur')
-            ->where('statut', 'disponible')
+        $chauffeurs = Personnel::where('compagnie_id', '=', $compagnieId)
+            ->where('gare_id', '=', $gare->id)
+            ->where('type_personnel', '=', 'Chauffeur')
+            ->where('statut', '=', 'disponible')
             ->orderBy('name')
             ->get();
 
         // Available vehicles (station-specific)
-        $vehicules = Vehicule::where('compagnie_id', $compagnieId)
-            ->where('gare_id', $gare->id)
-            ->where('is_active', true)
-            ->where('statut', 'disponible')
+        $vehicules = Vehicule::where('compagnie_id', '=', $compagnieId)
+            ->where('gare_id', '=', $gare->id)
+            ->where('is_active', '=', true)
+            ->where('statut', '=', 'disponible')
             ->orderBy('immatriculation')
             ->get();
 
@@ -174,7 +174,7 @@ class GareVoyageController extends Controller
         }
 
         // Check if active voyage already exists
-        $exists = Voyage::where('programme_id', $programme->id)
+        $exists = Voyage::where('programme_id', '=', $programme->id)
             ->whereDate('date_voyage', $validated['date_voyage'])
             ->whereNotIn('statut', ['annulé']) // Allow new assignment if previous was cancelled
             ->exists();
@@ -184,7 +184,7 @@ class GareVoyageController extends Controller
         }
 
         // Check driver availability (ignoring cancelled trips)
-        $chauffeurBusy = Voyage::where('personnel_id', $chauffeur->id)
+        $chauffeurBusy = Voyage::where('personnel_id', '=', $chauffeur->id)
             ->whereDate('date_voyage', $validated['date_voyage'])
             ->whereNotIn('statut', ['annulé', 'terminé'])
             ->exists();
@@ -194,7 +194,7 @@ class GareVoyageController extends Controller
         }
 
         // Check vehicle availability (ignoring cancelled trips)
-        $vehiculeBusy = Voyage::where('vehicule_id', $vehicule->id)
+        $vehiculeBusy = Voyage::where('vehicule_id', '=', $vehicule->id)
             ->whereDate('date_voyage', $validated['date_voyage'])
             ->whereNotIn('statut', ['annulé', 'terminé'])
             ->exists();

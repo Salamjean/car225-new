@@ -26,6 +26,8 @@ class Gare extends Authenticatable
         'responsable_nom',
         'responsable_prenom',
         'compagnie_id',
+        'latitude',
+        'longitude',
     ];
 
     protected $hidden = [

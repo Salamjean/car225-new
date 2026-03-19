@@ -39,21 +39,34 @@
             <i class="fas fa-check"></i>
         </div>
         
-        <h1 class="text-2xl font-bold text-slate-800 mb-2">Paiement Enregistré !</h1>
-        <p class="text-slate-600 mb-6">
-            Votre paiement pour la <strong>Réservation</strong> via Wave est en cours de validation. Vous recevrez vos billets d'ici peu.
-        </p>
+        @if(($status ?? '') === 'Payé')
+            <h1 class="text-2xl font-bold text-slate-800 mb-2">Paiement Confirmé !</h1>
+            <p class="text-slate-600 mb-6">
+                Votre paiement pour la <strong>Réservation</strong> via Wave a été validé avec succès. Vos billets sont disponibles.
+            </p>
+        @else
+            <h1 class="text-2xl font-bold text-slate-800 mb-2">Paiement Enregistré !</h1>
+            <p class="text-slate-600 mb-6">
+                Votre paiement pour la <strong>Réservation</strong> via Wave est en cours de validation. Vous recevrez vos billets d'ici peu.
+            </p>
+        @endif
 
         <div class="bg-slate-50 rounded-xl p-5 mb-8 text-left border border-slate-100">
             <div class="flex justify-between mb-3">
-                <span class="text-slate-500 text-sm">Session ID :</span>
-                <span class="text-slate-800 font-mono text-xs font-bold">{{ substr($sessionId ?? 'N/A', 0, 15) }}...</span>
+                <span class="text-slate-500 text-sm">Référence :</span>
+                <span class="text-slate-800 font-mono text-sm font-bold">{{ $ticketReference ?? 'N/A' }}</span>
             </div>
             <div class="flex justify-between">
                 <span class="text-slate-500 text-sm">Statut :</span>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    <i class="fas fa-clock mr-1"></i> En Traitement
-                </span>
+                @if(($status ?? '') === 'Payé')
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <i class="fas fa-check-circle mr-1"></i> Payé
+                    </span>
+                @else
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <i class="fas fa-clock mr-1"></i> En Traitement
+                    </span>
+                @endif
             </div>
         </div>
 

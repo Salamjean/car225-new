@@ -50,33 +50,43 @@ class SignalementApiController extends Controller
                 // Par défaut, le display_statut = statut DB
                 $res->display_statut = $res->statut;
                 $res->temps_restant = null;
+                $res->estimated_arrival_at = null; // Heure précise pour le mobile
                 $res->is_ongoing = false;
-                $res->can_report = false; // Par défaut, on ne peut pas signaler
+                $res->can_report = false; 
 
                 if ($res->statut === 'terminee') {
                     $voyage = $res->mission;
                     
                     if ($voyage) {
+                        $res->voyage_id = $voyage->id; // S'assurer de l'ID pour le signalement
+                        $res->vehicule_id = $voyage->vehicule_id;
+
                         if ($voyage->statut === 'en_cours') {
                             $res->display_statut = 'en_voyage';
                             $res->is_ongoing = true;
-                            $res->can_report = true; // SEULEMENT LORSQU'IL EST EN VOYAGE
+                            $res->can_report = true; 
                             
                             $res->temps_restant = $voyage->temps_restant;
+                            $res->estimated_arrival_at = $voyage->estimated_arrival_at 
+                                ? $voyage->estimated_arrival_at->format('Y-m-d H:i:s') 
+                                : null;
                             $res->occupancy = $voyage->occupancy;
-                        } elseif ($voyage->statut === 'termine' || $voyage->statut === 'terminé') {
+                            
+                            // Coordonnées pour la carte mobile si dispo
+                            $res->lat = $voyage->latitude;
+                            $res->lng = $voyage->longitude;
+                        } elseif (in_array($voyage->statut, ['termine', 'terminé'])) {
                             $res->display_statut = 'arrive';
-                            $res->can_report = false; // INTERDIT SI ARRIVÉ
+                            $res->can_report = false;
                         } else {
                             $res->display_statut = 'enregistre';
                         }
                     } else {
-                         // Fallback si pas de voyage trouvé (rare)
                          $res->display_statut = 'enregistre';
                     }
                 } elseif ($res->statut === 'confirmee') {
                     $res->display_statut = 'confirmee';
-                    $res->can_report = false; // Doit être scanné d'abord (en voyage)
+                    $res->can_report = false; 
                 }
 
                 return $res;

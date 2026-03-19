@@ -15,5 +15,10 @@ class Admin extends Authenticatable
         'name',
         'email',
         'password',
+        'portefeuille',
+    ];
+
+    protected $casts = [
+        'portefeuille' => 'decimal:2',
     ];
 }

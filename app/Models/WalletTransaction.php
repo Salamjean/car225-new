@@ -18,6 +18,8 @@ class WalletTransaction extends Model
         'status', // pending, completed, failed, cancelled
         'payment_method',
         'external_transaction_id',
+        'commission_amount',
+        'commission_rate',
         'metadata',
     ];
 

@@ -65,8 +65,12 @@
 
         <div class="bg-gray-50 rounded-2xl p-5 mb-8 text-left border border-gray-100">
             <div class="flex justify-between items-center mb-2">
-                <span class="text-gray-500 text-sm font-medium">Référence</span>
-                <span class="text-gray-800 font-bold text-sm">{{ $transactionId }}</span>
+                <span class="text-gray-500 text-sm font-medium">Référence Billet</span>
+                <span class="text-gray-800 font-bold text-sm">{{ $ticketReference ?? 'N/A' }}</span>
+            </div>
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-gray-500 text-sm font-medium">ID Transaction</span>
+                <span class="text-gray-400 font-medium text-xs">{{ $transactionId }}</span>
             </div>
             <div class="flex justify-between items-center">
                 <span class="text-gray-500 text-sm font-medium">Type</span>

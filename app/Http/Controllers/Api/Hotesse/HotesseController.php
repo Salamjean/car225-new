@@ -48,11 +48,35 @@ class HotesseController extends Controller
                 ->sum('montant');
         }
 
-        $recent_reservations = Reservation::where('hotesse_id', $hotesse->id)
+        $recent_reservations_models = Reservation::where('hotesse_id', $hotesse->id)
             ->with(['programme'])
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
+
+        $recent_reservations = $recent_reservations_models->map(function ($rv) {
+            $ticketNo = 'TK-' . str_pad($rv->id, 3, '0', STR_PAD_LEFT);
+            $formattedStatut = 'En attente';
+            if ($rv->statut === 'confirmee') $formattedStatut = 'Confirmé';
+            elseif ($rv->statut === 'annulee') $formattedStatut = 'Annulé';
+            elseif ($rv->statut === 'terminee') $formattedStatut = 'Terminé';
+
+            return [
+                'id' => $rv->id,
+                'ticket_no' => $ticketNo,
+                'reference' => $rv->reference,
+                'passager' => $rv->passager_prenom . ' ' . $rv->passager_nom,
+                'trajet' => $rv->programme ? ($rv->programme->point_depart . ' → ' . $rv->programme->point_arrive) : 'N/A',
+                'prix' => number_format($rv->montant, 0, ',', ' ') . ' FCFA',
+                'date' => $rv->date_voyage ? $rv->date_voyage->format('d M Y') : '',
+                'heure' => substr($rv->heure_depart, 0, 5),
+                'siege' => 'Place ' . $rv->seat_number,
+                'statut' => $formattedStatut,
+                'qr_code' => $rv->qr_code,
+                'qr_code_url' => $rv->qr_code_path ? asset('storage/' . $rv->qr_code_path) : null,
+                'created_at' => $rv->created_at->format('d/m/Y H:i')
+            ];
+        });
 
         return response()->json([
             'success' => true,
@@ -197,6 +221,8 @@ class HotesseController extends Controller
                 'date_heure' => ($rv->date_voyage ? $rv->date_voyage->format('d M Y') : '') . ' • ' . substr($rv->heure_depart, 0, 5),
                 'siege' => 'Place ' . $rv->seat_number,
                 'statut' => $formattedStatut,
+                'qr_code' => $rv->qr_code,
+                'qr_code_url' => $rv->qr_code_path ? asset('storage/' . $rv->qr_code_path) : null,
                 'created_at' => $rv->created_at->format('d/m/Y H:i')
             ];
         });
@@ -687,6 +713,8 @@ class HotesseController extends Controller
             'place' => $reservation->seat_number,
             'montant_total' => number_format($reservation->montant, 0, ',', ' ') . ' FCFA',
             'statut' => $formattedStatut,
+            'qr_code' => $reservation->qr_code,
+            'qr_code_url' => $reservation->qr_code_path ? asset('storage/' . $reservation->qr_code_path) : null,
             'created_at' => $reservation->created_at->format('d/m/Y H:i')
         ];
 

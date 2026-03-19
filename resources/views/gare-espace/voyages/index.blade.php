@@ -225,7 +225,8 @@
                                          'total_seats' => $totalS,
                                          'chauffeur' => $voyage->chauffeur?->name . ' ' . $voyage->chauffeur?->prenom,
                                          'vehicule' => $voyage->vehicule?->immatriculation,
-                                         'statut' => $voyage->statut
+                                         'statut' => $voyage->statut,
+'temps_restant' => $voyage->temps_restant
                                      ]) }})">
                                     <div class="p-6 bg-gradient-to-br from-gray-50 to-blue-50 border-b border-gray-100">
                                         <div class="flex justify-between items-start mb-4">
@@ -447,6 +448,16 @@ document.addEventListener('DOMContentLoaded', function() {
                             <p class="text-xl font-black ${data.statut === 'en_cours' ? 'text-purple-600' : 'text-gray-900'}">${data.statut === 'en_cours' ? (data.arrival || 'Calcul...') : (data.tarif + ' F')}</p>
                         </div>
                     </div>
+                    
+                    ${data.statut === 'en_cours' ? `
+                    <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-[10px] font-black text-blue-400 uppercase mb-1">Temps Restant (GPS)</p>
+                            <p class="text-xl font-black text-blue-700 animate-pulse">${data.temps_restant || 'Localisation en cours...'}</p>
+                        </div>
+                        <i class="fas fa-satellite-dish text-2xl text-blue-300"></i>
+                    </div>
+                    ` : ''}
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="flex items-center gap-3 p-3 bg-gray-50/50 rounded-2xl border border-gray-100/50 transition-colors">
