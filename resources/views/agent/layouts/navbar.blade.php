@@ -7,14 +7,12 @@
     <div class="navbar-inner">
         {{-- Left: Menu toggle (mobile) + Page title --}}
         <div class="navbar-left">
-            {{-- Toggle mobile --}}
-            <button class="navbar-toggle d-md-none" onclick="toggleSidebar()">
+            {{-- <button class="navbar-toggle d-md-none" onclick="toggleSidebar()">
                 <i class="fas fa-bars"></i>
-            </button>
-            {{-- Toggle collapse sidebar (bureau) --}}
-            <button class="navbar-toggle d-none d-md-flex" id="sidebarCollapseBtn" onclick="toggleSidebarCollapse()" title="Réduire la sidebar">
+            </button> --}}
+            {{-- <button class="navbar-toggle d-none d-md-flex" id="sidebarCollapseBtn" onclick="toggleSidebarCollapse()" title="Réduire la sidebar">
                 <i class="fas fa-bars" id="sidebarCollapseIcon"></i>
-            </button>
+            </button> --}}
             <div class="navbar-title d-none d-md-block">
                 @yield('title', 'Espace Agent')
             </div>
