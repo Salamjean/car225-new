@@ -38,9 +38,10 @@
                                             <p class="text-white/50 text-[10px] font-black uppercase tracking-widest mb-1">Arrivée prévue</p>
                                             <p class="text-xl font-black">{{ \Carbon\Carbon::parse($currentTrip->programme->heure_arrive)->format('H:i') }}</p>
                                         </div>
-                                        <div>
-                                            <p class="text-white/50 text-[10px] font-black uppercase tracking-widest mb-1">Siège n°</p>
-                                            <p class="text-xl font-black">{{ $currentTrip->seat_number }}</p>
+                                        <div class="flex flex-col">
+                                            <p class="text-[10px] font-black text-white/60 uppercase tracking-widest mb-1">Siège n°</p>
+                                            <p class="text-2xl font-black text-white">{{ $currentTrip->seat_number }}</p>
+                                            <p class="text-[9px] font-medium text-white/40 mt-1 uppercase tracking-tighter">{{ $currentTrip->reference }}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -50,16 +51,26 @@
                                     
                                     @php
                                         $dateVoyage = \Carbon\Carbon::parse($currentTrip->date_voyage)->format('Y-m-d');
-                                        $arrivalDateTime = \Carbon\Carbon::parse($dateVoyage . ' ' . $currentTrip->programme->heure_arrive);
-                                        if (\Carbon\Carbon::parse($currentTrip->programme->heure_arrive)->lt(\Carbon\Carbon::parse($currentTrip->programme->heure_depart))) {
+                                        $heureArrive = $currentTrip->programme->heure_arrive;
+                                        
+                                        // Utiliser le voyage lié si disponible pour l'estimation dynamique
+                                        $linkedVoyage = $currentTrip->programme->voyages->first();
+                                        
+                                        // Priorité à l'estimation dynamique
+                                        $arrivalDateTime = ($linkedVoyage && $linkedVoyage->estimated_arrival_at) 
+                                            ? \Carbon\Carbon::parse($linkedVoyage->estimated_arrival_at) 
+                                            : \Carbon\Carbon::parse($dateVoyage . ' ' . $heureArrive);
+                                        
+                                        // Gérer le passage à minuit si pas d'estimation dynamique
+                                        if (!($linkedVoyage && $linkedVoyage->estimated_arrival_at) && \Carbon\Carbon::parse($currentTrip->programme->heure_arrive)->lt(\Carbon\Carbon::parse($currentTrip->programme->heure_depart))) {
                                             $arrivalDateTime->addDay();
                                         }
                                     @endphp
                                     
-                                    <div class="text-3xl font-black tracking-tighter mb-1 font-mono" 
+                                    <div class="text-xl md:text-2xl font-black tracking-tight mb-2 min-h-[1.5em] flex items-center justify-center" 
                                          id="user-timer-{{ $currentTrip->id }}" 
                                          data-arrival="{{ $arrivalDateTime->toIso8601String() }}">
-                                        --:--:--
+                                        Calcul en cours...
                                     </div>
                                     <div class="w-full h-1.5 bg-white/20 rounded-full mt-4 overflow-hidden">
                                         <div class="h-full bg-white rounded-full animate-pulse shadow-[0_0_10px_rgba(255,255,255,0.5)]" style="width: 65%"></div>
@@ -450,7 +461,7 @@
                     const distance = arrivalTime - now;
                     
                     if (distance < 0) {
-                        timer.innerHTML = "Arrivé";
+                        timer.innerHTML = "🏁 Destination atteinte";
                         if (document.getElementById('tracking-time')) {
                             document.getElementById('tracking-time').innerHTML = `<i class="fas fa-flag-checkered"></i> Arrivé`;
                         }
@@ -459,9 +470,16 @@
                     
                     const hours = Math.floor(distance / (1000 * 60 * 60));
                     const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
                     
-                    const timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    let timeString = "";
+                    if (hours > 0) {
+                        timeString = `Arrivée dans <strong> ${hours}h ${minutes}min</strong>`;
+                    } else if (minutes > 0) {
+                        timeString = `Arrivée dans <strong> ${minutes}min</strong>`;
+                    } else {
+                        timeString = `Arrivée <strong>imminente</strong>`;
+                    }
+
                     timer.innerHTML = timeString;
                     
                     const trackingTimeEl = document.getElementById('tracking-time');
@@ -473,7 +491,7 @@
 
             if (document.querySelectorAll('[data-arrival]').length > 0) {
                 updateTimers();
-                setInterval(updateTimers, 1000);
+                setInterval(updateTimers, 60000); // Mise à jour toutes les minutes
             }
         });
     </script>
@@ -568,6 +586,15 @@
                         if (isFirstLoad) {
                             map.setView(latLng, 14, { animate: true });
                             isFirstLoad = false;
+                        }
+
+                        // NEW: Update timer arrival data
+                        if (loc.estimated_arrival) {
+                            const timer = document.getElementById('user-timer-{{ $currentTrip->id ?? "" }}');
+                            if (timer) {
+                                timer.setAttribute('data-arrival', loc.estimated_arrival);
+                                updateTimers();
+                            }
                         }
                     })
                     .catch(err => {

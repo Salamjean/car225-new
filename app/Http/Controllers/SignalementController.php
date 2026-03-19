@@ -22,17 +22,21 @@ class SignalementController extends Controller
         $today = now()->format('Y-m-d');
         $preselectedReservationId = $request->query('reservation_id');
 
-        // Récupérer toutes les réservations du jour (Scannées/Terminées ou Confirmées)
-        $reservations = \App\Models\Reservation::with(['programme.compagnie', 'programme.voyages'])
+        // Récupérer toutes les réservations récentes du jour (ou liées à un voyage en cours)
+        $reservations = \App\Models\Reservation::with(['programme.compagnie', 'programme.voyages', 'voyage'])
             ->where('user_id', $user->id)
-            ->whereDate('date_voyage', $today)
             ->whereIn('statut', ['confirmee', 'terminee'])
+            ->where(function($q) use ($today) {
+                $q->whereDate('date_voyage', $today)
+                  ->orWhereNotNull('voyage_id'); // On garde celles liées à un voyage (lien direct)
+            })
+            ->latest()
             ->get();
 
-        // Chercher celle qui est "en voyage" (le Voyage associé est 'en_cours')
+        // Chercher celle qui est "en voyage"
         $activeReservation = $reservations->first(function($res) {
             // Un utilisateur est "en voyage" si sa réservation est 'terminee' (scannée) 
-            // ET que le voyage (mission) est 'en_cours'
+            // ET que le voyage (mission) est 'en_cours' (utilisant l'accesseur intelligent mission)
             return $res->statut === 'terminee' && $res->mission && $res->mission->statut === 'en_cours';
         });
 

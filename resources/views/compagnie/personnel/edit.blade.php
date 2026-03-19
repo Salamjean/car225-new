@@ -75,7 +75,7 @@
             <i class="fas fa-arrow-left"></i> Retour à la liste
         </a>
 
-        <form action="{{ route('personnel.update', $personnel->id) }}" method="POST" enctype="multipart/form-data" id="editPersonnelForm">
+        <form action="{{ route('personnels.update', $personnel->id) }}" method="POST" enctype="multipart/form-data" id="editPersonnelForm">
             @csrf
             @method('PUT')
 

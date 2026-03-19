@@ -57,6 +57,8 @@
     .bi-edit:hover { background: var(--orange); color: white; border-color: var(--orange); }
     .bi-del:hover { background: #E11D48; color: white; border-color: #E11D48; }
 
+    .code-id-badge { background: #F8FAFC; color: #64748B; padding: 4px 8px; border-radius: 6px; font-family: monospace; font-weight: 800; font-size: 11px; border: 1.5px solid #E2E8F0; display: inline-block; }
+
     .sa-detail-card { background: var(--surface-2); border-radius: 16px; padding: 20px; text-align: left; margin-top: 20px; border: 1px solid var(--border); }
     .sa-detail-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
     .sa-detail-avatar { width: 60px; height: 60px; border-radius: 14px; background: var(--orange); color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 800; }
@@ -157,6 +159,7 @@
                     <tr>
                         <th>Collaborateur</th>
                         <th>Fonction</th>
+                        <th>CODE ID</th>
                         <th>Coordonnées</th>
                         <th class="text-center">Statut</th>
                         <th class="text-right">Actions</th>
@@ -167,8 +170,9 @@
                     <tr class="personnel-row" 
                         data-type="{{ $personnel->type_personnel }}" 
                         data-statut="{{ $personnel->statut }}"
-                        data-search="{{ strtolower($personnel->name . ' ' . $personnel->prenom . ' ' . $personnel->email) }}"
+                        data-search="{{ strtolower($personnel->name . ' ' . $personnel->prenom . ' ' . $personnel->email . ' ' . $personnel->code_id) }}"
                         data-id="{{ $personnel->id }}"
+                        data-code-id="{{ $personnel->code_id }}"
                         data-full-name="{{ addslashes($personnel->prenom . ' ' . $personnel->name) }}"
                         data-email="{{ $personnel->email }}"
                         data-phone="{{ $personnel->country_code }} {{ $personnel->contact }}"
@@ -196,6 +200,10 @@
                             @else
                                 <span class="role-badge rb-convoyeur"><i class="fas fa-people-carry"></i> Convoyeur</span>
                             @endif
+                        </td>
+
+                        <td>
+                            <span class="code-id-badge">{{ $personnel->code_id ?? 'N/A' }}</span>
                         </td>
 
                         <td>
@@ -229,7 +237,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5">
+                        <td colspan="6">
                             <div class="table-empty">
                                 <i class="fas fa-users-slash"></i>
                                 <h4 style="font-size: 14px; font-weight: 800; color: var(--text-1); margin: 0;">Aucun personnel enregistré</h4>
@@ -286,6 +294,7 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.addEventListener('click', function() {
             const row = this.closest('tr');
             const name = row.getAttribute('data-full-name');
+            const codeId = row.getAttribute('data-code-id');
             const email = row.getAttribute('data-email');
             const type = row.getAttribute('data-type');
             const phone = row.getAttribute('data-phone');
@@ -308,13 +317,21 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         <div class="sa-grid">
                             <div class="sa-box">
+                                <div class="sa-box-label">CODE IDENTIFIANT</div>
+                                <div class="sa-box-val" style="color:var(--orange);">${codeId || 'N/A'}</div>
+                            </div>
+                            <div class="sa-box">
                                 <div class="sa-box-label">DIVISION</div>
                                 <div class="sa-box-val">${type}</div>
                             </div>
-                            <div class="sa-box">
+                        </div>
+
+                        <div class="sa-row">
+                            <div>
                                 <div class="sa-box-label">ÉTAT ACTUEL</div>
-                                <div class="sa-box-val" style="color:${statutColor};">${statut}</div>
+                                <div style="font-size:14px; font-weight:800; color:${statutColor}; text-transform:uppercase;">${statut}</div>
                             </div>
+                            <div class="status-pill ${statut === 'disponible' ? 'sp-libre' : 'sp-route'}" style="padding:4px 8px;">${statut}</div>
                         </div>
 
                         <div class="sa-row">

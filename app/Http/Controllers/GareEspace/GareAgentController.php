@@ -21,10 +21,13 @@ class GareAgentController extends Controller
     {
         $gare = Auth::guard('gare')->user();
         $agents = Agent::where('gare_id', $gare->id)
+            ->whereNull('archived_at')
             ->orderBy('created_at', 'desc')
             ->get();
+            
+        $agentsArchivedCount = Agent::where('gare_id', $gare->id)->whereNotNull('archived_at')->count();
 
-        return view('gare-espace.agent.index', compact('agents'));
+        return view('gare-espace.agent.index', compact('agents', 'agentsArchivedCount'));
     }
 
     public function create()
@@ -44,31 +47,11 @@ class GareAgentController extends Controller
             'nom_urgence' => 'required|string|max:255',
             'lien_parente_urgence' => 'required|string|max:100',
             'profile_picture' => 'nullable|image|max:2048',
-        ], [
-            'name.required' => 'Le nom est obligatoire.',
-            'name.min' => 'Le nom doit avoir au moins 3 caractères.',
-            'prenom.required' => 'Le prénom est obligatoire.',
-            'prenom.min' => 'Le prénom doit avoir au moins 3 caractères.',
-            'email.required' => 'L\'adresse e-mail est obligatoire.',
-            'email.email' => 'L\'adresse e-mail n\'est pas valide.',
-            'email.unique' => 'Cette adresse e-mail est déjà associée à un compte.',
-            'contact.required' => 'Le contact est obligatoire.',
-            'commune.required' => 'La commune est obligatoire.',
-            'cas_urgence.required' => 'Le contact d\'urgence est obligatoire.',
-            'nom_urgence.required' => 'Le nom de la personne à contacter est obligatoire.',
-            'lien_parente_urgence.required' => 'Le lien de parenté est obligatoire.',
-            'profile_picture.image' => 'Le fichier doit être une image.',
-            'profile_picture.max' => 'L\'image ne doit pas dépasser 2 Mo.',
         ]);
 
         try {
             DB::beginTransaction();
-
             $gare = Auth::guard('gare')->user();
-
-            if ($request->contact === $request->cas_urgence) {
-                return redirect()->back()->withErrors(['cas_urgence' => 'Le contact d\'urgence doit être différent du contact principal.'])->withInput();
-            }
 
             $agent = new Agent();
             $agent->name = $request->name;
@@ -79,52 +62,83 @@ class GareAgentController extends Controller
             $agent->nom_urgence = $request->nom_urgence;
             $agent->lien_parente_urgence = $request->lien_parente_urgence;
             $agent->password = Hash::make(Str::random(16));
+            $agent->commune = $request->commune;
+            $agent->compagnie_id = $gare->compagnie_id;
+            $agent->gare_id = $gare->id;
 
             if ($request->hasFile('profile_picture')) {
                 $agent->profile_picture = $request->file('profile_picture')->store('profile_pictures', 'public');
             }
 
-            $agent->commune = $request->commune;
-            $agent->compagnie_id = $gare->compagnie_id;
-            $agent->gare_id = $gare->id;
-
             $agent->save();
 
-            // Envoi de l'e-mail de vérification
+            // OTP / Verification Logic
             ResetCodePasswordAgent::where('email', $agent->email)->delete();
-            $code1 = rand(1000, 4000);
-            $code = $code1 . '' . $agent->id;
-
-            ResetCodePasswordAgent::create([
-                'code' => $code,
-                'email' => $agent->email,
-            ]);
-
-            Notification::route('mail', $agent->email)
-                ->notify(new SendEmailToAgentAfterRegistrationNotification($code, $agent->email, $agent->code_id));
+            $code = rand(1000, 4000) . $agent->id;
+            ResetCodePasswordAgent::create(['code' => $code, 'email' => $agent->email]);
+            Notification::route('mail', $agent->email)->notify(new SendEmailToAgentAfterRegistrationNotification($code, $agent->email, $agent->code_id));
 
             DB::commit();
-
-            return redirect()->route('gare-espace.agents.index')->with('success', 'L\'agent a bien été créé avec succès.');
+            return redirect()->route('gare-espace.agents.index')->with('success', 'L\'agent a bien été créé.');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Erreur lors de la création de l\'agent depuis la gare: ' . $e->getMessage());
-            return redirect()->back()->withErrors(['error' => 'Une erreur est survenue lors de l\'enregistrement. Veuillez réessayer.'])->withInput();
+            Log::error('Erreur creation agent: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Erreur lors de l\'enregistrement.'])->withInput();
         }
+    }
+
+    public function edit(Agent $agent)
+    {
+        return view('gare-espace.agent.edit', compact('agent'));
+    }
+
+    public function update(Request $request, Agent $agent)
+    {
+        $request->validate([
+            'name' => 'required|string|min:3|max:255',
+            'prenom' => 'required|string|min:3|max:255',
+            'email' => 'required|email|unique:agents,email,' . $agent->id,
+            'contact' => 'required|string|max:15',
+            'commune' => 'required|string|max:255',
+            'cas_urgence' => 'required|string|max:15',
+            'nom_urgence' => 'required|string|max:255',
+            'lien_parente_urgence' => 'required|string|max:100',
+            'profile_picture' => 'nullable|image|max:2048',
+        ]);
+
+        try {
+            $agent->name = $request->name;
+            $agent->prenom = $request->prenom;
+            $agent->email = $request->email;
+            $agent->contact = $this->formatPhoneNumber($request->contact);
+            $agent->cas_urgence = $this->formatPhoneNumber($request->cas_urgence);
+            $agent->nom_urgence = $request->nom_urgence;
+            $agent->lien_parente_urgence = $request->lien_parente_urgence;
+            $agent->commune = $request->commune;
+
+            if ($request->hasFile('profile_picture')) {
+                if ($agent->profile_picture) Storage::disk('public')->delete($agent->profile_picture);
+                $agent->profile_picture = $request->file('profile_picture')->store('profile_pictures', 'public');
+            }
+
+            $agent->save();
+            return redirect()->route('gare-espace.agents.index')->with('success', 'L\'agent a été mis à jour.');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Erreur lors de la mise à jour.'])->withInput();
+        }
+    }
+
+    public function destroy(Agent $agent)
+    {
+        $agent->update(['archived_at' => now()]);
+        return redirect()->route('gare-espace.agents.index')->with('success', 'L\'agent a été archivé.');
     }
 
     private function formatPhoneNumber($number)
     {
         $number = preg_replace('/[^0-9+]/', '', $number);
-
-        if (substr($number, 0, 2) === '00') {
-            $number = '+' . substr($number, 2);
-        }
-
-        if (substr($number, 0, 1) !== '+') {
-            $number = '+225' . $number;
-        }
-
+        if (substr($number, 0, 2) === '00') $number = '+' . substr($number, 2);
+        if (substr($number, 0, 1) !== '+') $number = '+225' . $number;
         return $number;
     }
 }
