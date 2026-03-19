@@ -127,10 +127,12 @@
             .btn-scanner-hero:hover {
                 transform: translateY(-4px);
                 box-shadow: 0 20px 30px -10px rgba(255, 90, 31, 0.6);
+                border: 2px solid var(--primary-brand);
             }
 
             .btn-scanner-hero:active {
                 transform: translateY(0);
+                border: 2px solid var(--primary-brand);
             }
 
             /* Styles pour la liste des véhicules */
@@ -204,10 +206,10 @@
             }
 
             /* Modal Styling */
-            .modal-content {
+            /* .modal-content {
                 border-radius: 24px;
                 border: none;
-            }
+            } */
 
             .modal-header-premium {
                 background: var(--secondary-brand);
@@ -646,21 +648,20 @@
         </div>
     </div>
 
-    <!-- Modal Confirmation Passager (Premium Redesign) -->
     <div class="modal fade" id="confirmModal" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static">
-        <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 500px;">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document" style="max-width: 680px;">
             <div class="modal-content overflow-hidden border-0 shadow-[0_35px_60px_-15px_rgba(0,0,0,0.3)] rounded-[32px]">
                 <div class="modal-body p-0" id="confirmModalBody">
                     <!-- Contenu injecté dynamiquement -->
                 </div>
                 <div class="modal-footer p-6 border-0 bg-slate-50 flex items-center gap-3">
                     <button type="button"
-                        class="flex-1 py-4 font-bold text-slate-500 bg-white border border-slate-200 rounded-2xl hover:bg-slate-100 transition-colors"
+                        class="flex-1 py-3 font-bold text-slate-500 bg-white border border-slate-200 rounded-2xl hover:bg-slate-100 transition-colors"
                         id="cancelConfirmBtn">
                         Fermer
                     </button>
                     <button type="button"
-                        class="flex-[2] py-4 px-8 font-bold text-white bg-[#ff5a1f] rounded-2xl shadow-xl shadow-[#ff5a1f]/20 hover:bg-[#e64e16] hover:-translate-y-1 transition-all flex items-center justify-center gap-3"
+                        class="flex-[2] py-3 px-4 font-bold text-white bg-[#ff5a1f] rounded-2xl shadow-xl shadow-[#ff5a1f]/20 hover:bg-[#e64e16] hover:-translate-y-1 transition-all flex items-center justify-center gap-3"
                         id="confirmEmbarquementBtn">
                         <i class="material-icons">task_alt</i>
                         Confirmer l'embarquement
@@ -945,91 +946,87 @@
                 names[0][0].toUpperCase();
 
             var html = `
-                <div class="relative">
-                    <div class="p-8 bg-slate-900 text-white relative overflow-hidden">
-                        <div class="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full translate-x-10 -translate-y-10"></div>
-                        <div class="relative z-10 flex items-center gap-5">
-                            <div class="w-16 h-16 bg-orange-500 rounded-2xl flex items-center justify-center text-2xl font-black shadow-lg">
-                                ${initials}
+                <div class="p-3 bg-slate-900 text-white relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full translate-x-10 -translate-y-10"></div>
+                    <div class="relative z-10 flex items-center gap-5">
+                        <div class="w-16 h-16 bg-orange-500 rounded-2xl flex items-center justify-center text-2xl font-black shadow-lg">
+                            ${initials}
+                        </div>
+                        <div>
+                            <div class="text-[10px] uppercase font-black tracking-[0.2em] text-orange-400 mb-1">Passager Confirmé</div>
+                            <h3 class="text-2xl font-bold leading-tight">${passengerName}</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-8 bg-slate-50">
+                    <!-- Route Details -->
+                    <div class="bg-white rounded-3xl p-4 border border-slate-100 mb-8 shadow-sm">
+                        <div class="flex items-center justify-between gap-4">
+                            <div class="flex-1">
+                                <div class="text-[10px] uppercase font-bold text-slate-400 mb-1">Départ</div>
+                                <div class="text-xl font-black text-slate-900 leading-tight">${res.gare_depart_ville || res.trajet.split(' → ')[0]}</div>
+                                <div class="text-[12px] font-bold text-orange-600 mt-1">${res.gare_depart || ''}</div>
                             </div>
-                            <div>
-                                <div class="text-[10px] uppercase font-black tracking-[0.2em] text-orange-400 mb-1">Passager Confirmé</div>
-                                <h3 class="text-xl font-bold leading-tight">${passengerName}</h3>
+                            <div class="flex flex-col items-center">
+                                <div class="w-12 h-[2px] bg-slate-100"></div>
+                                <div class="w-10 h-10 rounded-full bg-white border-2 border-slate-100 flex items-center justify-center -my-5 z-10 shadow-sm">
+                                    <i class="material-icons text-orange-500" style="font-size: 18px;">directions_bus</i>
+                                </div>
+                                <div class="w-12 h-[2px] bg-slate-100"></div>
+                            </div>
+                            <div class="flex-1 text-right">
+                                <div class="text-[10px] uppercase font-bold text-slate-400 mb-1">Arrivée</div>
+                                <div class="text-xl font-black text-slate-900 leading-tight">${res.gare_arrivee_ville || res.trajet.split(' → ')[1]}</div>
+                                <div class="text-[12px] font-bold text-orange-600 mt-1">${res.gare_arrivee || ''}</div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="p-8">
-                        <!-- Route Details -->
-                        <div class="bg-slate-50 rounded-3xl p-6 border border-slate-100 mb-8">
-                            <div class="flex items-center justify-between gap-4">
-                                <div class="flex-1">
-                                    <div class="text-[10px] uppercase font-bold text-slate-400 mb-1">Départ</div>
-                                    <div class="text-lg font-black text-slate-900 leading-tight">${res.gare_depart_ville || res.trajet.split(' → ')[0]}</div>
-                                    <div class="text-[11px] font-bold text-orange-600 mt-1">${res.gare_depart || ''}</div>
-                                </div>
-                                <div class="flex flex-col items-center">
-                                    <div class="w-10 h-[2px] bg-slate-200"></div>
-                                    <div class="w-8 h-8 rounded-full bg-white border-2 border-slate-200 flex items-center justify-center -my-4 z-10">
-                                        <i class="material-icons text-slate-400" style="font-size: 14px;">directions_bus</i>
-                                    </div>
-                                    <div class="w-10 h-[2px] bg-slate-200"></div>
-                                </div>
-                                <div class="flex-1 text-right">
-                                    <div class="text-[10px] uppercase font-bold text-slate-400 mb-1">Arrivée</div>
-                                    <div class="text-lg font-black text-slate-900 leading-tight">${res.gare_arrivee_ville || res.trajet.split(' → ')[1]}</div>
-                                    <div class="text-[11px] font-bold text-orange-600 mt-1">${res.gare_arrivee || ''}</div>
-                                </div>
-                            </div>
+                    <div class="grid grid-cols-2 gap-8 mb-8">
+                        <div>
+                            <div class="info-label mb-1">Référence</div>
+                            <div class="font-mono font-bold text-lg text-slate-900">${res.reference}</div>
                         </div>
-
-                        <div class="grid grid-cols-2 gap-6 mb-8">
-                            <div>
-                                <div class="info-label mb-1">Référence</div>
-                                <div class="font-mono font-bold text-slate-900">${res.reference}</div>
-                            </div>
-                            <div class="text-right">
-                                <div class="info-label mb-1">Type de billet</div>
-                                <div class="${bgClass} text-white text-[10px] font-black uppercase px-3 py-1 rounded-full inline-block tracking-wider">
-                                    ${type}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="space-y-4">
-                            <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600">
-                                        <i class="material-icons text-base">phone</i>
-                                    </div>
-                                    <span class="text-sm font-semibold text-slate-600">Téléphone</span>
-                                </div>
-                                <span class="text-sm font-bold text-slate-900">${phone}</span>
-                            </div>
-
-                            <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600">
-                                        <i class="material-icons text-base">airline_seat_recline_normal</i>
-                                    </div>
-                                    <span class="text-sm font-semibold text-slate-600">Siège</span>
-                                </div>
-                                <span class="text-sm font-bold text-slate-900">${res.seat_number || '1'}</span>
+                        <div class="text-right">
+                            <div class="info-label mb-1">Type de billet</div>
+                            <div class="${bgClass} text-white text-[10px] font-black uppercase px-4 py-1.5 rounded-full inline-block tracking-wider">
+                                ${type}
                             </div>
                         </div>
                     </div>
 
-                    <div class="px-8 pb-4">
+                    <div class="grid grid-cols-2 gap-4 mb-5">
+                        <div class="flex items-center gap-3 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                            <div class="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500">
+                                <i class="material-icons text-xl">phone</i>
+                            </div>
+                            <div>
+                                <div class="text-[10px] uppercase font-bold text-slate-400">Téléphone</div>
+                                <div class="text-sm font-bold text-slate-900">${phone}</div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-3 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                            <div class="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500">
+                                <i class="material-icons text-xl">airline_seat_recline_normal</i>
+                            </div>
+                            <div>
+                                <div class="text-[10px] uppercase font-bold text-slate-400">Siège</div>
+                                <div class="text-sm font-bold text-slate-900">${res.seat_number || '1'}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
                         ${res.statut === 'terminee' ? `
-                                                            <div class="py-3 px-4 bg-amber-50 text-amber-700 rounded-xl flex items-center gap-3 text-xs font-bold border border-amber-100">
-                                                                <i class="material-icons text-base">warning</i>
-                                                                Déjà scanné précédemment
+                                                            <div class="py-4 px-6 bg-amber-50 text-amber-700 rounded-2xl flex items-center gap-4 text-sm font-bold border border-amber-100">
+                                                                <div class="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
+                                                                    <i class="material-icons text-lg">warning</i>
+                                                                </div>
+                                                                <span>Billet déjà utilisé précédemment</span>
                                                             </div>
                                                         ` : `
-                                                            <div class="py-3 px-4 bg-emerald-50 text-emerald-700 rounded-xl flex items-center gap-3 text-xs font-bold border border-emerald-100">
-                                                                <i class="material-icons text-base">verified_user</i>
-                                                                Prêt pour l'embarquement
-                                                            </div>
                                                         `}
                     </div>
                 </div>

@@ -41,6 +41,23 @@
         margin-left: 0 !important;
       }
     }
+
+    /* Fix global : Suppression outline/halo bleu sur tous les boutons & inputs au focus/actif */
+    button:focus, 
+    button:active,
+    .btn:focus, 
+    .btn:active,
+    .btn-scanner-hero:focus,
+    .btn-premium-filter:focus,
+    .form-control:focus,
+    .form-control-premium:focus,
+    .form-select:focus,
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none !important;
+      box-shadow: none !important;
+    }
   </style>
   
   @yield('styles')
