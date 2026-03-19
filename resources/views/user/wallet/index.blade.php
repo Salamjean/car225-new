@@ -151,13 +151,7 @@
                 </table>
             </div>
 
-            {{-- Pied du tableau avec lien "Voir tout l'historique" --}}
-            <div class="px-6 py-4 border-t border-gray-100 bg-gray-50/50 text-center">
-                <a href="{{ route('user.wallet.recharges') }}"
-                   class="text-sm font-bold text-[#e94f1b] hover:underline">
-                    → Voir l'historique complet avec filtres et recherche
-                </a>
-            </div>
+           
 
         </div>
 

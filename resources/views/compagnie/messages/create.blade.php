@@ -2,145 +2,99 @@
 
 @section('styles')
 <style>
-    :root {
-        --primary-accent: #e94f1b;
-        --secondary-bg: #f8fafc;
-    }
+    .form-wrapper { max-width: 800px; margin: 0 auto; }
+    
+    .btn-back { display: inline-flex; align-items: center; gap: 8px; color: var(--text-3); font-weight: 700; font-size: 13px; text-decoration: none; margin-bottom: 24px; transition: color 0.2s; }
+    .btn-back:hover { color: var(--orange); text-decoration: none; }
 
-    .form-glass-card {
-        background: white;
-        border: 1px solid #e2e8f0;
-        border-radius: 32px;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
-        overflow: hidden;
-    }
+    .form-glass-card { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; overflow: hidden; box-shadow: var(--shadow-md); }
+    
+    .form-header { background: linear-gradient(135deg, #1A1714 0%, #2A2520 100%); padding: 40px 20px; text-align: center; }
+    .form-header-icon { width: 64px; height: 64px; background: var(--orange); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; margin: 0 auto 16px; box-shadow: 0 8px 24px rgba(249,115,22,0.3); }
+    .form-header-title { font-size: 24px; font-weight: 800; color: white; margin-bottom: 4px; }
+    .form-header-subtitle { font-size: 13px; color: rgba(255,255,255,0.7); }
 
-    .form-header {
-        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-        padding: 3rem 2rem;
-        text-align: center;
-    }
+    .form-body { padding: 40px; }
+    .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+    .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+    
+    .custom-label { font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-3); letter-spacing: 0.5px; margin: 0; }
+    .input-field { width: 100%; background: var(--surface-2); border: 2px solid transparent; border-radius: 14px; padding: 14px 18px; font-size: 13px; font-weight: 600; color: var(--text-1); transition: all 0.2s; outline: none; }
+    .input-field:focus { background: var(--surface); border-color: var(--orange); box-shadow: 0 0 0 4px var(--orange-light); }
+    .input-field:disabled { opacity: 0.6; cursor: not-allowed; }
+    
+    textarea.input-field { min-height: 180px; resize: vertical; line-height: 1.6; }
 
-    .input-field {
-        background: var(--secondary-bg);
-        border: 2px solid transparent;
-        border-radius: 16px;
-        padding: 1rem 1.25rem;
-        font-weight: 500;
-        transition: all 0.3s ease;
-    }
+    .btn-send { background: var(--orange); color: white; padding: 16px; border-radius: 14px; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; border: none; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; transition: all 0.2s; box-shadow: 0 8px 20px rgba(249,115,22,0.25); }
+    .btn-send:hover { transform: translateY(-3px); box-shadow: 0 12px 25px rgba(249,115,22,0.35); }
 
-    .input-field:focus {
-        background: white;
-        border-color: var(--primary-accent);
-        box-shadow: 0 0 0 4px rgba(233, 79, 27, 0.1);
-        outline: none;
-    }
+    .loading-text { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--orange); margin-top: 6px; display: none; }
+    .loading-text.visible { display: block; }
 
-    .custom-label {
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        font-size: 0.75rem;
-        color: #64748b;
-        margin-bottom: 0.75rem;
-        display: block;
-    }
-
-    .btn-send {
-        background: var(--primary-accent);
-        color: white;
-        padding: 1.25rem;
-        border-radius: 20px;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        box-shadow: 0 10px 20px -5px rgba(233, 79, 27, 0.3);
-        transition: all 0.3s ease;
-    }
-
-    .btn-send:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 15px 25px -5px rgba(233, 79, 27, 0.4);
-        color: white;
-    }
-
-    .back-link {
-        color: #94a3b8;
-        font-weight: 700;
-        transition: all 0.3s ease;
-    }
-
-    .back-link:hover {
-        color: var(--primary-accent);
-        text-decoration: none;
+    @media (max-width: 640px) {
+        .form-grid-2 { grid-template-columns: 1fr; gap: 16px; }
+        .form-body { padding: 24px; }
     }
 </style>
 @endsection
 
 @section('content')
-<div class="container-fluid px-4 py-6">
-    <div class="mb-6">
-        <a href="{{ route('compagnie.messages.index') }}" class="back-link inline-flex items-center">
-            <i class="fas fa-arrow-left mr-2"></i>
-            Retour au centre de messages
+<div class="dashboard-page">
+    <div class="form-wrapper">
+        <a href="{{ route('compagnie.messages.index') }}" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Retour au centre de messages
         </a>
-    </div>
 
-    <div class="row justify-content-center">
-        <div class="col-lg-7">
-            <div class="form-glass-card">
-                <div class="form-header">
-                    <div class="w-16 h-16 bg-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-orange-900/20">
-                        <i class="fas fa-paper-plane text-white text-2xl"></i>
-                    </div>
-                    <h2 class="text-white text-3xl font-black">Nouveau Message</h2>
-                    <p class="text-slate-400 mt-2 font-medium">Diffusez une information importante à vos équipes</p>
+        <div class="form-glass-card">
+            <div class="form-header">
+                <div class="form-header-icon">
+                    <i class="fas fa-paper-plane"></i>
                 </div>
+                <h2 class="form-header-title">Nouveau Message</h2>
+                <p class="form-header-subtitle">Diffusez une information importante à vos équipes</p>
+            </div>
 
-                <div class="p-8 md:p-12">
-                    <form action="{{ route('compagnie.messages.store') }}" method="POST" id="messageForm">
-                        @csrf
+            <div class="form-body">
+                <form action="{{ route('compagnie.messages.store') }}" method="POST" id="messageForm">
+                    @csrf
+                    
+                    <div class="form-grid-2">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="custom-label">Cible de communication</label>
+                            <select class="input-field" id="recipient_type" name="recipient_type" required>
+                                <option value="" selected disabled>Choisir un profil...</option>
+                                <option value="agent">👨‍💼 Agents</option>
+                                <option value="caisse">💰 Caisse</option>
+                                <option value="gare">⛪ Gares</option>
+                                <option value="personnel">🚛 Chauffeurs / Personnel</option>
+                            </select>
+                        </div>
                         
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                            <div>
-                                <label class="custom-label">Cible de communication</label>
-                                <select class="input-field w-full" id="recipient_type" name="recipient_type" required>
-                                    <option value="" selected disabled>Choisir un profil...</option>
-                                    <option value="agent">👨‍💼 Agents</option>
-                                    <option value="caisse">💰 Caisse</option>
-                                    <option value="gare">⛪ Gares</option>
-                                    <option value="personnel">🚛 Chauffeurs / Personnel</option>
-                                </select>
-                            </div>
-                            
-                            <div>
-                                <label class="custom-label">Destinataire spécifique</label>
-                                <select class="input-field w-full disabled:opacity-50" id="recipient_id" name="recipient_id" required disabled>
-                                    <option value="" selected disabled>Sélectionner &larr;</option>
-                                </select>
-                                <div id="loading-recipients" class="hidden mt-2 text-orange-500 text-xs font-bold uppercase tracking-widest">
-                                    <i class="fas fa-sync fa-spin mr-1"></i> Synchronisation...
-                                </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="custom-label">Destinataire spécifique</label>
+                            <select class="input-field" id="recipient_id" name="recipient_id" required disabled>
+                                <option value="" selected disabled>Sélectionner &larr;</option>
+                            </select>
+                            <div id="loading-recipients" class="loading-text">
+                                <i class="fas fa-sync fa-spin mr-1"></i> Synchronisation...
                             </div>
                         </div>
+                    </div>
 
-                        <div class="mb-8">
-                            <label class="custom-label">Objet de la communication</label>
-                            <input type="text" class="input-field w-full" id="subject" name="subject" required placeholder="Saisissez le titre du message...">
-                        </div>
+                    <div class="form-group">
+                        <label class="custom-label">Objet de la communication</label>
+                        <input type="text" class="input-field" id="subject" name="subject" required placeholder="Saisissez le titre du message...">
+                    </div>
 
-                        <div class="mb-10">
-                            <label class="custom-label">Contenu du message</label>
-                            <textarea class="input-field w-full min-h-[200px] resize-none" id="message" name="message" rows="6" required placeholder="Rédigez ici votre communication professionnelle..."></textarea>
-                        </div>
+                    <div class="form-group">
+                        <label class="custom-label">Contenu du message</label>
+                        <textarea class="input-field" id="message" name="message" required placeholder="Rédigez ici votre communication professionnelle..."></textarea>
+                    </div>
 
-                        <button type="submit" class="btn-send w-full flex items-center justify-center">
-                            <i class="fas fa-paper-plane mr-3 text-lg"></i>
-                            Envoyer maintenant
-                        </button>
-                    </form>
-                </div>
+                    <button type="submit" class="btn-send">
+                        <i class="fas fa-paper-plane"></i> Envoyer maintenant
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -159,7 +113,7 @@
             
             recipientSelect.innerHTML = '<option value="" selected disabled>Chargement...</option>';
             recipientSelect.disabled = true;
-            loadingIndicator.classList.remove('hidden');
+            loadingIndicator.classList.add('visible');
 
             fetch(`{{ route('compagnie.messages.recipients') }}?type=${type}`)
                 .then(response => response.json())
@@ -185,11 +139,11 @@
                     });
                     
                     recipientSelect.disabled = false;
-                    loadingIndicator.classList.add('hidden');
+                    loadingIndicator.classList.remove('visible');
                 })
                 .catch(error => {
                     recipientSelect.innerHTML = '<option disabled>Erreur réseau</option>';
-                    loadingIndicator.classList.add('hidden');
+                    loadingIndicator.classList.remove('visible');
                 });
         });
     });

@@ -1,623 +1,239 @@
 @extends('compagnie.layouts.template')
 
+@section('page-title', 'Enrôlement')
+@section('page-subtitle', 'Ajouter un nouvel agent d\'accueil à votre équipe')
+
+@section('styles')
+<style>
+    .form-wrapper { max-width: 1000px; margin: 0 auto; }
+    
+    .btn-back { display: inline-flex; align-items: center; gap: 8px; color: var(--text-3); font-weight: 700; font-size: 13px; text-decoration: none; margin-bottom: 24px; transition: color 0.2s; }
+    .btn-back:hover { color: var(--orange); text-decoration: none; }
+
+    .form-grid-layout { display: grid; grid-template-columns: 280px 1fr; gap: 24px; }
+
+    .dash-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow-sm); overflow: hidden; }
+    .card-header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+    .card-step { width: 28px; height: 28px; background: var(--orange); color: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; }
+    .card-title { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-1); margin: 0; }
+    .card-body { padding: 24px; }
+
+    /* Photo Upload */
+    .photo-upload-container { display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .photo-label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-3); letter-spacing: 1px; margin-bottom: 16px; }
+    .avatar-wrapper { position: relative; width: 160px; height: 160px; border-radius: 30px; background: var(--surface-2); border: 4px solid var(--surface); box-shadow: var(--shadow-md); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .avatar-placeholder { font-size: 60px; color: var(--border-strong); }
+    .avatar-preview { width: 100%; height: 100%; object-fit: cover; display: none; }
+    .btn-upload { position: absolute; bottom: -10px; right: -10px; width: 44px; height: 44px; border-radius: 14px; background: var(--text-1); color: white; display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; transition: all 0.2s; border: 4px solid var(--surface); z-index: 10; }
+    .btn-upload:hover { background: var(--orange); transform: scale(1.05); }
+
+    .photo-hints { margin-top: 32px; padding: 16px; background: var(--orange-light); border-radius: 12px; border: 1px solid var(--orange-mid); text-align: left; width: 100%; }
+    .photo-hints h4 { font-size: 10px; font-weight: 800; color: var(--orange-dark); text-transform: uppercase; margin-bottom: 8px; }
+    .photo-hints ul { list-style: none; padding: 0; margin: 0; }
+    .photo-hints li { font-size: 11px; color: var(--text-2); font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+    .photo-hints li::before { content: ""; width: 4px; height: 4px; border-radius: 50%; background: var(--orange); }
+
+    /* Inputs */
+    .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-3); letter-spacing: 0.5px; }
+    .input-with-icon { position: relative; }
+    .input-with-icon i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-3); }
+    .input-with-icon select { padding-right: 36px; }
+    .input-with-icon .chevron { position: absolute; right: 16px; left: auto; font-size: 10px; pointer-events: none; }
+    .form-control { width: 100%; padding: 12px 16px 12px 44px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); font-size: 13px; font-weight: 600; color: var(--text-1); outline: none; transition: all 0.2s; appearance: none; }
+    .form-control:focus { background: var(--surface); border-color: var(--orange); box-shadow: 0 0 0 3px var(--orange-light); }
+    .form-control option { background: var(--surface); color: var(--text-1); padding: 10px; }
+    select.form-control { cursor: pointer; height: 48px; }
+    .form-error { font-size: 10px; font-weight: 700; color: #DC2626; margin-top: 4px; }
+
+    /* Action Footer */
+    .form-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+    .btn-reset { padding: 14px 24px; border-radius: 12px; background: transparent; border: 1px solid transparent; font-size: 12px; font-weight: 800; text-transform: uppercase; color: var(--text-3); cursor: pointer; transition: 0.2s; }
+    .btn-reset:hover { background: var(--surface-2); color: var(--text-2); }
+    .btn-submit { padding: 14px 32px; border-radius: 12px; background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%); color: white; border: none; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(249,115,22,0.3); }
+    .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(249,115,22,0.4); }
+
+    @media (max-width: 992px) {
+        .form-grid-layout { grid-template-columns: 1fr; }
+        .photo-upload-container { padding-bottom: 24px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+    }
+    @media (max-width: 640px) {
+        .form-grid-2 { grid-template-columns: 1fr; }
+        .form-actions { flex-direction: column-reverse; }
+        .btn-submit, .btn-reset { width: 100%; text-align: center; justify-content: center; }
+    }
+</style>
+@endsection
+
 @section('content')
-<!-- Import Google Fonts & Animate.css -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+<div class="dashboard-page">
+    <div class="form-wrapper">
+        <a href="{{ route('compagnie.agents.index') }}" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Retour au Répertoire
+        </a>
 
-<div class="content-wrapper-modern">
-    <!-- Header Actions -->
-    <div class="action-header animate__animated animate__fadeIn">
-        <div class="header-left">
-            <h1 class="main-title">Nouvel Agent</h1>
-            <p class="main-subtitle">Créez un profil complet pour votre futur collaborateur</p>
-        </div>
-        <div class="header-right">
-            <a href="{{ route('compagnie.agents.index') }}" class="btn btn-filter">
-                <i class="fas fa-arrow-left"></i>
-                <span>Retour à la liste</span>
-            </a>
-        </div>
-    </div>
+        <form method="POST" action="{{ route('compagnie.agents.store') }}" enctype="multipart/form-data" id="createAgentForm">
+            @csrf
 
-    <div class="row justify-content-center">
-        <div class="col-xxl-10">
-            <div class="main-card-modern animate__animated animate__fadeInUp">
-                <!-- Inner Header with Step Indicators -->
-                <div class="card-header-inner">
-                    <div class="step-indicator">
-                        <div class="step active">
-                            <span class="step-num">1</span>
-                            <span class="step-text">Profil & Identité de l'Agent</span>
+            <div class="form-grid-layout">
+                
+                {{-- ── LEFT: PHOTO ── --}}
+                <div class="dash-card">
+                    <div class="card-body photo-upload-container">
+                        <label class="photo-label">Photo de Profil</label>
+                        
+                        <div class="avatar-wrapper">
+                            <div class="avatar-placeholder" id="avatarPlaceholder">
+                                <i class="fas fa-user-tie"></i>
+                            </div>
+                            <img id="imagePreview" src="#" alt="Aperçu" class="avatar-preview">
+                            
+                            <label for="profile_picture" class="btn-upload">
+                                <i class="fas fa-camera"></i>
+                                <input type="file" id="profile_picture" name="profile_picture" class="d-none" accept="image/*">
+                            </label>
+                        </div>
+                        @error('profile_picture') <span class="form-error mt-2">{{ $message }}</span> @enderror
+
+                        <div class="photo-hints">
+                            <h4><i class="fas fa-info-circle"></i> Recommandations</h4>
+                            <ul>
+                                <li>Format JPG ou PNG</li>
+                                <li>Poids max : 2 Mo</li>
+                                <li>Photo type identité</li>
+                            </ul>
                         </div>
                     </div>
                 </div>
 
-                <form method="POST" action="{{ route('compagnie.agents.store') }}" enctype="multipart/form-data" class="premium-form p-4 p-md-5" id="createAgentForm">
-                    @csrf
-
-                    <div class="row g-4">
-                        <!-- Profil Side -->
-                        <div class="col-lg-4">
-                            <div class="profile-upload-section">
-                                <label class="section-label">Photo d'identité</label>
-                                <div class="avatar-preview-wrapper shadow-sm">
-                                    <div class="avatar-current" id="imagePreviewContainer">
-                                        <div id="avatarPlaceholder" class="avatar-placeholder-big">
-                                            <i class="fas fa-user-plus"></i>
-                                        </div>
-                                        <img id="imagePreview" src="#" alt="Aperçu" style="display: none;">
-                                    </div>
-                                    <label for="profile_picture" class="btn-change-avatar">
-                                        <i class="fas fa-camera"></i>
-                                        <input type="file" id="profile_picture" name="profile_picture" class="d-none" accept="image/*">
-                                    </label>
-                                </div>
-                                <div class="upload-guidelines">
-                                    <p class="upload-hint"><i class="fas fa-info-circle me-1"></i> Formats acceptés : JPG, PNG (Max. 2Mo)</p>
-                                  
-                                </div>
-                            </div>
+                {{-- ── RIGHT: INFORMATIONS ── --}}
+                <div style="display: flex; flex-direction: column; gap: 24px;">
+                    
+                    {{-- Section 1 --}}
+                    <div class="dash-card">
+                        <div class="card-header">
+                            <div class="card-step">1</div>
+                            <h3 class="card-title">Informations Personnelles</h3>
                         </div>
-
-                        <!-- Form Side -->
-                        <div class="col-lg-8">
-                            <div class="form-section-header mb-4">
-                                <h4 class="section-inner-title">Coordonnées de l'agent</h4>
-                                <div class="title-accent"></div>
-                            </div>
-
-                            <div class="row g-4">
-                                <div class="col-md-6">
-                                    <div class="form-group-modern">
-                                        <label>Nom de famille <span class="required">*</span></label>
-                                        <div class="input-with-icon">
-                                            <i class="fas fa-user"></i>
-                                            <input type="text" name="name" value="{{ old('name') }}" required placeholder="Ex: Bakayoko">
-                                        </div>
-                                        @error('name') <span class="error-msg">{{ $message }}</span> @enderror
+                        <div class="card-body">
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label class="form-label">Nom de Famille <span class="text-danger">*</span></label>
+                                    <div class="input-with-icon">
+                                        <i class="fas fa-user"></i>
+                                        <input type="text" name="name" value="{{ old('name') }}" required class="form-control" placeholder="Ex: Bakayoko">
                                     </div>
+                                    @error('name') <span class="form-error">{{ $message }}</span> @enderror
                                 </div>
 
-                                <div class="col-md-6">
-                                    <div class="form-group-modern">
-                                        <label>Prénom(s) <span class="required">*</span></label>
-                                        <div class="input-with-icon">
-                                            <i class="fas fa-user-tag"></i>
-                                            <input type="text" name="prenom" value="{{ old('prenom') }}" required placeholder="Ex: Jean-Marc">
-                                        </div>
-                                        @error('prenom') <span class="error-msg">{{ $message }}</span> @enderror
+                                <div class="form-group">
+                                    <label class="form-label">Prénom(s) <span class="text-danger">*</span></label>
+                                    <div class="input-with-icon">
+                                        <i class="fas fa-signature"></i>
+                                        <input type="text" name="prenom" value="{{ old('prenom') }}" required class="form-control" placeholder="Ex: Jean-Marc">
                                     </div>
+                                    @error('prenom') <span class="form-error">{{ $message }}</span> @enderror
                                 </div>
 
-                                <div class="col-md-6">
-                                    <div class="form-group-modern">
-                                        <label>Adresse Email <span class="required">*</span></label>
-                                        <div class="input-with-icon">
-                                            <i class="fas fa-envelope"></i>
-                                            <input type="email" name="email" value="{{ old('email') }}" required placeholder="agent@compagnie.com">
-                                        </div>
-                                        @error('email') <span class="error-msg">{{ $message }}</span> @enderror
+                                <div class="form-group">
+                                    <label class="form-label">Email / Identifiant <span class="text-danger">*</span></label>
+                                    <div class="input-with-icon">
+                                        <i class="fas fa-envelope-open"></i>
+                                        <input type="email" name="email" value="{{ old('email') }}" required class="form-control" placeholder="agent.b@cie.com">
                                     </div>
+                                    @error('email') <span class="form-error">{{ $message }}</span> @enderror
                                 </div>
 
-                                <div class="col-md-6">
-                                    <div class="form-group-modern">
-                                        <label>Numéro de téléphone <span class="required">*</span></label>
-                                        <div class="input-with-icon">
-                                            <i class="fas fa-phone-alt"></i>
-                                            <input type="text" name="contact" value="{{ old('contact') }}" required placeholder="Ex: 07 00 00 00 00" maxlength="10">
-                                        </div>
-                                        @error('contact') <span class="error-msg">{{ $message }}</span> @enderror
+                                <div class="form-group">
+                                    <label class="form-label">Contact Mobile <span class="text-danger">*</span></label>
+                                    <div class="input-with-icon">
+                                        <i class="fas fa-phone-alt"></i>
+                                        <input type="text" name="contact" value="{{ old('contact') }}" required maxlength="10" class="form-control" placeholder="07 00 00 00 00" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)">
                                     </div>
+                                    @error('contact') <span class="form-error">{{ $message }}</span> @enderror
                                 </div>
 
-                                <div class="col-md-6">
-                                    <div class="form-group-modern">
-                                        <label>Gare d'affectation <span class="required">*</span></label>
-                                        <div class="input-with-icon">
-                                            <i class="fas fa-building"></i>
-                                            <select name="gare_id" required>
-                                                <option value="">Sélectionner une gare</option>
-                                                @foreach($gares as $gare)
-                                                    <option value="{{ $gare->id }}" {{ old('gare_id') == $gare->id ? 'selected' : '' }}>
-                                                        {{ $gare->nom_gare }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        @error('gare_id') <span class="error-msg">{{ $message }}</span> @enderror
+                                <div class="form-group">
+                                    <label class="form-label">Gare d'Affectation <span class="text-danger">*</span></label>
+                                    <div class="input-with-icon">
+                                        <i class="fas fa-building"></i>
+                                        <select name="gare_id" required class="form-control">
+                                            <option value="" disabled selected>Sélectionner une gare...</option>
+                                            @foreach($gares as $gare)
+                                                <option value="{{ $gare->id }}" {{ old('gare_id') == $gare->id ? 'selected' : '' }}>{{ $gare->nom_gare }}</option>
+                                            @endforeach
+                                        </select>
+                                        <i class="fas fa-chevron-down chevron"></i>
                                     </div>
+                                    @error('gare_id') <span class="form-error">{{ $message }}</span> @enderror
                                 </div>
 
-                                <div class="col-md-6">
-                                    <div class="form-group-modern">
-                                        <label>Commune de résidence <span class="required">*</span></label>
-                                        <div class="input-with-icon">
-                                            <i class="fas fa-map-marker-alt"></i>
-                                            <input type="text" name="commune" value="{{ old('commune') }}" required placeholder="Ex: Cocody">
-                                        </div>
-                                        @error('commune') <span class="error-msg">{{ $message }}</span> @enderror
+                                <div class="form-group">
+                                    <label class="form-label">Commune (Résidence) <span class="text-danger">*</span></label>
+                                    <div class="input-with-icon">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                        <input type="text" name="commune" value="{{ old('commune') }}" required class="form-control" placeholder="Ex: Cocody, Yopougon">
                                     </div>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <div class="form-group-modern">
-                                        <label>Nom de la personne à contacter <span class="required">*</span></label>
-                                        <div class="input-with-icon">
-                                            <i class="fas fa-user-shield"></i>
-                                            <input type="text" name="nom_urgence" value="{{ old('nom_urgence') }}" required placeholder="Ex: Mme Bakayoko">
-                                        </div>
-                                        @error('nom_urgence') <span class="error-msg">{{ $message }}</span> @enderror
-                                    </div>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <div class="form-group-modern">
-                                        <label>Lien de parenté <span class="required">*</span></label>
-                                        <div class="input-with-icon">
-                                            <i class="fas fa-users"></i>
-                                            <select name="lien_parente_urgence" required>
-                                                <option value="">Sélectionner le lien</option>
-                                                <option value="Conjoint(e)" {{ old('lien_parente_urgence') == 'Conjoint(e)' ? 'selected' : '' }}>Conjoint(e)</option>
-                                                <option value="Père" {{ old('lien_parente_urgence') == 'Père' ? 'selected' : '' }}>Père</option>
-                                                <option value="Mère" {{ old('lien_parente_urgence') == 'Mère' ? 'selected' : '' }}>Mère</option>
-                                                <option value="Frère" {{ old('lien_parente_urgence') == 'Frère' ? 'selected' : '' }}>Frère</option>
-                                                <option value="Sœur" {{ old('lien_parente_urgence') == 'Sœur' ? 'selected' : '' }}>Sœur</option>
-                                                <option value="Oncle" {{ old('lien_parente_urgence') == 'Oncle' ? 'selected' : '' }}>Oncle</option>
-                                                <option value="Tante" {{ old('lien_parente_urgence') == 'Tante' ? 'selected' : '' }}>Tante</option>
-                                                <option value="Ami(e)" {{ old('lien_parente_urgence') == 'Ami(e)' ? 'selected' : '' }}>Ami(e)</option>
-                                                <option value="Autre" {{ old('lien_parente_urgence') == 'Autre' ? 'selected' : '' }}>Autre</option>
-                                            </select>
-                                        </div>
-                                        @error('lien_parente_urgence') <span class="error-msg">{{ $message }}</span> @enderror
-                                    </div>
-                                </div>
-
-                                <div class="col-12">
-                                    <div class="form-group-modern">
-                                        <label>Numéro de téléphone d'urgence <span class="required">*</span></label>
-                                        <div class="input-with-icon">
-                                            <i class="fas fa-ambulance"></i>
-                                            <input type="text" name="cas_urgence" value="{{ old('cas_urgence') }}" required placeholder="Ex: 01 01 01 01 01" maxlength="10">
-                                        </div>
-                                        <small class="form-hint">Important pour la sécurité de l'agent.</small>
-                                        @error('cas_urgence') <span class="error-msg">{{ $message }}</span> @enderror
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Form Footer Actions -->
-                            <div class="form-footer-actions mt-5 pt-4 border-top">
-                                <div class="d-flex justify-content-end gap-3 align-items-center">
-                                    <button type="reset" class="btn btn-reset-premium">
-                                        <i class="fas fa-redo"></i> Réinitialiser
-                                    </button>
-                                    <button type="submit" class="btn btn-primary-modern">
-                                        <i class="fas fa-user-plus"></i>
-                                        <span>Créer le profil agent</span>
-                                    </button>
+                                    @error('commune') <span class="form-error">{{ $message }}</span> @enderror
                                 </div>
                             </div>
                         </div>
                     </div>
-                </form>
+
+                    {{-- Section 2 --}}
+                    <div class="dash-card">
+                        <div class="card-header" style="background: var(--surface-2);">
+                            <div class="card-step" style="background: var(--text-1);">2</div>
+                            <h3 class="card-title">Sécurité & Urgence</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label class="form-label">Contact d'Urgence (Nom complet) <span class="text-danger">*</span></label>
+                                    <div class="input-with-icon">
+                                        <i class="fas fa-user-shield"></i>
+                                        <input type="text" name="nom_urgence" value="{{ old('nom_urgence') }}" required class="form-control" placeholder="Nom complet du contact">
+                                    </div>
+                                    @error('nom_urgence') <span class="form-error">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Lien de Parenté <span class="text-danger">*</span></label>
+                                    <div class="input-with-icon">
+                                        <i class="fas fa-users"></i>
+                                        <select name="lien_parente_urgence" required class="form-control">
+                                            <option value="" disabled selected>Relation avec l'agent...</option>
+                                            @foreach(['Conjoint(e)', 'Père', 'Mère', 'Frère', 'Sœur', 'Oncle', 'Tante', 'Ami(e)', 'Autre'] as $lien)
+                                                <option value="{{ $lien }}" {{ old('lien_parente_urgence') == $lien ? 'selected' : '' }}>{{ $lien }}</option>
+                                            @endforeach
+                                        </select>
+                                        <i class="fas fa-chevron-down chevron"></i>
+                                    </div>
+                                    @error('lien_parente_urgence') <span class="form-error">{{ $message }}</span> @enderror
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Buttons --}}
+                    <div class="form-actions">
+                        <button type="reset" class="btn-reset">Réinitialiser</button>
+                        <button type="submit" class="btn-submit">
+                            Finaliser Enrôlement <i class="fas fa-check-circle"></i>
+                        </button>
+                    </div>
+
+                </div>
             </div>
-        </div>
+        </form>
     </div>
 </div>
+@endsection
 
-<style>
-/* CSS Variables & Design System */
-:root {
-    --primary: #e94f1b;
-    --primary-light: #ff6b3d;
-    --primary-dark: #c13e13;
-    --secondary-green: #10b981;
-    --gray-bg: #f8fafc;
-    --card-bg: #ffffff;
-    --text-main: #1e293b;
-    --text-muted: #64748b;
-    --border-color: #e2e8f0;
-    --font-family: 'Plus Jakarta Sans', sans-serif;
-    --radius-xl: 1.5rem;
-}
-
-body {
-    background-color: var(--gray-bg);
-}
-
-.content-wrapper-modern {
-    padding: 2rem;
-    font-family: var(--font-family);
-    max-width: 1400px;
-    margin: 0 auto;
-}
-
-/* Header */
-.action-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2.5rem;
-    flex-wrap: wrap;
-    gap: 1.5rem;
-}
-
-.main-title {
-    font-size: 2.25rem;
-    font-weight: 800;
-    color: var(--text-main);
-    letter-spacing: -0.02em;
-    margin-bottom: 0.25rem;
-}
-
-.main-subtitle {
-    color: var(--text-muted);
-    margin: 0;
-}
-
-.btn-filter {
-    background: white;
-    border: 1px solid var(--border-color);
-    padding: 0.75rem 1.25rem;
-    border-radius: 0.75rem;
-    font-weight: 600;
-    color: var(--text-main);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    transition: all 0.2s;
-    text-decoration: none !important;
-}
-
-.btn-filter:hover {
-    background: #f1f5f9;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-}
-
-/* Main Card */
-.main-card-modern {
-    background: white;
-    border-radius: var(--radius-xl);
-    border: 1px solid var(--border-color);
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
-    overflow: hidden;
-}
-
-.card-header-inner {
-    padding: 1.5rem 3rem;
-    background: #f8fafc;
-    border-bottom: 1px solid var(--border-color);
-}
-
-/* Step Indicator */
-.step-indicator {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-}
-
-.step {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    color: var(--text-muted);
-    opacity: 0.6;
-}
-
-.step.active {
-    color: var(--primary);
-    opacity: 1;
-    font-weight: 700;
-}
-
-.step-num {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: #e2e8f0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.8rem;
-    transition: all 0.3s;
-}
-
-.active .step-num {
-    background: var(--primary);
-    color: white;
-    box-shadow: 0 4px 10px rgba(233, 79, 27, 0.2);
-}
-
-.step-text {
-    font-size: 0.9rem;
-}
-
-.step-line {
-    flex-grow: 0;
-    width: 40px;
-    height: 2px;
-    background: #e2e8f0;
-}
-
-/* Profile Section */
-.profile-upload-section {
-    text-align: center;
-    padding: 1rem;
-}
-
-.section-label {
-    display: block;
-    font-weight: 700;
-    font-size: 0.875rem;
-    color: var(--text-main);
-    margin-bottom: 1.5rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.avatar-preview-wrapper {
-    position: relative;
-    width: 180px;
-    height: 180px;
-    margin: 0 auto 1.5rem;
-}
-
-.avatar-current {
-    width: 100%;
-    height: 100%;
-    border-radius: 2rem;
-    overflow: hidden;
-    background: #f1f5f9;
-    border: 4px solid white;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.06);
-}
-
-.avatar-current img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.avatar-placeholder-big {
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
-    color: #94a3b8;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 3.5rem;
-}
-
-.btn-change-avatar {
-    position: absolute;
-    bottom: 8px;
-    right: 8px;
-    width: 44px;
-    height: 44px;
-    background: var(--primary);
-    border-radius: 1rem;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(233, 79, 27, 0.3);
-    transition: all 0.2s;
-}
-
-.btn-change-avatar:hover {
-    transform: scale(1.1) rotate(5deg);
-    background: var(--primary-dark);
-}
-
-.upload-guidelines {
-    padding: 1rem;
-    background: #fcfdfe;
-    border-radius: 1rem;
-    border: 1px solid #f1f5f9;
-}
-
-.upload-hint {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin-bottom: 0.75rem;
-}
-
-.mini-checklist {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-}
-
-.mini-checklist li {
-    font-size: 0.75rem;
-    color: #10b981;
-    font-weight: 600;
-}
-
-.mini-checklist i {
-    font-size: 0.6rem;
-    margin-right: 0.25rem;
-}
-
-/* Form Styles */
-.form-section-header {
-    position: relative;
-    padding-bottom: 0.75rem;
-}
-
-.section-inner-title {
-    font-size: 1.25rem;
-    font-weight: 800;
-    color: var(--text-main);
-    margin: 0;
-}
-
-.title-accent {
-    width: 40px;
-    height: 4px;
-    background: var(--primary);
-    border-radius: 2px;
-    margin-top: 0.5rem;
-}
-
-.form-group-modern {
-    margin-bottom: 0.5rem;
-}
-
-.form-group-modern label {
-    font-weight: 700;
-    font-size: 0.9rem;
-    color: var(--text-main);
-    margin-bottom: 0.5rem;
-    display: block;
-}
-
-.required {
-    color: var(--primary);
-}
-
-.input-with-icon {
-    position: relative;
-}
-
-.input-with-icon i {
-    position: absolute;
-    left: 1.25rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-muted);
-    font-size: 0.9rem;
-    transition: color 0.2s;
-}
-
-.input-with-icon input, 
-.input-with-icon select {
-    width: 100%;
-    padding: 0.85rem 1.25rem 0.85rem 3rem;
-    border-radius: 1rem;
-    border: 1.5px solid var(--border-color);
-    background: #fdfdfd;
-    font-weight: 600;
-    color: var(--text-main);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.input-with-icon select {
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 1.25rem center;
-    background-size: 1rem;
-}
-
-.input-with-icon input:focus, 
-.input-with-icon select:focus {
-    border-color: var(--primary);
-    background: white;
-    box-shadow: 0 0 0 4px rgba(233, 79, 27, 0.1);
-    outline: none;
-}
-
-.input-with-icon input:focus + i,
-.input-with-icon select:focus + i {
-    color: var(--primary);
-}
-
-.form-hint {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    display: block;
-    margin-top: 0.4rem;
-}
-
-.error-msg {
-    color: #ef4444;
-    font-size: 0.8rem;
-    font-weight: 600;
-    margin-top: 0.4rem;
-    display: block;
-}
-
-/* Footer Actions */
-.btn-primary-modern {
-    background: var(--primary);
-    color: white;
-    padding: 0.85rem 2.25rem;
-    border-radius: 1rem;
-    font-weight: 700;
-    border: none;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    transition: all 0.2s;
-    box-shadow: 0 4px 12px rgba(233, 79, 27, 0.2);
-}
-
-.btn-primary-modern:hover {
-    background: var(--primary-dark);
-    transform: translateY(-2px);
-    color: white;
-    box-shadow: 0 6px 18px rgba(233, 79, 27, 0.3);
-}
-
-.btn-reset-premium {
-    background: #f1f5f9;
-    color: #475569;
-    padding: 0.85rem 1.5rem;
-    border-radius: 1rem;
-    border: none;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    transition: all 0.2s;
-}
-
-.btn-reset-premium:hover {
-    background: #e2e8f0;
-    color: #1e293b;
-}
-
-.btn-link-modern {
-    text-decoration: none !important;
-    font-weight: 700;
-    color: var(--text-muted);
-    transition: color 0.2s;
-}
-
-.btn-link-modern:hover {
-    color: var(--primary);
-}
-
-/* Responsive Fixes */
-@media (max-width: 992px) {
-    .content-wrapper-modern { padding: 1.25rem; }
-    .action-header { margin-bottom: 1.5rem; }
-    .card-header-inner { padding: 1.25rem; }
-    .main-title { font-size: 1.75rem; }
-}
-
-@media (max-width: 576px) {
-    .step-text { display: none; }
-    .btn-primary-modern { width: 100%; justify-content: center; }
-    .form-footer-actions .d-flex { flex-direction: column-reverse; }
-    .btn-reset-premium { width: 100%; justify-content: center; }
-}
-</style>
-
+@section('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Real-time Image Preview
     const profileInput = document.getElementById('profile_picture');
     const imagePreview = document.getElementById('imagePreview');
     const placeholder = document.getElementById('avatarPlaceholder');
@@ -625,61 +241,38 @@ document.addEventListener('DOMContentLoaded', function() {
     profileInput.addEventListener('change', function() {
         const file = this.files[0];
         if (file) {
-            // Validation simple
             if (file.size > 2 * 1024 * 1024) {
                 Swal.fire({
-                    icon: 'error',
-                    title: 'Fichier trop volumineux',
-                    text: 'La taille maximale est de 2 Mo.',
-                    confirmButtonColor: '#e94f1b'
+                    icon: 'error', title: 'Fichier trop lourd', text: 'La taille maximale autorisée est de 2 Mo.',
+                    confirmButtonColor: '#F97316', customClass: { popup: 'rounded-lg border-0 shadow-sm' }
                 });
                 this.value = '';
                 return;
             }
-
             const reader = new FileReader();
             reader.onload = function(e) {
                 imagePreview.src = e.target.result;
                 imagePreview.style.display = 'block';
-                if (placeholder) placeholder.style.display = 'none';
-                
-                // Add a small animation
-                imagePreview.classList.add('animate__animated', 'animate__fadeIn');
+                placeholder.style.display = 'none';
             }
             reader.readAsDataURL(file);
         }
     });
 
-    // Form Reset Logic
     const createForm = document.getElementById('createAgentForm');
     createForm.addEventListener('reset', function() {
         setTimeout(() => {
             imagePreview.src = '#';
             imagePreview.style.display = 'none';
-            if (placeholder) placeholder.style.display = 'flex';
+            placeholder.style.display = 'flex';
         }, 10);
     });
 
-    // Success Message Handling
     @if(session('success'))
         Swal.fire({
-            icon: 'success',
-            title: 'Agent créé !',
-            text: '{{ session('success') }}',
-            timer: 3000,
-            showConfirmButton: false,
-            toast: true,
-            position: 'top-end'
-        });
-    @endif
-
-    // Error Message Handling
-    @if($errors->any())
-        Swal.fire({
-            icon: 'error',
-            title: 'Erreur de saisie',
-            text: 'Veuillez vérifier les informations du formulaire.',
-            confirmButtonColor: '#e94f1b'
+            icon: 'success', title: 'Opération Réussie', text: '{{ session('success') }}',
+            timer: 3000, showConfirmButton: false, toast: true, position: 'top-end',
+            customClass: { popup: 'rounded-lg shadow-sm' }
         });
     @endif
 });

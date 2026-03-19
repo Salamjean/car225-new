@@ -1,361 +1,253 @@
 @extends('compagnie.layouts.template')
 
+@section('page-title', 'Communication')
+@section('page-subtitle', 'Espace d\'échange professionnel Car225')
+
 @section('styles')
 <style>
-    :root {
-        --primary-accent: #e94f1b;
-        --primary-accent-glow: rgba(233, 79, 27, 0.15);
-        --glass-bg: rgba(255, 255, 255, 0.95);
-        --text-main: #1a202c;
-        --text-muted: #718096;
-    }
+    /* Headers & Actions */
+    .msg-header-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+    .btn-new-msg { background: var(--orange); color: white; padding: 12px 20px; border-radius: 12px; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; transition: all 0.2s; box-shadow: 0 8px 16px rgba(249,115,22,0.25); }
+    .btn-new-msg:hover { background: var(--orange-dark); color: white; text-decoration: none; transform: translateY(-2px); box-shadow: 0 12px 20px rgba(249,115,22,0.35); }
 
-    .glass-card {
-        background: var(--glass-bg);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 24px;
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
-    }
+    /* Tabs */
+    .msg-tabs { display: flex; gap: 8px; margin-bottom: 0; border-bottom: none; }
+    .msg-tab-btn { padding: 14px 24px; font-weight: 800; font-size: 13px; color: var(--text-3); background: transparent; border: 1px solid transparent; border-bottom: none; border-radius: 16px 16px 0 0; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: all 0.2s; }
+    .msg-tab-btn:hover { color: var(--text-2); background: rgba(255,255,255,0.5); }
+    .msg-tab-btn.active { background: var(--surface); color: var(--orange); border-color: var(--border); box-shadow: 0 -4px 15px rgba(0,0,0,0.02); }
+    
+    .msg-badge { background: var(--surface-2); color: var(--text-2); min-width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; border-radius: 20px; font-size: 11px; font-weight: 800; padding: 0 6px; }
+    .msg-tab-btn.active .msg-badge { background: var(--orange-light); color: var(--orange); }
+    .msg-badge-danger { background: #FEF2F2 !important; color: #DC2626 !important; border: 1px solid #FECDD3; }
 
-    .nav-pill-custom .nav-link {
-        color: var(--text-muted);
-        font-weight: 500;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 1px solid transparent;
-        padding: 0.6rem 1.5rem;
-        border-radius: 14px;
-    }
+    /* Panels & Filters */
+    .msg-panel { background: var(--surface); border-radius: 0 16px 16px 16px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); min-height: 400px; display: flex; flex-direction: column; overflow: hidden; }
+    .msg-filter-bar { padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--surface-2); display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+    .msg-filter-pill { padding: 8px 16px; border-radius: 10px; font-size: 12px; font-weight: 700; color: var(--text-3); text-decoration: none; display: flex; align-items: center; gap: 8px; transition: all 0.2s; white-space: nowrap; border: 1px solid transparent; }
+    .msg-filter-pill:hover { color: var(--text-2); text-decoration: none; }
+    .msg-filter-pill.active { background: var(--surface); color: var(--text-1); border-color: var(--border); box-shadow: var(--shadow-sm); }
 
-    .nav-pill-custom .nav-link.active {
-        background: white !important;
-        color: var(--primary-accent) !important;
-        border-color: var(--primary-accent-glow);
-        box-shadow: 0 4px 12px var(--primary-accent-glow);
-    }
+    /* Message List */
+    .msg-list { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 4px; }
+    .msg-item { display: flex; align-items: center; gap: 16px; padding: 16px; border-radius: 12px; border: 1px solid transparent; background: transparent; transition: all 0.2s; text-decoration: none !important; color: inherit; }
+    .msg-item:hover { background: var(--surface-2); border-color: var(--border); transform: translateX(6px); box-shadow: var(--shadow-sm); }
+    
+    .msg-avatar { width: 50px; height: 50px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; flex-shrink: 0; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); }
+    .av-orange { background: var(--orange-light); color: var(--orange); border: 1px solid var(--orange-mid); }
+    .av-blue { background: #EFF6FF; color: #2563EB; border: 1px solid #BFDBFE; }
+    .av-purple { background: #F3E8FF; color: #9333EA; border: 1px solid #E9D5FF; }
+    .av-emerald { background: #ECFDF5; color: #059669; border: 1px solid #A7F3D0; }
+    
+    .msg-content { flex: 1; min-width: 0; }
+    .msg-sender-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .msg-sender { font-size: 14px; font-weight: 800; color: var(--text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .msg-tag { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 6px; border-radius: 6px; }
+    
+    .msg-subject { font-size: 13px; font-weight: 700; color: var(--text-1); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .msg-item.read .msg-subject { color: var(--text-2); font-weight: 600; }
+    .msg-snippet { font-size: 12px; color: var(--text-3); font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    
+    .msg-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0; min-width: 100px; }
+    .msg-time { font-size: 11px; font-weight: 700; color: var(--text-3); }
+    .msg-status { padding: 4px 10px; border-radius: 20px; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 4px; }
+    .st-read { background: #ECFDF5; color: #059669; border: 1px solid #A7F3D0; }
+    .st-unread { background: #FFF1F2; color: #E11D48; border: 1px solid #FECDD3; animation: pulseRed 2s infinite; }
+    .st-sent { background: var(--surface-2); color: var(--text-2); border: 1px solid var(--border); }
 
-    .message-item {
-        border-radius: 18px;
-        margin: 0.5rem 1rem;
-        border: 1px solid transparent !important;
-        transition: all 0.25s ease;
-    }
+    .msg-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; text-align: center; }
+    .msg-empty-icon { width: 80px; height: 80px; border-radius: 50%; background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-size: 32px; color: var(--text-3); margin-bottom: 16px; }
+    .msg-empty-title { font-size: 18px; font-weight: 800; color: var(--text-1); margin-bottom: 8px; }
+    .msg-empty-text { font-size: 13px; color: var(--text-3); }
 
-    .message-item:hover {
-        background: #fff !important;
-        border-color: #edf2f7 !important;
-        transform: translateX(8px);
-        box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-    }
+    @keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(225, 29, 72, 0); } 100% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); } }
 
-    .avatar-glow { position: relative; }
-    .avatar-glow::after {
-        content: '';
-        position: absolute;
-        inset: -4px;
-        border-radius: 50%;
-        background: currentColor;
-        opacity: 0.15;
-        z-index: -1;
-    }
-
-    .btn-glow-primary {
-        background: var(--primary-accent);
-        color: white;
-        transition: all 0.3s ease;
-        box-shadow: 0 8px 16px var(--primary-accent-glow);
-    }
-    .btn-glow-primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 12px 20px var(--primary-accent-glow);
-        color: white;
-    }
-
-    .pagination-wrapper .pagination { gap: 8px; }
-    .pagination-wrapper .page-link {
-        border-radius: 10px !important;
-        border: none;
-        color: var(--text-muted);
-        background: #f7fafc;
-    }
-    .pagination-wrapper .page-item.active .page-link {
-        background: var(--primary-accent);
-        color: white;
-    }
-
-    .main-tab-btn {
-        padding: 0.75rem 1.5rem;
-        font-weight: 700;
-        border-radius: 16px 16px 0 0;
-        border: 1px solid transparent;
-        border-bottom: none;
-        background: transparent;
-        color: var(--text-muted);
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-    .main-tab-btn.active {
-        background: white;
-        color: var(--primary-accent);
-        border-color: #edf2f7;
-    }
-    .main-tab-btn .badge-count {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 22px;
-        height: 22px;
-        border-radius: 999px;
-        font-size: 0.7rem;
-        font-weight: 800;
-        margin-left: 0.5rem;
-        padding: 0 6px;
+    @media (max-width: 768px) {
+        .msg-item { flex-direction: column; align-items: flex-start; gap: 12px; position: relative; }
+        .msg-meta { flex-direction: row; justify-content: space-between; width: 100%; align-items: center; }
+        .msg-time { position: absolute; top: 16px; right: 16px; }
     }
 </style>
 @endsection
 
 @section('content')
-<div class="container-fluid px-4 py-4">
-    <!-- Header -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+@php
+    // Si l'URL contient "type" ou "tab=sent", c'est qu'on navigue dans les messages envoyés
+    $isSentActive = request()->has('type') || request('tab') == 'sent';
+@endphp
+<div class="dashboard-page">
+
+    <div class="msg-header-actions">
         <div>
-            <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">Communication</h2>
-            <p class="text-slate-500 mt-1 font-medium d-flex align-items-center">
-                <span class="w-2 h-2 rounded-full bg-orange-500 mr-2"></span>
-                Espace d'échange professionnel Car225
-            </p>
+            <h2 class="dash-title">Communication</h2>
+            <p class="dash-subtitle">Espace d'échange professionnel Car225</p>
         </div>
-        <a href="{{ route('compagnie.messages.create') }}" class="btn btn-glow-primary rounded-2xl px-6 py-3 font-bold d-inline-flex align-items-center">
-            <i class="fas fa-plus-circle text-xl mr-2"></i>
-            Nouveau Message
+        <a href="{{ route('compagnie.messages.create') }}" class="btn-new-msg">
+            <i class="fas fa-plus-circle"></i> Nouveau Message
         </a>
     </div>
 
     <!-- Main Tabs -->
-    <div class="flex gap-2 mb-0">
-        <button class="main-tab-btn active" onclick="switchMainTab('received', this)" id="tab-received">
-            <i class="fas fa-inbox mr-2"></i> Messages Reçus des Gares
-            <span class="badge-count {{ $unreadReceivedCount > 0 ? 'bg-red-500 text-white' : 'bg-slate-100 text-slate-600' }}">
+   <div class="msg-tabs">
+        <button class="msg-tab-btn {{ !$isSentActive ? 'active' : '' }}" onclick="switchMainTab('received', this)">
+            <i class="fas fa-inbox"></i> Messages Reçus des Gares
+            <span class="msg-badge {{ $unreadReceivedCount > 0 ? 'msg-badge-danger' : '' }}">
                 {{ $unreadReceivedCount > 0 ? $unreadReceivedCount : $receivedMessages->total() }}
             </span>
         </button>
-        <button class="main-tab-btn" onclick="switchMainTab('sent', this)" id="tab-sent">
-            <i class="fas fa-paper-plane mr-2"></i> Messages Envoyés
-            <span class="badge-count bg-slate-100 text-slate-600">{{ $messages->total() }}</span>
+        <button class="msg-tab-btn {{ $isSentActive ? 'active' : '' }}" onclick="switchMainTab('sent', this)">
+            <i class="fas fa-paper-plane"></i> Messages Envoyés
+            <span class="msg-badge">{{ $messages->total() }}</span>
         </button>
     </div>
 
-    <!-- RECEIVED MESSAGES FROM GARES (DEFAULT) -->
-    <div id="panel-received">
-        <div class="glass-card bg-white min-h-[500px] flex flex-col" style="border-top-left-radius: 0;">
-            <div class="p-4 border-b border-slate-100 bg-slate-50/30">
-                <div class="flex items-center gap-3 px-2">
-                    <i class="fas fa-warehouse text-orange-500 text-xl"></i>
-                    <span class="font-bold text-slate-700">Messages reçus de vos gares</span>
-                </div>
-            </div>
-
-            <div class="flex-grow py-4">
-                <div class="space-y-1">
-                    @forelse($receivedMessages as $gareMsg)
-                        <a href="{{ route('compagnie.messages.show-received', $gareMsg->id) }}" class="list-group-item list-group-item-action message-item p-4 bg-transparent border-0 hover:no-underline">
-                            <div class="flex flex-col lg:flex-row lg:items-center gap-4">
-                                <div class="flex items-center flex-shrink-0">
-                                    <div class="avatar-glow text-orange-600">
-                                        <div class="w-14 h-14 rounded-2xl bg-orange-100 flex items-center justify-center font-bold text-lg shadow-inner">
-                                            <i class="fas fa-warehouse"></i>
-                                        </div>
-                                    </div>
-                                    <div class="ml-4 lg:hidden block">
-                                        <h4 class="text-lg font-bold text-slate-900 leading-tight">{{ $gareMsg->gare->nom_gare ?? 'Gare' }}</h4>
-                                        <span class="text-sm font-semibold text-orange-600 uppercase tracking-wider">Gare</span>
-                                    </div>
-                                </div>
-
-                                <div class="flex-grow lg:px-4">
-                                    <div class="hidden lg:flex items-center mb-1 gap-2">
-                                        <h4 class="text-lg font-bold text-slate-900 leading-tight">{{ $gareMsg->gare->nom_gare ?? 'Gare' }}</h4>
-                                        <span class="mx-1 text-slate-300">&middot;</span>
-                                        <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-orange-100 text-orange-600 uppercase">Gare</span>
-                                    </div>
-                                    <h5 class="text-md font-bold text-slate-700 mb-1 {{ !$gareMsg->is_read ? 'text-slate-900' : '' }} truncate">{{ $gareMsg->subject }}</h5>
-                                    <p class="text-slate-500 text-sm line-clamp-1 italic">{{ $gareMsg->message }}</p>
-                                </div>
-
-                                <div class="flex items-center lg:flex-col lg:items-end justify-between lg:justify-center gap-2 flex-shrink-0 min-w-[120px]">
-                                    <span class="text-xs font-bold text-slate-400 lg:order-1">
-                                        {{ $gareMsg->created_at->translatedFormat('d M, H:i') }}
-                                    </span>
-                                    <div class="lg:order-2">
-                                        @if($gareMsg->is_read)
-                                            <div class="flex items-center text-emerald-500 bg-emerald-50 px-3 py-1 rounded-full text-xs font-extrabold border border-emerald-100">
-                                                <i class="fas fa-check-double mr-1.5"></i> LU
-                                            </div>
-                                        @else
-                                            <div class="flex items-center text-orange-500 bg-orange-50 px-3 py-1 rounded-full text-xs font-extrabold border border-orange-100 animate-pulse">
-                                                <i class="fas fa-envelope mr-1.5"></i> NOUVEAU
-                                            </div>
-                                        @endif
-                                    </div>
-                                </div>
-
-                                <div class="hidden lg:flex items-center justify-center w-10 h-10 rounded-full bg-slate-50 text-slate-300 p-0">
-                                    <i class="fas fa-chevron-right"></i>
-                                </div>
-                            </div>
-                        </a>
-                    @empty
-                        <div class="flex flex-col items-center justify-center py-20 px-4 text-center">
-                            <div class="w-32 h-32 bg-slate-50 rounded-full flex items-center justify-center mb-6">
-                                <i class="fas fa-warehouse text-5xl text-slate-200"></i>
-                            </div>
-                            <h3 class="text-2xl font-bold text-slate-800">Aucun message reçu</h3>
-                            <p class="text-slate-500 max-w-sm mt-2">Aucun message de vos gares pour le moment.</p>
-                        </div>
-                    @endforelse
-                </div>
-            </div>
-
-            @if($receivedMessages->hasPages())
-            <div class="border-t border-slate-100 p-6 flex justify-center pagination-wrapper">
-                {{ $receivedMessages->appends(request()->query())->links() }}
-            </div>
-            @endif
+    <!-- PANEL: RECEIVED MESSAGES -->
+    <div id="panel-received" class="msg-panel" style="border-top-left-radius: 0; display: {{ !$isSentActive ? 'flex' : 'none' }};">
+        <div class="msg-filter-bar">
+            <span class="msg-filter-pill active" style="pointer-events: none;">
+                <i class="fas fa-warehouse text-orange"></i> Boîte de réception Gares
+            </span>
         </div>
+
+        <div class="msg-list">
+            @forelse($receivedMessages as $gareMsg)
+                <a href="{{ route('compagnie.messages.show-received', $gareMsg->id) }}" class="msg-item {{ $gareMsg->is_read ? 'read' : '' }}">
+                    <div class="msg-avatar av-orange">
+                        <i class="fas fa-warehouse"></i>
+                    </div>
+                    
+                    <div class="msg-content">
+                        <div class="msg-sender-wrap">
+                            <span class="msg-sender">{{ $gareMsg->gare->nom_gare ?? 'Gare Inconnue' }}</span>
+                            <span class="msg-tag av-orange">Gare</span>
+                        </div>
+                        <div class="msg-subject">{{ $gareMsg->subject }}</div>
+                        <div class="msg-snippet">{{ $gareMsg->message }}</div>
+                    </div>
+
+                    <div class="msg-meta">
+                        <span class="msg-time">{{ $gareMsg->created_at->translatedFormat('d M, H:i') }}</span>
+                        @if($gareMsg->is_read)
+                            <span class="msg-status st-read"><i class="fas fa-check-double"></i> Lu</span>
+                        @else
+                            <span class="msg-status st-unread"><i class="fas fa-envelope"></i> Nouveau</span>
+                        @endif
+                    </div>
+                </a>
+            @empty
+                <div class="msg-empty">
+                    <div class="msg-empty-icon"><i class="fas fa-inbox"></i></div>
+                    <div class="msg-empty-title">Aucun message reçu</div>
+                    <div class="msg-empty-text">Vos gares ne vous ont envoyé aucun message pour le moment.</div>
+                </div>
+            @endforelse
+        </div>
+
+        @if($receivedMessages->hasPages())
+        <div class="dash-card-footer">
+            {{ $receivedMessages->appends(request()->query())->links('pagination::bootstrap-4') }}
+        </div>
+        @endif
     </div>
 
-    <!-- SENT MESSAGES PANEL -->
-    <div id="panel-sent" style="display: none;">
-        <div class="glass-card bg-white min-h-[500px] flex flex-col" style="border-top-right-radius: 0;">
-            <div class="p-4 border-b border-slate-100 bg-slate-50/30">
-                <ul class="nav nav-pill-custom gap-2 overflow-x-auto print:hidden">
-                    <li class="nav-item">
-                        <a class="nav-link {{ !request('type') ? 'active' : '' }}" href="{{ route('compagnie.messages.index') }}">
-                            <i class="fas fa-layer-group opacity-70 mr-2"></i> Flux global
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request('type') == 'agent' ? 'active' : '' }}" href="{{ route('compagnie.messages.index', ['type' => 'agent']) }}">
-                            <i class="fas fa-user-tie opacity-70 mr-2"></i> Agents
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request('type') == 'personnel' ? 'active' : '' }}" href="{{ route('compagnie.messages.index', ['type' => 'personnel']) }}">
-                            <i class="fas fa-steering-wheel opacity-70 mr-2"></i> Chauffeurs
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request('type') == 'caisse' ? 'active' : '' }}" href="{{ route('compagnie.messages.index', ['type' => 'caisse']) }}">
-                            <i class="fas fa-cash-register opacity-70 mr-2"></i> Points Caisse
-                        </a>
-                    </li>
-                </ul>
-            </div>
-
-            <div class="flex-grow py-4">
-                <div class="space-y-1">
-                    @forelse($messages as $message)
-                        @php
-                            $recipient = $message->recipient;
-                            $recipientName = 'Indéfini';
-                            $initials = '??';
-                            
-                            if ($recipient) {
-                                if ($message->recipient_type === 'App\Models\Gare') {
-                                    $recipientName = $recipient->nom_gare;
-                                    $initials = strtoupper(substr($recipient->nom_gare, 0, 2));
-                                } else {
-                                    $recipientName = ($recipient->name ?? '') . ' ' . ($recipient->prenom ?? '');
-                                    $initials = strtoupper(substr($recipient->name ?? '', 0, 1) . substr($recipient->prenom ?? '', 0, 1));
-                                }
-                            }
-
-                            $typeConfig = [
-                                'App\\Models\\Agent' => ['icon' => 'fa-user-tie', 'color' => 'text-blue-600', 'bg' => 'bg-blue-100', 'label' => 'Agent'],
-                                'App\\Models\\Caisse' => ['icon' => 'fa-cash-register', 'color' => 'text-emerald-600', 'bg' => 'bg-emerald-100', 'label' => 'Caisse'],
-                                'App\\Models\\Personnel' => ['icon' => 'fa-steering-wheel', 'color' => 'text-purple-600', 'bg' => 'bg-purple-100', 'label' => 'Chauffeur'],
-                                'App\\Models\\Gare' => ['icon' => 'fa-warehouse', 'color' => 'text-orange-600', 'bg' => 'bg-orange-100', 'label' => 'Gare'],
-                                'App\\Models\\User' => ['icon' => 'fa-user-shield', 'color' => 'text-indigo-600', 'bg' => 'bg-indigo-100', 'label' => 'Admin/User'],
-                            ][$message->recipient_type] ?? ['icon' => 'fa-user', 'color' => 'text-slate-400', 'bg' => 'bg-slate-100', 'label' => 'Inconnu'];
-                        @endphp
-
-                        <a href="{{ route('compagnie.messages.show', $message->id) }}" class="list-group-item list-group-item-action message-item p-4 bg-transparent border-0 hover:no-underline">
-                            <div class="flex flex-col lg:flex-row lg:items-center gap-4">
-                                <div class="flex items-center flex-shrink-0">
-                                    <div class="avatar-glow text-orange-600">
-                                        <div class="w-14 h-14 rounded-2xl bg-orange-100 flex items-center justify-center font-bold text-lg shadow-inner">
-                                            {{ $initials }}
-                                        </div>
-                                    </div>
-                                    <div class="ml-4 lg:hidden block">
-                                        <h4 class="text-lg font-bold text-slate-900 leading-tight">{{ $recipientName }}</h4>
-                                        <span class="text-sm font-semibold {{ $typeConfig['color'] }} uppercase tracking-wider">{{ $typeConfig['label'] }}</span>
-                                    </div>
-                                </div>
-
-                                <div class="flex-grow lg:px-4">
-                                    <div class="hidden lg:flex items-center mb-1 gap-2">
-                                        <h4 class="text-lg font-bold text-slate-900 leading-tight">{{ $recipientName }}</h4>
-                                        <span class="mx-1 text-slate-300">&middot;</span>
-                                        <span class="text-xs font-bold px-2 py-0.5 rounded-md {{ $typeConfig['bg'] }} {{ $typeConfig['color'] }} uppercase">
-                                            {{ $typeConfig['label'] }}
-                                        </span>
-                                    </div>
-                                    <h5 class="text-md font-bold text-slate-700 mb-1 truncate">{{ $message->subject }}</h5>
-                                    <p class="text-slate-500 text-sm line-clamp-1 italic">{{ $message->message }}</p>
-                                </div>
-
-                                <div class="flex items-center lg:flex-col lg:items-end justify-between lg:justify-center gap-2 flex-shrink-0 min-w-[120px]">
-                                    <span class="text-xs font-bold text-slate-400 lg:order-1">
-                                        {{ $message->created_at->translatedFormat('d M, H:i') }}
-                                    </span>
-                                    <div class="lg:order-2">
-                                        @if($message->is_read)
-                                            <div class="flex items-center text-emerald-500 bg-emerald-50 px-3 py-1 rounded-full text-xs font-extrabold border border-emerald-100">
-                                                <i class="fas fa-check-double mr-1.5"></i> LU
-                                            </div>
-                                        @else
-                                            <div class="flex items-center text-slate-400 bg-slate-50 px-3 py-1 rounded-full text-xs font-extrabold border border-slate-100">
-                                                <i class="fas fa-paper-plane mr-1.5"></i> ENVOYÉ
-                                            </div>
-                                        @endif
-                                    </div>
-                                </div>
-                                
-                                <div class="hidden lg:flex items-center justify-center w-10 h-10 rounded-full bg-slate-50 text-slate-300 p-0">
-                                    <i class="fas fa-chevron-right"></i>
-                                </div>
-                            </div>
-                        </a>
-                    @empty
-                        <div class="flex flex-col items-center justify-center py-20 px-4 text-center">
-                            <div class="w-32 h-32 bg-slate-50 rounded-full flex items-center justify-center mb-6">
-                                <i class="fas fa-envelope-open text-5xl text-slate-200"></i>
-                            </div>
-                            <h3 class="text-2xl font-bold text-slate-800">Aucune communication</h3>
-                            <p class="text-slate-500 max-w-sm mt-2">Vous n'avez envoyé aucun message dans cette catégorie.</p>
-                            <a href="{{ route('compagnie.messages.create') }}" class="mt-8 btn btn-outline-primary rounded-xl px-4 py-2 hover:bg-orange-500 border-slate-200 text-slate-600 font-bold">
-                                Envoyer premier message
-                            </a>
-                        </div>
-                    @endforelse
-                </div>
-            </div>
-
-            @if($messages->hasPages())
-            <div class="border-t border-slate-100 p-6 flex justify-center pagination-wrapper">
-                {{ $messages->appends(request()->query())->links() }}
-            </div>
-            @endif
+    <!-- PANEL: SENT MESSAGES -->
+  <div id="panel-sent" class="msg-panel" style="display: {{ $isSentActive ? 'flex' : 'none' }};">
+       <div class="msg-filter-bar">
+            <a class="msg-filter-pill {{ !request('type') ? 'active' : '' }}" href="{{ route('compagnie.messages.index', ['tab' => 'sent']) }}">
+                <i class="fas fa-layer-group"></i> Flux global
+            </a>
+            <a class="msg-filter-pill {{ request('type') == 'agent' ? 'active' : '' }}" href="{{ route('compagnie.messages.index', ['type' => 'agent', 'tab' => 'sent']) }}">
+                <i class="fas fa-user-tie"></i> Agents
+            </a>
+            <a class="msg-filter-pill {{ request('type') == 'personnel' ? 'active' : '' }}" href="{{ route('compagnie.messages.index', ['type' => 'personnel', 'tab' => 'sent']) }}">
+                <i class="fas fa-steering-wheel"></i> Chauffeurs
+            </a>
+            <a class="msg-filter-pill {{ request('type') == 'caisse' ? 'active' : '' }}" href="{{ route('compagnie.messages.index', ['type' => 'caisse', 'tab' => 'sent']) }}">
+                <i class="fas fa-cash-register"></i> Points Caisse
+            </a>
         </div>
+
+        <div class="msg-list">
+            @forelse($messages as $message)
+                @php
+                    $recipient = $message->recipient;
+                    $recipientName = 'Indéfini';
+                    $initials = '??';
+                    
+                    if ($recipient) {
+                        if ($message->recipient_type === 'App\Models\Gare') {
+                            $recipientName = $recipient->nom_gare;
+                            $initials = strtoupper(substr($recipient->nom_gare, 0, 2));
+                        } else {
+                            $recipientName = trim(($recipient->name ?? '') . ' ' . ($recipient->prenom ?? ''));
+                            $initials = strtoupper(substr($recipient->name ?? '?', 0, 1) . substr($recipient->prenom ?? '', 0, 1));
+                        }
+                    }
+
+                    $typeConfig = [
+                        'App\\Models\\Agent' => ['color' => 'av-blue', 'label' => 'Agent'],
+                        'App\\Models\\Caisse' => ['color' => 'av-emerald', 'label' => 'Caisse'],
+                        'App\\Models\\Personnel' => ['color' => 'av-purple', 'label' => 'Chauffeur'],
+                        'App\\Models\\Gare' => ['color' => 'av-orange', 'label' => 'Gare'],
+                    ][$message->recipient_type] ?? ['color' => 'av-blue', 'label' => 'Inconnu'];
+                @endphp
+
+                <a href="{{ route('compagnie.messages.show', $message->id) }}" class="msg-item read">
+                    <div class="msg-avatar {{ $typeConfig['color'] }}">
+                        {{ $initials }}
+                    </div>
+                    
+                    <div class="msg-content">
+                        <div class="msg-sender-wrap">
+                            <span class="msg-sender">{{ $recipientName }}</span>
+                            <span class="msg-tag {{ $typeConfig['color'] }}">{{ $typeConfig['label'] }}</span>
+                        </div>
+                        <div class="msg-subject">{{ $message->subject }}</div>
+                        <div class="msg-snippet">{{ $message->message }}</div>
+                    </div>
+
+                    <div class="msg-meta">
+                        <span class="msg-time">{{ $message->created_at->translatedFormat('d M, H:i') }}</span>
+                        @if($message->is_read)
+                            <span class="msg-status st-read"><i class="fas fa-check-double"></i> Lu</span>
+                        @else
+                            <span class="msg-status st-sent"><i class="fas fa-paper-plane"></i> Envoyé</span>
+                        @endif
+                    </div>
+                </a>
+            @empty
+                <div class="msg-empty">
+                    <div class="msg-empty-icon"><i class="fas fa-paper-plane"></i></div>
+                    <div class="msg-empty-title">Aucune communication envoyée</div>
+                    <div class="msg-empty-text">Vous n'avez envoyé aucun message dans cette catégorie.</div>
+                    <br>
+                    <a href="{{ route('compagnie.messages.create') }}" class="btn-action btn-secondary" style="border-radius:12px; padding:10px 20px;">
+                        Envoyer le premier message
+                    </a>
+                </div>
+            @endforelse
+        </div>
+
+        @if($messages->hasPages())
+        <div class="dash-card-footer">
+            {{ $messages->appends(request()->query())->links('pagination::bootstrap-4') }}
+        </div>
+        @endif
     </div>
+
 </div>
 
+@endsection
+
+@section('scripts')
 <script>
 function switchMainTab(tab, btn) {
-    document.getElementById('panel-sent').style.display = tab === 'sent' ? 'block' : 'none';
-    document.getElementById('panel-received').style.display = tab === 'received' ? 'block' : 'none';
-    document.querySelectorAll('.main-tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('panel-sent').style.display = tab === 'sent' ? 'flex' : 'none';
+    document.getElementById('panel-received').style.display = tab === 'received' ? 'flex' : 'none';
+    
+    document.querySelectorAll('.msg-tab-btn').forEach(b => {
+        b.classList.remove('active');
+        b.style.borderBottom = 'none';
+    });
     btn.classList.add('active');
 }
 </script>

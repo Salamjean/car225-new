@@ -1,328 +1,81 @@
-<header class="mdc-top-app-bar">
-    <div class="mdc-top-app-bar__row">
-        <div class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start">
-            <button
-                class="material-icons mdc-top-app-bar__navigation-icon mdc-icon-button sidebar-toggler text-white">menu</button>
-        </div>
-        <div class="mdc-top-app-bar__section mdc-top-app-bar__section--align-end mdc-top-app-bar__section-right">
-            <!-- Version desktop (cachée sur mobile) -->
-            <div class="menu-button-container menu-profile d-none d-md-block">
-                <button class="mdc-button mdc-menu-button">
-                    <span class="d-flex align-items-center">
-                        <span class="figure">
-                            @if (Auth::guard('compagnie')->user()->path_logo)
-                                <img src="{{ asset('storage/' . Auth::guard('compagnie')->user()->path_logo) }}"
-                                    alt="logo" class="user" style="background-color: white">
-                            @else
-                                <div
-                                    class="user default-logo d-flex align-items-center justify-content-center text-white font-weight-bold">
-                                    {{ substr(Auth::guard('compagnie')->user()->name, 0, 2) }}
-                                </div>
-                            @endif
-                        </span>
-                        <span class="user-name text-white"> {{ Auth::guard('compagnie')->user()->sigle }}</span>
-                        <span class="ml-2 text-white">&#9662;</span>
-                    </span>
-                </button>
-                <div class="mdc-menu mdc-menu-surface" tabindex="-1">
-                    <ul class="mdc-list" role="menu" aria-hidden="true" aria-orientation="vertical">
-                        <li class="mdc-list-item" role="menuitem">
-                            <a href="{{ route('compagnie.profile') }}" class="d-flex align-items-center w-100 text-decoration-none text-dark">
-                                <i class="mdi mdi-account mr-2" style="color: #193561; font-size: 1.5rem;"></i>
-                                <span>Mon Profil</span>
-                            </a>
-                        </li>
-                        <li class="mdc-list-item" role="menuitem">
-                            <a href="{{ route('compagnie.logout') }}"
-                                class="d-flex align-items-center w-100 text-decoration-none text-dark">
-                                <i class="mdi mdi-logout mr-2" style="color: #193561; font-size: 1.5rem;"></i>
-                                <span>Déconnexion</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
+<header class="topbar">
 
-            <!-- Version mobile (affichée uniquement sur mobile) -->
-            <div class="d-md-none mobile-menu-container">
-                <button class="mdc-icon-button text-white mobile-profile-toggle">
-                    <span class="figure">
-                        @if (Auth::guard('compagnie')->user()->path_logo)
-                            <img src="{{ asset('storage/' . Auth::guard('compagnie')->user()->path_logo) }}"
-                                alt="logo" class="user-mobile">
-                        @else
-                            <div
-                                class="user-mobile default-logo d-flex align-items-center justify-content-center text-white font-weight-bold">
-                                {{ substr(Auth::guard('compagnie')->user()->name, 0, 2) }}
-                            </div>
-                        @endif
-                    </span>
-                </button>
-                <div class="mobile-menu mdc-menu mdc-menu-surface" tabindex="-1">
-                    <ul class="mdc-list" role="menu" aria-hidden="true" aria-orientation="vertical">
-                        <li class="mobile-user-info mdc-list-item" style="pointer-events: none;">
-                            <div class="d-flex align-items-center w-100">
-                                <span class="figure mr-2">
-                                    @if (Auth::guard('compagnie')->user()->path_logo)
-                                        <img src="{{ asset('storage/' . Auth::guard('compagnie')->user()->path_logo) }}"
-                                            alt="logo" class="user-mobile-small">
-                                    @else
-                                        <div
-                                            class="user-mobile-small default-logo d-flex align-items-center justify-content-center text-white font-weight-bold">
-                                            {{ substr(Auth::guard('compagnie')->user()->name, 0, 2) }}
-                                        </div>
-                                    @endif
-                                </span>
-                                <span class="user-name">{{ Auth::guard('compagnie')->user()->name }}</span>
-                            </div>
-                        </li>
-                        <li role="separator" class="mdc-list-divider"></li>
-                        <li class="mdc-list-item" role="menuitem">
-                            <a href="{{ route('compagnie.profile') }}" class="d-flex align-items-center w-100 text-decoration-none text-dark py-2">
-                                <i class="mdi mdi-account mr-2" style="color: #193561; font-size: 1.5rem;"></i>
-                                <span>Mon Profil</span>
-                            </a>
-                        </li>
-                        <li class="mdc-list-item" role="menuitem">
-                            <a href="{{ route('compagnie.logout') }}"
-                                class="d-flex align-items-center w-100 text-decoration-none text-dark py-2">
-                                <i class="mdi mdi-logout mr-2" style="color: #193561; font-size: 1.5rem;"></i>
-                                <span>Déconnexion</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
+    {{-- Burger mobile --}}
+    <button class="topbar-burger" onclick="openSidebar()" aria-label="Menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    {{-- Titre page --}}
+    <div class="topbar-title-wrap">
+        <h1 class="topbar-title">@yield('page-title', 'Tableau de bord')</h1>
+        <span class="topbar-breadcrumb">@yield('page-subtitle', 'Vue d\'ensemble de votre activité')</span>
+    </div>
+
+    {{-- Actions droite --}}
+    <div class="topbar-actions">
+
+        {{-- Solde compagnie --}}
+        <div class="topbar-solde">
+            <i class="fas fa-coins topbar-solde-icon"></i>
+            <div class="topbar-solde-info">
+                <span class="topbar-solde-label">Solde</span>
+                <span class="topbar-solde-val">
+                    {{ number_format(Auth::guard('compagnie')->user()->tickets, 0, ',', ' ') }}
+                    <span class="topbar-solde-unit">CFA</span>
+                </span>
             </div>
         </div>
+
+        {{-- Notifications --}}
+        @php
+            $notifCount = \App\Models\Signalement::whereHas('programme', function ($q) {
+                $q->where('compagnie_id', Auth::guard('compagnie')->id());
+            })->where('is_read_by_company', false)->count();
+        @endphp
+        <a href="{{ route('compagnie.signalements.index') }}" class="topbar-icon-btn" title="Signalements">
+            <i class="fas fa-bell"></i>
+            @if($notifCount > 0)
+                <span class="topbar-notif-dot"></span>
+            @endif
+        </a>
+
+        {{-- Actualiser --}}
+        <button class="topbar-icon-btn" onclick="window.location.reload()" title="Actualiser">
+            <i class="fas fa-sync-alt"></i>
+        </button>
+
+        {{-- Profil dropdown --}}
+        <div class="topbar-profile-wrap" id="topbarProfileWrap">
+            <button class="topbar-profile-btn" onclick="toggleProfileMenu()" id="topbarProfileBtn">
+                @if(Auth::guard('compagnie')->user()->path_logo)
+                    <img src="{{ asset('storage/' . Auth::guard('compagnie')->user()->path_logo) }}"
+                         alt="logo" class="topbar-profile-img">
+                @else
+                    <div class="topbar-profile-avatar">
+                        {{ strtoupper(substr(Auth::guard('compagnie')->user()->name, 0, 2)) }}
+                    </div>
+                @endif
+                <span class="topbar-profile-name d-none d-md-inline">
+                    {{ Auth::guard('compagnie')->user()->sigle }}
+                </span>
+                <i class="fas fa-chevron-down topbar-profile-chevron d-none d-md-inline"></i>
+            </button>
+
+            <div class="topbar-dropdown" id="topbarDropdown">
+                <div class="topbar-dropdown-header">
+                    <div class="topbar-dropdown-name">{{ Auth::guard('compagnie')->user()->name }}</div>
+                    <div class="topbar-dropdown-email">{{ Auth::guard('compagnie')->user()->email }}</div>
+                </div>
+                <div class="topbar-dropdown-divider"></div>
+                <a class="topbar-dropdown-item" href="{{ route('compagnie.profile') }}">
+                    <i class="fas fa-id-card"></i> Mon Profil
+                </a>
+                <div class="topbar-dropdown-divider"></div>
+                <a class="topbar-dropdown-item topbar-dropdown-logout" href="{{ route('compagnie.logout') }}">
+                    <i class="fas fa-sign-out-alt"></i> Déconnexion
+                </a>
+            </div>
+        </div>
+
     </div>
 </header>
-
-<style>
-    .mdc-menu-button .ml-2 {
-        font-size: 0.9rem;
-        transition: transform 0.3s ease;
-    }
-
-    .mdc-menu-button:focus .ml-2 {
-        transform: rotate(180deg);
-    }
-
-    /* Correction pour l'alignement du menu à droite */
-    .menu-button-container {
-        position: relative;
-    }
-
-    .mdc-menu-surface {
-        z-index: 1000;
-        right: 0 !important;
-        left: auto !important;
-    }
-
-    .mdc-menu {
-        position: absolute;
-        right: 0;
-        top: 100%;
-        left: auto !important;
-    }
-
-    /* Styles pour les images de profil */
-    .figure .user {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        object-fit: cover;
-    }
-
-    .user-mobile {
-        width: 35px;
-        height: 35px;
-        border-radius: 50%;
-        object-fit: cover;
-    }
-
-    .user-mobile-small {
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        object-fit: cover;
-    }
-
-    /* Styles premium ajoutés */
-    .mdc-top-app-bar {
-        background: linear-gradient(135deg, #ea580c 0%, #f97316 100%) !important;
-        box-shadow: 0 4px 20px rgba(234, 88, 12, 0.25) !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    .mdc-icon-button {
-        transition: all 0.3s ease;
-    }
-    .mdc-icon-button:hover {
-        background: rgba(255, 255, 255, 0.2) !important;
-        border-radius: 50%;
-        transform: scale(1.05);
-    }
-    .user-name {
-        font-weight: 700 !important;
-        font-family: 'Inter', sans-serif;
-        letter-spacing: 0.3px;
-    }
-    .mdc-menu-surface {
-        border-radius: 16px !important;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08) !important;
-        border: 1px solid #f1f5f9 !important;
-        padding: 8px 0 !important;
-    }
-    .mdc-list-item[role="menuitem"] {
-        margin: 4px 12px !important;
-        border-radius: 10px !important;
-        transition: all 0.2s;
-    }
-    .mdc-list-item[role="menuitem"]:hover {
-        background-color: #fff7ed !important;
-        color: #ea580c !important;
-    }
-    .mdc-list-item[role="menuitem"]:hover a, .mdc-list-item[role="menuitem"]:hover i {
-        color: #ea580c !important;
-    }
-    .mobile-user-info {
-        background-color: #ffffff !important;
-        border-bottom: 1px solid #f1f5f9 !important;
-    }
-
-    /* Styles pour la version mobile */
-    .mobile-menu-container {
-        position: relative;
-    }
-
-    .mobile-profile-toggle {
-        padding: 8px;
-    }
-
-    .mobile-user-info {
-        background-color: #f8f9fa;
-        border-bottom: 1px solid #dee2e6;
-        min-height: 60px;
-    }
-
-    .mobile-menu .mdc-list-item {
-        min-height: 48px;
-        display: flex;
-        align-items: center;
-    }
-
-    /* Ajustement pour les écrans très petits */
-    @media (max-width: 576px) {
-        .mobile-menu .mdc-list-item {
-            padding: 12px 16px;
-        }
-
-        .mobile-menu {
-            min-width: 200px;
-        }
-
-        .mobile-user-info .user-name {
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-
-        /* Assurer que le conteneur mobile est visible */
-        .mobile-menu-container {
-            display: block !important;
-        }
-    }
-
-    /* Forcer l'affichage mobile sur les petits écrans */
-    @media (max-width: 767.98px) {
-        .d-md-none {
-            display: block !important;
-        }
-
-        .d-none.d-md-block {
-            display: none !important;
-        }
-    }
-</style>
-
-<script>
-    // Initialisation des menus
-    document.addEventListener('DOMContentLoaded', function() {
-        // Menu desktop
-        const menuButton = document.querySelector('.mdc-menu-button');
-        const menu = document.querySelector('.mdc-menu');
-
-        // Menu mobile
-        const mobileMenuButton = document.querySelector('.mobile-profile-toggle');
-        const mobileMenu = document.querySelector('.mobile-menu');
-
-        // Initialiser le menu desktop
-        if (menuButton && menu) {
-            const menuInstance = new mdc.menu.MDCMenu(menu);
-            menuInstance.setAnchorCorner(mdc.menu.Corner.BOTTOM_END);
-            menuInstance.setAnchorMargin({
-                top: 0,
-                bottom: 0,
-                left: 0,
-                right: 0
-            });
-
-            menuButton.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                menuInstance.open = !menuInstance.open;
-            });
-        }
-
-        // Initialiser le menu mobile
-        if (mobileMenuButton && mobileMenu) {
-            const mobileMenuInstance = new mdc.menu.MDCMenu(mobileMenu);
-            mobileMenuInstance.setAnchorCorner(mdc.menu.Corner.BOTTOM_END);
-            mobileMenuInstance.setAnchorMargin({
-                top: 0,
-                bottom: 0,
-                left: 0,
-                right: 0
-            });
-
-            mobileMenuButton.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                mobileMenuInstance.open = !mobileMenuInstance.open;
-            });
-
-            // Fermer le menu quand on clique sur un lien
-            mobileMenu.addEventListener('click', (e) => {
-                if (e.target.closest('a')) {
-                    setTimeout(() => {
-                        mobileMenuInstance.open = false;
-                    }, 100);
-                }
-            });
-        }
-
-        // Fermer les menus quand on clique ailleurs
-        document.addEventListener('click', function(e) {
-            if (menu && menuButton && !menuButton.contains(e.target) && !menu.contains(e.target)) {
-                const menuInstance = mdc.menu.MDCMenu.attachTo(menu);
-                menuInstance.open = false;
-            }
-            if (mobileMenu && mobileMenuButton && !mobileMenuButton.contains(e.target) && !mobileMenu
-                .contains(e.target)) {
-                const mobileMenuInstance = mdc.menu.MDCMenu.attachTo(mobileMenu);
-                mobileMenuInstance.open = false;
-            }
-        });
-    });
-
-    // Correction supplémentaire pour forcer l'alignement à droite
-    function fixMenuPosition() {
-        const menus = document.querySelectorAll('.mdc-menu-surface');
-        menus.forEach(menu => {
-            menu.style.left = 'auto';
-            menu.style.right = '0';
-        });
-    }
-
-    // Appliquer la correction après le chargement et après chaque ouverture de menu
-    document.addEventListener('DOMContentLoaded', fixMenuPosition);
-    setTimeout(fixMenuPosition, 100);
-</script>

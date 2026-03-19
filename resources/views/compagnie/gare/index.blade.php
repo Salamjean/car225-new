@@ -1,140 +1,198 @@
 @extends('compagnie.layouts.template')
+
+@section('page-title', 'Réseau des Gares')
+@section('page-subtitle', 'Gérez vos points d\'embarquement et supervisez vos responsables de gare')
+
+@section('styles')
+<style>
+    .gare-avatar-box {
+        width: 40px; height: 40px; border-radius: 12px; background: var(--orange-light); color: var(--orange);
+        display: flex; align-items: center; justify-content: center; font-size: 16px; border: 1px solid var(--orange-mid);
+    }
+    
+    .search-box { position: relative; max-width: 350px; width: 100%; }
+    .search-box i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-3); font-size: 13px; }
+    .search-box input {
+        width: 100%; padding: 10px 16px 10px 40px;
+        border: 1px solid var(--border); border-radius: var(--radius-sm);
+        font-size: 13px; background: var(--surface); color: var(--text-1); transition: 0.2s;
+    }
+    .search-box input:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px var(--orange-light); }
+
+    .btn-action {
+        width: 32px; height: 32px; border-radius: 8px; border: none; display: inline-flex; align-items: center; justify-content: center;
+        font-size: 13px; transition: 0.2s; cursor: pointer; text-decoration: none;
+    }
+    .btn-action.edit { background: #EFF6FF; color: #2563EB; }
+    .btn-action.delete { background: #FEF2F2; color: #DC2626; }
+    .btn-action:hover { transform: translateY(-2px); filter: brightness(0.95); text-decoration: none; }
+</style>
+@endsection
+
 @section('content')
-<div class="min-h-screen bg-gradient-to-br from-gray-50 to-green-50 py-8 px-4">
-    <div class="mx-auto" style="width: 90%">
-        <!-- En-tête -->
-        <div class="text-center mb-12">
-            <div class="inline-flex items-center justify-center w-16 h-16 bg-[#e94f1b] rounded-2xl shadow-lg mb-4">
-                <i class="fas fa-building text-3xl text-white"></i>
+<div class="dashboard-page">
+
+    {{-- STATS ROW --}}
+    <div class="metric-grid mb-4">
+        <div class="metric-card">
+            <div class="metric-top">
+                <div class="metric-icon mi-amber"><i class="fas fa-warehouse"></i></div>
+                <span class="metric-tag mt-slate">Réseau</span>
             </div>
-            <h1 class="text-4xl font-bold text-gray-900 mb-3">Gestion des Gares</h1>
-            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
-                Gérez vos gares et points d'embarquement
-            </p>
+            <div class="metric-label">Gares Opérationnelles</div>
+            <div class="metric-value">{{ $gares->count() }}</div>
         </div>
 
-        <!-- Carte principale -->
-        <div class="bg-white rounded-3xl shadow-xl overflow-hidden">
-            <!-- En-tête de la carte -->
-            <div class="px-8 py-6 bg-gradient-to-r from-[#e94f1b] to-[#e89116]">
-                <div class="flex flex-col sm:flex-row justify-between items-center">
-                    <h2 class="text-2xl font-bold text-white mb-4 sm:mb-0">Liste des Gares</h2>
-                    <a href="{{ route('gare.create') }}" 
-                       class="flex items-center px-6 py-3 bg-white text-[#e94f1b] font-bold rounded-xl hover:bg-gray-50 transform hover:-translate-y-1 transition-all duration-200 shadow-lg">
-                        <i class="fas fa-plus mr-2"></i>
-                        Nouvelle Gare
-                    </a>
-                </div>
+        <div class="metric-card">
+            <div class="metric-top">
+                <div class="metric-icon mi-blue"><i class="fas fa-city"></i></div>
+                <span class="metric-tag mt-blue">Couverture</span>
             </div>
+            <div class="metric-label">Villes Desservies</div>
+            <div class="metric-value">{{ $gares->pluck('ville')->unique()->count() }}</div>
+        </div>
 
-            <!-- Contenu -->
-            <div class="p-8">
-                <!-- Tableau des gares -->
-                <div class="overflow-hidden rounded-2xl border border-gray-200">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nom de la Gare</th>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Ville</th>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Adresse</th>
-                                <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            @forelse($gares as $gare)
-                            <tr class="hover:bg-gray-50 transition-colors duration-200">
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-bold text-gray-900">{{ $gare->nom_gare }}</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-600">{{ $gare->ville }}</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-600">{{ $gare->adresse }}</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-center">
-                                    <div class="flex items-center justify-center space-x-2">
-                                        <a href="{{ route('gare.edit', $gare->id) }}" 
-                                           class="inline-flex items-center px-3 py-2 bg-[#e94f1b] text-white rounded-lg hover:bg-[#e89116] transition-colors duration-200"
-                                           title="Modifier">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-
-                                        <button type="button" 
-                                                class="inline-flex items-center px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 delete-gare"
-                                                title="Supprimer"
-                                                data-gare-id="{{ $gare->id }}"
-                                                data-gare-nom="{{ $gare->nom_gare }}">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="4" class="px-6 py-8 text-center">
-                                    <div class="flex flex-col items-center justify-center text-gray-500">
-                                        <i class="fas fa-building text-5xl mb-4 text-gray-300"></i>
-                                        <p class="text-lg font-semibold mb-2">Aucune gare trouvée</p>
-                                        <p class="text-sm">Commencez par ajouter votre première gare.</p>
-                                    </div>
-                                </td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
+        <div class="metric-card">
+            <div class="metric-top">
+                <div class="metric-icon" style="background: #F3E8FF; color: #7E22CE;"><i class="fas fa-user-tie"></i></div>
+                <span class="metric-tag" style="background: #F3E8FF; color: #7E22CE;">Encadrement</span>
             </div>
+            <div class="metric-label">Chefs de Gare</div>
+            <div class="metric-value">{{ $gares->count() }}</div>
+        </div>
+    </div>
+
+    {{-- ACTION HEADER --}}
+    <div class="dash-card mb-4 p-3 d-flex flex-wrap align-items-center justify-content-between" style="gap: 16px;">
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="gareSearch" placeholder="Chercher une gare, ville, adresse...">
+        </div>
+        
+        <a href="{{ route('gare.create') }}" class="btn btn-primary" style="background: var(--orange); border: none; font-weight: 700; border-radius: var(--radius-sm); font-size: 13px;">
+            <i class="fas fa-plus mr-2"></i> Ajouter une Gare
+        </a>
+    </div>
+
+    {{-- TABLE --}}
+    <div class="dash-card">
+        <div class="dash-card-head" style="background: var(--surface-2);">
+            <div class="dash-card-head-left">
+                <div class="dash-card-icon" style="background: var(--text-1); color: white;">
+                    <i class="fas fa-network-wired"></i>
+                </div>
+                <span class="dash-card-title">Répertoire Stratégique</span>
+            </div>
+        </div>
+
+        <div class="dash-table-wrap">
+            <table class="dash-table">
+                <thead>
+                    <tr>
+                        <th>Nom de la Gare</th>
+                        <th>Localisation</th>
+                        <th>Adresse</th>
+                        <th class="text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($gares as $gare)
+                    <tr class="gare-row">
+                        <td>
+                            <div class="d-flex align-items-center" style="gap: 12px;">
+                                <div class="gare-avatar-box">
+                                    <i class="fas fa-warehouse"></i>
+                                </div>
+                                <div>
+                                    <div style="font-weight: 800; font-size: 13px; color: var(--text-1); text-transform: uppercase;">{{ $gare->nom_gare }}</div>
+                                    <div style="font-size: 10px; font-weight: 800; color: var(--text-3); margin-top: 4px; background: var(--surface-2); padding: 2px 6px; border-radius: 4px; display: inline-block;">
+                                        ID: #{{ str_pad($gare->id, 3, '0', STR_PAD_LEFT) }}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div style="font-weight: 800; font-size: 12px; color: var(--text-1); text-transform: uppercase;"><i class="fas fa-city mr-1 text-muted"></i> {{ $gare->ville }}</div>
+                        </td>
+                        <td>
+                            <div style="font-weight: 600; font-size: 12px; color: var(--text-2);"><i class="fas fa-map-marker-alt mr-1" style="color: var(--orange);"></i> {{ Str::limit($gare->adresse, 40) }}</div>
+                        </td>
+                        <td class="text-right">
+                            <div class="d-flex justify-content-end" style="gap: 8px;">
+                                <a href="{{ route('gare.edit', $gare->id) }}" class="btn-action edit" title="Modifier">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" onclick="confirmDeleteGare({{ $gare->id }}, '{{ addslashes($gare->nom_gare) }}')" class="btn-action delete" title="Supprimer">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="4">
+                            <div class="table-empty py-5">
+                                <i class="fas fa-university table-empty-icon mb-3" style="font-size: 40px; color: var(--border-strong);"></i>
+                                <h3 style="font-size: 14px; font-weight: 800; color: var(--text-1); margin: 0;">Aucune gare enregistrée</h3>
+                                <p style="font-size: 12px; color: var(--text-3); font-weight: 600; margin-bottom: 16px;">Votre réseau de gares est vide pour le moment.</p>
+                                <a href="{{ route('gare.create') }}" class="btn btn-primary btn-sm" style="background: var(--orange); border: none; font-weight: 700; border-radius: var(--radius-sm);">
+                                    Créer la Première Gare
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.delete-gare').forEach(button => {
-        button.addEventListener('click', function() {
-            const gareId = this.getAttribute('data-gare-id');
-            const nom = this.getAttribute('data-gare-nom');
+    const searchInput = document.getElementById('gareSearch');
+    const tableRows = document.querySelectorAll('.gare-row');
 
-            Swal.fire({
-                title: 'Supprimer la gare',
-                html: `Êtes-vous sûr de vouloir supprimer la gare <strong>${nom}</strong> ?`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Oui, supprimer',
-                cancelButtonText: 'Annuler',
-                confirmButtonColor: '#EF4444',
-                cancelButtonColor: '#6B7280'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = `/company/gare/${gareId}`;
-                    const csrf = document.createElement('input');
-                    csrf.type = 'hidden';
-                    csrf.name = '_token';
-                    csrf.value = '{{ csrf_token() }}';
-                    const method = document.createElement('input');
-                    method.type = 'hidden';
-                    method.name = '_method';
-                    method.value = 'DELETE';
-                    form.appendChild(csrf);
-                    form.appendChild(method);
-                    document.body.appendChild(form);
-                    form.submit();
-                }
-            });
+    searchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase().trim();
+        tableRows.forEach(row => {
+            const text = row.innerText.toLowerCase();
+            row.style.display = text.includes(query) ? '' : 'none';
         });
     });
 
+    window.confirmDeleteGare = function(id, name) {
+        Swal.fire({
+            title: 'Suppression de Gare',
+            html: `Voulez-vous vraiment supprimer la gare <strong>${name}</strong> ?<br>Cette action affectera les itinéraires liés.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: 'var(--red)',
+            cancelButtonColor: 'var(--text-3)',
+            confirmButtonText: 'Supprimer',
+            cancelButtonText: 'Annuler',
+            customClass: { popup: 'rounded-lg border-0 shadow-sm' }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/company/gare/${id}`;
+                form.innerHTML = `
+                    <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="_method" value="DELETE">
+                `;
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    }
+
     @if(session('success'))
-    Swal.fire({
-        title: 'Succès!',
-        text: '{{ session('success') }}',
-        icon: 'success',
-        confirmButtonColor: '#e94f1b'
-    });
+        Swal.fire({
+            icon: 'success', title: 'Opération réussie', text: "{{ session('success') }}",
+            timer: 3000, showConfirmButton: false, toast: true, position: 'top-end',
+            customClass: { popup: 'rounded-lg shadow-sm border-left-success' }
+        });
     @endif
 });
 </script>

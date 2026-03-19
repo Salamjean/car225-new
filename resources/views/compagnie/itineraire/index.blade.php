@@ -1,468 +1,228 @@
 @extends('compagnie.layouts.template')
+
+@section('page-title', 'Gestion des Itinéraires')
+@section('page-subtitle', 'Définissez vos routes et trajets interurbains')
+
+@section('styles')
+<style>
+    .search-box { position: relative; max-width: 350px; width: 100%; }
+    .search-box i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-3); font-size: 13px; }
+    .search-box input {
+        width: 100%; padding: 10px 16px 10px 40px;
+        border: 1px solid var(--border); border-radius: var(--radius-sm);
+        font-size: 13px; background: var(--surface); color: var(--text-1); transition: 0.2s;
+    }
+    .search-box input:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px var(--orange-light); }
+
+    .itinerary-main { display: flex; align-items: center; gap: 12px; }
+    .itinerary-icon-box {
+        width: 36px; height: 36px; border-radius: 10px; background: var(--orange-light); color: var(--orange);
+        display: flex; align-items: center; justify-content: center; font-size: 16px; border: 1px solid var(--orange-mid);
+    }
+    .itinerary-path { display: flex; align-items: center; gap: 8px; }
+    .path-start, .path-end { font-size: 13px; font-weight: 800; color: var(--text-1); }
+    .path-arrow { color: var(--text-3); font-size: 12px; }
+
+    .date-info { display: flex; flex-direction: column; gap: 2px; }
+    .date-val { font-size: 13px; font-weight: 700; color: var(--text-1); }
+    .time-val { font-size: 11px; color: var(--text-3); font-weight: 600; }
+
+    .btn-action {
+        width: 32px; height: 32px; border-radius: 8px; border: none; display: inline-flex; align-items: center; justify-content: center;
+        font-size: 13px; transition: all 0.2s; cursor: pointer; text-decoration: none;
+    }
+    .btn-action.view { background: #F0F9FF; color: #0EA5E9; }
+    .btn-action.edit { background: #EFF6FF; color: #2563EB; }
+    .btn-action.delete { background: #FEF2F2; color: #DC2626; }
+    .btn-action:hover { transform: translateY(-2px); filter: brightness(0.95); text-decoration: none; }
+</style>
+@endsection
+
 @section('content')
-    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-green-50 py-8 px-4">
-        <div class=" mx-auto" style="width: 90%">
-            <!-- En-tête avec bouton -->
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-900 mb-2">Gestion des Itinéraires</h1>
-                    <p class="text-gray-600">Liste de tous vos itinéraires enregistrés</p>
-                </div>
-                <a href="{{ route('itineraire.create') }}"
-                    class="flex items-center px-6 py-3 bg-[#e94f1b] text-white font-semibold rounded-xl hover:bg-[#e89116] transform hover:-translate-y-1 transition-all duration-200 shadow-lg hover:shadow-xl mt-4 sm:mt-0">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    Nouvel Itinéraire
-                </a>
-            </div>
+<div class="dashboard-page">
 
-            <!-- Carte principale -->
-            <div class="bg-white rounded-3xl shadow-xl overflow-hidden">
-                <!-- En-tête de la table -->
-                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <div class="flex items-center">
-                            <div class="w-2 h-8 bg-[#e94f1b] rounded-full mr-3"></div>
-                            <h2 class="text-xl font-bold text-gray-800">Liste des Itinéraires</h2>
-                            <span class="ml-3 px-3 py-1 bg-[#e94f1b] text-white text-sm font-medium rounded-full"
-                                id="itineraires-count">
-                                {{ $itineraires->count() }} itinéraire(s)
-                            </span>
-                        </div>
-
-                        <!-- Barre de recherche -->
-                        <form method="GET" action="{{ route('itineraire.index') }}" class="relative w-full sm:w-64">
-                            <input type="text" name="search" value="{{ request('search') }}"
-                                placeholder="Rechercher un itinéraire..."
-                                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-200"
-                                id="search-input">
-                            <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- Tableau -->
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th
-                                    class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Itinéraire
-                                </th>
-                                <th
-                                    class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Distance & Durée
-                                </th>
-                                <th
-                                    class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Date de création
-                                </th>
-                                <th
-                                    class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Actions
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200" id="itineraires-table">
-                            @forelse($itineraires as $itineraire)
-                                <tr class="hover:bg-gray-50 transition-colors duration-150"
-                                    data-itineraire-id="{{ $itineraire->id }}">
-                                    <!-- Colonne Itinéraire -->
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center" style="display: flex; justify-content:center">
-                                            <div
-                                                class="flex-shrink-0 h-12 w-12 bg-gradient-to-br from-[#e94f1b] to-orange-500 rounded-xl flex items-center justify-center text-white font-bold text-sm">
-                                                <svg class="w-6 h-6" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                </svg>
-                                            </div>
-                                            <div class="ml-4">
-                                                <div class="text-sm font-semibold text-gray-900 flex items-center">
-                                                    {{ $itineraire->point_depart }}
-                                                    <svg class="w-4 h-4 mx-2 text-[#e94f1b]" fill="none"
-                                                        stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                                                    </svg>
-                                                    {{ $itineraire->point_arrive }}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-
-                                    <!-- Colonne Distance & Durée -->
-                                    <td class="px-6 py-4 whitespace-nowrap" style="display: flex; justify-content:center">
-                                        <div class="flex flex-col space-y-1">
-                                            <div class="flex items-center text-sm text-gray-900"
-                                                style="display: flex; justify-content:center">
-                                                <svg class="w-4 h-4 mr-1 text-green-500" fill="none"
-                                                    stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
-                                                <span class="font-medium">{{ $itineraire->durer_parcours }}</span>
-                                            </div>
-                                            <div class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full inline-block w-40"
-                                                style="display: flex; justify-content:center">
-                                                <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                                </svg>
-                                                Itinéraire calculé
-                                            </div>
-                                        </div>
-                                    </td>
-
-                                    <!-- Colonne Date -->
-                                    <td class="px-6 py-4 whitespace-nowrap text-center">
-                                        <div class="text-sm text-gray-900">
-                                            {{ $itineraire->created_at->format('d/m/Y') }}
-                                        </div>
-                                        <div class="text-xs text-gray-500">
-                                            {{ $itineraire->created_at->format('H:i') }}
-                                        </div>
-                                    </td>
-
-                                    <!-- Colonne Actions -->
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <div class="flex justify-end items-center space-x-2"
-                                            style="display: flex; justify-content:center">
-                                            <!-- Bouton Voir avec SweetAlert -->
-                                            <button type="button"
-                                                class="text-blue-600 hover:text-blue-900 p-2 rounded-lg hover:bg-blue-50 transition-colors duration-200 show-itineraire-btn"
-                                                data-itineraire="{{ json_encode($itineraire) }}" title="Voir détails">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                </svg>
-                                            </button>
-
-                                            <!-- Bouton Modifier -->
-                                            <a href="{{ route('itineraire.edit', $itineraire) }}"
-                                                class="text-green-600 hover:text-green-900 p-2 rounded-lg hover:bg-green-50 transition-colors duration-200"
-                                                title="Modifier">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                </svg>
-                                            </a>
-
-                                            <!-- Bouton Supprimer avec SweetAlert -->
-                                            <button type="button"
-                                                class="text-red-600 hover:text-red-900 p-2 rounded-lg hover:bg-red-50 transition-colors duration-200 delete-itineraire-btn"
-                                                data-itineraire-id="{{ $itineraire->id }}"
-                                                data-itineraire-name="{{ $itineraire->point_depart }} → {{ $itineraire->point_arrive }}"
-                                                title="Supprimer">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @empty
-                                <!-- État vide -->
-                                <tr>
-                                    <td colspan="4" class="px-6 py-12 text-center">
-                                        <div class="flex flex-col items-center justify-center">
-                                            <svg class="w-16 h-16 text-gray-400 mb-4" fill="none"
-                                                stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            </svg>
-                                            <h3 class="text-lg font-medium text-gray-900 mb-2">Aucun itinéraire trouvé</h3>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Pagination -->
-                @if ($itineraires->hasPages())
-                    <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
-                        <div class="flex items-center justify-between">
-                            <div class="text-sm text-gray-700">
-                                Affichage de {{ $itineraires->firstItem() }} à {{ $itineraires->lastItem() }} sur
-                                {{ $itineraires->total() }} résultats
-                            </div>
-                            <div class="flex space-x-2">
-                                {{ $itineraires->links() }}
-                            </div>
-                        </div>
-                    </div>
-                @endif
-            </div>
-        </div>
+    {{-- ACTION HEADER --}}
+    <div class="dash-card mb-4 p-3 d-flex flex-wrap align-items-center justify-content-between" style="gap: 16px;">
+        <form method="GET" action="{{ route('itineraire.index') }}" class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" name="search" value="{{ request('search') }}" id="searchInput" placeholder="Rechercher un trajet...">
+        </form>
+        
+        <a href="{{ route('itineraire.create') }}" class="btn btn-primary" style="background: var(--orange); border: none; font-weight: 700; border-radius: var(--radius-sm); font-size: 13px;">
+            <i class="fas fa-plus mr-2"></i> Nouvel Itinéraire
+        </a>
     </div>
 
-    <!-- Inclure SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    {{-- TABLE --}}
+    <div class="dash-card">
+        <div class="dash-card-head" style="background: var(--surface-2);">
+            <div class="dash-card-head-left">
+                <div class="dash-card-icon" style="background: var(--text-1); color: white;">
+                    <i class="fas fa-map-marked-alt"></i>
+                </div>
+                <span class="dash-card-title">Catalogue des itinéraires</span>
+            </div>
+            <span class="dash-card-tag">{{ $itineraires->total() }} LIGNES</span>
+        </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Recherche en temps réel
-            const searchInput = document.getElementById('search-input');
-            if (searchInput) {
-                let searchTimeout;
-
-                searchInput.addEventListener('input', function(e) {
-                    clearTimeout(searchTimeout);
-                    searchTimeout = setTimeout(() => {
-                        this.closest('form').submit();
-                    }, 500);
-                });
-            }
-
-            // Gestion du bouton Voir avec SweetAlert
-            const showButtons = document.querySelectorAll('.show-itineraire-btn');
-            showButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const itineraire = JSON.parse(this.getAttribute('data-itineraire'));
-                    const createdDate = new Date(itineraire.created_at).toLocaleDateString(
-                    'fr-FR', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-
-                    const updatedDate = new Date(itineraire.updated_at).toLocaleDateString(
-                    'fr-FR', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-
-                    Swal.fire({
-                        title: `Itinéraire #${String(itineraire.id).padStart(4, '0')}`,
-                        html: `
-                    <div class="text-left space-y-4">
-                        <div class="bg-gradient-to-r from-[#e94f1b] to-orange-500 p-4 rounded-xl text-white text-center">
-                            <div class="text-lg font-bold">${itineraire.point_depart}</div>
-                            <div class="my-2">
-                                <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
-                                </svg>
+        <div class="dash-table-wrap">
+            <table class="dash-table">
+                <thead>
+                    <tr>
+                        <th>Itinéraire</th>
+                        <th>Distance & Durée</th>
+                        <th>Date de création</th>
+                        <th class="text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="itinerairesTable">
+                    @forelse($itineraires as $itineraire)
+                    <tr>
+                        <td>
+                            <div class="itinerary-main">
+                                <div class="itinerary-icon-box">
+                                    <i class="fas fa-route"></i>
+                                </div>
+                                <div class="itinerary-path">
+                                    <span class="path-start">{{ $itineraire->point_depart }}</span>
+                                    <i class="fas fa-long-arrow-alt-right path-arrow"></i>
+                                    <span class="path-end">{{ $itineraire->point_arrive }}</span>
+                                </div>
                             </div>
-                            <div class="text-lg font-bold">${itineraire.point_arrive}</div>
+                        </td>
+                        <td>
+                            <div class="date-info">
+                                <span class="date-val"><i class="far fa-clock mr-1" style="color: var(--orange);"></i> {{ $itineraire->durer_parcours }}</span>
+                                <span class="time-val">Estimation du trajet</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="date-info">
+                                <span class="date-val">{{ $itineraire->created_at->format('d/m/Y') }}</span>
+                                <span class="time-val">{{ $itineraire->created_at->format('H:i') }}</span>
+                            </div>
+                        </td>
+                        <td class="text-right">
+                            <div class="d-flex justify-content-end" style="gap: 8px;">
+                                <button type="button" class="btn-action view show-itineraire-btn" data-itineraire="{{ json_encode($itineraire) }}" title="Voir">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <a href="{{ route('itineraire.edit', $itineraire) }}" class="btn-action edit" title="Modifier">
+                                    <i class="fas fa-pen"></i>
+                                </a>
+                                <button type="button" class="btn-action delete delete-itineraire-btn" data-itineraire-id="{{ $itineraire->id }}" data-itineraire-name="{{ $itineraire->point_depart }} → {{ $itineraire->point_arrive }}" title="Supprimer">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="4">
+                            <div class="table-empty py-5">
+                                <i class="fas fa-route table-empty-icon mb-3" style="font-size: 40px; color: var(--border-strong);"></i>
+                                <h3 style="font-size: 14px; font-weight: 800; color: var(--text-1); margin: 0;">Aucun itinéraire trouvé</h3>
+                                <p style="font-size: 12px; color: var(--text-3); font-weight: 600; margin-bottom: 16px;">Votre catalogue de trajets est vide.</p>
+                                <a href="{{ route('itineraire.create') }}" class="btn btn-primary btn-sm" style="background: var(--orange); border: none; font-weight: 700; border-radius: var(--radius-sm);">
+                                    Définir un itinéraire
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        @if ($itineraires->hasPages())
+        <div class="p-3 border-top">
+            {{ $itineraires->links('pagination::bootstrap-4') }}
+        </div>
+        @endif
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        let timer;
+        searchInput.addEventListener('input', () => {
+            clearTimeout(timer);
+            timer = setTimeout(() => searchInput.closest('form').submit(), 600);
+        });
+    }
+
+    document.querySelectorAll('.show-itineraire-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const data = JSON.parse(this.getAttribute('data-itineraire'));
+            const date = new Date(data.created_at).toLocaleDateString();
+            
+            Swal.fire({
+                title: `<div style="font-size: 12px; font-weight: 700; color: var(--text-3); text-transform: uppercase;">Détails Itinéraire</div><div style="font-size: 18px; font-weight: 800; color: var(--text-1); margin-top: 5px;">Route #${data.id}</div>`,
+                html: `
+                    <div style="text-align: left; padding: 10px;">
+                        <div style="background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%); padding: 24px; border-radius: 16px; color: white; text-align: center; margin-bottom: 20px; box-shadow: var(--shadow-sm);">
+                            <div style="font-size: 18px; font-weight: 800;">${data.point_depart}</div>
+                            <div style="margin: 12px 0; opacity: 0.7;"><i class="fas fa-long-arrow-alt-down" style="font-size: 24px;"></i></div>
+                            <div style="font-size: 18px; font-weight: 800;">${data.point_arrive}</div>
                         </div>
-                        
-                        <div class="grid grid-cols-2 gap-4 text-sm">
-                            <div class="text-center p-3 bg-blue-50 rounded-lg">
-                                <div class="font-semibold text-blue-700">Durée</div>
-                                <div class="text-lg font-bold text-gray-900 mt-1">${itineraire.durer_parcours}</div>
+                        <div class="row">
+                            <div class="col-6">
+                                <div style="background: var(--surface-2); border: 1px solid var(--border); padding: 16px; border-radius: 12px;">
+                                    <div style="font-size: 10px; font-weight: 800; color: var(--text-3); text-transform: uppercase; margin-bottom: 4px;">Durée Estimée</div>
+                                    <div style="font-size: 16px; font-weight: 800; color: var(--text-1);">${data.durer_parcours}</div>
+                                </div>
                             </div>
-                            <div class="text-center p-3 bg-green-50 rounded-lg">
-                                <div class="font-semibold text-green-700">ID</div>
-                                <div class="text-lg font-bold text-gray-900 mt-1">#${String(itineraire.id).padStart(4, '0')}</div>
-                            </div>
-                        </div>
-                        
-                        <div class="border-t pt-3 space-y-2 text-sm">
-                            <div class="flex justify-between">
-                                <span class="font-semibold text-gray-700">Créé le:</span>
-                                <span class="text-gray-900">${createdDate}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="font-semibold text-gray-700">Modifié le:</span>
-                                <span class="text-gray-900">${updatedDate}</span>
+                            <div class="col-6">
+                                <div style="background: var(--surface-2); border: 1px solid var(--border); padding: 16px; border-radius: 12px;">
+                                    <div style="font-size: 10px; font-weight: 800; color: var(--text-3); text-transform: uppercase; margin-bottom: 4px;">Date Création</div>
+                                    <div style="font-size: 16px; font-weight: 800; color: var(--text-1);">${date}</div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 `,
-                        width: 500,
-                        padding: '1.5rem',
-                        background: '#fff',
-                        showCloseButton: true,
-                        showConfirmButton: false,
-                        customClass: {
-                            popup: 'rounded-3xl shadow-2xl'
-                        }
-                    });
-                });
-            });
-
-            // Gestion du bouton Supprimer avec SweetAlert
-            const deleteButtons = document.querySelectorAll('.delete-itineraire-btn');
-            deleteButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const itineraireId = this.getAttribute('data-itineraire-id');
-                    const itineraireName = this.getAttribute('data-itineraire-name');
-
-                    Swal.fire({
-                        title: 'Êtes-vous sûr ?',
-                        html: `
-                    <div class="text-center">
-                        <div class="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
-                            <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                            </svg>
-                        </div>
-                        <p class="text-gray-700 mb-2">Vous êtes sur le point de supprimer l'itinéraire :</p>
-                        <p class="font-semibold text-lg text-gray-900">${itineraireName}</p>
-                        <p class="text-red-600 text-sm mt-2">Cette action est irréversible !</p>
-                    </div>
-                `,
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonColor: '#d33',
-                        cancelButtonColor: '#3085d6',
-                        confirmButtonText: 'Oui, supprimer !',
-                        cancelButtonText: 'Annuler',
-                        reverseButtons: true,
-                        customClass: {
-                            popup: 'rounded-3xl'
-                        }
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            // Créer un formulaire de suppression dynamique
-                            const form = document.createElement('form');
-                            form.method = 'POST';
-                            form.action = `/company/Itinerary/${itineraireId}`;
-                            form.style.display = 'none';
-
-                            const csrfToken = document.createElement('input');
-                            csrfToken.type = 'hidden';
-                            csrfToken.name = '_token';
-                            csrfToken.value = '{{ csrf_token() }}';
-
-                            const methodField = document.createElement('input');
-                            methodField.type = 'hidden';
-                            methodField.name = '_method';
-                            methodField.value = 'DELETE';
-
-                            form.appendChild(csrfToken);
-                            form.appendChild(methodField);
-                            document.body.appendChild(form);
-                            form.submit();
-                        }
-                    });
-                });
-            });
-
-            // Animation au survol des lignes
-            const tableRows = document.querySelectorAll('tbody tr');
-            tableRows.forEach(row => {
-                row.addEventListener('mouseenter', function() {
-                    this.style.transform = 'translateY(-2px)';
-                    this.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
-                });
-
-                row.addEventListener('mouseleave', function() {
-                    this.style.transform = 'translateY(0)';
-                    this.style.boxShadow = 'none';
-                });
+                showCloseButton: true, showConfirmButton: false, width: 450,
+                customClass: { popup: 'rounded-lg border-0 shadow-sm' }
             });
         });
+    });
 
-        // SweetAlert notifications
-        @if (Session::has('success'))
+    document.querySelectorAll('.delete-itineraire-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.getAttribute('data-itineraire-id');
+            const name = this.getAttribute('data-itineraire-name');
+
             Swal.fire({
-                icon: 'success',
-                title: 'Succès',
-                text: '{{ Session::get('success') }}',
-                confirmButtonText: 'OK',
-                background: 'white',
+                title: 'Supprimer cet itinéraire ?',
+                html: `Le trajet <b>${name}</b> sera retiré de votre catalogue.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: 'var(--red)',
+                cancelButtonColor: 'var(--text-3)',
+                confirmButtonText: 'Oui, supprimer',
+                cancelButtonText: 'Annuler',
+                customClass: { popup: 'rounded-lg border-0 shadow-sm' }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = `/company/Itinerary/${id}`;
+                    form.innerHTML = `<input type="hidden" name="_token" value="{{ csrf_token() }}"><input type="hidden" name="_method" value="DELETE">`;
+                    document.body.appendChild(form);
+                    form.submit();
+                }
             });
-        @endif
+        });
+    });
+});
 
-        @if (Session::has('error'))
-            Swal.fire({
-                icon: 'error',
-                title: 'Erreur',
-                text: '{{ Session::get('error') }}',
-                confirmButtonText: 'OK',
-                background: 'white',
-
-            });
-        @endif
-    </script>
-
-    <style>
-        /* Styles personnalisés pour la pagination */
-        .pagination {
-            display: flex;
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .page-item .page-link {
-            padding: 0.5rem 0.75rem;
-            margin: 0 0.125rem;
-            border: 1px solid #d1d5db;
-            border-radius: 0.5rem;
-            color: #6b7280;
-            text-decoration: none;
-            transition: all 0.2s;
-        }
-
-        .page-item.active .page-link {
-            background-color: #e94f1b;
-            border-color: #e94f1b;
-            color: white;
-        }
-
-        .page-item .page-link:hover {
-            background-color: #f3f4f6;
-            border-color: #d1d5db;
-        }
-
-        .page-item.active .page-link:hover {
-            background-color: #e89116;
-            border-color: #e89116;
-        }
-
-        /* Styles pour SweetAlert */
-        .swal2-popup {
-            border-radius: 1.5rem !important;
-        }
-
-        /* Animation des lignes du tableau */
-        tbody tr {
-            transition: all 0.3s ease;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .table-responsive {
-                font-size: 0.875rem;
-            }
-
-            .px-6 {
-                padding-left: 1rem;
-                padding-right: 1rem;
-            }
-
-            .py-4 {
-                padding-top: 1rem;
-                padding-bottom: 1rem;
-            }
-        }
-    </style>
+@if(session('success'))
+    Swal.fire({ icon: 'success', title: 'Succès', text: '{{ session('success') }}', confirmButtonColor: '#F97316', customClass: { popup: 'rounded-lg shadow-sm' } });
+@endif
+@if(session('error'))
+    Swal.fire({ icon: 'error', title: 'Erreur', text: '{{ session('error') }}', confirmButtonColor: '#EF4444', customClass: { popup: 'rounded-lg shadow-sm' } });
+@endif
+</script>
 @endsection

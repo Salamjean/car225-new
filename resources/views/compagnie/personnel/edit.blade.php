@@ -1,184 +1,331 @@
 @extends('compagnie.layouts.template')
+
+@section('page-title', 'Modifier Collaborateur')
+@section('page-subtitle', 'Mise à jour des informations de ' . $personnel->prenom . ' ' . $personnel->name)
+
+@section('styles')
+<style>
+    /* Même CSS que la page Create Personnel */
+    .form-wrapper { max-width: 1000px; margin: 0 auto; }
+    
+    .btn-back { display: inline-flex; align-items: center; gap: 8px; color: var(--text-3); font-weight: 700; font-size: 13px; text-decoration: none; margin-bottom: 24px; transition: color 0.2s; }
+    .btn-back:hover { color: var(--orange); text-decoration: none; }
+
+    .form-grid-layout { display: grid; grid-template-columns: 280px 1fr; gap: 24px; }
+
+    .dash-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow-sm); overflow: hidden; }
+    .card-header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+    .card-step { width: 28px; height: 28px; background: var(--text-1); color: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; }
+    .card-title { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-1); margin: 0; }
+    .card-body { padding: 24px; }
+
+    .photo-upload-container { display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .photo-label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-3); letter-spacing: 1px; margin-bottom: 16px; }
+    .avatar-wrapper { position: relative; width: 160px; height: 160px; border-radius: 30px; background: var(--surface-2); border: 4px solid var(--surface); box-shadow: var(--shadow-md); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .avatar-placeholder { font-size: 60px; color: var(--border-strong); }
+    .avatar-preview { width: 100%; height: 100%; object-fit: cover; }
+    .btn-upload { position: absolute; bottom: -10px; right: -10px; width: 44px; height: 44px; border-radius: 14px; background: var(--text-1); color: white; display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; transition: all 0.2s; border: 4px solid var(--surface); z-index: 10; }
+    .btn-upload:hover { background: var(--orange); transform: scale(1.05); }
+
+    .photo-hints { margin-top: 32px; padding: 16px; background: var(--surface-2); border-radius: 12px; border: 1px solid var(--border); text-align: left; width: 100%; }
+    .photo-hints h4 { font-size: 10px; font-weight: 800; color: var(--text-2); text-transform: uppercase; margin-bottom: 8px; }
+    .photo-hints p { font-size: 11px; color: var(--text-3); font-weight: 600; font-style: italic; margin: 0; line-height: 1.5; }
+
+    .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-3); letter-spacing: 0.5px; }
+    .input-with-icon { position: relative; }
+    .input-with-icon i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-3); }
+    .input-with-icon select { padding-right: 36px; }
+    .input-with-icon .chevron { position: absolute; right: 16px; left: auto; font-size: 10px; pointer-events: none; }
+    .form-control { width: 100%; padding: 14px 16px 14px 44px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); font-size: 13px; font-weight: 600; color: var(--text-1); outline: none; transition: all 0.2s; appearance: none; }
+    .form-control:focus { background: var(--surface); border-color: var(--orange); box-shadow: 0 0 0 3px var(--orange-light); }
+    .form-control.is-invalid { border-color: #EF4444; box-shadow: 0 0 0 3px #FEE2E2; }
+    .form-error { font-size: 10px; font-weight: 700; color: #DC2626; margin-top: 4px; }
+
+    .form-row-phone { display: flex; gap: 12px; }
+    .form-row-phone > div:first-child { width: 120px; flex-shrink: 0; }
+    .form-row-phone > div:last-child { flex: 1; }
+    .form-row-phone .form-control { padding-left: 16px; }
+
+    .form-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+    .btn-reset { padding: 14px 24px; border-radius: 12px; background: transparent; border: 1px solid transparent; font-size: 12px; font-weight: 800; text-transform: uppercase; color: var(--text-3); cursor: pointer; transition: 0.2s; text-decoration: none; display: inline-flex; align-items: center; }
+    .btn-reset:hover { background: var(--surface-2); color: var(--text-2); text-decoration: none; }
+    .btn-submit { padding: 14px 32px; border-radius: 12px; background: var(--orange); color: white; border: none; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
+    .btn-submit:hover { background: var(--orange-dark); box-shadow: 0 4px 12px rgba(249,115,22,0.25); }
+
+    @media (max-width: 992px) {
+        .form-grid-layout { grid-template-columns: 1fr; }
+        .photo-upload-container { padding-bottom: 24px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+    }
+    @media (max-width: 640px) {
+        .form-grid-2 { grid-template-columns: 1fr; }
+        .form-actions { flex-direction: column-reverse; }
+        .btn-submit, .btn-reset { width: 100%; text-align: center; justify-content: center; }
+        .form-row-phone { flex-direction: column; }
+        .form-row-phone > div:first-child { width: 100%; }
+    }
+</style>
+@endsection
+
 @section('content')
-<div class="min-h-screen bg-gradient-to-br from-gray-50 to-green-50 py-8 px-4">
-    <div class="mx-auto" style="width: 90%">
-        <!-- En-tête -->
-        <div class="text-center mb-12">
-            <div class="inline-flex items-center justify-center w-16 h-16 bg-[#e94f1b] rounded-2xl shadow-lg mb-4">
-                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-            </div>
-            <h1 class="text-4xl font-bold text-gray-900 mb-3">Modifier Personnel</h1>
-            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
-                Modifiez les informations de {{ $personnel->prenom }} {{ $personnel->name }}
-            </p>
-        </div>
+<div class="dashboard-page">
+    <div class="form-wrapper">
+        <a href="{{ route('personnel.index') }}" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Retour à la liste
+        </a>
 
-        <!-- Carte du formulaire -->
-        <div class="bg-white rounded-3xl shadow-xl overflow-hidden">
-            <form action="{{ route('personnels.update', $personnel->id) }}" method="POST" enctype="multipart/form-data" class="p-8">
-                @csrf
-                @method('PUT')
+        <form action="{{ route('personnel.update', $personnel->id) }}" method="POST" enctype="multipart/form-data" id="editPersonnelForm">
+            @csrf
+            @method('PUT')
 
-                <!-- Section 0: Affectation à une Gare -->
-                @if(isset($gares) && $gares->count() > 0)
-                <div class="mb-12">
-                    <div class="flex items-center mb-6">
-                        <div class="w-2 h-8 bg-blue-500 rounded-full mr-4"></div>
-                        <h2 class="text-2xl font-bold text-gray-900">Affectation à une Gare</h2>
-                    </div>
-
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div class="space-y-2">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">
-                                <span>Gare</span>
-                                <span class="text-red-500 ml-1">*</span>
-                            </label>
-                            <select name="gare_id" required
-                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white">
-                                <option value="" disabled>-- Sélectionnez une gare --</option>
-                                @foreach($gares as $gare)
-                                    <option value="{{ $gare->id }}" {{ old('gare_id', $personnel->gare_id) == $gare->id ? 'selected' : '' }}>
-                                        {{ $gare->nom_gare }} — {{ $gare->ville }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('gare_id')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-                    </div>
-                </div>
-                @endif
-
-                <!-- Section 1: Informations personnelles -->
-                <div class="mb-12">
-                    <div class="flex items-center mb-6">
-                        <div class="w-2 h-8 bg-[#e94f1b] rounded-full mr-4"></div>
-                        <h2 class="text-2xl font-bold text-gray-900">Informations personnelles</h2>
-                    </div>
-
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <!-- Nom -->
-                        <div class="space-y-2">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">
-                                <span>Nom</span>
-                                <span class="text-red-500 ml-1">*</span>
-                            </label>
-                            <input type="text" name="name" value="{{ old('name', $personnel->name) }}" required
-                                   class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white">
-                            @error('name') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-                        </div>
-
-                        <!-- Prénom -->
-                        <div class="space-y-2">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">
-                                <span>Prénom</span>
-                                <span class="text-red-500 ml-1">*</span>
-                            </label>
-                            <input type="text" name="prenom" value="{{ old('prenom', $personnel->prenom) }}" required
-                                   class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white">
-                            @error('prenom') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-                        </div>
-
-                        <!-- Type de personnel -->
-                        <div class="space-y-2">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">
-                                <span>Type de personnel</span>
-                                <span class="text-red-500 ml-1">*</span>
-                            </label>
-                            <select name="type_personnel" required
-                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
-                                <option value="Chauffeur" {{ old('type_personnel', $personnel->type_personnel) == 'Chauffeur' ? 'selected' : '' }}>Chauffeur</option>
-                                <option value="Convoyeur" {{ old('type_personnel', $personnel->type_personnel) == 'Convoyeur' ? 'selected' : '' }}>Convoyeur</option>
-                            </select>
-                            @error('type_personnel') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Section 2: Informations de contact -->
-                <div class="mb-12">
-                    <div class="flex items-center mb-6">
-                        <div class="w-2 h-8 bg-green-500 rounded-full mr-4"></div>
-                        <h2 class="text-2xl font-bold text-gray-900">Informations de contact</h2>
-                    </div>
-
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div class="space-y-2">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">Email</label>
-                            <input type="email" name="email" value="{{ old('email', $personnel->email) }}" required
-                                   class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white">
-                            @error('email') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-                        </div>
-
-                        <div class="space-y-2">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">Contact</label>
-                            <input type="text" name="contact" value="{{ old('contact', $personnel->contact) }}" required
-                                   class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white">
-                            @error('contact') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-                        </div>
-
-                        <div class="space-y-2">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">Contact d'urgence</label>
-                            <input type="text" name="contact_urgence" value="{{ old('contact_urgence', $personnel->contact_urgence) }}" required
-                                   class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white">
-                            @error('contact_urgence') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Photo de profil -->
-                <div class="mb-12">
-                    <div class="flex items-center mb-6">
-                        <div class="w-2 h-8 bg-purple-500 rounded-full mr-4"></div>
-                        <h2 class="text-2xl font-bold text-gray-900">Photo de profil</h2>
-                    </div>
-
-                    <div class="flex flex-col items-center">
-                        <div class="mb-4">
+            <div class="form-grid-layout">
+                
+                {{-- ── LEFT: PHOTO ── --}}
+                <div class="dash-card">
+                    <div class="card-body photo-upload-container">
+                        <label class="photo-label">Photo de Profil</label>
+                        
+                        <div class="avatar-wrapper">
                             @if($personnel->profile_image)
-                                <img id="preview" src="{{ asset('storage/' . $personnel->profile_image) }}" class="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg">
-                            @else
-                                <div id="default-avatar" class="w-32 h-32 bg-[#e94f1b] rounded-full flex items-center justify-center text-white font-bold">
-                                    <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                                    </svg>
+                                <img id="imagePreview" src="{{ asset('storage/' . $personnel->profile_image) }}" alt="Aperçu" class="avatar-preview" style="display: block;">
+                                <div class="avatar-placeholder" id="avatarPlaceholder" style="display: none;">
+                                    <i class="fas fa-user-circle"></i>
                                 </div>
-                                <img id="preview" class="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg hidden">
+                            @else
+                                <div class="avatar-placeholder" id="avatarPlaceholder">
+                                    <i class="fas fa-user-circle"></i>
+                                </div>
+                                <img id="imagePreview" src="#" alt="Aperçu" class="avatar-preview">
                             @endif
+                            
+                            <label for="profile_image" class="btn-upload">
+                                <i class="fas fa-camera"></i>
+                                <input type="file" id="profile_image" name="profile_image" class="d-none" accept="image/*">
+                            </label>
                         </div>
-                        <label for="profile_image" class="cursor-pointer bg-gray-100 px-6 py-2 rounded-lg border-2 border-dashed border-gray-300 hover:border-[#e94f1b] transition-all">
-                            <span>Changer la photo</span>
-                            <input type="file" id="profile_image" name="profile_image" class="hidden" accept="image/*">
-                        </label>
+                        @error('profile_image') <span class="form-error mt-2">{{ $message }}</span> @enderror
+
+                        <div class="photo-hints">
+                            <h4><i class="fas fa-shield-alt"></i> Traçabilité</h4>
+                            <p>Les mises à jour de profils sont enregistrées dans le journal système.</p>
+                        </div>
                     </div>
                 </div>
 
-                <div class="flex justify-between items-center pt-8 border-t border-gray-200">
-                    <a href="{{ route('personnel.index') }}" class="px-8 py-4 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all">Retour</a>
-                    <button type="submit" class="px-12 py-4 bg-[#e94f1b] text-white font-bold rounded-xl hover:bg-[#e89116] shadow-lg transition-all">Enregistrer les modifications</button>
+                {{-- ── RIGHT: INFORMATIONS ── --}}
+                <div style="display: flex; flex-direction: column; gap: 24px;">
+                    
+                    {{-- Section 1: Affectation --}}
+                    @if(isset($gares) && $gares->count() > 0)
+                    <div class="dash-card">
+                        <div class="card-header">
+                            <div class="card-step">1</div>
+                            <h3 class="card-title">Affectation & Rôle</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label class="form-label">Gare de Rattachement <span class="text-danger">*</span></label>
+                                    <div class="input-with-icon">
+                                        <i class="fas fa-university"></i>
+                                        <select name="gare_id" required class="form-control">
+                                            <option value="" disabled>-- Choisir une gare --</option>
+                                            @foreach($gares as $gare)
+                                                <option value="{{ $gare->id }}" {{ old('gare_id', $personnel->gare_id) == $gare->id ? 'selected' : '' }}>
+                                                    {{ $gare->nom_gare }} — {{ $gare->ville }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <i class="fas fa-chevron-down chevron"></i>
+                                    </div>
+                                    @error('gare_id') <span class="form-error">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Type de Fonction <span class="text-danger">*</span></label>
+                                    <div class="input-with-icon">
+                                        <i class="fas fa-id-badge"></i>
+                                        <select name="type_personnel" required class="form-control">
+                                            <option value="Chauffeur" {{ old('type_personnel', $personnel->type_personnel) == 'Chauffeur' ? 'selected' : '' }}>Chauffeur</option>
+                                            <option value="Convoyeur" {{ old('type_personnel', $personnel->type_personnel) == 'Convoyeur' ? 'selected' : '' }}>Convoyeur</option>
+                                        </select>
+                                        <i class="fas fa-chevron-down chevron"></i>
+                                    </div>
+                                    @error('type_personnel') <span class="form-error">{{ $message }}</span> @enderror
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
+                    {{-- Section 2: Identité --}}
+                    <div class="dash-card">
+                        <div class="card-header">
+                            <div class="card-step" style="background: var(--blue);">2</div>
+                            <h3 class="card-title">Identité & Contact</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label class="form-label">Nom de Famille <span class="text-danger">*</span></label>
+                                    <div class="input-with-icon">
+                                        <i class="fas fa-id-card"></i>
+                                        <input type="text" name="name" value="{{ old('name', $personnel->name) }}" required class="form-control">
+                                    </div>
+                                    @error('name') <span class="form-error">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Prénom(s) <span class="text-danger">*</span></label>
+                                    <div class="input-with-icon">
+                                        <i class="fas fa-user"></i>
+                                        <input type="text" name="prenom" value="{{ old('prenom', $personnel->prenom) }}" required class="form-control">
+                                    </div>
+                                    @error('prenom') <span class="form-error">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div class="form-group" style="grid-column: 1 / -1;">
+                                    <label class="form-label">Adresse Email Pro <span class="text-danger">*</span></label>
+                                    <div class="input-with-icon">
+                                        <i class="fas fa-envelope"></i>
+                                        <input type="email" name="email" value="{{ old('email', $personnel->email) }}" required class="form-control">
+                                    </div>
+                                    @error('email') <span class="form-error">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div class="form-group" style="grid-column: 1 / -1;">
+                                    <label class="form-label">Numéro Mobile Personnel <span class="text-danger">*</span></label>
+                                    <div class="form-row-phone">
+                                        <div class="input-with-icon">
+                                            <select name="country_code" required class="form-control" style="padding-left:16px;">
+                                                <option value="+225" {{ $personnel->country_code == '+225' ? 'selected' : '' }}>🇨🇮 +225</option>
+                                                <option value="+33" {{ $personnel->country_code == '+33' ? 'selected' : '' }}>🇫🇷 +33</option>
+                                                <option value="+1" {{ $personnel->country_code == '+1' ? 'selected' : '' }}>🇺🇸 +1</option>
+                                            </select>
+                                            <i class="fas fa-chevron-down chevron"></i>
+                                        </div>
+                                        <div class="input-with-icon">
+                                            <i class="fas fa-phone-alt"></i>
+                                            <input type="text" name="contact" value="{{ old('contact', $personnel->contact) }}" required maxlength="10" class="form-control" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)">
+                                        </div>
+                                    </div>
+                                    @error('contact') <span class="form-error">{{ $message }}</span> @enderror
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Section 3: Urgence --}}
+                    <div class="dash-card">
+                        <div class="card-header" style="background: var(--surface-2);">
+                            <div class="card-step" style="background: var(--text-1);">3</div>
+                            <h3 class="card-title">Données de Secours</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-grid-2">
+                                <div class="form-group" style="grid-column: 1 / -1;">
+                                    <label class="form-label">Numéro Mobile Urgence <span class="text-danger">*</span></label>
+                                    <div class="form-row-phone">
+                                        <div class="input-with-icon">
+                                            <select name="country_code_urgence" required class="form-control" style="padding-left:16px;">
+                                                <option value="+225" {{ $personnel->country_code_urgence == '+225' ? 'selected' : '' }}>🇨🇮 +225</option>
+                                                <option value="+33" {{ $personnel->country_code_urgence == '+33' ? 'selected' : '' }}>🇫🇷 +33</option>
+                                            </select>
+                                            <i class="fas fa-chevron-down chevron"></i>
+                                        </div>
+                                        <div class="input-with-icon">
+                                            <i class="fas fa-ambulance"></i>
+                                            <input type="text" name="contact_urgence" id="contact_urgence" value="{{ old('contact_urgence', $personnel->contact_urgence) }}" required maxlength="10" class="form-control" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)">
+                                        </div>
+                                    </div>
+                                    <span id="error-contact-same" class="form-error" style="display: none;">Le contact d'urgence doit être différent du contact principal.</span>
+                                    @error('contact_urgence') <span class="form-error">{{ $message }}</span> @enderror
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Buttons --}}
+                    <div class="form-actions">
+                        <a href="{{ route('personnel.index') }}" class="btn-reset">Annuler les modifications</a>
+                        <button type="submit" class="btn-submit">
+                            <i class="fas fa-sync-alt"></i> Mettre à jour 
+                        </button>
+                    </div>
+
                 </div>
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
 </div>
 
+@endsection
+
+@section('scripts')
 <script>
-document.getElementById('profile_image').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const preview = document.getElementById('preview');
-            const defaultAvatar = document.getElementById('default-avatar');
-            preview.src = e.target.result;
-            preview.classList.remove('hidden');
-            if(defaultAvatar) defaultAvatar.classList.add('hidden');
-        };
-        reader.readAsDataURL(file);
+document.addEventListener('DOMContentLoaded', function() {
+    const profileInput = document.getElementById('profile_image');
+    const imagePreview = document.getElementById('imagePreview');
+    const placeholder = document.getElementById('avatarPlaceholder');
+
+    profileInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            if (file.size > 2 * 1024 * 1024) {
+                Swal.fire({
+                    icon: 'error', title: 'Fichier volumineux', text: 'La taille maximale autorisée est de 2 Mo.',
+                    confirmButtonColor: '#F97316', customClass: { popup: 'rounded-[20px] shadow-lg border-0' }
+                });
+                this.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.src = e.target.result;
+                imagePreview.style.display = 'block';
+                placeholder.style.display = 'none';
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+
+    const contactInput = document.querySelector('input[name="contact"]');
+    const contactUrgenceInput = document.getElementById('contact_urgence');
+    const errorSameContact = document.getElementById('error-contact-same');
+    const form = document.getElementById('editPersonnelForm');
+
+    function validateContacts() {
+        if (contactInput.value && contactUrgenceInput.value && contactInput.value === contactUrgenceInput.value) {
+            errorSameContact.style.display = 'block';
+            contactUrgenceInput.classList.add('is-invalid');
+            return false;
+        } else {
+            errorSameContact.style.display = 'none';
+            contactUrgenceInput.classList.remove('is-invalid');
+            return true;
+        }
     }
+
+    contactInput.addEventListener('input', validateContacts);
+    contactUrgenceInput.addEventListener('input', validateContacts);
+
+    form.addEventListener('submit', function(e) {
+        if (!validateContacts()) {
+            e.preventDefault();
+            Swal.fire({
+                icon: 'error', title: 'Conflit de numéros', text: "Le numéro d'urgence ne peut pas être identique au numéro principal.",
+                confirmButtonColor: '#F97316', customClass: { popup: 'rounded-[20px] shadow-lg border-0' }
+            });
+        }
+    });
+
+    @if(session('success'))
+        Swal.fire({
+            icon: 'success', title: 'Mise à jour Réussie', text: "{{ session('success') }}",
+            confirmButtonColor: '#F97316', customClass: { popup: 'rounded-[20px] shadow-lg border-0' }
+        });
+    @endif
 });
 </script>
 @endsection

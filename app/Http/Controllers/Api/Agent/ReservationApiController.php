@@ -50,7 +50,7 @@ class ReservationApiController extends Controller
                     'heure_depart' => $p->heure_depart,
                     'gare_depart' => $p->gareDepart ? $p->gareDepart->nom_gare : null,
                     'gare_arrivee' => $p->gareArrivee ? $p->gareArrivee->nom_gare : null,
-                    'vehicule_id' => $p->vehicule_id,
+                    'vehicule_id' => $p->vehicule ? $p->vehicule->id : null,
                     'immatriculation' => $p->vehicule->immatriculation ?? 'N/A',
                 ];
             });
@@ -199,6 +199,8 @@ class ReservationApiController extends Controller
                 'is_aller_retour' => $reservation->is_aller_retour,
                 'type_scan' => strtoupper($targetScan),
                 'statut' => $statutActuel,
+                'vehicule_id' => $prog->vehicule ? $prog->vehicule->id : null,
+                'immatriculation' => $prog->vehicule ? $prog->vehicule->immatriculation : 'N/A',
             ],
         ]);
     }
@@ -312,6 +314,7 @@ class ReservationApiController extends Controller
                 'statut' => $reservation->statut,
                 'statut_aller' => $reservation->statut_aller,
                 'statut_retour' => $reservation->statut_retour,
+                'vehicule_id' => $reservation->embarquement_vehicule_id,
             ],
         ]);
     }
@@ -378,7 +381,7 @@ class ReservationApiController extends Controller
                     'heure_depart' => $p->heure_depart,
                     'gare_depart' => $p->gareDepart ? $p->gareDepart->nom_gare : null,
                     'gare_arrivee' => $p->gareArrivee ? $p->gareArrivee->nom_gare : null,
-                    'vehicule_id' => $p->vehicule_id,
+                    'vehicule_id' => $p->vehicule ? $p->vehicule->id : null,
                     'immatriculation' => $p->vehicule->immatriculation ?? 'N/A',
                 ];
             });

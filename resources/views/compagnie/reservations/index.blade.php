@@ -1,288 +1,274 @@
 @extends('compagnie.layouts.template')
 
+@section('page-title', 'Gestion des Réservations')
+@section('page-subtitle', 'Suivez et gérez les réservations de vos voyages')
+
 @section('content')
-<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4">
-    <div class="mx-auto" style="width: 100%">
-        <!-- En-tête -->
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
-            <div class="mb-6 lg:mb-0">
-                <h1 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-3">Gestion des Réservations</h1>
-                <p class="text-lg text-gray-600">
-                    Suivez et gérez les réservations de vos voyages
-                </p>
+<div class="dashboard-page">
+
+    {{-- ── STATS ROW ── --}}
+    <div class="metric-grid mb-4">
+        <div class="metric-card">
+            <div class="metric-top">
+                <div class="metric-icon mi-amber"><i class="fas fa-ticket-alt"></i></div>
             </div>
+            <div class="metric-label">Actives</div>
+            <div class="metric-value">{{ number_format($reservationsEnCours->total(), 0, ',', ' ') }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-top">
+                <div class="metric-icon mi-blue"><i class="fas fa-history"></i></div>
+            </div>
+            <div class="metric-label">Historique</div>
+            <div class="metric-value">{{ number_format($reservationsTerminees->total(), 0, ',', ' ') }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-top">
+                <div class="metric-icon mi-green"><i class="fas fa-wallet"></i></div>
+            </div>
+            <div class="metric-label">Chiffre d'Affaires</div>
+            <div class="metric-value">{{ number_format($reservationsEnCours->sum('montant'), 0, ',', ' ') }} <span class="metric-unit">F</span></div>
+        </div>
+    </div>
 
-            <!-- Actions -->
-            <div class="flex flex-col md:flex-row gap-4">
-                <a href="{{ route('company.reservation.details') }}" 
-                   class="inline-flex items-center justify-center px-6 py-3 bg-[#e94f1b] text-white font-bold rounded-xl hover:bg-orange-600 transform hover:-translate-y-1 transition-all duration-200 shadow-md hover:shadow-lg">
-                    <i class="mdi mdi-chart-bar mr-2 text-xl"></i>
-                    Détails & Statistiques
+    {{-- ── ACTIONS HEADER ── --}}
+    <div class="dash-card mb-4 mt-4">
+        <div class="dash-header-actions">
+            <div class="tab-modern">
+                <a href="?tab=en-cours" class="tab-item {{ request('tab') == 'en-cours' || !request('tab') ? 'active' : '' }}">
+                    <i class="fas fa-clock"></i> En Cours
                 </a>
-
-                <button onclick="window.location.reload();"
-                    class="inline-flex items-center justify-center px-6 py-3 bg-white text-gray-700 font-bold rounded-xl hover:bg-gray-50 transform hover:-translate-y-1 transition-all duration-200 shadow-md hover:shadow-lg border border-gray-200">
-                    <i class="mdi mdi-refresh mr-2 text-xl"></i>
-                    Actualiser
+                <a href="?tab=terminees" class="tab-item {{ request('tab') == 'terminees' ? 'active' : '' }}">
+                    <i class="fas fa-check-double"></i> Passées
+                </a>
+            </div>
+            <div class="action-buttons">
+                <a href="{{ route('company.reservation.details') }}" class="btn-action btn-secondary">
+                    <i class="fas fa-chart-line"></i> Analyses
+                </a>
+                <button onclick="window.location.reload();" class="btn-action btn-primary">
+                    <i class="fas fa-sync-alt"></i> Actualiser
                 </button>
             </div>
         </div>
+    </div>
 
-        <!-- Statistiques rapides -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-red-500">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-600">Total Réservations En Cours</p>
-                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ $reservationsEnCours->total() }}</p>
-                    </div>
-                    <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
-                        <i class="mdi mdi-ticket-account text-red-500 text-2xl"></i>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-gray-500">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-600">Historique Total</p>
-                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ $reservationsTerminees->total() }}</p>
-                    </div>
-                    <div class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
-                        <i class="mdi mdi-history text-gray-500 text-2xl"></i>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-green-500">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-600">Revenus En Cours</p>
-                        <p class="text-xl font-bold text-gray-900 mt-1">
-                            {{ number_format($reservationsEnCours->sum('montant'), 0, ',', ' ') }} FCFA
-                        </p>
-                    </div>
-                    <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                        <i class="mdi mdi-cash-multiple text-green-500 text-2xl"></i>
-                    </div>
-                </div>
-            </div>
+    {{-- ── TABLE CARD ── --}}
+    <div class="dash-card">
+        <div class="dash-table-wrap">
+            <table class="dash-table">
+                @if(request('tab') == 'terminees')
+                    <thead>
+                        <tr>
+                            <th>Réf & Date</th>
+                            <th>Passager</th>
+                            <th>Trajet</th>
+                            <th class="text-center">Place</th>
+                            <th class="text-right">Montant</th>
+                            <th class="text-center">Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($reservationsTerminees as $reservation)
+                        <tr>
+                            <td>
+                                <div class="cell-stack">
+                                    <span class="text-ref">{{ $reservation->reference }}</span>
+                                    <span class="text-date">{{ \Carbon\Carbon::parse($reservation->date_voyage)->format('d/m/Y') }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="td-user">
+                                    <div class="td-avatar text-blue">
+                                        {{ substr($reservation->passager_nom, 0, 1) }}
+                                    </div>
+                                    <div class="cell-stack">
+                                        <span class="td-name">{{ $reservation->passager_prenom }} {{ $reservation->passager_nom }}</span>
+                                        <span class="td-phone">{{ $reservation->passager_telephone ?? '---' }}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                @if($reservation->programme)
+                                    <div class="cell-stack">
+                                        <div class="route-pill">
+                                            {{ $reservation->programme->point_depart }}
+                                            <i class="fas fa-arrow-right route-arrow"></i>
+                                            {{ $reservation->programme->point_arrive }}
+                                        </div>
+                                        <span class="text-time mt-1">{{ $reservation->programme->heure_depart }}</span>
+                                    </div>
+                                @else
+                                    <span class="text-muted">---</span>
+                                @endif
+                            </td>
+                            <td class="text-center">
+                                <span class="seat-badge">{{ $reservation->seat_number }}</span>
+                            </td>
+                            <td class="text-right">
+                                <span class="td-amount">{{ number_format($reservation->montant, 0, ',', ' ') }} F</span>
+                            </td>
+                            <td class="text-center">
+                                @if($reservation->statut == 'terminee')
+                                    <span class="status-pill sp-success"><span class="dot"></span> Scannée</span>
+                                @elseif($reservation->statut == 'annulee')
+                                    <span class="status-pill sp-danger"><span class="dot"></span> Annulée</span>
+                                @else
+                                    <span class="status-pill sp-gray"><span class="dot"></span> Passée</span>
+                                @endif
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="6">
+                                <div class="table-empty">
+                                    <i class="fas fa-history table-empty-icon"></i>
+                                    <p>Aucun historique de réservation</p>
+                                </div>
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                @else
+                    <thead>
+                        <tr>
+                            <th>Passager & Réf</th>
+                            <th>Trajet & Heure</th>
+                            <th class="text-center">Date</th>
+                            <th class="text-center">Place</th>
+                            <th class="text-right">Montant</th>
+                            <th class="text-center">Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($reservationsEnCours as $reservation)
+                        <tr>
+                            <td>
+                                <div class="td-user">
+                                    <div class="td-avatar text-orange">
+                                        {{ substr($reservation->passager_nom, 0, 1) }}
+                                    </div>
+                                    <div class="cell-stack">
+                                        <span class="td-name">{{ $reservation->passager_prenom }} {{ $reservation->passager_nom }}</span>
+                                        <div class="user-meta">
+                                            <span class="td-phone">{{ $reservation->passager_telephone ?? '---' }}</span>
+                                            <span class="text-ref">{{ $reservation->reference }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                @if($reservation->programme)
+                                    <div class="cell-stack">
+                                        <div class="route-pill">
+                                            {{ $reservation->programme->point_depart }}
+                                            <i class="fas fa-chevron-right route-arrow"></i>
+                                            {{ $reservation->programme->point_arrive }}
+                                        </div>
+                                        <span class="text-time mt-1">{{ $reservation->programme->heure_depart }}</span>
+                                    </div>
+                                @else
+                                    <span class="text-muted">Trajet inconnu</span>
+                                @endif
+                            </td>
+                            <td class="text-center">
+                                <div class="cell-stack text-center">
+                                    <span class="date-day">{{ \Carbon\Carbon::parse($reservation->date_voyage)->format('d M') }}</span>
+                                    <span class="date-year">{{ \Carbon\Carbon::parse($reservation->date_voyage)->format('Y') }}</span>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <span class="seat-badge seat-badge-orange">{{ $reservation->seat_number }}</span>
+                            </td>
+                            <td class="text-right">
+                                <span class="td-amount">{{ number_format($reservation->montant, 0, ',', ' ') }} F</span>
+                            </td>
+                            <td class="text-center">
+                                @php
+                                    $st = match($reservation->statut) {
+                                        'confirmee' => ['class' => 'sp-success', 'label' => 'Confirmée'],
+                                        'en_attente' => ['class' => 'sp-warning', 'label' => 'Attente'],
+                                        default => ['class' => 'sp-blue', 'label' => ucfirst($reservation->statut)]
+                                    };
+                                @endphp
+                                <span class="status-pill {{ $st['class'] }}"><span class="dot"></span> {{ $st['label'] }}</span>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="6">
+                                <div class="table-empty">
+                                    <i class="fas fa-ticket-alt table-empty-icon"></i>
+                                    <p>Aucune réservation active</p>
+                                </div>
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                @endif
+            </table>
         </div>
 
-        <!-- Carte principale -->
-        <div class="bg-white rounded-3xl shadow-xl overflow-hidden min-h-[500px]">
-            <!-- Navigation Onglets -->
-            <div class="flex border-b border-gray-200">
-                <a href="?tab=en-cours" 
-                   class="flex-1 text-center py-4 px-6 text-sm font-bold uppercase tracking-wider transition-colors duration-200 {{ request('tab') == 'en-cours' || !request('tab') ? 'text-red-600 border-b-4 border-red-500 bg-red-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50' }}">
-                   <i class="mdi mdi-clock-outline mr-2 text-lg"></i> En cours / A venir
-                </a>
-                <a href="?tab=terminees" 
-                   class="flex-1 text-center py-4 px-6 text-sm font-bold uppercase tracking-wider transition-colors duration-200 {{ request('tab') == 'terminees' ? 'text-gray-800 border-b-4 border-gray-600 bg-gray-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50' }}">
-                   <i class="mdi mdi-history mr-2 text-lg"></i> Terminées / Passées
-                </a>
+        <div class="dash-card-footer">
+            <div class="pagination-info">
+                Page {{ (request('tab') == 'terminees' ? $reservationsTerminees->currentPage() : $reservationsEnCours->currentPage()) }} sur {{ (request('tab') == 'terminees' ? $reservationsTerminees->lastPage() : $reservationsEnCours->lastPage()) }}
             </div>
-
-            <!-- Contenu -->
-            <div class="p-0">
+            <div class="pagination-wrapper">
                 @if(request('tab') == 'terminees')
-                    <!-- Table Terminées -->
-                    @if($reservationsTerminees->count() > 0)
-                        <div class="overflow-x-auto">
-                            <table class="w-full">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Réf</th>
-                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Passager</th>
-                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Trajet</th>
-                                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Date & Heure</th>
-                                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Place</th>
-                                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Montant</th>
-                                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Statut</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    @foreach($reservationsTerminees as $reservation)
-                                    <tr class="hover:bg-gray-50 transition-colors duration-200">
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="font-mono text-sm bg-gray-100 px-2 py-1 rounded">{{ $reservation->reference }}</span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm font-bold text-gray-900">{{ $reservation->passager_prenom }} {{ $reservation->passager_nom }}</div>
-                                            <div class="text-xs text-gray-500">{{ $reservation->passager_telephone ?? 'N/A' }}</div>
-                                            <div class="flex gap-1 mt-1">
-                                                @if($reservation->hotesse_id)
-                                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200">Hôtesse</span>
-                                                @elseif($reservation->caisse_id)
-                                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200">Caisse</span>
-                                                @else
-                                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700 border border-blue-200">En ligne</span>
-                                                @endif
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            @if($reservation->programme)
-                                                <div class="text-sm text-gray-900">
-                                                    {{ $reservation->programme->point_depart }} → {{ $reservation->programme->point_arrive }}
-                                                </div>
-                                            @else
-                                                <span class="text-gray-400">-</span>
-                                            @endif
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            <div class="text-sm font-bold text-gray-900">
-                                                {{ \Carbon\Carbon::parse($reservation->date_voyage)->format('d/m/Y') }}
-                                            </div>
-                                            @if($reservation->programme)
-                                            <div class="text-xs text-gray-500">
-                                                {{ $reservation->programme->heure_depart }}
-                                            </div>
-                                            @endif
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 font-bold rounded">
-                                                {{ $reservation->seat_number }}
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center font-bold text-gray-600">
-                                            {{ number_format($reservation->montant, 0, ',', ' ') }} F
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            @if($reservation->statut == 'terminee')
-                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                    <i class="mdi mdi-check-circle mr-1"></i> Scannée
-                                                </span>
-                                            @elseif($reservation->statut == 'annulee')
-                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                                    <i class="mdi mdi-close-circle mr-1"></i> Annulée
-                                                </span>
-                                            @elseif(\Carbon\Carbon::parse($reservation->date_voyage)->isPast())
-                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                                    <i class="mdi mdi-clock-outline mr-1"></i> Passée
-                                                </span>
-                                            @else
-                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                    {{ ucfirst($reservation->statut) }}
-                                                </span>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="px-6 py-4 border-t border-gray-200">
-                            {{ $reservationsTerminees->appends(['tab' => 'terminees'])->links() }}
-                        </div>
-                    @else
-                        <div class="flex flex-col items-center justify-center py-12 text-gray-500">
-                            <i class="mdi mdi-history text-6xl mb-4 text-gray-300"></i>
-                            <p class="text-lg font-medium">Aucune réservation passée</p>
-                        </div>
-                    @endif
-
+                    {{ $reservationsTerminees->appends(['tab' => 'terminees'])->links('pagination::bootstrap-4') }}
                 @else
-                    <!-- Table En Cours (Défaut) -->
-                    @if($reservationsEnCours->count() > 0)
-                        <div class="overflow-x-auto">
-                            <table class="w-full">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Passager</th>
-                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Trajet</th>
-                                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Date & Heure</th>
-                                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Place</th>
-                                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Montant</th>
-                                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Statut</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    @foreach($reservationsEnCours as $reservation)
-                                    <tr class="hover:bg-red-50 transition-colors duration-200 group">
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="flex items-center">
-                                                <div class="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center text-red-500 font-bold mr-3">
-                                                    {{ substr($reservation->passager_prenom, 0, 1) }}
-                                                </div>
-                                                <div>
-                                                    <div class="text-sm font-bold text-gray-900">{{ $reservation->passager_prenom }} {{ $reservation->passager_nom }}</div>
-                                                    <div class="text-xs text-gray-500">{{ $reservation->passager_telephone ?? 'N/A' }}</div>
-                                                    <div class="flex flex-wrap gap-1 mt-1">
-                                                        <span class="text-[10px] text-gray-400 font-mono">{{ $reservation->reference }}</span>
-                                                        @if($reservation->hotesse_id)
-                                                            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200">Hôtesse</span>
-                                                        @elseif($reservation->caisse_id)
-                                                            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200">Caisse</span>
-                                                        @else
-                                                            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700 border border-blue-200">En ligne</span>
-                                                        @endif
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            @if($reservation->programme)
-                                                <div class="text-sm font-medium text-gray-900">
-                                                    {{ $reservation->programme->point_depart }} 
-                                                    <i class="mdi mdi-arrow-right mx-1 text-gray-400"></i>
-                                                    {{ $reservation->programme->point_arrive }}
-                                                </div>
-                                            @else
-                                                <span class="text-gray-400 italic">Trajet inconnu</span>
-                                            @endif
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            <div class="text-sm font-bold text-gray-900">
-                                                {{ \Carbon\Carbon::parse($reservation->date_voyage)->format('d M') }}
-                                            </div>
-                                            @if($reservation->programme)
-                                            <div class="text-xs text-gray-500 font-medium bg-gray-100 rounded-lg px-2 py-1 inline-block mt-1">
-                                                {{ $reservation->programme->heure_depart }}
-                                            </div>
-                                            @endif
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            <span class="inline-flex items-center justify-center w-10 h-10 bg-red-100 text-red-800 font-bold rounded-lg text-lg">
-                                                {{ $reservation->seat_number }}
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            <div class="text-sm font-bold text-green-600">
-                                                {{ number_format($reservation->montant, 0, ',', ' ') }} F
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            @if($reservation->statut == 'confirmee')
-                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
-                                                    <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span> Confirmée
-                                                </span>
-                                            @elseif($reservation->statut == 'en_attente')
-                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
-                                                    <span class="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span> En attente
-                                                </span>
-                                            @else
-                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                    {{ ucfirst($reservation->statut) }}
-                                                </span>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="px-6 py-4 border-t border-gray-200">
-                            {{ $reservationsEnCours->appends(['tab' => 'en-cours'])->links() }}
-                        </div>
-                    @else
-                        <div class="flex flex-col items-center justify-center py-12 text-gray-500">
-                            <i class="mdi mdi-calendar-blank text-6xl mb-4 text-gray-300"></i>
-                            <p class="text-lg font-medium">Aucune réservation en cours</p>
-                        </div>
-                    @endif
+                    {{ $reservationsEnCours->appends(['tab' => 'en-cours'])->links('pagination::bootstrap-4') }}
                 @endif
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    /* Headers & Actions */
+    .dash-header-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 20px; }
+    .action-buttons { display: flex; gap: 10px; }
+    .btn-action { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; border: none; text-decoration: none; }
+    .btn-primary { background: var(--orange); color: #fff; }
+    .btn-primary:hover { background: var(--orange-dark); color: #fff; text-decoration: none; }
+    .btn-secondary { background: var(--surface-2); color: var(--text-1); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: var(--border-strong); color: var(--text-1); text-decoration: none; }
+
+    /* Tabs */
+    .tab-modern { display: flex; background: var(--surface-2); padding: 5px; border-radius: 12px; border: 1px solid var(--border); }
+    .tab-item { padding: 8px 20px; border-radius: 8px; font-size: 12px; font-weight: 800; color: var(--text-3); text-decoration: none; display: flex; align-items: center; gap: 8px; transition: all 0.2s; text-transform: uppercase; letter-spacing: 0.5px; }
+    .tab-item:hover { text-decoration: none; color: var(--text-2); }
+    .tab-item.active { background: var(--surface); color: var(--orange); box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+
+    /* Table Utils */
+    .cell-stack { display: flex; flex-direction: column; gap: 4px; }
+    .text-ref { font-size: 11px; font-weight: 800; color: var(--orange-dark); text-transform: uppercase; letter-spacing: 0.5px; }
+    .text-date { font-size: 12px; font-weight: 600; color: var(--text-3); }
+    .text-time { font-size: 11px; font-weight: 700; color: var(--text-3); text-transform: uppercase; }
+    .text-muted { font-size: 12px; font-style: italic; color: var(--text-3); }
+    .td-avatar.text-blue { background: #EFF6FF; color: #2563EB; }
+    .td-avatar.text-orange { background: var(--orange-light); color: var(--orange); }
+    .user-meta { display: flex; align-items: center; gap: 10px; }
+    
+    .date-day { font-size: 13px; font-weight: 800; color: var(--text-1); text-transform: uppercase; }
+    .date-year { font-size: 11px; font-weight: 700; color: var(--text-3); }
+
+    /* Badges */
+    .seat-badge { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border); font-size: 13px; font-weight: 800; color: var(--text-2); }
+    .seat-badge-orange { background: var(--orange-light); border-color: var(--orange-mid); color: var(--orange-dark); }
+    
+    .status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+    .sp-success { background: #ECFDF5; color: #059669; }
+    .sp-warning { background: #FFFBEB; color: #D97706; }
+    .sp-danger { background: #FEF2F2; color: #DC2626; }
+    .sp-blue { background: #EFF6FF; color: #2563EB; }
+    .sp-gray { background: var(--surface-2); color: var(--text-2); }
+    .status-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+    /* Footer Pagination */
+    .dash-card-footer { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-top: 1px solid var(--border); }
+    .pagination-info { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-3); letter-spacing: 0.5px; }
+    .pagination-wrapper svg { max-width: 20px; } /* Fixe un bug courant sans Tailwind */
+    .pagination-wrapper p { margin: 0; }
+</style>
 @endsection

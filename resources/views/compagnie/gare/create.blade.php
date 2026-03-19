@@ -1,433 +1,263 @@
 @extends('compagnie.layouts.template')
 
+@section('page-title', 'Nouvelle Gare')
+@section('page-subtitle', 'Configurez un nouveau point d\'embarquement stratégique pour votre réseau')
+
 @section('styles')
 <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
 <style>
-    .ts-control {
-        border-radius: 0.75rem !important;
-        padding: 0.75rem 1rem !important;
-        background-color: #f9fafb !important;
-        border: 1px solid #e5e7eb !important;
+    .form-container { max-width: 1000px; margin: 0 auto; }
+    
+    .form-card {
+        background: var(--surface); border-radius: var(--radius);
+        border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+        margin-bottom: 24px; overflow: hidden;
     }
-    .ts-wrapper.focus .ts-control {
-        box-shadow: 0 0 0 2px #e94f1b !important;
-        border-color: transparent !important;
+    .form-card-header {
+        padding: 16px 24px; background: var(--surface-2);
+        border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px;
     }
-    .ts-dropdown {
-        border-radius: 0.75rem !important;
-        margin-top: 0.5rem !important;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+    .form-step-badge {
+        width: 32px; height: 32px; border-radius: 10px;
+        background: var(--orange); color: white; display: flex; align-items: center; justify-content: center;
+        font-weight: 800; font-size: 13px; box-shadow: 0 4px 10px rgba(249,115,22,0.3);
     }
-    input:focus, select:focus {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(254, 162, 25, 0.15);
+    
+    .input-group-modern { position: relative; margin-bottom: 20px; }
+    .input-group-modern .form-label {
+        display: block; font-size: 10px; font-weight: 700; color: var(--text-3);
+        text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
     }
-    #default-avatar, #image-preview {
-        transition: all 0.3s ease;
+    .input-group-modern .input-icon {
+        position: absolute; left: 16px; top: 35px; color: var(--text-3); font-size: 14px; transition: 0.2s; z-index: 5;
     }
-    #default-avatar:hover, #image-preview:hover {
-        transform: scale(1.05);
+    .input-group-modern .input-modern {
+        width: 100%; padding: 12px 16px 12px 42px;
+        border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+        background: var(--surface-2); color: var(--text-1); font-size: 13px; font-weight: 600; transition: 0.2s;
     }
-    select {
-        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
-        background-position: right 0.5rem center;
-        background-repeat: no-repeat;
-        background-size: 1.5em 1.5em;
-        padding-right: 2.5rem;
+    .input-group-modern .input-modern:focus {
+        outline: none; border-color: var(--orange); background: var(--surface); box-shadow: 0 0 0 3px var(--orange-light);
     }
+    .input-group-modern .input-modern:focus + .input-icon, .input-group-modern:focus-within .input-icon { color: var(--orange); }
+    
+    .phone-group { display: flex; gap: 8px; }
+    .phone-prefix { width: 90px; padding: 12px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface-2); font-size: 12px; font-weight: 700; color: var(--text-2); text-align: center; }
+    
+    /* TomSelect overrides */
+    .ts-wrapper .ts-control { border: 1px solid var(--border-strong) !important; border-radius: var(--radius-sm) !important; padding: 12px 16px 12px 42px !important; background: var(--surface-2) !important; font-size: 13px !important; font-weight: 600 !important; color: var(--text-1) !important; box-shadow: none !important; }
+    .ts-wrapper.focus .ts-control { border-color: var(--orange) !important; background: var(--surface) !important; box-shadow: 0 0 0 3px var(--orange-light) !important; }
+    .ts-dropdown { border-radius: var(--radius-sm) !important; font-size: 13px !important; }
+    
+    /* Upload Image */
+    .profile-upload-wrap { position: relative; width: 140px; height: 140px; margin: 0 auto; }
+    .profile-img-box { width: 100%; height: 100%; border-radius: 30px; background: var(--surface-2); border: 2px dashed var(--border-strong); display: flex; align-items: center; justify-content: center; overflow: hidden; transition: 0.2s; }
+    .profile-img-box img { width: 100%; height: 100%; object-fit: cover; }
+    .profile-icon-placeholder { font-size: 40px; color: var(--text-3); }
+    .profile-upload-btn { position: absolute; bottom: -5px; right: -5px; width: 40px; height: 40px; border-radius: 12px; background: var(--orange); color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 3px solid var(--surface); transition: 0.2s; }
+    .profile-upload-btn:hover { transform: scale(1.1); }
+
+    .btn-submit { background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%); color: white; padding: 14px 28px; border-radius: var(--radius-sm); font-weight: 700; font-size: 13px; text-transform: uppercase; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(249,115,22,0.3); transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(249,115,22,0.4); color: white; }
 </style>
 @endsection
 
 @section('content')
-<div class="min-h-screen bg-gradient-to-br from-gray-50 to-green-50 py-8 px-4">
-    <div class="mx-auto" style="width: 90%">
-        <!-- En-tête -->
-        <div class="text-center mb-12">
-            <div class="inline-flex items-center justify-center w-16 h-16 bg-[#e94f1b] rounded-2xl shadow-lg mb-4">
-                <i class="fas fa-plus text-3xl text-white"></i>
+<div class="dashboard-page">
+    <div class="form-container">
+
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <a href="{{ route('gare.index') }}" class="btn btn-light btn-sm" style="font-weight: 700; font-size: 12px; border-radius: var(--radius-sm);">
+                <i class="fas fa-arrow-left mr-2"></i> Retour au réseau
+            </a>
+        </div>
+
+        <form action="{{ route('gare.store') }}" method="POST" enctype="multipart/form-data">
+            @csrf
+
+            <div class="form-card">
+                <div class="form-card-header">
+                    <div class="form-step-badge">01</div>
+                    <h3 style="font-size: 14px; font-weight: 800; color: var(--text-1); margin: 0; text-transform: uppercase;">Informations Structurelles</h3>
+                </div>
+                <div class="p-4">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="input-group-modern">
+                                <label class="form-label">Nom de la Gare <span class="text-danger">*</span></label>
+                                <i class="fas fa-building input-icon"></i>
+                                <input type="text" name="nom_gare" value="{{ old('nom_gare') }}" required class="input-modern" placeholder="Ex: Gare de Bassam Central">
+                                @error('nom_gare') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="input-group-modern">
+                                <label class="form-label">Ville / Localité <span class="text-danger">*</span></label>
+                                <i class="fas fa-city input-icon"></i>
+                                <select name="ville" id="select-ville" required class="input-modern">
+                                    <option value="">Sélectionnez une ville</option>
+                                    @php
+                                        $villes = ['Abidjan','Alepé', 'Abengourou', 'Adzopé', 'Agboville', 'Anyama', 'Bondoukou', 'Bongouanou', 'Bouaflé', 'Bouaké', 'Boundiali', 'Bouna', 'Dabou', 'Daloa', 'Divo', 'Duékoué', 'Ferkessédougou', 'Gagnoa', 'Grand-Bassam', 'Guiglo', 'Issia', 'Katiola', 'Korhogo', 'Man', 'Odienné', 'Oumé', 'San-Pédro', 'Séguéla', 'Sinfra', 'Soubré', 'Tanda', 'Touba', 'Toumodi', 'Vavoua', 'Yamoussoukro', 'Zénoula'];
+                                        sort($villes);
+                                    @endphp
+                                    @foreach($villes as $ville)
+                                        <option value="{{ $ville }}" {{ old('ville') == $ville ? 'selected' : '' }}>{{ $ville }}</option>
+                                    @endforeach
+                                </select>
+                                @error('ville') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="input-group-modern mb-0">
+                                <label class="form-label">Adresse Complète / Point de Repère <span class="text-danger">*</span></label>
+                                <i class="fas fa-map-marker-alt input-icon"></i>
+                                <input type="text" name="adresse" value="{{ old('adresse') }}" required class="input-modern" placeholder="Ex: Boulevard Lagunaire, face au grand marché">
+                                @error('adresse') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <h1 class="text-4xl font-bold text-gray-900 mb-3">Nouvelle Gare</h1>
-            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
-                Ajoutez un nouveau point d'embarquement avec son responsable
-            </p>
-        </div>
 
-        <!-- Formulaire -->
-        <div class="bg-white rounded-3xl shadow-xl overflow-hidden">
-            <form action="{{ route('gare.store') }}" method="POST" enctype="multipart/form-data" class="p-8">
-                @csrf
-
-                <!-- Section 1: Informations de la gare -->
-                <div class="mb-12">
-                    <div class="flex items-center mb-6">
-                        <div class="w-2 h-8 bg-[#e94f1b] rounded-full mr-4"></div>
-                        <h2 class="text-2xl font-bold text-gray-900">Informations de la gare</h2>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Nom de la gare -->
-                        <div class="space-y-2">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">
-                                <span>Nom de la gare</span>
-                                <span class="text-red-500 ml-1">*</span>
-                            </label>
-                            <div class="relative">
-                                <input type="text" name="nom_gare" value="{{ old('nom_gare') }}" required
-                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
-                                    placeholder="Ex: Gare de Bassam">
-                                <div class="absolute inset-y-0 right-0 flex items-center pr-3">
-                                    <i class="fas fa-warehouse text-gray-400"></i>
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="form-card h-100 mb-4 mb-lg-0">
+                        <div class="form-card-header">
+                            <div class="form-step-badge" style="background: var(--blue); box-shadow: 0 4px 10px rgba(59,130,246,0.3);">02</div>
+                            <h3 style="font-size: 14px; font-weight: 800; color: var(--text-1); margin: 0; text-transform: uppercase;">Responsable de Site</h3>
+                        </div>
+                        <div class="p-4">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="input-group-modern">
+                                        <label class="form-label">Nom <span class="text-danger">*</span></label>
+                                        <i class="fas fa-user-tie input-icon"></i>
+                                        <input type="text" name="responsable_nom" value="{{ old('responsable_nom') }}" required class="input-modern" style="padding-left: 42px;">
+                                        @error('responsable_nom') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="input-group-modern">
+                                        <label class="form-label">Prénom <span class="text-danger">*</span></label>
+                                        <i class="fas fa-user input-icon"></i>
+                                        <input type="text" name="responsable_prenom" value="{{ old('responsable_prenom') }}" required class="input-modern" style="padding-left: 42px;">
+                                        @error('responsable_prenom') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="input-group-modern mb-md-0">
+                                        <label class="form-label">Email Professionnel <span class="text-danger">*</span></label>
+                                        <i class="fas fa-envelope input-icon"></i>
+                                        <input type="email" name="email" value="{{ old('email') }}" required class="input-modern" placeholder="responsable@gare.com">
+                                        @error('email') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="input-group-modern mb-0">
+                                        <label class="form-label">Contact Direct <span class="text-danger">*</span></label>
+                                        <div class="phone-group">
+                                            <select name="country_code" class="phone-prefix">
+                                                <option value="+225" selected>🇨🇮 +225</option>
+                                                <option value="+33">🇫🇷 +33</option>
+                                            </select>
+                                            <input type="text" name="contact" value="{{ old('contact') }}" required class="input-modern" placeholder="07 00 00 00 00" style="padding-left: 16px;">
+                                        </div>
+                                        @error('contact') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
+                                    </div>
                                 </div>
                             </div>
-                            @error('nom_gare')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <!-- Ville -->
-                        <div class="space-y-2">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">
-                                <span>Ville</span>
-                                <span class="text-red-500 ml-1">*</span>
-                            </label>
-                            <select id="select-ville" name="ville" required class="w-full">
-                                <option value="">Sélectionnez une ville</option>
-                                @php
-                                    $villes = [
-                                        'Abidjan','Alepé', 'Abengourou', 'Adzopé', 'Agboville', 'Anyama', 'Bondoukou', 'Bongouanou', 'Bouaflé', 'Bouaké', 
-                                        'Boundiali', 'Bouna', 'Dabou', 'Daloa', 'Divo', 'Duékoué', 'Ferkessédougou', 'Gagnoa', 
-                                        'Grand-Bassam', 'Guiglo', 'Issia', 'Katiola', 'Korhogo', 'Man', 'Odienné', 'Oumé', 
-                                        'San-Pédro', 'Séguéla', 'Sinfra', 'Soubré', 'Tanda', 'Touba', 'Toumodi', 'Vavoua', 
-                                        'Yamoussoukro', 'Zénoula'
-                                    ];
-                                    sort($villes);
-                                @endphp
-                                @foreach($villes as $ville)
-                                    <option value="{{ $ville }}" {{ old('ville') == $ville ? 'selected' : '' }}>
-                                        {{ $ville }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('ville')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <!-- Adresse -->
-                        <div class="space-y-2 md:col-span-2">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">
-                                <span>Adresse / Situation Géographique</span>
-                                <span class="text-red-500 ml-1">*</span>
-                            </label>
-                            <div class="relative">
-                                <input type="text" name="adresse" value="{{ old('adresse') }}" required
-                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
-                                    placeholder="Ex: Rue 12, Face au marché">
-                                <div class="absolute inset-y-0 right-0 flex items-center pr-3">
-                                    <i class="fas fa-map-marker-alt text-gray-400"></i>
-                                </div>
-                            </div>
-                            @error('adresse')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
                         </div>
                     </div>
                 </div>
-
-                <!-- Section 2: Responsable de la gare -->
-                <div class="mb-12">
-                    <div class="flex items-center mb-6">
-                        <div class="w-2 h-8 bg-blue-500 rounded-full mr-4"></div>
-                        <h2 class="text-2xl font-bold text-gray-900">Responsable de la gare</h2>
-                    </div>
-
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <!-- Nom -->
-                        <div class="space-y-2">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">
-                                <span>Nom</span>
-                                <span class="text-red-500 ml-1">*</span>
-                            </label>
-                            <div class="relative">
-                                <input type="text" name="responsable_nom" value="{{ old('responsable_nom') }}" required
-                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
-                                    placeholder="Entrez le nom">
-                                <div class="absolute inset-y-0 right-0 flex items-center pr-3">
-                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                                    </svg>
-                                </div>
+                
+                <div class="col-lg-4">
+                    <div class="form-card h-100 text-center p-4 d-flex flex-column align-items-center justify-content-center">
+                        <h4 style="font-size: 10px; font-weight: 800; color: var(--text-3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px;">Photo du Responsable</h4>
+                        <div class="profile-upload-wrap">
+                            <div class="profile-img-box" id="image-preview-box">
+                                <div id="placeholder-icon" class="profile-icon-placeholder"><i class="fas fa-camera"></i></div>
+                                <img id="preview" src="#" class="d-none">
                             </div>
-                            @error('responsable_nom')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
+                            <input type="file" name="profile_image" id="profile_image" class="d-none" accept="image/*">
+                            <label for="profile_image" class="profile-upload-btn"><i class="fas fa-plus"></i></label>
                         </div>
-
-                        <!-- Prénom -->
-                        <div class="space-y-2">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">
-                                <span>Prénom</span>
-                                <span class="text-red-500 ml-1">*</span>
-                            </label>
-                            <div class="relative">
-                                <input type="text" name="responsable_prenom" value="{{ old('responsable_prenom') }}" required
-                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
-                                    placeholder="Entrez le prénom">
-                                <div class="absolute inset-y-0 right-0 flex items-center pr-3">
-                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                                    </svg>
-                                </div>
-                            </div>
-                            @error('responsable_prenom')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
+                        <p style="font-size: 10px; color: var(--text-3); margin-top: 10px; font-style: italic;">Formats: JPG, PNG (Max 2Mo)</p>
+                        @error('profile_image') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
                     </div>
                 </div>
+            </div>
 
-                <!-- Section 3: Informations de contact -->
-                <div class="mb-12">
-                    <div class="flex items-center mb-6">
-                        <div class="w-2 h-8 bg-green-500 rounded-full mr-4"></div>
-                        <h2 class="text-2xl font-bold text-gray-900">Informations de contact</h2>
-                    </div>
-
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <!-- Email -->
-                        <div class="space-y-2">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">
-                                <span>Email</span>
-                                <span class="text-red-500 ml-1">*</span>
-                            </label>
-                            <div class="relative">
-                                <input type="email" name="email" value="{{ old('email') }}" required
-                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
-                                    placeholder="email@exemple.com">
-                                <div class="absolute inset-y-0 right-0 flex items-center pr-3">
-                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                                    </svg>
-                                </div>
+            <div class="form-card mt-4">
+                <div class="p-4">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="input-group-modern mb-md-0">
+                                <label class="form-label">Commune Spécifique</label>
+                                <i class="fas fa-map-pin input-icon"></i>
+                                <input type="text" name="commune" value="{{ old('commune') }}" class="input-modern" placeholder="Ex: Treichville Arras">
+                                @error('commune') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
                             </div>
-                            <p class="text-xs text-blue-500">Un code OTP sera envoyé à cet email</p>
-                            @error('email')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
                         </div>
-
-                        <!-- Contact principal -->
-                        <div class="space-y-2">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">
-                                <span>Contact principal</span>
-                                <span class="text-red-500 ml-1">*</span>
-                            </label>
-                            <div class="flex gap-3">
-                                <div class="w-32">
-                                    <select name="country_code" required
-                                        class="w-full px-3 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
+                        <div class="col-md-6">
+                            <div class="input-group-modern mb-0">
+                                <label class="form-label">Contact de Secours</label>
+                                <div class="phone-group">
+                                    <select name="country_code_urgence" class="phone-prefix">
                                         <option value="+225" selected>🇨🇮 +225</option>
-                                        <option value="+33">🇫🇷 +33</option>
-                                        <option value="+1">🇺🇸 +1</option>
-                                        <option value="+44">🇬🇧 +44</option>
                                     </select>
+                                    <input type="text" name="contact_urgence" value="{{ old('contact_urgence') }}" class="input-modern" placeholder="Optionnel" style="padding-left: 16px;">
                                 </div>
-                                <div class="flex-1">
-                                    <div class="relative">
-                                        <input type="text" name="contact" value="{{ old('contact') }}" required
-                                            maxlength="10"
-                                            oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"
-                                            class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
-                                            placeholder="Ex: 0700000000">
-                                        <div class="absolute inset-y-0 right-0 flex items-center pr-3">
-                                            <i class="fas fa-phone text-gray-400"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            @error('contact')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <!-- Contact d'urgence -->
-                        <div class="space-y-2">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">
-                                <span>Contact d'urgence</span>
-                            </label>
-                            <div class="flex gap-3">
-                                <div class="w-32">
-                                    <select name="country_code_urgence"
-                                        class="w-full px-3 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
-                                        <option value="+225" selected>🇨🇮 +225</option>
-                                        <option value="+33">🇫🇷 +33</option>
-                                        <option value="+1">🇺🇸 +1</option>
-                                        <option value="+44">🇬🇧 +44</option>
-                                    </select>
-                                </div>
-                                <div class="flex-1">
-                                    <div class="relative">
-                                        <input type="text" name="contact_urgence" value="{{ old('contact_urgence') }}"
-                                            maxlength="10"
-                                            oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"
-                                            class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
-                                            placeholder="Ex: 0100000000">
-                                        <div class="absolute inset-y-0 right-0 flex items-center pr-3">
-                                            <i class="fas fa-exclamation-triangle text-gray-400"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <p class="text-xs text-gray-500">Personne à contacter en cas d'urgence</p>
-                            @error('contact_urgence')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <!-- Commune -->
-                        <div class="space-y-2">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">
-                                <span>Commune</span>
-                            </label>
-                            <div class="relative">
-                                <input type="text" name="commune" value="{{ old('commune') }}"
-                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
-                                    placeholder="Ex: Cocody, Yopougon...">
-                                <div class="absolute inset-y-0 right-0 flex items-center pr-3">
-                                    <i class="fas fa-map-pin text-gray-400"></i>
-                                </div>
-                            </div>
-                            @error('commune')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Section 4: Photo de profil -->
-                <div class="mb-12">
-                    <div class="flex items-center mb-6">
-                        <div class="w-2 h-8 bg-purple-500 rounded-full mr-4"></div>
-                        <h2 class="text-2xl font-bold text-gray-900">Photo de profil</h2>
-                    </div>
-
-                    <div class="flex justify-center">
-                        <div class="max-w-md w-full">
-                            <div class="text-center space-y-4">
-                                <div class="flex justify-center">
-                                    <div class="relative">
-                                        <div id="image-preview" class="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center border-2 border-dashed border-gray-300 hidden overflow-hidden">
-                                            <img id="preview" class="w-full h-full rounded-full object-cover" src="" alt="Aperçu">
-                                        </div>
-                                        <div id="default-avatar" class="w-32 h-32 bg-[#e94f1b] rounded-full flex items-center justify-center text-white font-bold text-lg">
-                                            <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                                            </svg>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="space-y-2">
-                                    <label for="profile_image" class="cursor-pointer inline-block">
-                                        <div class="px-6 py-4 border-2 border-dashed border-gray-300 rounded-xl hover:border-[#e94f1b] transition-all duration-200 text-center bg-gray-50 hover:bg-white">
-                                            <svg class="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                            </svg>
-                                            <span class="text-sm font-medium text-gray-600">Cliquez pour uploader une photo</span>
-                                            <p class="text-xs text-gray-400 mt-1">PNG, JPG, JPEG (max. 2MB)</p>
-                                        </div>
-                                    </label>
-                                    <input type="file" id="profile_image" name="profile_image" class="hidden" accept="image/*">
-                                    @error('profile_image')
-                                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                                    @enderror
-                                </div>
+                                @error('contact_urgence') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Actions -->
-                <div class="flex flex-col sm:flex-row gap-4 justify-between items-center pt-8 border-t border-gray-200">
-                    <a href="{{ route('gare.index') }}" 
-                       class="flex items-center px-8 py-4 text-gray-700 font-semibold rounded-xl border border-gray-300 hover:bg-gray-50 transition-all duration-200 group">
-                        <svg class="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                        </svg>
-                        Retour à la liste
-                    </a>
-                    
-                    <button type="submit"
-                            class="flex items-center px-8 py-4 bg-[#e94f1b] text-white font-bold rounded-xl hover:bg-[#e89116] transform hover:-translate-y-1 transition-all duration-200 shadow-lg hover:shadow-xl">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                        </svg>
-                        Enregistrer la gare
-                    </button>
-                </div>
-            </form>
-        </div>
+            <div class="d-flex justify-content-end mt-4 pt-3" style="border-top: 1px solid var(--border);">
+                <button type="submit" class="btn-submit">
+                    <i class="fas fa-check-circle"></i> Valider & Créer la Gare
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 @endsection
 
 @section('scripts')
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    new TomSelect("#select-ville",{
-        create: false,
-        sortField: { field: "text", direction: "asc" },
-        placeholder: "Rechercher une ville...",
-        maxOptions: 50
+document.addEventListener('DOMContentLoaded', function() {
+    new TomSelect("#select-ville", {
+        create: false, sortField: { field: "text", direction: "asc" }, placeholder: "Sélectionner la ville principale..."
     });
 
-    // Image upload preview
     const profileImageInput = document.getElementById('profile_image');
-    const imagePreview = document.getElementById('image-preview');
-    const defaultAvatar = document.getElementById('default-avatar');
-    const preview = document.getElementById('preview');
+    const imagePreview = document.getElementById('preview');
+    const placeholderIcon = document.getElementById('placeholder-icon');
 
     profileImageInput.addEventListener('change', function(e) {
         const file = e.target.files[0];
-        if (file && file.type.startsWith('image/')) {
+        if (file) {
             const reader = new FileReader();
             reader.onload = function(e) {
-                preview.src = e.target.result;
-                defaultAvatar.classList.add('hidden');
-                imagePreview.classList.remove('hidden');
-            };
+                imagePreview.src = e.target.result;
+                imagePreview.classList.remove('d-none');
+                placeholderIcon.classList.add('d-none');
+            }
             reader.readAsDataURL(file);
-        } else {
-            defaultAvatar.classList.remove('hidden');
-            imagePreview.classList.add('hidden');
-            profileImageInput.value = '';
         }
     });
 
-    // SweetAlert messages
     @if(session('success'))
         Swal.fire({
-            icon: 'success', title: 'Succès!',
-            text: "{{ session('success') }}",
-            confirmButtonColor: '#e94f1b', timer: 5000, showConfirmButton: true
+            icon: 'success', title: 'GÉO-BASE MISE À JOUR', text: "{{ session('success') }}",
+            timer: 3000, showConfirmButton: false, toast: true, position: 'top-end',
+            customClass: { popup: 'rounded-lg shadow-sm border-left-success' }
         });
     @endif
-
-    @if(session('warning'))
-        Swal.fire({
-            icon: 'warning', title: 'Attention',
-            text: "{{ session('warning') }}",
-            confirmButtonColor: '#e94f1b'
-        });
-    @endif
-
-    @if(session('error'))
-        Swal.fire({
-            icon: 'error', title: 'Erreur',
-            text: "{{ session('error') }}",
-            confirmButtonColor: '#e94f1b'
-        });
-    @endif
+});
 </script>
 @endsection

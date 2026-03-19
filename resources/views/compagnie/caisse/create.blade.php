@@ -1,439 +1,323 @@
 @extends('compagnie.layouts.template')
+
+@section('page-title', 'Enrôlement Caisse')
+@section('page-subtitle', 'Ajouter un nouveau gestionnaire de caisse à votre équipe')
+
+@section('styles')
+<style>
+    /* Structure de la page */
+    .enrolment-container {
+        max-width: 1100px;
+        margin: 0 auto;
+    }
+    
+    .form-card {
+        background: var(--surface);
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 24px;
+        overflow: hidden;
+    }
+    .form-card-header {
+        padding: 16px 24px;
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--border);
+        display: flex; align-items: center; gap: 12px;
+    }
+    .form-step-badge {
+        width: 32px; height: 32px; border-radius: 10px;
+        background: var(--orange); color: white;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 800; font-size: 13px;
+        box-shadow: 0 4px 10px rgba(249,115,22,0.3);
+    }
+    
+    /* Upload de profil */
+    .profile-upload-wrap {
+        position: relative; width: 160px; height: 160px; margin: 0 auto 24px;
+    }
+    .profile-img-box {
+        width: 100%; height: 100%; border-radius: 30px;
+        background: var(--surface-2); border: 2px dashed var(--border-strong);
+        display: flex; align-items: center; justify-content: center;
+        overflow: hidden; transition: all 0.3s;
+    }
+    .profile-img-box:hover { border-color: var(--orange); }
+    .profile-img-box img { width: 100%; height: 100%; object-fit: cover; }
+    .profile-icon-placeholder { font-size: 40px; color: var(--text-3); }
+    
+    .profile-upload-btn {
+        position: absolute; bottom: -10px; right: -10px;
+        width: 44px; height: 44px; border-radius: 12px;
+        background: var(--orange); color: white;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; box-shadow: var(--shadow-md); border: 4px solid var(--surface);
+        transition: transform 0.2s, background 0.2s;
+    }
+    .profile-upload-btn:hover { background: var(--orange); transform: scale(1.05); }
+
+    /* Champs de formulaire modernes avec icônes */
+    .input-group-modern { position: relative; margin-bottom: 20px; }
+    .input-group-modern .form-label {
+        display: block; font-size: 10px; font-weight: 700; color: var(--text-3);
+        text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
+    }
+    .input-group-modern .input-icon {
+        position: absolute; left: 16px; top: 35px;
+        color: var(--text-3); font-size: 14px; transition: color 0.2s;
+    }
+    .input-group-modern .input-modern {
+        width: 100%; padding: 12px 16px 12px 42px;
+        border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+        background: var(--surface-2); color: var(--text-1);
+        font-size: 13px; font-weight: 600; transition: all 0.2s;
+    }
+    .input-group-modern .input-modern:focus {
+        outline: none; border-color: var(--orange); background: var(--surface);
+        box-shadow: 0 0 0 3px var(--orange-light);
+    }
+    .input-group-modern .input-modern:focus + .input-icon,
+    .input-group-modern:focus-within .input-icon { color: var(--orange); }
+    
+    select.input-modern { appearance: none; cursor: pointer; height: 48px; }
+    .input-modern option { background: var(--surface); color: var(--text-1); padding: 10px; }
+    .select-chevron { position: absolute; right: 16px; top: 35px; color: var(--text-3); font-size: 12px; pointer-events: none; }
+
+    .btn-submit {
+        background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%);
+        color: white; padding: 14px 28px; border-radius: var(--radius-sm);
+        font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;
+        border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(249,115,22,0.3); transition: 0.2s;
+    }
+    .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(249,115,22,0.4); color: white; }
+</style>
+@endsection
+
 @section('content')
-<div class="min-h-screen bg-gradient-to-br from-gray-50 to-orange-50 py-8 px-4">
-    <div class="mx-auto" style="width: 90%">
-        <!-- En-tête -->
-        <div class="text-center mb-12">
-            <div class="inline-flex items-center justify-center w-16 h-16 bg-[#e94e1a] rounded-2xl shadow-lg mb-4">
-                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
-                </svg>
-            </div>
-            <h1 class="text-4xl font-bold text-gray-900 mb-3">Nouvelle Caissière</h1>
-            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
-                Ajoutez une nouvelle caissière à votre équipe
-            </p>
+<div class="dashboard-page">
+    <div class="enrolment-container">
+
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <a href="{{ route('compagnie.caisse.index') }}" class="btn btn-light btn-sm" style="font-weight: 700; font-size: 12px; border-radius: var(--radius-sm);">
+                <i class="fas fa-arrow-left mr-2"></i> Retour au répertoire
+            </a>
         </div>
 
-        <!-- Carte du formulaire -->
-        <div class="bg-white rounded-3xl shadow-xl overflow-hidden">
-            <form action="{{ route('compagnie.caisse.store') }}" method="POST" enctype="multipart/form-data" class="p-8">
-                @csrf
+        <form method="POST" action="{{ route('compagnie.caisse.store') }}" enctype="multipart/form-data" id="createCaisseForm">
+            @csrf
 
-                <!-- Section 0: Affectation à une Gare -->
-                @if(isset($gares) && $gares->count() > 0)
-                <div class="mb-12">
-                    <div class="flex items-center mb-6">
-                        <div class="w-2 h-8 bg-blue-500 rounded-full mr-4"></div>
-                        <h2 class="text-2xl font-bold text-gray-900">Affectation à une Gare</h2>
-                    </div>
-
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div class="space-y-2">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">
-                                <span>Gare</span>
-                                <span class="text-red-500 ml-1">*</span>
+            <div class="row">
+                {{-- COLONNE GAUCHE : PROFIL --}}
+                <div class="col-lg-4 mb-4">
+                    <div class="form-card text-center p-4" style="position: sticky; top: 80px;">
+                        <h4 style="font-size: 11px; font-weight: 800; color: var(--text-3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px;">Photo de profil</h4>
+                        
+                        <div class="profile-upload-wrap">
+                            <div class="profile-img-box" id="imagePreviewContainer">
+                                <div id="avatarPlaceholder" class="profile-icon-placeholder">
+                                    <i class="fas fa-user-shield"></i>
+                                </div>
+                                <img id="imagePreview" src="#" alt="Aperçu" class="d-none">
+                            </div>
+                            <label for="profile_picture" class="profile-upload-btn">
+                                <i class="fas fa-camera"></i>
+                                <input type="file" id="profile_picture" name="profile_picture" class="d-none" accept="image/*">
                             </label>
-                            <select name="gare_id" required
-                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white">
-                                <option value="" disabled {{ old('gare_id') ? '' : 'selected' }}>-- Sélectionnez une gare --</option>
-                                @foreach($gares as $gare)
-                                    <option value="{{ $gare->id }}" {{ old('gare_id') == $gare->id ? 'selected' : '' }}>
-                                        {{ $gare->nom_gare }} — {{ $gare->ville }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('gare_id')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                            <p class="text-xs text-gray-400 mt-1">
-                                <i class="fas fa-info-circle mr-1"></i>
-                                Sélectionnez la gare à laquelle cette caissière sera affectée.
+                        </div>
+
+                        <div style="background: var(--orange-light); border: 1px solid var(--orange-mid); border-radius: 12px; padding: 16px; text-align: left; margin-top: 20px;">
+                            <h5 style="font-size: 11px; font-weight: 800; color: var(--orange-dark); text-transform: uppercase; margin-bottom: 8px;">
+                                <i class="fas fa-shield-alt mr-1"></i> Information Sécurité
+                            </h5>
+                            <p style="font-size: 11px; color: var(--orange-dark); opacity: 0.8; margin: 0; font-style: italic; line-height: 1.4;">
+                                "Les accès caisse sont strictement personnels. Chaque agent est responsable des opérations effectuées sous son identifiant."
                             </p>
                         </div>
-                    </div>
-                </div>
-                @endif
-
-                <!-- Section 1: Informations personnelles -->
-                <div class="mb-12">
-                    <div class="flex items-center mb-6">
-                        <div class="w-2 h-8 bg-[#e94e1a] rounded-full mr-4"></div>
-                        <h2 class="text-2xl font-bold text-gray-900">Informations personnelles</h2>
-                    </div>
-
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <!-- Nom -->
-                        <div class="space-y-2">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">
-                                <span>Nom</span>
-                                <span class="text-red-500 ml-1">*</span>
-                            </label>
-                            <div class="relative">
-                                <input type="text" 
-                                       name="name" 
-                                       value="{{ old('name') }}"
-                                       required
-                                       class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
-                                       placeholder="Entrez le nom">
-                                <div class="absolute inset-y-0 right-0 flex items-center pr-3">
-                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                                    </svg>
-                                </div>
-                            </div>
-                            @error('name')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <!-- Prénom -->
-                        <div class="space-y-2">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">
-                                <span>Prénom</span>
-                                <span class="text-red-500 ml-1">*</span>
-                            </label>
-                            <div class="relative">
-                                <input type="text" 
-                                       name="prenom" 
-                                       value="{{ old('prenom') }}"
-                                       required
-                                       class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
-                                       placeholder="Entrez le prénom">
-                                <div class="absolute inset-y-0 right-0 flex items-center pr-3">
-                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                                    </svg>
-                                </div>
-                            </div>
-                            @error('prenom')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
+                        @error('profile_picture') <span class="text-danger" style="font-size: 11px; font-weight: 700; margin-top: 10px; display: block;">{{ $message }}</span> @enderror
                     </div>
                 </div>
 
-                <!-- Section 2: Informations de contact -->
-                <div class="mb-12">
-                    <div class="flex items-center mb-6">
-                        <div class="w-2 h-8 bg-blue-500 rounded-full mr-4"></div>
-                        <h2 class="text-2xl font-bold text-gray-900">Informations de contact</h2>
-                    </div>
-
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <!-- Email -->
-                        <div class="space-y-2">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">
-                                <span>Email</span>
-                                <span class="text-red-500 ml-1">*</span>
-                            </label>
-                            <div class="relative">
-                                <input type="email" 
-                                       name="email" 
-                                       value="{{ old('email') }}"
-                                       required
-                                       class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
-                                       placeholder="email@exemple.com">
-                                <div class="absolute inset-y-0 right-0 flex items-center pr-3">
-                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                                    </svg>
-                                </div>
-                            </div>
-                            <p class="text-xs text-blue-600">Un code OTP sera envoyé à cet email</p>
-                            @error('email')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
+                {{-- COLONNE DROITE : FORMULAIRE --}}
+                <div class="col-lg-8">
+                    
+                    {{-- 01. Affectation --}}
+                    <div class="form-card">
+                        <div class="form-card-header">
+                            <div class="form-step-badge">01</div>
+                            <h3 style="font-size: 14px; font-weight: 800; color: var(--text-1); margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">Affectation Poste</h3>
                         </div>
-
-                        <!-- Contact principal -->
-                        <div class="space-y-2">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">
-                                <span>Contact principal</span>
-                                <span class="text-red-500 ml-1">*</span>
-                            </label>
-                            <div class="relative">
-                                <input type="text" 
-                                       name="contact" 
-                                       value="{{ old('contact') }}"
-                                       required
-                                       maxlength="10"
-                                       oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"
-                                       class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
-                                       placeholder="Ex: 0700000000">
-                                <div class="absolute inset-y-0 right-0 flex items-center pr-3">
-                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-                                    </svg>
-                                </div>
-                            </div>
-                            @error('contact')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <!-- Nom d'urgence -->
-                        <div class="space-y-2">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">
-                                <span>Nom de la personne à contacter</span>
-                                <span class="text-red-500 ml-1">*</span>
-                            </label>
-                            <div class="relative">
-                                <input type="text" 
-                                       name="nom_urgence" 
-                                       value="{{ old('nom_urgence') }}"
-                                       required
-                                       class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
-                                       placeholder="Ex: Mme Bakayoko">
-                                <div class="absolute inset-y-0 right-0 flex items-center pr-3">
-                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                                    </svg>
-                                </div>
-                            </div>
-                            @error('nom_urgence')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <!-- Lien de parenté -->
-                        <div class="space-y-2">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">
-                                <span>Lien de parenté</span>
-                                <span class="text-red-500 ml-1">*</span>
-                            </label>
-                            <div class="relative">
-                                <select name="lien_parente_urgence" required
-                                        class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white appearance-none">
-                                    <option value="" disabled {{ old('lien_parente_urgence') ? '' : 'selected' }}>-- Sélectionnez le lien --</option>
-                                    <option value="Conjoint(e)" {{ old('lien_parente_urgence') == 'Conjoint(e)' ? 'selected' : '' }}>Conjoint(e)</option>
-                                    <option value="Père" {{ old('lien_parente_urgence') == 'Père' ? 'selected' : '' }}>Père</option>
-                                    <option value="Mère" {{ old('lien_parente_urgence') == 'Mère' ? 'selected' : '' }}>Mère</option>
-                                    <option value="Frère" {{ old('lien_parente_urgence') == 'Frère' ? 'selected' : '' }}>Frère</option>
-                                    <option value="Sœur" {{ old('lien_parente_urgence') == 'Sœur' ? 'selected' : '' }}>Sœur</option>
-                                    <option value="Oncle" {{ old('lien_parente_urgence') == 'Oncle' ? 'selected' : '' }}>Oncle</option>
-                                    <option value="Tante" {{ old('lien_parente_urgence') == 'Tante' ? 'selected' : '' }}>Tante</option>
-                                    <option value="Ami(e)" {{ old('lien_parente_urgence') == 'Ami(e)' ? 'selected' : '' }}>Ami(e)</option>
-                                    <option value="Autre" {{ old('lien_parente_urgence') == 'Autre' ? 'selected' : '' }}>Autre</option>
+                        <div class="p-4">
+                            <div class="input-group-modern mb-0">
+                                <label class="form-label">Gare de Rattachement</label>
+                                <i class="fas fa-university input-icon"></i>
+                                <select name="gare_id" required class="input-modern">
+                                    <option value="" disabled selected>-- Sélectionner la gare d'affectation --</option>
+                                    @foreach($gares as $gare)
+                                        <option value="{{ $gare->id }}" {{ old('gare_id') == $gare->id ? 'selected' : '' }}>
+                                            {{ $gare->nom_gare }} — {{ $gare->ville }}
+                                        </option>
+                                    @endforeach
                                 </select>
+                                <i class="fas fa-chevron-down select-chevron"></i>
+                                @error('gare_id') <span class="text-danger" style="font-size: 10px; font-weight: 700; margin-top: 4px; display: block;">{{ $message }}</span> @enderror
                             </div>
-                            @error('lien_parente_urgence')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <!-- Contact d'urgence -->
-                        <div class="space-y-2">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">
-                                <span>Numéro d'urgence</span>
-                                <span class="text-red-500 ml-1">*</span>
-                            </label>
-                            <div class="relative">
-                                <input type="text" 
-                                       name="cas_urgence" 
-                                       value="{{ old('cas_urgence') }}"
-                                       required
-                                       maxlength="10"
-                                       oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"
-                                       class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
-                                       placeholder="Ex: 0100000000">
-                                <div class="absolute inset-y-0 right-0 flex items-center pr-3">
-                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-                                    </svg>
-                                </div>
-                            </div>
-                            @error('cas_urgence')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <!-- Commune -->
-                        <div class="space-y-2">
-                            <label class="flex items-center text-sm font-semibold text-gray-700">
-                                <span>Commune</span>
-                            </label>
-                            <div class="relative">
-                                <input type="text" 
-                                       name="commune" 
-                                       value="{{ old('commune') }}"
-                                       class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94e1a] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
-                                       placeholder="Ex: Cocody, Yopougon...">
-                                <div class="absolute inset-y-0 right-0 flex items-center pr-3">
-                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                    </svg>
-                                </div>
-                            </div>
-                            @error('commune')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
                         </div>
                     </div>
-                </div>
 
-                <!-- Section 3: Photo de profil -->
-                <div class="mb-12">
-                    <div class="flex items-center mb-6">
-                        <div class="w-2 h-8 bg-purple-500 rounded-full mr-4"></div>
-                        <h2 class="text-2xl font-bold text-gray-900">Photo de profil</h2>
-                    </div>
-
-                    <div class="flex justify-center">
-                        <div class="max-w-md w-full">
-                            <div class="text-center space-y-4">
-                                <!-- Aperçu de l'image -->
-                                <div class="flex justify-center">
-                                    <div class="relative">
-                                        <div id="image-preview" class="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center border-2 border-dashed border-gray-300 hidden overflow-hidden">
-                                            <img id="preview" class="w-full h-full rounded-full object-cover" src="" alt="Aperçu">
-                                        </div>
-                                        <div id="default-avatar" class="w-32 h-32 bg-[#e94e1a] rounded-full flex items-center justify-center text-white font-bold text-lg">
-                                            <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                                            </svg>
-                                        </div>
+                    {{-- 02. Identité --}}
+                    <div class="form-card">
+                        <div class="form-card-header">
+                            <div class="form-step-badge" style="background: var(--blue); box-shadow: 0 4px 10px rgba(59,130,246,0.3);">02</div>
+                            <h3 style="font-size: 14px; font-weight: 800; color: var(--text-1); margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">Identité & Coordonnées</h3>
+                        </div>
+                        <div class="p-4">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="input-group-modern">
+                                        <label class="form-label">Nom de Famille</label>
+                                        <i class="fas fa-id-card input-icon"></i>
+                                        <input type="text" name="name" value="{{ old('name') }}" required class="input-modern" placeholder="Ex: Bakayoko">
+                                        @error('name') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
                                     </div>
                                 </div>
-                                
-                                <!-- Bouton d'upload centré -->
-                                <div class="space-y-2">
-                                    <label for="profile_picture" class="cursor-pointer inline-block">
-                                        <div class="px-6 py-4 border-2 border-dashed border-gray-300 rounded-xl hover:border-[#e94e1a] transition-all duration-200 text-center bg-gray-50 hover:bg-white">
-                                            <svg class="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                            </svg>
-                                            <span class="text-sm font-medium text-gray-600">Cliquez pour uploader une photo</span>
-                                            <p class="text-xs text-gray-400 mt-1">PNG, JPG, JPEG (max. 2MB)</p>
-                                        </div>
-                                    </label>
-                                    <input type="file" id="profile_picture" name="profile_picture" class="hidden" accept="image/*">
-                                    @error('profile_picture')
-                                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                                    @enderror
+                                <div class="col-md-6">
+                                    <div class="input-group-modern">
+                                        <label class="form-label">Prénom(s)</label>
+                                        <i class="fas fa-user input-icon"></i>
+                                        <input type="text" name="prenom" value="{{ old('prenom') }}" required class="input-modern" placeholder="Ex: Jean-Marc">
+                                        @error('prenom') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="input-group-modern">
+                                        <label class="form-label">Adresse Email Pro</label>
+                                        <i class="fas fa-envelope input-icon"></i>
+                                        <input type="email" name="email" value="{{ old('email') }}" required class="input-modern" placeholder="agent.caisse@cie.com">
+                                        @error('email') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="input-group-modern">
+                                        <label class="form-label">Contact Mobile</label>
+                                        <i class="fas fa-phone-alt input-icon"></i>
+                                        <input type="text" name="contact" value="{{ old('contact') }}" required maxlength="10" class="input-modern" placeholder="07 00 00 00 00" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)">
+                                        @error('contact') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Actions -->
-                <div class="flex flex-col sm:flex-row gap-4 justify-between items-center pt-8 border-t border-gray-200">
-                    <a href="{{ route('compagnie.caisse.index') }}" 
-                       class="flex items-center px-8 py-4 text-gray-700 font-semibold rounded-xl border border-gray-300 hover:bg-gray-50 transition-all duration-200 group">
-                        <svg class="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                        </svg>
-                        Retour à la liste
-                    </a>
-                    
-                    <button type="submit"
-                            class="flex items-center px-8 py-4 bg-[#e94e1a] text-white font-bold rounded-xl hover:bg-[#d33d0f] transform hover:-translate-y-1 transition-all duration-200 shadow-lg hover:shadow-xl">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                        </svg>
-                        Créer la caissière
-                    </button>
+                    {{-- 03. Accès --}}
+                    <div class="form-card">
+                        <div class="form-card-header">
+                            <div class="form-step-badge" style="background: var(--orange); box-shadow: 0 4px 10px rgba(249,115,22,0.3);">03</div>
+                            <h3 style="font-size: 14px; font-weight: 800; color: var(--text-1); margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">Paramètres d'Accès</h3>
+                        </div>
+                        <div class="p-4" style="background: #FAFAF9;">
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="input-group-modern">
+                                        <label class="form-label">Code ID Caisse (Identifiant)</label>
+                                        <i class="fas fa-id-badge input-icon"></i>
+                                        <input type="text" name="code_id" value="{{ old('code_id') }}" required class="input-modern" style="background: white;" placeholder="Ex: CAI-2024-001">
+                                        @error('code_id') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="input-group-modern mb-md-0">
+                                        <label class="form-label">Mot de Passe</label>
+                                        <i class="fas fa-lock input-icon"></i>
+                                        <input type="password" name="password" required class="input-modern" style="background: white;" placeholder="••••••••">
+                                        @error('password') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="input-group-modern mb-0">
+                                        <label class="form-label">Confirmer Mot de Passe</label>
+                                        <i class="fas fa-check-double input-icon"></i>
+                                        <input type="password" name="password_confirmation" required class="input-modern" style="background: white;" placeholder="••••••••">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Actions --}}
+                    <div class="d-flex align-items-center justify-content-between mt-4 pt-3" style="border-top: 1px solid var(--border);">
+                        <div>
+                            <p style="font-size: 11px; font-weight: 600; color: var(--text-3); margin: 0; font-style: italic; max-width: 300px;">En validant, vous permettez à ce nouveau caissier d'effectuer des transactions au nom de la compagnie.</p>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="reset" class="btn btn-light" style="font-weight: 700; font-size: 13px; border-radius: var(--radius-sm);">Réinitialiser</button>
+                            <button type="submit" class="btn-submit">
+                                <i class="fas fa-check-circle mr-2"></i> Valider l'Ouverture
+                            </button>
+                        </div>
+                    </div>
+
                 </div>
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
 </div>
+@endsection
 
+@section('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Gestion de l'upload d'image
-    const profilePictureInput = document.getElementById('profile_picture');
-    const imagePreview = document.getElementById('image-preview');
-    const defaultAvatar = document.getElementById('default-avatar');
-    const preview = document.getElementById('preview');
+    const profileInput = document.getElementById('profile_picture');
+    const imagePreview = document.getElementById('imagePreview');
+    const placeholder = document.getElementById('avatarPlaceholder');
 
-    profilePictureInput.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        
-        if (file && file.type.startsWith('image/')) {
+    profileInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            if (file.size > 2 * 1024 * 1024) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Fichier trop lourd',
+                    text: 'La taille maximale autorisée est de 2 Mo.',
+                    confirmButtonColor: '#F97316',
+                    customClass: { popup: 'rounded-lg border-0 shadow-sm' }
+                });
+                this.value = '';
+                return;
+            }
+
             const reader = new FileReader();
-            
             reader.onload = function(e) {
-                preview.src = e.target.result;
-                defaultAvatar.classList.add('hidden');
-                imagePreview.classList.remove('hidden');
-            };
-            
+                imagePreview.src = e.target.result;
+                imagePreview.classList.remove('d-none');
+                placeholder.classList.add('d-none');
+            }
             reader.readAsDataURL(file);
-        } else {
-            defaultAvatar.classList.remove('hidden');
-            imagePreview.classList.add('hidden');
-            profilePictureInput.value = '';
         }
     });
 
-    // Validation en temps réel de l'email
-    const emailInput = document.querySelector('input[name="email"]');
-    emailInput.addEventListener('blur', function(e) {
-        const email = e.target.value;
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        
-        if (email && !emailRegex.test(email)) {
-            e.target.classList.add('border-red-300');
-        } else {
-            e.target.classList.remove('border-red-300');
-        }
-    });
-});
-</script>
-
-<!-- SweetAlert2 -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Success message
     @if(session('success'))
         Swal.fire({
             icon: 'success',
-            title: 'Succès!',
+            title: 'Opération réussie',
             text: "{{ session('success') }}",
-            confirmButtonColor: '#e94f1b',
-            timer: 5000,
-            showConfirmButton: true
+            timer: 3000,
+            showConfirmButton: false,
+            toast: true,
+            position: 'top-end',
+            customClass: { popup: 'rounded-lg shadow-sm' }
         });
     @endif
 
-    // Error message from session
-    @if(session('error'))
-        Swal.fire({
-            icon: 'error',
-            title: 'Erreur',
-            text: "{{ session('error') }}",
-            confirmButtonColor: '#e94f1b'
-        });
-    @endif
-
-    // Simple validation errors
     @if($errors->any())
         Swal.fire({
             icon: 'error',
             title: 'Erreur de validation',
-            text: "Veuillez vérifier les informations saisies.",
-            confirmButtonColor: '#e94f1b'
+            text: 'Veuillez vérifier les champs signalés en rouge.',
+            confirmButtonColor: '#F97316',
+            customClass: { popup: 'rounded-lg border-0 shadow-sm' }
         });
     @endif
 });
 </script>
-
-<style>
-input:focus, select:focus {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(233, 78, 26, 0.15);
-}
-
-#default-avatar, #image-preview {
-    transition: all 0.3s ease;
-}
-
-#default-avatar:hover, #image-preview:hover {
-    transform: scale(1.05);
-}
-</style>
 @endsection

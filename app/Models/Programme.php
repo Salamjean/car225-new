@@ -91,9 +91,22 @@ class Programme extends Model
 
     public function getVehiculeForDate($date)
     {
-        $voyage = $this->voyages()->whereDate('date_voyage', $date)->first();
-        if ($voyage && $voyage->vehicule) {
-            return $voyage->vehicule;
+        // Utiliser la collection chargée si possible pour éviter N+1
+        if ($this->relationLoaded('voyages')) {
+            $voyage = $this->voyages->first(function($v) use ($date) {
+                $vDate = $v->date_voyage instanceof \Carbon\Carbon 
+                    ? $v->date_voyage->toDateString() 
+                    : substr($v->date_voyage, 0, 10);
+                return $vDate == $date;
+            });
+            if ($voyage && $voyage->vehicule) {
+                return $voyage->vehicule;
+            }
+        } else {
+            $voyage = $this->voyages()->whereDate('date_voyage', $date)->with('vehicule')->first();
+            if ($voyage && $voyage->vehicule) {
+                return $voyage->vehicule;
+            }
         }
 
         // Repli sur le premier véhicule actif de la compagnie
