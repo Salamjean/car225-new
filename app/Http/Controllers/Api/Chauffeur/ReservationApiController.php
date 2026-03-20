@@ -227,6 +227,7 @@ class ReservationApiController extends Controller
             'embarquement_scanned_at' => now(),
             'embarquement_agent_id' => null,
             'embarquement_vehicule_id' => $voyageActif->vehicule->id,
+            'voyage_id' => $voyageActif->id, // On lie directement au voyage actif
             'embarquement_status' => 'scanned',
         ];
 

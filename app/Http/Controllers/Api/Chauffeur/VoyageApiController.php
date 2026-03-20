@@ -99,8 +99,8 @@ class VoyageApiController extends Controller
             return response()->json(['success' => false, 'message' => 'Ce voyage ne vous appartient pas.'], 403);
         }
 
-        if ($voyage->statut !== 'confirmé') {
-            return response()->json(['success' => false, 'message' => 'Vous devez d\'abord confirmer ce voyage.'], 400);
+        if (!in_array($voyage->statut, ['en_attente', 'confirmé'])) {
+            return response()->json(['success' => false, 'message' => 'Ce voyage ne peut pas être démarré.'], 400);
         }
 
         if ($voyage->occupancy < 1) {
@@ -149,6 +149,10 @@ class VoyageApiController extends Controller
      */
     public function annuler(Request $request, Voyage $voyage)
     {
+        $request->validate([
+            'reason' => 'required|string|min:5|max:1000',
+        ]);
+
         $chauffeur = $request->user();
 
         if ($voyage->personnel_id !== $chauffeur->id) {
@@ -160,6 +164,23 @@ class VoyageApiController extends Controller
         }
 
         $voyage->update(['statut' => 'annulé']);
+
+        // Envoyer le motif à la gare (comme sur le web)
+        $gareId = $voyage->gare_depart_id ?? ($voyage->programme ? $voyage->programme->gare_depart_id : null);
+        
+        if ($gareId) {
+            \App\Models\GareMessage::create([
+                'gare_id' => $gareId,
+                'sender_type' => 'App\Models\Personnel',
+                'sender_id' => $chauffeur->id,
+                'recipient_type' => 'App\Models\Gare',
+                'recipient_id' => $gareId,
+                'subject' => 'Annulation de voyage #' . $voyage->id,
+                'message' => "Le chauffeur {$chauffeur->prenom} {$chauffeur->name} a annulé le voyage #{$voyage->id} via Mobile. \n\nMotif : " . $request->reason,
+                'is_read' => false,
+            ]);
+        }
+
         $chauffeur->update(['statut' => 'disponible']);
 
         if ($voyage->vehicule) {
@@ -168,7 +189,7 @@ class VoyageApiController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Le voyage a été annulé.',
+            'message' => 'Le voyage a été annulé et le motif transmis à la gare.',
         ]);
     }
 
@@ -216,20 +237,26 @@ class VoyageApiController extends Controller
             'id' => $voyage->id,
             'date_voyage' => $voyage->date_voyage,
             'statut' => $voyage->statut,
-            'occupancy' => $voyage->occupancy ?? 0,
+            'occupancy' => $voyage->occupancy,
+            'estimated_arrival_at' => $voyage->estimated_arrival_at,
+            'temps_restant' => $voyage->temps_restant,
             'programme' => $voyage->programme ? [
                 'id' => $voyage->programme->id,
                 'point_depart' => $voyage->programme->point_depart,
                 'point_arrive' => $voyage->programme->point_arrive,
                 'heure_depart' => $voyage->programme->heure_depart,
+                'heure_arrive' => $voyage->programme->heure_arrive,
                 'gare_depart' => optional($voyage->programme->gareDepart)->nom_gare ?? '',
                 'gare_arrivee' => optional($voyage->programme->gareArrivee)->nom_gare ?? '',
+                'montant_billet' => $voyage->programme->montant_billet,
+                'capacity' => $voyage->programme->capacity ?? ($voyage->vehicule->nombre_place ?? 50),
             ] : null,
             'vehicule' => $voyage->vehicule ? [
                 'id' => $voyage->vehicule->id,
                 'marque' => $voyage->vehicule->marque,
                 'modele' => $voyage->vehicule->modele,
                 'immatriculation' => $voyage->vehicule->immatriculation,
+                'nombre_place' => $voyage->vehicule->nombre_place,
             ] : null,
         ];
     }

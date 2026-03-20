@@ -158,8 +158,8 @@ class ChauffeurApiController extends Controller
         // Voyages du jour
         $todayVoyages = Voyage::where('personnel_id', $chauffeur->id)
             ->whereDate('date_voyage', $today)
-            ->where('statut', '!=', 'terminé')
             ->with(['programme.gareDepart', 'programme.gareArrivee', 'vehicule'])
+            ->orderBy('updated_at', 'desc')
             ->get()
             ->map(function($v) {
                 return $this->formatVoyage($v);
@@ -168,7 +168,7 @@ class ChauffeurApiController extends Controller
         // Voyages à venir
         $upcomingVoyages = Voyage::where('personnel_id', $chauffeur->id)
             ->whereDate('date_voyage', '>', $today)
-            ->where('statut', '!=', 'terminé')
+            ->whereNotIn('statut', ['terminé', 'annulé'])
             ->with(['programme.gareDepart', 'programme.gareArrivee', 'vehicule'])
             ->orderBy('date_voyage', 'asc')
             ->limit(10)
@@ -202,20 +202,26 @@ class ChauffeurApiController extends Controller
             'id' => $voyage->id,
             'date_voyage' => $voyage->date_voyage,
             'statut' => $voyage->statut,
-            'occupancy' => $voyage->occupancy ?? 0,
+            'occupancy' => $voyage->occupancy,
+            'estimated_arrival_at' => $voyage->estimated_arrival_at,
+            'temps_restant' => $voyage->temps_restant,
             'programme' => $voyage->programme ? [
                 'id' => $voyage->programme->id,
                 'point_depart' => $voyage->programme->point_depart,
                 'point_arrive' => $voyage->programme->point_arrive,
                 'heure_depart' => $voyage->programme->heure_depart,
+                'heure_arrive' => $voyage->programme->heure_arrive,
                 'gare_depart' => optional($voyage->programme->gareDepart)->nom_gare ?? '',
                 'gare_arrivee' => optional($voyage->programme->gareArrivee)->nom_gare ?? '',
+                'montant_billet' => $voyage->programme->montant_billet,
+                'capacity' => $voyage->programme->capacity ?? ($voyage->vehicule->nombre_place ?? 50),
             ] : null,
             'vehicule' => $voyage->vehicule ? [
                 'id' => $voyage->vehicule->id,
                 'marque' => $voyage->vehicule->marque,
                 'modele' => $voyage->vehicule->modele,
                 'immatriculation' => $voyage->vehicule->immatriculation,
+                'nombre_place' => $voyage->vehicule->nombre_place,
             ] : null,
         ];
     }

@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class GarePersonnelController extends Controller
@@ -78,7 +79,7 @@ class GarePersonnelController extends Controller
                 'compagnie_id' => $gare->compagnie_id,
                 'gare_id' => $gare->id,
                 'password' => Hash::make(Str::random(12)),
-                'statut' => 'indisponible',
+                'statut' => 'disponible',
             ]);
 
             if ($validatedData['type_personnel'] === 'Chauffeur') {

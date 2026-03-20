@@ -112,8 +112,7 @@
                                                id="timer-{{ $voyage->id }}">
                                                 <i class="fas fa-clock fa-spin-slow text-blue-500"></i>
                                                 <span class="countdown-text">{{ $voyage->temps_restant ?: "Calcul de l'arrivée..." }}</span>
-                                            </p>
- </p>
+                                            </p> </p>
                                             <!-- GPS Status Indicator -->
                                             <div class="flex items-center gap-1 mt-1" id="gps-indicator-{{ $voyage->id }}" style="display: none;">
                                                 <span style="width:8px;height:8px;background:#10b981;border-radius:50%;display:inline-block;animation:gpsPulse 1.5s infinite;"></span>
@@ -435,7 +434,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-
     // Update every minute (more batteries friendly for drivers) but start immediately
     // Désactivation du countdown JS
     // updateTimers();
@@ -536,8 +534,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             textElement.innerHTML = "Vous arrivez dans <strong>" + data.temps_restant + "</strong>";
                         }
                     }
-                }
-            }
+                }            }
         })
         .catch(err => console.error('GPS send error:', err));
     }
