@@ -127,8 +127,10 @@ class AdminDashboard extends Controller
         
         // 10. Programmes actifs aujourd'hui
         $programmesAujourdhui = Programme::whereDate('date_depart', Carbon::today())->count();
+        $portefeuilleAdmin = Auth::guard('admin')->user()->portefeuille ?? 0;
 
         return view('admin.dashboard', compact(
+            'portefeuilleAdmin',
             'totalUsers',
             'totalCompagnies',
             'totalVehicules',

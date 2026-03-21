@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Compagnie;
 
 use App\Http\Controllers\Controller;
 use App\Models\Compagnie;
+use App\Models\Reservation;
 use App\Models\ResetCodePasswordCompagnie;
 use App\Notifications\SendEmailToCompagnieAfterRegistrationNotification;
 use Illuminate\Http\Request;
@@ -18,9 +19,15 @@ class CompagnieController extends Controller
     /**
      * Afficher la liste des compagnies
      */
-    public function index(Request $request)
+  public function index(Request $request)
     {
-        $query = Compagnie::query();
+        // On ajoute une sous-requête pour calculer la somme des réservations confirmées
+        $query = Compagnie::query()
+            ->addSelect(['total_revenu' => Reservation::selectRaw('COALESCE(SUM(montant), 0)')
+                ->join('programmes', 'programmes.id', '=', 'reservations.programme_id')
+                ->whereColumn('programmes.compagnie_id', 'compagnies.id')
+                ->where('reservations.statut', 'confirmee')
+            ]);
         
         // Recherche
         if ($request->has('search') && !empty($request->search)) {

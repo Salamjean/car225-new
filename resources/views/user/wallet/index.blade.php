@@ -50,7 +50,7 @@
                                     <span id="displayAmount" class="font-black">0 FCFA</span>
                                 </div>
                                 <div class="flex justify-between items-center text-sm mb-2 text-blue-600">
-                                    <span class="font-bold">Frais de service (4%) :</span>
+                                    <span class="font-bold">Frais de service (2%) :</span>
                                     <span id="displayCommission" class="font-black">+ 0 FCFA</span>
                                 </div>
                                 <div class="border-t border-green-100 pt-2 flex justify-between items-center">
@@ -261,7 +261,7 @@
     amountInput.addEventListener('input', function() {
         const amount = parseFloat(this.value);
         if (amount >= 100) {
-            const commission = Math.round(amount * 0.04);
+            const commission = Math.round(amount * 0.02);
             const total = amount + commission;
 
             displayAmount.innerText = amount.toLocaleString('fr-FR') + ' FCFA';

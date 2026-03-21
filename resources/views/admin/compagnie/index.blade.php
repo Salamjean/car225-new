@@ -63,6 +63,9 @@
                                     class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                     Localisation
                                 </th>
+                                <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    Revenus
+                                </th>
                                 <th
                                     class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                     Statut
@@ -116,7 +119,9 @@
                                         <div class="text-sm text-gray-500 truncate max-w-xs">{{ $compagnie->adresse }}
                                         </div>
                                     </td>
-
+                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                        <span class="font-bold text-green-600">{{ number_format($compagnie->total_revenu ?? 0, 0, ',', ' ') }} FCFA</span>
+                                    </td>
                                     <!-- Colonne Statut -->
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
                                         @if ($compagnie->statut === 'actif')
@@ -194,7 +199,7 @@
                             @empty
                                 <!-- État vide -->
                                 <tr>
-                                    <td colspan="5" class="px-6 py-12 text-center">
+                                 <td colspan="7" class="px-6 py-12 text-center">
                                         <div class="flex flex-col items-center justify-center">
                                             <svg class="w-16 h-16 text-gray-400 mb-4" fill="none"
                                                 stroke="currentColor" viewBox="0 0 24 24">
@@ -274,6 +279,7 @@
                             <div><strong class="text-gray-700">Contact:</strong> ${compagnie.contact}</div>
                             <div><strong class="text-gray-700">Préfixe:</strong> ${compagnie.prefix}</div>
                             <div><strong class="text-gray-700">Commune:</strong> ${compagnie.commune}</div>
+                            <div><strong class="text-gray-700">Revenus:</strong> <span class="text-green-600 font-bold">${new Intl.NumberFormat('fr-FR').format(compagnie.total_revenu || 0)} FCFA</span></div>
                             <div><strong class="text-gray-700">Adresse:</strong> ${compagnie.adresse}</div>
                             <div><strong class="text-gray-700">Statut:</strong> ${statusBadge}</div>
                             ${compagnie.username ? `<div><strong class="text-gray-700">Username:</strong> ${compagnie.username}</div>` : ''}

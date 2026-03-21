@@ -910,12 +910,12 @@ $dateAller = $request->date_voyage;
                 ], 422);
             }
         
-        // --- CALCUL COMMISSION (4% pour Mobile Money / Wave) ---
+        // --- CALCUL COMMISSION (2% pour Mobile Money / Wave) ---
         $commissionAmount = 0;
         $commissionRate = 0;
         
         if ($paymentMethod !== 'wallet') {
-            $commissionRate = 4.00;
+            $commissionRate = 2.00;
             $commissionAmount = round($montantTotal * ($commissionRate / 100));
             $montantTotal += $commissionAmount;
         }
