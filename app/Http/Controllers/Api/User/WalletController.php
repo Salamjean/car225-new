@@ -56,8 +56,8 @@ class WalletController extends Controller
         $amount = $request->amount;
         $paymentMethod = $request->input('payment_method', 'cinetpay');
         
-        // --- CALCUL COMMISSION (4% additionnel) ---
-        $commissionRate = 4.00;
+        // --- CALCUL COMMISSION (2% additionnel) ---
+        $commissionRate = 2.00;
         $commissionAmount = round($amount * ($commissionRate / 100));
         $totalToPay = $amount + $commissionAmount;
 

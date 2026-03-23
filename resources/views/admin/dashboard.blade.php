@@ -22,21 +22,15 @@
         <!-- Row 1: Main Stats -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <!-- Revenue Card -->
-            <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-6 shadow-xl text-white transform hover:-translate-y-1 transition-all">
+          <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-6 shadow-xl text-white transform hover:-translate-y-1 transition-all">
                 <div class="flex items-center justify-between mb-4">
                     <div class="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
                         <i class="fas fa-wallet text-2xl"></i>
                     </div>
-                    @if($revenueVariation != 0)
-                    <span class="px-2 py-1 bg-white/20 rounded-lg text-xs font-bold flex items-center gap-1">
-                        <i class="fas fa-arrow-{{ $revenueVariation > 0 ? 'up' : 'down' }}"></i>
-                        {{ abs($revenueVariation) }}%
-                    </span>
-                    @endif
                 </div>
-                <p class="text-sm font-bold text-white/80 uppercase tracking-wider">Revenus Totaux</p>
-                <h3 class="text-3xl font-black mt-2">{{ number_format($totalRevenue, 0, ',', ' ') }} <span class="text-lg">FCFA</span></h3>
-                <p class="mt-4 text-xs text-white/70 font-medium">Ce mois: {{ number_format($revenueThisMonth, 0, ',', ' ') }} FCFA</p>
+                <p class="text-sm font-bold text-white/80 uppercase tracking-wider">Mon Portefeuille</p>
+                <h3 class="text-3xl font-black mt-2">{{ number_format($portefeuilleAdmin, 0, ',', ' ') }} <span class="text-lg">FCFA</span></h3>
+                <p class="mt-4 text-xs text-white/70 font-medium">Gains sur les réservations</p>
             </div>
 
             <!-- Reservations Card -->

@@ -265,8 +265,8 @@ class WalletController extends Controller
         $user = Auth::user();
         $amount = $request->amount;
         
-        // --- CALCUL COMMISSION (4% additionnel) ---
-        $commissionRate = 4.00;
+        // --- CALCUL COMMISSION (2% additionnel) ---
+        $commissionRate = 2.00;
         $commissionAmount = round($amount * ($commissionRate / 100));
         $totalToPay = $amount + $commissionAmount;
 

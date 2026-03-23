@@ -68,20 +68,7 @@
                                             </div>
                                         </div>
                                         @if($voyage->statut === 'en_cours')
-                                            @php
-                                                $dateVoyage = \Carbon\Carbon::parse($voyage->date_voyage)->format('Y-m-d');
-                                                $arrivalDateTime = \Carbon\Carbon::parse($dateVoyage . ' ' . $voyage->programme->heure_arrive);
-                                                if (\Carbon\Carbon::parse($voyage->programme->heure_arrive)->lt(\Carbon\Carbon::parse($voyage->programme->heure_depart))) {
-                                                    $arrivalDateTime->addDay();
-                                                }
-                                            @endphp
-                                            <div class="mt-2 flex items-center gap-2 text-blue-600">
-                                                <i class="fas fa-hourglass-half text-[10px] animate-spin-slow"></i>
-                                                <span class="text-xs font-black tracking-tighter countdown-text" 
-                                                      data-arrival="{{ $arrivalDateTime->toIso8601String() }}">
-                                                    Temps restant: --:--:--
-                                                </span>
-                                            </div>
+
                                             <!-- GPS Status Indicator -->
                                             <div class="mt-1 flex items-center gap-1 hidden" id="gps-indicator-{{ $voyage->id }}">
                                                 <span style="width:7px;height:7px;background:#10b981;border-radius:50%;display:inline-block;animation:livePulse 1.5s infinite;"></span>
@@ -199,31 +186,7 @@
 @section('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    function updateTimers() {
-        const timers = document.querySelectorAll('[data-arrival]');
-        
-        timers.forEach(timer => {
-            const arrivalTime = new Date(timer.dataset.arrival).getTime();
-            const now = new Date().getTime();
-            const distance = arrivalTime - now;
-            
-            if (distance < 0) {
-                timer.innerHTML = "Arrivé à destination";
-                return;
-            }
-            
-            const hours = Math.floor(distance / (1000 * 60 * 60));
-            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-            
-            timer.innerHTML = `Temps restant: ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        });
-    }
 
-    if (document.querySelectorAll('[data-arrival]').length > 0) {
-        updateTimers();
-        setInterval(updateTimers, 1000);
-    }
 
     // ============================================
     // GPS Location Sharing for active voyages

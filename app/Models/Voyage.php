@@ -63,7 +63,16 @@ class Voyage extends Model
     public function getOccupancyAttribute()
     {
         $date = \Carbon\Carbon::parse($this->date_voyage)->format('Y-m-d');
-        return \App\Models\Reservation::where(function($q) use ($date) {
+        
+        // On compte les passagers liés DIRECTEMENT à ce voyage (scannés par ce chauffeur)
+        // OU ceux qui correspondent au programme et à la date
+        return \App\Models\Reservation::where(function($q) {
+            $q->where('voyage_id', $this->id)
+              ->where(function($sub) {
+                  $sub->where('statut_aller', 'terminee')
+                      ->orWhere('statut_retour', 'terminee');
+              });
+        })->orWhere(function($q) use ($date) {
             $q->where('programme_id', $this->programme_id)
               ->whereDate('date_voyage', $date)
               ->where('statut_aller', 'terminee');

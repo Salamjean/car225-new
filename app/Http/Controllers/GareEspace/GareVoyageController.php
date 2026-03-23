@@ -33,10 +33,16 @@ class GareVoyageController extends Controller
                       ->where('statut', 'terminé');
             });
 
-        // Hide past programs if today
+        // Hide past programs if today, UNLESS they have an active assignment
         if (Carbon::parse($date)->isToday()) {
             $currentTime = Carbon::now()->format('H:i:s');
-            $allProgrammes->whereTime('heure_depart', '>', $currentTime);
+            $allProgrammes->where(function($q) use ($currentTime, $date) {
+                $q->whereTime('heure_depart', '>', $currentTime)
+                  ->orWhereHas('voyages', function ($sub) use ($date) {
+                      $sub->whereDate('date_voyage', $date)
+                          ->whereIn('statut', ['en_attente', 'confirmé', 'en_cours', 'interrompu']);
+                  });
+            });
         }
 
         $allProgrammes = $allProgrammes->with(['gareDepart', 'gareArrivee', 'voyages' => function ($query) use ($date) {

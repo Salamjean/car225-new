@@ -103,7 +103,7 @@ class PersonnelController extends Controller
                 'compagnie_id' => Auth::guard('compagnie')->user()->id ?? null,
                 'gare_id' => $validatedData['gare_id'] ?? null,
                 'password' => Hash::make(Str::random(12)), // Mot de passe temporaire aléatoire
-                'statut' => 'indisponible', // Par défaut indisponible jusqu'à vérification OTP
+                'statut' => 'disponible', // Par défaut disponible
             ]);
 
             // Envoi de l'OTP si c'est un chauffeur
