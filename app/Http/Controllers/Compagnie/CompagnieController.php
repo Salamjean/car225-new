@@ -127,7 +127,8 @@ class CompagnieController extends Controller
      */
     public function show(Compagnie $compagnie)
     {
-        return view('admin.compagnie.show', compact('compagnie'));
+        $historique = $compagnie->historiqueTickets()->latest()->paginate(10);
+        return view('admin.compagnie.show', compact('compagnie', 'historique'));
     }
 
     /**

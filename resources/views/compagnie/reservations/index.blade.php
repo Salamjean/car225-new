@@ -11,10 +11,10 @@
         position: relative;
         min-height: 80vh;
         z-index: 1;
-        overflow: hidden;
         border-radius: 30px;
         padding: 30px;
         background: #F8F9FB;
+        box-shadow: inset 0 0 40px rgba(0,0,0,0.01);
     }
 
     /* Mesh Gradient Background Elements */
@@ -23,14 +23,15 @@
         filter: blur(100px);
         z-index: -1;
         border-radius: 50%;
-        opacity: 0.4;
+        opacity: 0.3;
     }
-    .shape-1 { width: 400px; height: 400px; background: rgba(255, 90, 31, 0.2); top: -100px; right: -100px; }
+    .shape-1 { width: 400px; height: 400px; background: rgba(255, 90, 31, 0.15); top: -100px; right: -100px; }
     .shape-2 { width: 300px; height: 300px; background: rgba(0, 26, 65, 0.1); bottom: -50px; left: -50px; }
 
     /* ── METRICS (Glass Bubbles) ── */
     .metric-grid {
-        display: flex;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
         gap: 20px;
         margin-bottom: 40px;
     }
@@ -41,7 +42,6 @@
         border: 1px solid rgba(255, 255, 255, 0.4);
         border-radius: 24px;
         padding: 24px;
-        flex: 1;
         display: flex;
         align-items: center;
         gap: 20px;
@@ -248,7 +248,7 @@
     <div class="bg-shape shape-2"></div>
 
     {{-- ── STATS ROW ── --}}
-    <div style="display:flex; justify-content: space-between; gap: 20px; margin-bottom: 20px;">
+    <div class="metric-grid">
         <div class="glass-metric stagger" style="animation-delay: 0.1s">
             <div class="metric-icon-box mi-orange">
                 <i class="fas fa-ticket-alt"></i>
@@ -318,7 +318,7 @@
             @php $delay = (0.4 + ($loop->index * 0.05)); @endphp
             <div class="glass-month-card stagger {{ $tab === 'terminees' ? 'past-card' : '' }}" 
                  style="animation-delay: {{ $delay }}s"
-                 onclick="startSequentialSelection('{{ $monthKey }}', '{{ \Carbon\Carbon::parse($monthKey . '-01')->translatedFormat('F Y') }}')">
+                 onclick="window.location.href = '{{ route('company.reservation.by_month', ['month' => $monthKey]) }}?tab={{ $tab }}'">
                 <div class="month-badge {{ $tab === 'terminees' ? 'past-badge' : 'pulse-badge' }}">{{ count($reservations) }}</div>
                 <div class="month-header {{ $tab === 'terminees' ? 'past-header' : '' }}">{{ \Carbon\Carbon::parse($monthKey . '-01')->translatedFormat('F') }}</div>
                 <div class="month-name">{{ \Carbon\Carbon::parse($monthKey . '-01')->translatedFormat('M') }}</div>
@@ -337,65 +337,6 @@
 </div>
 
 <script>
-const monthsData = @json($monthsData);
-
-async function startSequentialSelection(monthKey, monthLabel) {
-    const datesForMonth = monthsData[monthKey];
-    if (!datesForMonth) return;
-
-    let dateOptions = '<option value="full_month">📂 TOUTES LES RÉSERVATIONS DU MOIS</option>';
-    Object.keys(datesForMonth).sort().forEach(date => {
-        dateOptions += `<option value="${date}">📅 ${datesForMonth[date].formatted}</option>`;
-    });
-
-    const { value: selectedDate } = await Swal.fire({
-        title: 'Choisir une date',
-        customClass: { popup: 'swal2-glass' },
-        html: `
-            <p class="text-muted mb-3">Mois de <strong>${monthLabel}</strong></p>
-            <select id="swal-select-date" class="form-control" style="border-radius: 12px; height: 50px; font-weight: 600;">
-                ${dateOptions}
-            </select>
-        `,
-        showCancelButton: true,
-        confirmButtonText: 'Suivant <i class="fas fa-arrow-right ml-1"></i>',
-        cancelButtonText: 'Annuler',
-        preConfirm: () => document.getElementById('swal-select-date').value
-    });
-
-    if (selectedDate) {
-        if (selectedDate === 'full_month') {
-            window.location.href = `{{ route('company.reservation.by_month', ['month' => '__MONTH__']) }}`.replace('__MONTH__', monthKey);
-            return;
-        }
-
-        const dateInfo = datesForMonth[selectedDate];
-        let hourOptions = '<option value="all">🕒 Toutes les heures</option>';
-        dateInfo.hours.forEach(h => {
-            hourOptions += `<option value="${h}">⏰ ${h}</option>`;
-        });
-
-        const { value: selectedHour } = await Swal.fire({
-            title: 'Choisir l\'heure',
-            customClass: { popup: 'swal2-glass' },
-            html: `
-                <p class="text-muted mb-3">Le <strong>${dateInfo.formatted}</strong></p>
-                <select id="swal-select-hour" class="form-control" style="border-radius: 12px; height: 50px; font-weight: 600;">
-                    ${hourOptions}
-                </select>
-            `,
-            showCancelButton: true,
-            confirmButtonText: 'Voir les réservations',
-            cancelButtonText: 'Retour',
-            preConfirm: () => document.getElementById('swal-select-hour').value
-        });
-
-        if (selectedHour) {
-            let url = `{{ route('company.reservation.by_date', ['date' => '__DATE__']) }}`.replace('__DATE__', selectedDate);
-            if (selectedHour !== 'all') url += `?heure=${selectedHour}`;
-            window.location.href = url;
-        }
-    }
-}
+// Le script a été simplifié pour utiliser un redirect direct au lieu d'un popup séquentiel
 </script>
 @endsection

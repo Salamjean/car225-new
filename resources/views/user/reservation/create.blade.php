@@ -126,12 +126,24 @@
 
                 {{-- Search Form --}}
                 <form action="{{ route('reservation.create') }}" method="GET" id="search-form">
-                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-end">
+                    {{-- Type de voyage --}}
+                    <div class="flex gap-6 mb-4 px-2">
+                        <label class="flex items-center gap-2 cursor-pointer text-white font-semibold">
+                            <input type="radio" name="type_voyage" value="aller_simple" class="form-radio text-[#e94f1b] focus:ring-[#e94f1b]" {{ ($searchParams['type_voyage'] ?? 'aller_simple') === 'aller_simple' ? 'checked' : '' }} onchange="toggleDateRetour()">
+                            Aller simple
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer text-white font-semibold">
+                            <input type="radio" name="type_voyage" value="aller_retour" class="form-radio text-[#e94f1b] focus:ring-[#e94f1b]" {{ ($searchParams['type_voyage'] ?? '') === 'aller_retour' ? 'checked' : '' }} onchange="toggleDateRetour()">
+                            Aller-Retour
+                        </label>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-end" id="search-grid">
 
                         {{-- Départ --}}
-                        <div class="lg:col-span-3">
+                        <div class="lg:col-span-4 transition-all duration-300" id="div_depart">
                             <label class="block text-xs font-bold text-blue-200/80 uppercase tracking-widest mb-2">
-                                <i class="fas fa-map-marker-alt text-[#e94f1b] mr-1"></i> Départ
+                                <i class="fas fa-map-marker-alt text-[#e94f1b] mr-1"></i> De
                             </label>
                             <div class="relative">
                                 <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -140,12 +152,12 @@
                                 <input type="text" id="point_depart" name="point_depart"
                                     value="{{ $searchParams['point_depart'] ?? '' }}"
                                     class="glass-input w-full pl-11 pr-4 py-3.5 rounded-xl font-semibold text-sm"
-                                    placeholder="Ville ou gare de départ" required>
+                                    placeholder="Ville de départ" required>
                             </div>
                         </div>
 
                         {{-- Swap --}}
-                        <div class="lg:col-span-1 flex items-end justify-center pb-1">
+                        <div class="lg:col-span-1 flex items-end justify-center pb-1 transition-all duration-300" id="div_swap">
                             <button type="button" onclick="swapLocations()"
                                 class="swap-btn w-11 h-11 bg-[#e94f1b] text-white rounded-full shadow-lg shadow-orange-500/30 flex items-center justify-center"
                                 title="Inverser départ/arrivée">
@@ -154,9 +166,9 @@
                         </div>
 
                         {{-- Arrivée --}}
-                        <div class="lg:col-span-3">
+                        <div class="lg:col-span-4 transition-all duration-300" id="div_arrive">
                             <label class="block text-xs font-bold text-blue-200/80 uppercase tracking-widest mb-2">
-                                <i class="fas fa-flag text-emerald-400 mr-1"></i> Arrivée
+                                <i class="fas fa-flag text-emerald-400 mr-1"></i> À
                             </label>
                             <div class="relative">
                                 <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -165,40 +177,100 @@
                                 <input type="text" id="point_arrive" name="point_arrive"
                                     value="{{ $searchParams['point_arrive'] ?? '' }}"
                                     class="glass-input w-full pl-11 pr-4 py-3.5 rounded-xl font-semibold text-sm"
-                                    placeholder="Ville ou gare d'arrivée" required>
+                                    placeholder="Ville d'arrivée" required>
                             </div>
                         </div>
 
-                        {{-- Date --}}
-                        <div class="lg:col-span-2">
-                            <label class="block text-xs font-bold text-blue-200/80 uppercase tracking-widest mb-2">
-                                <i class="fas fa-calendar-alt text-blue-400 mr-1"></i> Date
+                        {{-- Date Aller --}}
+                        <div class="lg:col-span-2 transition-all duration-300" id="div_date_depart">
+                            <label class="block text-xs font-bold text-blue-200/80 uppercase tracking-widest mb-2 truncate">
+                                <i class="fas fa-calendar-alt text-blue-400 mr-1"></i> Date aller
                             </label>
                             <div class="relative">
-                                <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <i class="fas fa-calendar-alt text-blue-400/60"></i>
+                                <span class="absolute inset-y-0 left-0 pl-1 flex items-center pointer-events-none">
+                                    <i class="fas fa-calendar-alt text-blue-400/60 text-xs"></i>
                                 </span>
                                 <input type="date" id="date_depart" name="date_depart"
                                     value="{{ $searchParams['date_depart'] ?? date('Y-m-d', strtotime('+1 day')) }}"
-                                    class="glass-input w-full pl-11 pr-4 py-3.5 rounded-xl font-semibold text-sm"
+                                    class="glass-input w-full pl-7 pr-1 py-3.5 rounded-xl font-semibold text-xs sm:text-sm"
                                     min="{{ date('Y-m-d', strtotime('+1 day')) }}" required>
                             </div>
                         </div>
 
+                        {{-- Date Retour --}}
+                        <div class="lg:col-span-2 hidden transition-all duration-300" id="div_date_retour">
+                            <label class="block text-xs font-bold text-blue-200/80 uppercase tracking-widest mb-2 truncate">
+                                <i class="fas fa-calendar-check text-purple-400 mr-1"></i> Date retour
+                            </label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-1 flex items-center pointer-events-none">
+                                    <i class="fas fa-calendar-check text-purple-400/60 text-xs"></i>
+                                </span>
+                                <input type="date" id="date_retour" name="date_retour"
+                                    value="{{ $searchParams['date_retour'] ?? '' }}"
+                                    class="glass-input w-full pl-7 pr-1 py-3.5 rounded-xl font-semibold text-xs sm:text-sm"
+                                    min="{{ $searchParams['date_depart'] ?? date('Y-m-d', strtotime('+1 day')) }}">
+                            </div>
+                        </div>
+
                         {{-- Rechercher et Réinitialiser --}}
-                        <div class="lg:col-span-3 flex gap-2">
-                            <button type="submit"
-                                class="flex-1 bg-[#e94f1b] hover:bg-[#d4430f] text-white px-3 py-3.5 rounded-xl font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300 flex items-center justify-center gap-2 active:scale-[0.97]">
+                        <div class="lg:col-span-1 transition-all duration-300 flex flex-col sm:flex-row gap-2" id="div_submit">
+                            <button type="submit" title="Rechercher"
+                                class="flex-1 bg-[#e94f1b] hover:bg-[#d4430f] text-white p-3.5 rounded-xl font-black text-sm uppercase shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300 flex items-center justify-center active:scale-[0.97]">
                                 <i class="fas fa-search"></i>
-                                <span>Rechercher</span>
                             </button>
                             <a href="{{ route('reservation.create') }}" title="Réinitialiser"
-                                class="w-[50px] sm:w-[56px] flex-shrink-0 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl shadow-lg shadow-white/5 backdrop-blur-sm transition-all duration-300 flex items-center justify-center active:scale-[0.97]">
+                                class="w-full sm:w-11 flex-shrink-0 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl shadow-lg shadow-white/5 backdrop-blur-sm transition-all duration-300 flex items-center justify-center active:scale-[0.97] p-3.5 sm:p-0">
                                 <i class="fas fa-undo"></i>
                             </a>
                         </div>
                     </div>
                 </form>
+
+                <script>
+                    function toggleDateRetour() {
+                        const isAllerRetour = document.querySelector('input[name="type_voyage"]:checked').value === 'aller_retour';
+                        const divDateRetour = document.getElementById('div_date_retour');
+                        const inputDateRetour = document.getElementById('date_retour');
+                        const divDepart = document.getElementById('div_depart');
+                        const divArrive = document.getElementById('div_arrive');
+                        const divDateDepart = document.getElementById('div_date_depart');
+                        
+                        if (isAllerRetour) {
+                            divDateRetour.classList.remove('hidden');
+                            inputDateRetour.setAttribute('required', 'required');
+                            
+                            // 3 + 1 + 3 + 2 + 2 + 1 = 12
+                            divDepart.className = "lg:col-span-3 transition-all duration-300";
+                            divArrive.className = "lg:col-span-3 transition-all duration-300";
+                            divDateDepart.className = "lg:col-span-2 transition-all duration-300";
+                        } else {
+                            divDateRetour.classList.add('hidden');
+                            inputDateRetour.removeAttribute('required');
+                            inputDateRetour.value = '';
+                            
+                            // 4 + 1 + 4 + 2 + 1 = 11? No, 4+1+4+2+1 = 12.
+                            divDepart.className = "lg:col-span-4 transition-all duration-300";
+                            divArrive.className = "lg:col-span-4 transition-all duration-300";
+                            divDateDepart.className = "lg:col-span-2 transition-all duration-300";
+                        }
+                    }
+                    
+                    document.addEventListener('DOMContentLoaded', function() {
+                        toggleDateRetour();
+                        
+                        const dateDepartInput = document.getElementById('date_depart');
+                        const dateRetourInput = document.getElementById('date_retour');
+                        if (dateDepartInput && dateRetourInput) {
+                            dateDepartInput.addEventListener('change', function() {
+                                dateRetourInput.min = this.value;
+                                if (dateRetourInput.value && dateRetourInput.value < this.value) {
+                                    dateRetourInput.value = this.value;
+                                }
+                            });
+                        }
+                    });
+                </script>
             </div>
         </div>
 
@@ -254,6 +326,12 @@
                                         <span class="text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg">
                                             <i class="fas fa-calendar-alt mr-1"></i>{{ date('d/m/Y', strtotime($searchParams['date_depart'])) }}
                                         </span>
+                                        @if(isset($searchParams['type_voyage']) && $searchParams['type_voyage'] === 'aller_retour' && isset($searchParams['date_retour']) && $searchParams['date_retour'])
+                                            <i class="fas fa-arrows-alt-h text-purple-400 text-[10px]"></i>
+                                            <span class="text-xs font-bold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-lg">
+                                                <i class="fas fa-calendar-check mr-1"></i>{{ date('d/m/Y', strtotime($searchParams['date_retour'])) }}
+                                            </span>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -1166,8 +1244,20 @@ var currentRetourProgramId = null;
                 const routeData = JSON.parse(routeDataJson);
                 console.log('Données route:', routeData);
                 
-                // Toujours demander le type de voyage en premier
-                showRouteTripTypeModal(routeData, dateDepartInitial);
+                const searchTypeVoyage = '{{ $searchParams["type_voyage"] ?? "aller_simple" }}';
+                const searchDateRetour = '{{ $searchParams["date_retour"] ?? "" }}';
+
+                if (searchTypeVoyage === 'aller_retour' && routeData.has_retour && searchDateRetour) {
+                    window.userWantsAllerRetour = true;
+                    window.userChoseAllerRetour = true;
+                    window.selectedReturnDate = searchDateRetour;
+                    window.currentRouteData = routeData;
+                    window.currentDateDepart = dateDepartInitial;
+                    showRouteDepartureTimes(routeData, dateDepartInitial, true); 
+                } else {
+                    // Toujours demander le type de voyage en premier si on n'a pas sélectionné Aller-Retour avec Date en amont
+                    showRouteTripTypeModal(routeData, dateDepartInitial);
+                }
             } catch (e) {
                 console.error('Erreur JS lors du clic:', e);
                 Swal.fire({
@@ -1355,7 +1445,12 @@ var currentRetourProgramId = null;
             Swal.close();
             
             if (isAllerRetour) {
-                showReturnDateSelection(routeData, dateDepart);
+                // Si une date de retour a déjà été sélectionnée lors de la recherche, on l'utilise directement
+                if (window.selectedReturnDate) {
+                    loadReturnSchedulesForDate(routeData, window.selectedReturnDate);
+                } else {
+                    showReturnDateSelection(routeData, dateDepart);
+                }
             } else {
                 startReservationFromRoute(progId, dateDepart, false);
             }
@@ -4314,11 +4409,11 @@ function proceedToPassengerInfoFromRetour() {
                 title: 'Mode de paiement',
                 html: `
                     <div class="flex flex-col gap-4 text-center">
-                        <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm">
                             <p class="text-gray-500 text-[10px] uppercase tracking-wider font-extrabold mb-3">Résumé de la commande</p>
                             
                             <div class="flex justify-between items-center mb-1">
-                                <span class="text-gray-600 text-xs">Total Réservation</span>
+                                <span class="text-gray-600 text-xs font-semibold">Total Réservation</span>
                                 <span class="font-bold text-gray-800">${new Intl.NumberFormat('fr-FR').format(montantTotal)} FCFA</span>
                             </div>
                             
@@ -4331,17 +4426,19 @@ function proceedToPassengerInfoFromRetour() {
                             <div class="text-[10px] text-gray-500 text-right mt-1">Votre solde: <span class="font-bold text-gray-700">${new Intl.NumberFormat('fr-FR').format(userSolde)} FCFA</span></div>
                         </div>
 
-                        <div class="bg-blue-50 p-3 rounded-xl border border-blue-100 text-left relative overflow-hidden">
-                            <div class="absolute top-0 right-0 bg-blue-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-bl-lg">Frais +2%</div>
-                            <p class="text-blue-800 text-xs font-bold mb-1 flex items-center gap-1">
-                                <i class="fas fa-mobile-alt"></i> Mobile Money (Wave)
+                        <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 text-left relative overflow-hidden">
+                            <p class="text-blue-800 text-xs font-bold mb-3 flex items-center gap-1 uppercase tracking-tight">
+                                <i class="fas fa-hand-holding-usd"></i> Frais de service
                             </p>
-                            <p class="text-blue-600 text-[10px] leading-tight mb-2">
-                                Un supplément de 2% est appliqué pour les frais de service admin.
-                            </p>
-                            <div class="flex justify-between items-center pt-1 border-t border-blue-200/50">
-                                <span class="text-gray-700 text-xs font-bold">Total à payer :</span>
-                                <span class="text-lg font-black text-blue-700">${new Intl.NumberFormat('fr-FR').format(totalWithCommission)} FCFA</span>
+                            
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="text-blue-600 text-[11px] font-medium">Frais de service</span>
+                                <span class="text-blue-800 font-bold text-xs">${new Intl.NumberFormat('fr-FR').format(commission)} FCFA</span>
+                            </div>
+
+                            <div class="flex justify-between items-center pt-2 border-t border-blue-200/50">
+                                <span class="text-gray-700 text-sm font-black uppercase">Total à payer :</span>
+                                <span class="text-xl font-black text-blue-700">${new Intl.NumberFormat('fr-FR').format(totalWithCommission)} FCFA</span>
                             </div>
                         </div>
                     </div>
@@ -4350,7 +4447,7 @@ function proceedToPassengerInfoFromRetour() {
                 showCancelButton: true,
                 showDenyButton: true,
                 confirmButtonText: `<i class="fas fa-wallet mr-2"></i>Payer via Mon CarPay`,
-                denyButtonText: `<i class="fas fa-mobile-alt mr-2"></i>Payer par Wave (+2%)`,
+                denyButtonText: `<i class="fas fa-mobile-alt mr-2"></i>Payer par Wave`,
                 confirmButtonColor: '#e94f1b',
                 denyButtonColor: '#3b82f6',
                 cancelButtonText: 'Annuler',

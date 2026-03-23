@@ -79,9 +79,8 @@
                         </div>
                     </div>
                     @endif
-                    
-                    <!-- Stats Grid -->
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                             <!-- Stats Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <!-- Total Reservations Card -->
                         <div class="bg-gradient-to-br from-white via-[#fcfcfd] to-[#f4f5f7] rounded-[32px] p-7 shadow-[inset_0_1px_1px_rgba(255,255,255,1),_0_10px_30px_rgba(0,0,0,0.03)] border border-gray-100 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,1),_0_15px_40px_rgba(0,0,0,0.06)] transition-all duration-300 relative overflow-hidden group">
                             <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/80 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
@@ -112,22 +111,6 @@
                                
                             </div>
                             <p class="mt-4 text-[11px] font-bold text-gray-400 uppercase">Prochains départs gérés</p>
-                        </div>
-
-                        <!-- Total Spent Card -->
-                        <div class="bg-gradient-to-br from-white via-[#fcfcfd] to-[#f4f5f7] rounded-[32px] p-7 shadow-[inset_0_1px_1px_rgba(255,255,255,1),_0_10px_30px_rgba(0,0,0,0.03)] border border-gray-100 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,1),_0_15px_40px_rgba(0,0,0,0.06)] transition-all duration-300 relative overflow-hidden group">
-                            <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/80 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
-                            <div class="flex items-center gap-3 mb-6 relative z-10">
-                                <div class="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
-                                    <i class="fas fa-chart-line text-sm"></i>
-                                </div>
-                                <span class="text-xs font-bold uppercase tracking-wider text-gray-400">Dépenses Totales</span>
-                            </div>
-                            <div class="flex items-baseline gap-2">
-                                <h3 class="text-2xl font-black text-gray-900">{{ number_format($totalSpent, 0, ',', ' ') }}</h3>
-                                <span class="text-[10px] font-bold text-blue-600 uppercase">CFA</span>
-                            </div>
-                            <p class="mt-4 text-[11px] font-bold text-gray-400 uppercase">Total cumulé</p>
                         </div>
                     </div>
 

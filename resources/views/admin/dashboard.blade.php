@@ -133,13 +133,16 @@
             <!-- Revenue Chart -->
             <!-- Revenue Tickets Card (New) -->
             @if(\App\Models\Setting::isTicketSystemEnabled())
-            <div class="lg:col-span-2 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl shadow-xl overflow-hidden relative mb-8">
-                <div class="absolute right-0 top-0 h-full w-1/3 bg-white/10 transform skew-x-12"></div>
-                <div class="absolute right-10 top-10 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
+            <a href="{{ route('admin.revenus.tickets') }}" class="lg:col-span-2 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl shadow-xl overflow-hidden relative mb-8 block transition-all hover:scale-[1.01] hover:shadow-blue-200/50 group z-50">
+                <div class="absolute right-0 top-0 h-full w-1/3 bg-white/10 transform skew-x-12 group-hover:skew-x-6 transition-transform pointer-events-none"></div>
+                <div class="absolute right-10 top-10 w-24 h-24 bg-white/10 rounded-full blur-xl animate-pulse pointer-events-none"></div>
                 
                 <div class="px-8 py-8 relative z-10 flex items-center justify-between">
                     <div>
-                         <p class="text-blue-100 font-medium text-sm uppercase tracking-widest mb-1">Revenus Tickets (Rechargements)</p>
+                         <p class="text-blue-100 font-medium text-sm uppercase tracking-widest mb-1 flex items-center gap-2">
+                             Revenus Tickets (Rechargements)
+                             <i class="fas fa-external-link-alt text-xs opacity-50 group-hover:opacity-100 transition-opacity"></i>
+                         </p>
                          <h2 class="text-4xl font-black text-white tracking-tight mb-2">
                             {{ number_format($totalTicketRevenue, 0, ',', ' ') }} <span class="text-2xl text-blue-200">FCFA</span>
                          </h2>
@@ -148,11 +151,11 @@
                             <span>Ce mois: {{ number_format($ticketRevenueMonth, 0, ',', ' ') }} FCFA</span>
                          </div>
                     </div>
-                    <div class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center text-white text-3xl shadow-lg backdrop-blur-sm">
+                    <div class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center text-white text-3xl shadow-lg backdrop-blur-sm group-hover:rotate-12 transition-transform">
                         <i class="fas fa-wallet"></i>
                     </div>
                 </div>
-            </div>
+            </a>
             @endif
 
             <div class="lg:col-span-2 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">

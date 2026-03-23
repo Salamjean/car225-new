@@ -7,7 +7,7 @@
     <div class="mx-auto" style="width: 90%">
         <div class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-                <h2 class="text-3xl font-bold text-gray-900 mb-2">Itinéraires</h2>
+                <h2 class="text-3xl font-bold text-gray-900 mb-2">Itinéraires ({{ $itineraires->total() }})</h2>
                 <p class="text-gray-500 text-lg">Liste des itinéraires de votre compagnie</p>
             </div>
             <a href="{{ route('gare-espace.itineraire.create') }}" 
@@ -32,32 +32,6 @@
                     Rechercher
                 </button>
             </form>
-        </div>
-
-        <!-- Stats -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-100">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm text-gray-500 font-medium uppercase">Total Itinéraires</p>
-                        <p class="text-3xl font-bold text-gray-900 mt-1">{{ $itineraires->total() }}</p>
-                    </div>
-                    <div class="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center">
-                        <i class="fas fa-route text-blue-600 text-2xl"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-100">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm text-gray-500 font-medium uppercase">Page actuelle</p>
-                        <p class="text-3xl font-bold text-gray-900 mt-1">{{ $itineraires->currentPage() }} / {{ $itineraires->lastPage() }}</p>
-                    </div>
-                    <div class="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center">
-                        <i class="fas fa-file-alt text-green-600 text-2xl"></i>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- Itinéraires List -->

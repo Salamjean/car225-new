@@ -1846,7 +1846,8 @@ class ReservationApiController extends Controller
                     ])
                 ]);
 
-                // DÉDUCTION SOLDE COMPAGNIE (Wallet = immédiat)
+                // Déduction du solde de la compagnie (le montant sans la commission admin)
+                // Pour le wallet API, $montantTotal n'inclut pas de commission
                 $programme->compagnie->deductTickets($montantTotal, "Réservation Wallet API #{$transactionId}");
 
                 // Créer le paiement (déjà confirmé pour wallet)
@@ -1970,9 +1971,9 @@ class ReservationApiController extends Controller
 
                 DB::commit();
 
-                // Déduction des tickets de la compagnie
-                $ticketsToDeduct = $request->nombre_places * ($isAllerRetour ? 2 : 1);
-                $programme->compagnie->deductTickets($ticketsToDeduct, "Réservation Wallet #{$transactionId}");
+                // Déduction des tickets de la compagnie (montant financier, pas quantité)
+                $amountToDeduct = collect($createdReservations)->sum('montant');
+                $programme->compagnie->deductTickets($amountToDeduct, "Réservation Wallet #{$transactionId}");
 
                 // Mise à jour statut programme
                 $this->updateProgramStatus($programme, $dateVoyage);
@@ -2507,6 +2508,15 @@ class ReservationApiController extends Controller
                     'payment_date' => now()
                 ]);
 
+                // --- AJOUT COMMISSION DANS LE PORTEFEUILLE ADMIN ---
+                if ($paiement->commission_amount > 0) {
+                    $admin = \App\Models\Admin::first();
+                    if ($admin) {
+                        $admin->increment('portefeuille', $paiement->commission_amount);
+                        Log::info("Commission de {$paiement->commission_amount} FCFA ajoutée au portefeuille admin via API mobile notify reservation.");
+                    }
+                }
+
                 // Récupérer toutes les réservations liées
                 $reservations = Reservation::where('payment_transaction_id', $transactionId)->get();
 
@@ -2588,17 +2598,11 @@ class ReservationApiController extends Controller
                     $firstReservation->load('programme.compagnie');
                     
                     if ($firstReservation->programme && $firstReservation->programme->compagnie) {
-                        // Compter le nombre total de réservations (aller-retour = 2 tickets par réservation originale)
-                        $ticketsToDeduct = 0;
-                        foreach ($reservations as $res) {
-                            // Chaque réservation = 1 ticket (les retours sont des réservations séparées)
-                            $ticketsToDeduct += 1;
-                        }
+                        Log::info("API CinetPay: Déduction de tickets pour compagnie {$firstReservation->programme->compagnie->name}");
                         
-                        Log::info("API CinetPay: Déduction de {$ticketsToDeduct} tickets pour compagnie {$firstReservation->programme->compagnie->name}");
-                        
+                        $amountToDeduct = $reservations->sum('montant');
                         $firstReservation->programme->compagnie->deductTickets(
-                            $ticketsToDeduct, 
+                            $amountToDeduct, 
                             "Réservation CinetPay #{$transactionId}"
                         );
                     } else {
@@ -2806,6 +2810,15 @@ class ReservationApiController extends Controller
                     'payment_date' => now()
                 ]);
 
+                // --- AJOUT COMMISSION DANS LE PORTEFEUILLE ADMIN ---
+                if ($paiement->commission_amount > 0) {
+                    $admin = \App\Models\Admin::first();
+                    if ($admin) {
+                        $admin->increment('portefeuille', $paiement->commission_amount);
+                        Log::info("Commission de {$paiement->commission_amount} FCFA ajoutée au portefeuille admin via API mobile verify reservation.");
+                    }
+                }
+
                 // Récupérer les réservations
                 $reservations = Reservation::where('payment_transaction_id', $transactionId)->get();
                 $confirmedReservations = [];
@@ -2888,9 +2901,9 @@ class ReservationApiController extends Controller
                     // Décrémentation des tickets
                     $firstReservation->load('programme.compagnie');
                     if ($firstReservation->programme && $firstReservation->programme->compagnie) {
-                        $ticketsToDeduct = $reservations->count();
-                        Log::info("Déduction de {$ticketsToDeduct} tickets pour compagnie {$firstReservation->programme->compagnie->name}");
-                        $firstReservation->programme->compagnie->deductTickets($ticketsToDeduct, "Réservation CinetPay #{$transactionId}");
+                        $amountToDeduct = $reservations->sum('montant');
+                        Log::info("Déduction de {$amountToDeduct} FCFA (tickets) pour compagnie {$firstReservation->programme->compagnie->name}");
+                        $firstReservation->programme->compagnie->deductTickets($amountToDeduct, "Réservation CinetPay #{$transactionId}");
                     }
                 }
 

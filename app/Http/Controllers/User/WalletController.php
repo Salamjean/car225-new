@@ -540,6 +540,15 @@ class WalletController extends Controller
                 $user = $transaction->user;
                 $user->solde += $transaction->amount;
                 $user->save();
+
+                // --- CRÉDITER LE PORTEFEUILLE ADMIN ---
+                if ($transaction->commission_amount > 0) {
+                    $admin = \App\Models\Admin::first();
+                    if ($admin) {
+                        $admin->increment('portefeuille', $transaction->commission_amount);
+                        Log::info("Commission de {$transaction->commission_amount} ajoutée au portefeuille admin via rechargement wallet (verify).");
+                    }
+                }
                 
                 DB::commit();
 
@@ -637,6 +646,16 @@ class WalletController extends Controller
                     if ($user) {
                         $user->solde += $transaction->amount;
                         $user->save();
+
+                        // --- CRÉDITER LE PORTEFEUILLE ADMIN ---
+                        if ($transaction->commission_amount > 0) {
+                            $admin = \App\Models\Admin::first();
+                            if ($admin) {
+                                $admin->increment('portefeuille', $transaction->commission_amount);
+                                Log::info("Commission de {$transaction->commission_amount} ajoutée au portefeuille admin via rechargement wallet (notify).");
+                            }
+                        }
+
                         Log::info("Wallet user {$user->id} credited via notify. Amount: {$transaction->amount}. New balance: {$user->solde}");
                     } else {
                         Log::error("User not found for transaction {$transaction->id}");
@@ -683,6 +702,15 @@ class WalletController extends Controller
                     'payment_details' => $paymentStatus['data']
                 ]);
 
+                // --- AJOUT COMMISSION DANS LE PORTEFEUILLE ADMIN ---
+                if ($paiement->commission_amount > 0) {
+                    $admin = \App\Models\Admin::first();
+                    if ($admin) {
+                        $admin->increment('portefeuille', $paiement->commission_amount);
+                        Log::info("Commission de {$paiement->commission_amount} FCFA ajoutée au portefeuille admin via notify reservation.");
+                    }
+                }
+
                 $reservations = \App\Models\Reservation::where('paiement_id', $paiement->id)->get();
                 
                 // Instancier ReservationController pour utiliser ses méthodes helpers (QR, Email)
@@ -695,6 +723,12 @@ class WalletController extends Controller
                         'statut_aller' => 'confirmee',
                         'statut_retour' => ($res->is_aller_retour) ? 'confirmee' : $res->statut_retour
                     ]);
+
+                    // DÉDUCTION TICKETS COMPAGNIE (Nouvelle logique ajoutée)
+                    if ($res->programme && $res->programme->compagnie) {
+                        // On déduit SEULEMENT le montant de la réservation (sans frais additionnels si présents au niveau paiement)
+                        $res->programme->compagnie->deductTickets($res->montant, "Réservation #{$res->reference} (CinetPay)");
+                    }
 
                     // Générer QR Code et sauvegarder
                     try {

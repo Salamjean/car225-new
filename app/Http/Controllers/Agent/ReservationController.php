@@ -223,8 +223,8 @@ class ReservationController extends Controller
             'programme_id' => 'nullable|integer', // L'ID du programme sélectionné dans le modal
         ]);
 
-        // On charge la réservation avec son programme ALLER par défaut
-        $reservation = Reservation::with(['programme.gareDepart', 'programme.gareArrivee', 'user'])
+        // On charge la réservation avec son programme et les vendeurs éventuels
+        $reservation = Reservation::with(['programme.gareDepart', 'programme.gareArrivee', 'user', 'hotesse', 'caisse'])
             ->where('reference', $request->reference)
             ->first();
 
@@ -322,7 +322,12 @@ class ReservationController extends Controller
                 'montant' => number_format($reservation->montant ?? 0, 0, ',', ' ') . ' FCFA',
                 'is_aller_retour' => $reservation->is_aller_retour,
                 'type_scan' => strtoupper($targetScan),
-                'statut' => $statutActuel,
+                'statut' => $statutActuel ?? $reservation->statut, // Fallback vers le statut global
+                // Infos vendeurs pour le tracking demandé (hotesse_id, caisse_id)
+                'vendeur' => $reservation->hotesse ? "Hotesse: " . $reservation->hotesse->nom_complet : ($reservation->caisse ? "Caisse: " . $reservation->caisse->nom : "En ligne"),
+                'caisse_id' => $reservation->caisse_id,
+                'hotesse_id' => $reservation->hotesse_id,
+                'statut_badge' => $reservation->statut === 'confirmee' ? 'CONFIRMÉ' : $reservation->statut
             ]
         ]);
     }

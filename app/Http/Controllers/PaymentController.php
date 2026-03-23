@@ -125,6 +125,16 @@ class PaymentController extends Controller
                 if ($user) {
                     $user->solde += $transaction->amount;
                     $user->save();
+
+                    // --- AJOUT COMMISSION DANS LE PORTEFEUILLE ADMIN ---
+                    if ($transaction->commission_amount > 0) {
+                        $admin = \App\Models\Admin::first();
+                        if ($admin) {
+                            $admin->increment('portefeuille', $transaction->commission_amount);
+                            Log::info("Commission de {$transaction->commission_amount} FCFA ajoutée au portefeuille admin via Wave recharge.");
+                        }
+                    }
+
                     Log::info("Wave Wallet: Compte rechargé via Central Webhook. User: {$user->id}, Montant: {$transaction->amount}");
                 }
                 \Illuminate\Support\Facades\DB::commit();

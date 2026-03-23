@@ -985,19 +985,30 @@
 
                         <div class="grid grid-cols-2 gap-6 mb-8">
                             <div>
-                                <div class="info-label mb-1">Référence</div>
-                                <div class="font-mono font-bold text-slate-900">${res.reference}</div>
+                                <div class="info-label mb-1">Passager</div>
+                                <div class="font-bold text-slate-900">${res.passager_nom_complet}</div>
+                                <div class="text-xs text-slate-400 mt-1">${res.passager_telephone || 'Pas de numéro'}</div>
                             </div>
                             <div class="text-right">
-                                <div class="info-label mb-1">Type de billet</div>
-                                <div class="${bgClass} text-white text-[10px] font-black uppercase px-3 py-1 rounded-full inline-block tracking-wider">
-                                    ${type}
-                                </div>
+                                <div class="info-label mb-1">Vendeur</div>
+                                <div class="font-bold text-orange-600">${res.vendeur}</div>
+                                <div class="text-[10px] font-black uppercase text-slate-400 mt-1 tracking-wider">Provenance</div>
                             </div>
                         </div>
 
                         <div class="space-y-4">
                             <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                <div>
+                                    <div class="text-[10px] uppercase font-bold text-slate-400">Référence du billet</div>
+                                    <div class="font-mono text-xs font-black text-slate-900 mt-0.5">${res.reference}</div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="bg-slate-200 text-slate-700 text-[10px] font-black uppercase px-2 py-0.5 rounded-full">
+                                        SIEGE ${res.seat_number}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
                                 <div class="flex items-center gap-3">
                                     <div class="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600">
                                         <i class="material-icons text-base">phone</i>

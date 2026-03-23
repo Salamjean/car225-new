@@ -166,7 +166,7 @@
                                         <div id="uploadPlaceholder">
                                             <i class="fas fa-camera fa-2x text-muted opacity-50 d-block mb-2"></i>
                                             <span class="small text-muted">Appuyez pour prendre une photo</span>
-                                            <div class="text-muted" style="font-size: 0.65rem;">Obligatoire en cas d'accident</div>
+                                            <div class="text-muted" style="font-size: 0.65rem;">Optionnelle</div>
                                         </div>
                                         <div id="uploadPreview" class="d-none">
                                             <i class="fas fa-check-circle text-success fa-2x mb-1"></i>

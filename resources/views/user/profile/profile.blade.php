@@ -16,7 +16,7 @@
                 <div class="bg-white rounded-3xl shadow-xl p-8">
                     <div class="text-center">
                         <div class="relative w-40 h-40 mx-auto mb-4 group cursor-pointer" onclick="document.getElementById('photoInput').click()">
-                            <img src="{{ $user->photo_profile_path ? asset('storage/' . $user->photo_profile_path) : asset('assets/images/default-avatar.png') }}" 
+                            <img src="{{ $user->photo_profile_path ? (str_starts_with($user->photo_profile_path, 'http') ? $user->photo_profile_path : asset('storage/' . $user->photo_profile_path)) : asset('assets/images/default-avatar.png') }}" 
                                  class="w-full h-full rounded-full object-cover border-4 border-[#e94e1a] transition-all duration-300 group-hover:opacity-75" 
                                  id="profilePhotoPreview"
                                  alt="Photo de profil">
@@ -160,6 +160,7 @@
                     </form>
                 </div>
 
+                @if(!$user->google_id)
                 <!-- Changer le mot de passe -->
                 <div class="bg-white rounded-3xl shadow-xl p-8">
                     <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center">
@@ -203,6 +204,7 @@
                         </div>
                     </form>
                 </div>
+                @endif
             </div>
         </div>
     </div>
@@ -225,6 +227,35 @@
             input.next('.invalid-feedback').text(errors[field][0]);
         }
     }
+
+    // Gérer le changement du lien de parenté "Autre"
+    $('#lien_parente_urgence').on('change', async function() {
+        if ($(this).val() === 'Autre') {
+            const { value: customRelation } = await Swal.fire({
+                title: 'Précisez le lien de parenté',
+                input: 'text',
+                inputPlaceholder: 'Entrez le lien de parenté',
+                showCancelButton: true,
+                confirmButtonText: 'Valider',
+                cancelButtonText: 'Annuler',
+                confirmButtonColor: '#e94e1a',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'Ce champ est requis !'
+                    }
+                }
+            });
+
+            if (customRelation) {
+                // Ajouter la nouvelle option et la sélectionner
+                const newOption = new Option(customRelation, customRelation, true, true);
+                $(this).append(newOption).trigger('change');
+            } else {
+                // Si annulé, on remet à vide
+                $(this).val('');
+            }
+        }
+    });
 
     // Mise à jour du profil
     $('#profileForm').on('submit', async function(e) {
@@ -278,53 +309,64 @@
 
             Swal.close();
 
-            if (checkRes.type === 'password') {
-                const { value: password } = await Swal.fire({
-                    title: 'Confirmer la modification',
-                    text: 'Veuillez entrer votre mot de passe actuel pour continuer.',
-                    input: 'password',
-                    inputPlaceholder: 'Votre mot de passe',
-                    showCancelButton: true,
-                    confirmButtonText: 'Confirmer',
-                    cancelButtonText: 'Annuler',
-                    confirmButtonColor: '#e94e1a',
-                    inputAttributes: {
-                        autocapitalize: 'off',
-                        autocorrect: 'off'
-                    }
-                });
+            promptForSecurityAndSubmit(form, checkRes);
 
-                if (!password) return; // Annulé ou vide
-                
-                submitFinalProfile(form, { confirm_password: password });
-
-            } else if (checkRes.type === 'otp') {
-                const { value: otp } = await Swal.fire({
-                    title: 'Code de sécurité',
-                    text: checkRes.message,
-                    input: 'text',
-                    inputPlaceholder: 'Code à 6 chiffres',
-                    showCancelButton: true,
-                    confirmButtonText: 'Vérifier',
-                    cancelButtonText: 'Annuler',
-                    confirmButtonColor: '#e94e1a'
-                });
-
-                if (!otp) return;
-                
-                submitFinalProfile(form, { otp_code: otp });
-            }
         } catch(xhr) {
+             let errorMsg = xhr.responseJSON?.message || 'Une erreur est survenue lors de la vérification.';
+             if (xhr.status === 422 && xhr.responseJSON?.errors) {
+                 const firstErrorKey = Object.keys(xhr.responseJSON.errors)[0];
+                 errorMsg = xhr.responseJSON.errors[firstErrorKey][0];
+                 showErrors(xhr.responseJSON.errors);
+             }
              Swal.fire({
                  icon: 'error',
                  title: 'Erreur!',
-                 text: xhr.responseJSON?.message || 'Une erreur est survenue lors de la vérification.',
+                 text: errorMsg,
                  confirmButtonColor: '#e94e1a'
              });
         }
     });
 
-    function submitFinalProfile(form, extraData) {
+    async function promptForSecurityAndSubmit(form, checkRes) {
+        if (checkRes.type === 'password') {
+            const { value: password } = await Swal.fire({
+                title: 'Confirmer la modification',
+                text: 'Veuillez entrer votre mot de passe actuel pour continuer.',
+                input: 'password',
+                inputPlaceholder: 'Votre mot de passe',
+                showCancelButton: true,
+                confirmButtonText: 'Confirmer',
+                cancelButtonText: 'Annuler',
+                confirmButtonColor: '#e94e1a',
+                inputAttributes: {
+                    autocapitalize: 'off',
+                    autocorrect: 'off'
+                }
+            });
+
+            if (!password) return; // Annulé ou vide
+            
+            submitFinalProfile(form, { confirm_password: password }, checkRes);
+
+        } else if (checkRes.type === 'otp') {
+            const { value: otp } = await Swal.fire({
+                title: 'Code de sécurité',
+                text: checkRes.message,
+                input: 'text',
+                inputPlaceholder: 'Code à 6 chiffres',
+                showCancelButton: true,
+                confirmButtonText: 'Vérifier',
+                cancelButtonText: 'Annuler',
+                confirmButtonColor: '#e94e1a'
+            });
+
+            if (!otp) return;
+            
+            submitFinalProfile(form, { otp_code: otp }, checkRes);
+        }
+    }
+
+    function submitFinalProfile(form, extraData, checkRes) {
         let formData = new FormData(form[0]);
         for (const [key, val] of Object.entries(extraData)) {
             formData.append(key, val);
@@ -363,6 +405,11 @@
                             title: 'Erreur',
                             text: xhr.responseJSON.errors.otp_code ? xhr.responseJSON.errors.otp_code[0] : xhr.responseJSON.errors.confirm_password[0],
                             confirmButtonColor: '#e94e1a'
+                        }).then(() => {
+                            // Relancer juste la demande de sécurité sans renvoyer de SMS
+                            if (checkRes) {
+                                promptForSecurityAndSubmit(form, checkRes);
+                            }
                         });
                     } else {
                         Swal.close();

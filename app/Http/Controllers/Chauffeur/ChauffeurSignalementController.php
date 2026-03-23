@@ -67,7 +67,7 @@ class ChauffeurSignalementController extends Controller
             'description' => 'required|string',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
-            'photo' => 'required_if:type,accident|image|max:10240',
+            'photo' => 'nullable|image|max:10240',
         ]);
 
         try {

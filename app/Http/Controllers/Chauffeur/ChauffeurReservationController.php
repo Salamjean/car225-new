@@ -205,6 +205,7 @@ class ChauffeurReservationController extends Controller
             'embarquement_scanned_at'  => now(),
             'embarquement_agent_id'    => null, // pas un agent
             'embarquement_vehicule_id' => $voyageActif->vehicule->id,
+            'voyage_id'                => $voyageActif->id, // ATTRIDUTION DU VOYAGE_ID
             'embarquement_status'      => 'scanned',
         ];
 

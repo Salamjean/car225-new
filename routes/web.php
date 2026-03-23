@@ -96,6 +96,9 @@ Route::prefix('admin')->group(function () {
 Route::middleware('admin')->prefix('admin')->group(function () {
     Route::get('/dashboard', [AdminDashboard::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/logout', [AdminDashboard::class, 'logout'])->name('admin.logout');
+    
+    // Revenus Tickets détaillés (Placé en haut pour priorité)
+    Route::get('/revenus-tickets', [AdminDashboard::class, 'revenusTickets'])->name('admin.revenus.tickets');
 
     //Les routes pour creer une compagnie 
     Route::prefix('company')->group(function () {
@@ -145,6 +148,8 @@ Route::middleware('admin')->prefix('admin')->group(function () {
         Route::post('/{supportRequest}/repondre', [App\Http\Controllers\Admin\SupportController::class, 'repondre'])->name('admin.support.repondre');
         Route::patch('/{supportRequest}/statut', [App\Http\Controllers\Admin\SupportController::class, 'changeStatut'])->name('admin.support.statut');
     });
+
+
 
     // Gestion des Paramètres
     Route::prefix('settings')->group(function () {
@@ -626,7 +631,7 @@ Route::prefix('sapeur-pompier')->group(function () {
             if ($signalement->sapeur_pompier_id !== Auth::guard('sapeur_pompier')->id()) {
                 abort(403);
             }
-            $signalement->load(['user', 'personnel', 'compagnie', 'programme.compagnie', 'programme.gareDepart', 'vehicule']);
+            $signalement->load(['user', 'personnel', 'compagnie', 'voyage', 'programme.compagnie', 'programme.gareDepart', 'vehicule']);
             return view('sapeur_pompier.signalement.show', compact('signalement'));
         })->name('sapeur-pompier.signalement.show');
 
