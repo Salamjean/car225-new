@@ -721,6 +721,12 @@ Route::prefix('gare-espace')->name('gare-espace.')->group(function () {
             Route::delete('/{voyage}', [App\Http\Controllers\GareEspace\GareVoyageController::class, 'destroy'])->name('destroy');
         });
 
+        // Réservations
+        Route::prefix('reservations')->name('reservations.')->group(function () {
+            Route::get('/', [App\Http\Controllers\GareEspace\GareReservationController::class, 'index'])->name('index');
+            Route::get('/{reservation}', [App\Http\Controllers\GareEspace\GareReservationController::class, 'show'])->name('show');
+        });
+
         // Personnel (CRUD)
         Route::prefix('personnel')->name('personnel.')->group(function () {
             Route::get('/', [App\Http\Controllers\GareEspace\GarePersonnelController::class, 'index'])->name('index');

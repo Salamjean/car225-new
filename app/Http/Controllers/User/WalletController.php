@@ -196,6 +196,7 @@ class WalletController extends Controller
         $user = Auth::user();
         $transactions = $user->walletTransactions()
             ->where('reference', 'LIKE', 'W-RECH-%') // Filtrer uniquement les rechargements
+            ->whereNotIn('status', ['pending', 'en_attente']) // Masquer les transactions en attente
             ->orderBy('created_at', 'desc')
             ->take(5)
             ->get();

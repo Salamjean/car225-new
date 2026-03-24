@@ -50,6 +50,13 @@
             <span class="font-medium text-sm">Programmer Voyages</span>
         </a>
 
+        <!-- Réservations -->
+        <a href="{{ route('gare-espace.reservations.index') }}" 
+           class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('gare-espace.reservations.*') ? 'bg-orange-500/20 text-orange-400 shadow-lg' : 'text-gray-300 hover:bg-gray-700/50 hover:text-white' }}">
+            <i class="fas fa-ticket-alt w-5 text-center"></i>
+            <span class="font-medium text-sm">Réservations</span>
+        </a>
+
         <!-- Personnel -->
         <a href="{{ route('gare-espace.personnel.index') }}" 
            class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('gare-espace.personnel.*') ? 'bg-orange-500/20 text-orange-400 shadow-lg' : 'text-gray-300 hover:bg-gray-700/50 hover:text-white' }}">

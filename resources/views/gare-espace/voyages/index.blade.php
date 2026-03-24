@@ -49,7 +49,7 @@
         <!-- Header -->
         <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-                <h2 class="text-4xl font-black text-gray-900 mb-2 leading-tight">Programmation <span class="text-blue-600">des Voyages</span></h2>
+                <h2 class="text-4xl font-black text-gray-900 mb-2 leading-tight">Programmation <span class="text-orange-600">des Voyages</span></h2>
                 <p class="text-gray-500 text-lg">Gérez vos départs et assignations avec précision</p>
             </div>
             <div class="bg-white p-2 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-2">
@@ -119,7 +119,7 @@
                 <div class="bg-white rounded-[2rem] shadow-xl shadow-blue-900/5 border border-gray-100 overflow-hidden mb-12">
                     <div class="p-8 md:p-12">
                         <div class="max-w-4xl mx-auto text-center mb-10">
-                            <h3 class="text-3xl font-bold text-gray-900 mb-4 tracking-tight">Nouvelle <span class="text-blue-600 underline decoration-blue-200 underline-offset-8">Assignation</span></h3>
+                            <h3 class="text-3xl font-bold text-gray-900 mb-4 tracking-tight">Nouvelle <span class="text-orange-600 underline decoration-orange-200 underline-offset-8">Assignation</span></h3>
                             <p class="text-gray-500">Sélectionnez une destination pour voir les horaires disponibles</p>
                         </div>
 
@@ -198,7 +198,7 @@
                 <!-- Section: Assigned Voyages -->
                 <div class="mb-12">
                     <div class="flex items-center gap-4 mb-6">
-                        <h3 class="text-2xl font-black text-gray-900 tracking-tight">Voyages <span class="text-blue-600">Assignés</span></h3>
+                        <h3 class="text-2xl font-black text-gray-900 tracking-tight">Voyages <span class="text-orange-600">Assignés</span></h3>
                         <div class="h-px bg-gray-200 flex-1"></div>
                     </div>
 

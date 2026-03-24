@@ -31,6 +31,11 @@
                 <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Confirmées</span>
             </div>
             <h3 class="text-3xl font-black text-gray-900">{{ $stats['confirmed'] }}</h3>
+            <div class="mt-4 pt-4 border-t border-gray-50 flex justify-end">
+                <span class="text-[9px] font-black text-green-600 uppercase tracking-widest flex items-center gap-1">
+                    Voir plus <i class="fas fa-arrow-right text-[7px]"></i>
+                </span>
+            </div>
         </a>
 
         <!-- Pending -->
@@ -42,6 +47,11 @@
                 <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">En attente</span>
             </div>
             <h3 class="text-3xl font-black text-gray-900">{{ $stats['pending'] }}</h3>
+            <div class="mt-4 pt-4 border-t border-gray-50 flex justify-end">
+                <span class="text-[9px] font-black text-yellow-600 uppercase tracking-widest flex items-center gap-1">
+                    Voir plus <i class="fas fa-arrow-right text-[7px]"></i>
+                </span>
+            </div>
         </a>
 
         <!-- Terminee -->
@@ -53,6 +63,11 @@
                 <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Terminées</span>
             </div>
             <h3 class="text-3xl font-black text-gray-900">{{ $stats['finished'] }}</h3>
+            <div class="mt-4 pt-4 border-t border-gray-50 flex justify-end">
+                <span class="text-[9px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1">
+                    Voir plus <i class="fas fa-arrow-right text-[7px]"></i>
+                </span>
+            </div>
         </a>
 
         <!-- Cancelled -->
@@ -64,6 +79,11 @@
                 <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Annulées</span>
             </div>
             <h3 class="text-3xl font-black text-gray-900">{{ $stats['cancelled'] }}</h3>
+            <div class="mt-4 pt-4 border-t border-gray-50 flex justify-end">
+                <span class="text-[9px] font-black text-red-600 uppercase tracking-widest flex items-center gap-1">
+                    Voir plus <i class="fas fa-arrow-right text-[7px]"></i>
+                </span>
+            </div>
         </a>
 
         <!-- Passed -->
@@ -75,6 +95,11 @@
                 <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Passées</span>
             </div>
             <h3 class="text-3xl font-black text-gray-900">{{ $stats['passed'] }}</h3>
+            <div class="mt-4 pt-4 border-t border-gray-50 flex justify-end">
+                <span class="text-[9px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-1">
+                    Voir plus <i class="fas fa-arrow-right text-[7px]"></i>
+                </span>
+            </div>
         </a>
     </div>
 
@@ -251,7 +276,7 @@
                         @endif
                     </td>
 
-                    <td class="px-6 py-5 text-center pr-8">
+                    <td class="px-6 py-5 text-center pr-8 flex items-center justify-center gap-2">
                         <a href="{{ route('user.reservation.group', $reservation->payment_transaction_id) }}" 
                            class="inline-flex items-center gap-2 px-4 py-2 bg-[#e94f1b] text-white text-[10px] font-black rounded-xl uppercase tracking-widest hover:bg-[#d44518] transition-all shadow-md shadow-orange-200">
                             <i class="fas fa-ticket-alt"></i> Voir les billets

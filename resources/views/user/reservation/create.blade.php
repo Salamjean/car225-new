@@ -4417,10 +4417,10 @@ function proceedToPassengerInfoFromRetour() {
                 html: `
                     <div class="flex flex-col gap-4 text-center">
                         <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm">
-                            <p class="text-gray-500 text-[10px] uppercase tracking-wider font-extrabold mb-3">Résumé de la commande</p>
+                            <p class="text-gray-500 text-[10px] uppercase tracking-wider font-extrabold mb-3">Résumé de la reservation</p>
                             
                             <div class="flex justify-between items-center mb-1">
-                                <span class="text-gray-600 text-xs font-semibold">Total Réservation</span>
+                                <span class="text-gray-600 text-xs font-semibold">Montant de la réservation</span>
                                 <span class="font-bold text-gray-800">${new Intl.NumberFormat('fr-FR').format(montantTotal)} FCFA</span>
                             </div>
                             
