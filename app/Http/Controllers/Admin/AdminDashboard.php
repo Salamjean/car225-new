@@ -167,6 +167,66 @@ class AdminDashboard extends Controller
         ));
     }
 
+    public function revenusTickets(\Illuminate\Http\Request $request)
+    {
+        $query = \App\Models\HistoriqueTicket::with('compagnie')
+            ->where('montant', '>', 0);
+
+        // Filtre par compagnie
+        if ($request->filled('compagnie_id')) {
+            $query->where('compagnie_id', $request->compagnie_id);
+        }
+
+        // Filtre par date
+        if ($request->filled('date_debut')) {
+            $query->whereDate('created_at', '>=', $request->date_debut);
+        }
+        if ($request->filled('date_fin')) {
+            $query->whereDate('created_at', '<=', $request->date_fin);
+        }
+
+        // Stats globales pour la vue de détail
+        $totalTicketRevenue = (clone $query)->sum('montant');
+        // 1. Revenus par compagnie (Breakdown) - On applique les mêmes filtres que la query principale
+        $companyStats = DB::table('historique_tickets')
+            ->join('compagnies', 'historique_tickets.compagnie_id', '=', 'compagnies.id')
+            ->where('historique_tickets.montant', '>', 0);
+            
+        if ($request->filled('compagnie_id')) {
+            $companyStats->where('historique_tickets.compagnie_id', $request->compagnie_id);
+        }
+        if ($request->filled('date_debut')) {
+            $companyStats->whereDate('historique_tickets.created_at', '>=', $request->date_debut);
+        }
+        if ($request->filled('date_fin')) {
+            $companyStats->whereDate('historique_tickets.created_at', '<=', $request->date_fin);
+        }
+
+        $companyStats = $companyStats->select('compagnies.name', DB::raw('SUM(historique_tickets.montant) as total_revenue'), DB::raw('COUNT(historique_tickets.id) as count'))
+            ->groupBy('compagnies.name')
+            ->orderByDesc('total_revenue')
+            ->get();
+
+        $totalRecharges = (clone $query)->count();
+        $averageRecharge = $totalRecharges > 0 ? $totalTicketRevenue / $totalRecharges : 0;
+
+        // 2. Portefeuille Admin
+        $portefeuilleAdmin = Auth::guard('admin')->user()->portefeuille ?? 0;
+
+        $recharges = $query->orderBy('created_at', 'desc')->paginate(20);
+        $compagnies = Compagnie::orderBy('name', 'asc')->get();
+
+        return view('admin.revenus.tickets', compact(
+            'recharges',
+            'compagnies',
+            'totalTicketRevenue',
+            'totalRecharges',
+            'averageRecharge',
+            'companyStats',
+            'portefeuilleAdmin'
+        ));
+    }
+
     public function logout()
     {
         Auth::guard('admin')->logout();

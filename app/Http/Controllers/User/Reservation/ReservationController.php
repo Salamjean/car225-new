@@ -41,8 +41,14 @@ class ReservationController extends Controller
     {
         $user = Auth::user();
 
+        // 0. Auto-update status to 'passe' for past trips (confirmed but dated before today)
+        Reservation::query()->where('user_id', $user->id)
+            ->where('statut', 'confirmee')
+            ->whereDate('date_voyage', '<', now()->toDateString())
+            ->update(['statut' => 'passe']);
+
         // 1. Construire la requête de base pour les filtres
-        $query = Reservation::where('user_id', $user->id)
+        $query = Reservation::query()->where('user_id', $user->id)
             ->where('statut', '!=', 'en_attente')
             ->whereHas('programme');
 
@@ -56,7 +62,10 @@ class ReservationController extends Controller
             });
         }
 
-        if ($request->filled('statut')) {
+        // Default to 'confirmee' if no status filter is provided
+        if (!$request->filled('statut')) {
+            $query->where('statut', 'confirmee');
+        } else {
             $query->where('statut', $request->statut);
         }
 
@@ -108,10 +117,11 @@ class ReservationController extends Controller
 
         // Statistiques (globales pour l'utilisateur)
         $stats = [
-            'confirmed' => Reservation::where('user_id', $user->id)->where('statut', 'confirmee')->count(),
-            'pending' => Reservation::where('user_id', $user->id)->where('statut', 'en_attente')->count(),
-            'cancelled' => Reservation::where('user_id', $user->id)->where('statut', 'annulee')->count(),
-            'total_amount' => Reservation::where('user_id', $user->id)->where('statut', 'confirmee')->sum('montant'),
+            'confirmed' => Reservation::query()->where('user_id', $user->id)->where('statut', 'confirmee')->count(),
+            'pending' => Reservation::query()->where('user_id', $user->id)->where('statut', 'en_attente')->count(),
+            'cancelled' => Reservation::query()->where('user_id', $user->id)->where('statut', 'annulee')->count(),
+            'finished' => Reservation::query()->where('user_id', $user->id)->where('statut', 'terminee')->count(),
+            'passed' => Reservation::query()->where('user_id', $user->id)->where('statut', 'passe')->count(),
         ];
 
         return view('user.reservation.index', compact('reservations', 'stats'));
@@ -462,6 +472,8 @@ class ReservationController extends Controller
             'date_depart' => $date_depart_recherche,
             'date_depart_formatted' => $formattedDate,
             'heure_depart' => $heure_depart,
+            'type_voyage' => $request->type_voyage ?? 'aller_simple',
+            'date_retour' => $request->date_retour ?? null,
         ];
 
         // Mismatch logic
@@ -969,7 +981,8 @@ $dateAller = $request->date_voyage;
             $reservationStatus = 'confirmee';
             $isWallet = true;
 
-            // Déduction du solde de la compagnie (Wallet = immédiat)
+            // Déduction du solde de la compagnie (le montant sans la commission admin)
+            // On s'assure de déduire le montant avant ajout de la commission (qui est déjà le cas pour wallet)
             $programme->compagnie->deductTickets($montantTotal, "Réservation Wallet #{$transactionId}");
 
         } else {
@@ -1140,6 +1153,7 @@ $dateAller = $request->date_voyage;
                                 'nom_passager_urgence' => $passager['nom_urgence'],
                                 'is_aller_retour' => $isAllerRetour,
                                 'montant' => $prixUnitaire + ($fraisChoixSiege / (count($request->passagers) * ($isAllerRetour ? 2 : 1))),
+                                'commission_amount' => 0, // La commission est stockée au niveau du Paiement global
                                 'statut' => $reservationStatus,
                                 'date_voyage' => $dateRetour,
                                 'date_retour' => $dateRetour,

@@ -90,10 +90,10 @@
                         </h2>
 
                         <!-- Bouton Retirer -->
-                        <button onclick="openWithdrawModal()" class="w-full py-3 bg-[#e94f1b] text-white rounded-xl shadow-lg hover:bg-orange-700 transition-all font-bold flex items-center justify-center gap-2">
+                        {{-- <button onclick="openWithdrawModal()" class="w-full py-3 bg-[#e94f1b] text-white rounded-xl shadow-lg hover:bg-orange-700 transition-all font-bold flex items-center justify-center gap-2">
                             <i class="fas fa-money-bill-wave"></i>
                             Retirer votre argent
-                        </button>
+                        </button> --}}
                     </div>
                 </div>
             </div>

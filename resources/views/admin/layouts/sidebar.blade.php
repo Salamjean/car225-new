@@ -17,6 +17,12 @@
             Tableau de bord
           </a>
         </div>
+        <div class="mdc-list-item mdc-drawer-item" id="historique-menu-item">
+          <a class="mdc-drawer-link" href="{{route('admin.revenus.tickets')}}">
+            <i class="fas fa-history mdc-list-item__start-detail mdc-drawer-item-icon"></i>
+            Historique Global
+          </a>
+        </div>
         <div class="mdc-list-item mdc-drawer-item">
           <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel" data-target="ui-sub-perso">
             <i class="fas fa-building mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>

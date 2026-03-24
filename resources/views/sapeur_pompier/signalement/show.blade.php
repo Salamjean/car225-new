@@ -177,32 +177,39 @@
 
                     <!-- Liste des Passagers (Manifeste) -->
                     @php
-                        // Récupérer tous les passagers de ce voyage
                         $passengersList = collect();
-                        if ($signalement->programme) {
-                            // On cherche les réservations du programme pour la date où l'accident a été signalé
+                        $reservations = collect();
+
+                        // Priorité au voyage_id pour une précision maximale (recommandé par l'utilisateur)
+                        if ($signalement->voyage_id) {
+                            $reservations = \App\Models\Reservation::where('voyage_id', $signalement->voyage_id)
+                                ->whereIn('statut', ['confirmee', 'terminee'])
+                                ->with('user')
+                                ->get();
+                        } elseif ($signalement->programme) {
+                            // Fallback par programme et date d'accident
                             $dateVoyage = $signalement->created_at->format('Y-m-d');
                             $reservations = \App\Models\Reservation::where('programme_id', $signalement->programme->id)
                                 ->whereDate('date_voyage', $dateVoyage)
-                                ->whereIn('statut', ['confirmee', 'terminee']) // 'terminee' signifie qu'ils sont montés à bord (scannés)
+                                ->whereIn('statut', ['confirmee', 'terminee'])
                                 ->with('user')
                                 ->get();
+                        }
 
-                            foreach ($reservations as $res) {
-                                $name = trim(($res->passager_nom ?? '') . ' ' . ($res->passager_prenom ?? ''));
-                                $contact = $res->passager_telephone ?? '-';
-                                $seat = $res->seat_number ?? '?';
-                                $urgence = $res->passager_urgence ?? null;
+                        foreach ($reservations as $res) {
+                            $name = trim(($res->passager_nom ?? '') . ' ' . ($res->passager_prenom ?? ''));
+                            $contact = $res->passager_telephone ?? '-';
+                            $seat = $res->seat_number ?? '?';
+                            $urgence = $res->passager_urgence ?? $res->ice_contact ?? null; // Prise en compte de ice_contact s'il existe
 
-                                $passengersList->push([
-                                    'name' => $name ?: ($res->user->name ?? 'Inconnu'),
-                                    'contact' => $contact,
-                                    'type' => 'Passager',
-                                    'seat' => $seat,
-                                    'ice_contact' => $urgence,
-                                    'ice_name' => 'Contact Urgence'
-                                ]);
-                            }
+                            $passengersList->push([
+                                'name' => $name ?: ($res->user->name ?? 'Inconnu'),
+                                'contact' => $contact,
+                                'type' => 'Passager',
+                                'seat' => $seat,
+                                'ice_contact' => $urgence,
+                                'ice_name' => 'Contact Urgence'
+                            ]);
                         }
                     @endphp
 

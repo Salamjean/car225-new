@@ -14,6 +14,12 @@ class UserController extends Controller
     {
         $user = Auth::user();
 
+        // 0. Auto-update status to 'passe' for past trips
+        Reservation::query()->where('user_id', $user->id)
+            ->where('statut', 'confirmee')
+            ->whereDate('date_voyage', '<', now()->toDateString())
+            ->update(['statut' => 'passe']);
+
         // 1. Statistiques Globales
         $totalReservations = Reservation::where('user_id', $user->id)
             ->where('statut', 'confirmee')

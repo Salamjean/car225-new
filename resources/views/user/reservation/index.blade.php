@@ -21,9 +21,9 @@
     </div>
 
     <!-- Stats Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
         <!-- Confirmed -->
-        <div class="bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group">
+        <a href="{{ route('reservation.index', ['statut' => 'confirmee']) }}" class="block bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group">
             <div class="flex items-center justify-between mb-4">
                 <div class="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center text-green-600 transition-colors group-hover:bg-green-600 group-hover:text-white">
                     <i class="fas fa-check-circle text-xl"></i>
@@ -31,10 +31,10 @@
                 <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Confirmées</span>
             </div>
             <h3 class="text-3xl font-black text-gray-900">{{ $stats['confirmed'] }}</h3>
-        </div>
+        </a>
 
         <!-- Pending -->
-        <div class="bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group">
+        <a href="{{ route('reservation.index', ['statut' => 'en_attente']) }}" class="block bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group">
             <div class="flex items-center justify-between mb-4">
                 <div class="w-12 h-12 bg-yellow-50 rounded-2xl flex items-center justify-center text-yellow-600 transition-colors group-hover:bg-yellow-600 group-hover:text-white">
                     <i class="fas fa-clock text-xl"></i>
@@ -42,10 +42,21 @@
                 <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">En attente</span>
             </div>
             <h3 class="text-3xl font-black text-gray-900">{{ $stats['pending'] }}</h3>
-        </div>
+        </a>
+
+        <!-- Terminee -->
+        <a href="{{ route('reservation.index', ['statut' => 'terminee']) }}" class="block bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white">
+                    <i class="fas fa-flag-checkered text-xl"></i>
+                </div>
+                <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Terminées</span>
+            </div>
+            <h3 class="text-3xl font-black text-gray-900">{{ $stats['finished'] }}</h3>
+        </a>
 
         <!-- Cancelled -->
-        <div class="bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group">
+        <a href="{{ route('reservation.index', ['statut' => 'annulee']) }}" class="block bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group">
             <div class="flex items-center justify-between mb-4">
                 <div class="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-600 transition-colors group-hover:bg-red-600 group-hover:text-white">
                     <i class="fas fa-times-circle text-xl"></i>
@@ -53,18 +64,18 @@
                 <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Annulées</span>
             </div>
             <h3 class="text-3xl font-black text-gray-900">{{ $stats['cancelled'] }}</h3>
-        </div>
+        </a>
 
-        <!-- Total Amount -->
-        <div class="bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group">
+        <!-- Passed -->
+        <a href="{{ route('reservation.index', ['statut' => 'passe']) }}" class="block bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group">
             <div class="flex items-center justify-between mb-4">
-                <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white">
-                    <i class="fas fa-money-bill-wave text-xl"></i>
+                <div class="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-600 transition-colors group-hover:bg-gray-600 group-hover:text-white">
+                    <i class="fas fa-history text-xl"></i>
                 </div>
-                <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Dépense Totale</span>
+                <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Passées</span>
             </div>
-            <h3 class="text-3xl font-black text-gray-900">{{ number_format($stats['total_amount'], 0, ',', ' ') }} <span class="text-sm">FCFA</span></h3>
-        </div>
+            <h3 class="text-3xl font-black text-gray-900">{{ $stats['passed'] }}</h3>
+        </a>
     </div>
 
     <!-- Filters Section -->
@@ -92,10 +103,11 @@
                     <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Statut</label>
                     <select name="statut" class="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-[#e94f1b] focus:bg-white outline-none transition-all text-sm font-bold">
                         <option value="">Tous les statuts</option>
-                        <option value="confirmee" {{ request('statut') == 'confirmee' ? 'selected' : '' }}>Confirmée</option>
+                        <option value="confirmee" {{ request('statut') == 'confirmee' || !request()->has('statut') ? 'selected' : '' }}>Confirmée</option>
                         <option value="en_attente" {{ request('statut') == 'en_attente' ? 'selected' : '' }}>En attente</option>
                         <option value="terminee" {{ request('statut') == 'terminee' ? 'selected' : '' }}>Terminée</option>
                         <option value="annulee" {{ request('statut') == 'annulee' ? 'selected' : '' }}>Annulée</option>
+                        <option value="passe" {{ request('statut') == 'passe' ? 'selected' : '' }}>Passée</option>
                     </select>
                 </div>
 

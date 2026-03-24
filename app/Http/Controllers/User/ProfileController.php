@@ -30,8 +30,13 @@ class ProfileController extends Controller
         $user = auth()->user();
 
         // Validation basique des contacts avant l'envoi
-        if ($request->contact && strlen($request->contact) !== 10) {
-            return response()->json(['success' => false, 'message' => 'Le contact doit comporter exactement 10 chiffres.', 'errors' => ['contact' => ['Le contact doit comporter exactement 10 chiffres.']]], 422);
+        if ($request->filled('contact')) {
+            $request->validate([
+                'contact' => 'digits:10|unique:users,contact,' . $user->id
+            ], [
+                'contact.digits' => 'Le contact doit comporter exactement 10 chiffres.',
+                'contact.unique' => 'Ce numéro de téléphone est déjà utilisé par un autre compte.'
+            ]);
         }
 
         $smsService = app(\App\Services\SmsService::class);
@@ -86,12 +91,13 @@ class ProfileController extends Controller
             'name' => 'required|string|max:255',
             'prenom' => 'nullable|string|max:255',
             'email' => 'nullable|email|unique:users,email,' . $user->id,
-            'contact' => 'nullable|string|digits:10',
+            'contact' => 'nullable|string|digits:10|unique:users,contact,' . $user->id,
             'nom_urgence' => 'nullable|string|max:255',
             'lien_parente_urgence' => 'nullable|string|max:255',
             'contact_urgence' => 'nullable|string|digits:10|different:contact',
         ], [
             'contact.digits' => 'Le contact doit comporter exactement 10 chiffres.',
+            'contact.unique' => 'Ce numéro de téléphone est déjà utilisé par un autre compte.',
             'contact_urgence.digits' => 'Le contact d\'urgence doit comporter exactement 10 chiffres.',
             'contact_urgence.different' => 'Le contact d\'urgence doit être différent de votre contact principal.',
         ]);
@@ -152,9 +158,10 @@ class ProfileController extends Controller
                 'message' => 'Profil mis à jour avec succès'
             ]);
         } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Erreur profile update: " . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Erreur lors de la mise à jour du profil'
+                'message' => 'Erreur lors de la mise à jour du profil: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -220,7 +227,8 @@ class ProfileController extends Controller
         if (!Hash::check($validated['current_password'], $user->password)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Le mot de passe actuel est incorrect'
+                'message' => 'Le mot de passe actuel est incorrect',
+                'errors' => ['current_password' => ['Le mot de passe actuel est incorrect']]
             ], 422);
         }
 

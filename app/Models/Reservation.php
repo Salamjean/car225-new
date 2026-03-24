@@ -264,6 +264,14 @@ class Reservation extends Model
         return $this->statut === 'en_attente';
     }
 
+    /**
+     * Vérifier si la réservation est passée
+     */
+    public function isPasse(): bool
+    {
+        return $this->statut === 'passe';
+    }
+
     // ========================================
     // SCOPES
     // ========================================

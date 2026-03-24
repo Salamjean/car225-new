@@ -87,6 +87,16 @@
         font-size: 14px;
         border: 1px solid #FED7AA;
     }
+
+    .dashboard-page {
+        position: relative;
+        min-height: 80vh;
+        z-index: 1;
+        border-radius: 30px;
+        padding: 30px;
+        background: #F8F9FB;
+        box-shadow: inset 0 0 40px rgba(0,0,0,0.01);
+    }
 </style>
 @endsection
 
@@ -94,9 +104,28 @@
 <div class="dashboard-page">
 
     <div class="mb-4 d-flex justify-content-between align-items-center">
-        <a href="{{ route('company.reservation.index') }}" class="btn-back">
+        <a href="{{ route('company.reservation.index', ['tab' => $tab ?? 'en-cours']) }}" class="btn-back">
             <i class="fas fa-arrow-left"></i> Retour au calendrier
         </a>
+        
+        @if(isset($isFullMonth) && $isFullMonth)
+            <div class="d-flex align-items-center gap-2">
+                <div class="input-group" style="width: 280px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-radius: 12px; overflow: hidden; border: 1px solid #E2E8F0;">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text bg-white border-0 text-orange">
+                            <i class="fas fa-calendar-alt"></i>
+                        </span>
+                    </div>
+                    <input type="text" id="dateFilter" class="form-control border-0" placeholder="Filtrer par date..." style="font-weight: 700; height: 45px;">
+                    <div class="input-group-append">
+                        <button class="btn btn-white border-0 text-muted" type="button" onclick="clearDateFilter()" title="Tous les jours">
+                            <i class="fas fa-times-circle"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         @if($heure && $heure !== 'all')
             <span class="time-badge">
                 <i class="fas fa-clock mr-1"></i> Départ de {{ $heure }}
@@ -108,7 +137,7 @@
         <div class="new-date-card">
             @if(isset($isFullMonth) && $isFullMonth)
                 <span class="card-month">{{ \Carbon\Carbon::parse($date)->format('Y') }}</span>
-                <span class="card-day" style="font-size: 22px;">ALL</span>
+                <span class="card-day" style="font-size: 22px;">TOUT</span>
             @else
                 <span class="card-month">{{ \Carbon\Carbon::parse($date)->translatedFormat('M') }}</span>
                 <span class="card-day">{{ \Carbon\Carbon::parse($date)->format('d') }}</span>
@@ -117,19 +146,25 @@
         <div class="flex-grow-1">
             <h3 class="m-0 text-dark-blue">{{ isset($isFullMonth) && $isFullMonth ? $monthLabel : \Carbon\Carbon::parse($date)->translatedFormat('l d F Y') }}</h3>
             <p class="text-muted m-0">
-                {{ count($reservations) }} réservation(s) confirmée(s)
-                @if($heure && $heure !== 'all') pour ce voyage @endif
+                <span id="resCount">{{ count($reservations) }}</span> réservation(s) 
+                @if(($tab ?? 'en-cours') === 'en-cours')
+                    confirmée(s)
+                @else
+                    historiques
+                @endif
             </p>
         </div>
         <div class="text-right">
             <div class="metric-label small">Total Recettes</div>
-            <div class="h4 font-weight-bold text-orange m-0">{{ number_format($reservations->sum('montant'), 0, ',', ' ') }} F</div>
+            <div class="h4 font-weight-bold text-orange m-0">
+                <span id="totalRevenue">{{ number_format($reservations->sum('montant'), 0, ',', ' ') }}</span> F
+            </div>
         </div>
     </div>
 
     <div class="dash-card">
         <div class="dash-table-wrap">
-            <table class="dash-table">
+            <table class="dash-table" id="reservationsTable">
                 <thead>
                     <tr>
                         <th>Passager & Réf</th>
@@ -141,7 +176,9 @@
                 </thead>
                 <tbody>
                     @forelse ($reservations as $reservation)
-                    <tr>
+                    <tr class="reservation-row" 
+                        data-date="{{ \Carbon\Carbon::parse($reservation->date_voyage)->toDateString() }}"
+                        data-amount="{{ $reservation->montant }}">
                         <td>
                             <div class="td-user">
                                 <div class="td-avatar text-orange">
@@ -164,7 +201,12 @@
                                         <i class="fas fa-chevron-right route-arrow"></i>
                                         {{ $reservation->programme->point_arrive }}
                                     </div>
-                                    <span class="text-time mt-1">{{ $reservation->programme->heure_depart }}</span>
+                                    <span class="text-time mt-1">
+                                        @if(isset($isFullMonth) && $isFullMonth)
+                                            {{ \Carbon\Carbon::parse($reservation->date_voyage)->translatedFormat('d M') }} à 
+                                        @endif
+                                        {{ $reservation->programme->heure_depart }}
+                                    </span>
                                 </div>
                             @else
                                 <span class="text-muted">Trajet inconnu</span>
@@ -177,7 +219,23 @@
                             <span class="td-amount">{{ number_format($reservation->montant, 0, ',', ' ') }} F</span>
                         </td>
                         <td class="text-center">
-                            <span class="status-pill sp-success"><span class="dot"></span> Confirmée</span>
+                            @if($reservation->statut === 'confirmee')
+                                <span class="status-pill sp-success"><span class="dot"></span> Confirmée</span>
+                            @elseif($reservation->statut === 'terminee')
+                                <span class="status-pill" style="background: #eff6ff; color: #1e40af;">
+                                    <span class="dot" style="background: #1e40af;"></span> Terminée
+                                </span>
+                            @elseif($reservation->statut === 'passe')
+                                <span class="status-pill" style="background: #f3f4f6; color: #374151;">
+                                    <span class="dot" style="background: #374151;"></span> Expirée
+                                </span>
+                            @elseif($reservation->statut === 'annulee')
+                                <span class="status-pill" style="background: #fef2f2; color: #991b1b;">
+                                    <span class="dot" style="background: #991b1b;"></span> Annulée
+                                </span>
+                            @else
+                                <span class="status-pill sp-success">{{ $reservation->statut }}</span>
+                            @endif
                         </td>
                     </tr>
                     @empty
@@ -192,4 +250,58 @@
         </div>
     </div>
 </div>
+
+{{-- Flatpickr Styles & Scripts --}}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js"></script>
+
+<script>
+let fp;
+document.addEventListener('DOMContentLoaded', function() {
+    const availableDates = @json($reservations->pluck('date_voyage')->map(fn($d) => \Carbon\Carbon::parse($d)->toDateString())->unique()->values());
+    const monthYear = "{{ \Carbon\Carbon::parse($date)->format('Y-m') }}";
+
+    if (document.getElementById('dateFilter')) {
+        fp = flatpickr("#dateFilter", {
+            locale: "fr",
+            dateFormat: "Y-m-d",
+            altInput: true,
+            altFormat: "j F Y",
+            enable: availableDates,
+            defaultDate: null,
+            onChange: function(selectedDates, dateStr) {
+                filterByDate(dateStr);
+            }
+        });
+    }
+});
+
+function filterByDate(dateStr) {
+    const rows = document.querySelectorAll('.reservation-row');
+    let count = 0;
+    let revenue = 0;
+
+    rows.forEach(row => {
+        if (!dateStr || row.dataset.date === dateStr) {
+            row.style.display = '';
+            count++;
+            revenue += parseFloat(row.dataset.amount);
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    // Update stats
+    document.getElementById('resCount').textContent = count;
+    document.getElementById('totalRevenue').textContent = new Intl.NumberFormat('fr-FR').format(revenue);
+}
+
+function clearDateFilter() {
+    if (fp) {
+        fp.clear();
+        filterByDate(null);
+    }
+}
+</script>
 @endsection

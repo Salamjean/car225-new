@@ -14,22 +14,21 @@ class ReservationController extends Controller
         $compagnie = Auth::guard('compagnie')->user();
         $tab = request('tab', 'en-cours');
 
-        // Récupérer uniquement les réservations confirmées
         $query = Reservation::whereHas('programme', function ($q) use ($compagnie) {
             $q->where('compagnie_id', $compagnie->id);
-        })
-        ->with(['programme'])
-        ->where('statut', 'confirmee');
+        })->with(['programme']);
 
         if ($tab === 'terminees') {
-            $query->whereDate('date_voyage', '<', now())
+            // Terminées : terminee, passe, annulee
+            $query->whereIn('statut', ['terminee', 'passe', 'annulee'])
                   ->orderBy('date_voyage', 'desc');
         } else {
-            $query->whereDate('date_voyage', '>=', now())
+            // En cours : uniquement confirmee
+            $query->where('statut', 'confirmee')
                   ->orderBy('date_voyage', 'asc');
         }
 
-        $reservationsEnCours = $query->paginate(500); 
+        $reservationsEnCours = $query->paginate(1000); // Augmenté pour le groupement par mois
 
         return view('compagnie.reservations.index', compact('reservationsEnCours', 'tab'));
     }
@@ -38,13 +37,19 @@ class ReservationController extends Controller
     {
         $compagnie = Auth::guard('compagnie')->user();
         $heure = $request->query('heure');
+        $tab = $request->query('tab', 'en-cours');
 
         $query = Reservation::whereHas('programme', function ($q) use ($compagnie) {
             $q->where('compagnie_id', $compagnie->id);
         })
         ->whereDate('date_voyage', $date)
-        ->where('statut', 'confirmee')
         ->with(['programme', 'user', 'programme.itineraire']);
+
+        if ($tab === 'terminees') {
+            $query->whereIn('statut', ['terminee', 'passe', 'annulee']);
+        } else {
+            $query->where('statut', 'confirmee');
+        }
 
         if ($heure && $heure !== 'all') {
             $query->whereHas('programme', function($q) use ($heure) {
@@ -54,20 +59,26 @@ class ReservationController extends Controller
 
         $reservations = $query->orderBy('created_at', 'desc')->get();
 
-        return view('compagnie.reservations.by_date', compact('reservations', 'date', 'heure'));
+        return view('compagnie.reservations.by_date', compact('reservations', 'date', 'heure', 'tab'));
     }
 
-    public function byMonth($month)
+    public function byMonth(Request $request, $month)
     {
         $compagnie = Auth::guard('compagnie')->user();
+        $tab = $request->query('tab', 'en-cours');
         
         // $month est au format YYYY-MM
         $query = Reservation::whereHas('programme', function ($q) use ($compagnie) {
             $q->where('compagnie_id', $compagnie->id);
         })
         ->where('date_voyage', 'LIKE', "{$month}%")
-        ->where('statut', 'confirmee')
         ->with(['programme', 'user', 'programme.itineraire']);
+
+        if ($tab === 'terminees') {
+            $query->whereIn('statut', ['terminee', 'passe', 'annulee']);
+        } else {
+            $query->where('statut', 'confirmee');
+        }
 
         $reservations = $query->orderBy('date_voyage', 'asc')
                              ->orderBy('created_at', 'desc')
@@ -75,8 +86,9 @@ class ReservationController extends Controller
 
         return view('compagnie.reservations.by_date', [
             'reservations' => $reservations,
-            'date' => $month . '-01', // On passe le premier jour pour Carbon dans la vue
+            'date' => $month . '-01', 
             'heure' => 'all',
+            'tab' => $tab,
             'isFullMonth' => true,
             'monthLabel' => \Carbon\Carbon::parse($month . '-01')->translatedFormat('F Y')
         ]);
