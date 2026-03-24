@@ -218,7 +218,7 @@
                         <p class="text-sm font-bold text-[#1A1D1F]">{{ number_format($reservation->total_group_amount, 0, ',', ' ') }}</p>
                         <p class="text-[9px] font-medium text-gray-400 uppercase tracking-wider">FCFA</p>
                     </td>
-
+   
                     <td class="px-6 py-5 text-center">
                         @if(in_array($reservation->statut, ['confirmee', 'terminee']) && $reservation->mission && $reservation->mission->statut == 'en_cours')
                             <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-purple-100 italic">
