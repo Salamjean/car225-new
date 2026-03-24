@@ -111,29 +111,6 @@
 
                         <div class="col-12">
                             <div class="input-group-modern mb-0">
-                                <label class="form-label text-orange font-bold mb-2 block">LOCALISATION GPS (FACULTATIF MAIS RECOMMANDÉ POUR LE SUIVI)</label>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="input-group-modern">
-                                            <i class="fas fa-map-pin input-icon"></i>
-                                            <input type="number" step="0.00000001" name="latitude" value="{{ old('latitude') }}" class="input-modern" placeholder="Latitude (ex: 5.3484)">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="input-group-modern">
-                                            <i class="fas fa-map-pin input-icon"></i>
-                                            <input type="number" step="0.00000001" name="longitude" value="{{ old('longitude') }}" class="input-modern" placeholder="Longitude (ex: -4.0305)">
-                                        </div>
-                                    </div>
-                                </div>
-                                <p style="font-size: 10px; color: var(--text-3); margin-top: -10px; font-style: italic;">
-                                    <i class="fas fa-info-circle"></i> Ces coordonnées permettent de calculer l'arrivée estimée en temps réel pour vos chauffeurs.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="col-12 mt-3">
-                            <div class="input-group-modern mb-0">
                                 <label class="form-label">Adresse Complète / Point de Repère <span class="text-danger">*</span></label>
                                 <i class="fas fa-map-marker-alt input-icon"></i>
                                 <input type="text" name="adresse" value="{{ old('adresse') }}" required class="input-modern" placeholder="Ex: Boulevard Lagunaire, face au grand marché">
@@ -185,7 +162,7 @@
                                                 <option value="+225" selected>🇨🇮 +225</option>
                                                 <option value="+33">🇫🇷 +33</option>
                                             </select>
-                                            <input type="text" name="contact" value="{{ old('contact') }}" required class="input-modern" placeholder="07 00 00 00 00" style="padding-left: 16px;">
+                                            <input type="text" name="contact" value="{{ old('contact') }}" required class="input-modern phone-input" placeholder="0700000000" maxlength="10" pattern="[0-9]{10}" style="padding-left: 16px;">
                                         </div>
                                         @error('contact') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
                                     </div>
@@ -230,7 +207,7 @@
                                     <select name="country_code_urgence" class="phone-prefix">
                                         <option value="+225" selected>🇨🇮 +225</option>
                                     </select>
-                                    <input type="text" name="contact_urgence" value="{{ old('contact_urgence') }}" class="input-modern" placeholder="Optionnel" style="padding-left: 16px;">
+                                    <input type="text" name="contact_urgence" value="{{ old('contact_urgence') }}" class="input-modern phone-input" placeholder="0701020304" maxlength="10" pattern="[0-9]{10}" style="padding-left: 16px;">
                                 </div>
                                 @error('contact_urgence') <span class="text-danger" style="font-size: 10px; font-weight: 700;">{{ $message }}</span> @enderror
                             </div>
@@ -260,6 +237,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const profileImageInput = document.getElementById('profile_image');
     const imagePreview = document.getElementById('preview');
     const placeholderIcon = document.getElementById('placeholder-icon');
+
+    // Restriction des champs téléphone
+    const phoneInputs = document.querySelectorAll('.phone-input');
+    phoneInputs.forEach(input => {
+        input.addEventListener('input', function(e) {
+            // Retirer tout ce qui n'est pas un chiffre
+            this.value = this.value.replace(/[^0-9]/g, '');
+            
+            // Limiter à 10 caractères
+            if (this.value.length > 10) {
+                this.value = this.value.slice(0, 10);
+            }
+        });
+    });
 
     profileImageInput.addEventListener('change', function(e) {
         const file = e.target.files[0];
