@@ -38,11 +38,6 @@
             <span class="font-medium text-sm">Tableau de bord</span>
         </a>
 
-        <!-- Séparateur -->
-        <div class="py-2">
-            <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Gestion</p>
-        </div>
-
         <!-- Voyages -->
         <a href="{{ route('gare-espace.voyages.index') }}" 
            class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('gare-espace.voyages.*') ? 'bg-orange-500/20 text-orange-400 shadow-lg' : 'text-gray-300 hover:bg-gray-700/50 hover:text-white' }}">
@@ -51,11 +46,28 @@
         </a>
 
         <!-- Réservations -->
-        <a href="{{ route('gare-espace.reservations.index') }}" 
-           class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('gare-espace.reservations.*') ? 'bg-orange-500/20 text-orange-400 shadow-lg' : 'text-gray-300 hover:bg-gray-700/50 hover:text-white' }}">
-            <i class="fas fa-ticket-alt w-5 text-center"></i>
-            <span class="font-medium text-sm">Réservations</span>
-        </a>
+        <div x-data="{ open: {{ request()->routeIs('gare-espace.reservations.*') ? 'true' : 'false' }} }" class="space-y-1">
+            <button @click="open = !open" 
+               class="flex items-center gap-3 w-full px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('gare-espace.reservations.*') ? 'bg-orange-500/20 text-orange-400 shadow-lg' : 'text-gray-300 hover:bg-gray-700/50 hover:text-white' }}">
+                <i class="fas fa-ticket-alt w-5 text-center"></i>
+                <span class="font-medium text-sm flex-1 text-left">Réservations</span>
+                <i class="fas fa-chevron-down text-[10px] transition-transform duration-200" :class="open ? 'rotate-180' : ''"></i>
+            </button>
+            <div x-show="open" x-transition class="pl-12 space-y-1 overflow-hidden">
+                <a href="{{ route('gare-espace.reservations.index', ['tab' => 'en-cours']) }}" 
+                   class="block py-2 text-xs font-medium transition-colors {{ request('tab') == 'en-cours' || (!request()->has('tab') && request()->routeIs('gare-espace.reservations.index')) ? 'text-orange-500' : 'text-gray-400 hover:text-white' }}">
+                    Confirmés
+                </a>
+                <a href="{{ route('gare-espace.reservations.index', ['tab' => 'terminees']) }}" 
+                   class="block py-2 text-xs font-medium transition-colors {{ request('tab') == 'terminees' ? 'text-orange-500' : 'text-gray-400 hover:text-white' }}">
+                    Terminés
+                </a>
+                <a href="{{ route('gare-espace.reservations.index', ['tab' => 'details']) }}" 
+                   class="block py-2 text-xs font-medium transition-colors {{ request('tab') == 'details' ? 'text-orange-500' : 'text-gray-400 hover:text-white' }}">
+                    Détails & Stats
+                </a>
+            </div>
+        </div>
 
         <!-- Personnel -->
         <a href="{{ route('gare-espace.personnel.index') }}" 
@@ -91,11 +103,6 @@
             <i class="fas fa-user-tie w-5 text-center"></i>
             <span class="font-medium text-sm">Agents</span>
         </a>
-
-        <!-- Séparateur -->
-        <div class="py-2">
-            <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Autres</p>
-        </div>
 
         <!-- Boîte de réception -->
         <a href="{{ route('gare-espace.messages.index') }}" 

@@ -54,22 +54,35 @@ class GareReservationController extends Controller
             $query->whereDate('date_voyage', $request->date_voyage);
         }
 
-        // Filtre par statut
-        if ($request->filled('statut')) {
+        $tab = $request->get('tab', 'en-cours');
+
+        // Calculate stats on a baseline query (before filtering by status)
+        $baseQuery = clone $query;
+
+        // Filtre de recherche par statut explicite (si présent via formulaire)
+        if ($request->filled('statut') && $request->statut !== 'all') {
             $query->where('statut', $request->statut);
+        } else {
+            // Logique stricte des onglets
+            if ($tab === 'en-cours') {
+                $query->where('statut', 'confirmee');
+            } elseif ($tab === 'terminees') {
+                $query->where('statut', 'terminee');
+            }
+            // Onglet 'details' : Pas de filtre de statut (on affiche tout)
         }
 
         $reservations = $query->paginate(10)->withQueryString();
 
-        // Stats pour les badges
+        // Stats pour les badges basées sur la requête non filtrée par statut
         $stats = [
-            'total' => (clone $query)->count(),
-            'today' => (clone $query)->whereDate('date_voyage', Carbon::today())->count(),
-            'pending' => (clone $query)->where('statut', 'en_attente')->count(),
-            'confirmed' => (clone $query)->where('statut', 'confirmee')->count()
+            'total' => (clone $baseQuery)->count(),
+            'today' => (clone $baseQuery)->whereDate('date_voyage', Carbon::today())->count(),
+            'pending' => (clone $baseQuery)->where('statut', 'en_attente')->count(),
+            'confirmed' => (clone $baseQuery)->where('statut', 'confirmee')->count()
         ];
 
-        return view('gare-espace.reservation.reservation', compact('reservations', 'stats'));
+        return view('gare-espace.reservation.reservation', compact('reservations', 'stats', 'tab'));
     }
 
     /**
@@ -102,6 +115,9 @@ class GareReservationController extends Controller
                     'telephone' => $reservation->passager_telephone,
                     'email' => $reservation->passager_email,
                     'urgence' => $reservation->passager_urgence . ' (' . $reservation->nom_passager_urgence . ')',
+                    'photo' => $reservation->user && $reservation->user->photo_profile_path 
+                               ? asset('storage/' . $reservation->user->photo_profile_path) 
+                               : null,
                 ],
                 'trajet' => [
                     'depart' => $reservation->programme->point_depart,
