@@ -1254,6 +1254,13 @@ var currentRetourProgramId = null;
                     window.currentRouteData = routeData;
                     window.currentDateDepart = dateDepartInitial;
                     showRouteDepartureTimes(routeData, dateDepartInitial, true); 
+                } else if (searchTypeVoyage === 'aller_simple') {
+                    window.userWantsAllerRetour = false;
+                    window.userChoseAllerRetour = false;
+                    window.selectedReturnDate = null;
+                    window.currentRouteData = routeData;
+                    window.currentDateDepart = dateDepartInitial;
+                    showRouteDepartureTimes(routeData, dateDepartInitial, false);
                 } else {
                     // Toujours demander le type de voyage en premier si on n'a pas sélectionné Aller-Retour avec Date en amont
                     showRouteTripTypeModal(routeData, dateDepartInitial);

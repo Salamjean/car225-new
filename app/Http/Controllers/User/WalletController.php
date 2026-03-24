@@ -194,7 +194,11 @@ class WalletController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $transactions = $user->walletTransactions()->orderBy('created_at', 'desc')->take(5)->get();
+        $transactions = $user->walletTransactions()
+            ->where('reference', 'LIKE', 'W-RECH-%') // Filtrer uniquement les rechargements
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
 
         return view('user.wallet.index', compact('user', 'transactions'));
     }

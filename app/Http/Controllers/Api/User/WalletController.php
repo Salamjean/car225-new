@@ -29,6 +29,7 @@ class WalletController extends Controller
     {
         $user = $request->user();
         $transactions = $user->walletTransactions()
+            ->where('reference', 'LIKE', 'W-RECH-%') // Filtrer uniquement les rechargements
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
