@@ -272,6 +272,10 @@ Route::middleware('compagnie')->prefix('company')->group(function () {
         Route::post('/{id}/interrupt', [CompagnieSignalementController::class, 'interruptVoyage'])->name('compagnie.signalements.interrupt');
         Route::post('/{id}/resume', [CompagnieSignalementController::class, 'resumeVoyage'])->name('compagnie.signalements.resume');
         Route::post('/{id}/transbordement', [CompagnieSignalementController::class, 'transbordement'])->name('compagnie.signalements.transbordement');
+
+        // Notification accident — contacts urgence des passagers évacués
+        Route::get('/{id}/notification-accident', [CompagnieSignalementController::class, 'notificationAccident'])->name('compagnie.signalement.notification-accident');
+        Route::post('/{id}/envoyer-notifications', [CompagnieSignalementController::class, 'envoyerNotifications'])->name('compagnie.signalement.envoyer-notifications');
     });
 
     // Routes de gestion des gares
@@ -393,6 +397,7 @@ Route::middleware('hotesse')->prefix('hotesse')->group(function () {
     // Sales history and printing
     Route::get('/ventes', [App\Http\Controllers\Hotesse\HotesseController::class, 'ventes'])->name('hotesse.ventes');
     Route::get('/ticket/{reservation}/imprimer', [App\Http\Controllers\Hotesse\HotesseController::class, 'imprimerTicket'])->name('hotesse.ticket.imprimer');
+    Route::get('/ticket/{reservation}/imprimer-thermal', [App\Http\Controllers\Hotesse\HotesseController::class, 'imprimerThermal'])->name('hotesse.ticket.thermal');
     
     // API Route for Return Trips (Shared Logic with User)
     Route::get('/api/return-trips', [App\Http\Controllers\User\Reservation\ReservationController::class, 'apiReturnTrips'])->name('hotesse.api.return-trips');
@@ -532,6 +537,7 @@ Route::middleware('auth')->prefix('user')->group(function () {
         Route::post('/reservations/{reservation}/calculate-delta', [ReservationController::class, 'calculateModificationDelta'])->name('reservations.calculate-delta');
     });
     Route::get('/programmes/{programme}/recalculate-status', [ReservationController::class, 'recalculateProgramStatus'])->name('programmes.recalculate-status');
+    Route::post('/reservations/{reservation}/update-emergency', [ReservationController::class, 'updateEmergencyContact'])->name('user.reservation.update-emergency');
     Route::get('/programmes/{programme}/status-for-date/{date}', [ReservationController::class, 'getProgramStatusForDate'])->name('programmes.status-for-date');
 
     // Signalement de problèmes
@@ -635,7 +641,7 @@ Route::prefix('sapeur-pompier')->group(function () {
             return view('sapeur_pompier.signalement.show', compact('signalement'));
         })->name('sapeur-pompier.signalement.show');
 
-        // Route pour marquer comme traité
+        // Route pour marquer comme traité avec bilan passagers
         Route::patch('/signalements/{signalement}/mark-as-treated', function (\Illuminate\Http\Request $request, \App\Models\Signalement $signalement) {
             if ($signalement->sapeur_pompier_id !== Auth::guard('sapeur_pompier')->id()) {
                 abort(403);
@@ -644,10 +650,64 @@ Route::prefix('sapeur-pompier')->group(function () {
             $signalement->nombre_morts = $request->input('nombre_morts', 0);
             $signalement->nombre_blesses = $request->input('nombre_blesses', 0);
             $signalement->details_intervention = $request->input('details_intervention');
-            $signalement->statut = 'traite';
 
+            // Bilan passagers (évacués / indemnes)
+            $bilanPassagers = [];
+            if ($request->has('passagers')) {
+                foreach ($request->input('passagers') as $resId => $data) {
+                    $statut = $data['statut'] ?? 'indemne';
+                    $entry = [
+                        'reservation_id' => (int) $resId,
+                        'statut' => $statut,
+                    ];
+                    if ($statut === 'evacue') {
+                        $entry['hopital_nom'] = $data['hopital_nom'] ?? '';
+                        $entry['hopital_adresse'] = $data['hopital_adresse'] ?? '';
+                    }
+                    $bilanPassagers[] = $entry;
+                }
+            }
+            $signalement->bilan_passagers = $bilanPassagers;
+            $signalement->statut = 'traite';
             $signalement->save();
-            return back()->with('success', 'Intervention clôturée et bilan enregistré avec succès.');
+
+            // Envoyer un message interne à la compagnie
+            if ($signalement->compagnie_id) {
+                $evacuees = collect($bilanPassagers)->where('statut', 'evacue');
+                $indemnes = collect($bilanPassagers)->where('statut', 'indemne');
+
+                $hopitaux = $evacuees->pluck('hopital_nom')->unique()->filter()->implode(', ');
+
+                $messageBody = "🚨 **BILAN D'INTERVENTION — Signalement #{$signalement->id}**\n\n";
+                $messageBody .= "📊 **Résumé :**\n";
+                $messageBody .= "• Morts : {$signalement->nombre_morts}\n";
+                $messageBody .= "• Blessés : {$signalement->nombre_blesses}\n";
+                $messageBody .= "• Évacués : {$evacuees->count()}\n";
+                $messageBody .= "• Indemnes : {$indemnes->count()}\n\n";
+
+                if ($evacuees->count() > 0) {
+                    $messageBody .= "🏥 **Hôpitaux :** {$hopitaux}\n\n";
+                    $messageBody .= "⚠️ **Action requise :** Des passagers ont été évacués. ";
+                    $messageBody .= "Veuillez notifier les contacts d'urgence des passagers évacués.\n\n";
+                    $messageBody .= "👉 Cliquez sur le lien ci-dessous pour accéder à la page de notification :\n";
+                    $messageBody .= route('compagnie.signalement.notification-accident', $signalement->id);
+                }
+
+                if ($signalement->details_intervention) {
+                    $messageBody .= "\n\n📝 **Rapport :** {$signalement->details_intervention}";
+                }
+
+                \App\Models\CompanyMessage::create([
+                    'compagnie_id' => $signalement->compagnie_id,
+                    'recipient_id' => $signalement->compagnie_id,
+                    'recipient_type' => 'App\\Models\\Compagnie',
+                    'subject' => "🚨 Bilan d'accident — Signalement #{$signalement->id}",
+                    'message' => $messageBody,
+                    'is_read' => false,
+                ]);
+            }
+
+            return back()->with('success', 'Intervention clôturée et bilan enregistré avec succès. La compagnie a été notifiée.');
         })->name('sapeur-pompier.signalement.mark-as-treated');
     });
 });
@@ -724,6 +784,7 @@ Route::prefix('gare-espace')->name('gare-espace.')->group(function () {
         // Réservations
         Route::prefix('reservations')->name('reservations.')->group(function () {
             Route::get('/', [App\Http\Controllers\GareEspace\GareReservationController::class, 'index'])->name('index');
+            Route::get('/program/{programme}', [App\Http\Controllers\GareEspace\GareReservationController::class, 'programDetails'])->name('program');
             Route::get('/{reservation}', [App\Http\Controllers\GareEspace\GareReservationController::class, 'show'])->name('show');
         });
 
@@ -775,6 +836,16 @@ Route::prefix('gare-espace')->name('gare-espace.')->group(function () {
             Route::get('/{itineraire}/edit', [App\Http\Controllers\GareEspace\GareItineraireController::class, 'edit'])->name('edit');
             Route::put('/{itineraire}', [App\Http\Controllers\GareEspace\GareItineraireController::class, 'update'])->name('update');
             Route::delete('/{itineraire}', [App\Http\Controllers\GareEspace\GareItineraireController::class, 'destroy'])->name('destroy');
+        });
+
+        // Programmes
+        Route::prefix('programme')->name('programme.')->group(function () {
+            Route::get('/', [App\Http\Controllers\GareEspace\GareProgrammeController::class, 'index'])->name('index');
+            Route::get('/create', [App\Http\Controllers\GareEspace\GareProgrammeController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\GareEspace\GareProgrammeController::class, 'store'])->name('store');
+            Route::post('/update-route', [App\Http\Controllers\GareEspace\GareProgrammeController::class, 'updateRoute'])->name('updateRoute');
+            Route::delete('/{id}', [App\Http\Controllers\GareEspace\GareProgrammeController::class, 'destroy'])->name('destroy');
+            Route::patch('/{id}/annuler', [App\Http\Controllers\GareEspace\GareProgrammeController::class, 'annuler'])->name('annuler');
         });
 
         // Messages (Boîte de réception)

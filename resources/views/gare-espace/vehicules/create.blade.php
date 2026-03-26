@@ -29,7 +29,7 @@
                             <h2 class="text-2xl font-bold text-gray-900">Informations générales</h2>
                         </div>
 
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="grid grid-cols-1 gap-6">
                             <!-- Immatriculation -->
                             <div class="space-y-2">
                                 <label class="flex items-center text-sm font-semibold text-gray-700">
@@ -40,17 +40,6 @@
                                     class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white font-mono"
                                     placeholder="Entrer l'immatriculation">
                                 @error('immatriculation')
-                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <!-- Numéro de série -->
-                            <div class="space-y-2">
-                                <label class="text-sm font-semibold text-gray-700">Numéro de série</label>
-                                <input type="text" name="numero_serie" value="{{ old('numero_serie') }}"
-                                    class="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
-                                    placeholder="Numéro de série du véhicule">
-                                @error('numero_serie')
                                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                 @enderror
                             </div>

@@ -191,7 +191,7 @@
                                     <i class="fas fa-calendar-alt text-blue-400/60 text-xs"></i>
                                 </span>
                                 <input type="date" id="date_depart" name="date_depart"
-                                    value="{{ $searchParams['date_depart'] ?? date('Y-m-d', strtotime('+1 day')) }}"
+                                    value="{{ $searchParams['date_depart'] ?? '' }}"
                                     class="glass-input w-full pl-7 pr-1 py-3.5 rounded-xl font-semibold text-xs sm:text-sm"
                                     min="{{ date('Y-m-d', strtotime('+1 day')) }}" required>
                             </div>
@@ -324,7 +324,7 @@
                                             </span>
                                         @endif
                                         <span class="text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg">
-                                            <i class="fas fa-calendar-alt mr-1"></i>{{ date('d/m/Y', strtotime($searchParams['date_depart'])) }}
+                                            <i class="fas fa-calendar-alt mr-1"></i>{{ date('d/m/Y', strtotime($searchParams['date_depart'] ?? $searchParams['date_depart_formatted'])) }}
                                         </span>
                                         @if(isset($searchParams['type_voyage']) && $searchParams['type_voyage'] === 'aller_retour' && isset($searchParams['date_retour']) && $searchParams['date_retour'])
                                             <i class="fas fa-arrows-alt-h text-purple-400 text-[10px]"></i>
@@ -418,7 +418,7 @@
                                                             $chipBg = $isFull ? 'bg-red-50 border-red-200 text-red-600' : ($isAlmost ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700');
                                                             $dotColor = $isFull ? 'bg-red-400' : ($isAlmost ? 'bg-amber-400' : 'bg-emerald-400');
                                                         @endphp
-                                                        <div onclick="showVehicleDetails('{{ $horaire['vehicule_id'] ?? 0 }}', '{{ $horaire['id'] }}', '{{ $searchParams['date_depart'] }}', '{{ substr($horaire['heure_depart'], 0, 5) }}')"
+                                                        <div onclick="showVehicleDetails('{{ $horaire['vehicule_id'] ?? 0 }}', '{{ $horaire['id'] }}', '{{ $searchParams['date_depart'] ?? $searchParams['date_depart_formatted'] }}', '{{ substr($horaire['heure_depart'], 0, 5) }}')"
                                                              class="schedule-chip flex items-center gap-2 px-3 py-2 rounded-xl border {{ $chipBg }} cursor-pointer group shadow-sm"
                                                              title="Cliquez pour voir les places disponibles">
                                                             <span class="w-1.5 h-1.5 rounded-full {{ $dotColor }}"></span>
@@ -465,7 +465,7 @@
                                             @endphp
                                             <button type="button"
                                                 data-route="{{ json_encode($routeData, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) }}"
-                                                data-date="{{ $searchParams['date_depart'] }}"
+                                                data-date="{{ $searchParams['date_depart'] ?? $searchParams['date_depart_formatted'] }}"
                                                 onclick="handleReservationClick(this)"
                                                 class="bg-gradient-to-r from-[#e94f1b] to-orange-500 text-white px-6 sm:px-8 py-3 rounded-xl font-black text-sm shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:from-[#d4430f] hover:to-orange-600 transition-all duration-300 active:scale-95 flex items-center gap-2 whitespace-nowrap">
                                                 <span>RÉSERVER</span>
@@ -1240,30 +1240,35 @@ var currentRetourProgramId = null;
                     console.error("Pas de données data-route trouvées");
                     return;
                 }
-
                 const routeData = JSON.parse(routeDataJson);
-                console.log('Données route:', routeData);
-                
                 const searchTypeVoyage = '{{ $searchParams["type_voyage"] ?? "aller_simple" }}';
                 const searchDateRetour = '{{ $searchParams["date_retour"] ?? "" }}';
+                const hasSearchedDate = '{{ $searchParams["date_depart"] ?? "" }}' !== "";
 
-                if (searchTypeVoyage === 'aller_retour' && routeData.has_retour && searchDateRetour) {
+                if (!hasSearchedDate) {
+                    // Si ce n'est pas une recherche (pas de date de départ spécifiée), on demande d'abord le type de voyage
+                    showRouteTripTypeModal(routeData, dateDepartInitial);
+                } else if (searchTypeVoyage === 'aller_retour' && routeData.has_retour && searchDateRetour) {
                     window.userWantsAllerRetour = true;
                     window.userChoseAllerRetour = true;
                     window.selectedReturnDate = searchDateRetour;
                     window.currentRouteData = routeData;
                     window.currentDateDepart = dateDepartInitial;
                     showRouteDepartureTimes(routeData, dateDepartInitial, true); 
-                } else if (searchTypeVoyage === 'aller_simple') {
+                } else {
+                    // Si c'est une recherche simple ou qu'on n'a pas de retour spécifié
                     window.userWantsAllerRetour = false;
                     window.userChoseAllerRetour = false;
                     window.selectedReturnDate = null;
                     window.currentRouteData = routeData;
                     window.currentDateDepart = dateDepartInitial;
-                    showRouteDepartureTimes(routeData, dateDepartInitial, false);
-                } else {
-                    // Toujours demander le type de voyage en premier si on n'a pas sélectionné Aller-Retour avec Date en amont
-                    showRouteTripTypeModal(routeData, dateDepartInitial);
+                    
+                    // Si c'est aller simple par défaut on demande l'heure, sinon on demande le type
+                    if (searchTypeVoyage === 'aller_simple') {
+                        showRouteDepartureTimes(routeData, dateDepartInitial, false);
+                    } else {
+                        showRouteTripTypeModal(routeData, dateDepartInitial);
+                    }
                 }
             } catch (e) {
                 console.error('Erreur JS lors du clic:', e);
@@ -3226,7 +3231,7 @@ function onAllerRetourChoiceChange() {
             // On ne montre plus les dÃ©tails du vÃ©hicule selon la demande utilisateur
             const programTitle = (program.compagnie?.sigle || 'Compagnie') + ' - ' + program.point_depart + ' → ' + program.point_arrive;
 
-            window.seatAssignmentMode = null; // Réinitialiser le mode
+            window.seatAssignmentMode = 'auto'; // Mode automatique par défaut
             const basePriceTemp = parseInt(window.currentProgramPrice) * selectedNumberOfPlaces;
 
             let html = `
@@ -3236,31 +3241,38 @@ function onAllerRetourChoiceChange() {
                         <p class="text-gray-600">Sélectionnez vos places | Total places: ${totalPlaces}</p>
                     </div>
 
-                    <!-- Choix du mode d'assignation (Boutons larges style Image 2) -->
-                    <div id="seatModeSelectionArea" class="grid sm:grid-cols-2 gap-4 sm:gap-6 mb-6 max-w-4xl mx-auto">
-                        <!-- Automatique -->
-                        <button type="button" onclick="selectSeatMode('auto')" id="modeAutoBtn" class="bg-blue-600 text-white rounded-2xl p-4 sm:p-6 shadow-md hover:shadow-lg transition-all flex flex-col items-center justify-center text-center relative overflow-hidden group border-4 border-transparent">
-                            <div class="absolute inset-0 bg-blue-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                            <div class="relative z-10 flex flex-col items-center">
-                                <div class="flex items-center gap-3 mb-4">
-                                    <i class="fas fa-cog text-4xl"></i>
-                                    <span class="text-2xl font-black text-left leading-tight">PLACEMENT<br>AUTOMATIQUE</span>
-                                </div>
-                                <p class="font-medium text-blue-100 text-sm">Laissez-nous vous attribuer un siège.<br>Simple et rapide.</p>
-                            </div>
-                        </button>
+                    <!-- Choix du mode d'assignation (Manuel uniquement — automatique par défaut) -->
+                    <div id="seatModeSelectionArea" class="flex flex-col items-center gap-4 mb-6 max-w-2xl mx-auto w-full">
 
-                        <!-- Manuel -->
-                        <button type="button" onclick="selectSeatMode('manual')" id="modeManualBtn" class="bg-[#f08800] text-white rounded-2xl p-4 sm:p-6 shadow-md hover:shadow-lg transition-all flex flex-col items-center justify-center text-center relative overflow-hidden group border-4 border-transparent">
+                        <!-- Info : place déjà assignée automatiquement -->
+                        <div class="w-full bg-green-50 border border-green-200 rounded-xl px-4 py-3 flex items-start gap-3">
+                            <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <i class="fas fa-check text-green-600 text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-green-800 font-semibold text-sm">Une place vous a été assignée automatiquement</p>
+                                <p class="text-green-600 text-xs mt-0.5">C'est <strong>gratuit</strong> ! Cliquez directement sur <strong>Valider le choix</strong> pour continuer, ou choisissez votre siège ci-dessous.</p>
+                            </div>
+                        </div>
+
+                        <!-- Bouton Manuel -->
+                        <button type="button" onclick="selectSeatMode('manual')" id="modeManualBtn" class="bg-[#f08800] text-white rounded-2xl p-5 shadow-md hover:shadow-lg transition-all flex flex-col items-center justify-center text-center relative overflow-hidden group border-4 border-transparent w-full">
                             <div class="absolute inset-0 bg-[#d97a00] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                             <div class="relative z-10 w-full flex flex-col items-center">
-                                <div class="flex items-center gap-3 mb-4">
-                                    <i class="fas fa-hand-pointer text-4xl"></i>
+                                <div class="flex items-center gap-3 mb-2">
+                                    <i class="fas fa-hand-pointer text-3xl"></i>
                                     <span class="text-2xl font-black text-left leading-tight">CHOISIR<br>SA PLACE</span>
                                 </div>
-                                <div class="bg-white text-gray-800 rounded-xl p-3 flex items-center justify-between w-full mt-2 shadow-sm">
-                                    <p class="text-xs text-left font-medium leading-tight flex-1">Le choix de places ajoutera <strong class="text-[#e94f1b]">100 FCFA</strong> par place sur le prix du billet.</p>
-                                    <div class="ml-2 w-10 h-10 border-2 border-gray-200 rounded grid grid-cols-2 gap-0.5 p-0.5" style="transform: scale(0.8)">
+                                <p class="text-orange-100 text-sm mb-4">Visualisez le plan du bus et sélectionnez votre siège préféré</p>
+                                <div class="bg-white text-gray-800 rounded-xl p-3 flex items-center gap-3 w-full shadow-sm">
+                                    <div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                        <i class="fas fa-tag text-[#f08800] text-sm"></i>
+                                    </div>
+                                    <div class="text-left flex-1">
+                                        <p class="text-xs font-bold text-gray-700">Surcoût : <strong class="text-[#e94f1b]">+100 FCFA</strong> par place</p>
+                                        <p class="text-xs text-gray-500">Sera ajouté au prix du billet</p>
+                                    </div>
+                                    <div class="w-10 h-10 border-2 border-gray-200 rounded grid grid-cols-2 gap-0.5 p-0.5 flex-shrink-0">
                                         <div class="bg-gray-200 rounded-sm"></div><div class="bg-gray-200 rounded-sm"></div>
                                         <div class="bg-orange-500 rounded-sm"></div><div class="bg-gray-200 rounded-sm"></div>
                                         <div class="bg-gray-200 rounded-sm"></div><div class="bg-orange-500 rounded-sm"></div>
@@ -3393,9 +3405,10 @@ function onAllerRetourChoiceChange() {
 
             document.getElementById('seatSelectionArea').innerHTML = html;
             updateSelectedSeatsCount();
+            setTimeout(() => { autoAssignSeats(); }, 50);
         }
 
-        window.seatAssignmentMode = null;
+        window.seatAssignmentMode = 'auto';
         window.seatSelectionExtraCost = 0;
 
         function selectSeatMode(mode) {
@@ -3405,18 +3418,14 @@ function onAllerRetourChoiceChange() {
             const seatMapContainer = document.getElementById('seatMapContainer');
             
             if (mode === 'auto') {
-                modeAutoBtn.classList.add('ring-4', 'ring-blue-300', 'scale-[1.02]');
-                modeManualBtn.classList.remove('ring-4', 'ring-orange-300', 'scale-[1.02]');
-                modeManualBtn.style.opacity = '0.6';
-                modeAutoBtn.style.opacity = '1';
-                
+                if (modeAutoBtn) { modeAutoBtn.classList.add('ring-4', 'ring-blue-300', 'scale-[1.02]'); modeAutoBtn.style.opacity = '1'; }
+                if (modeManualBtn) { modeManualBtn.classList.remove('ring-4', 'ring-orange-300', 'scale-[1.02]'); modeManualBtn.style.opacity = '0.6'; }
+
                 seatMapContainer.classList.add('hidden');
                 autoAssignSeats();
             } else {
-                modeManualBtn.classList.add('ring-4', 'ring-orange-300', 'scale-[1.02]');
-                modeAutoBtn.classList.remove('ring-4', 'ring-blue-300', 'scale-[1.02]');
-                modeAutoBtn.style.opacity = '0.6';
-                modeManualBtn.style.opacity = '1';
+                if (modeManualBtn) { modeManualBtn.classList.add('ring-4', 'ring-orange-300', 'scale-[1.02]'); modeManualBtn.style.opacity = '1'; }
+                if (modeAutoBtn) { modeAutoBtn.classList.remove('ring-4', 'ring-blue-300', 'scale-[1.02]'); modeAutoBtn.style.opacity = '0.6'; }
                 
                 selectedSeats.forEach(seat => {
                     const el = document.querySelector(`[onclick="toggleSeat(${seat})"]`);
@@ -3819,7 +3828,7 @@ function generateSeatSelectionViewRetour(program) {
     // On ne montre plus les dÃ©tails du vÃ©hicule
     const programTitle = (program.compagnie?.sigle || 'Compagnie') + ' - ' + program.point_depart + ' → ' + program.point_arrive;
 
-    window.seatAssignmentModeRetour = null;
+    window.seatAssignmentModeRetour = 'auto'; // Mode automatique par défaut
 
     let html = `
         <div class="bg-white p-2 sm:p-6 mb-6 rounded-xl">
@@ -3828,29 +3837,38 @@ function generateSeatSelectionViewRetour(program) {
                 <p class="text-gray-600">Sélectionnez vos places | Total places: ${totalPlaces}</p>
             </div>
             
-            <!-- Choix du mode d'assignation -->
-            <div id="seatModeSelectionAreaRetour" class="grid sm:grid-cols-2 gap-4 sm:gap-6 mb-6 max-w-4xl mx-auto">
-                <button type="button" onclick="selectSeatModeRetour('auto')" id="modeAutoBtnRetour" class="bg-blue-600 text-white rounded-2xl p-4 sm:p-6 shadow-md hover:shadow-lg transition-all flex flex-col items-center justify-center text-center relative overflow-hidden group border-4 border-transparent">
-                    <div class="absolute inset-0 bg-blue-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <div class="relative z-10 flex flex-col items-center">
-                        <div class="flex items-center gap-3 mb-4">
-                            <i class="fas fa-cog text-4xl"></i>
-                            <span class="text-2xl font-black text-left leading-tight">PLACEMENT<br>AUTOMATIQUE</span>
-                        </div>
-                        <p class="font-medium text-blue-100 text-sm">Laissez-nous vous attribuer un siège.<br>Simple et rapide.</p>
-                    </div>
-                </button>
+            <!-- Choix du mode d'assignation (Manuel uniquement — automatique par défaut) -->
+            <div id="seatModeSelectionAreaRetour" class="flex flex-col items-center gap-4 mb-6 max-w-2xl mx-auto w-full">
 
-                <button type="button" onclick="selectSeatModeRetour('manual')" id="modeManualBtnRetour" class="bg-[#f08800] text-white rounded-2xl p-4 sm:p-6 shadow-md hover:shadow-lg transition-all flex flex-col items-center justify-center text-center relative overflow-hidden group border-4 border-transparent">
+                <!-- Info : place déjà assignée automatiquement -->
+                <div class="w-full bg-green-50 border border-green-200 rounded-xl px-4 py-3 flex items-start gap-3">
+                    <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <i class="fas fa-check text-green-600 text-sm"></i>
+                    </div>
+                    <div>
+                        <p class="text-green-800 font-semibold text-sm">Une place de retour vous a été assignée automatiquement</p>
+                        <p class="text-green-600 text-xs mt-0.5">C'est <strong>gratuit</strong> ! Cliquez directement sur <strong>Valider le choix du retour</strong> pour continuer, ou choisissez votre siège ci-dessous.</p>
+                    </div>
+                </div>
+
+                <!-- Bouton Manuel -->
+                <button type="button" onclick="selectSeatModeRetour('manual')" id="modeManualBtnRetour" class="bg-[#f08800] text-white rounded-2xl p-5 shadow-md hover:shadow-lg transition-all flex flex-col items-center justify-center text-center relative overflow-hidden group border-4 border-transparent w-full">
                     <div class="absolute inset-0 bg-[#d97a00] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <div class="relative z-10 w-full flex flex-col items-center">
-                        <div class="flex items-center gap-3 mb-4">
-                            <i class="fas fa-hand-pointer text-4xl"></i>
+                        <div class="flex items-center gap-3 mb-2">
+                            <i class="fas fa-hand-pointer text-3xl"></i>
                             <span class="text-2xl font-black text-left leading-tight">CHOISIR<br>SA PLACE</span>
                         </div>
-                        <div class="bg-white text-gray-800 rounded-xl p-3 flex items-center justify-between w-full shadow-inner mt-2">
-                            <p class="text-xs text-left font-medium leading-tight flex-1">Le choix de places ajoutera <strong class="text-[#e94f1b]">100 FCFA</strong> par place sur le prix du billet.</p>
-                            <div class="ml-2 w-10 h-10 border-2 border-gray-200 rounded grid grid-cols-2 gap-0.5 p-0.5" style="transform: scale(0.8)">
+                        <p class="text-orange-100 text-sm mb-4">Visualisez le plan du bus et sélectionnez votre siège préféré</p>
+                        <div class="bg-white text-gray-800 rounded-xl p-3 flex items-center gap-3 w-full shadow-sm">
+                            <div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-tag text-[#f08800] text-sm"></i>
+                            </div>
+                            <div class="text-left flex-1">
+                                <p class="text-xs font-bold text-gray-700">Surcoût : <strong class="text-[#e94f1b]">+100 FCFA</strong> par place</p>
+                                <p class="text-xs text-gray-500">Sera ajouté au prix du billet</p>
+                            </div>
+                            <div class="w-10 h-10 border-2 border-gray-200 rounded grid grid-cols-2 gap-0.5 p-0.5 flex-shrink-0">
                                 <div class="bg-gray-200 rounded-sm"></div><div class="bg-gray-200 rounded-sm"></div>
                                 <div class="bg-orange-500 rounded-sm"></div><div class="bg-gray-200 rounded-sm"></div>
                                 <div class="bg-gray-200 rounded-sm"></div><div class="bg-orange-500 rounded-sm"></div>
@@ -3970,6 +3988,7 @@ function generateSeatSelectionViewRetour(program) {
 
     document.getElementById('seatSelectionAreaRetour').innerHTML = html;
     updateSelectedSeatsCountRetour();
+    setTimeout(() => { autoAssignSeatsRetour(); }, 50);
 }
 function toggleSeatRetour(seatNumber) {
     const index = selectedSeatsRetour.indexOf(seatNumber);
@@ -4093,18 +4112,14 @@ function selectSeatModeRetour(mode) {
     const seatMapContainer = document.getElementById('seatMapContainerRetour');
     
     if (mode === 'auto') {
-        modeAutoBtn.classList.add('ring-4', 'ring-blue-300', 'scale-[1.02]');
-        modeManualBtn.classList.remove('ring-4', 'ring-orange-300', 'scale-[1.02]');
-        modeManualBtn.style.opacity = '0.6';
-        modeAutoBtn.style.opacity = '1';
-        
+        if (modeAutoBtn) { modeAutoBtn.classList.add('ring-4', 'ring-blue-300', 'scale-[1.02]'); modeAutoBtn.style.opacity = '1'; }
+        if (modeManualBtn) { modeManualBtn.classList.remove('ring-4', 'ring-orange-300', 'scale-[1.02]'); modeManualBtn.style.opacity = '0.6'; }
+
         seatMapContainer.classList.add('hidden');
         autoAssignSeatsRetour();
     } else {
-        modeManualBtn.classList.add('ring-4', 'ring-orange-300', 'scale-[1.02]');
-        modeAutoBtn.classList.remove('ring-4', 'ring-blue-300', 'scale-[1.02]');
-        modeAutoBtn.style.opacity = '0.6';
-        modeManualBtn.style.opacity = '1';
+        if (modeManualBtn) { modeManualBtn.classList.add('ring-4', 'ring-orange-300', 'scale-[1.02]'); modeManualBtn.style.opacity = '1'; }
+        if (modeAutoBtn) { modeAutoBtn.classList.remove('ring-4', 'ring-blue-300', 'scale-[1.02]'); modeAutoBtn.style.opacity = '0.6'; }
         
         selectedSeatsRetour.forEach(seat => {
             const el = document.querySelector(`[onclick="toggleSeatRetour(${seat})"]`);
@@ -4346,6 +4361,17 @@ function proceedToPassengerInfoFromRetour() {
                     isValid = false;
                 }
 
+                if (telephone !== "" && telephone === urgence) {
+                    isValid = false;
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Numéros identiques',
+                        text: `Le numéro de téléphone du passager (place n°${seat}) ne peut pas être le même que le numéro d'urgence.`,
+                        confirmButtonColor: '#e94f1b'
+                    });
+                    return;
+                }
+
                 passengers.push({
                     seat_number: seat,
                     nom, prenom, telephone, email, urgence, nom_urgence
@@ -4353,12 +4379,14 @@ function proceedToPassengerInfoFromRetour() {
             });
 
             if (!isValid) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Informations manquantes',
-                    text: 'Veuillez remplir toutes les informations pour chaque passager.',
-                    confirmButtonColor: '#e94f1b'
-                });
+                if (!Swal.isVisible()) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Informations manquantes',
+                        text: 'Veuillez remplir toutes les informations pour chaque passager.',
+                        confirmButtonColor: '#e94f1b'
+                    });
+                }
                 return;
             }
 

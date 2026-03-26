@@ -422,4 +422,107 @@ class SignalementController extends Controller
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
         return $earthRadius * $c;
     }
+
+    /**
+     * Page de notification accident — afficher les passagers évacués avec contacts d'urgence.
+     */
+    public function notificationAccident($id)
+    {
+        $compagnieId = Auth::guard('compagnie')->id();
+        $compagnie = Auth::guard('compagnie')->user();
+
+        $signalement = Signalement::whereHas('programme', function ($q) use ($compagnieId) {
+            $q->where('compagnie_id', $compagnieId);
+        })->with(['programme.gareDepart', 'programme.gareArrivee', 'vehicule', 'voyage', 'sapeurPompier'])
+          ->findOrFail($id);
+
+        $bilanPassagers = $signalement->bilan_passagers ?? [];
+        $evacueeIds = collect($bilanPassagers)->where('statut', 'evacue')->pluck('reservation_id')->toArray();
+
+        // Récupérer les réservations des passagers évacués
+        $reservationsEvacuees = \App\Models\Reservation::whereIn('id', $evacueeIds)
+            ->with('user')
+            ->get();
+
+        // Associer chaque réservation avec les données de l'hôpital
+        $passagersEvacues = $reservationsEvacuees->map(function ($res) use ($bilanPassagers) {
+            $bilanEntry = collect($bilanPassagers)->firstWhere('reservation_id', $res->id);
+            return [
+                'reservation' => $res,
+                'nom' => trim(($res->passager_nom ?? '') . ' ' . ($res->passager_prenom ?? '')) ?: ($res->user->name ?? 'Inconnu'),
+                'contact_urgence' => $res->passager_urgence ?? $res->ice_contact ?? null,
+                'nom_contact_urgence' => $res->nom_passager_urgence ?? 'Contact d\'urgence',
+                'email_passager' => $res->passager_email ?? ($res->user->email ?? null),
+                'telephone_passager' => $res->passager_telephone ?? null,
+                'hopital_nom' => $bilanEntry['hopital_nom'] ?? 'Non précisé',
+                'hopital_adresse' => $bilanEntry['hopital_adresse'] ?? '',
+                'seat' => $res->seat_number ?? '?',
+            ];
+        });
+
+        // Grouper par hôpital
+        $parHopital = $passagersEvacues->groupBy('hopital_nom');
+
+        // Récupérer aussi les indemnes
+        $indemneIds = collect($bilanPassagers)->where('statut', 'indemne')->pluck('reservation_id')->toArray();
+        $countIndemnes = count($indemneIds);
+
+        return view('compagnie.signalements.notification-accident', compact(
+            'signalement',
+            'compagnie',
+            'passagersEvacues',
+            'parHopital',
+            'countIndemnes'
+        ));
+    }
+
+    /**
+     * Envoyer les notifications aux contacts d'urgence des passagers évacués.
+     */
+    public function envoyerNotifications(Request $request, $id)
+    {
+        $compagnieId = Auth::guard('compagnie')->id();
+        $compagnie = Auth::guard('compagnie')->user();
+
+        $signalement = Signalement::whereHas('programme', function ($q) use ($compagnieId) {
+            $q->where('compagnie_id', $compagnieId);
+        })->with(['programme'])->findOrFail($id);
+
+        $request->validate([
+            'message' => 'required|string|min:10',
+            'contacts' => 'required|array|min:1',
+            'contacts.*' => 'required|string',
+        ]);
+
+        $messageTexte = $request->input('message');
+        $contacts = $request->input('contacts');
+        $sent = 0;
+
+        foreach ($contacts as $contact) {
+            try {
+                // Envoyer par email si c'est un email
+                if (filter_var($contact, FILTER_VALIDATE_EMAIL)) {
+                    Mail::raw($messageTexte, function ($mail) use ($contact, $compagnie, $signalement) {
+                        $mail->to($contact)
+                             ->subject("Notification d'accident — {$compagnie->name}")
+                             ->from(config('mail.from.address'), $compagnie->name);
+                    });
+                    $sent++;
+                }
+                // Pour les numéros de téléphone, on log l'envoi (intégration SMS future)
+                else {
+                    Log::info("SMS Notification Accident #{$signalement->id}", [
+                        'to' => $contact,
+                        'message' => $messageTexte,
+                        'compagnie' => $compagnie->name,
+                    ]);
+                    $sent++;
+                }
+            } catch (\Exception $e) {
+                Log::error("Erreur envoi notification accident: " . $e->getMessage());
+            }
+        }
+
+        return back()->with('success', "{$sent} notification(s) envoyée(s) aux contacts d'urgence avec succès.");
+    }
 }

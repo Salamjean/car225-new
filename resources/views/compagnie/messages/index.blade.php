@@ -88,20 +88,73 @@
 
     <!-- Main Tabs -->
    <div class="msg-tabs">
-        <button class="msg-tab-btn {{ !$isSentActive ? 'active' : '' }}" onclick="switchMainTab('received', this)">
-            <i class="fas fa-inbox"></i> Messages Reçus des Gares
+        <button class="msg-tab-btn {{ !$isSentActive && request('tab') !== 'accident' ? 'active' : '' }}" onclick="switchMainTab('received', this)">
+            <i class="fas fa-inbox"></i> Reçus (Gares)
             <span class="msg-badge {{ $unreadReceivedCount > 0 ? 'msg-badge-danger' : '' }}">
                 {{ $unreadReceivedCount > 0 ? $unreadReceivedCount : $receivedMessages->total() }}
             </span>
         </button>
+        <button class="msg-tab-btn {{ request('tab') === 'accident' ? 'active' : '' }}" onclick="switchMainTab('accident', this)">
+            <i class="fas fa-car-crash"></i> Bilans Accidents
+            <span class="msg-badge {{ ($unreadAccidentCount ?? 0) > 0 ? 'msg-badge-danger' : '' }}">
+                {{ ($unreadAccidentCount ?? 0) > 0 ? $unreadAccidentCount : ($accidentMessages->total() ?? 0) }}
+            </span>
+        </button>
         <button class="msg-tab-btn {{ $isSentActive ? 'active' : '' }}" onclick="switchMainTab('sent', this)">
-            <i class="fas fa-paper-plane"></i> Messages Envoyés
+            <i class="fas fa-paper-plane"></i> Envoyés
             <span class="msg-badge">{{ $messages->total() }}</span>
         </button>
     </div>
 
+    <!-- PANEL: ACCIDENT BILANS -->
+    <div id="panel-accident" class="msg-panel" style="display: {{ request('tab') === 'accident' ? 'flex' : 'none' }};">
+        <div class="msg-filter-bar">
+            <span class="msg-filter-pill active" style="pointer-events: none;">
+                <i class="fas fa-fire-extinguisher" style="color:#DC2626;"></i> Bilans d'intervention — Sapeurs Pompiers
+            </span>
+        </div>
+
+        <div class="msg-list">
+            @forelse($accidentMessages as $accMsg)
+                <a href="{{ route('compagnie.messages.show', $accMsg->id) }}" class="msg-item {{ $accMsg->is_read ? 'read' : '' }}">
+                    <div class="msg-avatar" style="background:{{ $accMsg->is_read ? '#FEE2E2' : '#DC2626' }};color:{{ $accMsg->is_read ? '#DC2626' : 'white' }};">
+                        <i class="fas fa-car-crash"></i>
+                    </div>
+                    <div class="msg-content">
+                        <div class="msg-sender-wrap">
+                            <span class="msg-sender">Sapeurs Pompiers</span>
+                            <span class="msg-tag" style="background:#FEE2E2;color:#DC2626;">Accident</span>
+                        </div>
+                        <div class="msg-subject">{{ $accMsg->subject }}</div>
+                        <div class="msg-snippet">{{ Str::limit(strip_tags($accMsg->message), 80) }}</div>
+                    </div>
+                    <div class="msg-meta">
+                        <span class="msg-time">{{ $accMsg->created_at->translatedFormat('d M, H:i') }}</span>
+                        @if($accMsg->is_read)
+                            <span class="msg-status st-read"><i class="fas fa-check-double"></i> Lu</span>
+                        @else
+                            <span class="msg-status st-unread"><i class="fas fa-envelope"></i> Nouveau</span>
+                        @endif
+                    </div>
+                </a>
+            @empty
+                <div class="msg-empty">
+                    <div class="msg-empty-icon"><i class="fas fa-shield-alt"></i></div>
+                    <div class="msg-empty-title">Aucun bilan reçu</div>
+                    <div class="msg-empty-text">Aucun rapport d'accident transmis par les sapeurs pompiers.</div>
+                </div>
+            @endforelse
+        </div>
+
+        @if(isset($accidentMessages) && $accidentMessages->hasPages())
+        <div class="dash-card-footer">
+            {{ $accidentMessages->appends(request()->query())->links('pagination::bootstrap-4') }}
+        </div>
+        @endif
+    </div>
+
     <!-- PANEL: RECEIVED MESSAGES -->
-    <div id="panel-received" class="msg-panel" style="border-top-left-radius: 0; display: {{ !$isSentActive ? 'flex' : 'none' }};">
+    <div id="panel-received" class="msg-panel" style="border-top-left-radius: 0; display: {{ !$isSentActive && request('tab') !== 'accident' ? 'flex' : 'none' }};">
         <div class="msg-filter-bar">
             <span class="msg-filter-pill active" style="pointer-events: none;">
                 <i class="fas fa-warehouse text-orange"></i> Boîte de réception Gares
@@ -243,6 +296,7 @@
 function switchMainTab(tab, btn) {
     document.getElementById('panel-sent').style.display = tab === 'sent' ? 'flex' : 'none';
     document.getElementById('panel-received').style.display = tab === 'received' ? 'flex' : 'none';
+    document.getElementById('panel-accident').style.display = tab === 'accident' ? 'flex' : 'none';
     
     document.querySelectorAll('.msg-tab-btn').forEach(b => {
         b.classList.remove('active');

@@ -110,52 +110,101 @@
         </div>
 
         <!-- Today's Voyages -->
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-100">
-            <div class="p-6 border-b border-gray-100">
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 anim-fade-up">
+            <div class="p-6 border-b border-gray-100 flex items-center justify-between">
                 <h2 class="text-xl font-bold text-gray-900 flex items-center gap-3">
                     <i class="fas fa-calendar-day text-orange-500"></i>
                     Voyages du jour
                 </h2>
+                <div class="flex gap-2">
+                    <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-black uppercase tracking-wider">
+                        Assignés: {{ $voyagesAujourdhui->count() }}
+                    </span>
+                    <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-[10px] font-black uppercase tracking-wider">
+                        À assigner: {{ $programmesNonAssignes->count() }}
+                    </span>
+                </div>
             </div>
             <div class="p-6">
-                @forelse($voyagesAujourdhui as $voyage)
-                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl mb-3 last:mb-0 hover:bg-gray-100 transition-colors">
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                                <i class="fas fa-route text-blue-600"></i>
+                @php
+                    $allToday = $voyagesAujourdhui->map(function($v) {
+                        return (object)[
+                            'type' => 'assigned',
+                            'time' => $v->programme?->heure_depart,
+                            'route' => ($v->programme?->gareDepart?->nom_gare ?? 'Gare') . ' → ' . ($v->programme?->gareArrivee?->nom_gare ?? 'Gare'),
+                            'chauffeur' => ($v->chauffeur?->prenom ?? '') . ' ' . ($v->chauffeur?->name ?? 'N/A'),
+                            'vehicule' => $v->vehicule?->immatriculation ?? 'N/A',
+                            'statut' => $v->statut,
+                            'url' => route('gare-espace.voyages.index', ['show_details' => $v->programme_id])
+                        ];
+                    })->concat($programmesNonAssignes->map(function($p) {
+                        return (object)[
+                            'type' => 'unassigned',
+                            'time' => $p->heure_depart,
+                            'route' => ($p->gareDepart?->nom_gare ?? 'Gare') . ' → ' . ($p->gareArrivee?->nom_gare ?? 'Gare'),
+                            'chauffeur' => 'Non assigné',
+                            'vehicule' => 'Non assigné',
+                            'statut' => 'à_assigner',
+                            'url' => route('gare-espace.voyages.index')
+                        ];
+                    }))->sortBy('time');
+                @endphp
+
+                @forelse($allToday as $voyage)
+                    <a href="{{ $voyage->url }}" class="flex items-center justify-between p-4 {{ $voyage->type === 'unassigned' ? 'bg-red-50/50 border-l-4 border-red-500' : 'bg-gray-50 border-l-4 border-blue-500' }} rounded-xl mb-3 last:mb-0 hover:bg-gray-100 transition-all duration-300 group block">
+                        <div class="flex items-center justify-between w-full">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 {{ $voyage->type === 'unassigned' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600' }} rounded-xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                                    <i class="fas fa-route"></i>
+                                </div>
+                                <div>
+                                    <p class="font-black text-gray-900 uppercase tracking-tight group-hover:text-blue-600 transition-colors">
+                                        {{ $voyage->route }}
+                                    </p>
+                                    <p class="text-xs text-gray-500 flex items-center gap-3">
+                                        <span class="flex items-center gap-1 font-bold">
+                                            <i class="fas fa-clock text-orange-500"></i> {{ \Carbon\Carbon::parse($voyage->time)->format('H:i') }}
+                                        </span>
+                                        <span class="w-1 h-1 bg-gray-300 rounded-full"></span>
+                                        <span class="flex items-center gap-1">
+                                            <i class="fas fa-user {{ $voyage->type === 'unassigned' ? 'text-gray-300' : 'text-blue-500' }}"></i> {{ $voyage->chauffeur }}
+                                        </span>
+                                        <span class="w-1 h-1 bg-gray-300 rounded-full"></span>
+                                        <span class="flex items-center gap-1">
+                                            <i class="fas fa-bus {{ $voyage->type === 'unassigned' ? 'text-gray-300' : 'text-blue-500' }}"></i> {{ $voyage->vehicule }}
+                                        </span>
+                                    </p>
+                                </div>
                             </div>
-                            <div>
-                                <p class="font-semibold text-gray-900">
-                                    {{ $voyage->programme?->gareDepart?->nom_gare ?? 'Gare inconnue' }} → {{ $voyage->programme?->gareArrivee?->nom_gare ?? 'Gare inconnue' }}
-                                </p>
-                                <p class="text-sm text-gray-500">
-                                    <i class="fas fa-clock mr-1"></i> {{ $voyage->programme?->heure_depart ? \Carbon\Carbon::parse($voyage->programme->heure_depart)->format('H:i') : '--:--' }}
-                                    <span class="mx-2">•</span>
-                                    <i class="fas fa-user mr-1"></i> {{ $voyage->chauffeur?->prenom ?? 'N/A' }} {{ $voyage->chauffeur?->name ?? '' }}
-                                    <span class="mx-2">•</span>
-                                    <i class="fas fa-bus mr-1"></i> {{ $voyage->vehicule?->immatriculation ?? 'N/A' }}
-                                </p>
+                            <div class="flex items-center gap-3">
+                                @if($voyage->type === 'unassigned')
+                                    <div class="px-4 py-2 bg-red-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-red-200">
+                                        Assigner
+                                    </div>
+                                @else
+                                    <div class="flex flex-col items-end gap-1">
+                                        @if($voyage->statut === 'en_attente')
+                                            <span class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-lg text-[10px] font-black uppercase tracking-widest leading-none">En attente</span>
+                                        @elseif($voyage->statut === 'en_cours')
+                                            <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-[10px] font-black uppercase tracking-widest leading-none">En cours</span>
+                                        @elseif($voyage->statut === 'terminé')
+                                            <span class="px-3 py-1 bg-green-100 text-green-700 rounded-lg text-[10px] font-black uppercase tracking-widest leading-none">Terminé</span>
+                                        @else
+                                            <span class="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-[10px] font-black uppercase tracking-widest leading-none">{{ $voyage->statut }}</span>
+                                        @endif
+                                        <span class="text-[9px] font-bold text-blue-400 uppercase tracking-tighter">Cliquez pour voir les détails</span>
+                                    </div>
+                                @endif
                             </div>
                         </div>
-                        <div>
-                            @if($voyage->statut === 'en_attente')
-                                <span class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-lg text-sm font-semibold">En attente</span>
-                            @elseif($voyage->statut === 'en_cours')
-                                <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-sm font-semibold">En cours</span>
-                            @elseif($voyage->statut === 'terminé')
-                                <span class="px-3 py-1 bg-green-100 text-green-700 rounded-lg text-sm font-semibold">Terminé</span>
-                            @else
-                                <span class="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm font-semibold">{{ $voyage->statut }}</span>
-                            @endif
-                        </div>
-                    </div>
+                    </a>
                 @empty
                     <div class="text-center py-12">
                         <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
                             <i class="fas fa-inbox text-gray-300 text-3xl"></i>
                         </div>
-                        <h3 class="text-lg font-semibold text-gray-900 mb-1">Aucun voyage aujourd'hui</h3>
-                        <p class="text-gray-500 text-sm">Rendez-vous sur la page de programmation pour assigner des voyages.</p>
+                        <h3 class="text-lg font-black text-gray-900 mb-1 uppercase tracking-tight">Aucun voyage aujourd'hui</h3>
+                        <p class="text-gray-500 text-xs font-medium uppercase tracking-widest">Tous les programmes sont terminés ou assignés.</p>
                     </div>
                 @endforelse
             </div>

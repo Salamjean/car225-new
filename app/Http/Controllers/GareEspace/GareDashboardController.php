@@ -27,25 +27,48 @@ class GareDashboardController extends Controller
         $totalVehicules = Vehicule::where('gare_id', $gare->id)->where('is_active', true)->count();
         $vehiculesDisponibles = Vehicule::where('gare_id', $gare->id)->where('is_active', true)->where('statut', 'disponible')->count();
 
-        // Today voyages concerning this gare
+        // Today's data
         $today = Carbon::today()->toDateString();
+        $currentTime = Carbon::now()->format('H:i:s');
+
+        // 1. Assigned voyages for today
         $voyagesAujourdhui = Voyage::where('gare_depart_id', $gare->id)
             ->whereDate('date_voyage', $today)
-            ->with(['programme.gareDepart', 'programme.gareArrivee', 'chauffeur', 'vehicule'])
+            ->with(['programme.gareArrivee', 'chauffeur', 'vehicule'])
+            ->get();
+
+        // 2. Unassigned programs for today
+        // We only show programs that are active and haven't been assigned a voyage for today
+        $programmesNonAssignes = Programme::where('gare_depart_id', $gare->id)
+            ->where('statut', 'actif')
+            ->whereDate('date_depart', '<=', $today)
+            ->where(function($q) use ($today) {
+                $q->whereDate('date_fin', '>=', $today)
+                  ->orWhereNull('date_fin');
+            })
+            ->whereDoesntHave('voyages', function($q) use ($today) {
+                $q->whereDate('date_voyage', $today)
+                  ->where('statut', '!=', 'annulé');
+            })
+            ->whereTime('heure_depart', '>', $currentTime) // Only upcoming ones
+            ->with(['gareArrivee'])
+            ->orderBy('heure_depart')
             ->get();
 
         $programmesActifs = Programme::where('compagnie_id', $compagnieId)
-            ->where(function($query) use ($gare) {
-                $query->where('gare_depart_id', $gare->id);
-            })
+            ->where('gare_depart_id', $gare->id)
             ->where('statut', 'actif')
             ->whereDate('date_depart', '<=', $today)
-            ->whereDate('date_fin', '>=', $today)
+            ->where(function($q) use ($today) {
+                $q->whereDate('date_fin', '>=', $today)
+                  ->orWhereNull('date_fin');
+            })
             ->count();
 
         return view('gare-espace.dashboard', compact(
             'gare', 'totalPersonnel', 'totalChauffeurs', 'chauffeursDisponibles',
-            'totalVehicules', 'vehiculesDisponibles', 'voyagesAujourdhui', 'programmesActifs'
+            'totalVehicules', 'vehiculesDisponibles', 'voyagesAujourdhui', 
+            'programmesActifs', 'programmesNonAssignes'
         ));
     }
 

@@ -109,17 +109,10 @@
                     <h3 class="card-title">Informations Générales</h3>
                 </div>
                 <div class="card-body">
-                    <div class="form-grid-2">
-                        <div class="form-group">
-                            <label class="form-label">Immatriculation *</label>
-                            <input type="text" name="immatriculation" value="{{ old('immatriculation') }}" required class="form-control" placeholder="ex: 1234 AB 01" style="font-family: monospace; letter-spacing: 1px;">
-                            @error('immatriculation') <span class="form-error">{{ $message }}</span> @enderror
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Numéro de série</label>
-                            <input type="text" name="numero_serie" value="{{ old('numero_serie') }}" class="form-control" placeholder="Numéro de châssis">
-                            @error('numero_serie') <span class="form-error">{{ $message }}</span> @enderror
-                        </div>
+                    <div class="form-group">
+                        <label class="form-label">Immatriculation *</label>
+                        <input type="text" name="immatriculation" value="{{ old('immatriculation') }}" required class="form-control" placeholder="ex: 1234 AB 01" style="font-family: monospace; letter-spacing: 1px;">
+                        @error('immatriculation') <span class="form-error">{{ $message }}</span> @enderror
                     </div>
                 </div>
                 <div style="height: 1px; background: var(--border);"></div>

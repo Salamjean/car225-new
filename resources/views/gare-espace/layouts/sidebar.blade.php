@@ -42,7 +42,7 @@
         <a href="{{ route('gare-espace.voyages.index') }}" 
            class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('gare-espace.voyages.*') ? 'bg-orange-500/20 text-orange-400 shadow-lg' : 'text-gray-300 hover:bg-gray-700/50 hover:text-white' }}">
             <i class="fas fa-route w-5 text-center"></i>
-            <span class="font-medium text-sm">Programmer Voyages</span>
+            <span class="font-medium text-sm">Assigner des Voyages</span>
         </a>
 
         <!-- Réservations -->
@@ -84,18 +84,25 @@
         </a>
 
         <!-- Itinéraires -->
-        <a href="{{ route('gare-espace.itineraire.index') }}" 
+        <a href="{{ route('gare-espace.itineraire.index') }}"
            class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('gare-espace.itineraire.*') ? 'bg-orange-500/20 text-orange-400 shadow-lg' : 'text-gray-300 hover:bg-gray-700/50 hover:text-white' }}">
             <i class="fas fa-map-marked-alt w-5 text-center"></i>
             <span class="font-medium text-sm">Itinéraires</span>
         </a>
 
+        <!-- Programmes -->
+        <a href="{{ route('gare-espace.programme.index') }}"
+           class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('gare-espace.programme.*') ? 'bg-orange-500/20 text-orange-400 shadow-lg' : 'text-gray-300 hover:bg-gray-700/50 hover:text-white' }}">
+            <i class="fas fa-calendar-alt w-5 text-center"></i>
+            <span class="font-medium text-sm">Programmes</span>
+        </a>
+
         <!-- Caisse -->
-        <a href="{{ route('gare-espace.caisse.index') }}" 
+        {{-- <a href="{{ route('gare-espace.caisse.index') }}" 
            class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('gare-espace.caisse.*') ? 'bg-orange-500/20 text-orange-400 shadow-lg' : 'text-gray-300 hover:bg-gray-700/50 hover:text-white' }}">
             <i class="fas fa-cash-register w-5 text-center"></i>
             <span class="font-medium text-sm">Caissières</span>
-        </a>
+        </a> --}}
 
         <!-- Agents -->
         <a href="{{ route('gare-espace.agents.index') }}" 

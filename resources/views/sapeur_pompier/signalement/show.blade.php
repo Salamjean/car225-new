@@ -302,6 +302,7 @@
                             <input type="hidden" name="nombre_morts" id="input-nombre-morts">
                             <input type="hidden" name="nombre_blesses" id="input-nombre-blesses">
                             <input type="hidden" name="details_intervention" id="input-details-intervention">
+                            <div id="dynamic-hidden-inputs"></div>
 
                             <button type="button" onclick="confirmTreatment()"
                                 class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-6 py-2 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2">
@@ -315,57 +316,269 @@
                                 <i class="fas fa-check-circle"></i> Déjà traité
                             </button>
                             <div class="text-xs text-gray-500 text-right">
-                                @if($signalement->nombre_morts > 0) <span
-                                class="text-red-600 font-bold">{{ $signalement->nombre_morts }} Mort(s)</span> • @endif
-                                @if($signalement->nombre_blesses > 0) <span
-                                class="text-orange-600 font-bold">{{ $signalement->nombre_blesses }} Blessé(s)</span> @endif
+                                @if($signalement->nombre_morts > 0) <span class="text-red-600 font-bold">{{ $signalement->nombre_morts }} Mort(s)</span> • @endif
+                                @if($signalement->nombre_blesses > 0) <span class="text-orange-600 font-bold">{{ $signalement->nombre_blesses }} Blessé(s)</span> • @endif
+                                @if($signalement->bilan_passagers)
+                                    @php
+                                        $evacues = collect($signalement->bilan_passagers)->where('statut', 'evacue')->count();
+                                        $indemnesCount = collect($signalement->bilan_passagers)->where('statut', 'indemne')->count();
+                                    @endphp
+                                    <span class="text-blue-600 font-bold">{{ $evacues }} Évacué(s)</span> •
+                                    <span class="text-green-600 font-bold">{{ $indemnesCount }} Indemne(s)</span>
+                                @endif
                             </div>
                         </div>
                     @endif
 
                     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
                     <script>
+                        const reservationsRaw = @json($reservations ?? collect());
+
                         function confirmTreatment() {
-                            Swal.fire({
-                                title: 'Bilan de l\'intervention',
-                                html: `
-                                                <div class="text-left">
-                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nombre de mort(s)</label>
-                                                    <input type="number" id="swal-morts" class="swal2-input m-0 mb-4 w-full" placeholder="0" min="0" value="0">
+                            // Construction des lignes passagers
+                            let passengerRows = '';
+                            if (reservationsRaw.length > 0) {
+                                reservationsRaw.forEach((res) => {
+                                    const name = ((res.passager_nom || '') + ' ' + (res.passager_prenom || '')).trim() || (res.user ? res.user.name : 'Inconnu');
+                                    const seat = res.seat_number || '?';
+                                    const resId = res.id;
 
-                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nombre de blessé(s)</label>
-                                                    <input type="number" id="swal-blesses" class="swal2-input m-0 mb-4 w-full" placeholder="0" min="0" value="0">
-
-                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Autres informations / Rapport</label>
-                                                    <textarea id="swal-details" class="swal2-textarea m-0 w-full" placeholder="Détails sur l'intervention..."></textarea>
+                                    passengerRows += `
+                                    <div class="passenger-row" data-res-id="${resId}" data-statut="indemne"
+                                        style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px;margin-bottom:10px;transition:all .25s;">
+                                        <div style="display:flex;align-items:center;gap:12px;">
+                                            <div style="width:40px;height:40px;background:linear-gradient(135deg,#e0e7ff,#c7d2fe);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                                <span style="font-weight:800;font-size:13px;color:#4338ca;">${seat}</span>
+                                            </div>
+                                            <div style="flex:1;min-width:0;">
+                                                <div style="font-weight:700;font-size:14px;color:#1e293b;">${name}</div>
+                                                <div style="font-size:11px;color:#94a3b8;">Place n°${seat}</div>
+                                            </div>
+                                            <div style="display:flex;gap:6px;flex-shrink:0;">
+                                                <button type="button" onclick="setPassengerStatus(${resId}, 'indemne', this)"
+                                                    class="btn-indemne-${resId}"
+                                                    style="padding:7px 14px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;border:2px solid #22c55e;background:#f0fdf4;color:#16a34a;transition:all .2s;display:flex;align-items:center;gap:5px;">
+                                                    <i class="fas fa-heart" style="font-size:10px;"></i> Indemne
+                                                </button>
+                                                <button type="button" onclick="setPassengerStatus(${resId}, 'evacue', this)"
+                                                    class="btn-evacue-${resId}"
+                                                    style="padding:7px 14px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;border:2px solid #e2e8f0;background:#fff;color:#94a3b8;transition:all .2s;display:flex;align-items:center;gap:5px;">
+                                                    <i class="fas fa-ambulance" style="font-size:10px;"></i> Évacué
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div id="hopital-fields-${resId}" style="display:none;margin-top:12px;padding-top:12px;border-top:1px dashed #fca5a5;">
+                                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                                                <div>
+                                                    <label style="display:block;font-size:10px;font-weight:700;color:#991b1b;text-transform:uppercase;margin-bottom:4px;letter-spacing:0.5px;">
+                                                        <i class="fas fa-hospital" style="margin-right:3px;"></i> Hôpital d'évacuation
+                                                    </label>
+                                                    <input type="text" id="hopital-nom-${resId}" placeholder="Ex: CHU de Cocody"
+                                                        style="width:100%;padding:8px 12px;border:1px solid #fca5a5;border-radius:10px;font-size:13px;background:#fff;">
                                                 </div>
-                                            `,
+                                                <div>
+                                                    <label style="display:block;font-size:10px;font-weight:700;color:#991b1b;text-transform:uppercase;margin-bottom:4px;letter-spacing:0.5px;">
+                                                        <i class="fas fa-map-marker-alt" style="margin-right:3px;"></i> Adresse / Localisation
+                                                    </label>
+                                                    <input type="text" id="hopital-adresse-${resId}" placeholder="Ex: Cocody, Abidjan"
+                                                        style="width:100%;padding:8px 12px;border:1px solid #fca5a5;border-radius:10px;font-size:13px;background:#fff;">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>`;
+                                });
+                            }
+
+                            const hasPassengers = reservationsRaw.length > 0;
+
+                            Swal.fire({
+                                title: '',
+                                html: `
+                                <div style="text-align:left;">
+                                    {{-- En-tête --}}
+                                    <div style="text-align:center;margin-bottom:20px;">
+                                        <div style="width:56px;height:56px;background:linear-gradient(135deg,#fef2f2,#fee2e2);border-radius:16px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:10px;">
+                                            <i class="fas fa-file-medical-alt" style="font-size:24px;color:#dc2626;"></i>
+                                        </div>
+                                        <h2 style="font-size:20px;font-weight:800;color:#1e293b;margin:0;">Bilan de l'intervention</h2>
+                                        <p style="font-size:12px;color:#94a3b8;margin-top:4px;">Remplissez le bilan puis catégorisez chaque passager</p>
+                                    </div>
+
+                                    {{-- Section Bilan chiffré --}}
+                                    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:16px;margin-bottom:20px;">
+                                        <div style="font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+                                            <i class="fas fa-chart-bar" style="color:#6366f1;"></i> Bilan chiffré
+                                        </div>
+                                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+                                            <div>
+                                                <label style="display:block;font-size:10px;font-weight:700;color:#ef4444;text-transform:uppercase;margin-bottom:4px;">
+                                                    <i class="fas fa-skull-crossbones" style="margin-right:3px;"></i> Mort(s)
+                                                </label>
+                                                <input type="number" id="swal-morts" value="0" min="0"
+                                                    style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:16px;font-weight:700;text-align:center;background:#fff;">
+                                            </div>
+                                            <div>
+                                                <label style="display:block;font-size:10px;font-weight:700;color:#f59e0b;text-transform:uppercase;margin-bottom:4px;">
+                                                    <i class="fas fa-user-injured" style="margin-right:3px;"></i> Blessé(s)
+                                                </label>
+                                                <input type="number" id="swal-blesses" value="0" min="0"
+                                                    style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:16px;font-weight:700;text-align:center;background:#fff;">
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label style="display:block;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:4px;">
+                                                <i class="fas fa-pen" style="margin-right:3px;"></i> Rapport d'intervention
+                                            </label>
+                                            <textarea id="swal-details" rows="2" placeholder="Détails complémentaires..."
+                                                style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;resize:vertical;background:#fff;"></textarea>
+                                        </div>
+                                    </div>
+
+                                    ${hasPassengers ? `
+                                    {{-- Section Passagers --}}
+                                    <div style="margin-bottom:8px;">
+                                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                                            <div style="font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;display:flex;align-items:center;gap:6px;">
+                                                <i class="fas fa-users" style="color:#3b82f6;"></i> État des passagers (${reservationsRaw.length})
+                                            </div>
+                                            <div style="display:flex;gap:12px;font-size:12px;font-weight:700;">
+                                                <span id="count-indemnes" style="color:#16a34a;background:#f0fdf4;padding:3px 10px;border-radius:8px;">
+                                                    <i class="fas fa-heart" style="font-size:9px;margin-right:3px;"></i> ${reservationsRaw.length} indemne(s)
+                                                </span>
+                                                <span id="count-evacues" style="color:#dc2626;background:#fef2f2;padding:3px 10px;border-radius:8px;">
+                                                    <i class="fas fa-ambulance" style="font-size:9px;margin-right:3px;"></i> 0 évacué(s)
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div style="max-height:320px;overflow-y:auto;padding-right:4px;">
+                                            ${passengerRows}
+                                        </div>
+                                    </div>
+                                    ` : '<div style="text-align:center;padding:16px;background:#f8fafc;border-radius:12px;border:1px dashed #e2e8f0;color:#94a3b8;font-size:13px;margin-bottom:8px;"><i class="fas fa-info-circle" style="margin-right:6px;"></i>Aucun passager trouvé pour ce voyage</div>'}
+                                </div>`,
+                                width: '720px',
                                 showCancelButton: true,
-                                confirmButtonText: 'Valider et Clôturer',
+                                confirmButtonText: '<i class="fas fa-check-circle" style="margin-right:6px;"></i> Valider et Clôturer',
                                 cancelButtonText: 'Annuler',
                                 confirmButtonColor: '#10b981',
-                                cancelButtonColor: '#6b7280',
+                                cancelButtonColor: '#94a3b8',
+                                customClass: {
+                                    popup: 'rounded-2xl',
+                                    confirmButton: 'rounded-xl font-bold px-6 py-3',
+                                    cancelButton: 'rounded-xl font-bold px-6 py-3',
+                                },
                                 preConfirm: () => {
                                     const morts = document.getElementById('swal-morts').value;
                                     const blesses = document.getElementById('swal-blesses').value;
                                     const details = document.getElementById('swal-details').value;
 
-                                    if (!morts || !blesses) {
-                                        Swal.showValidationMessage('Veuillez renseigner les chiffres (mettez 0 si aucun)');
+                                    if (morts === '' || blesses === '') {
+                                        Swal.showValidationMessage('Renseignez le nombre de morts et de blessés (0 si aucun)');
                                         return false;
                                     }
 
-                                    return { morts: morts, blesses: blesses, details: details };
+                                    // Collecter les données passagers
+                                    const passagers = [];
+                                    let hasError = false;
+
+                                    document.querySelectorAll('.passenger-row').forEach(row => {
+                                        const resId = row.dataset.resId;
+                                        const statut = row.dataset.statut || 'indemne';
+                                        const entry = { reservation_id: resId, statut: statut };
+
+                                        if (statut === 'evacue') {
+                                            const hopNom = document.getElementById(`hopital-nom-${resId}`).value.trim();
+                                            const hopAdresse = document.getElementById(`hopital-adresse-${resId}`).value.trim();
+                                            if (!hopNom) {
+                                                hasError = true;
+                                                document.getElementById(`hopital-nom-${resId}`).style.borderColor = '#ef4444';
+                                                document.getElementById(`hopital-nom-${resId}`).style.background = '#fff5f5';
+                                            }
+                                            entry.hopital_nom = hopNom;
+                                            entry.hopital_adresse = hopAdresse;
+                                        }
+                                        passagers.push(entry);
+                                    });
+
+                                    if (hasError) {
+                                        Swal.showValidationMessage('Précisez l\'hôpital pour chaque passager évacué.');
+                                        return false;
+                                    }
+
+                                    return {
+                                        morts, blesses, details, passagers
+                                    };
                                 }
                             }).then((result) => {
                                 if (result.isConfirmed) {
-                                    document.getElementById('input-nombre-morts').value = result.value.morts;
-                                    document.getElementById('input-nombre-blesses').value = result.value.blesses;
-                                    document.getElementById('input-details-intervention').value = result.value.details;
-
-                                    document.getElementById('mark-treated-form').submit();
+                                    const { morts, blesses, details, passagers } = result.value;
+                                    submitBilan({ morts, blesses, details }, passagers);
                                 }
                             });
+                        }
+
+                        function setPassengerStatus(resId, statut, btn) {
+                            const row = btn.closest('.passenger-row');
+                            row.dataset.statut = statut;
+
+                            const btnIndemne = document.querySelector(`.btn-indemne-${resId}`);
+                            const btnEvacue = document.querySelector(`.btn-evacue-${resId}`);
+                            const hopitalFields = document.getElementById(`hopital-fields-${resId}`);
+
+                            if (statut === 'evacue') {
+                                btnEvacue.style.cssText = 'padding:7px 14px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;border:2px solid #ef4444;background:#fef2f2;color:#dc2626;transition:all .2s;display:flex;align-items:center;gap:5px;';
+                                btnIndemne.style.cssText = 'padding:7px 14px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;border:2px solid #e2e8f0;background:#fff;color:#94a3b8;transition:all .2s;display:flex;align-items:center;gap:5px;';
+                                hopitalFields.style.display = 'block';
+                                row.style.border = '1px solid #fca5a5';
+                                row.style.background = '#fffbfb';
+                            } else {
+                                btnIndemne.style.cssText = 'padding:7px 14px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;border:2px solid #22c55e;background:#f0fdf4;color:#16a34a;transition:all .2s;display:flex;align-items:center;gap:5px;';
+                                btnEvacue.style.cssText = 'padding:7px 14px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;border:2px solid #e2e8f0;background:#fff;color:#94a3b8;transition:all .2s;display:flex;align-items:center;gap:5px;';
+                                hopitalFields.style.display = 'none';
+                                row.style.border = '1px solid #e2e8f0';
+                                row.style.background = '#fff';
+                            }
+
+                            updateCounts();
+                        }
+
+                        function updateCounts() {
+                            const allRows = document.querySelectorAll('.passenger-row');
+                            let evacues = 0, indemnes = 0;
+                            allRows.forEach(r => {
+                                if (r.dataset.statut === 'evacue') evacues++;
+                                else indemnes++;
+                            });
+                            const elIndemnes = document.getElementById('count-indemnes');
+                            const elEvacues = document.getElementById('count-evacues');
+                            if (elIndemnes) elIndemnes.innerHTML = `<i class="fas fa-heart" style="font-size:9px;margin-right:3px;"></i> ${indemnes} indemne(s)`;
+                            if (elEvacues) elEvacues.innerHTML = `<i class="fas fa-ambulance" style="font-size:9px;margin-right:3px;"></i> ${evacues} évacué(s)`;
+                        }
+
+                        function submitBilan(bilanGeneral, passagers) {
+                            document.getElementById('input-nombre-morts').value = bilanGeneral.morts;
+                            document.getElementById('input-nombre-blesses').value = bilanGeneral.blesses;
+                            document.getElementById('input-details-intervention').value = bilanGeneral.details;
+
+                            const container = document.getElementById('dynamic-hidden-inputs');
+                            container.innerHTML = '';
+
+                            passagers.forEach((p) => {
+                                const addField = (key, val) => {
+                                    const input = document.createElement('input');
+                                    input.type = 'hidden';
+                                    input.name = `passagers[${p.reservation_id}][${key}]`;
+                                    input.value = val || '';
+                                    container.appendChild(input);
+                                };
+                                addField('statut', p.statut);
+                                if (p.statut === 'evacue') {
+                                    addField('hopital_nom', p.hopital_nom);
+                                    addField('hopital_adresse', p.hopital_adresse);
+                                }
+                            });
+
+                            document.getElementById('mark-treated-form').submit();
                         }
                     </script>
 

@@ -24,11 +24,16 @@ class Signalement extends Model
         'vehicule_id',
         'reservation_id',
         'photo_path',
+        'nombre_morts',
+        'nombre_blesses',
+        'details_intervention',
+        'bilan_passagers',
     ];
 
     protected $casts = [
         'latitude' => 'float',
         'longitude' => 'float',
+        'bilan_passagers' => 'array',
     ];
 
     public function user()

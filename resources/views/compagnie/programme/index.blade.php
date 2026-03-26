@@ -115,6 +115,10 @@
                                         {{ $route->itineraire->point_arrive }}
                                     </h3>
                                     <span class="metric-tag mt-amber">{{ number_format($route->montant_billet, 0, ',', ' ') }} FCFA</span>
+                                    @php 
+                                        $capacity = $route->aller->first()?->capacity ?? $route->retour->first()?->capacity ?? 'N/A';
+                                    @endphp
+                                    <span class="metric-tag mt-blue" style="background: #EFF6FF; color: #2563EB;">{{ $capacity }} PLACES</span>
                                 </div>
                                 <div style="font-size: 11px; font-weight: 700; color: var(--text-3); text-transform: uppercase;">
                                     {{ $route->gare_depart?->nom_gare ?? $route->itineraire?->point_depart ?? 'N/A' }}
@@ -141,8 +145,8 @@
                                 <button type="button" onclick="showSchedulesPopup({{ json_encode($route) }})" class="btn-action view" title="Voir les horaires">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                <button type="button" onclick="manageSchedules({{ json_encode($route) }})" class="btn-action edit" title="Ajouter un horaire">
-                                    <i class="fas fa-plus"></i>
+                                <button type="button" onclick="manageSchedules({{ json_encode($route) }})" class="btn-action edit" title="Modifier les horaires">
+                                    <i class="fas fa-pencil-alt"></i>
                                 </button>
                             </div>
                         </div>
@@ -175,6 +179,12 @@ function showSchedulesPopup(routeData) {
                     <i class="fas fa-arrow-right" style="color: var(--text-3); font-size: 10px;"></i>
                     <div style="font-weight: 700; font-size: 14px; color: var(--text-3);">${h.heure_arrive}</div>
                 </div>
+                
+                <div style="text-align: center; flex: 1; padding: 0 15px;">
+                    <div style="font-weight: 800; font-size: 12px; color: var(--orange-dark);">${new Intl.NumberFormat('fr-FR').format(h.montant_billet)} FCFA</div>
+                    <div style="font-size: 9px; font-weight: 700; color: var(--text-3); text-transform: uppercase;">${h.capacity || 'N/A'} PLACES</div>
+                </div>
+
                 <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: ${colorHex};">${label}</div>
             </div>
         `).join('');

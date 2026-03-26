@@ -37,15 +37,22 @@
         </a>
 
         @php
-            $unreadGareMessages = Auth::guard('compagnie')->user()
+            $compagnieAuth = Auth::guard('compagnie')->user();
+            $unreadGareMessages = $compagnieAuth
                 ->receivedGareMessages()->where('is_read', false)->count();
+            $unreadAccidentMessages = \App\Models\CompanyMessage::where('compagnie_id', $compagnieAuth->id)
+                ->where('recipient_type', 'App\\Models\\Compagnie')
+                ->where('recipient_id', $compagnieAuth->id)
+                ->where('is_read', false)
+                ->count();
+            $totalUnreadMessages = $unreadGareMessages + $unreadAccidentMessages;
         @endphp
         <a class="nav-item {{ request()->routeIs('compagnie.messages.*') ? 'active' : '' }}"
            href="{{ route('compagnie.messages.index') }}">
             <i class="nav-icon fas fa-envelope"></i>
             Messages
-            @if($unreadGareMessages > 0)
-                <span class="nav-badge">{{ $unreadGareMessages }}</span>
+            @if($totalUnreadMessages > 0)
+                <span class="nav-badge">{{ $totalUnreadMessages }}</span>
             @endif
         </a>
 

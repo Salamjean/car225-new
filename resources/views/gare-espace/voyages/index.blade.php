@@ -19,10 +19,22 @@
         background-color: #fff !important;
     }
     .ts-dropdown {
-        border-radius: 0.75rem !important;
-        margin-top: 5px !important;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+        border-radius: 1.25rem !important;
+        margin-top: 8px !important;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
         border: 1px solid #e5e7eb !important;
+        z-index: 1000 !important;
+        padding: 8px !important;
+        background: white !important;
+    }
+    .ts-dropdown .option {
+        padding: 12px 16px !important;
+        border-radius: 0.75rem !important;
+        margin-bottom: 4px !important;
+    }
+    .ts-dropdown .active {
+        background-color: #fef2f2 !important;
+        color: #e94f1b !important;
     }
     .time-slot-btn {
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -116,7 +128,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <!-- Left Column: Search & New Assignment -->
             <div class="lg:col-span-12">
-                <div class="bg-white rounded-[2rem] shadow-xl shadow-blue-900/5 border border-gray-100 overflow-hidden mb-12">
+                <div class="bg-white rounded-[2rem] shadow-xl shadow-blue-900/5 border border-gray-100 mb-12">
                     <div class="p-8 md:p-12">
                         <div class="max-w-4xl mx-auto text-center mb-10">
                             <h3 class="text-3xl font-bold text-gray-900 mb-4 tracking-tight">Nouvelle <span class="text-orange-600 underline decoration-orange-200 underline-offset-8">Assignation</span></h3>
@@ -211,7 +223,7 @@
                                     $res = $prog->getPlacesReserveesForDate($date);
                                     $totalS = $prog->getTotalSeats($date);
                                 @endphp
-                                <div class="assignment-card bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col cursor-pointer hover:border-blue-300 group" 
+                                <div id="programme-card-{{ $prog->id }}" class="assignment-card bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col cursor-pointer hover:border-blue-300 group" 
                                      onclick="showVoyageDetails({{ json_encode([
                                          'id' => $prog->id,
                                          'route' => ($prog->point_depart ?: $prog->gareDepart?->nom_gare) . ' → ' . ($prog->point_arrive ?: $prog->gareArrivee?->nom_gare),
@@ -343,12 +355,15 @@ document.addEventListener('DOMContentLoaded', function() {
         options: {!! json_encode($itineraries) !!},
         render: {
             option: function(data, escape) {
-                return `<div>
-                    <div class="flex justify-between items-center">
-                        <span class="block font-bold text-gray-900">${escape(data.route)}</span>
-                        <span class="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">${escape(data.capacity)} Places</span>
+                return `<div class="py-1">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="block font-black text-gray-900 text-sm italic">${escape(data.route)}</span>
+                        <span class="text-[9px] font-black text-white bg-orange-500 px-2 py-0.5 rounded-lg shadow-sm shadow-orange-500/20">${escape(data.capacity)} Places</span>
                     </div>
-                    <span class="block text-xs text-gray-500">${escape(data.name)}</span>
+                    <div class="flex items-center gap-1.5 opacity-70">
+                        <i class="fas fa-map-marker-alt text-[10px] text-orange-500"></i>
+                        <span class="block text-[11px] font-bold text-gray-500 uppercase tracking-tight">${escape(data.name)}</span>
+                    </div>
                 </div>`;
             },
             item: function(data, escape) {
@@ -521,6 +536,19 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     };
+
+    // Auto-show details if parameter is present
+    const urlParams = new URLSearchParams(window.location.search);
+    const showDetailsId = urlParams.get('show_details');
+    if (showDetailsId) {
+        setTimeout(() => {
+            const card = document.getElementById('programme-card-' + showDetailsId);
+            if (card) {
+                card.click();
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 300);
+    }
 });
 </script>
 @endsection

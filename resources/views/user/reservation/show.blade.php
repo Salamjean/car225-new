@@ -98,16 +98,23 @@
             </div>
 
             <!-- Passenger Details -->
-            <div class="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden">
-                <div class="px-8 py-6 border-b border-gray-50 bg-gray-50/50">
+            <div class="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden anim-fade-up">
+                <div class="px-8 py-6 border-b border-gray-50 bg-gray-50/50 flex items-center justify-between">
                     <h3 class="text-sm font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
                         <i class="fas fa-user text-[#e94f1b]"></i>
                         Informations Passager
                     </h3>
+                    @if($reservation->statut !== 'annulee' && $reservation->statut !== 'passe')
+                    <button onclick="editEmergencyContact()" class="group flex items-center gap-2 px-4 py-2 bg-[#e94f1b]/10 hover:bg-[#e94f1b] text-[#e94f1b] hover:text-white rounded-xl transition-all duration-300">
+                        <i class="fas fa-pencil-alt text-[10px]"></i>
+                        <span class="text-[10px] font-black uppercase tracking-widest">Modifier d'urgence</span>
+                    </button>
+                    @endif
                 </div>
-                <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div class="flex items-center gap-4 bg-gray-50 p-6 rounded-2xl">
-                        <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-[#e94f1b]">
+                <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Voyageur -->
+                    <div class="flex items-center gap-4 bg-gray-50 p-6 rounded-2xl border border-transparent hover:border-[#e94f1b]/20 transition-all duration-300">
+                        <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-[#e94f1b] shadow-sm">
                             <i class="fas fa-id-card text-xl"></i>
                         </div>
                         <div>
@@ -116,13 +123,36 @@
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-4 bg-gray-50 p-6 rounded-2xl">
-                        <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-[#e94f1b]">
+                    <!-- Contact -->
+                    <div class="flex items-center gap-4 bg-gray-50 p-6 rounded-2xl border border-transparent hover:border-[#e94f1b]/20 transition-all duration-300">
+                        <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-[#e94f1b] shadow-sm">
                             <i class="fas fa-phone text-xl"></i>
                         </div>
                         <div>
                             <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Contact</p>
                             <p class="text-lg font-black text-gray-900 leading-none">{{ $reservation->passager_telephone }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Contact Urgence -->
+                    <div class="flex items-center gap-4 bg-orange-50/30 p-6 rounded-2xl border border-dashed border-orange-200">
+                        <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-[#e94f1b] shadow-sm">
+                            <i class="fas fa-user-shield text-xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-1">Contact d'Urgence</p>
+                            <p id="display-nom-urgence" class="text-lg font-black text-gray-900 uppercase leading-none">{{ $reservation->nom_passager_urgence ?? 'Néant' }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Tel Urgence -->
+                    <div class="flex items-center gap-4 bg-orange-50/30 p-6 rounded-2xl border border-dashed border-orange-200">
+                        <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-[#e94f1b] shadow-sm">
+                            <i class="fas fa-phone-alt text-xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-1">Tel. Urgence</p>
+                            <p id="display-tel-urgence" class="text-lg font-black text-gray-900 leading-none">{{ $reservation->passager_urgence ?? 'Néant' }}</p>
                         </div>
                     </div>
                 </div>
@@ -238,4 +268,117 @@
         </div>
     </div>
 </div>
+@push('scripts')
+<script>
+function editEmergencyContact() {
+    Swal.fire({
+        title: 'MODIFIER CONTACT D\'URGENCE',
+        html: `
+            <div class="space-y-4 text-left p-4">
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Nom Urgence</label>
+                    <input id="swal-nom-urgence" class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-gray-900 focus:ring-2 focus:ring-[#e94f1b] focus:bg-white transition-all outline-none" value="{{ $reservation->nom_passager_urgence }}">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Téléphone Urgence</label>
+                    <input id="swal-tel-urgence" 
+                           type="tel" 
+                           maxlength="10" 
+                           pattern="[0-9]*"
+                           oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                           class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-gray-900 focus:ring-2 focus:ring-[#e94f1b] focus:bg-white transition-all outline-none" 
+                           placeholder="Ex: 0102030405"
+                           value="{{ $reservation->passager_urgence }}">
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'SAUVEGARDER',
+        cancelButtonText: 'ANNULER',
+        confirmButtonColor: '#e94f1b',
+        customClass: {
+            popup: 'rounded-[32px] border-0 shadow-2xl',
+            title: 'text-xl font-black text-gray-900 tracking-tight',
+            confirmButton: 'px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest',
+            cancelButton: 'px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest'
+        },
+        preConfirm: () => {
+            const nom = document.getElementById('swal-nom-urgence').value;
+            const tel = document.getElementById('swal-tel-urgence').value;
+            
+            if (!nom) {
+                Swal.showValidationMessage('Veuillez saisir le nom');
+                return false;
+            }
+            if (!tel) {
+                Swal.showValidationMessage('Veuillez saisir le numéro de téléphone');
+                return false;
+            }
+            if (tel.length !== 10) {
+                Swal.showValidationMessage('Le numéro de téléphone doit comporter exactement 10 chiffres');
+                return false;
+            }
+            if (!/^[0-9]+$/.test(tel)) {
+                Swal.showValidationMessage('Le numéro de téléphone ne doit contenir que des chiffres');
+                return false;
+            }
+            
+            return { nom, tel };
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            updateEmergencyContact(result.value.nom, result.value.tel);
+        }
+    });
+}
+
+function updateEmergencyContact(nom, tel) {
+    Swal.fire({
+        title: 'Mise à jour...',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+    });
+
+    fetch('{{ route("user.reservation.update-emergency", $reservation) }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            nom_passager_urgence: nom,
+            passager_urgence: tel
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'SUCCÈS',
+                text: data.message,
+                confirmButtonColor: '#e94f1b',
+                customClass: { popup: 'rounded-[32px]' }
+            }).then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'ERREUR',
+                text: data.message,
+                confirmButtonColor: '#e94f1b'
+            });
+        }
+    })
+    .catch(error => {
+        Swal.fire({
+            icon: 'error',
+            title: 'ERREUR',
+            text: 'Une erreur est survenue lors de la mise à jour.'
+        });
+    });
+}
+</script>
+@endpush
 @endsection

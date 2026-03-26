@@ -313,6 +313,54 @@
                 </div>
                 @endif
 
+                {{-- Bilan d'accident (si traité avec bilan passagers) --}}
+                @if($signalement->statut === 'traite' && $signalement->bilan_passagers)
+                    @php
+                        $bilanData = is_array($signalement->bilan_passagers) ? $signalement->bilan_passagers : json_decode($signalement->bilan_passagers, true);
+                        $evacues = collect($bilanData)->where('statut', 'evacue');
+                        $indemnes = collect($bilanData)->where('statut', 'indemne');
+                    @endphp
+                    <div class="mini-card" style="background: linear-gradient(135deg,#FEF2F2,#FFF7ED); border-color: #FCA5A5;">
+                        <h4 style="color: #B91C1C;"><i class="fas fa-file-medical-alt"></i> Bilan de l'intervention</h4>
+
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+                            <div style="background:white;border:1px solid #FCA5A5;border-radius:10px;padding:10px;text-align:center;">
+                                <div style="font-size:20px;font-weight:900;color:#DC2626;">{{ $signalement->nombre_morts ?? 0 }}</div>
+                                <div style="font-size:9px;font-weight:700;color:#991B1B;text-transform:uppercase;">Mort(s)</div>
+                            </div>
+                            <div style="background:white;border:1px solid #FDBA74;border-radius:10px;padding:10px;text-align:center;">
+                                <div style="font-size:20px;font-weight:900;color:#EA580C;">{{ $signalement->nombre_blesses ?? 0 }}</div>
+                                <div style="font-size:9px;font-weight:700;color:#9A3412;text-transform:uppercase;">Blessé(s)</div>
+                            </div>
+                        </div>
+
+                        <div style="display:flex;gap:8px;margin-bottom:12px;">
+                            <div style="flex:1;background:#DBEAFE;border-radius:8px;padding:8px 10px;text-align:center;">
+                                <span style="font-weight:800;font-size:14px;color:#1D4ED8;">{{ $evacues->count() }}</span>
+                                <span style="font-size:9px;font-weight:700;color:#1E40AF;display:block;">Évacué(s)</span>
+                            </div>
+                            <div style="flex:1;background:#DCFCE7;border-radius:8px;padding:8px 10px;text-align:center;">
+                                <span style="font-weight:800;font-size:14px;color:#16A34A;">{{ $indemnes->count() }}</span>
+                                <span style="font-size:9px;font-weight:700;color:#15803D;display:block;">Indemne(s)</span>
+                            </div>
+                        </div>
+
+                        @if($signalement->details_intervention)
+                        <div style="background:white;border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:12px;">
+                            <div style="font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;margin-bottom:4px;">Rapport</div>
+                            <div style="font-size:12px;color:var(--text-1);font-weight:600;">{{ $signalement->details_intervention }}</div>
+                        </div>
+                        @endif
+
+                        @if($evacues->count() > 0)
+                        <a href="{{ route('compagnie.signalement.notification-accident', $signalement->id) }}"
+                           style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;background:#2563EB;color:white;border-radius:10px;font-size:11px;font-weight:800;text-transform:uppercase;text-decoration:none;letter-spacing:0.5px;box-shadow:0 4px 12px rgba(37,99,235,0.3);transition:all 0.2s;">
+                            <i class="fas fa-paper-plane"></i> Notifier les contacts d'urgence
+                        </a>
+                        @endif
+                    </div>
+                @endif
+
                 {{-- Gare de départ --}}
                 @if(isset($gareDepart) && $gareDepart)
                 <div class="mini-card" style="background: #EFF6FF; border-color: #BFDBFE;">

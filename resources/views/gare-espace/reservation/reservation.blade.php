@@ -331,391 +331,232 @@
         </div>
     </div>
 
-    {{-- FILTRES --}}
-    <div class="glass-filter stagger" style="animation-delay: 0.5s">
-        <form method="GET" action="{{ route('gare-espace.reservations.index') }}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-{{ $tab === 'details' ? '5' : '4' }} gap-4 items-end">
-            <input type="hidden" name="tab" value="{{ $tab }}">
-            <!-- Référence -->
-            <div>
-                <label class="filter-label">Référence / Commande</label>
-                <div class="relative">
-                    <i class="fas fa-barcode filter-icon"></i>
-                    <input type="text" name="reference" value="{{ request('reference') }}" placeholder="Ex: RES-2026..." class="filter-input">
+    {{-- ── PROGRAM SELECTION GRID ── --}}
+    @if($tab !== 'details')
+    <div class="mb-10 stagger" style="animation-delay: 0.5s">
+        <div class="flex items-center justify-between mb-6">
+            <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                <i class="fas fa-route text-orange-500"></i> Sélectionner un trajet
+            </h4>
+            @if($tab !== 'details')
+            <div class="bg-white p-2 rounded-xl shadow-sm border border-gray-100 flex items-center gap-2">
+                <i class="fas fa-calendar-alt text-orange-500 ml-2"></i>
+                <input type="date" value="{{ $date }}" 
+                       onchange="window.location.href='{{ route('gare-espace.reservations.index', ['tab' => $tab]) }}&date_voyage=' + this.value"
+                       class="border-none focus:ring-0 font-bold text-gray-700 bg-transparent text-sm">
+            </div>
+            @endif
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            @forelse($availableProgrammes as $destinationId => $progs)
+                <div class="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:shadow-orange-500/5 transition-all group overflow-hidden relative">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-orange-50 rounded-full -mr-16 -mt-16 group-hover:bg-orange-100 transition-colors"></div>
+                    
+                    <div class="relative z-10">
+                        <p class="text-[10px] font-black text-orange-500 uppercase tracking-widest mb-1">Vers</p>
+                        <h5 class="text-xl font-black text-gray-900 mb-4 truncate uppercase tracking-tighter">
+                            {{ $progs->first()->gareArrivee?->nom_gare ?? $progs->first()->point_arrive }}
+                        </h5>
+                        
+                        <div class="grid grid-cols-2 gap-2">
+                                @foreach($progs as $prog)
+                                <a href="{{ route('gare-espace.reservations.program', ['programme' => $prog->id, 'date' => $date]) }}" 
+                                   class="flex flex-col items-center p-3 rounded-2xl border {{ request('programme_id') == $prog->id ? 'bg-orange-500 border-orange-500 text-white shadow-lg shadow-orange-500/30' : 'bg-gray-50 border-gray-100 text-gray-600 hover:border-orange-300 hover:bg-orange-50' }} transition-all">
+                                    <span class="text-lg font-black leading-none mb-1">{{ \Carbon\Carbon::parse($prog->heure_depart)->format('H:i') }}</span>
+                                    <span class="text-[8px] font-black uppercase {{ request('programme_id') == $prog->id ? 'text-orange-100' : 'text-gray-400' }}">
+                                        {{ $prog->getPlacesReserveesForDate($date) }}/{{ $prog->getTotalSeats($date) }} Réserv.
+                                    </span>
+                                </a>
+                                @endforeach
+                        </div>
+                    </div>
                 </div>
+            @empty
+                <div class="col-span-full bg-white/50 border-2 border-dashed border-gray-200 rounded-[2rem] p-10 text-center">
+                    <i class="fas fa-calendar-times text-3xl text-gray-300 mb-3"></i>
+                    <p class="text-gray-400 font-bold">Aucun programme actif pour cette date.</p>
+                </div>
+            @endforelse
+        </div>
+    </div>
+    @endif
+
+    @if($tab === 'details')
+        {{-- FILTRES --}}
+        <div class="glass-filter stagger" style="animation-delay: 0.6s">
+            <form method="GET" action="{{ route('gare-espace.reservations.index') }}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
+                <input type="hidden" name="tab" value="{{ $tab }}">
+                
+                <!-- Date -->
+                <div>
+                    <label class="filter-label">Date Voyage</label>
+                    <div class="relative">
+                        <i class="fas fa-calendar-day filter-icon"></i>
+                        <input type="date" name="date_voyage" value="{{ request('date_voyage') ?? $date }}" class="filter-input">
+                    </div>
+                </div>
+
+                <!-- Référence -->
+                <div>
+                    <label class="filter-label">Référence / Commande</label>
+                    <div class="relative">
+                        <i class="fas fa-barcode filter-icon"></i>
+                        <input type="text" name="reference" value="{{ request('reference') }}" placeholder="Ex: RES-2026..." class="filter-input">
+                    </div>
+                </div>
+
+                <!-- Passager -->
+                <div>
+                    <label class="filter-label">Nom du Passager</label>
+                    <div class="relative">
+                        <i class="fas fa-user filter-icon"></i>
+                        <input type="text" name="passager" value="{{ request('passager') }}" placeholder="Nom ou Prénom" class="filter-input">
+                    </div>
+                </div>
+
+                <!-- Statut -->
+                <div>
+                    <label class="filter-label">Statut</label>
+                    <div class="relative">
+                        <i class="fas fa-info-circle filter-icon"></i>
+                        <select name="statut" class="filter-input hover:cursor-pointer" style="padding-right: 15px;">
+                            <option value="all" {{ request('statut') == 'all' ? 'selected' : '' }}>Tous les statuts</option>
+                            <option value="confirmee" {{ request('statut') == 'confirmee' ? 'selected' : '' }}>Confirmée</option>
+                            <option value="en_attente" {{ request('statut') == 'en_attente' ? 'selected' : '' }}>En attente</option>
+                            <option value="terminee" {{ request('statut') == 'terminee' ? 'selected' : '' }}>Terminée</option>
+                            <option value="annulee" {{ request('statut') == 'annulee' ? 'selected' : '' }}>Annulée</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex gap-2">
+                    <button type="submit" class="btn-premium btn-premium-orange flex-1">
+                        <i class="fas fa-search"></i> Rechercher
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        {{-- TABLEAU --}}
+        <div class="dash-card stagger" style="animation-delay: 0.6s">
+            <div class="overflow-x-auto">
+                <table class="dash-table w-full">
+                    <thead>
+                        <tr>
+                            <th>Référence & Trans.</th>
+                            <th>Passager</th>
+                            <th>Itinéraire</th>
+                            <th>Voyage</th>
+                            <th class="text-right">Montant</th>
+                            <th class="text-center">Statut</th>
+                            <th class="text-center">Détails</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($reservations as $reservation)
+                        <tr class="hover:bg-orange-50/30 transition-colors cursor-pointer" onclick="showDetails({{ $reservation->id }})">
+                            <td>
+                                <div class="cell-stack">
+                                    <span class="text-ref">
+                                        <i class="fas fa-ticket-alt opacity-50 mr-1"></i> {{ $reservation->reference }}
+                                    </span>
+                                    <span class="text-trans-id">{{ $reservation->payment_transaction_id }}</span>
+                                </div>
+                            </td>
+
+                            <td>
+                                <div class="flex items-center gap-3">
+                                    <div class="td-avatar text-orange">
+                                        {{ mb_substr($reservation->passager_nom, 0, 1) }}
+                                    </div>
+                                    <div class="cell-stack">
+                                        <span class="td-name">{{ $reservation->passager_prenom }} {{ $reservation->passager_nom }}</span>
+                                        <span class="td-phone">
+                                            <i class="fas fa-phone-alt text-[10px] text-orange-400 mr-1"></i> {{ $reservation->passager_telephone }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td>
+                                <div class="cell-stack">
+                                    <div class="route-pill">
+                                        {{ $reservation->programme->point_depart ?? 'N/A' }}
+                                        <i class="fas fa-chevron-right route-arrow"></i>
+                                        {{ $reservation->programme->point_arrive ?? 'N/A' }}
+                                    </div>
+                                    <div class="flex items-center justify-between mt-1.5">
+                                        <span class="text-[10px] font-black text-orange-500 uppercase tracking-widest">Siège #{{ $reservation->seat_number }}</span>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td>
+                                <div class="cell-stack">
+                                    <span class="td-name">{{ \Carbon\Carbon::parse($reservation->date_voyage)->format('d/m/Y') }}</span>
+                                    <span class="text-time">
+                                        <i class="far fa-clock text-orange-400 mr-1"></i> {{ $reservation->heure_depart }}
+                                    </span>
+                                </div>
+                            </td>
+
+                            <td class="text-right">
+                                <span class="td-amount">{{ number_format($reservation->montant, 0, ',', ' ') }}</span>
+                                <span class="text-[10px] font-black text-gray-400 uppercase ml-1">FCFA</span>
+                            </td>
+
+                            <td class="text-center">
+                                @if($reservation->statut == 'confirmee')
+                                    <span class="status-pill sp-success"><span class="dot"></span> Confirmée</span>
+                                @elseif($reservation->statut == 'en_attente')
+                                    <span class="status-pill sp-pending"><span class="dot"></span> En attente</span>
+                                @elseif($reservation->statut == 'terminee')
+                                    <span class="status-pill sp-done"><span class="dot"></span> Terminée</span>
+                                @elseif($reservation->statut == 'annulee')
+                                    <span class="status-pill sp-danger"><span class="dot"></span> Annulée</span>
+                                @else
+                                    <span class="status-pill sp-pending"><span class="dot"></span> {{ $reservation->statut }}</span>
+                                @endif
+                            </td>
+
+                            <td class="text-center" onclick="event.stopPropagation()">
+                                <button onclick="showDetails({{ $reservation->id }})" class="btn-icon">
+                                    <i class="fas fa-eye text-sm"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="7" class="py-24 text-center">
+                                <div class="flex flex-col items-center">
+                                    <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center text-orange-200 mb-6 border border-gray-100 shadow-sm">
+                                        <i class="fas fa-search-minus text-3xl"></i>
+                                    </div>
+                                    <h3 class="text-xl font-black text-gray-900 mb-2 uppercase tracking-tighter">Aucune réservation trouvée</h3>
+                                    <p class="text-gray-400 font-medium max-w-sm mx-auto text-sm">Nous n'avons trouvé aucune réservation correspondant à vos critères de recherche.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
 
-            <!-- Passager -->
-            <div>
-                <label class="filter-label">Nom du Passager</label>
-                <div class="relative">
-                    <i class="fas fa-user filter-icon"></i>
-                    <input type="text" name="passager" value="{{ request('passager') }}" placeholder="Nom ou Prénom" class="filter-input">
+            @if($reservations->hasPages())
+            <div class="pagination-wrapper bg-white">
+                <div class="text-[10px] font-black text-gray-500 uppercase tracking-widest hidden md:block">
+                    Affichage de {{ $reservations->firstItem() }} à {{ $reservations->lastItem() }} sur {{ $reservations->total() }}
                 </div>
-            </div>
-
-            <!-- Date -->
-            <div>
-                <label class="filter-label">Date de Voyage</label>
-                <div class="relative">
-                    <i class="fas fa-calendar filter-icon"></i>
-                    <input type="date" name="date_voyage" value="{{ request('date_voyage') }}" class="filter-input uppercase">
-                </div>
-            </div>
-
-            <!-- Statut (Uniquement dans Détails & Stats) -->
-            @if($tab === 'details')
-            <div>
-                <label class="filter-label">Statut</label>
-                <div class="relative">
-                    <i class="fas fa-info-circle filter-icon"></i>
-                    <select name="statut" class="filter-input hover:cursor-pointer" style="padding-right: 15px;">
-                        <option value="all" {{ request('statut') == 'all' ? 'selected' : '' }}>Tous les statuts</option>
-                        <option value="confirmee" {{ request('statut') == 'confirmee' ? 'selected' : '' }}>Confirmée</option>
-                        <option value="en_attente" {{ request('statut') == 'en_attente' ? 'selected' : '' }}>En attente</option>
-                        <option value="terminee" {{ request('statut') == 'terminee' ? 'selected' : '' }}>Terminée</option>
-                        <option value="annulee" {{ request('statut') == 'annulee' ? 'selected' : '' }}>Annulée</option>
-                    </select>
+                <div class="flex items-center gap-2">
+                    {{ $reservations->onEachSide(1)->links('pagination::tailwind') }}
                 </div>
             </div>
             @endif
-
-            <!-- Actions -->
-            <div class="flex gap-2">
-                <button type="submit" class="btn-premium btn-premium-orange flex-1">
-                    <i class="fas fa-search"></i> Filtrer
-                </button>
-                @if(request()->anyFilled(['reference', 'passager', 'date_voyage', 'statut']))
-                <a href="{{ route('gare-espace.reservations.index', ['tab' => $tab]) }}" class="btn-premium btn-premium-light" title="Réinitialiser">
-                    <i class="fas fa-redo-alt"></i>
-                </a>
-                @endif
-            </div>
-        </form>
-    </div>
-
-    {{-- TABLEAU --}}
-    <div class="dash-card stagger" style="animation-delay: 0.6s">
-        <div class="overflow-x-auto">
-            <table class="dash-table w-full">
-                <thead>
-                    <tr>
-                        <th>Référence & Trans.</th>
-                        <th>Passager</th>
-                        <th>Itinéraire</th>
-                        <th>Voyage</th>
-                        <th class="text-right">Montant</th>
-                        <th class="text-center">Statut</th>
-                        <th class="text-center">Détails</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($reservations as $reservation)
-                    <tr class="hover:bg-orange-50/30 transition-colors cursor-pointer" onclick="showDetails({{ $reservation->id }})">
-                        <td>
-                            <div class="cell-stack">
-                                <span class="text-ref">
-                                    <i class="fas fa-ticket-alt opacity-50 mr-1"></i> {{ $reservation->reference }}
-                                </span>
-                                <span class="text-trans-id">{{ $reservation->payment_transaction_id }}</span>
-                            </div>
-                        </td>
-
-                        <td>
-                            <div class="flex items-center gap-3">
-                                <div class="td-avatar text-orange">
-                                    {{ mb_substr($reservation->passager_nom, 0, 1) }}
-                                </div>
-                                <div class="cell-stack">
-                                    <span class="td-name">{{ $reservation->passager_prenom }} {{ $reservation->passager_nom }}</span>
-                                    <span class="td-phone">
-                                        <i class="fas fa-phone-alt text-[10px] text-orange-400 mr-1"></i> {{ $reservation->passager_telephone }}
-                                    </span>
-                                </div>
-                            </div>
-                        </td>
-
-                        <td>
-                            <div class="cell-stack">
-                                <div class="route-pill">
-                                    {{ $reservation->programme->point_depart ?? 'N/A' }}
-                                    <i class="fas fa-chevron-right route-arrow"></i>
-                                    {{ $reservation->programme->point_arrive ?? 'N/A' }}
-                                </div>
-                                <span class="text-[10px] font-black text-orange-500 uppercase tracking-widest mt-1">Siège #{{ $reservation->seat_number }}</span>
-                            </div>
-                        </td>
-
-                        <td>
-                            <div class="cell-stack">
-                                <span class="td-name">{{ \Carbon\Carbon::parse($reservation->date_voyage)->format('d/m/Y') }}</span>
-                                <span class="text-time">
-                                    <i class="far fa-clock text-orange-400 mr-1"></i> {{ $reservation->heure_depart }}
-                                </span>
-                            </div>
-                        </td>
-
-                        <td class="text-right">
-                            <span class="td-amount">{{ number_format($reservation->montant, 0, ',', ' ') }}</span>
-                            <span class="text-[10px] font-black text-gray-400 uppercase ml-1">FCFA</span>
-                        </td>
-
-                        <td class="text-center">
-                            @if($reservation->statut == 'confirmee')
-                                <span class="status-pill sp-success"><span class="dot"></span> Confirmée</span>
-                            @elseif($reservation->statut == 'en_attente')
-                                <span class="status-pill sp-pending"><span class="dot"></span> En attente</span>
-                            @elseif($reservation->statut == 'terminee')
-                                <span class="status-pill sp-done"><span class="dot"></span> Terminée</span>
-                            @elseif($reservation->statut == 'annulee')
-                                <span class="status-pill sp-danger"><span class="dot"></span> Annulée</span>
-                            @else
-                                <span class="status-pill sp-pending"><span class="dot"></span> {{ $reservation->statut }}</span>
-                            @endif
-                        </td>
-
-                        <td class="text-center" onclick="event.stopPropagation()">
-                            <button onclick="showDetails({{ $reservation->id }})" class="btn-icon">
-                                <i class="fas fa-eye text-sm"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="7" class="py-24 text-center">
-                            <div class="flex flex-col items-center">
-                                <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center text-orange-200 mb-6 border border-gray-100 shadow-sm">
-                                    <i class="fas fa-search-minus text-3xl"></i>
-                                </div>
-                                <h3 class="text-xl font-black text-gray-900 mb-2 uppercase tracking-tighter">Aucune réservation trouvée</h3>
-                                <p class="text-gray-400 font-medium max-w-sm mx-auto text-sm">Nous n'avons trouvé aucune réservation correspondant à vos critères de recherche.</p>
-                            </div>
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
         </div>
-
-        @if($reservations->hasPages())
-        <div class="pagination-wrapper bg-white">
-            <div class="text-[10px] font-black text-gray-500 uppercase tracking-widest hidden md:block">
-                Affichage de {{ $reservations->firstItem() }} à {{ $reservations->lastItem() }} sur {{ $reservations->total() }}
-            </div>
-            <div class="flex items-center gap-2">
-                {{ $reservations->onEachSide(1)->links('pagination::tailwind') }}
-            </div>
-        </div>
-        @endif
-    </div>
+    @endif
 </div>
 
-<!-- Modal Détails -->
-<div id="modalDetails" class="fixed inset-0 z-[100] flex items-center justify-center hidden pt-10 pb-10">
-    <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onclick="closeModal()"></div>
-    <div class="relative bg-white w-full max-w-2xl mx-4 rounded-[2rem] shadow-2xl overflow-hidden transform transition-all scale-95 opacity-0 duration-300" id="modalContent">
-        <!-- Modal Header -->
-        <div class="bg-gradient-to-r from-orange-500 to-orange-400 px-8 py-6 flex items-center justify-between">
-            <div class="flex items-center gap-4">
-                <div class="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-white shadow-inner">
-                    <i class="fas fa-user-tag text-xl"></i>
-                </div>
-                <div>
-                    <h2 class="text-xl font-black text-white uppercase tracking-tight leading-none mb-1">Détails Passager</h2>
-                    <p class="text-orange-100 text-xs font-medium" id="modalRef"></p>
-                </div>
-            </div>
-            <button onclick="closeModal()" class="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-
-        <!-- Modal Body -->
-        <div class="p-8 space-y-8 bg-gray-50/50 max-h-[85vh] overflow-y-auto">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <!-- Info Passager -->
-                <div class="space-y-4">
-                    <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                        <span class="w-4 h-[2px] rounded bg-orange-300"></span> Informations Voyageur
-                    </h3>
-                    
-                    <div class="flex items-center gap-4 mb-6 bg-white p-4 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group">
-                        <div class="absolute top-0 right-0 w-24 h-24 bg-orange-500/5 rounded-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
-                        <div class="relative">
-                            <img id="passagerPhoto" src="" alt="Photo" class="w-20 h-20 rounded-2xl object-cover border-2 border-white shadow-md hidden">
-                            <div id="passagerInitial" class="w-20 h-20 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white text-2xl font-black shadow-lg">
-                                ?
-                            </div>
-                        </div>
-                        <div class="flex-1">
-                            <span class="text-[9px] font-black text-orange-500 uppercase tracking-wider block mb-0.5">Identité du voyageur</span>
-                            <p class="font-black text-gray-900 text-lg leading-tight" id="passagerNom"></p>
-                            <div class="flex items-center gap-2 mt-1">
-                                <span class="px-2 py-0.5 bg-green-50 text-green-600 text-[10px] font-bold rounded-md border border-green-100 uppercase">Vérifié</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="space-y-3">
-                        <div class="flex flex-col bg-white p-4 rounded-2xl border border-gray-100 shadow-sm transition-all hover:border-orange-200">
-                            <span class="text-[10px] font-black text-orange-500 uppercase mb-1 flex items-center gap-2">
-                                <i class="fas fa-phone-alt text-[9px]"></i> Téléphone
-                            </span>
-                            <p class="font-bold text-gray-900" id="passagerTel"></p>
-                        </div>
-                        <div class="flex flex-col bg-white p-4 rounded-2xl border border-gray-100 shadow-sm transition-all hover:border-orange-200">
-                            <span class="text-[10px] font-black text-orange-500 uppercase mb-1 flex items-center gap-2">
-                                <i class="fas fa-ambulance text-[9px]"></i> Contact d'Urgence
-                            </span>
-                            <p class="font-bold text-gray-900 text-sm" id="passagerUrgence"></p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Info Trajet -->
-                <div class="space-y-4">
-                    <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                        <span class="w-4 h-[2px] rounded bg-orange-300"></span> Détails du Trajet
-                    </h3>
-                    <div class="bg-[#1e293b] rounded-3xl p-6 text-white space-y-6 shadow-xl">
-                        <div class="flex items-center justify-between gap-4">
-                            <div class="text-center flex-1">
-                                <p class="text-[9px] font-black text-orange-400 uppercase mb-1">Départ</p>
-                                <p class="text-[13px] font-black uppercase" id="trajetDepart"></p>
-                            </div>
-                            <div class="flex flex-col items-center">
-                                <i class="fas fa-bus text-orange-500"></i>
-                                <div class="w-8 h-[1px] bg-slate-600 my-1"></div>
-                            </div>
-                            <div class="text-center flex-1">
-                                <p class="text-[9px] font-black text-orange-400 uppercase mb-1">Arrivée</p>
-                                <p class="text-[13px] font-black uppercase" id="trajetArrivee"></p>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-4 border-t border-slate-700 pt-6">
-                            <div>
-                                <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Date & Heure</p>
-                                <p class="text-xs font-bold" id="trajetDate"></p>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Siège</p>
-                                <p class="text-xl font-black text-orange-500" id="trajetSiege"></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Voyage/Mission Info -->
-            <div id="voyageInfo" class="hidden">
-                <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-4">
-                    <span class="w-4 h-[2px] rounded bg-orange-300"></span> Véhicule & Chauffeur
-                </h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="flex items-center gap-4 bg-orange-50 p-4 rounded-2xl border border-orange-100">
-                        <div class="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center shadow-lg shadow-orange-500/30">
-                            <i class="fas fa-bus"></i>
-                        </div>
-                        <div>
-                            <p class="text-[9px] font-black text-orange-500 uppercase">Véhicule</p>
-                            <p class="text-sm font-bold text-gray-900" id="voyageVehicule"></p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-4 bg-orange-50 p-4 rounded-2xl border border-orange-100">
-                        <div class="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center shadow-lg shadow-orange-500/30">
-                            <i class="fas fa-user-circle"></i>
-                        </div>
-                        <div>
-                            <p class="text-[9px] font-black text-orange-500 uppercase">Chauffeur</p>
-                            <p class="text-sm font-bold text-gray-900" id="voyageChauffeur"></p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="flex items-center justify-between p-5 bg-white rounded-2xl border border-dashed border-gray-300 shadow-sm">
-                <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-orange-500 border border-gray-100">
-                        <i class="fas fa-money-bill-wave"></i>
-                    </div>
-                    <div>
-                        <p class="text-[10px] font-black text-gray-400 uppercase leading-none mb-1">Montant Payé</p>
-                        <p class="text-base font-black text-gray-900" id="paiementMontant"></p>
-                    </div>
-                </div>
-                <div class="text-right">
-                    <p class="text-[10px] font-black text-gray-400 uppercase leading-none mb-1">Méthode</p>
-                    <span class="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-bold rounded-lg uppercase tracking-wide inline-block mt-1" id="paiementMethode"></span>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-    function showDetails(id) {
-        const modal = document.getElementById('modalDetails');
-        const content = document.getElementById('modalContent');
-        
-        modal.classList.remove('hidden');
-        setTimeout(() => {
-            content.classList.remove('scale-95', 'opacity-0');
-            content.classList.add('scale-100', 'opacity-100');
-        }, 10);
-
-        // Fetch data
-        fetch(`/gare-espace/reservations/${id}`)
-            .then(response => response.json())
-            .then(res => {
-                if(res.success) {
-                    const data = res.data;
-                    document.getElementById('modalRef').textContent = `Référence: ${data.reference}`;
-                    document.getElementById('passagerNom').textContent = data.passager.nom;
-                    document.getElementById('passagerTel').textContent = data.passager.telephone;
-                    document.getElementById('passagerUrgence').textContent = data.passager.urgence;
-
-                    // Gérer la photo du passager
-                    const photoImg = document.getElementById('passagerPhoto');
-                    const initialBox = document.getElementById('passagerInitial');
-                    if (data.passager.photo) {
-                        photoImg.src = data.passager.photo;
-                        photoImg.classList.remove('hidden');
-                        initialBox.classList.add('hidden');
-                    } else {
-                        photoImg.classList.add('hidden');
-                        initialBox.classList.remove('hidden');
-                        initialBox.textContent = data.passager.nom.charAt(0).toUpperCase();
-                    }
-                    
-                    document.getElementById('trajetDepart').textContent = data.trajet.depart;
-                    document.getElementById('trajetArrivee').textContent = data.trajet.arrivee;
-                    document.getElementById('trajetDate').textContent = `${data.trajet.date} à ${data.trajet.heure}`;
-                    document.getElementById('trajetSiege').textContent = data.trajet.siege;
-
-                    document.getElementById('paiementMontant').textContent = data.paiement.montant;
-                    document.getElementById('paiementMethode').textContent = data.paiement.methode;
-
-                    const vInfo = document.getElementById('voyageInfo');
-                    if (data.voyage) {
-                        vInfo.classList.remove('hidden');
-                        document.getElementById('voyageVehicule').textContent = data.voyage.vehicule;
-                        document.getElementById('voyageChauffeur').textContent = data.voyage.chauffeur;
-                    } else {
-                        vInfo.classList.add('hidden');
-                    }
-                }
-            });
-    }
-
-    function closeModal() {
-        const modal = document.getElementById('modalDetails');
-        const content = document.getElementById('modalContent');
-        
-        content.classList.remove('scale-100', 'opacity-100');
-        content.classList.add('scale-95', 'opacity-0');
-        
-        setTimeout(() => {
-            modal.classList.add('hidden');
-        }, 300);
-    }
-</script>
+@include('gare-espace.reservation._modal_details')
 @endsection

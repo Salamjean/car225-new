@@ -169,6 +169,17 @@ class HotesseController extends Controller
         return view('hotesse.ticket-pdf', compact('reservation'));
     }
 
+    public function imprimerThermal(Reservation $reservation)
+    {
+        $hotesse = Auth::guard('hotesse')->user();
+        
+        if ($reservation->hotesse_id !== $hotesse->id && $reservation->compagnie_id !== $hotesse->compagnie_id) {
+            abort(403);
+        }
+
+        return view('hotesse.ticket-thermal', compact('reservation'));
+    }
+
    public function vendreTicket(Request $request)
     {
         $hotesse = Auth::guard('hotesse')->user();

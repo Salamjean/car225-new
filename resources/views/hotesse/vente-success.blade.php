@@ -51,9 +51,15 @@
                             </svg>
                         </button>
                         <a href="{{ route('hotesse.ticket.imprimer', $reservation->id) }}" target="_blank" 
-                            class="p-1.5 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-800 hover:text-white transition-all duration-200 shadow-sm hover:shadow-md" title="Imprimer">
+                            class="p-1.5 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-800 hover:text-white transition-all duration-200 shadow-sm hover:shadow-md" title="Imprimer A4">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                            </svg>
+                        </a>
+                        <a href="intent://{{ request()->getHost() }}{{ route('hotesse.ticket.thermal', $reservation->id, false) }}#Intent;scheme=http;package=com.fourbarcode.print;end" 
+                            class="p-1.5 bg-gray-100 text-[#e94e1a] rounded-lg hover:bg-[#e94e1a] hover:text-white transition-all duration-200 shadow-sm hover:shadow-md" title="Imprimer Direct (Orgboro)">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                         </a>
                     </div>

@@ -19,19 +19,20 @@ class CompanyMessageController extends Controller
     public function index(Request $request)
     {
         $compagnie = Auth::guard('compagnie')->user();
-        $query = $compagnie->sentMessages()->with('recipient')->latest();
+
+        // Messages envoyés par la compagnie (hors bilans accidents entrants)
+        $query = $compagnie->sentMessages()->with('recipient')
+            ->where(function ($q) use ($compagnie) {
+                $q->where('recipient_type', '!=', 'App\\Models\\Compagnie')
+                  ->orWhere('recipient_id', '!=', $compagnie->id);
+            })
+            ->latest();
 
         if ($request->has('type')) {
             switch ($request->type) {
-                case 'agent':
-                    $query->where('recipient_type', Agent::class);
-                    break;
-                case 'caisse':
-                    $query->where('recipient_type', Caisse::class);
-                    break;
-                case 'personnel':
-                    $query->where('recipient_type', Personnel::class);
-                    break;
+                case 'agent':     $query->where('recipient_type', Agent::class); break;
+                case 'caisse':    $query->where('recipient_type', Caisse::class); break;
+                case 'personnel': $query->where('recipient_type', Personnel::class); break;
             }
         }
 
@@ -40,14 +41,21 @@ class CompanyMessageController extends Controller
         // Messages reçus des gares
         $receivedQuery = GareMessage::where('recipient_type', 'App\Models\Compagnie')
             ->where('recipient_id', $compagnie->id);
-            
         $unreadReceivedCount = (clone $receivedQuery)->where('is_read', false)->count();
+        $receivedMessages = $receivedQuery->with('gare')->latest()->paginate(10, ['*'], 'received_page');
 
-        $receivedMessages = $receivedQuery->with('gare')
-            ->latest()
-            ->paginate(10, ['*'], 'received_page');
+        // Messages entrants bilans d'accident (SP → Compagnie)
+        $accidentMessagesQuery = CompanyMessage::where('compagnie_id', $compagnie->id)
+            ->where('recipient_type', 'App\\Models\\Compagnie')
+            ->where('recipient_id', $compagnie->id)
+            ->latest();
+        $unreadAccidentCount = (clone $accidentMessagesQuery)->where('is_read', false)->count();
+        $accidentMessages = $accidentMessagesQuery->paginate(10, ['*'], 'accident_page');
 
-        return view('compagnie.messages.index', compact('messages', 'receivedMessages', 'unreadReceivedCount'));
+        return view('compagnie.messages.index', compact(
+            'messages', 'receivedMessages', 'unreadReceivedCount',
+            'accidentMessages', 'unreadAccidentCount'
+        ));
     }
 
     public function show(CompanyMessage $message)
@@ -55,7 +63,12 @@ class CompanyMessageController extends Controller
         if ($message->compagnie_id !== Auth::guard('compagnie')->id()) {
             abort(403);
         }
-        
+
+        // Marquer comme lu si c'est un message entrant (bilan accident)
+        if (!$message->is_read && $message->recipient_type === 'App\\Models\\Compagnie') {
+            $message->update(['is_read' => true]);
+        }
+
         return view('compagnie.messages.show', compact('message'));
     }
 

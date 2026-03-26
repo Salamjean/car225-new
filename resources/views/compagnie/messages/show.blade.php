@@ -123,8 +123,38 @@
             <div class="message-body">
                 <div class="message-bubble">
                     <div class="quote-mark">"</div>
-                    <div class="message-text">{{ $message->message }}</div>
+                    <div class="message-text">{!! nl2br(preg_replace(
+                        '/(https?:\/\/[^\s\)]+)/',
+                        '<a href="$1" target="_blank" style="color:#2563EB;font-weight:700;text-decoration:underline;word-break:break-all;">$1</a>',
+                        e($message->message)
+                    )) !!}</div>
                 </div>
+
+                {{-- Bouton d'action si c'est un bilan d'accident avec lien de notification --}}
+                @if(Str::contains($message->message, '/notification-accident'))
+                    @php
+                        preg_match('/(https?:\/\/[^\s\)]+notification-accident)/', $message->message, $matches);
+                        $notifLink = $matches[1] ?? null;
+                        // Extraire l'ID du signalement depuis le lien
+                        preg_match('/signalements\/(\d+)\/notification-accident/', $message->message, $idMatches);
+                        $sigId = $idMatches[1] ?? null;
+                    @endphp
+                    @if($sigId)
+                    <div style="margin-top:20px;padding:20px;background:linear-gradient(135deg,#EFF6FF,#DBEAFE);border:1px solid #93C5FD;border-radius:16px;display:flex;align-items:center;gap:16px;">
+                        <div style="width:48px;height:48px;background:white;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px rgba(37,99,235,0.15);">
+                            <i class="fas fa-paper-plane" style="color:#2563EB;font-size:18px;"></i>
+                        </div>
+                        <div style="flex:1;">
+                            <div style="font-size:13px;font-weight:800;color:#1E40AF;margin-bottom:2px;">Notifier les contacts d'urgence</div>
+                            <div style="font-size:11px;color:#3B82F6;font-weight:600;">Accédez à la page de notification pour informer les familles des passagers évacués.</div>
+                        </div>
+                        <a href="{{ route('compagnie.signalement.notification-accident', $sigId) }}"
+                           style="background:#2563EB;color:white;padding:10px 20px;border-radius:12px;font-size:12px;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;box-shadow:0 4px 12px rgba(37,99,235,0.3);transition:all 0.2s;">
+                            <i class="fas fa-arrow-right"></i> Accéder
+                        </a>
+                    </div>
+                    @endif
+                @endif
             </div>
 
             <div class="detail-footer print-hide">

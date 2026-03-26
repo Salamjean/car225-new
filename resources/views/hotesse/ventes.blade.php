@@ -138,13 +138,22 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4">
-                                <a href="{{ route('hotesse.ticket.imprimer', $vente->id) }}" target="_blank"
-                                    class="inline-flex items-center px-3 py-2 bg-[#e94e1a] text-white text-sm font-semibold rounded-lg hover:bg-[#d33d0f] transition-all">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
-                                    </svg>
-                                    Imprimer
-                                </a>
+                                <div class="flex flex-col gap-1">
+                                    <a href="{{ route('hotesse.ticket.imprimer', $vente->id) }}" target="_blank"
+                                        class="inline-flex items-center px-3 py-1.5 bg-gray-800 text-white text-xs font-semibold rounded-lg hover:bg-black transition-all">
+                                        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                                        </svg>
+                                        PDF
+                                    </a>
+                                    <a href="intent://{{ request()->getHost() }}{{ route('hotesse.ticket.thermal', $vente->id, false) }}#Intent;scheme=http;package=com.fourbarcode.print;end"
+                                        class="inline-flex items-center px-3 py-1.5 bg-[#e94e1a] text-white text-xs font-bold rounded-lg hover:bg-[#d33d0f] transition-all">
+                                        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        Imprimer Direct
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                         @empty

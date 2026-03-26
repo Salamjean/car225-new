@@ -18,6 +18,20 @@ class GareReservationController extends Controller
         $gare = Auth::guard('gare')->user();
         $compagnieId = $gare->compagnie_id;
         $gareNom = $gare->nom_gare;
+        $date = $request->get('date_voyage', Carbon::today()->toDateString());
+        $tab = $request->get('tab', 'en-cours');
+
+        // Fetch all active programs for this gare to show in the selection grid
+        $availableProgrammes = \App\Models\Programme::where('gare_depart_id', $gare->id)
+            ->where('statut', 'actif')
+            ->whereDate('date_depart', '<=', $date)
+            ->where(function($q) use ($date) {
+                $q->whereDate('date_fin', '>=', $date)
+                  ->orWhereNull('date_fin');
+            })
+            ->with(['gareArrivee'])
+            ->get()
+            ->groupBy('gare_arrivee_id');
 
         $query = Reservation::where(function($q) use ($compagnieId) {
                 $q->where('compagnie_id', $compagnieId)
@@ -35,10 +49,17 @@ class GareReservationController extends Controller
             ->with(['programme.gareDepart', 'programme.gareArrivee', 'user', 'voyage'])
             ->latest();
 
+        // Specific Programme filter
+        if ($request->filled('programme_id')) {
+            $query->where('programme_id', $request->programme_id);
+        }
+
         // Filtre par référence
         if ($request->filled('reference')) {
-            $query->where('reference', 'LIKE', '%' . $request->reference . '%')
+            $query->where(function($q) use ($request) {
+                $q->where('reference', 'LIKE', '%' . $request->reference . '%')
                   ->orWhere('payment_transaction_id', 'LIKE', '%' . $request->reference . '%');
+            });
         }
 
         // Filtre par passager
@@ -50,39 +71,91 @@ class GareReservationController extends Controller
         }
 
         // Filtre par date de voyage
-        if ($request->filled('date_voyage')) {
-            $query->whereDate('date_voyage', $request->date_voyage);
+        if ($tab !== 'details' || $request->filled('date_voyage')) {
+            $query->whereDate('date_voyage', $date);
         }
 
-        $tab = $request->get('tab', 'en-cours');
-
-        // Calculate stats on a baseline query (before filtering by status)
+        // Calculate stats
         $baseQuery = clone $query;
 
-        // Filtre de recherche par statut explicite (si présent via formulaire)
+        // Filtre de recherche par statut explicite
         if ($request->filled('statut') && $request->statut !== 'all') {
             $query->where('statut', $request->statut);
         } else {
-            // Logique stricte des onglets
             if ($tab === 'en-cours') {
                 $query->where('statut', 'confirmee');
             } elseif ($tab === 'terminees') {
                 $query->where('statut', 'terminee');
             }
-            // Onglet 'details' : Pas de filtre de statut (on affiche tout)
         }
 
-        $reservations = $query->paginate(10)->withQueryString();
+        $reservations = $query->paginate(20)->withQueryString();
 
-        // Stats pour les badges basées sur la requête non filtrée par statut
+        // Calculate Global Stats for the Station (Unfiltered by date/program)
+        $globalQuery = Reservation::where(function($q) use ($compagnieId) {
+                $q->where('compagnie_id', $compagnieId)
+                  ->orWhereNull('compagnie_id');
+            })
+            ->where(function($q) use ($gare, $gareNom) {
+                $q->where('gare_depart_id', $gare->id)
+                ->orWhereHas('programme', function($sub) use ($gare, $gareNom) {
+                    $sub->where('gare_depart_id', $gare->id)
+                        ->orWhere('point_depart', 'LIKE', '%' . $gareNom . '%');
+                });
+            });
+
         $stats = [
-            'total' => (clone $baseQuery)->count(),
-            'today' => (clone $baseQuery)->whereDate('date_voyage', Carbon::today())->count(),
-            'pending' => (clone $baseQuery)->where('statut', 'en_attente')->count(),
-            'confirmed' => (clone $baseQuery)->where('statut', 'confirmee')->count()
+            'total' => (clone $globalQuery)->count(),
+            'today' => (clone $globalQuery)->whereDate('date_voyage', Carbon::today())->count(),
+            'pending' => (clone $globalQuery)->where('statut', 'en_attente')->whereDate('date_voyage', $date)->count(),
+            'confirmed' => (clone $globalQuery)->where('statut', 'confirmee')->whereDate('date_voyage', $date)->count()
         ];
 
-        return view('gare-espace.reservation.reservation', compact('reservations', 'stats', 'tab'));
+        // Indicate if we are in "Selection Mode" (no program selected)
+        $selection_mode = !$request->filled('programme_id') && !$request->filled('reference') && !$request->filled('passager');
+
+        return view('gare-espace.reservation.reservation', compact('reservations', 'stats', 'tab', 'availableProgrammes', 'date', 'selection_mode'));
+    }
+
+    /**
+     * Voir les réservations pour un programme spécifique
+     */
+    public function programDetails(Request $request, $programmeId)
+    {
+        $gare = Auth::guard('gare')->user();
+        $compagnieId = $gare->compagnie_id;
+        $date = $request->get('date', Carbon::today()->toDateString());
+        $tab = $request->get('tab', 'en-cours');
+        
+        $programme = \App\Models\Programme::with(['gareDepart', 'gareArrivee'])->findOrFail($programmeId);
+        
+        // Authorization check
+        if ($programme->gare_depart_id !== $gare->id && strpos($programme->point_depart, $gare->nom_gare) === false) {
+             abort(403);
+        }
+        
+        $query = Reservation::where('programme_id', '=', $programmeId, 'and')
+            ->whereDate('date_voyage', $date)
+            ->with(['user', 'voyage', 'programme.gareDepart', 'programme.gareArrivee'])
+            ->latest();
+
+        // Optional filters
+        if ($request->filled('reference')) {
+            $query->where('reference', 'LIKE', '%' . $request->reference . '%');
+        }
+        if ($request->filled('passager')) {
+            $query->where(function($q) use ($request) {
+                $q->where('passager_nom', 'LIKE', '%' . $request->passager . '%')
+                  ->orWhere('passager_prenom', 'LIKE', '%' . $request->passager . '%');
+            });
+        }
+        if ($request->filled('statut')) {
+             $query->where('statut', '=', $request->statut, 'and');
+        }
+
+        $reservations = $query->paginate(50)->withQueryString();
+        
+        return view('gare-espace.reservation.program_details', compact('programme', 'reservations', 'date', 'gare', 'tab'));
     }
 
     /**

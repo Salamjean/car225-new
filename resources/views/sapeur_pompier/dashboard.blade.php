@@ -1,162 +1,209 @@
 @extends('sapeur_pompier.layouts.app')
 
 @section('content')
-<div class="mb-8 flex justify-between items-end">
-    <div>
-        <h2 class="text-3xl font-bold text-gray-900">Tableau de bord</h2>
-        <p class="text-gray-500 mt-1">{{ $filterTitle ?? 'Surveillance des incidents en temps réel' }}</p>
+
+{{-- En-tête avec stats --}}
+<div class="mb-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-6">
+        <div>
+            <h2 class="text-2xl font-black text-gray-900">Tableau de bord</h2>
+            <p class="text-gray-400 text-sm mt-1 font-medium">{{ $filterTitle ?? 'Surveillance des incidents en temps réel' }}</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <span id="live-dot" class="relative flex h-3 w-3">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+            </span>
+            <span class="text-xs font-bold text-green-600 uppercase tracking-wide">En direct</span>
+        </div>
     </div>
-    <!-- Stat Cards could go here -->
+
+    {{-- Stat Cards --}}
+    @php
+        $totalSignalements = $signalements->count();
+        $accidents = $signalements->where('type', 'accident')->count();
+        $pannes = $signalements->where('type', 'panne')->count();
+        $nouveaux = $signalements->where('statut', 'nouveau')->count();
+        $traites = $signalements->where('statut', 'traite')->count();
+    @endphp
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
+            <div class="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-car-crash text-red-600 text-sm"></i>
+            </div>
+            <div>
+                <div class="text-xl font-black text-gray-900">{{ $accidents }}</div>
+                <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Accidents</div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
+            <div class="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-tools text-orange-600 text-sm"></i>
+            </div>
+            <div>
+                <div class="text-xl font-black text-gray-900">{{ $pannes }}</div>
+                <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Pannes</div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
+            <div class="w-10 h-10 bg-yellow-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-exclamation-circle text-yellow-600 text-sm"></i>
+            </div>
+            <div>
+                <div class="text-xl font-black text-gray-900">{{ $nouveaux }}</div>
+                <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">En attente</div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
+            <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-check-circle text-green-600 text-sm"></i>
+            </div>
+            <div>
+                <div class="text-xl font-black text-gray-900">{{ $traites }}</div>
+                <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Traités</div>
+            </div>
+        </div>
+    </div>
 </div>
 
 @if(session('success'))
-    <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded shadow-sm" role="alert">
-        <p class="font-bold">Succès</p>
-        <p>{{ session('success') }}</p>
+    <div class="bg-green-50 border border-green-200 text-green-700 p-4 mb-6 rounded-xl flex items-center gap-3" role="alert">
+        <i class="fas fa-check-circle text-green-500"></i>
+        <p class="font-bold text-sm">{{ session('success') }}</p>
     </div>
 @endif
 
-<div id="recent-signalements-container" class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-    <div class="p-6 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-        <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-            <i class="fas fa-bell text-red-500"></i> Signalements Récents
+{{-- Liste des signalements --}}
+<div id="recent-signalements-container" class="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
+    <div class="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white flex justify-between items-center">
+        <h3 class="text-sm font-black text-gray-800 flex items-center gap-2 uppercase tracking-wide">
+            <i class="fas fa-bell text-red-500"></i> Signalements
         </h3>
-        <span class="bg-red-100 text-red-700 text-xs font-bold px-3 py-1 rounded-full uppercase">
-            Accidents: {{ $signalements->where('type', 'accident')->count() }}
-        </span>
+        <div class="flex items-center gap-2">
+            <span class="bg-gray-100 text-gray-600 text-[10px] font-bold px-3 py-1 rounded-full uppercase">
+                Total: {{ $totalSignalements }}
+            </span>
+            @if($accidents > 0)
+            <span class="bg-red-100 text-red-700 text-[10px] font-bold px-3 py-1 rounded-full uppercase animate-pulse">
+                <i class="fas fa-car-crash mr-1"></i> {{ $accidents }} accident(s)
+            </span>
+            @endif
+        </div>
     </div>
-    
+
     @if($signalements->isEmpty())
-        <div class="p-12 text-center text-gray-500">
-            <div class="bg-gray-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i class="fas fa-check text-3xl text-gray-400"></i>
+        <div class="p-16 text-center">
+            <div class="bg-gray-50 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-shield-alt text-3xl text-gray-300"></i>
             </div>
-            <h4 class="text-xl font-medium mb-2">Aucun signalement</h4>
-            <p>Tout semble calme pour le moment.</p>
+            <h4 class="text-lg font-bold text-gray-400 mb-1">Aucun signalement</h4>
+            <p class="text-sm text-gray-300">Tout est calme pour le moment.</p>
         </div>
     @else
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="bg-gray-50 text-gray-500 text-sm uppercase tracking-wider">
-                        <th class="text-center p-4 font-semibold">Source</th>
-                        <th class="text-center p-4 font-semibold">Type</th>
-                        <th class="text-center p-4 font-semibold">Date & Heure</th>
-                        <th class="text-center p-4 font-semibold">Description</th>
-                        <th class="text-center p-4 font-semibold">Statut</th>
-                        <th class="text-center p-4 font-semibold">Lieu</th>
-                        <th class="text-center p-4 font-semibold">Action</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    @foreach($signalements as $signalement)
-                        @php
-                            $isChauffeur = $signalement->personnel_id && !$signalement->user_id;
-                            $isCompagnie = $signalement->compagnie_id && !$signalement->user_id && !$signalement->personnel_id;
-                        @endphp
-                        <tr class="hover:bg-gray-50 transition-colors {{ $signalement->type == 'accident' ? 'bg-red-50' : '' }}">
-                            
-                            {{-- SOURCE --}}
-                            <td class="p-4" style="text-align: center;">
+        <div class="divide-y divide-gray-50">
+            @foreach($signalements as $signalement)
+                @php
+                    $isChauffeur = $signalement->personnel_id && !$signalement->user_id;
+                    $isCompagnie = $signalement->compagnie_id && !$signalement->user_id && !$signalement->personnel_id;
+                    $isAccident = $signalement->type == 'accident';
+                    $isNew = $signalement->statut == 'nouveau';
+                @endphp
+                <a href="{{ route('sapeur-pompier.signalement.show', $signalement->id) }}"
+                   class="block hover:bg-gray-50 transition-all {{ $isAccident && $isNew ? 'bg-red-50 hover:bg-red-100 border-l-4 border-red-500' : '' }} {{ $isNew && !$isAccident ? 'border-l-4 border-yellow-400' : '' }}">
+                    <div class="px-6 py-4 flex items-center gap-4">
+
+                        {{-- Icône type --}}
+                        <div class="flex-shrink-0">
+                            @if($isAccident)
+                                <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center {{ $isNew ? 'animate-pulse' : '' }}">
+                                    <i class="fas fa-car-crash text-red-600 text-lg"></i>
+                                </div>
+                            @elseif($signalement->type == 'panne')
+                                <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+                                    <i class="fas fa-tools text-orange-600 text-lg"></i>
+                                </div>
+                            @elseif($signalement->type == 'retard')
+                                <div class="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
+                                    <i class="fas fa-clock text-yellow-600 text-lg"></i>
+                                </div>
+                            @else
+                                <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                                    <i class="fas fa-info-circle text-blue-600 text-lg"></i>
+                                </div>
+                            @endif
+                        </div>
+
+                        {{-- Infos principales --}}
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-1 flex-wrap">
+                                {{-- Badge type --}}
+                                @if($isAccident)
+                                    <span class="inline-flex items-center gap-1 bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-md font-bold uppercase">Accident</span>
+                                @elseif($signalement->type == 'panne')
+                                    <span class="inline-flex items-center gap-1 bg-orange-500 text-white text-[10px] px-2 py-0.5 rounded-md font-bold uppercase">Panne</span>
+                                @elseif($signalement->type == 'retard')
+                                    <span class="inline-flex items-center gap-1 bg-yellow-500 text-white text-[10px] px-2 py-0.5 rounded-md font-bold uppercase">Retard</span>
+                                @else
+                                    <span class="inline-flex items-center gap-1 bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-md font-bold uppercase">{{ $signalement->type }}</span>
+                                @endif
+
+                                {{-- Badge source --}}
                                 @if($isChauffeur)
-                                    <span class="inline-flex items-center gap-1 bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full font-bold uppercase">
-                                        <i class="fas fa-id-badge text-[9px]"></i> Chauffeur
+                                    <span class="inline-flex items-center gap-1 bg-blue-50 text-blue-600 text-[10px] px-2 py-0.5 rounded-md font-bold">
+                                        <i class="fas fa-id-badge" style="font-size:8px;"></i> Chauffeur
                                     </span>
                                 @elseif($isCompagnie || ($signalement->compagnie_id && !$signalement->user_id))
-                                    <span class="inline-flex items-center gap-1 bg-orange-100 text-orange-700 text-xs px-2 py-1 rounded-full font-bold uppercase">
-                                        <i class="fas fa-building text-[9px]"></i> Compagnie
+                                    <span class="inline-flex items-center gap-1 bg-orange-50 text-orange-600 text-[10px] px-2 py-0.5 rounded-md font-bold">
+                                        <i class="fas fa-building" style="font-size:8px;"></i> Compagnie
                                     </span>
                                 @elseif($signalement->user_id)
-                                    <span class="inline-flex items-center gap-1 bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded-full font-bold uppercase">
-                                        <i class="fas fa-user text-[9px]"></i> Passager
-                                    </span>
-                                @else
-                                    <span class="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full font-bold uppercase">
-                                        <i class="fas fa-question text-[9px]"></i> Inconnu
+                                    <span class="inline-flex items-center gap-1 bg-purple-50 text-purple-600 text-[10px] px-2 py-0.5 rounded-md font-bold">
+                                        <i class="fas fa-user" style="font-size:8px;"></i> Passager
                                     </span>
                                 @endif
-                            </td>
 
-                            {{-- TYPE --}}
-                            <td class="p-4" style="text-align: center;">
-                                @if($signalement->type == 'accident')
-                                    <span class="inline-flex items-center gap-1 bg-red-100 text-red-700 text-xs px-2 py-1 rounded-full font-bold uppercase">
-                                        <i class="fas fa-car-crash"></i> Accident
-                                    </span>
-                                @elseif($signalement->type == 'panne')
-                                    <span class="inline-flex items-center gap-1 bg-orange-100 text-orange-700 text-xs px-2 py-1 rounded-full font-bold uppercase">
-                                        <i class="fas fa-tools"></i> Panne
-                                    </span>
-                                @elseif($signalement->type == 'retard')
-                                    <span class="inline-flex items-center gap-1 bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded-full font-bold uppercase">
-                                        <i class="fas fa-clock"></i> Retard
-                                    </span>
-                                @else
-                                    <span class="inline-flex items-center gap-1 bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full font-bold uppercase">
-                                        {{ $signalement->type }}
-                                    </span>
-                                @endif
-                            </td>
-
-                            {{-- DATE --}}
-                            <td class="p-4 text-sm font-medium text-gray-700" style="text-align: center;">
-                                {{ $signalement->created_at->format('d/m/Y H:i') }}
-                                <div class="text-xs text-gray-400">{{ $signalement->created_at->diffForHumans() }}</div>
-                            </td>
-
-                            {{-- DESCRIPTION --}}
-                            <td class="p-4 text-sm text-gray-600 max-w-xs truncate" style="text-align: center;">
-                                {{ Str::limit($signalement->description, 50) }}
-                            </td>
-
-                            {{-- STATUT --}}
-                            <td class="p-4" style="text-align: center;">
+                                {{-- Badge statut --}}
                                 @if($signalement->statut == 'nouveau')
-                                    <span class="inline-flex items-center gap-1 bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded-full font-bold uppercase">
-                                        Nouveau
+                                    <span class="inline-flex items-center gap-1 bg-yellow-100 text-yellow-700 text-[10px] px-2 py-0.5 rounded-md font-bold uppercase">
+                                        <span class="w-1.5 h-1.5 bg-yellow-500 rounded-full"></span> Nouveau
                                     </span>
                                 @elseif($signalement->statut == 'traite')
-                                    <span class="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-bold uppercase">
-                                        Traité
-                                    </span>
-                                @else
-                                    <span class="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full font-bold uppercase">
-                                        {{ $signalement->statut }}
+                                    <span class="inline-flex items-center gap-1 bg-green-100 text-green-700 text-[10px] px-2 py-0.5 rounded-md font-bold uppercase">
+                                        <i class="fas fa-check" style="font-size:8px;"></i> Traité
                                     </span>
                                 @endif
-                            </td>
+                            </div>
 
-                            {{-- LIEU --}}
-                            <td class="p-4 text-sm text-gray-600" style="display: flex; justify-content: center; align-items: center;">
+                            {{-- Description --}}
+                            <p class="text-sm text-gray-700 font-medium truncate">{{ Str::limit($signalement->description, 80) }}</p>
+
+                            {{-- Lieu --}}
+                            <div class="flex items-center gap-3 mt-1.5">
                                 @if($signalement->latitude && $signalement->longitude)
-                                    <span class="location-container text-xs font-medium text-gray-700 block max-w-xs cursor-help" 
-                                          data-lat="{{ $signalement->latitude }}" 
+                                    <span class="location-container text-[11px] text-gray-400 font-medium"
+                                          data-lat="{{ $signalement->latitude }}"
                                           data-lon="{{ $signalement->longitude }}">
-                                        <i class="fas fa-spinner fa-spin text-gray-400"></i> Localisation...
+                                        <i class="fas fa-spinner fa-spin mr-1"></i> Localisation...
                                     </span>
-                                    <a href="https://www.google.com/maps/search/?api=1&query={{ $signalement->latitude }},{{ $signalement->longitude }}" target="_blank" class="text-blue-600 hover:underline flex items-center gap-1 text-xs mt-1">
-                                        <i class="fas fa-external-link-alt"></i> Ouvrir GPS
-                                    </a>
-                                @else
-                                    <span class="text-gray-400 italic">Non localisé</span>
                                 @endif
-                            </td>
+                            </div>
+                        </div>
 
-                            {{-- ACTION --}}
-                            <td class="p-4 text-right" style="text-align: center;">
-                                <a href="{{ route('sapeur-pompier.signalement.show', $signalement->id) }}" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-white border border-gray-200 hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-all shadow-sm">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                        {{-- Date + flèche --}}
+                        <div class="flex-shrink-0 text-right">
+                            <div class="text-xs font-bold text-gray-700">{{ $signalement->created_at->format('H:i') }}</div>
+                            <div class="text-[10px] text-gray-400 font-medium">{{ $signalement->created_at->diffForHumans() }}</div>
+                            <div class="text-[10px] text-gray-300 mt-0.5">{{ $signalement->created_at->format('d/m/Y') }}</div>
+                        </div>
+
+                        <div class="flex-shrink-0 text-gray-300">
+                            <i class="fas fa-chevron-right text-xs"></i>
+                        </div>
+                    </div>
+                </a>
+            @endforeach
         </div>
     @endif
-    
-    <!-- Pagination if needed -->
-    {{-- {{ $signalements->links() }} --}}
 </div>
 
 <script>
@@ -175,92 +222,60 @@
                 let adresseStr = '';
 
                 try {
-                    // Reverse Geocoding avec OpenStreetMap (Nominatim)
                     const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
                     const data = await response.json();
-
                     if (data && data.address) {
                         communeStr = data.address.city || data.address.town || data.address.village || data.address.suburb || data.address.county || '';
-                        
                         if (data.display_name) {
                             adresseStr = data.display_name.split(',').slice(0, 2).join(', ').trim();
                         }
                     }
                 } catch (error) {
-                    console.error('Erreur Reverse Geocoding arrière-plan:', error);
+                    console.error('Erreur Reverse Geocoding:', error);
                 }
 
-                // Send to backend
-                fetch('{{ route('sapeur-pompier.update-location') }}', {
+                fetch('{{ route("sapeur-pompier.update-location") }}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
-                    body: JSON.stringify({
-                        latitude: lat,
-                        longitude: lon,
-                        commune: communeStr,
-                        adresse: adresseStr
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if(data.success) {
-                        console.log('Localisation GPS, commune et adresse mis à jour avec succès');
-                    }
-                })
-                .catch(err => console.error('Erreur lors de la mise à jour GPS', err));
-                
+                    body: JSON.stringify({ latitude: lat, longitude: lon, commune: communeStr, adresse: adresseStr })
+                }).catch(err => console.error('Erreur MAJ GPS', err));
+
             }, function(error) {
-                console.error("Erreur Geolocation: ", error.message);
                 if (error.code === error.PERMISSION_DENIED) {
-                    alert("Avertissement : Veuillez autoriser la localisation sur votre navigateur pour recevoir les alertes d'accidents proches de vous.");
+                    alert("Veuillez autoriser la localisation pour recevoir les alertes proches de vous.");
                 }
-            }, {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 0
-            });
-        } else {
-            console.log("La géolocalisation n'est pas supportée par ce navigateur.");
+            }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
         }
     }
 
     function initGeocoding() {
-        // On cible uniquement les conteneurs qui n'ont pas encore été traités (facultatif mais plus propre)
         const containers = document.querySelectorAll('.location-container:not([data-processed="true"])');
-        
         containers.forEach(container => {
-            container.setAttribute('data-processed', 'true'); // Marquer comme traité
+            container.setAttribute('data-processed', 'true');
             const lat = container.getAttribute('data-lat');
             const lon = container.getAttribute('data-lon');
-            
-            // Petit délai aléatoire pour éviter de spammer l'API OSM
             setTimeout(() => {
                 fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
                 .then(response => response.json())
                 .then(data => {
                     if(data && data.display_name) {
-                        // On raccourcit un peu l'adresse pour l'affichage tableau
-                        const shortAddress = data.display_name.split(',').slice(0, 3).join(','); 
-                        container.innerHTML = `<i class="fas fa-map-marker-alt text-red-500"></i> ${shortAddress}...`;
-                        container.title = data.display_name; // Full address on hover
+                        const shortAddress = data.display_name.split(',').slice(0, 3).join(',');
+                        container.innerHTML = `<i class="fas fa-map-marker-alt text-red-400 mr-1"></i> ${shortAddress}`;
+                        container.title = data.display_name;
                     } else {
                         container.innerText = "Lieu inconnu";
                     }
                 })
-                .catch(err => {
-                    console.error('Erreur geo', err);
-                    container.innerText = "Err. réseau";
-                });
-            }, Math.random() * 2000); 
+                .catch(() => { container.innerText = "Err. réseau"; });
+            }, Math.random() * 1500);
         });
     }
 
     function startAutoRefresh() {
         setInterval(() => {
-            // Recharger le contenu du tableau via AJAX
             fetch(window.location.href)
                 .then(response => response.text())
                 .then(html => {
@@ -268,16 +283,13 @@
                     const doc = parser.parseFromString(html, 'text/html');
                     const newContainer = doc.getElementById('recent-signalements-container');
                     const currentContainer = document.getElementById('recent-signalements-container');
-
                     if (newContainer && currentContainer) {
                         currentContainer.innerHTML = newContainer.innerHTML;
-                        // Relancer le géocodage sur les nouveaux éléments
                         initGeocoding();
                     }
                 })
                 .catch(err => console.error('Erreur auto-refresh', err));
-        }, 15000); // 15 secondes
+        }, 3000); // Toutes les 3 secondes
     }
-
 </script>
 @endsection

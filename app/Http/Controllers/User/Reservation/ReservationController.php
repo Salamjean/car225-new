@@ -354,9 +354,9 @@ class ReservationController extends Controller
         // Paramètres de recherche
         $point_depart = $request->point_depart;
         $point_arrive = $request->point_arrive;
-        $date_depart_recherche = $request->date_depart ?? date('Y-m-d', strtotime('+1 day'));
+        $date_depart_recherche = $request->date_depart;
         $heure_depart = $request->heure_depart ?? null;
-        $formattedDate = date('Y-m-d', strtotime($date_depart_recherche));
+        $formattedDate = $date_depart_recherche ? date('Y-m-d', strtotime($date_depart_recherche)) : date('Y-m-d', strtotime('+1 day'));
 
         // Initialiser la requête avec les relations nécessaires pour éviter le N+1
         $query = Programme::with(['compagnie', 'itineraire', 'gareDepart', 'gareArrivee', 'voyages.vehicule', 'compagnie.vehicules'])
@@ -2972,4 +2972,30 @@ public function apiRouteDates(Request $request)
 }
 
 
+    /**
+     * Update emergency contact for a reservation.
+     */
+    public function updateEmergencyContact(Request $request, Reservation $reservation)
+    {
+        if ($reservation->user_id !== Auth::id()) {
+            return response()->json(['success' => false, 'message' => 'Non autorisé'], 403);
+        }
+
+        $request->validate([
+            'nom_passager_urgence' => 'required|string|max:255',
+            'passager_urgence' => 'required|string|size:10|regex:/^[0-9]+$/',
+        ]);
+
+        $reservation->update([
+            'nom_passager_urgence' => $request->nom_passager_urgence,
+            'passager_urgence' => $request->passager_urgence,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Contact d\'urgence mis à jour avec succès.',
+            'nom' => $reservation->nom_passager_urgence,
+            'telephone' => $reservation->passager_urgence
+        ]);
+    }
 }
