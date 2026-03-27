@@ -155,8 +155,12 @@
         fetch(`/gare-espace/reservations/${id}`)
             .then(response => response.json())
             .then(res => {
+                console.log("=== DEBUG: MODAL DETAILS DATA ===");
+                console.log("API Response details for ID " + id + ":", res);
                 if(res.success) {
                     const data = res.data;
+                    console.log("Trajet details:", data.trajet);
+                    
                     document.getElementById('modalRef').textContent = `Référence: ${data.reference}`;
                     document.getElementById('passagerNom').textContent = data.passager.nom;
                     document.getElementById('passagerTel').textContent = data.passager.telephone;

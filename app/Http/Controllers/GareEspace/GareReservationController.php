@@ -196,7 +196,7 @@ class GareReservationController extends Controller
                     'depart' => $reservation->programme->point_depart,
                     'arrivee' => $reservation->programme->point_arrive,
                     'date' => $reservation->date_voyage->format('d/m/Y'),
-                    'heure' => $reservation->heure_depart,
+                    'heure' => \Carbon\Carbon::parse($reservation->heure_depart ?? $reservation->programme->heure_depart)->format('H:i'),
                     'siege' => $reservation->seat_number,
                 ],
                 'paiement' => [

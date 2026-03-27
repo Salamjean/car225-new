@@ -243,7 +243,15 @@
 
                 modifState.current.progId = response.reservation.programme_id;
                 modifState.current.date = response.formatted_date_aller;
-                modifState.current.time = response.reservation.heure_depart.substring(0, 5); 
+                const heureDepart = response.reservation.heure_depart || (response.reservation.programme && response.reservation.programme.heure_depart) || '00:00:00';
+                
+                console.log("=== DEBUG: MODIFICATION DATA ===");
+                console.log("Full Response:", response);
+                console.log("Original reservation.heure_depart:", response.reservation.heure_depart);
+                console.log("Programme heure_depart:", response.reservation.programme ? response.reservation.programme.heure_depart : null);
+                console.log("Final computed heureDepart:", heureDepart);
+
+                modifState.current.time = heureDepart.substring(0, 5); 
                 modifState.current.seat = response.reservation.seat_number;
 
                 if(modifState.isRoundTrip && response.return_details) {
@@ -447,8 +455,12 @@
                 if(res.success && res.schedules.length > 0) {
                     let opts = '<option value="">-- Choisir Heure --</option>';
                     res.schedules.forEach(sch => {
-                        const schDisplay = sch.heure_depart.substring(0, 5);
-                        const schTime = sch.heure_depart;
+                        const heureDepart = sch.heure_depart || '00:00:00';
+                        if (!sch.heure_depart) {
+                            console.warn("=== DEBUG: SCHEDULE HAS NULL HEURE_DEPART ===", sch);
+                        }
+                        const schDisplay = heureDepart.substring(0, 5);
+                        const schTime = heureDepart;
                         const preTime = preSelectedTime ? preSelectedTime.substring(0, 5) : '';
                         const isSelected = (preTime && schDisplay === preTime) ? 'selected' : '';
                         opts += `<option value="${schTime}" ${isSelected} data-prog-id="${sch.id}" data-prix="${sch.montant_billet}">${schDisplay}</option>`;
