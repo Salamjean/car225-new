@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="min-h-screen bg-gradient-to-br from-gray-50 to-green-50 py-8 px-4">
-    <div class="mx-auto" style="width: 90%">
+    <div class="mx-auto" style="width: 100%">
         <div class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
                 <h2 class="text-3xl font-bold text-gray-900 mb-2">Personnel</h2>
@@ -18,7 +18,7 @@
         </div>
 
         <!-- Stats -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-100">
                 <div class="flex items-center justify-between">
                     <div>

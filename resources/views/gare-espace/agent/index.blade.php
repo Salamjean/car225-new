@@ -22,6 +22,7 @@
     font-family: var(--font-jakarta);
     background-color: var(--gray-50);
     min-height: 100vh;
+    width: 100%;
 }
 
 .stat-card-premium {
@@ -145,7 +146,7 @@
 
 <div class="gare-container py-8 px-4 sm:px-6 lg:px-8">
     {{-- Header --}}
-    <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+    <div class="mx-auto flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
         <div class="animate__animated animate__fadeInLeft">
             <h1 class="text-4xl font-black text-gray-900 tracking-tight mb-1">Agents de <span class="text-orange-600">Gare</span></h1>
             <p class="text-gray-500 font-medium">Gestion et pilotage des effectifs de votre gare</p>
@@ -159,7 +160,7 @@
     </div>
 
     {{-- Stats Grid --}}
-    <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+    <div class="mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
         <div class="stat-card-premium animate__animated animate__fadeInUp">
             <div class="flex items-center gap-4">
                 <div class="w-14 h-14 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center text-xl shadow-inner">
@@ -198,7 +199,7 @@
     </div>
 
     {{-- Main Table Section --}}
-    <div class="max-w-7xl mx-auto">
+    <div class="mx-auto">
         <div class="bg-white/40 backdrop-blur-sm rounded-[2.5rem] p-4 lg:p-8 animate__animated animate__fadeInUp" style="animation-delay: 0.3s">
             @if($agents->isEmpty())
                 <div class="py-20 text-center">

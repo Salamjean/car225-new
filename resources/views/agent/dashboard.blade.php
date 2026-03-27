@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="bg-gray-50 py-6 px-4 sm:px-6">
-    <div class="mx-auto" style="width: 95%;">
+    <div class="mx-auto" style="width: 100%;">
 
         <!-- Header -->
         <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">

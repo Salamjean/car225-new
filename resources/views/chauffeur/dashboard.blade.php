@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="min-h-screen bg-gradient-to-br from-gray-50 to-orange-50 py-8 px-4">
-    <div class="mx-auto" style="width: 90%">
+    <div class="mx-auto" style="width: 100%">
         <!-- Header Summary -->
         <div class="bg-gradient-to-r from-orange-600 to-red-600 rounded-2xl p-6 text-white shadow-lg mb-8">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">

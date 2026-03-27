@@ -5,7 +5,7 @@
 
 @section('styles')
 <style>
-    .form-wrapper { width: 75%; margin: 0 auto; }
+    .form-wrapper { width: 80%; margin: 0 auto; }
     
     .btn-back { display: inline-flex; align-items: center; gap: 8px; color: var(--text-3); font-weight: 700; font-size: 13px; text-decoration: none; margin-bottom: 24px; transition: color 0.2s; }
     .btn-back:hover { color: var(--orange); text-decoration: none; }

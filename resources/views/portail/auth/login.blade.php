@@ -341,7 +341,23 @@
 
             if (identifiantField && idIcon) {
                 identifiantField.addEventListener('input', function(e) {
-                    const value = e.target.value;
+                    let value = e.target.value;
+                    
+                    // Logic for automatic hyphen insertion
+                    // We only do this if it's not a deletion
+                    if (e.inputType !== 'deleteContentBackward' && e.inputType !== 'deleteContentForward') {
+                        const prefixes = ['USR', 'AGT', 'HTS', 'CSS', 'CHF', 'GAR', 'ADM', 'SST'];
+                        
+                        // If exactly 3 chars, check if it's a professional prefix
+                        if (value.length === 3) {
+                            const upperPrefix = value.toUpperCase();
+                            if (prefixes.includes(upperPrefix)) {
+                                e.target.value = upperPrefix + '-';
+                                value = e.target.value; // Update local value for icon logic
+                            }
+                        }
+                    }
+
                     if (value.includes('@')) {
                         idIcon.className = 'fas fa-envelope';
                     } else if (value.trim().length > 0) {

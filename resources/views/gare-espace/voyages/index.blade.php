@@ -57,7 +57,7 @@
 
 @section('content')
 <div class="min-h-screen bg-gradient-to-br from-gray-50 to-orange-50 py-8 px-4">
-    <div class="mx-auto" style="width: 90%">
+    <div class="mx-auto" style="width: 100%">
         <!-- Header -->
         <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>

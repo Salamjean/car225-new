@@ -6,7 +6,7 @@
 @section('styles')
 <style>
     /* Utilisation du même CSS que pour Agent Create */
-    .form-wrapper { max-width: 1000px; margin: 0 auto; }
+    .form-wrapper { width: 80%; margin: 0 auto; }
     
     .btn-back { display: inline-flex; align-items: center; gap: 8px; color: var(--text-3); font-weight: 700; font-size: 13px; text-decoration: none; margin-bottom: 24px; transition: color 0.2s; }
     .btn-back:hover { color: var(--orange); text-decoration: none; }
@@ -210,7 +210,6 @@
                                             <i class="fas fa-chevron-down chevron"></i>
                                         </div>
                                         <div class="input-with-icon">
-                                            <i class="fas fa-phone-alt"></i>
                                             <input type="text" name="contact" value="{{ old('contact') }}" required maxlength="10" class="form-control" placeholder="07 00 00 00 00" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)">
                                         </div>
                                     </div>
@@ -239,7 +238,6 @@
                                             <i class="fas fa-chevron-down chevron"></i>
                                         </div>
                                         <div class="input-with-icon">
-                                            <i class="fas fa-ambulance"></i>
                                             <input type="text" name="contact_urgence" id="contact_urgence" value="{{ old('contact_urgence') }}" required maxlength="10" class="form-control" placeholder="01 00 00 00 00" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)">
                                         </div>
                                     </div>

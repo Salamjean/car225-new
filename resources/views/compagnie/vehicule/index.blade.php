@@ -288,7 +288,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="sa-plate-wrap">
                             <div class="sa-plate">
                                 <div class="country">
-                                    <img src="https://upload.wikimedia.org/wikipedia/commons/b/bc/Flag_of_Cote_d%27Ivoire.svg" alt="CI">
                                     CI
                                 </div>
                                 <div class="number">${d.immat}</div>

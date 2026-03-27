@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="min-h-screen bg-gradient-to-br from-gray-50 to-orange-50 py-8 px-4">
-    <div class="mx-auto" style="width: 90%">
+    <div class="mx-auto" style="width: 100%">
         <div class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
                 <h2 class="text-3xl font-bold text-gray-900 mb-2">Véhicules</h2>

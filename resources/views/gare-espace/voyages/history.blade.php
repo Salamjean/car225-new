@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8 px-4">
-    <div class="mx-auto" style="width: 90%">
+    <div class="mx-auto" style="width: 100%">
         <div class="mb-8">
             <h2 class="text-3xl font-bold text-gray-900 mb-2">Historique des Voyages</h2>
             <p class="text-gray-500 text-lg">Consultez les voyages terminés de votre compagnie</p>

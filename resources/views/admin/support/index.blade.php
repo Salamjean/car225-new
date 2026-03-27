@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="min-h-screen bg-gradient-to-br from-gray-50 to-indigo-50/30 py-8 px-4">
-    <div class="mx-auto" style="width: 92%">
+    <div class="mx-auto" style="width: 100%">
 
         {{-- En-tête --}}
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">

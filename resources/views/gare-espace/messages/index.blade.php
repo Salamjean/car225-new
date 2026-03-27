@@ -237,7 +237,7 @@
 .msg-wrapper {
     padding: 2rem;
     font-family: var(--font-family);
-    max-width: 1200px;
+    width: 100%;
     margin: 0 auto;
 }
 

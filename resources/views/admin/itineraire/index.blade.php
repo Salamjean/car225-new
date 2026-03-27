@@ -1,7 +1,7 @@
 @extends('admin.layouts.template')
 @section('content')
     <div class="min-h-screen bg-gradient-to-br from-gray-50 to-green-50 py-8 px-4">
-       <div class=" mx-auto" style="width: 90%">
+       <div class=" mx-auto" style="width: 100%">
             <!-- En-tête avec bouton -->
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
                 <div>
