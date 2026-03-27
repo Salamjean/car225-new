@@ -172,27 +172,33 @@ class SmsService
 
     /**
      * Formater le numéro de téléphone au format international (+225)
+     * Les numéros ivoiriens sont à 10 chiffres avec le 0 de tête conservé.
+     * Exemples :
+     *   "0708325027"        → "+2250708325027"
+     *   "NOIR (0708325027)" → "+2250708325027"  (texte nettoyé)
+     *   "+2250708325027"    → "+2250708325027"
+     *   "2250708325027"     → "+2250708325027"
      */
     protected function formatPhoneNumber(string $phone): string
     {
         if (empty($phone)) return '';
 
-        // Supprimer les espaces et caractères spéciaux
+        // Supprimer les espaces et caractères non numériques (texte, parenthèses, etc.)
         $phone = preg_replace('/[^0-9+]/', '', $phone);
 
         if (empty($phone)) return '';
 
-        // Si le numéro commence déjà par +225, c'est bon
+        // Déjà au format +225XXXXXXXXXX
         if (str_starts_with($phone, '+225')) {
             return $phone;
         }
 
-        // Si le numéro commence par 225 (sans +), ajouter le +
+        // Format 225XXXXXXXXXX (sans +)
         if (str_starts_with($phone, '225')) {
             return '+' . $phone;
         }
 
-        // Sinon, ajouter +225 devant le numéro complet (garder le 0)
+        // Format local (0XXXXXXXXX) — garder le 0, ajouter +225
         return '+225' . $phone;
     }
 

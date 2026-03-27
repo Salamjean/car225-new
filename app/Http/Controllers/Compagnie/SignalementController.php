@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Compagnie;
 use App\Http\Controllers\Controller;
 use App\Models\Signalement;
 use App\Models\CompanyMessage;
+use App\Models\Reservation;
 use App\Models\SapeurPompier;
 use App\Notifications\NewSignalementNotification;
 use App\Notifications\NewInternalMessageNotification;
+use App\Services\SmsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -478,51 +480,88 @@ class SignalementController extends Controller
 
     /**
      * Envoyer les notifications aux contacts d'urgence des passagers évacués.
+     * Chaque contact reçoit un message personnalisé avec uniquement l'hôpital de SON proche.
      */
     public function envoyerNotifications(Request $request, $id)
     {
         $compagnieId = Auth::guard('compagnie')->id();
-        $compagnie = Auth::guard('compagnie')->user();
+        $compagnie   = Auth::guard('compagnie')->user();
 
         $signalement = Signalement::whereHas('programme', function ($q) use ($compagnieId) {
             $q->where('compagnie_id', $compagnieId);
         })->with(['programme'])->findOrFail($id);
 
         $request->validate([
-            'message' => 'required|string|min:10',
-            'contacts' => 'required|array|min:1',
-            'contacts.*' => 'required|string',
+            'message'       => 'required|string|min:10',
+            'reservations'  => 'required|array|min:1',
+            'reservations.*'=> 'required|integer',
         ]);
 
-        $messageTexte = $request->input('message');
-        $contacts = $request->input('contacts');
-        $sent = 0;
+        $messageTemplate = $request->input('message');
+        $reservationIds  = $request->input('reservations');
+        $bilanPassagers  = $signalement->bilan_passagers ?? [];
 
-        foreach ($contacts as $contact) {
+        $sent = 0;
+        $errors = 0;
+        $smsService = app(SmsService::class);
+
+        // Récupérer uniquement les réservations sélectionnées
+        $reservations = Reservation::whereIn('id', $reservationIds)->with('user')->get();
+
+        foreach ($reservations as $res) {
+            // Trouver l'entrée bilan spécifique à ce passager
+            $bilanEntry = collect($bilanPassagers)->firstWhere('reservation_id', $res->id);
+            if (!$bilanEntry || ($bilanEntry['statut'] ?? '') !== 'evacue') {
+                continue;
+            }
+
+            $hopitalNom     = $bilanEntry['hopital_nom'] ?? 'hôpital non précisé';
+            $hopitalAdresse = $bilanEntry['hopital_adresse'] ?? '';
+            $hopitalInfo    = $hopitalNom . ($hopitalAdresse ? "\nLocalisation : " . $hopitalAdresse : '');
+
+            // Construire le message personnalisé pour CE passager
+            $messagePersonnalise = str_replace('{HOPITAL}', $hopitalInfo, $messageTemplate);
+
+            $contactUrgence = $res->passager_urgence ?? $res->ice_contact ?? null;
+            $emailPassager  = $res->passager_email ?? ($res->user->email ?? null);
+
             try {
-                // Envoyer par email si c'est un email
-                if (filter_var($contact, FILTER_VALIDATE_EMAIL)) {
-                    Mail::raw($messageTexte, function ($mail) use ($contact, $compagnie, $signalement) {
-                        $mail->to($contact)
+                // 1. Envoi par email si disponible
+                if ($emailPassager && filter_var($emailPassager, FILTER_VALIDATE_EMAIL)) {
+                    Mail::raw($messagePersonnalise, function ($mail) use ($emailPassager, $compagnie, $signalement) {
+                        $mail->to($emailPassager)
                              ->subject("Notification d'accident — {$compagnie->name}")
                              ->from(config('mail.from.address'), $compagnie->name);
                     });
                     $sent++;
                 }
-                // Pour les numéros de téléphone, on log l'envoi (intégration SMS future)
-                else {
-                    Log::info("SMS Notification Accident #{$signalement->id}", [
-                        'to' => $contact,
-                        'message' => $messageTexte,
-                        'compagnie' => $compagnie->name,
-                    ]);
-                    $sent++;
+
+                // 2. Envoi SMS si contact d'urgence disponible
+                if ($contactUrgence) {
+                    $smsSent = $smsService->sendSms($contactUrgence, $messagePersonnalise);
+                    if ($smsSent) {
+                        $sent++;
+                        Log::info("SMS accident envoyé", ['to' => $contactUrgence, 'reservation_id' => $res->id]);
+                    } else {
+                        $errors++;
+                        Log::error("Échec SMS accident", [
+                            'to'             => $contactUrgence,
+                            'reservation_id' => $res->id,
+                        ]);
+                    }
                 }
+
             } catch (\Exception $e) {
-                Log::error("Erreur envoi notification accident: " . $e->getMessage());
+                $errors++;
+                Log::error("Erreur envoi notification accident #{$signalement->id}: " . $e->getMessage(), [
+                    'reservation_id' => $res->id,
+                ]);
             }
         }
 
-        return back()->with('success', "{$sent} notification(s) envoyée(s) aux contacts d'urgence avec succès.");
+        $msg = "{$sent} notification(s) envoyée(s) avec succès.";
+        if ($errors > 0) $msg .= " {$errors} échec(s) — vérifiez les logs.";
+
+        return back()->with($errors > 0 && $sent === 0 ? 'error' : 'success', $msg);
     }
 }

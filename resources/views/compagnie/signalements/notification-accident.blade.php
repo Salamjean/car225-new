@@ -151,10 +151,10 @@
                         @foreach($passagers as $p)
                             @php $contactUrgence = $p['contact_urgence']; @endphp
                             <div class="passenger-row">
-                                {{-- Checkbox --}}
+                                {{-- Checkbox — on envoie la reservation_id, pas le contact brut --}}
                                 <div style="flex-shrink:0;">
                                     @if($contactUrgence)
-                                        <input type="checkbox" name="contacts[]" value="{{ $contactUrgence }}"
+                                        <input type="checkbox" name="reservations[]" value="{{ $p['reservation']->id }}"
                                             checked class="contact-checkbox hospital-{{ Str::slug($hopitalNom) }}"
                                             style="width:18px;height:18px;accent-color:#2563EB;cursor:pointer;">
                                     @else
@@ -205,25 +205,22 @@
                     </div>
 
                     <div class="message-section-body">
-                        {{-- Boutons d'insertion rapide --}}
-                        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
-                            @foreach($parHopital as $hopitalNom => $passagers)
-                                <button type="button" onclick="insertHospitalInMessage('{{ $hopitalNom }}', '{{ $passagers->first()['hopital_adresse'] ?? '' }}')" class="tag-hospital">
-                                    <i class="fas fa-hospital"></i> Insérer : {{ $hopitalNom }}
-                                </button>
-                            @endforeach
+                        {{-- Info sur la personnalisation automatique --}}
+                        <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:flex-start;gap:10px;">
+                            <i class="fas fa-info-circle" style="color:#16A34A;font-size:15px;margin-top:1px;flex-shrink:0;"></i>
+                            <div style="font-size:12px;color:#15803D;font-weight:600;line-height:1.5;">
+                                Le message est <strong>automatiquement personnalisé</strong> pour chaque contact : le placeholder <code style="background:#DCFCE7;padding:1px 5px;border-radius:4px;">{HOPITAL}</code> sera remplacé par l'hôpital <strong>spécifique</strong> du proche du contact notifié.
+                            </div>
                         </div>
 
                         <textarea name="message" id="notification-message" class="custom-textarea" required>Bonjour,
 
 Nous vous informons qu'un accident de la route s'est produit le {{ $signalement->created_at->format('d/m/Y à H:i') }} sur le trajet {{ $signalement->programme->point_depart ?? '' }} → {{ $signalement->programme->point_arrive ?? '' }} ({{ $compagnie->name }}).
 
-Votre proche a été pris en charge et évacué vers l'hôpital suivant :
-@foreach($parHopital as $hopitalNom => $passagers)
-- {{ $hopitalNom }}{{ $passagers->first()['hopital_adresse'] ? ' — ' . $passagers->first()['hopital_adresse'] : '' }}
-@endforeach
+Votre proche a été pris en charge et evacue vers l'hopital suivant :
+{HOPITAL}
 
-Nous vous invitons à vous rapprocher de l'établissement pour plus d'informations sur l'état de votre proche.
+Nous vous invitons a vous rapprocher de l'etablissement pour plus d'informations sur l'etat de votre proche.
 
 Cordialement,
 {{ $compagnie->name }}</textarea>
@@ -233,7 +230,7 @@ Cordialement,
                                 <i class="fas fa-check-circle" style="color:#2563EB;margin-right:4px;"></i>
                                 <span id="selected-count">{{ $passagersEvacues->where('contact_urgence', '!=', null)->count() }}</span> contact(s) sélectionné(s)
                             </div>
-                            <button type="submit" class="btn-send">
+                            <button type="submit" class="btn-send" onclick="this.disabled=true;this.innerHTML='<i class=\'fas fa-spinner fa-spin\'></i> Envoi en cours...';this.form.submit();">
                                 <i class="fas fa-paper-plane"></i> Envoyer les notifications
                             </button>
                         </div>
