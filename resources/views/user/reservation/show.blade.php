@@ -167,7 +167,7 @@
                     <div class="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center text-green-600 mx-auto mb-6">
                         <i class="fas fa-check-circle text-4xl"></i>
                     </div>
-                    <h4 class="text-xl font-black text-gray-900 uppercase tracking-tight mb-2">Réservation Confirmée</h4>
+                    <h4 class="text-xl font-black text-gray-900 uppercase tracking-tight mb-2">Réserver</h4>
                     <p class="text-gray-500 font-medium text-sm mb-6">Votre billet est prêt pour le voyage.</p>
                 @elseif($reservation->statut == 'en_attente')
                     <div class="w-20 h-20 bg-yellow-50 rounded-full flex items-center justify-center text-yellow-600 mx-auto mb-6">
@@ -196,7 +196,7 @@
                         <div class="w-20 h-20 bg-purple-50 rounded-full flex items-center justify-center text-purple-600 mx-auto mb-6">
                             <i class="fas fa-user-check text-4xl"></i>
                         </div>
-                        <h4 class="text-xl font-black text-gray-900 uppercase tracking-tight mb-2">Enregistré</h4>
+                        <h4 class="text-xl font-black text-gray-900 uppercase tracking-tight mb-2">Embarqué</h4>
                         <p class="text-gray-500 font-medium text-sm mb-6">Votre embarquement a été validé. En attente du départ.</p>
                     @endif
                 @elseif($reservation->statut == 'annulee')

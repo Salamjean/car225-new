@@ -121,13 +121,12 @@
                                     <span class="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></span> En voyage
                                 </span>
                             @elseif($reservation->statut == 'confirmee')
-                            
                                 <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-green-100">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Confirmé
+                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Réserver
                                 </span>
                             @elseif($reservation->statut == 'terminee')
                                 <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-blue-100">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Terminé
+                                    <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Embarqué
                                 </span>
                             @elseif($reservation->statut == 'annulee')
                                 <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-red-100">

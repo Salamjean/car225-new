@@ -28,7 +28,7 @@
                 <div class="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center text-green-600 transition-colors group-hover:bg-green-600 group-hover:text-white">
                     <i class="fas fa-check-circle text-xl"></i>
                 </div>
-                <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Confirmées</span>
+                <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Réservées</span>
             </div>
             <h3 class="text-3xl font-black text-gray-900">{{ $stats['confirmed'] }}</h3>
             <div class="mt-4 pt-4 border-t border-gray-50 flex justify-end">
@@ -60,7 +60,7 @@
                 <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white">
                     <i class="fas fa-flag-checkered text-xl"></i>
                 </div>
-                <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Terminées</span>
+                <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Embarquées</span>
             </div>
             <h3 class="text-3xl font-black text-gray-900">{{ $stats['finished'] }}</h3>
             <div class="mt-4 pt-4 border-t border-gray-50 flex justify-end">
@@ -128,9 +128,9 @@
                     <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Statut</label>
                     <select name="statut" class="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-[#e94f1b] focus:bg-white outline-none transition-all text-sm font-bold">
                         <option value="">Tous les statuts</option>
-                        <option value="confirmee" {{ request('statut') == 'confirmee' || !request()->has('statut') ? 'selected' : '' }}>Confirmée</option>
+                        <option value="confirmee" {{ request('statut') == 'confirmee' || !request()->has('statut') ? 'selected' : '' }}>Réservée</option>
                         <option value="en_attente" {{ request('statut') == 'en_attente' ? 'selected' : '' }}>En attente</option>
-                        <option value="terminee" {{ request('statut') == 'terminee' ? 'selected' : '' }}>Terminée</option>
+                        <option value="terminee" {{ request('statut') == 'terminee' ? 'selected' : '' }}>Embarquée</option>
                         <option value="annulee" {{ request('statut') == 'annulee' ? 'selected' : '' }}>Annulée</option>
                         <option value="passe" {{ request('statut') == 'passe' ? 'selected' : '' }}>Passée</option>
                     </select>
@@ -263,11 +263,11 @@
                             </span>
                         @elseif($reservation->statut == 'confirmee')
                             <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-green-100">
-                                <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Confirmé
+                                <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Réserver
                             </span>
                         @elseif($reservation->statut == 'terminee')
                             <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-blue-100">
-                                <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Terminé
+                                <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Embarqué
                             </span>
                         @else
                             <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-red-100">
