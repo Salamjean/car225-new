@@ -641,17 +641,44 @@ Route::prefix('sapeur-pompier')->group(function () {
             return view('sapeur_pompier.signalement.show', compact('signalement'));
         })->name('sapeur-pompier.signalement.show');
 
+        // Page bilan d'intervention (nouvelle page pleine)
+        Route::get('/signalements/{signalement}/bilan', function (Signalement $signalement) {
+            if ($signalement->sapeur_pompier_id !== Auth::guard('sapeur_pompier')->id()) {
+                abort(403);
+            }
+            if ($signalement->statut === 'traite') {
+                return redirect()->route('sapeur-pompier.signalement.show', $signalement->id)
+                    ->with('info', 'Ce signalement a déjà été clôturé.');
+            }
+            $signalement->load(['user', 'personnel', 'compagnie', 'voyage', 'programme.compagnie', 'vehicule']);
+
+            $reservations = collect();
+            if ($signalement->voyage_id) {
+                $reservations = \App\Models\Reservation::where('voyage_id', $signalement->voyage_id)
+                    ->whereIn('statut', ['confirmee', 'terminee'])
+                    ->with('user')
+                    ->get();
+            } elseif ($signalement->programme_id) {
+                $dateVoyage = $signalement->created_at->format('Y-m-d');
+                $reservations = \App\Models\Reservation::where('programme_id', $signalement->programme_id)
+                    ->whereDate('date_voyage', $dateVoyage)
+                    ->whereIn('statut', ['confirmee', 'terminee'])
+                    ->with('user')
+                    ->get();
+            }
+
+            return view('sapeur_pompier.signalement.bilan', compact('signalement', 'reservations'));
+        })->name('sapeur-pompier.signalement.bilan');
+
         // Route pour marquer comme traité avec bilan passagers
         Route::patch('/signalements/{signalement}/mark-as-treated', function (\Illuminate\Http\Request $request, \App\Models\Signalement $signalement) {
             if ($signalement->sapeur_pompier_id !== Auth::guard('sapeur_pompier')->id()) {
                 abort(403);
             }
 
-            $signalement->nombre_morts = $request->input('nombre_morts', 0);
-            $signalement->nombre_blesses = $request->input('nombre_blesses', 0);
             $signalement->details_intervention = $request->input('details_intervention');
 
-            // Bilan passagers (évacués / indemnes)
+            // Bilan passagers (indemne / evacue / blesse / mort)
             $bilanPassagers = [];
             if ($request->has('passagers')) {
                 foreach ($request->input('passagers') as $resId => $data) {
@@ -661,12 +688,18 @@ Route::prefix('sapeur-pompier')->group(function () {
                         'statut' => $statut,
                     ];
                     if ($statut === 'evacue') {
-                        $entry['hopital_nom'] = $data['hopital_nom'] ?? '';
+                        $entry['hopital_nom']     = $data['hopital_nom'] ?? '';
                         $entry['hopital_adresse'] = $data['hopital_adresse'] ?? '';
                     }
                     $bilanPassagers[] = $entry;
                 }
             }
+
+            // Calcul automatique depuis les sélections passagers
+            $signalement->nombre_morts   = collect($bilanPassagers)->where('statut', 'mort')->count()
+                                           ?: (int) $request->input('nombre_morts', 0);
+            $signalement->nombre_blesses = collect($bilanPassagers)->where('statut', 'blesse')->count()
+                                           ?: (int) $request->input('nombre_blesses', 0);
             $signalement->bilan_passagers = $bilanPassagers;
             $signalement->statut = 'traite';
             $signalement->save();
@@ -707,7 +740,48 @@ Route::prefix('sapeur-pompier')->group(function () {
                 ]);
             }
 
-            return back()->with('success', 'Intervention clôturée et bilan enregistré avec succès. La compagnie a été notifiée.');
+            // Envoyer SMS directement aux contacts d'urgence des passagers évacués
+            $evacuees = collect($bilanPassagers)->where('statut', 'evacue');
+            if ($evacuees->count() > 0) {
+                $smsService = app(\App\Services\SmsService::class);
+                $signalement->loadMissing(['compagnie', 'programme']);
+                $programme  = $signalement->programme;
+                $compagnieNom = $signalement->compagnie->name ?? 'Votre compagnie de transport';
+                $dateAccident = \Carbon\Carbon::parse($signalement->created_at)->format('d/m/Y a H:i');
+                $trajet = ($programme->point_depart ?? 'Depart') . ' -> ' . ($programme->point_arrive ?? 'Arrivee');
+
+                foreach ($evacuees as $evacuee) {
+                    $reservation = \App\Models\Reservation::find($evacuee['reservation_id']);
+                    if (!$reservation || empty($reservation->passager_urgence)) continue;
+
+                    $hopitalNom    = $evacuee['hopital_nom'] ?? 'un hopital proche';
+                    $hopitalAdresse = !empty($evacuee['hopital_adresse']) ? "\nLocalisation : " . $evacuee['hopital_adresse'] : '';
+                    $nomPassager   = trim(($reservation->passager_prenom ?? '') . ' ' . ($reservation->passager_nom ?? '')) ?: 'Votre proche';
+
+                    $smsBody = "ACCIDENT - {$compagnieNom}\n"
+                             . "Le {$dateAccident} sur le trajet {$trajet}.\n"
+                             . "{$nomPassager} a ete evacue(e) a : {$hopitalNom}.{$hopitalAdresse}\n"
+                             . "Presentez-vous au plus vite.";
+
+                    try {
+                        $smsService->sendSms($reservation->passager_urgence, $smsBody);
+                        \Illuminate\Support\Facades\Log::info('SMS accident (SP) envoyé', [
+                            'to' => $reservation->passager_urgence,
+                            'reservation_id' => $reservation->id,
+                            'hopital' => $hopitalNom,
+                        ]);
+                    } catch (\Exception $e) {
+                        \Illuminate\Support\Facades\Log::error('Échec SMS accident (SP)', [
+                            'to' => $reservation->passager_urgence,
+                            'reservation_id' => $reservation->id,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
+                }
+            }
+
+            return redirect()->route('sapeur-pompier.signalement.show', $signalement->id)
+                ->with('success', 'Intervention clôturée. Bilan enregistré, la compagnie a été notifiée et les contacts d\'urgence alertés par SMS.');
         })->name('sapeur-pompier.signalement.mark-as-treated');
     });
 });

@@ -295,20 +295,10 @@
                 <div class="bg-gray-50 p-6 border-t border-gray-100 flex justify-end gap-3">
 
                     @if($signalement->statut != 'traite')
-                        <form id="mark-treated-form"
-                            action="{{ route('sapeur-pompier.signalement.mark-as-treated', $signalement->id) }}" method="POST">
-                            @csrf
-                            @method('PATCH')
-                            <input type="hidden" name="nombre_morts" id="input-nombre-morts">
-                            <input type="hidden" name="nombre_blesses" id="input-nombre-blesses">
-                            <input type="hidden" name="details_intervention" id="input-details-intervention">
-                            <div id="dynamic-hidden-inputs"></div>
-
-                            <button type="button" onclick="confirmTreatment()"
-                                class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-6 py-2 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2">
-                                <i class="fas fa-check"></i> Marquer comme traité
-                            </button>
-                        </form>
+                        <a href="{{ route('sapeur-pompier.signalement.bilan', $signalement->id) }}"
+                           class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-6 py-2 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2">
+                            <i class="fas fa-check"></i> Marquer comme traité
+                        </a>
                     @else
                         <div class="flex flex-col items-end mr-4">
                             <button disabled
