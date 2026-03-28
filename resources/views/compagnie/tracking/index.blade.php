@@ -390,9 +390,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
 
-    // Initial fetch + polling every 5 seconds
+    // Initial fetch + polling every 3 seconds
     fetchLocations();
-    setInterval(fetchLocations, 5000);
+    setInterval(fetchLocations, 3000);
 });
 </script>
 @endsection
