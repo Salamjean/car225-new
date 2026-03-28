@@ -297,7 +297,7 @@
                     @if($signalement->statut != 'traite')
                         <a href="{{ route('sapeur-pompier.signalement.bilan', $signalement->id) }}"
                            class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-6 py-2 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2">
-                            <i class="fas fa-check"></i> Marquer comme traité
+                            <i class="fas fa-check"></i> Procéder au traitement
                         </a>
                     @else
                         <div class="flex flex-col items-end mr-4">

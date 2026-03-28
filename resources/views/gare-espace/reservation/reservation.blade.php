@@ -274,9 +274,9 @@
                     @endif
                 </div>
                 @if($tab === 'en-cours')
-                    Voyages <span class="text-orange-500 ml-2">Confirmés</span>
+                    Voyages <span class="text-orange-500 ml-2">Réservés</span>
                 @elseif($tab === 'terminees')
-                    Voyages <span class="text-orange-500 ml-2">Terminés</span>
+                    Voyages <span class="text-orange-500 ml-2">Embarqués</span>
                 @else
                     Détails & <span class="text-orange-500 ml-2">Statistiques</span>
                 @endif
@@ -288,11 +288,11 @@
     <div class="premium-tabs stagger" style="animation-delay: 0.15s">
         <a href="{{ route('gare-espace.reservations.index', ['tab' => 'en-cours']) }}" 
            class="p-tab {{ $tab === 'en-cours' ? 'active' : '' }}">
-           📦 Confirmés
+           📦 Réservés
         </a>
         <a href="{{ route('gare-espace.reservations.index', ['tab' => 'terminees']) }}" 
            class="p-tab {{ $tab === 'terminees' ? 'active' : '' }}">
-           🏁 Terminés
+           🏁 Embarqués
         </a>
         <a href="{{ route('gare-espace.reservations.index', ['tab' => 'details']) }}" 
            class="p-tab {{ $tab === 'details' ? 'active' : '' }}">
@@ -325,7 +325,7 @@
                 <i class="fas fa-check-circle"></i>
             </div>
             <div class="metric-info">
-                <h4>Confirmées</h4>
+                <h4>Réservées</h4>
                 <p>{{ number_format($stats['confirmed'], 0, ',', ' ') }}</p>
             </div>
         </div>
@@ -361,7 +361,7 @@
                         
                         <div class="grid grid-cols-2 gap-2">
                                 @foreach($progs as $prog)
-                                <a href="{{ route('gare-espace.reservations.program', ['programme' => $prog->id, 'date' => $date]) }}" 
+                                <a href="{{ route('gare-espace.reservations.program', ['programme' => $prog->id, 'date' => $date, 'tab' => $tab]) }}" 
                                    class="flex flex-col items-center p-3 rounded-2xl border {{ request('programme_id') == $prog->id ? 'bg-orange-500 border-orange-500 text-white shadow-lg shadow-orange-500/30' : 'bg-gray-50 border-gray-100 text-gray-600 hover:border-orange-300 hover:bg-orange-50' }} transition-all">
                                     <span class="text-lg font-black leading-none mb-1">{{ \Carbon\Carbon::parse($prog->heure_depart)->format('H:i') }}</span>
                                     <span class="text-[8px] font-black uppercase {{ request('programme_id') == $prog->id ? 'text-orange-100' : 'text-gray-400' }}">
@@ -422,9 +422,9 @@
                         <i class="fas fa-info-circle filter-icon"></i>
                         <select name="statut" class="filter-input hover:cursor-pointer" style="padding-right: 15px;">
                             <option value="all" {{ request('statut') == 'all' ? 'selected' : '' }}>Tous les statuts</option>
-                            <option value="confirmee" {{ request('statut') == 'confirmee' ? 'selected' : '' }}>Confirmée</option>
+                            <option value="confirmee" {{ request('statut') == 'confirmee' ? 'selected' : '' }}>Réservée</option>
                             <option value="en_attente" {{ request('statut') == 'en_attente' ? 'selected' : '' }}>En attente</option>
-                            <option value="terminee" {{ request('statut') == 'terminee' ? 'selected' : '' }}>Terminée</option>
+                            <option value="terminee" {{ request('statut') == 'terminee' ? 'selected' : '' }}>Embarqué</option>
                             <option value="annulee" {{ request('statut') == 'annulee' ? 'selected' : '' }}>Annulée</option>
                         </select>
                     </div>
@@ -509,11 +509,11 @@
 
                             <td class="text-center">
                                 @if($reservation->statut == 'confirmee')
-                                    <span class="status-pill sp-success"><span class="dot"></span> Confirmée</span>
+                                    <span class="status-pill sp-success"><span class="dot"></span> Réservée</span>
                                 @elseif($reservation->statut == 'en_attente')
                                     <span class="status-pill sp-pending"><span class="dot"></span> En attente</span>
                                 @elseif($reservation->statut == 'terminee')
-                                    <span class="status-pill sp-done"><span class="dot"></span> Terminée</span>
+                                    <span class="status-pill sp-done"><span class="dot"></span> Embarqué</span>
                                 @elseif($reservation->statut == 'annulee')
                                     <span class="status-pill sp-danger"><span class="dot"></span> Annulée</span>
                                 @else

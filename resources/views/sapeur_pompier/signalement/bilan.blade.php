@@ -469,5 +469,38 @@
 
         document.getElementById('bilan-form').submit();
     }
+
+    // ─── Recherche automatique de l'adresse de l'hôpital ────────
+    let searchTimeout = null;
+    document.getElementById('hopital-nom').addEventListener('input', function(e) {
+        const query = e.target.value.trim();
+        const addressInput = document.getElementById('hopital-adresse');
+        
+        if (query.length < 3) return;
+        
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            const originalPlaceholder = addressInput.placeholder;
+            addressInput.placeholder = "Recherche de l'adresse...";
+            
+            // Recherche via Nominatim (limitée à la Côte d'Ivoire pour plus de précision)
+            fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=ci`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        addressInput.value = data[0].display_name;
+                        // Synchroniser avec l'état du passager courant
+                        if (currentResId) {
+                            passengerStates[currentResId].hopital_adresse = data[0].display_name;
+                        }
+                    }
+                    addressInput.placeholder = originalPlaceholder;
+                })
+                .catch(err => {
+                    console.error("Erreur Nominatim:", err);
+                    addressInput.placeholder = originalPlaceholder;
+                });
+        }, 800);
+    });
 </script>
 @endsection
