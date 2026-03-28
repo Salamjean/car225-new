@@ -60,8 +60,8 @@
 @endphp
 
 @section('content')
-<div class="py-8 px-4 sm:px-6 lg:px-8">
-    <div class="mx-auto" style="width:75%">
+<div class="py-4 sm:py-8 px-3 sm:px-6 lg:px-8">
+    <div class="mx-auto w-full max-w-3xl">
         
         <!-- Back Button -->
         <a href="{{ route('user.support.index') }}" class="inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-[#e94f1b] mb-8 transition-colors">

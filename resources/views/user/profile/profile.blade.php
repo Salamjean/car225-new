@@ -3,11 +3,11 @@
 @section('title', 'Mon Profil')
 
 @section('content')
-<div class="py-8 px-4" style="margin-top: -20px;">
-    <div class="mx-auto" style="width: 95%">
+<div class="py-4 sm:py-8 px-3 sm:px-4" style="margin-top: -20px;">
+    <div class="mx-auto w-full max-w-[1400px]">
         <!-- En-tête -->
-        <div class="mb-8">
-            <h1 class="text-4xl font-bold text-gray-900 mb-2">Mon Profil</h1>
+        <div class="mb-6 sm:mb-8">
+            <h1 class="text-2xl sm:text-4xl font-bold text-gray-900 mb-2">Mon Profil</h1>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -15,7 +15,7 @@
             <div class="lg:col-span-1">
                 <div class="bg-white rounded-3xl shadow-xl p-8">
                     <div class="text-center">
-                        <div class="relative w-40 h-40 mx-auto mb-4 group cursor-pointer" onclick="document.getElementById('photoInput').click()">
+                        <div class="relative w-28 h-28 sm:w-40 sm:h-40 mx-auto mb-4 group cursor-pointer" onclick="document.getElementById('photoInput').click()">
                             <img src="{{ $user->photo_profile_path ? (str_starts_with($user->photo_profile_path, 'http') ? $user->photo_profile_path : asset('storage/' . $user->photo_profile_path)) : asset('assets/images/default-avatar.png') }}" 
                                  class="w-full h-full rounded-full object-cover border-4 border-[#e94e1a] transition-all duration-300 group-hover:opacity-75" 
                                  id="profilePhotoPreview"
@@ -114,7 +114,7 @@
                                     <i class="fas fa-life-ring mr-2 text-red-500"></i>
                                     Personne à contacter d'urgence
                                 </h3>
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                                     <div>
                                         <label class="block text-sm font-semibold text-gray-700 mb-2">Nom et prénom urgence</label>
                                         <input type="text" id="nom_urgence" name="nom_urgence" value="{{ trim($user->nom_urgence . ' ' . $user->prenom_urgence) }}"

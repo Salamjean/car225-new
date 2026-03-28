@@ -1,12 +1,12 @@
 @extends('user.layouts.template')
 
 @section('content')
-    <div class="py-8 px-4 sm:px-6 lg:px-8" >
-        <div class="mx-auto" style="width:75%">
+    <div class="py-4 sm:py-8 px-3 sm:px-6 lg:px-8">
+        <div class="mx-auto w-full max-w-3xl">
             
             <!-- Header Section -->
             <div class="text-center mb-10">
-                <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight sm:text-4xl">
+                <h2 class="text-xl font-extrabold text-gray-900 tracking-tight sm:text-3xl">
                     Signaler un Problème
                 </h2>
                 <p class="mt-2 text-lg text-gray-600">

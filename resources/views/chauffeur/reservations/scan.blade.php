@@ -89,7 +89,7 @@
                         Scanner avec la caméra
                     </button>
                     <div id="cameraContainer" class="hidden mt-3">
-                        <div class="relative rounded-xl overflow-hidden bg-black" style="height: 450px;">
+                        <div class="relative rounded-xl overflow-hidden bg-black" style="height: min(450px, 65vw);">
                             <div id="qr-reader" style="width: 100%; height: 100%;"></div>
                         </div>
                         <button id="stopCameraBtn" class="mt-2 w-full text-center text-xs text-gray-400 hover:text-red-500 transition py-2">

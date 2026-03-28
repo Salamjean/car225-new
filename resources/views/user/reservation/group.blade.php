@@ -11,7 +11,7 @@
                 <a href="{{ route('reservation.index') }}" class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-[#e94f1b] hover:text-white transition-all">
                     <i class="fas fa-arrow-left text-xs"></i>
                 </a>
-                <h1 class="text-3xl font-black text-[#1A1D1F] tracking-tight uppercase">
+                <h1 class="text-xl sm:text-3xl font-black text-[#1A1D1F] tracking-tight uppercase">
                     Billets de la <span class="text-[#e94f1b]">Transaction</span>
                 </h1>
             </div>
@@ -26,7 +26,39 @@
 
     <!-- Reservations Table -->
     <div class="bg-white rounded-[32px] border border-gray-100 shadow-xl shadow-gray-200/40 overflow-hidden">
-        <div class="overflow-x-auto">
+
+        {{-- Mobile cards --}}
+        <div class="block md:hidden p-4 space-y-3">
+            @foreach($reservations as $reservation)
+            <div class="bg-gray-50 rounded-2xl border border-gray-100 p-4">
+                <div class="flex items-start justify-between gap-2 mb-2">
+                    <span class="text-[10px] font-mono font-semibold text-gray-500 bg-white border border-gray-100 px-2 py-1 rounded-lg">{{ $reservation->reference }}</span>
+                    <span class="text-xs font-bold text-gray-700 bg-white border border-gray-100 px-2 py-1 rounded-lg">Siège {{ $reservation->seat_number }}</span>
+                </div>
+                <div class="font-bold text-sm text-gray-900 mb-1">
+                    {{ $reservation->programme->point_depart }} <i class="fas fa-arrow-right text-[#e94f1b] text-xs mx-1"></i> {{ $reservation->programme->point_arrive }}
+                </div>
+                <div class="text-xs text-gray-500 mb-1">{{ $reservation->passager_nom }} {{ $reservation->passager_prenom }}</div>
+                <div class="flex items-center justify-between text-xs mb-3">
+                    <span class="text-gray-500"><i class="far fa-calendar mr-1"></i>{{ \Carbon\Carbon::parse($reservation->date_voyage)->format('d/m/Y') }}</span>
+                    <span class="font-black text-gray-900">{{ number_format($reservation->montant, 0, ',', ' ') }} FCFA</span>
+                </div>
+                <div class="flex gap-2">
+                    @if($reservation->statut == 'confirmee')
+                    <a href="{{ route('reservations.download', $reservation) }}" class="flex-1 flex items-center justify-center gap-1 py-2 bg-gray-900 text-white text-xs font-bold rounded-xl">
+                        <i class="fas fa-download text-xs"></i> Télécharger
+                    </a>
+                    @endif
+                    <a href="{{ route('reservations.show', $reservation) }}" class="flex-1 flex items-center justify-center gap-1 py-2 bg-white border border-gray-200 text-gray-600 text-xs font-bold rounded-xl">
+                        <i class="fas fa-eye text-xs"></i> Détails
+                    </a>
+                </div>
+            </div>
+            @endforeach
+        </div>
+
+        {{-- Desktop table --}}
+        <div class="hidden md:block overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="bg-gray-50/80 border-b border-gray-100">
@@ -185,6 +217,7 @@
                 </tbody>
             </table>
         </div>
+        </div>{{-- end desktop table --}}
     </div>
 </div>
 

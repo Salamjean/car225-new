@@ -2,8 +2,8 @@
 
 @section('content')
             <!-- Welcome Header -->
-            <div class="mb-10">
-                <h1 class="text-3xl font-black text-[#1A1D1F] tracking-tight mb-1 font-outfit uppercase">Tableau de bord</h1>
+            <div class="mb-6 sm:mb-10">
+                <h1 class="text-xl sm:text-3xl font-black text-[#1A1D1F] tracking-tight mb-1 font-outfit uppercase">Tableau de bord</h1>
                 <p class="text-gray-500 text-sm font-medium">Bon retour, <span class="text-[#e94f1b] font-bold">{{ $user->name }}</span>. Voici un aperçu de vos activités.</p>
             </div>
 
@@ -24,9 +24,9 @@
                                         <span class="flex h-2 w-2 rounded-full bg-white animate-pulse"></span>
                                     </div>
                                     
-                                    <h2 class="text-3xl font-black mb-1 leading-tight">
-                                        {{ $currentTrip->programme->point_depart }} 
-                                        <i class="fas fa-arrow-right text-white/50 mx-2 text-xl"></i> 
+                                    <h2 class="text-lg sm:text-2xl font-black mb-1 leading-tight">
+                                        {{ $currentTrip->programme->point_depart }}
+                                        <i class="fas fa-arrow-right text-white/50 mx-1 sm:mx-2 text-base sm:text-xl"></i>
                                         {{ $currentTrip->programme->point_arrive }}
                                     </h2>
                                     <p class="text-white/70 text-sm font-bold uppercase tracking-wider mb-6">
@@ -46,7 +46,7 @@
                                     </div>
                                 </div>
                                 
-                                <div class="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 text-center min-w-[200px]">
+                                <div class="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-4 sm:p-6 text-center w-full md:min-w-[200px] md:w-auto">
                                     <p class="text-white/70 text-[10px] font-black uppercase tracking-widest mb-3">Temps restant estimé</p>
                                     
                                     @php

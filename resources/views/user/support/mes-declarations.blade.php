@@ -12,7 +12,7 @@
                     <i class="fas fa-arrow-left text-sm"></i>
                 </a>
                 <div>
-                    <h1 class="text-3xl font-black text-[#1A1D1F] tracking-tight">Mes Déclarations</h1>
+                    <h1 class="text-xl sm:text-3xl font-black text-[#1A1D1F] tracking-tight">Mes Déclarations</h1>
                     <p class="text-gray-500 font-medium">Suivez l'état de vos demandes et les réponses reçues</p>
                 </div>
             </div>

@@ -58,8 +58,8 @@
         @include('user.layouts.navbar')
 
         <!-- Page Content -->
-        <main class="flex-1 pt-24 pb-12" style="width: 100%;">
-            <div class="mx-auto px-4 sm:px-8" style="width: 95%;">
+        <main class="flex-1 pt-20 sm:pt-24 pb-12 w-full">
+            <div class="mx-auto px-3 sm:px-6 w-full max-w-[1600px]">
                 @yield('content')
             </div>
         </main>

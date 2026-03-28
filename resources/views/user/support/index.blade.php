@@ -1,13 +1,13 @@
 @extends('user.layouts.template')
 
 @section('content')
-<div class="py-8 px-4 sm:px-6 lg:px-8">
-    <div class="mx-auto" style="width:75%">
+<div class="py-4 sm:py-8 px-3 sm:px-6 lg:px-8">
+    <div class="mx-auto w-full max-w-4xl">
         
         <!-- Header -->
         <div class="mb-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-                <h1 class="text-3xl font-black text-[#1A1D1F] tracking-tight">Support Client</h1>
+                <h1 class="text-xl sm:text-3xl font-black text-[#1A1D1F] tracking-tight">Support Client</h1>
                 <p class="text-gray-500 font-medium">Comment pouvons-nous vous aider aujourd'hui ?</p>
             </div>
             <a href="{{ route('user.support.mes-declarations') }}"

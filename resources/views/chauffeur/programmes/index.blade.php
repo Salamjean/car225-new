@@ -3,11 +3,11 @@
 @section('title', 'Mes Voyages Assignés')
 
 @section('content')
-<div class="min-h-screen bg-gradient-to-br from-gray-50 to-green-50 py-8 px-4">
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-green-50 py-4 px-3 sm:py-8 sm:px-4">
     <div class="mx-auto" style="width: 100%">
         <!-- Header -->
-        <div class="mb-8">
-            <h2 class="text-3xl font-bold text-gray-900 mb-2">
+        <div class="mb-4 sm:mb-8">
+            <h2 class="text-xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">
                 @if($tab === 'effectues')
                     Mes Voyages Effectués
                 @elseif($tab === 'non_effectues')
@@ -16,7 +16,7 @@
                     Mes Voyages en cours / À venir
                 @endif
             </h2>
-            <p class="text-gray-500 text-lg">Gérez vos missions et consultez votre historique</p>
+            <p class="text-gray-500 text-sm sm:text-lg">Gérez vos missions et consultez votre historique</p>
         </div>
 
         @if(session('success'))
@@ -39,8 +39,8 @@
 
         @if($tab === 'active' || $tab === 'non_effectues')
         <!-- Date Selector -->
-        <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 mb-8 animate-fade-in">
-            <form action="{{ route('chauffeur.voyages.index') }}" method="GET" class="flex items-end gap-4">
+        <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-lg border border-gray-100 mb-4 sm:mb-8 animate-fade-in">
+            <form action="{{ route('chauffeur.voyages.index') }}" method="GET" class="flex items-end gap-2 sm:gap-4">
                 <input type="hidden" name="tab" value="{{ $tab }}">
                 <div class="flex-1">
                     <label class="block text-sm font-bold text-gray-700 uppercase mb-2">
@@ -72,23 +72,23 @@
                     @endif
                 >
                     <!-- Voyage Header -->
-                    <div class="p-6 border-b border-gray-100 bg-gradient-to-r from-green-50 to-emerald-50">
-                        <div class="flex justify-between items-start">
-                            <div class="flex items-center gap-4">
-                                <div class="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center text-green-600 font-bold text-xl border border-gray-100">
+                    <div class="p-3 sm:p-5 border-b border-gray-100 bg-gradient-to-r from-green-50 to-emerald-50">
+                        <div class="flex flex-wrap justify-between items-start gap-2">
+                            <div class="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+                                <div class="w-11 h-11 sm:w-14 sm:h-14 bg-white rounded-xl sm:rounded-2xl shadow-sm flex items-center justify-center text-green-600 font-bold text-xs sm:text-base border border-gray-100 flex-shrink-0">
                                     {{ \Carbon\Carbon::parse($voyage->programme->heure_depart)->format('H:i') }}
                                 </div>
-                                <div>
+                                <div class="min-w-0 flex-1">
                                     <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Programme #{{ $voyage->programme->id }}</p>
-                                    <div class="flex items-center gap-3">
-                                        <div class="flex flex-col">
-                                            <span class="font-bold text-gray-900 text-lg leading-tight">{{ $voyage->programme->point_depart }}</span>
-                                            <span class="text-xs text-green-600 font-bold uppercase tracking-wider">{{ $voyage->programme->gareDepart->nom_gare }}</span>
+                                    <div class="flex flex-wrap items-center gap-1 sm:gap-2">
+                                        <div class="flex flex-col min-w-0">
+                                            <span class="font-bold text-gray-900 text-sm sm:text-base leading-tight truncate">{{ $voyage->programme->point_depart }}</span>
+                                            <span class="text-xs text-green-600 font-bold uppercase tracking-wider truncate">{{ $voyage->programme->gareDepart->nom_gare }}</span>
                                         </div>
-                                        <i class="fas fa-arrow-right text-green-500"></i>
-                                        <div class="flex flex-col">
-                                            <span class="font-bold text-gray-900 text-lg leading-tight">{{ $voyage->programme->point_arrive }}</span>
-                                            <span class="text-xs text-green-600 font-bold uppercase tracking-wider">{{ $voyage->programme->gareArrivee->nom_gare }}</span>
+                                        <i class="fas fa-arrow-right text-green-500 text-xs flex-shrink-0"></i>
+                                        <div class="flex flex-col min-w-0">
+                                            <span class="font-bold text-gray-900 text-sm sm:text-base leading-tight truncate">{{ $voyage->programme->point_arrive }}</span>
+                                            <span class="text-xs text-green-600 font-bold uppercase tracking-wider truncate">{{ $voyage->programme->gareArrivee->nom_gare }}</span>
                                         </div>
                                     </div>
                                     <div class="flex flex-col gap-1 mt-1">
@@ -125,51 +125,51 @@
 
                             <!-- Status Badge -->
                             @if($voyage->statut === 'en_attente')
-                                <span class="px-4 py-2 bg-yellow-100 text-yellow-700 rounded-xl font-semibold text-sm flex items-center gap-2">
+                                <span class="px-2 py-1 sm:px-4 sm:py-2 bg-yellow-100 text-yellow-700 rounded-xl font-semibold text-xs sm:text-sm flex items-center gap-1 sm:gap-2 flex-shrink-0">
                                     <i class="fas fa-hourglass-half"></i>
-                                    En attente
+                                    <span class="hidden sm:inline">En attente</span>
                                 </span>
                             @elseif($voyage->statut === 'confirmé')
-                                <span class="px-4 py-2 bg-blue-100 text-blue-700 rounded-xl font-semibold text-sm flex items-center gap-2">
+                                <span class="px-2 py-1 sm:px-4 sm:py-2 bg-blue-100 text-blue-700 rounded-xl font-semibold text-xs sm:text-sm flex items-center gap-1 sm:gap-2 flex-shrink-0">
                                     <i class="fas fa-check"></i>
-                                    Confirmé
+                                    <span class="hidden sm:inline">Confirmé</span>
                                 </span>
                             @elseif($voyage->statut === 'en_cours')
-                                <span class="px-4 py-2 bg-purple-100 text-purple-700 rounded-xl font-semibold text-sm flex items-center gap-2 animate-pulse">
+                                <span class="px-2 py-1 sm:px-4 sm:py-2 bg-purple-100 text-purple-700 rounded-xl font-semibold text-xs sm:text-sm flex items-center gap-1 sm:gap-2 animate-pulse flex-shrink-0">
                                     <i class="fas fa-spinner fa-spin"></i>
-                                    En cours
+                                    <span class="hidden sm:inline">En cours</span>
                                 </span>
                             @elseif($voyage->statut === 'annulé')
-                                <span class="px-4 py-2 bg-red-100 text-red-700 rounded-xl font-semibold text-sm flex items-center gap-2">
+                                <span class="px-2 py-1 sm:px-4 sm:py-2 bg-red-100 text-red-700 rounded-xl font-semibold text-xs sm:text-sm flex items-center gap-1 sm:gap-2 flex-shrink-0">
                                     <i class="fas fa-times-circle"></i>
-                                    Annulé
+                                    <span class="hidden sm:inline">Annulé</span>
                                 </span>
                             @else
-                                <span class="px-4 py-2 bg-green-100 text-green-700 rounded-xl font-semibold text-sm flex items-center gap-2">
+                                <span class="px-2 py-1 sm:px-4 sm:py-2 bg-green-100 text-green-700 rounded-xl font-semibold text-xs sm:text-sm flex items-center gap-1 sm:gap-2 flex-shrink-0">
                                     <i class="fas fa-check-circle"></i>
-                                    Terminé
+                                    <span class="hidden sm:inline">Terminé</span>
                                 </span>
                             @endif
                         </div>
                     </div>
 
                     <!-- Voyage Details -->
-                    <div class="p-6">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                            <div class="bg-gray-50 p-4 rounded-xl">
-                                <p class="text-xs font-bold text-gray-500 uppercase mb-2">Véhicule assigné</p>
+                    <div class="p-3 sm:p-5">
+                        <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-6">
+                            <div class="bg-gray-50 p-3 sm:p-4 rounded-xl">
+                                <p class="text-xs font-bold text-gray-500 uppercase mb-1 sm:mb-2">Véhicule assigné</p>
                                 <p class="font-bold text-gray-900">{{ $voyage->vehicule->immatriculation }}</p>
                                 <p class="text-sm text-gray-500">{{ $voyage->vehicule->marque }} {{ $voyage->vehicule->modele }}</p>
                                 <p class="text-xs text-gray-400 mt-1">{{ $voyage->vehicule->nombre_place }} places</p>
                             </div>
-                            <div class="bg-gray-50 p-4 rounded-xl">
-                                <p class="text-xs font-bold text-gray-500 uppercase mb-2">Date du voyage</p>
+                            <div class="bg-gray-50 p-3 sm:p-4 rounded-xl">
+                                <p class="text-xs font-bold text-gray-500 uppercase mb-1 sm:mb-2">Date du voyage</p>
                                 <p class="font-bold text-gray-900">{{ \Carbon\Carbon::parse($voyage->date_voyage)->format('d/m/Y') }}</p>
                                 <p class="text-sm text-gray-500">{{ \Carbon\Carbon::parse($voyage->date_voyage)->locale('fr')->isoFormat('dddd') }}</p>
                             </div>
-                            <div class="bg-gray-50 p-4 rounded-xl flex items-center justify-between col-span-1 md:col-span-1">
+                            <div class="bg-gray-50 p-3 sm:p-4 rounded-xl flex items-center justify-between col-span-1 md:col-span-1">
                                 <div>
-                                    <p class="text-xs font-bold text-gray-500 uppercase mb-2">Occupation</p>
+                                    <p class="text-xs font-bold text-gray-500 uppercase mb-1 sm:mb-2">Occupation</p>
                                     <div class="flex items-center gap-2">
                                         <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center text-green-600">
                                             <i class="fas fa-users text-lg"></i>
@@ -183,9 +183,9 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="bg-gray-50 p-4 rounded-xl">
-                                <p class="text-xs font-bold text-gray-500 uppercase mb-2">Tarif</p>
-                                <p class="font-bold text-gray-900 text-xl">{{ number_format($voyage->programme->montant_billet, 0, ',', ' ') }} FCFA</p>
+                            <div class="bg-gray-50 p-3 sm:p-4 rounded-xl">
+                                <p class="text-xs font-bold text-gray-500 uppercase mb-1 sm:mb-2">Tarif</p>
+                                <p class="font-bold text-gray-900 text-base sm:text-xl">{{ number_format($voyage->programme->montant_billet, 0, ',', ' ') }} FCFA</p>
                             </div>
                         </div>
 

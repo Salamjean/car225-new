@@ -12,7 +12,7 @@
                 <i class="fas fa-chevron-right text-[8px]"></i>
                 <span class="text-gray-900">{{ $reservation->reference }}</span>
             </nav>
-            <h1 class="text-3xl font-black text-[#1A1D1F] tracking-tight flex items-center gap-3 uppercase">
+            <h1 class="text-xl sm:text-3xl font-black text-[#1A1D1F] tracking-tight flex items-center gap-2 uppercase">
                 <i class="fas fa-receipt text-[#e94f1b]"></i>
                 Détails du <span class="text-[#e94f1b]">Billet</span>
             </h1>

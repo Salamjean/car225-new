@@ -3,7 +3,8 @@
 @section('styles')
 <style>
     .sig-page { background: linear-gradient(135deg, #f8fafc 0%, #fff1f2 100%); min-height: 80vh; }
-    .sig-header { background: linear-gradient(135deg, #1e293b, #334155); border-radius: 1.25rem; padding: 2rem; color: white; position: relative; overflow: hidden; }
+    .sig-header { background: linear-gradient(135deg, #1e293b, #334155); border-radius: 1.25rem; padding: 1.25rem; color: white; position: relative; overflow: hidden; }
+    @media (min-width: 768px) { .sig-header { padding: 2rem; } }
     .sig-header::before { content: ''; position: absolute; top: -50%; right: -20%; width: 300px; height: 300px; background: radial-gradient(circle, rgba(255,75,43,0.15) 0%, transparent 70%); border-radius: 50%; }
     .sig-card { background: white; border-radius: 1.25rem; border: 1px solid #e2e8f0; transition: all 0.3s cubic-bezier(.4,0,.2,1); overflow: hidden; }
     .sig-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.08); border-color: #cbd5e1; }
@@ -92,9 +93,9 @@
             }
         @endphp
         <div class="sig-card mb-3">
-            <div class="row g-0 align-items-center">
+            <div class="row g-0 align-items-start align-items-md-center">
                 {{-- Type + Description --}}
-                <div class="col-md-5 p-3 ps-4">
+                <div class="col-12 col-md-5 p-3 ps-3 ps-md-4">
                     <div class="d-flex align-items-start gap-3">
                         <div class="mt-1">
                             <span class="type-pill type-{{ $s->type }}">
@@ -116,7 +117,7 @@
                 </div>
 
                 {{-- Trajet + Gare --}}
-                <div class="col-md-3 p-3 border-start border-end">
+                <div class="col-12 col-md-3 p-3 border-top border-md-top-0 border-start-md border-end-md">
                     @if($s->voyage && $s->voyage->programme)
                     <div class="fw-bold text-dark small">{{ $s->voyage->programme->point_depart ?? '' }} → {{ $s->voyage->programme->point_arrive ?? '' }}</div>
                     <div class="text-muted" style="font-size: 0.7rem;">
@@ -138,7 +139,7 @@
                 </div>
 
                 {{-- Statut --}}
-                <div class="col-md-2 p-3 text-center">
+                <div class="col-6 col-md-2 p-3 text-center">
                     <div class="d-flex align-items-center justify-content-center gap-2">
                         <span class="status-dot {{ $s->statut }}"></span>
                         <span class="fw-bold small text-uppercase" style="letter-spacing: 0.5px;">{{ str_replace('_', ' ', $s->statut) }}</span>
@@ -146,7 +147,7 @@
                 </div>
 
                 {{-- Action --}}
-                <div class="col-md-2 p-3 text-end pe-4">
+                <div class="col-6 col-md-2 p-3 text-end pe-3 pe-md-4">
                     <a href="{{ route('chauffeur.signalements.show', $s) }}" class="btn btn-sm btn-dark rounded-pill px-3">
                         <i class="fas fa-eye me-1"></i> Voir
                     </a>

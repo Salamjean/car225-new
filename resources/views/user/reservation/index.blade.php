@@ -5,13 +5,13 @@
 @section('content')
 <div class="space-y-8">
     <!-- Header -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-            <h1 class="text-3xl font-black text-[#1A1D1F] tracking-tight flex items-center gap-3 uppercase">
+            <h1 class="text-xl sm:text-3xl font-black text-[#1A1D1F] tracking-tight flex items-center gap-2 uppercase">
                 <i class="fas fa-ticket-alt text-[#e94f1b]"></i>
                 Mes <span class="text-[#e94f1b]">Réservations</span>
             </h1>
-            <p class="text-gray-500 font-medium">Consultez et gérez toutes vos réservations de voyage</p>
+            <p class="text-gray-500 font-medium text-sm">Consultez et gérez toutes vos réservations de voyage</p>
         </div>
         <div class="flex items-center gap-3">
             <span class="px-5 py-2.5 bg-[#e94f1b] text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg shadow-[#e94f1b]/20">
@@ -21,7 +21,7 @@
     </div>
 
     <!-- Stats Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-6">
         <!-- Confirmed -->
         <a href="{{ route('reservation.index', ['statut' => 'confirmee']) }}" class="block bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group">
             <div class="flex items-center justify-between mb-4">
@@ -165,7 +165,58 @@
 
     <!-- Reservations Table -->
  <div class="bg-white rounded-[32px] border border-gray-100 shadow-xl shadow-gray-200/40 overflow-hidden">
-    <div class="overflow-x-auto">
+
+    {{-- Mobile cards (hidden on md+) --}}
+    <div class="block md:hidden p-4 space-y-3">
+        @forelse($reservations as $reservation)
+        <div class="bg-gray-50 rounded-2xl border border-gray-100 p-4 hover:border-[#e94f1b]/30 transition-all">
+            <div class="flex items-start justify-between gap-2 mb-2">
+                <span class="text-[10px] font-mono font-semibold text-gray-500 bg-white border border-gray-100 px-2 py-1 rounded-lg truncate max-w-[160px]">{{ $reservation->payment_transaction_id }}</span>
+                @if(in_array($reservation->statut, ['confirmee','terminee']) && $reservation->mission && $reservation->mission->statut == 'en_cours')
+                    <span class="inline-flex items-center gap-1 px-2 py-1 bg-purple-50 text-purple-600 text-[10px] font-bold rounded-lg border border-purple-100 whitespace-nowrap">
+                        <span class="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></span> En voyage
+                    </span>
+                @elseif($reservation->statut == 'confirmee')
+                    <span class="inline-flex items-center gap-1 px-2 py-1 bg-green-50 text-green-600 text-[10px] font-bold rounded-lg border border-green-100 whitespace-nowrap">
+                        <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Réservé
+                    </span>
+                @elseif($reservation->statut == 'terminee')
+                    <span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-lg border border-blue-100 whitespace-nowrap">
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Embarqué
+                    </span>
+                @else
+                    <span class="inline-flex items-center gap-1 px-2 py-1 bg-red-50 text-red-600 text-[10px] font-bold rounded-lg border border-red-100 whitespace-nowrap">
+                        <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> {{ ucfirst($reservation->statut) }}
+                    </span>
+                @endif
+            </div>
+            <div class="font-bold text-sm text-gray-900 mb-1">
+                {{ $reservation->programme->point_depart }} <i class="fas fa-arrow-right text-[#e94f1b] text-xs mx-1"></i> {{ $reservation->programme->point_arrive }}
+            </div>
+            <div class="flex items-center justify-between text-xs text-gray-500 mb-3">
+                <span><i class="far fa-calendar mr-1"></i>{{ \Carbon\Carbon::parse($reservation->date_voyage)->format('d/m/Y') }} &middot; {{ \Carbon\Carbon::parse($reservation->heure_depart ?? $reservation->programme->heure_depart)->format('H:i') }}</span>
+                <span class="font-black text-gray-900">{{ number_format($reservation->total_group_amount, 0, ',', ' ') }} FCFA</span>
+            </div>
+            <a href="{{ route('user.reservation.group', $reservation->payment_transaction_id) }}"
+               class="flex items-center justify-center gap-2 w-full py-2 bg-[#e94f1b] text-white text-xs font-black rounded-xl">
+                <i class="fas fa-ticket-alt"></i> Voir les billets ({{ $reservation->tickets_count }})
+            </a>
+        </div>
+        @empty
+        <div class="py-16 text-center">
+            <div class="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center text-[#e94f1b] mb-4 mx-auto">
+                <i class="fas fa-ticket-alt text-2xl"></i>
+            </div>
+            <h3 class="text-base font-bold text-gray-900 mb-2 uppercase">Aucun voyage pour le moment</h3>
+            <a href="{{ route('reservation.create') }}" class="px-6 py-3 bg-[#e94f1b] text-white rounded-xl font-bold text-sm inline-block mt-2">
+                <i class="fas fa-plus mr-2"></i> Réserver un billet
+            </a>
+        </div>
+        @endforelse
+    </div>
+
+    {{-- Desktop table (hidden on mobile) --}}
+    <div class="hidden md:block overflow-x-auto">
         <table class="w-full text-left border-collapse">
             <thead>
                 <tr class="bg-gray-50/80 border-b border-gray-100">
@@ -302,9 +353,10 @@
             </tbody>
         </table>
     </div>
-    
+    </div>{{-- end desktop table --}}
+
     @if($reservations->hasPages())
-    <div class="px-8 py-6 border-t border-gray-50 bg-gray-50">
+    <div class="px-4 sm:px-8 py-4 sm:py-6 border-t border-gray-50 bg-gray-50">
         {{ $reservations->links() }}
     </div>
     @endif

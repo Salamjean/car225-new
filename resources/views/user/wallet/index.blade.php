@@ -1,8 +1,8 @@
 @extends('user.layouts.template')
 
 @section('content')
-<div class="bg-gray-50 py-8 px-4 sm:px-6 lg:px-8" style="margin-top:-20px">
-    <div class="mx-auto" style="width: 95%;">
+<div class="bg-gray-50 py-4 sm:py-8 px-3 sm:px-6 lg:px-8" style="margin-top:-20px">
+    <div class="mx-auto w-full max-w-[1400px]">
 
         <!-- Header -->
         <div class="mb-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
@@ -11,7 +11,7 @@
                     <img src="{{ asset('assetsPoster/assets/images/logo_car225.png') }}" alt="CAR225" class="w-full h-full object-contain">
                 </div>
                 <div>
-                    <h1 class="text-3xl font-black text-gray-900 tracking-tight">CarPAY</h1>
+                    <h1 class="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">CarPAY</h1>
                     <p class="text-gray-500 font-medium">Gérez votre solde et vos transactions</p>
                 </div>
             </div>
@@ -123,29 +123,29 @@
                 <table class="w-full">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase tracking-wider">Date</th>
-                            <th class="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase tracking-wider">Référence</th>
-                            <th class="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase tracking-wider">Description</th>
-                            <th class="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase tracking-wider">Montant</th>
-                            <th class="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase tracking-wider">Statut</th>
+                            <th class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-black text-gray-500 uppercase tracking-wider">Date</th>
+                            <th class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-black text-gray-500 uppercase tracking-wider hidden sm:table-cell">Référence</th>
+                            <th class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-black text-gray-500 uppercase tracking-wider hidden md:table-cell">Description</th>
+                            <th class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-black text-gray-500 uppercase tracking-wider">Montant</th>
+                            <th class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-black text-gray-500 uppercase tracking-wider">Statut</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         @forelse($transactions as $transaction)
                         <tr class="hover:bg-gray-50 transition-colors">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">
-                                {{ $transaction->created_at->format('d/m/Y H:i') }}
+                            <td class="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 font-medium">
+                                {{ $transaction->created_at->format('d/m/Y') }}<span class="hidden sm:inline"> {{ $transaction->created_at->format('H:i') }}</span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">
+                            <td class="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 font-bold hidden sm:table-cell">
                                 {{ $transaction->reference }}
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-700">
+                            <td class="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-700 hidden md:table-cell">
                                 {{ Str::limit($transaction->description, 50) }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-black {{ $transaction->type == 'credit' ? 'text-green-600' : 'text-red-600' }}">
-                                {{ $transaction->type == 'credit' ? '+' : '-' }} {{ number_format($transaction->amount, 0, ',', ' ') }} FCFA
+                            <td class="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-black {{ $transaction->type == 'credit' ? 'text-green-600' : 'text-red-600' }}">
+                                {{ $transaction->type == 'credit' ? '+' : '-' }} {{ number_format($transaction->amount, 0, ',', ' ') }} <span class="hidden sm:inline">FCFA</span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                                 @if($transaction->status == 'completed')
                                     <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold">Validé</span>
                                 @elseif($transaction->status == 'pending')
