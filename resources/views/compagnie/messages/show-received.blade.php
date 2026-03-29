@@ -84,7 +84,7 @@
 
             <div class="message-body">
                 <i class="fas fa-quote-left quote-icon"></i>
-                <div class="message-text">{{ $message->message }}</div>
+                <div class="message-text">{!! $message->message !!}</div>
             </div>
 
             <div class="detail-footer print-hide">

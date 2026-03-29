@@ -148,7 +148,7 @@
             <p class="text-muted m-0">
                 <span id="resCount">{{ count($reservations) }}</span> réservation(s) 
                 @if(($tab ?? 'en-cours') === 'en-cours')
-                    confirmée(s)
+                    réservée(s)
                 @else
                     historiques
                 @endif
@@ -220,14 +220,18 @@
                         </td>
                         <td class="text-center">
                             @if($reservation->statut === 'confirmee')
-                                <span class="status-pill sp-success"><span class="dot"></span> Confirmée</span>
+                                <span class="status-pill sp-success"><span class="dot"></span> Réserver</span>
                             @elseif($reservation->statut === 'terminee')
-                                <span class="status-pill" style="background: #eff6ff; color: #1e40af;">
-                                    <span class="dot" style="background: #1e40af;"></span> Terminée
+                                <span class="status-pill" style="background: #FFF7ED; color: #EA580C;">
+                                    <span class="dot" style="background: #EA580C;"></span> Embarqué
                                 </span>
                             @elseif($reservation->statut === 'passe')
                                 <span class="status-pill" style="background: #f3f4f6; color: #374151;">
-                                    <span class="dot" style="background: #374151;"></span> Expirée
+                                    <span class="dot" style="background: #374151;"></span> Passé
+                                </span>
+                            @elseif($reservation->statut === 'en_attente')
+                                <span class="status-pill" style="background: #f3f4f6; color: #374151;">
+                                    <span class="dot" style="background: #374151;"></span> En attente
                                 </span>
                             @elseif($reservation->statut === 'annulee')
                                 <span class="status-pill" style="background: #fef2f2; color: #991b1b;">

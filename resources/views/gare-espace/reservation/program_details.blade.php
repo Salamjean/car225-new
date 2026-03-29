@@ -82,6 +82,8 @@
     .sp-success { background: #ECFDF5; color: #059669; }
     .sp-pending { background: #FEF3C7; color: #d97706; }
     .sp-done { background: #EFF6FF; color: #1d4ed8; }
+    .sp-orange { background: #FFF7ED; color: #EA580C; }
+    .sp-gray { background: #F8F9FB; color: #64748B; }
 </style>
 @endsection
 
@@ -141,12 +143,6 @@
                 </thead>
                 <tbody>
                     @forelse ($reservations as $reservation)
-                        @if($tab === 'en-cours' && $reservation->statut === 'terminee')
-                            @continue
-                        @endif
-                        @if($tab === 'terminees' && $reservation->statut !== 'terminee')
-                            @continue
-                        @endif
                     <tr class="hover:bg-gray-50/50 transition-colors">
                         <td>
                             <span class="text-xs font-black text-orange-500 uppercase">{{ $reservation->reference }}</span>
@@ -175,9 +171,13 @@
                              @if($reservation->statut == 'confirmee')
                                 <span class="status-pill sp-success">Réservée</span>
                             @elseif($reservation->statut == 'terminee')
-                                <span class="status-pill sp-done">Embarqué</span>
+                                <span class="status-pill sp-orange">Embarqué</span>
                             @elseif($reservation->statut == 'annulee')
                                 <span class="status-pill bg-red-50 text-red-600">Annulée</span>
+                            @elseif($reservation->statut == 'en_attente')
+                                <span class="status-pill sp-gray">En attente</span>
+                            @elseif($reservation->statut == 'passe')
+                                <span class="status-pill sp-gray">Passé</span>
                             @else
                                 <span class="status-pill sp-pending">{{ $reservation->statut }}</span>
                             @endif

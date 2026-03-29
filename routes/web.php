@@ -308,6 +308,14 @@ Route::middleware('compagnie')->prefix('company')->group(function () {
         Route::get('/', [\App\Http\Controllers\Compagnie\TrackingController::class, 'index'])->name('compagnie.tracking.index');
         Route::get('/locations', [\App\Http\Controllers\Compagnie\TrackingController::class, 'getActiveLocations'])->name('compagnie.tracking.locations');
     });
+
+    // Demandes de localisation GPS des gares
+    Route::prefix('gare-location-requests')->name('compagnie.gare-location-requests.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Compagnie\GareLocationRequestController::class, 'index'])->name('index');
+        Route::post('/{gareLocationRequest}/approve', [\App\Http\Controllers\Compagnie\GareLocationRequestController::class, 'approve'])->name('approve');
+        Route::post('/{gareLocationRequest}/reject', [\App\Http\Controllers\Compagnie\GareLocationRequestController::class, 'reject'])->name('reject');
+        Route::post('/gare/{gare}/update-location', [\App\Http\Controllers\Compagnie\GareLocationRequestController::class, 'updateGareLocation'])->name('updateGareLocation');
+    });
 });
 
 //Les routes de gestion des @caissières
@@ -846,6 +854,8 @@ Route::prefix('gare-espace')->name('gare-espace.')->group(function () {
         Route::get('/profile', [App\Http\Controllers\GareEspace\GareDashboardController::class, 'profile'])->name('profile');
         Route::post('/profile/update', [App\Http\Controllers\GareEspace\GareDashboardController::class, 'updateProfile'])->name('profile.update');
         Route::post('/profile/password', [App\Http\Controllers\GareEspace\GareDashboardController::class, 'updatePassword'])->name('profile.password');
+        Route::post('/profile/request-location', [App\Http\Controllers\GareEspace\GareDashboardController::class, 'requestLocationUpdate'])->name('profile.requestLocation');
+        Route::post('/profile/mark-location-notified', [App\Http\Controllers\GareEspace\GareDashboardController::class, 'markLocationNotified'])->name('profile.markLocationNotified');
 
         // Voyages
         Route::prefix('voyages')->name('voyages.')->group(function () {
@@ -920,6 +930,12 @@ Route::prefix('gare-espace')->name('gare-espace.')->group(function () {
             Route::post('/update-route', [App\Http\Controllers\GareEspace\GareProgrammeController::class, 'updateRoute'])->name('updateRoute');
             Route::delete('/{id}', [App\Http\Controllers\GareEspace\GareProgrammeController::class, 'destroy'])->name('destroy');
             Route::patch('/{id}/annuler', [App\Http\Controllers\GareEspace\GareProgrammeController::class, 'annuler'])->name('annuler');
+        });
+
+        // Tracking temps réel
+        Route::prefix('tracking')->name('tracking.')->group(function () {
+            Route::get('/', [App\Http\Controllers\GareEspace\GareTrackingController::class, 'index'])->name('index');
+            Route::get('/locations', [App\Http\Controllers\GareEspace\GareTrackingController::class, 'getActiveLocations'])->name('locations');
         });
 
         // Messages (Boîte de réception)

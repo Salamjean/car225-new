@@ -67,6 +67,11 @@ class CompagnieDashboard extends Controller
             $revenuePerDay[] = (float) $revenue;
         }
 
+        $liveVoyagesCount = \App\Models\Voyage::where('statut', 'en_cours')
+            ->whereHas('programme', function ($q) use ($compagnieId) {
+                $q->where('compagnie_id', $compagnieId);
+            })->count();
+
         return view('compagnie.dashboard', compact(
             'totalRevenue',
             'totalReservations',
@@ -76,7 +81,8 @@ class CompagnieDashboard extends Controller
             'recentSignalements',
             'days',
             'revenuePerDay',
-            'compagnieId'
+            'compagnieId',
+            'liveVoyagesCount'
         ));
     }
 

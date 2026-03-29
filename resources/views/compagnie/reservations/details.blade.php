@@ -89,7 +89,7 @@
                     <div class="filter-option-group">
                         <span class="option-label">Statut :</span>
                         <div class="pills-container">
-                            @foreach(['all' => 'Tous', 'confirmee' => 'Confirmée', 'en_attente' => 'Attente', 'terminee' => 'Terminée', 'annulee' => 'Annulée'] as $val => $label)
+                            @foreach(['all' => 'Tous', 'confirmee' => 'Réserver', 'en_attente' => 'Attente', 'terminee' => 'Embarqué', 'annulee' => 'Annulée'] as $val => $label)
                                 <a href="{{ request()->fullUrlWithQuery(['statut' => $val]) }}" 
                                    class="filter-pill {{ (request('statut', 'all') == $val) ? 'active-orange' : '' }}">
                                     {{ $label }}
@@ -190,10 +190,12 @@
                         <td class="text-center">
                             @php
                                 $statusMap = [
-                                    'confirmee' => ['class' => 'sp-success', 'label' => 'Confirmée'],
-                                    'en_attente' => ['class' => 'sp-warning', 'label' => 'Attente'],
-                                    'terminee' => ['class' => 'sp-gray', 'label' => 'Terminée'],
-                                    'annulee' => ['class' => 'sp-danger', 'label' => 'Annulée']
+                                    'confirmee' => ['class' => 'sp-success', 'label' => 'Réserver'],
+                                    'en_attente' => ['class' => 'sp-gray', 'label' => 'Attente'],
+                                    'terminee' => ['class' => 'sp-orange', 'label' => 'Embarqué'],
+                                    'annulee' => ['class' => 'sp-danger', 'label' => 'Annulée'],
+                                    'passe' => ['class' => 'sp-gray', 'label' => 'Passé'],
+                                    'expiree' => ['class' => 'sp-gray', 'label' => 'Passé']
                                 ];
                                 $st = $statusMap[$reservation->statut] ?? ['class' => 'sp-gray', 'label' => $reservation->statut];
                             @endphp
@@ -287,6 +289,7 @@
     .sp-warning { background: #FFFBEB; color: #D97706; }
     .sp-danger { background: #FEF2F2; color: #DC2626; }
     .sp-gray { background: var(--surface-2); color: var(--text-2); }
+    .sp-orange { background: #FFF7ED; color: #EA580C; }
     .status-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
     /* Footer Pagination */

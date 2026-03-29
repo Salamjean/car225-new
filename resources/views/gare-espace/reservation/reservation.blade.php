@@ -205,6 +205,8 @@
     .sp-pending { background: #FEF3C7; color: #d97706; }
     .sp-done { background: #EFF6FF; color: #1d4ed8; }
     .sp-danger { background: #FEF2F2; color: #b91c1c; }
+    .sp-orange { background: #FFF7ED; color: #EA580C; }
+    .sp-gray { background: #F8F9FB; color: #64748B; }
     .status-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
     .btn-icon {
@@ -511,11 +513,13 @@
                                 @if($reservation->statut == 'confirmee')
                                     <span class="status-pill sp-success"><span class="dot"></span> Réservée</span>
                                 @elseif($reservation->statut == 'en_attente')
-                                    <span class="status-pill sp-pending"><span class="dot"></span> En attente</span>
+                                    <span class="status-pill sp-gray"><span class="dot"></span> En attente</span>
                                 @elseif($reservation->statut == 'terminee')
-                                    <span class="status-pill sp-done"><span class="dot"></span> Embarqué</span>
+                                    <span class="status-pill sp-orange"><span class="dot"></span> Embarqué</span>
                                 @elseif($reservation->statut == 'annulee')
                                     <span class="status-pill sp-danger"><span class="dot"></span> Annulée</span>
+                                @elseif($reservation->statut == 'passe')
+                                    <span class="status-pill sp-gray"><span class="dot"></span> Passé</span>
                                 @else
                                     <span class="status-pill sp-pending"><span class="dot"></span> {{ $reservation->statut }}</span>
                                 @endif

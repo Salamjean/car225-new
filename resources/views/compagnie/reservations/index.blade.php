@@ -277,7 +277,7 @@
         </a>
         <a href="{{ route('company.reservation.index', ['tab' => 'terminees']) }}" 
            class="p-tab {{ $tab === 'terminees' ? 'active' : '' }}">
-           🏁 Terminées
+           🏁 Embarquées
         </a>
     </div>
 

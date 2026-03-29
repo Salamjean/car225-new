@@ -134,14 +134,17 @@ class GareReservationController extends Controller
              abort(403);
         }
         
-        $query = Reservation::where('programme_id', '=', $programmeId, 'and')
+        $query = $programme->reservations()
             ->whereDate('date_voyage', $date)
             ->with(['user', 'voyage', 'programme.gareDepart', 'programme.gareArrivee'])
             ->latest();
 
         // Optional filters
         if ($request->filled('reference')) {
-            $query->where('reference', 'LIKE', '%' . $request->reference . '%');
+            $query->where(function($q) use ($request) {
+                $q->where('reference', 'LIKE', '%' . $request->reference . '%')
+                  ->orWhere('payment_transaction_id', 'LIKE', '%' . $request->reference . '%');
+            });
         }
         if ($request->filled('passager')) {
             $query->where(function($q) use ($request) {
@@ -149,8 +152,15 @@ class GareReservationController extends Controller
                   ->orWhere('passager_prenom', 'LIKE', '%' . $request->passager . '%');
             });
         }
-        if ($request->filled('statut')) {
-             $query->where('statut', '=', $request->statut, 'and');
+        if ($request->filled('statut') && $request->statut !== 'all') {
+             $query->where('statut', $request->statut);
+        } else {
+             if ($tab === 'en-cours') {
+                 // For en-cours, we include confirmee and en_attente as they are active reservations
+                 $query->whereIn('statut', ['confirmee', 'en_attente']);
+             } elseif ($tab === 'terminees') {
+                 $query->where('statut', 'terminee');
+             }
         }
 
         $reservations = $query->paginate(50)->withQueryString();

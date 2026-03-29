@@ -69,9 +69,9 @@
         <div class="nav-sub-wrap {{ request()->routeIs('company.reservation.*') ? 'open' : '' }}">
             <div class="nav-sub">
                 <a class="nav-sub-item {{ request()->get('tab') === 'en-cours' ? 'sub-active' : '' }}"
-                   href="{{ route('company.reservation.index', ['tab' => 'en-cours']) }}">En cours</a>
+                   href="{{ route('company.reservation.index', ['tab' => 'en-cours']) }}">Réservés</a>
                 <a class="nav-sub-item {{ request()->get('tab') === 'terminees' ? 'sub-active' : '' }}"
-                   href="{{ route('company.reservation.index', ['tab' => 'terminees']) }}">Terminées</a>
+                   href="{{ route('company.reservation.index', ['tab' => 'terminees']) }}">Embarqués</a>
                 <a class="nav-sub-item {{ request()->routeIs('company.reservation.details') ? 'sub-active' : '' }}"
                    href="{{ route('company.reservation.details') }}">Détails &amp; Stats</a>
             </div>
@@ -166,16 +166,30 @@
         </div>
 
         {{-- Gares --}}
-        <div class="nav-item nav-has-sub {{ request()->routeIs('gare.*') ? 'sub-open' : '' }}"
+        @php
+            $pendingLocationRequests = \App\Models\GareLocationRequest::where('compagnie_id', Auth::guard('compagnie')->id())
+                ->where('statut', 'pending')->count();
+        @endphp
+        <div class="nav-item nav-has-sub {{ request()->routeIs('gare.*') || request()->routeIs('compagnie.gare-location-requests.*') ? 'sub-open' : '' }}"
              onclick="toggleNavSub(this)">
             <i class="nav-icon fas fa-building"></i>
             Gares
+            @if($pendingLocationRequests > 0)
+                <span class="nav-badge">{{ $pendingLocationRequests }}</span>
+            @endif
             <i class="nav-chevron fas fa-chevron-right"></i>
         </div>
-        <div class="nav-sub-wrap {{ request()->routeIs('gare.*') ? 'open' : '' }}">
+        <div class="nav-sub-wrap {{ request()->routeIs('gare.*') || request()->routeIs('compagnie.gare-location-requests.*') ? 'open' : '' }}">
             <div class="nav-sub">
                 <a class="nav-sub-item" href="{{ route('gare.create') }}">Ajouter</a>
                 <a class="nav-sub-item" href="{{ route('gare.index') }}">Liste</a>
+                <a class="nav-sub-item {{ request()->routeIs('compagnie.gare-location-requests.*') ? 'sub-active' : '' }}"
+                   href="{{ route('compagnie.gare-location-requests.index') }}">
+                    Localisation GPS
+                    @if($pendingLocationRequests > 0)
+                        <span style="background:#f97316;color:white;font-size:10px;font-weight:700;padding:1px 6px;border-radius:999px;margin-left:4px;">{{ $pendingLocationRequests }}</span>
+                    @endif
+                </a>
             </div>
         </div>
 

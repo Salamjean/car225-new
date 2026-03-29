@@ -55,23 +55,29 @@ class TrackingController extends Controller
             ->get();
 
         $locations = $activeVoyages->map(function ($voyage) {
-            $location = $voyage->latestLocation;
+            $location    = $voyage->latestLocation;
+            $gareDepart  = $voyage->programme->gareDepart;
+            $gareArrivee = $voyage->programme->gareArrivee;
             return [
-                'voyage_id' => $voyage->id,
-                'latitude' => $location ? (float) $location->latitude : null,
-                'longitude' => $location ? (float) $location->longitude : null,
-                'speed' => $location ? $location->speed : null,
-                'heading' => $location ? $location->heading : null,
-                'last_update' => $location ? $location->updated_at->diffForHumans() : 'Jamais',
-                'chauffeur' => $voyage->chauffeur ? $voyage->chauffeur->nom . ' ' . $voyage->chauffeur->prenom : 'Inconnu',
-                'vehicule' => $voyage->vehicule ? $voyage->vehicule->immatriculation : 'N/A',
-                'depart' => optional($voyage->programme->gareDepart)->nom_gare ?? $voyage->programme->point_depart,
-                'arrivee' => optional($voyage->programme->gareArrivee)->nom_gare ?? $voyage->programme->point_arrive,
-                'heure_depart' => $voyage->programme->heure_depart,
-                'heure_arrivee' => $voyage->programme->heure_arrive,
-                'date_voyage' => Carbon::parse($voyage->date_voyage)->format('d/m/Y'),
-                'statut' => $voyage->statut,
-                'temps_restant' => $voyage->temps_restant,
+                'voyage_id'       => $voyage->id,
+                'latitude'        => $location ? (float) $location->latitude : null,
+                'longitude'       => $location ? (float) $location->longitude : null,
+                'speed'           => $location ? $location->speed : null,
+                'heading'         => $location ? $location->heading : null,
+                'last_update'     => $location ? $location->updated_at->diffForHumans() : 'Jamais',
+                'chauffeur'       => $voyage->chauffeur ? $voyage->chauffeur->nom . ' ' . $voyage->chauffeur->prenom : 'Inconnu',
+                'vehicule'        => $voyage->vehicule ? $voyage->vehicule->immatriculation : 'N/A',
+                'depart'          => optional($gareDepart)->nom_gare ?? $voyage->programme->point_depart,
+                'arrivee'         => optional($gareArrivee)->nom_gare ?? $voyage->programme->point_arrive,
+                'heure_depart'    => $voyage->programme->heure_depart,
+                'heure_arrivee'   => $voyage->programme->heure_arrive,
+                'date_voyage'     => Carbon::parse($voyage->date_voyage)->format('d/m/Y'),
+                'statut'          => $voyage->statut,
+                'temps_restant'   => $voyage->temps_restant,
+                'gare_depart_lat' => $gareDepart ? (float) $gareDepart->latitude  : null,
+                'gare_depart_lng' => $gareDepart ? (float) $gareDepart->longitude : null,
+                'gare_arrivee_lat'=> $gareArrivee ? (float) $gareArrivee->latitude  : null,
+                'gare_arrivee_lng'=> $gareArrivee ? (float) $gareArrivee->longitude : null,
             ];
         })->filter(function ($loc) {
             return $loc['latitude'] !== null;

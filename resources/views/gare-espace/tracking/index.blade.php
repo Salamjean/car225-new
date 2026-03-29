@@ -1,4 +1,6 @@
-@extends('compagnie.layouts.template')
+@extends('gare-espace.layouts.template')
+
+@section('title', 'Suivi en temps réel')
 
 @section('styles')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -12,7 +14,7 @@
     }
 
     .tracking-header {
-        background: linear-gradient(135deg, #065f46 0%, #10b981 100%);
+        background: linear-gradient(135deg, #92400e 0%, #f97316 100%);
         border-radius: 16px;
         padding: 24px 32px;
         color: white;
@@ -97,13 +99,13 @@
     }
 
     .voyage-card:hover {
-        border-color: #10b981;
-        background: #ecfdf5;
+        border-color: #f97316;
+        background: #fff7ed;
     }
 
     .voyage-card.active {
-        border-color: #10b981;
-        background: #ecfdf5;
+        border-color: #f97316;
+        background: #fff7ed;
     }
 
     .voyage-card .route-label {
@@ -130,7 +132,7 @@
         gap: 4px;
         font-size: 0.72rem;
         font-weight: 700;
-        color: #10b981;
+        color: #f97316;
         margin-top: 4px;
     }
 
@@ -162,9 +164,8 @@
         font-weight: 600;
     }
 
-    /* Custom Leaflet marker */
     .bus-marker {
-        background: #10b981;
+        background: #f97316;
         border: 3px solid white;
         border-radius: 50%;
         width: 32px;
@@ -172,7 +173,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        box-shadow: 0 4px 12px rgba(249, 115, 22, 0.4);
         color: white;
         font-size: 14px;
     }
@@ -183,7 +184,7 @@
     }
 
     .leaflet-popup-content {
-        font-family: 'Segoe UI', sans-serif;
+        font-family: 'Inter', sans-serif;
         min-width: 200px;
     }
 
@@ -206,22 +207,22 @@
     .popup-info i {
         width: 16px;
         text-align: center;
-        color: #10b981;
+        color: #f97316;
     }
 </style>
 @endsection
 
 @section('content')
 <div class="min-h-screen bg-gray-50 py-6 px-4">
-    <div class="mx-auto" style="width: 95%;">
+    <div class="mx-auto max-w-[1600px]">
 
         <!-- Header -->
         <div class="tracking-header">
             <div>
                 <h1><i class="fas fa-satellite-dish mr-2"></i> Suivi en temps réel</h1>
-                <div class="subtitle">Suivez vos chauffeurs en direct sur la carte</div>
+                <div class="subtitle">Voyages au départ ou à l'arrivée de <strong>{{ auth('gare')->user()->nom_gare }}</strong></div>
             </div>
-            <div class="d-flex align-items-center gap-3" style="gap: 12px;">
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
                 <div class="stat-pill">
                     <i class="fas fa-bus"></i>
                     <span id="totalEnCours">{{ $activeVoyages->count() }}</span> voyage(s) en cours
@@ -238,14 +239,14 @@
         </div>
 
         <!-- Map + Sidebar -->
-        <div class="row" style="display: flex; gap: 24px; flex-wrap: wrap;">
-            <!-- Map Column -->
-            <div style="flex: 1; min-width: 0;">
+        <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start;">
+            <!-- Map -->
+            <div style="flex:1; min-width:0;">
                 <div id="trackingMap"></div>
             </div>
 
-            <!-- Sidebar Column -->
-            <div style="width: 320px; flex-shrink: 0;">
+            <!-- Sidebar -->
+            <div style="width:320px; flex-shrink:0;">
                 <div class="voyage-sidebar">
                     <div class="voyage-sidebar-header">
                         <i class="fas fa-list-ul mr-2"></i> Voyages en cours
@@ -276,14 +277,15 @@
                         @else
                             <div class="no-tracking">
                                 <i class="fas fa-road"></i>
-                                <p style="font-weight: 600;">Aucun voyage en cours</p>
-                                <p style="font-size: 0.75rem;">Les voyages démarrés par vos chauffeurs apparaîtront ici</p>
+                                <p style="font-weight:600;">Aucun voyage en cours</p>
+                                <p style="font-size:0.75rem;">Les voyages passant par votre gare apparaîtront ici</p>
                             </div>
                         @endif
                     </div>
                 </div>
             </div>
         </div>
+
     </div>
 </div>
 @endsection
@@ -292,7 +294,6 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    // Initialize map centered on Côte d'Ivoire
     const map = L.map('trackingMap').setView([6.8276, -5.2893], 7);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -300,10 +301,10 @@ document.addEventListener('DOMContentLoaded', function () {
         maxZoom: 19,
     }).addTo(map);
 
-    const markers = {};
-    const routeLayers = {};   // tracés OSRM, dessinés une seule fois par voyage
-    const routeShadows = {};
-    const gareMarkers = {};   // pins départ/arrivée
+    const markers = {};         // bus markers, updated every 3s
+    const routeLayers = {};     // OSRM route polylines (main + shadow), drawn once per voyage
+    const routeShadows = {};    // shadow layers for cleanup
+    const gareMarkers = {};     // departure/arrival gare pins, drawn once per voyage
     let isFirstLoad = true;
 
     function createBusIcon(isOnline = true) {
@@ -317,50 +318,60 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function createGareIcon(type) {
+        // type: 'depart' (green) or 'arrivee' (red)
         const color = type === 'depart' ? '#16a34a' : '#dc2626';
         const icon  = type === 'depart' ? 'fa-sign-out-alt' : 'fa-flag-checkered';
         return L.divIcon({
             html: `<div style="background:${color};border:3px solid white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(0,0,0,0.25);color:white;font-size:11px;"><i class="fas ${icon}"></i></div>`,
-            iconSize: [28, 28], iconAnchor: [14, 14], popupAnchor: [0, -18], className: ''
+            iconSize: [28, 28],
+            iconAnchor: [14, 14],
+            popupAnchor: [0, -18],
+            className: ''
         });
     }
 
+    /**
+     * Fetch OSRM road route and draw an orange polyline on the map.
+     * Stores the result in routeLayers[voyageId] so it is not re-fetched.
+     */
     function drawRoute(voyageId, departLat, departLng, arriveeLat, arriveeLng, departNom, arriveeNom) {
         const url = `https://router.project-osrm.org/route/v1/driving/${departLng},${departLat};${arriveeLng},${arriveeLat}?overview=full&geometries=geojson`;
+
         fetch(url)
             .then(r => r.json())
             .then(data => {
                 if (!data.routes || !data.routes.length) return;
-                const geojson = data.routes[0].geometry;
 
-                // Ombre portée
+                const geojson = data.routes[0].geometry;
+                // Ombre portée (trait épais semi-transparent en dessous)
                 const shadow = L.geoJSON(geojson, {
                     style: { color: 'rgba(0,0,0,0.18)', weight: 9, opacity: 1, lineCap: 'round', lineJoin: 'round' }
                 }).addTo(map);
 
-                // Trait principal vert (couleur compagnie)
+                // Trait principal orange style Google Maps
                 const polyline = L.geoJSON(geojson, {
-                    style: { color: '#10b981', weight: 5, opacity: 1, lineCap: 'round', lineJoin: 'round' }
+                    style: { color: '#f97316', weight: 5, opacity: 1, lineCap: 'round', lineJoin: 'round' }
                 }).addTo(map);
 
                 routeShadows[voyageId] = shadow;
-                routeLayers[voyageId]  = polyline;
+                routeLayers[voyageId] = polyline;
 
+                // Gare markers (drawn once alongside the route)
                 if (!gareMarkers[voyageId]) {
                     const mDepart = L.marker([departLat, departLng], { icon: createGareIcon('depart') })
                         .addTo(map)
-                        .bindPopup(`<div style="font-weight:700;">Départ</div><div style="font-size:0.82rem;color:#374151;">${departNom}</div>`);
+                        .bindPopup(`<div style="font-weight:700;font-size:0.9rem;">Départ</div><div style="font-size:0.82rem;color:#374151;">${departNom}</div>`);
                     const mArrivee = L.marker([arriveeLat, arriveeLng], { icon: createGareIcon('arrivee') })
                         .addTo(map)
-                        .bindPopup(`<div style="font-weight:700;">Arrivée</div><div style="font-size:0.82rem;color:#374151;">${arriveeNom}</div>`);
+                        .bindPopup(`<div style="font-weight:700;font-size:0.9rem;">Arrivée</div><div style="font-size:0.82rem;color:#374151;">${arriveeNom}</div>`);
                     gareMarkers[voyageId] = [mDepart, mArrivee];
                 }
             })
-            .catch(() => {});
+            .catch(() => {}); // silencieux si OSRM indisponible
     }
 
     function fetchLocations() {
-        fetch("{{ route('compagnie.tracking.locations') }}")
+        fetch("{{ route('gare-espace.tracking.locations') }}")
             .then(res => res.json())
             .then(data => {
                 if (!data.success) return;
@@ -368,7 +379,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 document.getElementById('totalEnCours').textContent = data.total_en_cours;
                 document.getElementById('totalTracked').textContent = data.total_tracked;
 
-                // Track which voyages we receive
                 const activeIds = new Set();
 
                 data.locations.forEach(loc => {
@@ -381,15 +391,14 @@ document.addEventListener('DOMContentLoaded', function () {
                         <div class="popup-info"><i class="fas fa-tachometer-alt"></i> ${loc.speed ? Math.round(loc.speed) + ' km/h' : 'N/A'}</div>
                         <div class="popup-info"><i class="fas fa-clock"></i> ${loc.temps_restant || 'N/A'}</div>
                         <div class="popup-info"><i class="fas fa-calendar"></i> ${loc.date_voyage} à ${loc.heure_depart}</div>
-                        <div class="popup-info" style="color: #9ca3af; font-size: 0.72rem;"><i class="fas fa-sync"></i> ${loc.last_update}</div>
+                        <div class="popup-info" style="color:#9ca3af;font-size:0.72rem;"><i class="fas fa-sync"></i> ${loc.last_update}</div>
                     `;
 
+                    // Update or create bus marker
                     if (markers[loc.voyage_id]) {
-                        // Update existing marker
                         markers[loc.voyage_id].setLatLng([loc.latitude, loc.longitude]);
                         markers[loc.voyage_id].setPopupContent(popupContent);
                     } else {
-                        // Create new marker
                         const marker = L.marker([loc.latitude, loc.longitude], {
                             icon: createBusIcon(true)
                         }).addTo(map);
@@ -397,7 +406,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         markers[loc.voyage_id] = marker;
                     }
 
-                    // Tracé OSRM (dessiné une seule fois)
+                    // Draw route once (only if not already drawn and coordinates available)
                     if (!routeLayers[loc.voyage_id]
                         && loc.gare_depart_lat && loc.gare_depart_lng
                         && loc.gare_arrivee_lat && loc.gare_arrivee_lng) {
@@ -409,25 +418,34 @@ document.addEventListener('DOMContentLoaded', function () {
                         );
                     }
 
-                    // Update sidebar speed
                     const speedEl = document.getElementById('speed-' + loc.voyage_id);
                     if (speedEl) {
                         speedEl.innerHTML = `<i class="fas fa-tachometer-alt"></i> <span>${loc.speed ? Math.round(loc.speed) + ' km/h' : 'GPS actif'}</span>`;
                     }
                 });
 
-                // Remove markers for voyages that are no longer active
+                // Supprimer les couches des voyages terminés
                 Object.keys(markers).forEach(id => {
                     if (!activeIds.has(parseInt(id))) {
                         map.removeLayer(markers[id]);
                         delete markers[id];
-                        if (routeShadows[id]) { map.removeLayer(routeShadows[id]); delete routeShadows[id]; }
-                        if (routeLayers[id])  { map.removeLayer(routeLayers[id]);  delete routeLayers[id]; }
-                        if (gareMarkers[id])  { gareMarkers[id].forEach(m => map.removeLayer(m)); delete gareMarkers[id]; }
+
+                        if (routeShadows[id]) {
+                            map.removeLayer(routeShadows[id]);
+                            delete routeShadows[id];
+                        }
+                        if (routeLayers[id]) {
+                            map.removeLayer(routeLayers[id]);
+                            delete routeLayers[id];
+                        }
+                        if (gareMarkers[id]) {
+                            gareMarkers[id].forEach(m => map.removeLayer(m));
+                            delete gareMarkers[id];
+                        }
                     }
                 });
 
-                // Fit bounds on first load if we have locations
+                // Centrer la carte au premier chargement
                 if (isFirstLoad && data.locations.length > 0) {
                     const bounds = L.latLngBounds(data.locations.map(l => [l.latitude, l.longitude]));
                     map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
@@ -437,21 +455,18 @@ document.addEventListener('DOMContentLoaded', function () {
             .catch(err => console.error('Tracking fetch error:', err));
     }
 
-    // Focus on a specific voyage marker
     window.focusVoyage = function(voyageId) {
-        // Highlight sidebar card
         document.querySelectorAll('.voyage-card').forEach(c => c.classList.remove('active'));
         const card = document.querySelector(`.voyage-card[data-voyage-id="${voyageId}"]`);
         if (card) card.classList.add('active');
 
-        // Zoom to marker
         if (markers[voyageId]) {
             map.setView(markers[voyageId].getLatLng(), 14, { animate: true });
             markers[voyageId].openPopup();
         }
     };
 
-    // Initial fetch + polling every 3 seconds
+    // Actualisation toutes les 3 secondes (routes dessinées une seule fois)
     fetchLocations();
     setInterval(fetchLocations, 3000);
 });

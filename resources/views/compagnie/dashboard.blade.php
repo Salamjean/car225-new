@@ -26,6 +26,23 @@
         </div>
     </div>
 
+    {{-- ── BANNIÈRE VOYAGES EN COURS ── --}}
+    @if(isset($liveVoyagesCount) && $liveVoyagesCount > 0)
+    <a href="{{ route('compagnie.tracking.index') }}" style="display:flex;align-items:center;gap:16px;background:linear-gradient(135deg,#065f46,#10b981);border-radius:14px;padding:16px 22px;color:white;text-decoration:none;margin-bottom:20px;box-shadow:0 8px 24px rgba(16,185,129,0.2);transition:opacity 0.15s;" onmouseover="this.style.opacity='.9'" onmouseout="this.style.opacity='1'">
+        <div style="width:38px;height:38px;background:rgba(255,255,255,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fas fa-satellite-dish" style="animation:pulse 2s infinite;"></i>
+        </div>
+        <div style="flex:1;min-width:0;">
+            <div style="font-size:14px;font-weight:800;margin:0;">{{ $liveVoyagesCount }} voyage{{ $liveVoyagesCount > 1 ? 's' : '' }} en cours — Voir sur la carte</div>
+            <div style="font-size:12px;opacity:0.85;margin-top:2px;">Suivez vos chauffeurs en temps réel avec tracé GPS et itinéraire</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.2);padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;flex-shrink:0;">
+            <span style="width:7px;height:7px;background:#f87171;border-radius:50%;display:inline-block;animation:ping 1s infinite;"></span>
+            LIVE <i class="fas fa-arrow-right" style="margin-left:4px;font-size:11px;"></i>
+        </div>
+    </a>
+    @endif
+
     {{-- ── METRIC CARDS ── --}}
     <div class="metric-grid">
 
