@@ -98,7 +98,8 @@
                 <h2>{{ $programme->gareDepart?->nom_gare ?? $programme->point_depart }} → {{ $programme->gareArrivee?->nom_gare ?? $programme->point_arrive }}</h2>
                 <p>Départ le <span class="text-orange-600">{{ \Carbon\Carbon::parse($date)->format('d/m/Y') }}</span> à <span class="text-orange-600 font-black">{{ \Carbon\Carbon::parse($programme->heure_depart)->format('H:i') }}</span></p>
                 <p class="text-[11px] uppercase tracking-widest mt-1">
-                    {{ $programme->getPlacesReserveesForDate($date) }}/{{ $programme->getTotalSeats($date) }} Passagers réservés
+                    {{ $programme->getPlacesReserveesForDate($date, $tab ?? null) }}/{{ $programme->getTotalSeats($date) }} 
+                    @if(($tab ?? '') === 'terminees') Passagers embarqués @else Passagers réservés @endif
                 </p>
             </div>
         </div>
@@ -168,10 +169,21 @@
                             <span class="text-[10px] text-gray-400 font-bold ml-1">FCFA</span>
                         </td>
                         <td class="text-center">
-                             @if($reservation->statut == 'confirmee')
-                                <span class="status-pill sp-success">Réservée</span>
+                            @php
+                                $isPastDate = \Carbon\Carbon::parse($reservation->date_voyage)->format('Y-m-d') < \Carbon\Carbon::now()->format('Y-m-d');
+                            @endphp
+                            @if($reservation->statut == 'confirmee' && $isPastDate)
+                                <span class="status-pill sp-gray">Passé</span>
                             @elseif($reservation->statut == 'terminee')
-                                <span class="status-pill sp-orange">Embarqué</span>
+                                @if(!empty($reservation->voyage_id))
+                                    <span class="status-pill sp-success">à voyagé</span>
+                                @elseif($isPastDate)
+                                    <span class="status-pill sp-gray">voyage manqué</span>
+                                @else
+                                    <span class="status-pill sp-orange">A embarqué</span>
+                                @endif
+                            @elseif($reservation->statut == 'confirmee')
+                                <span class="status-pill sp-success">Réservée</span>
                             @elseif($reservation->statut == 'annulee')
                                 <span class="status-pill bg-red-50 text-red-600">Annulée</span>
                             @elseif($reservation->statut == 'en_attente')

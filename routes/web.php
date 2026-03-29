@@ -256,6 +256,7 @@ Route::middleware('compagnie')->prefix('company')->group(function () {
         Route::get('/by-date/{date}', [CompagnieReservationController::class, 'byDate'])->name('company.reservation.by_date');
         Route::get('/by-month/{month}', [CompagnieReservationController::class, 'byMonth'])->name('company.reservation.by_month');
         Route::get('/details', [CompagnieReservationController::class, 'details'])->name('company.reservation.details');
+        Route::get('/reservations/{reservation}', [CompagnieReservationController::class, 'show'])->name('company.reservation.show');
         Route::get('/occupied-seats', [CompagnieReservationController::class, 'getOccupiedSeats'])->name('company.reservation.occupied-seats');
     });
 
@@ -530,6 +531,7 @@ Route::middleware('auth')->prefix('user')->group(function () {
         Route::delete('/reservations/{reservation}', [ReservationController::class, 'cancel'])->name('reservations.cancel');
         Route::get('/reservations/{reservation}/refund-preview', [ReservationController::class, 'getRefundPreview'])->name('reservations.refund-preview');
         Route::post('/reservations/{reservation}/cancel', [ReservationController::class, 'cancelReservation'])->name('reservations.cancel-refund');
+        Route::get('/reservations/{reservation}/modifier', [ReservationController::class, 'showModificationPage'])->name('reservations.modifier');
         Route::post('/reservations/{reservation}/modify', [ReservationController::class, 'processModification'])->name('reservations.modify');
         Route::get('/api/programmes', [ReservationController::class, 'apiProgrammes'])->name('api.programmes');
         Route::get('/api/grouped-routes', [ReservationController::class, 'apiGroupedRoutes'])->name('api.grouped-routes');
@@ -1017,6 +1019,7 @@ Route::prefix('chauffeur')->name('chauffeur.')->group(function () {
             Route::post('/{voyage}/complete', [ChauffeurVoyageController::class, 'complete'])->name('complete');
             Route::post('/{voyage}/update-location', [ChauffeurVoyageController::class, 'updateLocation'])->name('update-location');
             Route::post('/{voyage}/annuler', [ChauffeurVoyageController::class, 'annuler'])->name('annuler');
+            Route::get('/{voyage}/tracking', [ChauffeurVoyageController::class, 'tracking'])->name('tracking');
         });
 
         // Inbox for Chauffeur

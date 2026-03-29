@@ -241,6 +241,17 @@
                             </div>
 
                         @elseif($voyage->statut === 'en_cours')
+                            {{-- Bouton Suivi temps réel (en avant) --}}
+                            <a href="{{ route('chauffeur.voyages.tracking', $voyage->id) }}"
+                                class="w-full flex items-center justify-center gap-3 py-4 rounded-xl font-bold text-white mb-3 transition-all shadow-lg"
+                                style="background: linear-gradient(135deg, #1d4ed8, #3b82f6); box-shadow: 0 4px 16px rgba(59,130,246,0.35);">
+                                <span class="relative flex h-3 w-3">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+                                </span>
+                                <i class="fas fa-satellite-dish text-xl"></i>
+                                Suivi en temps réel
+                            </a>
                             <div class="flex flex-col md:flex-row gap-3">
                                 <form action="{{ route('chauffeur.voyages.complete', $voyage->id) }}" method="POST" onsubmit="return confirm('Confirmez-vous l\'arrivée à destination ?')" class="flex-1">
                                     @csrf

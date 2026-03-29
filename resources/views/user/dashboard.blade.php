@@ -455,8 +455,26 @@
             
             let map = null;
             let busMarker = null;
+            let routeLayer = null;
             let trackingInterval = null;
             let isFirstLoad = true;
+
+            // Gare coordinates from PHP
+            @if($currentTrip)
+            const gareDepart = {
+                lat: {{ $currentTrip->programme->gareDepart->latitude ?? 'null' }},
+                lng: {{ $currentTrip->programme->gareDepart->longitude ?? 'null' }},
+                nom: @json($currentTrip->programme->gareDepart->nom_gare ?? $currentTrip->programme->point_depart)
+            };
+            const gareArrivee = {
+                lat: {{ $currentTrip->programme->gareArrivee->latitude ?? 'null' }},
+                lng: {{ $currentTrip->programme->gareArrivee->longitude ?? 'null' }},
+                nom: @json($currentTrip->programme->gareArrivee->nom_gare ?? $currentTrip->programme->point_arrive)
+            };
+            @else
+            const gareDepart = { lat: null, lng: null, nom: '--' };
+            const gareArrivee = { lat: null, lng: null, nom: '--' };
+            @endif
 
             function createBusIcon(isOnline = true) {
                 return L.divIcon({
@@ -468,16 +486,75 @@
                 });
             }
 
+            function createGareIcon(type) {
+                const color = type === 'depart' ? '#10b981' : '#ef4444';
+                const icon = type === 'depart' ? 'fa-sign-out-alt' : 'fa-flag-checkered';
+                return L.divIcon({
+                    html: `<div style="background:${color};width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 3px 10px ${color}88;border:2px solid #fff;font-size:14px;"><i class="fas ${icon}"></i></div>`,
+                    iconSize: [36, 36],
+                    iconAnchor: [18, 18],
+                    popupAnchor: [0, -22],
+                    className: ''
+                });
+            }
+
+            function drawRoute() {
+                if (!gareDepart.lat || !gareArrivee.lat) return;
+
+                const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${gareDepart.lng},${gareDepart.lat};${gareArrivee.lng},${gareArrivee.lat}?overview=full&geometries=geojson`;
+
+                fetch(osrmUrl)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (!data.routes || !data.routes[0]) return;
+                        if (routeLayer) map.removeLayer(routeLayer);
+
+                        const geojson = data.routes[0].geometry;
+
+                        // Shadow layer
+                        L.geoJSON(geojson, {
+                            style: { color: 'rgba(0,0,0,0.15)', weight: 9, lineCap: 'round', lineJoin: 'round' }
+                        }).addTo(map);
+
+                        // Main green route
+                        routeLayer = L.geoJSON(geojson, {
+                            style: { color: '#10b981', weight: 5, lineCap: 'round', lineJoin: 'round', opacity: 0.9 }
+                        }).addTo(map);
+
+                        // Fit map to route
+                        map.fitBounds(routeLayer.getBounds(), { padding: [40, 40] });
+                    })
+                    .catch(() => {});
+            }
+
             function initMap() {
                 if (map) return; // Already initialized
 
                 // Default center (Côte d'Ivoire)
-                map = L.map('trackingMap').setView([6.8276, -5.2893], 7);
+                const center = (gareDepart.lat && gareDepart.lng)
+                    ? [gareDepart.lat, gareDepart.lng]
+                    : [6.8276, -5.2893];
+
+                map = L.map('trackingMap').setView(center, 7);
 
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '&copy; OpenStreetMap',
                     maxZoom: 19,
                 }).addTo(map);
+
+                // Add gare markers
+                if (gareDepart.lat && gareDepart.lng) {
+                    L.marker([gareDepart.lat, gareDepart.lng], { icon: createGareIcon('depart') })
+                        .addTo(map)
+                        .bindPopup(`<div class="popup-title">Départ</div><div class="popup-info"><i class="fas fa-map-marker-alt" style="color:#10b981"></i> ${gareDepart.nom}</div>`);
+                }
+                if (gareArrivee.lat && gareArrivee.lng) {
+                    L.marker([gareArrivee.lat, gareArrivee.lng], { icon: createGareIcon('arrivee') })
+                        .addTo(map)
+                        .bindPopup(`<div class="popup-title">Arrivée</div><div class="popup-info"><i class="fas fa-flag-checkered" style="color:#ef4444"></i> ${gareArrivee.nom}</div>`);
+                }
+
+                drawRoute();
             }
 
             function fetchLiveLocation() {
@@ -532,7 +609,10 @@
                         }
 
                         if (isFirstLoad) {
-                            map.setView(latLng, 14, { animate: true });
+                            // Don't override route bounds — just pan to bus if no route
+                            if (!gareDepart.lat || !gareArrivee.lat) {
+                                map.setView(latLng, 13, { animate: true });
+                            }
                             isFirstLoad = false;
                         }
 

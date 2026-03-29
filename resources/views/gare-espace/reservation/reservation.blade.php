@@ -344,6 +344,7 @@
             <div class="bg-white p-2 rounded-xl shadow-sm border border-gray-100 flex items-center gap-2">
                 <i class="fas fa-calendar-alt text-orange-500 ml-2"></i>
                 <input type="date" value="{{ $date }}" 
+                       @if(in_array($tab, ['en-cours', 'terminees'])) min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}" @endif
                        onchange="window.location.href='{{ route('gare-espace.reservations.index', ['tab' => $tab]) }}&date_voyage=' + this.value"
                        class="border-none focus:ring-0 font-bold text-gray-700 bg-transparent text-sm">
             </div>
@@ -367,7 +368,8 @@
                                    class="flex flex-col items-center p-3 rounded-2xl border {{ request('programme_id') == $prog->id ? 'bg-orange-500 border-orange-500 text-white shadow-lg shadow-orange-500/30' : 'bg-gray-50 border-gray-100 text-gray-600 hover:border-orange-300 hover:bg-orange-50' }} transition-all">
                                     <span class="text-lg font-black leading-none mb-1">{{ \Carbon\Carbon::parse($prog->heure_depart)->format('H:i') }}</span>
                                     <span class="text-[8px] font-black uppercase {{ request('programme_id') == $prog->id ? 'text-orange-100' : 'text-gray-400' }}">
-                                        {{ $prog->getPlacesReserveesForDate($date) }}/{{ $prog->getTotalSeats($date) }} Réserv.
+                                        {{ $prog->getPlacesReserveesForDate($date, $tab ?? null) }}/{{ $prog->getTotalSeats($date) }} 
+                                        @if(($tab ?? '') === 'terminees') Embarqués @else Réserv. @endif
                                     </span>
                                 </a>
                                 @endforeach
@@ -510,12 +512,23 @@
                             </td>
 
                             <td class="text-center">
-                                @if($reservation->statut == 'confirmee')
+                                @php
+                                    $isPastDate = \Carbon\Carbon::parse($reservation->date_voyage)->format('Y-m-d') < \Carbon\Carbon::now()->format('Y-m-d');
+                                @endphp
+                                @if($reservation->statut == 'confirmee' && $isPastDate)
+                                    <span class="status-pill sp-gray"><span class="dot"></span> Passé</span>
+                                @elseif($reservation->statut == 'terminee')
+                                    @if(!empty($reservation->voyage_id))
+                                        <span class="status-pill sp-success"><span class="dot"></span> à voyagé</span>
+                                    @elseif($isPastDate)
+                                        <span class="status-pill sp-gray"><span class="dot"></span> voyage manqué</span>
+                                    @else
+                                        <span class="status-pill sp-orange"><span class="dot"></span> A embarqué</span>
+                                    @endif
+                                @elseif($reservation->statut == 'confirmee')
                                     <span class="status-pill sp-success"><span class="dot"></span> Réservée</span>
                                 @elseif($reservation->statut == 'en_attente')
                                     <span class="status-pill sp-gray"><span class="dot"></span> En attente</span>
-                                @elseif($reservation->statut == 'terminee')
-                                    <span class="status-pill sp-orange"><span class="dot"></span> Embarqué</span>
                                 @elseif($reservation->statut == 'annulee')
                                     <span class="status-pill sp-danger"><span class="dot"></span> Annulée</span>
                                 @elseif($reservation->statut == 'passe')

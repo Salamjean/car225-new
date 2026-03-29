@@ -223,4 +223,39 @@ class VoyageController extends Controller
         return redirect()->route('chauffeur.voyages.index', ['tab' => 'non_effectues'])
             ->with('success', 'Le voyage a été annulé et le motif a été transmis à la gare.');
     }
+
+    /**
+     * Page de suivi en temps réel pour le chauffeur
+     * Position initiale = gare de départ assignée
+     */
+    public function tracking(Voyage $voyage)
+    {
+        $chauffeur = Auth::guard('chauffeur')->user();
+
+        if ($voyage->personnel_id !== $chauffeur->id) {
+            abort(403, 'Ce voyage ne vous appartient pas.');
+        }
+
+        if ($voyage->statut !== 'en_cours') {
+            return redirect()->route('chauffeur.voyages.index')
+                ->with('error', 'Le suivi en temps réel est uniquement disponible pour les voyages en cours.');
+        }
+
+        $voyage->load(['programme.gareDepart', 'programme.gareArrivee', 'vehicule', 'latestLocation']);
+
+        $gareDepart  = $voyage->gareDepart ?? $voyage->programme->gareDepart;
+        $gareArrivee = $voyage->gareArrivee ?? $voyage->programme->gareArrivee;
+
+        // Position initiale : dernière loc connue → sinon gare de départ → sinon centre CI
+        $initialLat = $voyage->latestLocation?->latitude
+            ?? $gareDepart?->latitude
+            ?? 6.8276;
+        $initialLng = $voyage->latestLocation?->longitude
+            ?? $gareDepart?->longitude
+            ?? -5.2893;
+
+        return view('chauffeur.voyages.tracking', compact(
+            'voyage', 'chauffeur', 'gareDepart', 'gareArrivee', 'initialLat', 'initialLng'
+        ));
+    }
 }

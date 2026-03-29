@@ -1,139 +1,151 @@
 <!-- Modal Détails -->
-<div id="modalDetails" class="fixed inset-0 z-[100] flex items-center justify-center hidden pt-10 pb-10">
-    <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onclick="closeModal()"></div>
-    <div class="relative bg-white w-full max-w-2xl mx-4 rounded-[2rem] shadow-2xl overflow-hidden transform transition-all scale-95 opacity-0 duration-300" id="modalContent">
-        <!-- Modal Header -->
-        <div class="bg-gradient-to-r from-orange-500 to-orange-400 px-8 py-6 flex items-center justify-between">
-            <div class="flex items-center gap-4">
-                <div class="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-white shadow-inner">
-                    <i class="fas fa-user-tag text-xl"></i>
+<style>
+    #modalDetails.hidden { display: none !important; }
+    #modalDetails {
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        z-index: 9999; display: flex; align-items: center; justify-content: center;
+        padding: 10px;
+    }
+    .modal-overlay {
+        position: absolute; inset: 0;
+        background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+    }
+    .modal-container {
+        position: relative; background: #fff; width: 100%; max-width: 650px;
+        border-radius: 28px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+        overflow: hidden; max-height: 95vh; display: flex; flex-direction: column;
+        animation: modalFadeIn 0.3s ease-out;
+    }
+    @keyframes modalFadeIn {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+    }
+    .modal-header-premium {
+        background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+        padding: 24px 30px; color: #fff; display: flex; align-items: center; justify-content: space-between;
+    }
+    .modal-body-premium {
+        padding: 30px; overflow-y: auto; background: #f9fafb;
+    }
+    .info-card-p {
+        background: #fff; padding: 18px; border-radius: 20px; 
+        border: 1px solid #f1f5f9; margin-bottom: 20px;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
+    }
+    .info-label-p {
+        font-size: 10px; font-weight: 800; color: #f97316; 
+        text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;
+    }
+    .info-value-p { font-weight: 800; color: #0f172a; font-size: 15px; }
+    .trajet-box-p {
+        background: #1e293b; color: #fff; border-radius: 24px; padding: 24px;
+        margin-bottom: 24px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+    }
+    .trajet-point-p { text-align: center; flex: 1; }
+    .trajet-point-p p:first-child { font-size: 9px; color: #fb923c; font-weight: 900; margin-bottom: 4px; text-transform: uppercase; }
+    .trajet-point-p p:last-child { font-size: 14px; font-weight: 800; text-transform: uppercase; }
+    .btn-close-modal-p {
+        background: rgba(255,255,255,0.15); border: none; color: #fff;
+        width: 36px; height: 36px; border-radius: 10px; cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-close-modal-p:hover { background: rgba(255,255,255,0.25); transform: rotate(90deg); }
+    .status-check {
+        padding: 4px 10px; background: #ecfdf5; color: #059669; font-size: 10px;
+        font-weight: 800; border-radius: 8px; border: 1px solid #d1fae5;
+        text-transform: uppercase; display: inline-block; margin-top: 4px;
+    }
+</style>
+
+<div id="modalDetails" class="hidden">
+    <div class="modal-overlay" onclick="closeModal()"></div>
+    <div class="modal-container" id="modalContent">
+        <div class="modal-header-premium">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div style="width: 46px; height: 46px; background: rgba(255,255,255,0.2); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                    <i class="fas fa-id-card"></i>
                 </div>
                 <div>
-                    <h2 class="text-xl font-black text-white uppercase tracking-tight leading-none mb-1">Détails Passager</h2>
-                    <p class="text-orange-100 text-xs font-medium" id="modalRef"></p>
+                    <h2 style="margin: 0; font-size: 18px; font-weight: 900; text-transform: uppercase; letter-spacing: -0.5px;">Détails Passager</h2>
+                    <p id="modalRef" style="margin: 0; font-size: 11px; font-weight: 600; opacity: 0.9;"></p>
                 </div>
             </div>
-            <button onclick="closeModal()" class="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors">
-                <i class="fas fa-times"></i>
-            </button>
+            <button onclick="closeModal()" class="btn-close-modal-p"><i class="fas fa-times"></i></button>
         </div>
 
-        <!-- Modal Body -->
-        <div class="p-8 space-y-8 bg-gray-50/50 max-h-[85vh] overflow-y-auto">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <!-- Info Passager -->
-                <div class="space-y-4">
-                    <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                        <span class="w-4 h-[2px] rounded bg-orange-300"></span> Informations Voyageur
-                    </h3>
-                    
-                    <div class="flex items-center gap-4 mb-6 bg-white p-4 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group">
-                        <div class="absolute top-0 right-0 w-24 h-24 bg-orange-500/5 rounded-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
-                        <div class="relative">
-                            <img id="passagerPhoto" src="" alt="Photo" class="w-20 h-20 rounded-2xl object-cover border-2 border-white shadow-md hidden">
-                            <div id="passagerInitial" class="w-20 h-20 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white text-2xl font-black shadow-lg">
-                                ?
-                            </div>
-                        </div>
-                        <div class="flex-1">
-                            <span class="text-[9px] font-black text-orange-500 uppercase tracking-wider block mb-0.5">Identité du voyageur</span>
-                            <p class="font-black text-gray-900 text-lg leading-tight" id="passagerNom"></p>
-                            <div class="flex items-center gap-2 mt-1">
-                                <span class="px-2 py-0.5 bg-green-50 text-green-600 text-[10px] font-bold rounded-md border border-green-100 uppercase">Vérifié</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="space-y-3">
-                        <div class="flex flex-col bg-white p-4 rounded-2xl border border-gray-100 shadow-sm transition-all hover:border-orange-200">
-                            <span class="text-[10px] font-black text-orange-500 uppercase mb-1 flex items-center gap-2">
-                                <i class="fas fa-phone-alt text-[9px]"></i> Téléphone
-                            </span>
-                            <p class="font-bold text-gray-900" id="passagerTel"></p>
-                        </div>
-                        <div class="flex flex-col bg-white p-4 rounded-2xl border border-gray-100 shadow-sm transition-all hover:border-orange-200">
-                            <span class="text-[10px] font-black text-orange-500 uppercase mb-1 flex items-center gap-2">
-                                <i class="fas fa-ambulance text-[9px]"></i> Contact d'Urgence
-                            </span>
-                            <p class="font-bold text-gray-900 text-sm" id="passagerUrgence"></p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Info Trajet -->
-                <div class="space-y-4">
-                    <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                        <span class="w-4 h-[2px] rounded bg-orange-300"></span> Détails du Trajet
-                    </h3>
-                    <div class="bg-[#1e293b] rounded-3xl p-6 text-white space-y-6 shadow-xl">
-                        <div class="flex items-center justify-between gap-4">
-                            <div class="text-center flex-1">
-                                <p class="text-[9px] font-black text-orange-400 uppercase mb-1">Départ</p>
-                                <p class="text-[13px] font-black uppercase" id="trajetDepart"></p>
-                            </div>
-                            <div class="flex flex-col items-center">
-                                <i class="fas fa-bus text-orange-500"></i>
-                                <div class="w-8 h-[1px] bg-slate-600 my-1"></div>
-                            </div>
-                            <div class="text-center flex-1">
-                                <p class="text-[9px] font-black text-orange-400 uppercase mb-1">Arrivée</p>
-                                <p class="text-[13px] font-black uppercase" id="trajetArrivee"></p>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-4 border-t border-slate-700 pt-6">
-                            <div>
-                                <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Date & Heure</p>
-                                <p class="text-xs font-bold" id="trajetDate"></p>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Siège</p>
-                                <p class="text-xl font-black text-orange-500" id="trajetSiege"></p>
-                            </div>
-                        </div>
-                    </div>
+        <div class="modal-body-premium">
+            <div style="display: flex; gap: 24px; margin-bottom: 30px; align-items: center;">
+                <div id="passagerInitial" style="width: 80px; height: 80px; border-radius: 20px; background: linear-gradient(135deg, #f97316, #ea580c); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 950; box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3);">?</div>
+                <img id="passagerPhoto" src="" class="hidden" style="width: 80px; height: 80px; border-radius: 20px; object-fit: cover; border: 3px solid #fff; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);">
+                <div style="flex: 1;">
+                    <p style="margin: 0; font-size: 9px; color: #f97316; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;">Identité du voyageur</p>
+                    <p id="passagerNom" style="margin: 0; font-size: 22px; font-weight: 900; color: #0f172a; line-height: 1.1;"></p>
+                    <span class="status-check">Vérifié <i class="fas fa-check-circle"></i></span>
                 </div>
             </div>
 
-            <!-- Voyage/Mission Info -->
-            <div id="voyageInfo" class="hidden">
-                <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-4">
-                    <span class="w-4 h-[2px] rounded bg-orange-300"></span> Véhicule & Chauffeur
-                </h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="flex items-center gap-4 bg-orange-50 p-4 rounded-2xl border border-orange-100">
-                        <div class="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center shadow-lg shadow-orange-500/30">
-                            <i class="fas fa-bus"></i>
-                        </div>
-                        <div>
-                            <p class="text-[9px] font-black text-orange-500 uppercase">Véhicule</p>
-                            <p class="text-sm font-bold text-gray-900" id="voyageVehicule"></p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-4 bg-orange-50 p-4 rounded-2xl border border-orange-100">
-                        <div class="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center shadow-lg shadow-orange-500/30">
-                            <i class="fas fa-user-circle"></i>
-                        </div>
-                        <div>
-                            <p class="text-[9px] font-black text-orange-500 uppercase">Chauffeur</p>
-                            <p class="text-sm font-bold text-gray-900" id="voyageChauffeur"></p>
-                        </div>
-                    </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
+                <div class="info-card-p">
+                    <p class="info-label-p"><i class="fas fa-phone-alt"></i> Téléphone</p>
+                    <p class="info-value-p" id="passagerTel"></p>
+                </div>
+                <div class="info-card-p">
+                    <p class="info-label-p"><i class="fas fa-ambulance"></i> Urgence</p>
+                    <p class="info-value-p" id="passagerUrgence" style="font-size: 13px;"></p>
                 </div>
             </div>
+
+            <p style="font-size: 10px; font-weight: 900; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; border-left: 3px solid #f97316; padding-left: 10px;">Détails du Trajet</p>
             
-            <div class="flex items-center justify-between p-5 bg-white rounded-2xl border border-dashed border-gray-300 shadow-sm">
-                <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-orange-500 border border-gray-100">
-                        <i class="fas fa-money-bill-wave"></i>
+            <div class="trajet-box-p">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 0 10px;">
+                    <div class="trajet-point-p">
+                        <p>Départ</p>
+                        <p id="trajetDepart" style="color: #fff;"></p>
                     </div>
-                    <div>
-                        <p class="text-[10px] font-black text-gray-400 uppercase leading-none mb-1">Montant Payé</p>
-                        <p class="text-base font-black text-gray-900" id="paiementMontant"></p>
+                    <div style="display: flex; flex-direction: column; align-items: center;">
+                        <i class="fas fa-bus" style="color: #f97316; font-size: 20px;"></i>
+                        <div style="width: 40px; height: 1px; background: rgba(255,255,255,0.2); margin: 6px 0;"></div>
+                    </div>
+                    <div class="trajet-point-p">
+                        <p>Arrivée</p>
+                        <p id="trajetArrivee" style="color: #fff;"></p>
                     </div>
                 </div>
-                <div class="text-right">
-                    <p class="text-[10px] font-black text-gray-400 uppercase leading-none mb-1">Méthode</p>
-                    <span class="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-bold rounded-lg uppercase tracking-wide inline-block mt-1" id="paiementMethode"></span>
+                <div style="display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                    <div>
+                        <p style="font-size: 9px; color: rgba(255,255,255,0.4); font-weight: 900; text-transform: uppercase; margin-bottom: 2px;">Date & Heure</p>
+                        <p id="trajetDate" style="font-size: 13px; margin: 0; font-weight: 700; color: #fff;"></p>
+                    </div>
+                    <div style="text-align: right;">
+                        <p style="font-size: 9px; color: rgba(255,255,255,0.4); font-weight: 900; text-transform: uppercase; margin-bottom: 2px;">Siège</p>
+                        <p id="trajetSiege" style="font-size: 22px; margin: 0; color: #f97316; font-weight: 950; line-height: 1;"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="voyageInfo" class="hidden" style="margin-bottom: 24px;">
+                 <p style="font-size: 10px; font-weight: 900; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; border-left: 3px solid #f97316; padding-left: 10px;">Véhicule & Chauffeur</p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="info-card-p" style="background: #fff; border-left: 4px solid #f97316; margin-bottom: 0;">
+                        <p class="info-label-p" style="color: #64748b;">Bus / Véhicule</p>
+                        <p id="voyageVehicule" class="info-value-p"></p>
+                    </div>
+                    <div class="info-card-p" style="background: #fff; border-left: 4px solid #f97316; margin-bottom: 0;">
+                        <p class="info-label-p" style="color: #64748b;">Conducteur</p>
+                        <p id="voyageChauffeur" class="info-value-p"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-card-p" style="display: flex; justify-content: space-between; align-items: center; border-style: dashed; margin-top: 10px; background: #fff;">
+                <div>
+                    <p class="info-label-p">Montant de la transaction</p>
+                    <p id="paiementMontant" class="info-value-p" style="font-size: 20px; color: #0f172a;"></p>
+                </div>
+                <div style="text-align: right;">
+                    <p class="info-label-p">Méthode</p>
+                    <p id="paiementMethode" class="info-value-p" style="font-size: 11px; background: #f1f5f9; padding: 6px 12px; border-radius: 10px; display: inline-block;"></p>
                 </div>
             </div>
         </div>
@@ -146,36 +158,39 @@
         const content = document.getElementById('modalContent');
         
         modal.classList.remove('hidden');
-        setTimeout(() => {
-            content.classList.remove('scale-95', 'opacity-0');
-            content.classList.add('scale-100', 'opacity-100');
-        }, 10);
 
-        // Fetch data
-        fetch(`/gare-espace/reservations/${id}`)
+        // Fetch data based on environment
+        const path = window.location.pathname;
+        let fetchUrl = '';
+        
+        if (path.includes('/gare-espace')) {
+            fetchUrl = `/gare-espace/reservations/${id}`;
+        } else if (path.includes('/company')) {
+            // Dans l'espace compagnie, les routes de réservation sont préfixées par 'booking'
+            fetchUrl = `/company/booking/reservations/${id}`;
+        }
+        
+        if (!fetchUrl) return;
+
+        fetch(fetchUrl)
             .then(response => response.json())
             .then(res => {
-                console.log("=== DEBUG: MODAL DETAILS DATA ===");
-                console.log("API Response details for ID " + id + ":", res);
                 if(res.success) {
                     const data = res.data;
-                    console.log("Trajet details:", data.trajet);
-                    
-                    document.getElementById('modalRef').textContent = `Référence: ${data.reference}`;
+                    document.getElementById('modalRef').textContent = `Nº Commande: ${data.reference}`;
                     document.getElementById('passagerNom').textContent = data.passager.nom;
                     document.getElementById('passagerTel').textContent = data.passager.telephone;
                     document.getElementById('passagerUrgence').textContent = data.passager.urgence;
 
-                    // Gérer la photo du passager
                     const photoImg = document.getElementById('passagerPhoto');
                     const initialBox = document.getElementById('passagerInitial');
                     if (data.passager.photo) {
                         photoImg.src = data.passager.photo;
-                        photoImg.classList.remove('hidden');
-                        initialBox.classList.add('hidden');
+                        photoImg.style.display = 'block';
+                        initialBox.style.display = 'none';
                     } else {
-                        photoImg.classList.add('hidden');
-                        initialBox.classList.remove('hidden');
+                        photoImg.style.display = 'none';
+                        initialBox.style.display = 'flex';
                         initialBox.textContent = data.passager.nom.charAt(0).toUpperCase();
                     }
                     
@@ -189,11 +204,11 @@
 
                     const vInfo = document.getElementById('voyageInfo');
                     if (data.voyage) {
-                        vInfo.classList.remove('hidden');
+                        vInfo.style.display = 'block';
                         document.getElementById('voyageVehicule').textContent = data.voyage.vehicule;
                         document.getElementById('voyageChauffeur').textContent = data.voyage.chauffeur;
                     } else {
-                        vInfo.classList.add('hidden');
+                        vInfo.style.display = 'none';
                     }
                 }
             });
@@ -201,20 +216,12 @@
 
     function closeModal() {
         const modal = document.getElementById('modalDetails');
-        const content = document.getElementById('modalContent');
-        
-        content.classList.remove('scale-100', 'opacity-100');
-        content.classList.add('scale-95', 'opacity-0');
-        
-        setTimeout(() => {
-            modal.classList.add('hidden');
-        }, 300);
+        modal.classList.add('hidden');
     }
 
-     // Listen for Escape key to close modal
     document.addEventListener('keydown', function(event) {
-        if (event.key === "Escape") {
-            closeModal();
-        }
+        if (event.key === "Escape") closeModal();
+    });
+</script>}
     });
 </script>

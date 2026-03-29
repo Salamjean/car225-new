@@ -182,13 +182,17 @@
                                         if ($reservation->embarquement_scanned_at) { $canAct = false; }
                                     @endphp
                                     
-                                    <button type="button" class="modify-btn w-8 h-8 rounded-lg flex items-center justify-center transition-all {{ $canAct ? 'bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white' : 'bg-gray-100 text-gray-400 cursor-not-allowed' }}"
-                                        data-id="{{ $reservation->id }}"
-                                        data-reference="{{ $reservation->reference }}"
-                                        data-departure="{{ $departureDateTime->toISOString() }}"
-                                        title="Modifier" {{ !$canAct ? 'disabled' : '' }}>
+                                    @if($canAct)
+                                    <a href="{{ route('reservations.modifier', $reservation) }}"
+                                        class="w-8 h-8 rounded-lg flex items-center justify-center transition-all bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white"
+                                        title="Modifier">
                                         <i class="fas fa-pen text-xs"></i>
-                                    </button>
+                                    </a>
+                                    @else
+                                    <span class="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100 text-gray-400 cursor-not-allowed" title="Modification non disponible">
+                                        <i class="fas fa-pen text-xs"></i>
+                                    </span>
+                                    @endif
                                     
                                     <button type="button" class="cancel-btn w-8 h-8 rounded-lg flex items-center justify-center transition-all {{ $canAct ? 'bg-red-50 text-red-600 hover:bg-red-600 hover:text-white' : 'bg-gray-100 text-gray-400 cursor-not-allowed' }}"
                                         data-id="{{ $reservation->id }}"

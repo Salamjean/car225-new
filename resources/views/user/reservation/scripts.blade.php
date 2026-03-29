@@ -200,8 +200,9 @@
                 });
         });
 
+        // MODIFICATION LOGIC removed — now handled by dedicated page (reservations.modifier)
         // =========================================
-        // MODIFICATION LOGIC
+        // (keeping structure for timer below)
         // =========================================
         let modifState = {
             resId: null,

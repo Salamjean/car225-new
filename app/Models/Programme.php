@@ -122,12 +122,19 @@ class Programme extends Model
     /**
      * Nombre de places réservées (confirmées) pour une date donnée
      */
-    public function getPlacesReserveesForDate($date)
+    public function getPlacesReserveesForDate($date, $tab = null)
     {
-        return $this->reservations()
-            ->whereIn('statut', ['confirmee', 'en_attente', 'terminee'])
-            ->whereDate('date_voyage', $date)
-            ->count();
+        $query = $this->reservations()->whereDate('date_voyage', $date);
+        
+        if ($tab === 'terminees') {
+            $query->where('statut', 'terminee');
+        } elseif ($tab === 'en-cours') {
+            $query->whereIn('statut', ['confirmee', 'en_attente']);
+        } else {
+            $query->whereIn('statut', ['confirmee', 'en_attente', 'terminee']);
+        }
+        
+        return $query->count();
     }
 
     /**

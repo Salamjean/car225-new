@@ -19,16 +19,16 @@ class ReservationController extends Controller
         })->with(['programme']);
 
         if ($tab === 'terminees') {
-            // Terminées : terminee, passe, annulee
-            $query->whereIn('statut', ['terminee', 'passe', 'annulee'])
+            // Terminées : terminee
+            $query->where('statut', 'terminee')
                   ->orderBy('date_voyage', 'desc');
         } else {
             // En cours : uniquement confirmee
-            $query->where('statut', 'confirmee')
+            $query->whereIn('statut', ['confirmee', 'en_attente'])
                   ->orderBy('date_voyage', 'asc');
         }
 
-        $reservationsEnCours = $query->paginate(1000); // Augmenté pour le groupement par mois
+        $reservationsEnCours = $query->paginate(10); // user requested 10
 
         return view('compagnie.reservations.index', compact('reservationsEnCours', 'tab'));
     }
@@ -46,9 +46,9 @@ class ReservationController extends Controller
         ->with(['programme', 'user', 'programme.itineraire']);
 
         if ($tab === 'terminees') {
-            $query->whereIn('statut', ['terminee', 'passe', 'annulee']);
+            $query->where('statut', 'terminee');
         } else {
-            $query->where('statut', 'confirmee');
+            $query->whereIn('statut', ['confirmee', 'en_attente']);
         }
 
         if ($heure && $heure !== 'all') {
@@ -57,7 +57,7 @@ class ReservationController extends Controller
             });
         }
 
-        $reservations = $query->orderBy('created_at', 'desc')->get();
+        $reservations = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
 
         return view('compagnie.reservations.by_date', compact('reservations', 'date', 'heure', 'tab'));
     }
@@ -75,17 +75,20 @@ class ReservationController extends Controller
         ->with(['programme', 'user', 'programme.itineraire']);
 
         if ($tab === 'terminees') {
-            $query->whereIn('statut', ['terminee', 'passe', 'annulee']);
+            $query->where('statut', 'terminee');
         } else {
-            $query->where('statut', 'confirmee');
+            $query->whereIn('statut', ['confirmee', 'en_attente']);
         }
+
+        $allDates = (clone $query)->pluck('date_voyage')->unique()->values();
 
         $reservations = $query->orderBy('date_voyage', 'asc')
                              ->orderBy('created_at', 'desc')
-                             ->get();
+                             ->paginate(10)->withQueryString();
 
         return view('compagnie.reservations.by_date', [
             'reservations' => $reservations,
+            'allDates' => $allDates,
             'date' => $month . '-01', 
             'heure' => 'all',
             'tab' => $tab,
@@ -216,6 +219,57 @@ class ReservationController extends Controller
             'vehicle_name' => $vehicule ? $vehicule->immatriculation . ' (' . $vehicule->marque . ')' : 'Véhicule non assigné',
             'total_seats' => $vehicule ? $vehicule->nombre_place : 70, // Par défaut 70 si pas de véhicule
             'occupied' => $occupiedSeats,
+        ]);
+    }
+
+    /**
+     * Voir les détails d'une réservation (AJAX)
+     */
+    public function show(Reservation $reservation)
+    {
+        $compagnie = Auth::guard('compagnie')->user();
+
+        // Vérification d'autorisation : Doit appartenir à la compagnie
+        $belongsToCompagnie = ($reservation->compagnie_id == $compagnie->id) || 
+                              ($reservation->programme && $reservation->programme->compagnie_id == $compagnie->id);
+
+        if (!$belongsToCompagnie) {
+            return response()->json(['message' => 'Accès non autorisé'], 403);
+        }
+
+        $reservation->load(['programme.gareDepart', 'programme.gareArrivee', 'user', 'voyage.vehicule', 'voyage.chauffeur', 'paiement']);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'reference' => $reservation->reference,
+                'transaction_id' => $reservation->payment_transaction_id,
+                'passager' => [
+                    'nom' => $reservation->passager_nom . ' ' . $reservation->passager_prenom,
+                    'telephone' => $reservation->passager_telephone,
+                    'email' => $reservation->passager_email,
+                    'urgence' => $reservation->passager_urgence . ' (' . $reservation->nom_passager_urgence . ')',
+                    'photo' => $reservation->user && $reservation->user->photo_profile_path 
+                               ? asset('storage/' . $reservation->user->photo_profile_path) 
+                               : null,
+                ],
+                'trajet' => [
+                    'depart' => $reservation->programme->point_depart,
+                    'arrivee' => $reservation->programme->point_arrive,
+                    'date' => \Carbon\Carbon::parse($reservation->date_voyage)->format('d/m/Y'),
+                    'heure' => \Carbon\Carbon::parse($reservation->heure_depart ?? $reservation->programme->heure_depart)->format('H:i'),
+                    'siege' => $reservation->seat_number,
+                ],
+                'paiement' => [
+                    'montant' => number_format($reservation->montant, 0, ',', ' ') . ' FCFA',
+                    'methode' => $reservation->paiement?->payment_method ?? 'N/A',
+                    'statut' => $reservation->statut,
+                ],
+                'voyage' => $reservation->voyage ? [
+                    'vehicule' => $reservation->voyage->vehicule->immatriculation . ' (' . $reservation->voyage->vehicule->marque . ')',
+                    'chauffeur' => $reservation->voyage->chauffeur->prenom . ' ' . $reservation->voyage->chauffeur->name,
+                ] : null
+            ]
         ]);
     }
 }

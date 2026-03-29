@@ -172,6 +172,7 @@
                         <th class="text-center">Place</th>
                         <th class="text-right">Montant</th>
                         <th class="text-center">Statut</th>
+                        <th class="text-center">Détails</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -222,9 +223,22 @@
                             @if($reservation->statut === 'confirmee')
                                 <span class="status-pill sp-success"><span class="dot"></span> Réserver</span>
                             @elseif($reservation->statut === 'terminee')
-                                <span class="status-pill" style="background: #FFF7ED; color: #EA580C;">
-                                    <span class="dot" style="background: #EA580C;"></span> Embarqué
-                                </span>
+                                @php
+                                    $isPastDate = \Carbon\Carbon::parse($reservation->date_voyage)->format('Y-m-d') < \Carbon\Carbon::now()->format('Y-m-d');
+                                @endphp
+                                @if($reservation->voyage_id)
+                                    <span class="status-pill" style="background: #FFF7ED; color: #EA580C; padding: 6px 14px; white-space: nowrap;">
+                                        <span class="dot" style="background: #EA580C;"></span> à voyagé
+                                    </span>
+                                @elseif($isPastDate)
+                                    <span class="status-pill" style="background: #f3f4f6; color: #374151;">
+                                        <span class="dot" style="background: #374151;"></span> voyage manqué
+                                    </span>
+                                @else
+                                    <span class="status-pill" style="background: #FFF7ED; color: #EA580C;">
+                                        <span class="dot" style="background: #EA580C;"></span> A embarqué
+                                    </span>
+                                @endif
                             @elseif($reservation->statut === 'passe')
                                 <span class="status-pill" style="background: #f3f4f6; color: #374151;">
                                     <span class="dot" style="background: #374151;"></span> Passé
@@ -241,6 +255,11 @@
                                 <span class="status-pill sp-success">{{ $reservation->statut }}</span>
                             @endif
                         </td>
+                        <td class="text-center">
+                            <button onclick="showDetails({{ $reservation->id }})" class="btn-icon" style="width: 38px; height: 38px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: #FFF7ED; color: #f97316; border: 1px solid #FFEDD5; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#f97316'; this.style.color='white';" onmouseout="this.style.background='#FFF7ED'; this.style.color='#f97316';">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
                     </tr>
                     @empty
                     <tr>
@@ -252,8 +271,13 @@
                 </tbody>
             </table>
         </div>
+        <div class="mt-4">
+            {{ $reservations->links('pagination::bootstrap-4') }}
+        </div>
     </div>
 </div>
+
+@include('gare-espace.reservation._modal_details')
 
 {{-- Flatpickr Styles & Scripts --}}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -263,7 +287,7 @@
 <script>
 let fp;
 document.addEventListener('DOMContentLoaded', function() {
-    const availableDates = @json($reservations->pluck('date_voyage')->map(fn($d) => \Carbon\Carbon::parse($d)->toDateString())->unique()->values());
+    const availableDates = @json(isset($allDates) ? $allDates->map(fn($d) => \Carbon\Carbon::parse($d)->toDateString())->unique()->values() : $reservations->pluck('date_voyage')->map(fn($d) => \Carbon\Carbon::parse($d)->toDateString())->unique()->values());
     const monthYear = "{{ \Carbon\Carbon::parse($date)->format('Y-m') }}";
 
     if (document.getElementById('dateFilter')) {

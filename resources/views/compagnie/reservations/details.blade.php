@@ -89,7 +89,7 @@
                     <div class="filter-option-group">
                         <span class="option-label">Statut :</span>
                         <div class="pills-container">
-                            @foreach(['all' => 'Tous', 'confirmee' => 'Réserver', 'en_attente' => 'Attente', 'terminee' => 'Embarqué', 'annulee' => 'Annulée'] as $val => $label)
+                            @foreach(['all' => 'Tous', 'confirmee' => 'Réservée', 'en_attente' => 'Attente', 'terminee' => 'Embarqué', 'annulee' => 'Annulée'] as $val => $label)
                                 <a href="{{ request()->fullUrlWithQuery(['statut' => $val]) }}" 
                                    class="filter-pill {{ (request('statut', 'all') == $val) ? 'active-orange' : '' }}">
                                     {{ $label }}
@@ -127,6 +127,7 @@
                         <th class="text-center">Place</th>
                         <th class="text-right">Montant</th>
                         <th class="text-center">Statut</th>
+                        <th class="text-center">Détails</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -189,22 +190,40 @@
                         </td>
                         <td class="text-center">
                             @php
-                                $statusMap = [
-                                    'confirmee' => ['class' => 'sp-success', 'label' => 'Réserver'],
-                                    'en_attente' => ['class' => 'sp-gray', 'label' => 'Attente'],
-                                    'terminee' => ['class' => 'sp-orange', 'label' => 'Embarqué'],
-                                    'annulee' => ['class' => 'sp-danger', 'label' => 'Annulée'],
-                                    'passe' => ['class' => 'sp-gray', 'label' => 'Passé'],
-                                    'expiree' => ['class' => 'sp-gray', 'label' => 'Passé']
-                                ];
-                                $st = $statusMap[$reservation->statut] ?? ['class' => 'sp-gray', 'label' => $reservation->statut];
+                                $isPastDate = \Carbon\Carbon::parse($reservation->date_voyage)->format('Y-m-d') < \Carbon\Carbon::now()->format('Y-m-d');
+                                
+                                if($reservation->statut == 'confirmee' && $isPastDate) {
+                                    $st = ['class' => 'sp-gray', 'label' => 'Passé'];
+                                } elseif($reservation->statut == 'terminee') {
+                                    if(empty($reservation->voyage_id) && $isPastDate) {
+                                        $st = ['class' => 'sp-gray', 'label' => 'voyage manqué'];
+                                    } elseif(!empty($reservation->voyage_id)) {
+                                        $st = ['class' => 'sp-orange', 'label' => 'à voyagé'];
+                                    } else {
+                                        $st = ['class' => 'sp-orange', 'label' => 'A embarqué'];
+                                    }
+                                } else {
+                                    $statusMap = [
+                                        'confirmee' => ['class' => 'sp-success', 'label' => 'Réservée'],
+                                        'en_attente' => ['class' => 'sp-gray', 'label' => 'Attente'],
+                                        'annulee' => ['class' => 'sp-danger', 'label' => 'Annulée'],
+                                        'passe' => ['class' => 'sp-gray', 'label' => 'Passé'],
+                                        'expiree' => ['class' => 'sp-gray', 'label' => 'Passé']
+                                    ];
+                                    $st = $statusMap[$reservation->statut] ?? ['class' => 'sp-gray', 'label' => $reservation->statut];
+                                }
                             @endphp
                             <span class="status-pill {{ $st['class'] }}"><span class="dot"></span> {{ $st['label'] }}</span>
+                        </td>
+                        <td class="text-center">
+                            <button onclick="showDetails({{ $reservation->id }})" class="btn-icon" style="width: 38px; height: 38px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: #FFF7ED; color: #f97316; border: 1px solid #FFEDD5; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#f97316'; this.style.color='white';" onmouseout="this.style.background='#FFF7ED'; this.style.color='#f97316';">
+                                <i class="fas fa-eye"></i>
+                            </button>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6">
+                        <td colspan="7">
                             <div class="table-empty">
                                 <i class="fas fa-filter table-empty-icon"></i>
                                 <p>Aucune réservation pour ces filtres</p>
@@ -226,6 +245,8 @@
         </div>
     </div>
 </div>
+
+@include('gare-espace.reservation._modal_details')
 
 <style>
     /* Headers & Actions */

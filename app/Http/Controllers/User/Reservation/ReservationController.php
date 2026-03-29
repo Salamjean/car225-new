@@ -2513,6 +2513,113 @@ public function apiRouteDates(Request $request)
     }
 
     /**
+     * Show dedicated modification page
+     */
+    public function showModificationPage(Reservation $reservation)
+    {
+        if ($reservation->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $service = new ReservationService();
+        $refundData = $service->calculateRefundPercentage($reservation);
+
+        if (!$refundData['can_cancel']) {
+            return redirect()->route('user.reservation.group', $reservation->payment_transaction_id)
+                ->with('error', 'Modification impossible moins de 15 minutes avant le départ.');
+        }
+
+        $isRetourLeg = Str::contains(Str::upper($reservation->reference), '-RET');
+        $pairedReservation = $service->findPairedReservation($reservation);
+
+        $mainRes  = $isRetourLeg ? ($pairedReservation ?? $reservation) : $reservation;
+        $retourRes = $isRetourLeg ? $reservation : $pairedReservation;
+
+        if ($reservation->is_aller_retour) {
+            $allerHeure = $mainRes->heure_depart ?? optional($mainRes->programme)->heure_depart ?? '00:00';
+            $allerDateTime = \Carbon\Carbon::parse(\Carbon\Carbon::parse($mainRes->date_voyage)->format('Y-m-d') . ' ' . $allerHeure);
+            if ($allerDateTime->isPast() || $mainRes->statut === 'terminee') {
+                return redirect()->route('user.reservation.group', $reservation->payment_transaction_id)
+                    ->with('error', 'Modification impossible : le voyage aller est déjà passé ou effectué.');
+            }
+        }
+
+        $totalOldPrice = (float) $mainRes->montant;
+        if ($retourRes) $totalOldPrice += (float) $retourRes->montant;
+
+        $isRoundTrip = (bool) $reservation->is_aller_retour;
+        $returnDetails = null;
+
+        if ($isRoundTrip && $retourRes) {
+            $returnDetails = [
+                'prog_id' => $retourRes->programme_id,
+                'date'    => \Carbon\Carbon::parse($retourRes->date_voyage)->format('Y-m-d'),
+                'time'    => $retourRes->heure_depart,
+                'seat'    => $retourRes->seat_number,
+            ];
+        } elseif ($isRoundTrip && $mainRes->date_retour) {
+            $returnDetails = [
+                'prog_id' => $mainRes->programme_retour_id,
+                'date'    => \Carbon\Carbon::parse($mainRes->date_retour)->format('Y-m-d'),
+                'time'    => $mainRes->programmeRetour ? $mainRes->programmeRetour->heure_depart : null,
+                'seat'    => null,
+            ];
+        }
+
+        $ticketCount   = ($pairedReservation || $isRoundTrip) ? 2 : 1;
+        $totalPenalty  = ($refundData['penalty'] ?? 0) * $ticketCount;
+        $residualValue = $refundData['percentage'] !== null
+            ? round($totalOldPrice * $refundData['percentage'] / 100)
+            : max(0, $totalOldPrice - $totalPenalty);
+
+        $today = now()->format('Y-m-d');
+        $routes = Programme::where('statut', 'actif')
+            ->where(function ($q) use ($today) {
+                $q->where('date_depart', '>=', $today)
+                  ->orWhere(function ($q2) use ($today) {
+                      $q2->where('date_depart', '<=', $today)
+                         ->where(function ($q3) use ($today) {
+                             $q3->whereNull('date_fin')->orWhere('date_fin', '>=', $today);
+                         });
+                  });
+            })
+            ->get()
+            ->map(fn($p) => [
+                'id'          => $p->id,
+                'unique_key'  => trim($p->point_depart) . '|' . trim($p->point_arrive) . '|' . $p->compagnie_id,
+                'name'        => trim($p->point_depart) . ' ➝ ' . trim($p->point_arrive),
+                'compagnie'   => $p->compagnie->name ?? '',
+                'prix'        => (int) str_replace(' ', '', $p->montant_billet ?? $p->prix ?? 0),
+                'depart'      => trim($p->point_depart),
+                'arrive'      => trim($p->point_arrive),
+                'compagnie_id'=> $p->compagnie_id,
+            ])
+            ->unique('unique_key')
+            ->values();
+
+        $currentProgramme  = $mainRes->programme;
+        $currentRouteKey   = trim($currentProgramme->point_depart) . '|' . trim($currentProgramme->point_arrive) . '|' . $currentProgramme->compagnie_id;
+
+        return view('user.reservation.modifier', [
+            'reservation'      => $mainRes,
+            'isRoundTrip'      => $isRoundTrip,
+            'returnDetails'    => $returnDetails,
+            'residualValue'    => $residualValue,
+            'totalOldPrice'    => $totalOldPrice,
+            'penaltyInfo'      => $refundData['time_remaining'],
+            'penalty'          => $totalOldPrice - $residualValue,
+            'routes'           => $routes,
+            'currentRouteKey'  => $currentRouteKey,
+            'formattedDateAller' => \Carbon\Carbon::parse($mainRes->date_voyage)->format('Y-m-d'),
+            'currentTime'      => $mainRes->heure_depart ? substr($mainRes->heure_depart, 0, 5) : null,
+            'currentSeat'      => $mainRes->seat_number,
+            'currentRetTime'   => $returnDetails && $returnDetails['time'] ? substr($returnDetails['time'], 0, 5) : null,
+            'currentRetSeat'   => $returnDetails['seat'] ?? null,
+            'userSolde'        => (float) Auth::user()->solde,
+        ]);
+    }
+
+    /**
      * Get modification data for the modal
      */
      public function getModificationData(Reservation $reservation)
