@@ -5,23 +5,28 @@
 @section('styles')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
-    /* ── override template wrapper pour full-screen ── */
-    .chauffeur-main-wrapper { padding: 0 !important; background: #0f172a !important; }
+    /* ── Cacher le sidebar sur cette page ── */
+    #chauffeurSidebar, #sidebarOverlay { display: none !important; }
+    .chauffeur-main-wrapper {
+        margin-left: 0 !important;
+        padding: 0 !important;
+        background: #0f172a !important;
+    }
 
     #driverMap {
         position: fixed;
-        inset: 64px 0 0 260px; /* sous navbar, à droite du sidebar */
+        inset: 118px 0 0 0; /* sous navbar (64px) + topbar (54px) */
         z-index: 1;
     }
     @media (max-width: 767.98px) {
-        #driverMap { inset: 56px 0 0 0; }
+        #driverMap { inset: 106px 0 0 0; }
     }
 
     /* ── Top bar ── */
     .driver-topbar {
         position: fixed;
         top: 64px;
-        left: 260px;
+        left: 0;
         right: 0;
         z-index: 10;
         background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
@@ -35,7 +40,7 @@
         backdrop-filter: blur(10px);
     }
     @media (max-width: 767.98px) {
-        .driver-topbar { left: 0; top: 56px; padding: 10px 16px; }
+        .driver-topbar { top: 56px; padding: 10px 16px; }
     }
 
     .route-pill {
@@ -78,7 +83,7 @@
         position: fixed;
         bottom: 24px;
         left: 50%;
-        transform: translateX(-50%) translateX(130px); /* +130 = moitié sidebar */
+        transform: translateX(-50%);
         z-index: 10;
         display: flex;
         gap: 12px;
@@ -86,7 +91,7 @@
         justify-content: center;
     }
     @media (max-width: 767.98px) {
-        .driver-hud { transform: translateX(-50%); bottom: 16px; padding: 0 12px; }
+        .driver-hud { bottom: 16px; padding: 0 12px; }
     }
 
     .hud-card {
@@ -119,8 +124,8 @@
     /* ── Back button ── */
     .back-btn {
         position: fixed;
-        top: 80px; /* sous topbar */
-        left: calc(260px + 16px);
+        top: 128px; /* sous navbar (64px) + topbar (~54px) + gap */
+        left: 16px;
         z-index: 10;
         background: rgba(15,23,42,0.85);
         border: 1px solid rgba(255,255,255,0.12);
@@ -178,7 +183,7 @@
 <div id="driverMap"></div>
 
 {{-- Top bar --}}
-<div class="driver-topbar" style="margin-top: 48px;">
+<div class="driver-topbar">
     <div class="route-pill">
         <div class="w-8 h-8 rounded-xl flex items-center justify-center" style="background:rgba(59,130,246,.2);">
             <i class="fas fa-bus text-blue-400 text-sm"></i>
@@ -206,7 +211,7 @@
 </div>
 
 {{-- Back button --}}
-<a href="{{ route('chauffeur.voyages.index') }}" class="back-btn" style="margin-top: 48px;">
+<a href="{{ route('chauffeur.voyages.index') }}" class="back-btn">
     <i class="fas fa-arrow-left"></i> Mes voyages
 </a>
 
@@ -259,9 +264,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const map = L.map('driverMap', { zoomControl: false }).setView([INIT_LAT, INIT_LNG], 12);
     L.control.zoom({ position: 'topright' }).addTo(map);
 
-    // Tuiles sombres (CartoDB dark)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_matter/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; CartoDB &copy; OSM',
+    // Tuiles détaillées (CartoDB Voyager — routes visibles avec labels)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
         maxZoom: 19,
         subdomains: 'abcd'
     }).addTo(map);
