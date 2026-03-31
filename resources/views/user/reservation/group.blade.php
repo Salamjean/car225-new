@@ -147,29 +147,39 @@
                         </td>
 
                         <td class="px-6 py-5 text-center">
+    @php
+        $estVoyage = ($reservation->statut == 'terminee' || $reservation->statut == 'passe') 
+                     && $reservation->voyage_id 
+                     && $reservation->voyage 
+                     && $reservation->voyage->statut == 'terminé';
+    @endphp
 
-                            @if(in_array($reservation->statut, ['confirmee', 'terminee']) && $reservation->mission && $reservation->mission->statut == 'en_cours')
-                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-purple-100 italic">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></span> En voyage
-                                </span>
-                            @elseif($reservation->statut == 'confirmee')
-                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-green-100">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Réserver
-                                </span>
-                            @elseif($reservation->statut == 'terminee')
-                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-blue-100">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Embarqué
-                                </span>
-                            @elseif($reservation->statut == 'annulee')
-                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-red-100">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Annulé
-                                </span>
-                            @else
-                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-yellow-50 text-yellow-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-yellow-100">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-yellow-500"></span> {{ ucfirst($reservation->statut) }}
-                                </span>
-                            @endif
-                        </td>
+   @if($estVoyage)
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 text-orange-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-orange-100">
+            <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span> Voyagé
+        </span>
+    @elseif(in_array($reservation->statut, ['confirmee', 'terminee']) && $reservation->mission && $reservation->mission->statut == 'en_cours')
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-purple-100 italic">
+            <span class="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></span> En voyage
+        </span>
+    @elseif($reservation->statut == 'confirmee')
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-green-100">
+            <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Réserver
+        </span>
+    @elseif($reservation->statut == 'terminee')
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-blue-100">
+            <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Embarqué
+        </span>
+    @elseif($reservation->statut == 'annulee')
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-red-100">
+            <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Annulé
+        </span>
+    @else
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-yellow-50 text-yellow-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-yellow-100">
+            <span class="w-1.5 h-1.5 rounded-full bg-yellow-500"></span> {{ $reservation->statut == 'passe' ? 'Passé' : ucfirst($reservation->statut) }}
+        </span>
+    @endif
+</td>
 
                         <td class="px-6 py-5 text-center pr-8">
                             <div class="flex items-center justify-center gap-2 opacity-60 group-hover:opacity-100 transition-opacity">

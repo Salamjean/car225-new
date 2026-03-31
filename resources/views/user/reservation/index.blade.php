@@ -21,8 +21,8 @@
     </div>
 
     <!-- Stats Grid -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-6">
-        <!-- Confirmed -->
+     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-6">
+        <!-- 1. Réservées (Confirmées) -->
         <a href="{{ route('reservation.index', ['statut' => 'confirmee']) }}" class="block bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group">
             <div class="flex items-center justify-between mb-4">
                 <div class="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center text-green-600 transition-colors group-hover:bg-green-600 group-hover:text-white">
@@ -38,29 +38,29 @@
             </div>
         </a>
 
-        <!-- Pending -->
-        <a href="{{ route('reservation.index', ['statut' => 'en_attente']) }}" class="block bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group">
-            <div class="flex items-center justify-between mb-4">
-                <div class="w-12 h-12 bg-yellow-50 rounded-2xl flex items-center justify-center text-yellow-600 transition-colors group-hover:bg-yellow-600 group-hover:text-white">
-                    <i class="fas fa-clock text-xl"></i>
-                </div>
-                <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">En attente</span>
-            </div>
-            <h3 class="text-3xl font-black text-gray-900">{{ $stats['pending'] }}</h3>
-            <div class="mt-4 pt-4 border-t border-gray-50 flex justify-end">
-                <span class="text-[9px] font-black text-yellow-600 uppercase tracking-widest flex items-center gap-1">
-                    Voir plus <i class="fas fa-arrow-right text-[7px]"></i>
-                </span>
-            </div>
-        </a>
+        <!-- 2. Voyagé (Remplace En attente) -->
+       <a href="{{ route('reservation.index', ['statut' => 'voyaged']) }}" class="block bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group">
+    <div class="flex items-center justify-between mb-4">
+        <div class="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 transition-colors group-hover:bg-orange-600 group-hover:text-white">
+            <i class="fas fa-route text-xl"></i>
+        </div>
+        <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Voyagés</span>
+    </div>
+    <h3 class="text-3xl font-black text-gray-900">{{ $stats['voyaged'] }}</h3>
+    <div class="mt-4 pt-4 border-t border-gray-50 flex justify-end">
+        <span class="text-[9px] font-black text-orange-600 uppercase tracking-widest flex items-center gap-1">
+            Voir plus <i class="fas fa-arrow-right text-[7px]"></i>
+        </span>
+    </div>
+</a>
 
-        <!-- Terminee -->
+        <!-- 3. Embarquées (Finished) -->
         <a href="{{ route('reservation.index', ['statut' => 'terminee']) }}" class="block bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group">
             <div class="flex items-center justify-between mb-4">
                 <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white">
-                    <i class="fas fa-flag-checkered text-xl"></i>
+                    <i class="fas fa-bus text-xl"></i>
                 </div>
-                <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Embarquées</span>
+                <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Embarqués</span>
             </div>
             <h3 class="text-3xl font-black text-gray-900">{{ $stats['finished'] }}</h3>
             <div class="mt-4 pt-4 border-t border-gray-50 flex justify-end">
@@ -70,7 +70,7 @@
             </div>
         </a>
 
-        <!-- Cancelled -->
+        <!-- 4. Annulées -->
         <a href="{{ route('reservation.index', ['statut' => 'annulee']) }}" class="block bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group">
             <div class="flex items-center justify-between mb-4">
                 <div class="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-600 transition-colors group-hover:bg-red-600 group-hover:text-white">
@@ -86,7 +86,7 @@
             </div>
         </a>
 
-        <!-- Passed -->
+        <!-- 5. Passées -->
         <a href="{{ route('reservation.index', ['statut' => 'passe']) }}" class="block bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group">
             <div class="flex items-center justify-between mb-4">
                 <div class="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-600 transition-colors group-hover:bg-gray-600 group-hover:text-white">
@@ -308,25 +308,35 @@
                     </td>
    
                     <td class="px-6 py-5 text-center">
-                        @if(in_array($reservation->statut, ['confirmee', 'terminee']) && $reservation->mission && $reservation->mission->statut == 'en_cours')
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-purple-100 italic">
-                                <span class="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></span> En voyage
-                            </span>
-                        @elseif($reservation->statut == 'confirmee')
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-green-100">
-                                <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Réserver
-                            </span>
-                        @elseif($reservation->statut == 'terminee')
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-blue-100">
-                                <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Embarqué
-                            </span>
-                        @else
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-red-100">
-                                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> {{ ucfirst($reservation->statut) }}
-                            </span>
-                        @endif
-                    </td>
+    @php
+        $estVoyage = ($reservation->statut == 'terminee' || $reservation->statut == 'passe') 
+                     && $reservation->voyage_id 
+                     && $reservation->voyage 
+                     && $reservation->voyage->statut == 'terminé';
+    @endphp
 
+  @if($estVoyage)
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 text-orange-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-orange-100">
+            <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span> Voyagé
+        </span>
+    @elseif(in_array($reservation->statut, ['confirmee', 'terminee']) && $reservation->mission && $reservation->mission->statut == 'en_cours')
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-purple-100 italic">
+            <span class="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></span> En voyage
+        </span>
+    @elseif($reservation->statut == 'confirmee')
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-green-100">
+            <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Réserver
+        </span>
+    @elseif($reservation->statut == 'terminee')
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-blue-100">
+            <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Embarqué
+        </span>
+    @else
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 text-[10px] font-bold rounded-lg uppercase tracking-widest border border-red-100">
+            <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> {{ $reservation->statut == 'passe' ? 'Passé' : ucfirst($reservation->statut) }}
+        </span>
+    @endif
+</td>
                     <td class="px-6 py-5 text-center pr-8 flex items-center justify-center gap-2">
                         <a href="{{ route('user.reservation.group', $reservation->payment_transaction_id) }}" 
                            class="inline-flex items-center gap-2 px-4 py-2 bg-[#e94f1b] text-white text-[10px] font-black rounded-xl uppercase tracking-widest hover:bg-[#d44518] transition-all shadow-md shadow-orange-200">

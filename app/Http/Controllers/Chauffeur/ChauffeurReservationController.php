@@ -20,10 +20,12 @@ class ChauffeurReservationController extends Controller
         $chauffeur = Auth::guard('chauffeur')->user();
 
         // Récupérer le voyage actif du chauffeur aujourd'hui
-        $voyageActif = Voyage::where('personnel_id', $chauffeur->id)
-            ->whereDate('date_voyage', Carbon::today())
-            ->with(['programme.gareDepart', 'programme.gareArrivee', 'vehicule'])
-            ->first();
+      $voyageActif = Voyage::where('personnel_id', $chauffeur->id)
+    ->whereDate('date_voyage', Carbon::today())
+    ->whereNotIn('statut', ['terminé', 'annulé']) // <-- LA CORRECTION EST ICI
+    ->with(['programme.gareDepart', 'programme.gareArrivee', 'vehicule']) // Adapte les relations selon la méthode (search, confirm, etc.)
+    ->orderBy('created_at', 'asc') // Optionnel: pour s'assurer de prendre le plus ancien non terminé si le chauffeur a 2 voyages le même jour
+    ->first();
 
         // Derniers scans effectués par le chauffeur aujourd'hui
         // On utilise embarquement_agent_id avec une valeur personnalisée préfixée pour les chauffeurs
@@ -52,11 +54,12 @@ class ChauffeurReservationController extends Controller
         $chauffeur = Auth::guard('chauffeur')->user();
 
         // Voyage actif du chauffeur aujourd'hui
-        $voyageActif = Voyage::where('personnel_id', $chauffeur->id)
-            ->whereDate('date_voyage', Carbon::today())
-            ->with(['programme', 'vehicule'])
-            ->first();
-
+      $voyageActif = Voyage::where('personnel_id', $chauffeur->id)
+    ->whereDate('date_voyage', Carbon::today())
+    ->whereNotIn('statut', ['terminé', 'annulé']) // <-- LA CORRECTION EST ICI
+    ->with(['programme.gareDepart', 'programme.gareArrivee', 'vehicule']) // Adapte les relations selon la méthode (search, confirm, etc.)
+    ->orderBy('created_at', 'asc') // Optionnel: pour s'assurer de prendre le plus ancien non terminé si le chauffeur a 2 voyages le même jour
+    ->first();
         if (!$voyageActif) {
             return response()->json([
                 'success' => false,
@@ -160,10 +163,12 @@ class ChauffeurReservationController extends Controller
 
         $chauffeur = Auth::guard('chauffeur')->user();
 
-        $voyageActif = Voyage::where('personnel_id', $chauffeur->id)
-            ->whereDate('date_voyage', Carbon::today())
-            ->with(['programme', 'vehicule'])
-            ->first();
+       $voyageActif = Voyage::where('personnel_id', $chauffeur->id)
+    ->whereDate('date_voyage', Carbon::today())
+    ->whereNotIn('statut', ['terminé', 'annulé']) // <-- LA CORRECTION EST ICI
+    ->with(['programme.gareDepart', 'programme.gareArrivee', 'vehicule']) // Adapte les relations selon la méthode (search, confirm, etc.)
+    ->orderBy('created_at', 'asc') // Optionnel: pour s'assurer de prendre le plus ancien non terminé si le chauffeur a 2 voyages le même jour
+    ->first();
 
         if (!$voyageActif || !$voyageActif->vehicule) {
             return response()->json([
@@ -207,6 +212,7 @@ class ChauffeurReservationController extends Controller
             'embarquement_vehicule_id' => $voyageActif->vehicule->id,
             'voyage_id'                => $voyageActif->id, // ATTRIDUTION DU VOYAGE_ID
             'embarquement_status'      => 'scanned',
+            'statut' => 'terminee', // <-- AJOUTE CETTE LIGNE ICI
         ];
 
         if ($targetScan === 'aller') {
@@ -225,14 +231,7 @@ class ChauffeurReservationController extends Controller
 
         $reservation->update($updateData);
 
-        // Mise à jour du statut global
-        if (!$reservation->is_aller_retour && $reservation->statut_aller === 'terminee') {
-            $reservation->update(['statut' => 'terminee']);
-        } elseif ($reservation->is_aller_retour
-            && $reservation->statut_aller === 'terminee'
-            && $reservation->statut_retour === 'terminee') {
-            $reservation->update(['statut' => 'terminee']);
-        }
+       
 
         return response()->json([
             'success' => true,

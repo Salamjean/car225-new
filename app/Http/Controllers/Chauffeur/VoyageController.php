@@ -196,9 +196,22 @@ class VoyageController extends Controller
 
         $voyage->update(['statut' => 'annulé']);
 
+        // Libérer les réservations liées : remettre voyage_id à null
+        // 1. Réservations directement liées via voyage_id
+        \App\Models\Reservation::where('voyage_id', $voyage->id)
+            ->update(['voyage_id' => null]);
+
+        // 2. Réservations liées par programme + date (n'ayant pas encore été nullifiées)
+        \App\Models\Reservation::where('programme_id', $voyage->programme_id)
+            ->whereDate('date_voyage', $voyage->date_voyage)
+            ->where('voyage_id', $voyage->id)
+            ->update(['voyage_id' => null]);
+
+        \Illuminate\Support\Facades\Log::info("Annulation voyage #{$voyage->id} (web): réservations libérées");
+
         // Envoyer le motif à la gare
         $gareId = $voyage->gare_depart_id ?? ($voyage->programme ? $voyage->programme->gare_depart_id : null);
-        
+
         if ($gareId) {
             \App\Models\GareMessage::create([
                 'gare_id' => $gareId,

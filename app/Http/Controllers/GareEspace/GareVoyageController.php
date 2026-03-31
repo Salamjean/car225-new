@@ -224,6 +224,23 @@ class GareVoyageController extends Controller
         $chauffeur->update(['statut' => 'indisponible']);
         $vehicule->update(['statut' => 'indisponible']);
 
+        // Assigner automatiquement voyage_id aux réservations existantes
+        // (passagers déjà réservés pour ce programme + date, y compris ceux d'un voyage annulé)
+        \App\Models\Reservation::where('programme_id', $programme->id)
+            ->whereDate('date_voyage', $validated['date_voyage'])
+            ->whereNull('voyage_id')
+            ->update(['voyage_id' => $voyage->id]);
+
+        // Aussi pour les retours (programme_retour_id)
+        if ($programme->programme_retour_id) {
+            \App\Models\Reservation::whereHas('programme', function ($q) use ($programme) {
+                $q->where('programme_retour_id', $programme->id);
+            })
+            ->whereDate('date_retour', $validated['date_voyage'])
+            ->whereNull('voyage_id')
+            ->update(['voyage_id' => $voyage->id]);
+        }
+
         // Send Notifications
         try {
             $chauffeur->notify(new \App\Notifications\VoyageAssignedNotification($voyage));

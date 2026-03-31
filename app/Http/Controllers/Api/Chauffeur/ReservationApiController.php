@@ -17,10 +17,11 @@ class ReservationApiController extends Controller
     {
         $chauffeur = $request->user();
 
-        $voyageActif = Voyage::where('personnel_id', $chauffeur->id)
-            ->whereDate('date_voyage', Carbon::today())
-            ->with(['programme.gareDepart', 'programme.gareArrivee', 'vehicule'])
-            ->first();
+      $voyageActif = Voyage::where('personnel_id', $chauffeur->id)
+    ->whereDate('date_voyage', Carbon::today())
+    ->whereNotIn('statut', ['terminé', 'annulé']) // <-- EMPÊCHE DE PRENDRE UN VOYAGE INACTIF
+    ->with(['programme.gareDepart', 'programme.gareArrivee', 'vehicule']) // (Garde tes relations spécifiques pour search et confirm)
+    ->first();
 
         $derniersScans = collect();
         if ($voyageActif) {
@@ -76,11 +77,11 @@ class ReservationApiController extends Controller
         $request->validate(['reference' => 'required|string']);
 
         $chauffeur = $request->user();
-
-        $voyageActif = Voyage::where('personnel_id', $chauffeur->id)
-            ->whereDate('date_voyage', Carbon::today())
-            ->with(['programme', 'vehicule'])
-            ->first();
+$voyageActif = Voyage::where('personnel_id', $chauffeur->id)
+    ->whereDate('date_voyage', Carbon::today())
+    ->whereNotIn('statut', ['terminé', 'annulé']) // <-- EMPÊCHE DE PRENDRE UN VOYAGE INACTIF
+    ->with(['programme.gareDepart', 'programme.gareArrivee', 'vehicule']) // (Garde tes relations spécifiques pour search et confirm)
+    ->first();
 
         if (!$voyageActif) {
             return response()->json([
@@ -89,7 +90,7 @@ class ReservationApiController extends Controller
             ], 403);
         }
 
-        $reservation = Reservation::with(['programme.gareDepart', 'programme.gareArrivee'])
+        $reservation = Reservation::with(['programme.gareDepart', 'programme.gareArrivee', 'user'])
             ->where('reference', $request->reference)
             ->first();
 
@@ -152,6 +153,15 @@ class ReservationApiController extends Controller
             $prog->load(['gareDepart', 'gareArrivee']);
         }
 
+        // Build full photo URL for the passenger
+        $photoPath = optional($reservation->user)->photo_profile_path;
+        $photoUrl = null;
+        if ($photoPath) {
+            $photoUrl = str_starts_with($photoPath, 'http')
+                ? $photoPath
+                : url('storage/' . ltrim($photoPath, '/'));
+        }
+
         return response()->json([
             'success' => true,
             'reservation' => [
@@ -159,6 +169,8 @@ class ReservationApiController extends Controller
                 'reference' => $reservation->reference,
                 'passager_nom_complet' => $reservation->passager_prenom . ' ' . $reservation->passager_nom,
                 'passager_telephone' => $reservation->passager_telephone,
+                'passager_email' => $reservation->passager_email,
+                'passager_photo' => $photoUrl,
                 'seat_number' => $reservation->seat_number,
                 'trajet' => optional($prog)->point_depart . ' → ' . optional($prog)->point_arrive,
                 'heure_depart' => optional($prog)->heure_depart,
@@ -182,11 +194,11 @@ class ReservationApiController extends Controller
 
         $chauffeur = $request->user();
 
-        $voyageActif = Voyage::where('personnel_id', $chauffeur->id)
-            ->whereDate('date_voyage', Carbon::today())
-            ->with(['programme', 'vehicule'])
-            ->first();
-
+      $voyageActif = Voyage::where('personnel_id', $chauffeur->id)
+    ->whereDate('date_voyage', Carbon::today())
+    ->whereNotIn('statut', ['terminé', 'annulé']) // <-- EMPÊCHE DE PRENDRE UN VOYAGE INACTIF
+    ->with(['programme.gareDepart', 'programme.gareArrivee', 'vehicule']) // (Garde tes relations spécifiques pour search et confirm)
+    ->first();
         if (!$voyageActif || !$voyageActif->vehicule) {
             return response()->json([
                 'success' => false,
@@ -229,6 +241,7 @@ class ReservationApiController extends Controller
             'embarquement_vehicule_id' => $voyageActif->vehicule->id,
             'voyage_id' => $voyageActif->id, // On lie directement au voyage actif
             'embarquement_status' => 'scanned',
+            'statut' => 'terminee', // <-- AJOUTE CETTE LIGNE ICI
         ];
 
         if ($targetScan === 'aller') {
@@ -247,12 +260,6 @@ class ReservationApiController extends Controller
 
         $reservation->update($updateData);
 
-        // Mise à jour du statut global
-        if (!$reservation->is_aller_retour && $reservation->statut_aller === 'terminee') {
-            $reservation->update(['statut' => 'terminee']);
-        } elseif ($reservation->is_aller_retour && $reservation->statut_aller === 'terminee' && $reservation->statut_retour === 'terminee') {
-            $reservation->update(['statut' => 'terminee']);
-        }
 
         return response()->json([
             'success' => true,

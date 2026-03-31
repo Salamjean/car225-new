@@ -57,6 +57,11 @@ class Voyage extends Model
         return $this->hasOne(DriverLocation::class)->latestOfMany();
     }
 
+    public function reservations()
+    {
+        return $this->hasMany(Reservation::class, 'voyage_id');
+    }
+
     /**
      * Nombre de passagers scannés pour ce voyage spécifique
      */

@@ -517,14 +517,20 @@
                                 @endphp
                                 @if($reservation->statut == 'confirmee' && $isPastDate)
                                     <span class="status-pill sp-gray"><span class="dot"></span> Passé</span>
-                                @elseif($reservation->statut == 'terminee')
-                                    @if(!empty($reservation->voyage_id))
-                                        <span class="status-pill sp-success"><span class="dot"></span> à voyagé</span>
-                                    @elseif($isPastDate)
-                                        <span class="status-pill sp-gray"><span class="dot"></span> voyage manqué</span>
-                                    @else
-                                        <span class="status-pill sp-orange"><span class="dot"></span> A embarqué</span>
-                                    @endif
+                              @elseif($reservation->statut == 'terminee')
+    @if(!empty($reservation->voyage_id) && $reservation->voyage_id != 0)
+        {{-- On vérifie si la relation voyage existe, si son statut est terminé, ET si on est dans l'onglet 'details' --}}
+        @if($reservation->voyage && in_array(strtolower($reservation->voyage->statut), ['terminé', 'termine']) && $tab === 'details')
+            <span class="status-pill sp-success"><span class="dot"></span> à voyagé</span>
+        @else
+            {{-- Dans tous les autres cas (en cours, ou dans l'onglet 'terminees'), on affiche A embarqué --}}
+            <span class="status-pill sp-orange"><span class="dot"></span> A embarqué</span>
+        @endif
+    @elseif($isPastDate)
+        <span class="status-pill sp-gray"><span class="dot"></span> voyage manqué</span>
+    @else
+        <span class="status-pill sp-orange"><span class="dot"></span> A embarqué</span>
+    @endif
                                 @elseif($reservation->statut == 'confirmee')
                                     <span class="status-pill sp-success"><span class="dot"></span> Réservée</span>
                                 @elseif($reservation->statut == 'en_attente')

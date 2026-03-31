@@ -63,11 +63,30 @@ class ReservationController extends Controller
         }
 
         // Default to 'confirmee' if no status filter is provided
-        if (!$request->filled('statut')) {
-            $query->where('statut', 'confirmee');
-        } else {
-            $query->where('statut', $request->statut);
-        }
+      if ($request->filled('statut')) {
+    if ($request->statut === 'voyaged') {
+        // Clic sur la carte "Voyagés" : On cherche les bus arrivés (statut voyage = terminé)
+        $query->whereIn('statut', ['terminee', 'passe'])
+              ->whereHas('voyage', function($q) {
+                  $q->where('statut', 'terminé');
+              });
+    } elseif ($request->statut === 'terminee') {
+        // Clic sur la carte "Embarqués" : On cherche ceux qui ont embarqué mais dont le bus n'est PAS encore arrivé
+        $query->where('statut', 'terminee')
+              ->where(function($q) {
+                  $q->whereDoesntHave('voyage')
+                    ->orWhereHas('voyage', function($v) {
+                        $v->where('statut', '!=', 'terminé');
+                    });
+              });
+    } else {
+        // Autres filtres classiques (annulées, passées, etc.)
+        $query->where('statut', $request->statut);
+    }
+} else {
+    // Par défaut : afficher les réservations confirmées
+    $query->where('statut', 'confirmee');
+}
 
         if ($request->filled('date_voyage')) {
             $query->whereDate('date_voyage', $request->date_voyage);
@@ -95,10 +114,10 @@ class ReservationController extends Controller
 
         // 4. Récupérer les modèles complets pour les lignes représentatives
         $representativeIds = $paginatedGroups->pluck('representative_id');
-        $fullReservations = Reservation::with(['programme', 'programme.compagnie', 'programme.gareDepart', 'programme.gareArrivee', 'programme.voyages'])
-            ->whereIn('id', $representativeIds)
-            ->get()
-            ->keyBy('id');
+      $fullReservations = Reservation::with(['programme', 'programme.compagnie', 'programme.gareDepart', 'programme.gareArrivee', 'voyage'])
+    ->whereIn('id', $representativeIds)
+    ->get()
+    ->keyBy('id');
 
         // 5. Fusionner les données agrégées dans les modèles
         $reservationsCollection = $paginatedGroups->getCollection()->map(function($group) use ($fullReservations) {
@@ -117,13 +136,20 @@ class ReservationController extends Controller
 
         // Statistiques (globales pour l'utilisateur)
         $stats = [
-            'confirmed' => Reservation::query()->where('user_id', $user->id)->where('statut', 'confirmee')->count(),
-            'pending' => Reservation::query()->where('user_id', $user->id)->where('statut', 'en_attente')->count(),
-            'cancelled' => Reservation::query()->where('user_id', $user->id)->where('statut', 'annulee')->count(),
-            'finished' => Reservation::query()->where('user_id', $user->id)->where('statut', 'terminee')->count(),
-            'passed' => Reservation::query()->where('user_id', $user->id)->where('statut', 'passe')->count(),
-        ];
-
+    'confirmed' => Reservation::where('user_id', $user->id)->where('statut', 'confirmee')->count(),
+    'pending'   => Reservation::where('user_id', $user->id)->where('statut', 'en_attente')->count(),
+    'voyaged'   => Reservation::where('user_id', $user->id)
+                    ->whereIn('statut', ['terminee', 'passe'])
+                    ->whereHas('voyage', function($q) { $q->where('statut', 'terminé'); })->count(),
+    'finished'  => Reservation::where('user_id', $user->id)
+                    ->where('statut', 'terminee')
+                    ->where(function($q) {
+                        $q->whereDoesntHave('voyage')
+                          ->orWhereHas('voyage', function($v) { $v->where('statut', '!=', 'terminé'); });
+                    })->count(), // Embarqués réels
+    'cancelled' => Reservation::where('user_id', $user->id)->where('statut', 'annulee')->count(),
+    'passed'    => Reservation::where('user_id', $user->id)->where('statut', 'passe')->count(),
+];
         return view('user.reservation.index', compact('reservations', 'stats'));
     }
 

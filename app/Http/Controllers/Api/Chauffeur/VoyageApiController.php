@@ -150,7 +150,7 @@ class VoyageApiController extends Controller
     public function annuler(Request $request, Voyage $voyage)
     {
         $request->validate([
-            'reason' => 'required|string|min:5|max:1000',
+            'reason' => 'nullable|string|max:1000',
         ]);
 
         $chauffeur = $request->user();
@@ -165,9 +165,28 @@ class VoyageApiController extends Controller
 
         $voyage->update(['statut' => 'annulé']);
 
-        // Envoyer le motif à la gare (comme sur le web)
+        // Libérer les réservations liées : remettre voyage_id à null
+        // 1. Réservations directement liées via voyage_id
+        $countDirect = \App\Models\Reservation::where('voyage_id', $voyage->id)->count();
+        \App\Models\Reservation::where('voyage_id', $voyage->id)
+            ->update(['voyage_id' => null]);
+
+        // 2. Réservations liées par programme + date (n'ayant pas encore été nullifiées)
+        $countProgramme = \App\Models\Reservation::where('programme_id', $voyage->programme_id)
+            ->whereDate('date_voyage', $voyage->date_voyage)
+            ->where('voyage_id', $voyage->id)
+            ->count();
+        \App\Models\Reservation::where('programme_id', $voyage->programme_id)
+            ->whereDate('date_voyage', $voyage->date_voyage)
+            ->where('voyage_id', $voyage->id)
+            ->update(['voyage_id' => null]);
+
+        \Illuminate\Support\Facades\Log::info("Annulation voyage #{$voyage->id}: {$countDirect} réservations directes, {$countProgramme} par programme libérées");
+
+        // Envoyer le motif à la gare
         $gareId = $voyage->gare_depart_id ?? ($voyage->programme ? $voyage->programme->gare_depart_id : null);
-        
+        $motif = $request->reason ?? 'Aucun motif fourni';
+
         if ($gareId) {
             \App\Models\GareMessage::create([
                 'gare_id' => $gareId,
@@ -176,7 +195,7 @@ class VoyageApiController extends Controller
                 'recipient_type' => 'App\Models\Gare',
                 'recipient_id' => $gareId,
                 'subject' => 'Annulation de voyage #' . $voyage->id,
-                'message' => "Le chauffeur {$chauffeur->prenom} {$chauffeur->name} a annulé le voyage #{$voyage->id} via Mobile. \n\nMotif : " . $request->reason,
+                'message' => "Le chauffeur {$chauffeur->prenom} {$chauffeur->name} a annulé le voyage #{$voyage->id} via Mobile. \n\nMotif : " . $motif,
                 'is_read' => false,
             ]);
         }

@@ -267,11 +267,12 @@ class ReservationApiController extends Controller
             }
         }
 
-        $updateData = [
+     $updateData = [
             'embarquement_scanned_at' => now(),
             'embarquement_agent_id' => $agent->id,
             'embarquement_vehicule_id' => $vehicule->id,
             'embarquement_status' => 'scanned',
+            'statut' => 'terminee', // <-- AJOUTE CETTE LIGNE
         ];
 
         $message = "";
@@ -298,12 +299,9 @@ class ReservationApiController extends Controller
 
         $reservation->update($updateData);
 
-        // Mise à jour du statut global
-        if (!$reservation->is_aller_retour && $reservation->statut_aller === 'terminee') {
-            $reservation->update(['statut' => 'terminee']);
-        } elseif ($reservation->is_aller_retour && $reservation->statut_aller === 'terminee' && $reservation->statut_retour === 'terminee') {
-            $reservation->update(['statut' => 'terminee']);
-        }
+        // ❌ SUPPRIME COMPLETEMENT CE BLOC :
+        // if (!$reservation->is_aller_retour && $reservation->statut_aller === 'terminee') { ... }
+        // elseif ($reservation->is_aller_retour && ...) { ... }
 
         return response()->json([
             'success' => true,
@@ -311,7 +309,7 @@ class ReservationApiController extends Controller
             'reservation' => [
                 'id' => $reservation->id,
                 'reference' => $reservation->reference,
-                'statut' => $reservation->statut,
+                'statut' => $reservation->statut, // Affichera désormais bien "terminee"
                 'statut_aller' => $reservation->statut_aller,
                 'statut_retour' => $reservation->statut_retour,
                 'vehicule_id' => $reservation->embarquement_vehicule_id,

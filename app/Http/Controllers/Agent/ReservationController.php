@@ -394,11 +394,12 @@ class ReservationController extends Controller
             }
         }
 
-        $updateData = [
+       $updateData = [
             'embarquement_scanned_at' => now(),
             'embarquement_agent_id' => $agent->id,
             'embarquement_vehicule_id' => $vehicule->id,
-            'embarquement_status' => 'scanned'
+            'embarquement_status' => 'scanned',
+            'statut' => 'terminee' // <-- AJOUTE CETTE LIGNE
         ];
 
         $message = "";
@@ -426,6 +427,7 @@ class ReservationController extends Controller
             ->whereDate('date_voyage', $today)
             ->first();
 
+        // JE NE TOUCHE PAS A TA LOGIQUE VOYAGE_ID
         if ($voyage) {
             $updateData['voyage_id'] = $voyage->id;
         }
@@ -433,12 +435,9 @@ class ReservationController extends Controller
         // Mise à jour
         $reservation->update($updateData);
 
-        // Mise à jour du statut global
-        if (!$reservation->is_aller_retour && $reservation->statut_aller === 'terminee') {
-            $reservation->update(['statut' => 'terminee']);
-        } elseif ($reservation->is_aller_retour && $reservation->statut_aller === 'terminee' && $reservation->statut_retour === 'terminee') {
-            $reservation->update(['statut' => 'terminee']);
-        }
+        // ❌ SUPPRIME COMPLETEMENT CE BLOC :
+        // if (!$reservation->is_aller_retour && $reservation->statut_aller === 'terminee') { ... }
+        // elseif ($reservation->is_aller_retour && ...) { ... }
 
         return response()->json([
             'success' => true,
