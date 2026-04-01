@@ -340,7 +340,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 // Trait principal vert (couleur compagnie)
                 const polyline = L.geoJSON(geojson, {
-                    style: { color: '#10b981', weight: 5, opacity: 1, lineCap: 'round', lineJoin: 'round' }
+                    style: { color: '#f97316', weight: 5, opacity: 1, lineCap: 'round', lineJoin: 'round' }
                 }).addTo(map);
 
                 routeShadows[voyageId] = shadow;

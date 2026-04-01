@@ -324,13 +324,13 @@ window.addNewRowGare = function () {
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                 <div>
                     <label style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:3px;">Départ</label>
-                    <input type="time" id="${depId}" name="aller_horaires[${index}][heure_depart]" required
+                    <input type="time" id="${depId}" name="new_horaires[${index}][heure_depart]" required
                         style="width:100%;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;font-weight:700;font-size:13px;"
                         onchange="autoCalcGare('${depId}','${arrId}')">
                 </div>
                 <div>
                     <label style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:3px;">Arrivée</label>
-                    <input type="time" id="${arrId}" name="aller_horaires[${index}][heure_arrive]" required readonly
+                    <input type="time" id="${arrId}" name="new_horaires[${index}][heure_arrive]" required readonly
                         style="width:100%;padding:6px 10px;border:1px dashed #e2e8f0;border-radius:6px;font-weight:700;font-size:13px;background:#f1f5f9;cursor:not-allowed;">
                 </div>
             </div>
