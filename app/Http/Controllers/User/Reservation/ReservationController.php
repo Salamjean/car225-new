@@ -1153,11 +1153,17 @@ $dateAller = $request->date_voyage;
                 if ($isAllerRetour && isset($dateRetour)) {
                     $seatsRetour = $request->seats_retour ?? [];
                     
-                    $returnProgram = Programme::where('compagnie_id', $programme->compagnie_id)
+                    $returnProgramWalletQuery = Programme::where('compagnie_id', $programme->compagnie_id)
                         ->where('point_depart', $programme->point_arrive)
                         ->where('point_arrive', $programme->point_depart)
-                        ->where('statut', 'actif')
-                        ->first();
+                        ->where('statut', 'actif');
+
+                    // ✅ CORRECTION : Filtrer par heure de retour choisie (comme CinetPay)
+                    if ($request->filled('heure_depart_retour')) {
+                        $returnProgramWalletQuery->where('heure_depart', $request->heure_depart_retour);
+                    }
+
+                    $returnProgram = $returnProgramWalletQuery->first();
 
                     if ($returnProgram) {
                         // 1. Cas sélection manuelle (Si l'utilisateur a choisi sa place)
@@ -1305,6 +1311,7 @@ $dateAller = $request->date_voyage;
                     'statut' => $reservationStatus,
                     'reference' => $reference,
                     'date_voyage' => $dateVoyage,
+                    'heure_depart' => $request->input('heure_depart', $programme->heure_depart), // ✅ CORRECTION : heure_depart ajoutée
                     'heure_arrive' => $programme->heure_arrive,
                     'gare_depart_id' => $request->gare_depart_id,
                     'gare_arrivee_id' => $request->gare_arrivee_id,

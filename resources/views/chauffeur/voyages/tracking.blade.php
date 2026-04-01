@@ -321,32 +321,79 @@ document.addEventListener('DOMContentLoaded', function () {
             .bindPopup(`<div style="font-weight:700;font-size:.85rem;color:#dc2626;"><i class="fas fa-flag-checkered mr-1"></i>Arrivée</div><div style="font-size:.78rem;color:#374151;">${ARRIVEE.nom}</div>`);
     }
 
-    /* ── Tracé OSRM (route bleue) ── */
-    let routeDrawn = false;
-    function drawRoute() {
-        if (routeDrawn || !DEPART.lat || !DEPART.lng || !ARRIVEE.lat || !ARRIVEE.lng) return;
-        const url = `https://router.project-osrm.org/route/v1/driving/${DEPART.lng},${DEPART.lat};${ARRIVEE.lng},${ARRIVEE.lat}?overview=full&geometries=geojson`;
+    /* ── Tracé OSRM dynamique (recalcul depuis position chauffeur) ── */
+    let currentRouteLayers = []; // Stocke les couches du tracé actuel pour les supprimer
+    let currentRouteCoords  = []; // Coordonnées [lat,lng] du tracé actuel pour le calcul de déviation
+    let isRerouting         = false; // Verrou pour éviter les requêtes simultanées
+    const REROUTE_THRESHOLD_M = 100; // Recalcul si le chauffeur s'éloigne de plus de 100m du tracé
+
+    /**
+     * Calcule la distance en mètres d'un point [lat,lng] au segment le plus proche du tracé.
+     */
+    function distanceToRoute(lat, lng) {
+        if (!currentRouteCoords.length) return Infinity;
+        const p = L.latLng(lat, lng);
+        let minDist = Infinity;
+        for (let i = 0; i < currentRouteCoords.length - 1; i++) {
+            const a = L.latLng(currentRouteCoords[i]);
+            const b = L.latLng(currentRouteCoords[i + 1]);
+            // Distance du point P au segment AB
+            const dist = p.distanceTo(a);
+            if (dist < minDist) minDist = dist;
+        }
+        return minDist;
+    }
+
+    /**
+     * Dessine ou redessine l'itinéraire depuis (fromLat, fromLng) jusqu'à la gare d'arrivée.
+     * @param {number} fromLat - Latitude actuelle du chauffeur
+     * @param {number} fromLng - Longitude actuelle du chauffeur
+     * @param {boolean} fitView - Si true, zoome sur le tracé entier
+     */
+    function drawRoute(fromLat, fromLng, fitView = false) {
+        if (isRerouting || !ARRIVEE.lat || !ARRIVEE.lng) return;
+        isRerouting = true;
+
+        const url = `https://router.project-osrm.org/route/v1/driving/${fromLng},${fromLat};${ARRIVEE.lng},${ARRIVEE.lat}?overview=full&geometries=geojson`;
+
         fetch(url)
             .then(r => r.json())
             .then(data => {
                 if (!data.routes?.length) return;
                 const geojson = data.routes[0].geometry;
-                // Ombre
-                L.geoJSON(geojson, {
-                    style: { color: 'rgba(0,0,0,0.45)', weight: 10, opacity: 1, lineCap: 'round', lineJoin: 'round' }
+
+                // 1. Supprimer l'ancien tracé
+                currentRouteLayers.forEach(layer => map.removeLayer(layer));
+                currentRouteLayers = [];
+
+                // 2. Dessiner le nouveau tracé
+                const shadow = L.geoJSON(geojson, {
+                    style: { color: 'rgba(0,0,0,0.3)', weight: 10, opacity: 1, lineCap: 'round', lineJoin: 'round' }
                 }).addTo(map);
-                // Tracé bleu chauffeur
-                L.geoJSON(geojson, {
-                    style: { color: '#3b82f6', weight: 5, opacity: 0.9, lineCap: 'round', lineJoin: 'round' }
+                const line = L.geoJSON(geojson, {
+                    style: { color: '#3b82f6', weight: 5, opacity: 0.95, lineCap: 'round', lineJoin: 'round' }
                 }).addTo(map);
-                // Zoom sur le tracé
-                const coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
-                map.fitBounds(L.latLngBounds(coords), { padding: [60, 60], maxZoom: 13 });
-                routeDrawn = true;
+
+                currentRouteLayers.push(shadow, line);
+
+                // 3. Mettre à jour les coordonnées du tracé pour la détection de déviation
+                currentRouteCoords = geojson.coordinates.map(c => [c[1], c[0]]);
+
+                // 4. Si premier tracé, zoomer pour tout voir
+                if (fitView && currentRouteCoords.length) {
+                    map.fitBounds(L.latLngBounds(currentRouteCoords), { padding: [60, 60], maxZoom: 13 });
+                }
             })
-            .catch(() => {});
+            .catch(() => {})
+            .finally(() => { isRerouting = false; });
     }
-    drawRoute();
+
+    // Tracé initial depuis la gare de départ (ou position initiale si pas de coords gare)
+    if (DEPART.lat && DEPART.lng) {
+        drawRoute(DEPART.lat, DEPART.lng, true);
+    } else {
+        drawRoute(INIT_LAT, INIT_LNG, true);
+    }
 
     /* ── GPS & envoi position ── */
     let gpsUpdateCount = 0;
@@ -390,7 +437,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Mettre à jour marker
                 driverMarker.setLatLng([lat, lng]);
 
-                // Centrer carte doucement
+                // Centrer carte doucement sur le chauffeur
                 map.panTo([lat, lng], { animate: true, duration: 1 });
 
                 // HUD vitesse
@@ -408,6 +455,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 const popupSpeed = document.getElementById('popup-speed');
                 if (popupSpeed) {
                     popupSpeed.innerHTML = `<i class="fas fa-tachometer-alt mr-1" style="color:#3b82f6;"></i>${kmh !== null ? kmh + ' km/h' : 'GPS actif'}`;
+                }
+
+                // ── Détection de déviation et recalcul d'itinéraire ──
+                // Si le chauffeur s'éloigne de plus de REROUTE_THRESHOLD_M mètres du tracé,
+                // on recalcule l'itinéraire depuis sa position actuelle.
+                const deviation = distanceToRoute(lat, lng);
+                if (deviation > REROUTE_THRESHOLD_M) {
+                    drawRoute(lat, lng, false);
                 }
 
                 // Envoyer au serveur max toutes les 5s

@@ -209,6 +209,60 @@
         text-align: center;
         color: #f97316;
     }
+
+    /* Légende carte */
+    .map-legend {
+        background: white;
+        border-radius: 12px;
+        padding: 10px 14px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        font-family: 'Inter', sans-serif;
+        font-size: 0.78rem;
+        min-width: 180px;
+    }
+    .map-legend .legend-title {
+        font-weight: 800;
+        font-size: 0.75rem;
+        color: #374151;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .legend-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin: 5px 0;
+    }
+    .legend-line-wrap { display: flex; align-items: center; gap: 7px; }
+    .legend-line {
+        width: 32px;
+        height: 4px;
+        border-radius: 2px;
+        flex-shrink: 0;
+    }
+    .legend-line.dashed {
+        background: repeating-linear-gradient(90deg, #7c3aed 0, #7c3aed 7px, transparent 7px, transparent 13px);
+        height: 3px;
+    }
+    .legend-label { color: #374151; font-size: 0.75rem; font-weight: 600; }
+    .legend-toggle {
+        background: #f97316;
+        border: none;
+        border-radius: 20px;
+        color: white;
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 2px 9px;
+        cursor: pointer;
+        transition: background .2s;
+        flex-shrink: 0;
+    }
+    .legend-toggle.off { background: #d1d5db; color: #6b7280; }
 </style>
 @endsection
 
@@ -302,9 +356,11 @@ document.addEventListener('DOMContentLoaded', function () {
     }).addTo(map);
 
     const markers = {};         // bus markers, updated every 3s
-    const routeLayers = {};     // OSRM route polylines (main + shadow), drawn once per voyage
+    const routeLayers = {};     // OSRM gare→gare (statiques, dessinés une seule fois)
     const routeShadows = {};    // shadow layers for cleanup
     const gareMarkers = {};     // departure/arrival gare pins, drawn once per voyage
+    const driverRoutes = {};    // tracés dynamiques position chauffeur→arrivée (tiretrés)
+    const driverRoutePending = new Set(); // verrou par voyage
     let isFirstLoad = true;
 
     function createBusIcon(isOnline = true) {
@@ -348,7 +404,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     style: { color: 'rgba(0,0,0,0.18)', weight: 9, opacity: 1, lineCap: 'round', lineJoin: 'round' }
                 }).addTo(map);
 
-                // Trait principal orange style Google Maps
+                // Tracé 1 ─ Orange plein : itinéraire officiel gare → gare
                 const polyline = L.geoJSON(geojson, {
                     style: { color: '#f97316', weight: 5, opacity: 1, lineCap: 'round', lineJoin: 'round' }
                 }).addTo(map);
@@ -368,6 +424,49 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             })
             .catch(() => {}); // silencieux si OSRM indisponible
+    }
+
+    /**
+     * Tracé 2 ─ Tiretré violet : chemin réel du chauffeur depuis sa position jusqu'à l'arrivée.
+     * Redessiné à chaque fetch avec la position GPS courante du chauffeur.
+     */
+    function drawDriverRoute(voyageId, driverLat, driverLng, arriveeLat, arriveeLng) {
+        if (driverRoutePending.has(voyageId)) return;
+        driverRoutePending.add(voyageId);
+
+        const url = `https://router.project-osrm.org/route/v1/driving/${driverLng},${driverLat};${arriveeLng},${arriveeLat}?overview=full&geometries=geojson`;
+        fetch(url)
+            .then(r => r.json())
+            .then(data => {
+                if (!data.routes || !data.routes.length) return;
+                const geojson = data.routes[0].geometry;
+
+                // Supprimer l'ancien tracé chauffeur
+                if (driverRoutes[voyageId]) {
+                    driverRoutes[voyageId].forEach(l => map.removeLayer(l));
+                }
+
+                // Ombre discrète violet
+                const dShadow = L.geoJSON(geojson, {
+                    style: { color: 'rgba(124,58,237,0.12)', weight: 8, opacity: 1 }
+                }).addTo(map);
+
+                // Tiretré violet ─ chemin réel du chauffeur
+                const dLine = L.geoJSON(geojson, {
+                    style: {
+                        color: '#7c3aed',
+                        weight: 3,
+                        opacity: 0.85,
+                        dashArray: '10, 8',   // “entrecoupé”
+                        lineCap: 'round',
+                        lineJoin: 'round'
+                    }
+                }).addTo(map);
+
+                driverRoutes[voyageId] = [dShadow, dLine];
+            })
+            .catch(() => {})
+            .finally(() => driverRoutePending.delete(voyageId));
     }
 
     function fetchLocations() {
@@ -406,7 +505,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         markers[loc.voyage_id] = marker;
                     }
 
-                    // Draw route once (only if not already drawn and coordinates available)
+                    // Tracé 1 gare→gare (dessiné une seule fois)
                     if (!routeLayers[loc.voyage_id]
                         && loc.gare_depart_lat && loc.gare_depart_lng
                         && loc.gare_arrivee_lat && loc.gare_arrivee_lng) {
@@ -415,6 +514,15 @@ document.addEventListener('DOMContentLoaded', function () {
                             loc.gare_depart_lat, loc.gare_depart_lng,
                             loc.gare_arrivee_lat, loc.gare_arrivee_lng,
                             loc.depart, loc.arrivee
+                        );
+                    }
+
+                    // Tracé 2 : chemin réel du chauffeur → arrivée (tiretré violet, mis à jour à chaque fetch)
+                    if (loc.gare_arrivee_lat && loc.gare_arrivee_lng) {
+                        drawDriverRoute(
+                            loc.voyage_id,
+                            loc.latitude, loc.longitude,
+                            loc.gare_arrivee_lat, loc.gare_arrivee_lng
                         );
                     }
 
@@ -442,6 +550,10 @@ document.addEventListener('DOMContentLoaded', function () {
                             gareMarkers[id].forEach(m => map.removeLayer(m));
                             delete gareMarkers[id];
                         }
+                        if (driverRoutes[id]) {
+                            driverRoutes[id].forEach(l => map.removeLayer(l));
+                            delete driverRoutes[id];
+                        }
                     }
                 });
 
@@ -465,6 +577,51 @@ document.addEventListener('DOMContentLoaded', function () {
             markers[voyageId].openPopup();
         }
     };
+
+    // ── Légende + toggles ─────────────────────────────────────────────
+    let showOfficialRoute = true;
+    let showDriverRoute   = true;
+
+    const legendControl = L.control({ position: 'bottomleft' });
+    legendControl.onAdd = function () {
+        const div = L.DomUtil.create('div', 'map-legend');
+        L.DomEvent.disableClickPropagation(div);
+        div.innerHTML = `
+            <div class="legend-title"><i class="fas fa-layer-group"></i> Légende</div>
+            <div class="legend-row">
+                <div class="legend-line-wrap">
+                    <div class="legend-line" style="background:#f97316;"></div>
+                    <span class="legend-label">Trajet officiel</span>
+                </div>
+                <button class="legend-toggle" id="toggle-official">Cachér</button>
+            </div>
+            <div class="legend-row">
+                <div class="legend-line-wrap">
+                    <div class="legend-line dashed"></div>
+                    <span class="legend-label">Chemin chauffeur</span>
+                </div>
+                <button class="legend-toggle" id="toggle-driver">Cachér</button>
+            </div>
+        `;
+        return div;
+    };
+    legendControl.addTo(map);
+
+    setTimeout(() => {
+        document.getElementById('toggle-official')?.addEventListener('click', function() {
+            showOfficialRoute = !showOfficialRoute;
+            this.textContent = showOfficialRoute ? 'Cachér' : 'Afficher';
+            this.classList.toggle('off', !showOfficialRoute);
+            Object.values(routeLayers).forEach(l => showOfficialRoute ? map.addLayer(l) : map.removeLayer(l));
+            Object.values(routeShadows).forEach(l => showOfficialRoute ? map.addLayer(l) : map.removeLayer(l));
+        });
+        document.getElementById('toggle-driver')?.addEventListener('click', function() {
+            showDriverRoute = !showDriverRoute;
+            this.textContent = showDriverRoute ? 'Cachér' : 'Afficher';
+            this.classList.toggle('off', !showDriverRoute);
+            Object.values(driverRoutes).forEach(layers => layers.forEach(l => showDriverRoute ? map.addLayer(l) : map.removeLayer(l)));
+        });
+    }, 300);
 
     // Actualisation toutes les 3 secondes (routes dessinées une seule fois)
     fetchLocations();
