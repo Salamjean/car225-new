@@ -94,6 +94,16 @@ class GareVoyageController extends Controller
             ->orderBy('immatriculation')
             ->get();
 
+        // Voyages bloqués : toujours en_cours mais date passée (problème chauffeur n'a pas marqué terminé)
+        $blockedVoyages = Voyage::whereHas('programme', function($q) use ($compagnieId) {
+                $q->where('compagnie_id', $compagnieId);
+            })
+            ->where('statut', 'en_cours')
+            ->whereDate('date_voyage', '<', Carbon::today())
+            ->with(['programme.gareDepart', 'programme.gareArrivee', 'chauffeur', 'vehicule'])
+            ->orderBy('date_voyage')
+            ->get();
+
         return view('gare-espace.voyages.index', compact(
             'availableProgrammes', 
             'assignedVoyages', 
@@ -101,9 +111,30 @@ class GareVoyageController extends Controller
             'chauffeurs', 
             'vehicules', 
             'date', 
-            'totalProgrammesCount'
+            'totalProgrammesCount',
+            'blockedVoyages'
         ));
     }
+
+    /**
+     * Récupérer les voyages bloqués (en_cours depuis une date passée)
+     * pour les afficher dans le panneau d'alertes de la gare
+     */
+    public function blockedVoyages()
+    {
+        $gare = Auth::guard('gare')->user();
+        $today = Carbon::today();
+
+        return Voyage::whereHas('programme', function($q) use ($gare) {
+                $q->where('compagnie_id', $gare->compagnie_id);
+            })
+            ->where('statut', 'en_cours')
+            ->whereDate('date_voyage', '<', $today)
+            ->with(['programme.gareDepart', 'programme.gareArrivee', 'chauffeur', 'vehicule'])
+            ->orderBy('date_voyage')
+            ->get();
+    }
+
 
     /**
      * Display finished voyages history
@@ -291,5 +322,132 @@ class GareVoyageController extends Controller
         $voyage->delete();
 
         return back()->with('success', 'Le voyage a été annulé avec succès.');
+    }
+
+    /**
+     * Forcer la clôture d'un voyage bloqué (en_cours depuis une date passée)
+     * La gare peut terminer le voyage à la place du chauffeur
+     */
+    public function forceComplete(Voyage $voyage)
+    {
+        $gare = Auth::guard('gare')->user();
+
+        // Vérifier que le voyage appartient à la compagnie de la gare
+        $voyage->load(['programme', 'chauffeur', 'vehicule']);
+        if (!$voyage->programme || $voyage->programme->compagnie_id !== $gare->compagnie_id) {
+            return response()->json(['success' => false, 'message' => 'Ce voyage n\'appartient pas à votre compagnie.'], 403);
+        }
+
+        // Seuls les voyages en_cours peuvent être clôturés forcément
+        if ($voyage->statut !== 'en_cours') {
+            return response()->json(['success' => false, 'message' => 'Ce voyage n\'est pas en cours.'], 422);
+        }
+
+        // Clôturer le voyage
+        $voyage->update(['statut' => 'terminé']);
+
+        // Libérer le chauffeur
+        if ($voyage->chauffeur) {
+            $voyage->chauffeur->update(['statut' => 'disponible']);
+        }
+
+        // Libérer le véhicule
+        if ($voyage->vehicule) {
+            $voyage->vehicule->update(['statut' => 'disponible']);
+        }
+
+        // Envoyer une notification FCM au chauffeur pour l'informer
+        if ($voyage->chauffeur && $voyage->chauffeur->fcm_token) {
+            try {
+                $fcmService = app(\App\Services\FcmService::class);
+                $route = ($voyage->programme->point_depart ?? '') . ' → ' . ($voyage->programme->point_arrive ?? '');
+                $fcmService->sendNotification(
+                    $voyage->chauffeur->fcm_token,
+                    '✅ Voyage clôturé par la gare',
+                    "Votre voyage ({$route}) a été marqué comme terminé par la gare {$gare->nom_gare}.",
+                    [
+                        'type' => 'voyage_force_complete',
+                        'voyage_id' => (string) $voyage->id,
+                    ]
+                );
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('FCM forceComplete: ' . $e->getMessage());
+            }
+        }
+
+        \Illuminate\Support\Facades\Log::info("Voyage #{$voyage->id} clôturé de force par la gare #{$gare->id}");
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Le voyage a été clôturé avec succès. Le chauffeur a été notifié.',
+        ]);
+    }
+
+    /**
+     * Envoyer une notification de rappel au chauffeur pour qu'il termine le voyage
+     */
+    public function sendReminder(Voyage $voyage)
+    {
+        $gare = Auth::guard('gare')->user();
+
+        $voyage->load(['programme', 'chauffeur']);
+        if (!$voyage->programme || $voyage->programme->compagnie_id !== $gare->compagnie_id) {
+            return response()->json(['success' => false, 'message' => 'Ce voyage n\'appartient pas à votre compagnie.'], 403);
+        }
+
+        if ($voyage->statut !== 'en_cours') {
+            return response()->json(['success' => false, 'message' => 'Ce voyage n\'est pas en cours.'], 422);
+        }
+
+        if (!$voyage->chauffeur) {
+            return response()->json(['success' => false, 'message' => 'Aucun chauffeur assigné à ce voyage.'], 422);
+        }
+
+        $chauffeur = $voyage->chauffeur;
+        $route = ($voyage->programme->point_depart ?? '') . ' → ' . ($voyage->programme->point_arrive ?? '');
+        $dateVoyage = \Carbon\Carbon::parse($voyage->date_voyage)->format('d/m/Y');
+
+        // Envoyer notification FCM si le chauffeur a un token
+        $fcmSent = false;
+        if ($chauffeur->fcm_token) {
+            try {
+                $fcmService = app(\App\Services\FcmService::class);
+                $result = $fcmService->sendNotification(
+                    $chauffeur->fcm_token,
+                    '🔔 Rappel — Terminer le voyage',
+                    "Votre voyage du {$dateVoyage} ({$route}) est toujours en cours. Veuillez le marquer comme terminé.",
+                    [
+                        'type' => 'voyage_reminder',
+                        'voyage_id' => (string) $voyage->id,
+                        'action' => 'complete_voyage',
+                    ]
+                );
+                $fcmSent = $result['success'] ?? false;
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('FCM sendReminder: ' . $e->getMessage());
+            }
+        }
+
+        // Envoyer aussi un message interne (boîte de réception chauffeur)
+        try {
+            \App\Models\GareMessage::create([
+                'gare_id'        => $gare->id,
+                'sender_type'    => 'App\Models\Gare',
+                'sender_id'      => $gare->id,
+                'recipient_type' => 'App\Models\Personnel',
+                'recipient_id'   => $chauffeur->id,
+                'subject'        => '⚠️ Action requise : Terminer le voyage #' . $voyage->id,
+                'message'        => "Bonjour {$chauffeur->prenom},\n\nVotre voyage du {$dateVoyage} ({$route}) est toujours marqué EN COURS dans notre système.\n\nMerci de vous connecter à l'application et de cliquer sur \"Terminer le voyage\" pour clôturer votre mission.\n\nCordialement,\nGare {$gare->nom_gare}",
+                'is_read'        => false,
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('GareMessage sendReminder: ' . $e->getMessage());
+        }
+
+        $msg = $fcmSent
+            ? 'Notification push et message interne envoyés au chauffeur.'
+            : 'Message interne envoyé au chauffeur (notification push non disponible).';
+
+        return response()->json(['success' => true, 'message' => $msg]);
     }
 }

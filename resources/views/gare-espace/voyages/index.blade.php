@@ -94,6 +94,69 @@
             </div>
         @endif
 
+        {{-- ===== PANNEAU VOYAGES BLOQUÉS ===== --}}
+        @if(isset($blockedVoyages) && $blockedVoyages->count() > 0)
+        <div class="mb-10" id="blocked-voyages-panel">
+            <div class="bg-gradient-to-r from-red-600 to-orange-500 rounded-3xl p-1 shadow-2xl shadow-red-500/30">
+                <div class="bg-white rounded-[1.75rem] p-6 md:p-8">
+                    <div class="flex items-start gap-5 mb-6">
+                        <div class="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center text-red-600 shrink-0 animate-pulse">
+                            <i class="fas fa-exclamation-triangle text-2xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-black text-gray-900">⚠️ Voyages en retard — Action requise</h3>
+                            <p class="text-sm text-gray-500 mt-1">
+                                {{ $blockedVoyages->count() }} voyage(s) datant de jours précédents sont encore marqués <strong class="text-red-600">En cours</strong>.
+                                Le chauffeur n'a pas confirmé l'arrivée. Vous pouvez le clôturer manuellement ou envoyer un rappel.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                        @foreach($blockedVoyages as $bv)
+                        @php
+                            $route = ($bv->programme->point_depart ?? $bv->programme->gareDepart?->nom_gare ?? 'N/A') . ' → ' . ($bv->programme->point_arrive ?? $bv->programme->gareArrivee?->nom_gare ?? 'N/A');
+                        @endphp
+                        <div class="bg-red-50 border border-red-100 rounded-2xl p-5 flex flex-col gap-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs font-black text-red-500 uppercase tracking-widest flex items-center gap-1">
+                                    <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                                    En cours (bloqué)
+                                </span>
+                                <span class="text-xs font-bold text-gray-400">
+                                    {{ \Carbon\Carbon::parse($bv->date_voyage)->format('d/m/Y') }}
+                                </span>
+                            </div>
+                            <p class="font-black text-gray-900 text-sm">{{ $route }}</p>
+                            <div class="flex flex-col gap-1 text-xs text-gray-600">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-user-tie text-blue-500 w-4"></i>
+                                    <span>{{ $bv->chauffeur?->name ?? 'N/A' }} {{ $bv->chauffeur?->prenom ?? '' }}</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-bus text-purple-500 w-4"></i>
+                                    <span>{{ $bv->vehicule?->immatriculation ?? 'N/A' }}</span>
+                                </div>
+                            </div>
+                            <div class="flex gap-2 mt-1">
+                                <button onclick="reminderVoyage({{ $bv->id }}, '{{ addslashes($route) }}')"
+                                    class="flex-1 py-2 text-[10px] font-black text-orange-700 bg-orange-100 hover:bg-orange-200 rounded-xl transition-all uppercase tracking-widest flex items-center justify-center gap-1">
+                                    <i class="fas fa-bell"></i> Rappel
+                                </button>
+                                <button onclick="forceCompleteVoyage({{ $bv->id }}, '{{ addslashes($route) }}')"
+                                    class="flex-1 py-2 text-[10px] font-black text-white bg-red-500 hover:bg-red-600 rounded-xl transition-all uppercase tracking-widest flex items-center justify-center gap-1">
+                                    <i class="fas fa-check-double"></i> Terminer
+                                </button>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+        {{-- ===== FIN PANNEAU ===== --}}
+
         <!-- Stats Overview -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
             <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center gap-6">
@@ -549,6 +612,80 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 300);
     }
+    // ====== VOYAGES BLOQUÉS — Actions ======
+    window.forceCompleteVoyage = function(voyageId, route) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Terminer ce voyage ?',
+            html: `<p class="text-gray-600 mt-2">Vous allez clôturer manuellement le voyage <strong>${route}</strong>.<br>Le chauffeur sera libéré et notifié.</p>`,
+            showCancelButton: true,
+            confirmButtonText: '✅ Oui, terminer',
+            cancelButtonText: 'Annuler',
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#6b7280',
+            customClass: { popup: 'rounded-3xl' }
+        }).then(result => {
+            if (!result.isConfirmed) return;
+            const btn = event.target;
+            Swal.fire({ title: 'En cours...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            
+            fetch(`/gare-espace/voyages/${voyageId}/force-complete`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({ icon: 'success', title: 'Voyage clôturé !', text: data.message, confirmButtonColor: '#22c55e', customClass: { popup: 'rounded-3xl' } })
+                        .then(() => window.location.reload());
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Erreur', text: data.message, customClass: { popup: 'rounded-3xl' } });
+                }
+            })
+            .catch(() => Swal.fire({ icon: 'error', title: 'Erreur réseau', text: 'Impossible de contacter le serveur.', customClass: { popup: 'rounded-3xl' } }));
+        });
+    };
+
+    window.reminderVoyage = function(voyageId, route) {
+        Swal.fire({
+            icon: 'info',
+            title: 'Envoyer un rappel ?',
+            html: `<p class="text-gray-600 mt-2">Un rappel push et un message interne seront envoyés au chauffeur du voyage <strong>${route}</strong>.</p>`,
+            showCancelButton: true,
+            confirmButtonText: '🔔 Envoyer le rappel',
+            cancelButtonText: 'Annuler',
+            confirmButtonColor: '#f97316',
+            cancelButtonColor: '#6b7280',
+            customClass: { popup: 'rounded-3xl' }
+        }).then(result => {
+            if (!result.isConfirmed) return;
+            Swal.fire({ title: 'Envoi en cours...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            
+            fetch(`/gare-espace/voyages/${voyageId}/send-reminder`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({ icon: 'success', title: 'Rappel envoyé !', text: data.message, confirmButtonColor: '#f97316', customClass: { popup: 'rounded-3xl' } });
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Erreur', text: data.message, customClass: { popup: 'rounded-3xl' } });
+                }
+            })
+            .catch(() => Swal.fire({ icon: 'error', title: 'Erreur réseau', text: 'Impossible de contacter le serveur.', customClass: { popup: 'rounded-3xl' } }));
+        });
+    };
+    // ====== FIN VOYAGES BLOQUÉS ======
+
 });
 </script>
 @endsection

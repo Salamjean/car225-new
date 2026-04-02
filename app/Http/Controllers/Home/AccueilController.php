@@ -41,6 +41,16 @@ class AccueilController extends Controller
         return view('home.pages.contact');
     }
 
+    public function privacy()
+    {
+        return view('home.pages.privacy');
+    }
+
+    public function deletion()
+    {
+        return view('home.pages.deletion');
+    }
+
     public function signaler()
     {
         return view('home.pages.signaler');

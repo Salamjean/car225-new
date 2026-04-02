@@ -68,6 +68,8 @@ Route::prefix('/')->group(function () {
     Route::get('/home/infos', [AccueilController::class, 'infos'])->name('home.infos');
     Route::get('/home/services', [AccueilController::class, 'services'])->name('home.services');
     Route::get('/home/contact', [AccueilController::class, 'contact'])->name('home.contact');
+    Route::get('/home/privacy', [AccueilController::class, 'privacy'])->name('home.privacy');
+    Route::get('/home/deletion', [AccueilController::class, 'deletion'])->name('home.deletion');
     Route::get('/home/signaler-probleme', [AccueilController::class, 'signaler'])->name('home.signaler');
     Route::post('/home/signaler-probleme', [AccueilController::class, 'storeSignaler'])->name('home.signaler.store');
     Route::get('/home/mes-reservations', [AccueilController::class, 'mesReservations'])->name('home.reservations');
@@ -865,6 +867,9 @@ Route::prefix('gare-espace')->name('gare-espace.')->group(function () {
             Route::get('/history', [App\Http\Controllers\GareEspace\GareVoyageController::class, 'history'])->name('history');
             Route::post('/', [App\Http\Controllers\GareEspace\GareVoyageController::class, 'store'])->name('store');
             Route::delete('/{voyage}', [App\Http\Controllers\GareEspace\GareVoyageController::class, 'destroy'])->name('destroy');
+            // Actions de gestion des voyages bloqués
+            Route::post('/{voyage}/force-complete', [App\Http\Controllers\GareEspace\GareVoyageController::class, 'forceComplete'])->name('force-complete');
+            Route::post('/{voyage}/send-reminder', [App\Http\Controllers\GareEspace\GareVoyageController::class, 'sendReminder'])->name('send-reminder');
         });
 
         // Réservations

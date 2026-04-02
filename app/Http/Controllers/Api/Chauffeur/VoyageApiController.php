@@ -18,15 +18,27 @@ class VoyageApiController extends Controller
         $chauffeur = $request->user();
         $date = $request->input('date', Carbon::today()->toDateString());
 
+        // Voyages du jour demandé
         $voyages = Voyage::where('personnel_id', $chauffeur->id)
             ->whereDate('date_voyage', $date)
             ->with(['programme.gareDepart', 'programme.gareArrivee', 'vehicule'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
+        // Voyages bloqués : en_cours mais date passée (le chauffeur n'a pas marqué terminé)
+        $blockedVoyages = Voyage::where('personnel_id', $chauffeur->id)
+            ->where('statut', 'en_cours')
+            ->whereDate('date_voyage', '<', Carbon::today())
+            ->with(['programme.gareDepart', 'programme.gareArrivee', 'vehicule'])
+            ->orderBy('date_voyage', 'asc')
+            ->get();
+
         return response()->json([
             'success' => true,
             'voyages' => $voyages->map(function($v) {
+                return $this->formatVoyage($v);
+            }),
+            'blocked_voyages' => $blockedVoyages->map(function($v) {
                 return $this->formatVoyage($v);
             }),
             'pagination' => [
