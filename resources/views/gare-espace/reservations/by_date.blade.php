@@ -161,6 +161,21 @@
             font-weight: 800;
             font-size: 14px;
             border: 1px solid #FED7AA;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .time-badge:hover {
+            background: #F97316;
+            color: #fff;
+            border-color: #F97316;
+            transform: scale(1.05);
+        }
+
+        .time-badge.active {
+            background: #F97316;
+            color: #fff;
+            border-color: #F97316;
         }
 
         .dashboard-page {
@@ -340,7 +355,7 @@
     <div class="dashboard-page">
 
         <div class="mb-4 d-flex justify-content-between align-items-center">
-            <a href="{{ route('company.reservation.index', ['tab' => $tab ?? 'en-cours']) }}" class="btn-back">
+            <a href="{{ route('gare-espace.reservations.index', ['tab' => $tab ?? 'en-cours']) }}" class="btn-back">
                 <i class="fas fa-arrow-left"></i> Retour au calendrier
             </a>
 
@@ -481,7 +496,9 @@
                                     </td>
                                     <td class="text-center">
                                         @if ($reservation->programme)
-                                            <span class="time-badge">
+                                            <span class="time-badge"
+                                                onclick="filterByHeure('{{ $reservation->programme->heure_depart }}')"
+                                                style="padding: 6px 12px; cursor: pointer;">
                                                 <i
                                                     class="fas fa-clock mr-1"></i>{{ $reservation->programme->heure_depart }}
                                             </span>
@@ -588,7 +605,6 @@
         let fp;
         let selectedReservationId = null;
         let selectedHeure = 'all';
-        const selectedProgrammeId = "{{ $programmeId ?? request('programme_id', '') }}";
 
         // Configuration des rangées (copié depuis caisse)
         const typeRangeConfig = {
@@ -701,8 +717,7 @@
 
             // Fetch reservations for the selected date and time
             const heureParam = (heure && heure !== 'all') ? `&heure=${heure}` : '';
-            const programmeParam = selectedProgrammeId ? `&programme_id=${selectedProgrammeId}` : '';
-            fetch(`/company/booking/reservations-by-date?date=${dateStr}&tab=${tab}${heureParam}${programmeParam}`)
+            fetch(`/gare-espace/reservations/reservations-by-date?date=${dateStr}&tab=${tab}${heureParam}`)
                 .then(response => response.json())
                 .then(data => {
                     // Update stats
@@ -738,19 +753,19 @@
                             </td>
                             <td>
                                 ${reservation.programme ? `
-                                                                        <div class="route-pill">
-                                                                            ${reservation.programme.point_depart}
-                                                                            <i class="fas fa-chevron-right route-arrow"></i>
-                                                                            ${reservation.programme.point_arrive}
-                                                                        </div>
-                                                                    ` : '<span class="text-muted">Trajet inconnu</span>'}
+                                                                    <div class="route-pill">
+                                                                        ${reservation.programme.point_depart}
+                                                                        <i class="fas fa-chevron-right route-arrow"></i>
+                                                                        ${reservation.programme.point_arrive}
+                                                                    </div>
+                                                                ` : '<span class="text-muted">Trajet inconnu</span>'}
                             </td>
                             <td class="text-center">
                                 ${reservation.programme ? `
-                                                                        <span class="time-badge" onclick="filterByHeure('${reservation.programme.heure_depart}')" style="padding: 6px 12px; cursor: pointer;">
-                                                                            <i class="fas fa-clock mr-1"></i>${reservation.programme.heure_depart}
-                                                                        </span>
-                                                                    ` : '<span class="text-muted">---</span>'}
+                                                                    <span class="time-badge" onclick="filterByHeure('${reservation.programme.heure_depart}')" style="padding: 6px 12px; cursor: pointer;">
+                                                                        <i class="fas fa-clock mr-1"></i>${reservation.programme.heure_depart}
+                                                                    </span>
+                                                                ` : '<span class="text-muted">---</span>'}
                             </td>
                             <td class="text-center">
                                 <span class="seat-badge seat-badge-orange">${reservation.seat_number}</span>
@@ -861,8 +876,7 @@
             const heureSelect = document.getElementById('heureFilter');
             if (!heureSelect) return;
 
-            const programmeParam = selectedProgrammeId ? `&programme_id=${selectedProgrammeId}` : '';
-            fetch(`/company/booking/reservations-by-date?date=${dateStr}&tab=${tab}${programmeParam}`)
+            fetch(`/gare-espace/reservations/reservations-by-date?date=${dateStr}&tab=${tab}`)
                 .then(response => response.json())
                 .then(data => {
                     populateHeureFilterFromReservations(data.reservations);
@@ -912,8 +926,7 @@
             const hoursList = document.getElementById('hoursList');
             if (!hoursList) return;
 
-            const programmeParam = selectedProgrammeId ? `&programme_id=${selectedProgrammeId}` : '';
-            fetch(`/company/booking/reservations-by-date?date=${dateStr}&tab=${tab}${programmeParam}`)
+            fetch(`/gare-espace/reservations/reservations-by-date?date=${dateStr}&tab=${tab}`)
                 .then(response => response.json())
                 .then(data => {
                     // Extract unique hours from reservations
@@ -947,6 +960,27 @@
                     }
                 })
                 .catch(error => console.error('Error fetching hours:', error));
+        }
+
+        function filterByHeure(heure) {
+            // Trouver le bon select selon le mode (fullMonth ou simple)
+            let heureSelect = document.getElementById('heureFilter');
+            if (!heureSelect) {
+                heureSelect = document.getElementById('hoursList');
+            }
+
+            if (!heureSelect) return;
+
+            // Mettre à jour la valeur du select
+            heureSelect.value = heure;
+
+            // Déclencher le changement
+            const isFullMonth = @json(isset($isFullMonth) && $isFullMonth);
+            if (isFullMonth) {
+                onHeureChange();
+            } else {
+                onHoursListChange();
+            }
         }
 
         function onHeureChange() {
@@ -1005,13 +1039,13 @@
             info.textContent = 'Chargement de la disposition...';
 
             // Make AJAX call to get occupied seats
-            fetch(`/company/booking/occupied-seats?programme_id=${programmeId}&date_voyage=${dateVoyage}`)
+            fetch(`/gare-espace/reservations/occupied-seats?programme_id=${programmeId}&date_voyage=${dateVoyage}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.vehicle_name && data.vehicle_name !== 'Véhicule non assigné') {
                         // Get vehicle details - we need to fetch the programme to get vehicle info
                         fetch(
-                                `/company/booking/programme-vehicle?programme_id=${programmeId}&date_voyage=${dateVoyage}`
+                                `/gare-espace/reservations/programme-vehicle?programme_id=${programmeId}&date_voyage=${dateVoyage}`
                             )
                             .then(response => response.json())
                             .then(vehicleData => {

@@ -98,7 +98,7 @@ Route::prefix('admin')->group(function () {
 Route::middleware('admin')->prefix('admin')->group(function () {
     Route::get('/dashboard', [AdminDashboard::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/logout', [AdminDashboard::class, 'logout'])->name('admin.logout');
-    
+
     // Revenus Tickets détaillés (Placé en haut pour priorité)
     Route::get('/revenus-tickets', [AdminDashboard::class, 'revenusTickets'])->name('admin.revenus.tickets');
 
@@ -164,7 +164,7 @@ Route::middleware('admin')->prefix('admin')->group(function () {
 Route::prefix('company')->group(function () {
     Route::get('/login', [CompagnieAuthenticate::class, 'login'])->name('compagnie.login');
     Route::post('/', [CompagnieAuthenticate::class, 'handleLogin'])->name('compagnie.handleLogin');
-    
+
     // Compagnie Password Reset Routes
     Route::get('/password/reset', [CompagniePasswordResetController::class, 'showResetForm'])->name('compagnie.password.request');
     Route::post('/password/send-otp', [CompagniePasswordResetController::class, 'sendOtp'])->name('compagnie.password.sendOtp');
@@ -260,6 +260,8 @@ Route::middleware('compagnie')->prefix('company')->group(function () {
         Route::get('/details', [CompagnieReservationController::class, 'details'])->name('company.reservation.details');
         Route::get('/reservations/{reservation}', [CompagnieReservationController::class, 'show'])->name('company.reservation.show');
         Route::get('/occupied-seats', [CompagnieReservationController::class, 'getOccupiedSeats'])->name('company.reservation.occupied-seats');
+        Route::get('/programme-vehicle', [CompagnieReservationController::class, 'getProgrammeVehicle'])->name('company.reservation.programme-vehicle');
+        Route::get('/reservations-by-date', [CompagnieReservationController::class, 'getReservationsByDate'])->name('company.reservation.reservations-by-date');
     });
 
     // Routes de gestion des signalements pour la compagnie
@@ -270,7 +272,7 @@ Route::middleware('compagnie')->prefix('company')->group(function () {
         Route::post('/{id}/alert-pompier', [CompagnieSignalementController::class, 'alertPompier'])->name('compagnie.signalements.alert-pompier');
         Route::patch('/{id}/mark-traite', [CompagnieSignalementController::class, 'markAsTraite'])->name('compagnie.signalements.mark-traite');
         Route::patch('/{id}/mark-read', [CompagnieSignalementController::class, 'markAsRead'])->name('compagnie.signalements.mark-read');
-        
+
         // Actions de gestion de voyage
         Route::post('/{id}/interrupt', [CompagnieSignalementController::class, 'interruptVoyage'])->name('compagnie.signalements.interrupt');
         Route::post('/{id}/resume', [CompagnieSignalementController::class, 'resumeVoyage'])->name('compagnie.signalements.resume');
@@ -327,13 +329,13 @@ Route::prefix('caisse')->group(function () {
     Route::get('/verify-otp', [App\Http\Controllers\Caisse\CaisseAuthController::class, 'showOtpVerification'])->name('caisse.auth.verify-otp');
     Route::post('/verify-otp', [App\Http\Controllers\Caisse\CaisseAuthController::class, 'verifyOtp'])->name('caisse.auth.verify-otp.submit');
     Route::post('/resend-otp', [App\Http\Controllers\Caisse\CaisseAuthController::class, 'resendOtp'])->name('caisse.auth.resend-otp');
-    
+
     Route::get('/setup-password', [App\Http\Controllers\Caisse\CaisseAuthController::class, 'showPasswordSetup'])->name('caisse.auth.setup-password');
     Route::post('/setup-password', [App\Http\Controllers\Caisse\CaisseAuthController::class, 'setupPassword'])->name('caisse.auth.setup-password.submit');
-    
+
     Route::get('/login', [App\Http\Controllers\Caisse\CaisseAuthController::class, 'showLogin'])->name('caisse.auth.login');
     Route::post('/login', [App\Http\Controllers\Caisse\CaisseAuthController::class, 'login'])->name('caisse.auth.login.submit');
-    
+
     // Caisse Password Reset Routes
     Route::get('/password/reset', [CaissePasswordResetController::class, 'showResetForm'])->name('caisse.password.request');
     Route::post('/password/send-otp', [CaissePasswordResetController::class, 'sendOtp'])->name('caisse.password.sendOtp');
@@ -344,22 +346,22 @@ Route::prefix('caisse')->group(function () {
 Route::middleware('caisse')->prefix('caisse')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\Caisse\CaisseController::class, 'dashboard'])->name('caisse.dashboard');
     Route::get('/logout', [App\Http\Controllers\Caisse\CaisseAuthController::class, 'logout'])->name('caisse.logout');
-    
+
     // Profile routes
     Route::get('/profile', [App\Http\Controllers\Caisse\CaisseController::class, 'profile'])->name('caisse.profile');
     Route::post('/profile/update', [App\Http\Controllers\Caisse\CaisseController::class, 'updateProfile'])->name('caisse.profile.update');
     Route::post('/profile/password', [App\Http\Controllers\Caisse\CaisseController::class, 'updatePassword'])->name('caisse.profile.password');
-    
+
     // Ticket selling routes
     Route::get('/vendre-ticket', [App\Http\Controllers\Caisse\CaisseController::class, 'vendreTicket'])->name('caisse.vendre-ticket');
     Route::post('/vendre-ticket', [App\Http\Controllers\Caisse\CaisseController::class, 'vendreTicketSubmit'])->name('caisse.vendre-ticket.submit');
     Route::get('/vente', [App\Http\Controllers\Caisse\CaisseController::class, 'vente'])->name('caisse.vente');
     Route::post('/vente', [App\Http\Controllers\Caisse\CaisseController::class, 'venteSubmit'])->name('caisse.vente.submit');
     Route::get('/vente-success', [App\Http\Controllers\Caisse\CaisseController::class, 'venteSuccess'])->name('caisse.vente-success');
-    
+
     // API Route for Vehicle Details (Shared Logic)
     Route::get('/api/vehicle/{id}', [App\Http\Controllers\User\Reservation\ReservationController::class, 'showVehicle'])->name('caisse.api.vehicle');
-    
+
     // Sales history and printing
     Route::get('/ventes', [App\Http\Controllers\Caisse\CaisseController::class, 'ventes'])->name('caisse.ventes');
     Route::get('/ticket/{reservation}/imprimer', [App\Http\Controllers\Caisse\CaisseController::class, 'imprimerTicket'])->name('caisse.ticket.imprimer');
@@ -377,13 +379,13 @@ Route::prefix('hotesse')->group(function () {
     Route::get('/verify-otp', [App\Http\Controllers\Hotesse\HotesseAuthController::class, 'showOtpVerification'])->name('hotesse.auth.verify-otp');
     Route::post('/verify-otp', [App\Http\Controllers\Hotesse\HotesseAuthController::class, 'verifyOtp'])->name('hotesse.auth.verify-otp.submit');
     Route::post('/resend-otp', [App\Http\Controllers\Hotesse\HotesseAuthController::class, 'resendOtp'])->name('hotesse.auth.resend-otp');
-    
+
     Route::get('/setup-password', [App\Http\Controllers\Hotesse\HotesseAuthController::class, 'showPasswordSetup'])->name('hotesse.auth.setup-password');
     Route::post('/setup-password', [App\Http\Controllers\Hotesse\HotesseAuthController::class, 'setupPassword'])->name('hotesse.auth.setup-password.submit');
-    
+
     Route::get('/login', [App\Http\Controllers\Hotesse\HotesseAuthController::class, 'showLogin'])->name('hotesse.auth.login');
     Route::post('/login', [App\Http\Controllers\Hotesse\HotesseAuthController::class, 'login'])->name('hotesse.auth.login.submit');
-    
+
     // Hotesse Password Reset Routes
     Route::get('/password/reset', [HotessePasswordResetController::class, 'showResetForm'])->name('hotesse.password.request');
     Route::post('/password/send-otp', [HotessePasswordResetController::class, 'sendOtp'])->name('hotesse.password.sendOtp');
@@ -394,22 +396,22 @@ Route::prefix('hotesse')->group(function () {
 Route::middleware('hotesse')->prefix('hotesse')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\Hotesse\HotesseController::class, 'dashboard'])->name('hotesse.dashboard');
     Route::get('/logout', [App\Http\Controllers\Hotesse\HotesseAuthController::class, 'logout'])->name('hotesse.logout');
-    
+
     // Profile routes
     Route::get('/profile', [App\Http\Controllers\Hotesse\HotesseController::class, 'profile'])->name('hotesse.profile');
     Route::post('/profile/update', [App\Http\Controllers\Hotesse\HotesseController::class, 'updateProfile'])->name('hotesse.profile.update');
     Route::post('/profile/password', [App\Http\Controllers\Hotesse\HotesseController::class, 'updatePassword'])->name('hotesse.profile.password');
-    
+
     // Ticket selling routes
     Route::get('/vendre-ticket', [App\Http\Controllers\Hotesse\HotesseController::class, 'vendreTicket'])->name('hotesse.vendre-ticket');
     Route::post('/vendre-ticket', [App\Http\Controllers\Hotesse\HotesseController::class, 'vendreTicketSubmit'])->name('hotesse.vendre-ticket.submit');
     Route::get('/vente-success', [App\Http\Controllers\Hotesse\HotesseController::class, 'venteSuccess'])->name('hotesse.vente-success');
-    
+
     // Sales history and printing
     Route::get('/ventes', [App\Http\Controllers\Hotesse\HotesseController::class, 'ventes'])->name('hotesse.ventes');
     Route::get('/ticket/{reservation}/imprimer', [App\Http\Controllers\Hotesse\HotesseController::class, 'imprimerTicket'])->name('hotesse.ticket.imprimer');
     Route::get('/ticket/{reservation}/imprimer-thermal', [App\Http\Controllers\Hotesse\HotesseController::class, 'imprimerThermal'])->name('hotesse.ticket.thermal');
-    
+
     // API Route for Return Trips (Shared Logic with User)
     Route::get('/api/return-trips', [App\Http\Controllers\User\Reservation\ReservationController::class, 'apiReturnTrips'])->name('hotesse.api.return-trips');
     Route::get('/api/vehicle/{id}', [App\Http\Controllers\User\Reservation\ReservationController::class, 'showVehicle'])->name('hotesse.api.vehicle');
@@ -420,7 +422,7 @@ Route::middleware('hotesse')->prefix('hotesse')->group(function () {
 Route::prefix('agent')->group(function () {
     Route::get('/login', [AuthenticateAgent::class, 'login'])->name('agent.login');
     Route::post('/login', [AuthenticateAgent::class, 'handleLogin'])->name('agent.handleLogin');
-    
+
     // Agent Password Reset Routes
     Route::get('/password/reset', [AgentPasswordResetController::class, 'showResetForm'])->name('agent.password.request');
     Route::post('/password/send-otp', [AgentPasswordResetController::class, 'sendOtp'])->name('agent.password.sendOtp');
@@ -476,10 +478,10 @@ Route::prefix('user')->group(function () {
     Route::get('/verify-otp', [UserAuthenticate::class, 'showVerifyOtp'])->name('user.verify-otp');
     Route::post('/verify-otp', [UserAuthenticate::class, 'handleVerifyOtp'])->name('user.verify-otp.submit');
     Route::post('/resend-otp', [UserAuthenticate::class, 'resendOtp'])->name('user.resend-otp');
-    
+
     // Route publique pour le retour de paiement Wallet (Mobile & Web)
     Route::get('/wallet', [\App\Http\Controllers\User\WalletController::class, 'paymentResult'])->name('wallet.payment.result');
-  
+
     // Password Reset Routes
     Route::get('/password/reset', [PasswordResetController::class, 'showResetForm'])->name('password.request');
     Route::post('/password/send-otp', [PasswordResetController::class, 'sendOtp'])->name('password.sendOtp');
@@ -496,81 +498,81 @@ Route::middleware('auth')->prefix('user')->group(function () {
     // Routes protégées qui nécessitent un numéro de téléphone
     Route::middleware('check_contact')->group(function () {
         Route::get('/dashboard', [UserController::class, 'dashboard'])->name('user.dashboard');
-    Route::get('/tracking/location', [UserController::class, 'getTrackingLocation'])->name('user.tracking.location');
-    Route::get('/logout', [UserController::class, 'logout'])->name('user.logout');
+        Route::get('/tracking/location', [UserController::class, 'getTrackingLocation'])->name('user.tracking.location');
+        Route::get('/logout', [UserController::class, 'logout'])->name('user.logout');
 
-    // Wallet Routes
-    Route::get('/compte', [WalletController::class, 'index'])->name('user.wallet.index');
-    Route::get('/compte/recharges', [WalletController::class, 'rechargeHistory'])->name('user.wallet.recharges');
-    Route::post('/compte/recharge', [WalletController::class, 'recharge'])->name('user.wallet.recharge');
-    Route::post('/compte/retrait', [WalletController::class, 'withdraw'])->name('user.wallet.withdraw');
-    Route::post('/compte/verify', [WalletController::class, 'verifyRecharge'])->name('user.wallet.verify');
-    Route::get('/compte/payment/success', [WalletController::class, 'paymentSuccess'])->name('user.wallet.payment.success');
-    Route::get('/compte/payment/failed', [WalletController::class, 'paymentFailed'])->name('user.wallet.payment.failed');
+        // Wallet Routes
+        Route::get('/compte', [WalletController::class, 'index'])->name('user.wallet.index');
+        Route::get('/compte/recharges', [WalletController::class, 'rechargeHistory'])->name('user.wallet.recharges');
+        Route::post('/compte/recharge', [WalletController::class, 'recharge'])->name('user.wallet.recharge');
+        Route::post('/compte/retrait', [WalletController::class, 'withdraw'])->name('user.wallet.withdraw');
+        Route::post('/compte/verify', [WalletController::class, 'verifyRecharge'])->name('user.wallet.verify');
+        Route::get('/compte/payment/success', [WalletController::class, 'paymentSuccess'])->name('user.wallet.payment.success');
+        Route::get('/compte/payment/failed', [WalletController::class, 'paymentFailed'])->name('user.wallet.payment.failed');
 
-    // Profile Routes
-    Route::get('/profile', [ProfileController::class, 'index'])->name('user.profile');
-    Route::post('/profile/request-update', [ProfileController::class, 'requestUpdate'])->name('user.profile.request_update');
-    Route::post('/profile/update', [ProfileController::class, 'update'])->name('user.profile.update');
-    Route::post('/profile/update-emergency', [ProfileController::class, 'updateEmergencyContact'])->name('user.profile.update-emergency');
-    Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('user.profile.password');
-    Route::post('/profile/photo', [ProfileController::class, 'updatePhoto'])->name('user.profile.photo');
+        // Profile Routes
+        Route::get('/profile', [ProfileController::class, 'index'])->name('user.profile');
+        Route::post('/profile/request-update', [ProfileController::class, 'requestUpdate'])->name('user.profile.request_update');
+        Route::post('/profile/update', [ProfileController::class, 'update'])->name('user.profile.update');
+        Route::post('/profile/update-emergency', [ProfileController::class, 'updateEmergencyContact'])->name('user.profile.update-emergency');
+        Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('user.profile.password');
+        Route::post('/profile/photo', [ProfileController::class, 'updatePhoto'])->name('user.profile.photo');
 
 
-    //Les routes pour faire une reservation 
-    Route::prefix('booking')->group(function () {
-        Route::get('/allReserve', [ReservationController::class, 'index'])->name('reservation.index');
-        Route::get('/group/{transaction_id}', [ReservationController::class, 'showGroup'])->name('user.reservation.group');
-        Route::get('/reservation', [ReservationController::class, 'create'])->name('reservation.create');
-        Route::get('/vehicle/{id}', [ReservationController::class, 'showVehicle'])->name('user.reservation.vehicle');
-        Route::get('/program/{id}', [ReservationController::class, 'getProgram'])->name('user.reservation.program');
-        Route::get('/program/{id}/default-vehicle', [ReservationController::class, 'getDefaultVehicle'])->name('user.reservation.default-vehicle');
-        Route::get('/reservation/reserved-seats/{programId}', [ReservationController::class, 'getReservedSeats'])->name('user.reservation.reserved-seats');
-        Route::post('/reservation', [ReservationController::class, 'store'])->name('reservation.store');
-        Route::get('/reservations/{reservation}', [ReservationController::class, 'show'])->name('reservations.show');
-        Route::get('/reservations/{reservation}/download', [ReservationController::class, 'download'])->name('reservations.download');
-        Route::get('/reservations/{reservation}/ticket', [ReservationController::class, 'ticket'])->name('reservations.ticket');
-        Route::delete('/reservations/{reservation}', [ReservationController::class, 'cancel'])->name('reservations.cancel');
-        Route::get('/reservations/{reservation}/refund-preview', [ReservationController::class, 'getRefundPreview'])->name('reservations.refund-preview');
-        Route::post('/reservations/{reservation}/cancel', [ReservationController::class, 'cancelReservation'])->name('reservations.cancel-refund');
-        Route::get('/reservations/{reservation}/modifier', [ReservationController::class, 'showModificationPage'])->name('reservations.modifier');
-        Route::post('/reservations/{reservation}/modify', [ReservationController::class, 'processModification'])->name('reservations.modify');
-        Route::get('/api/programmes', [ReservationController::class, 'apiProgrammes'])->name('api.programmes');
-        Route::get('/api/grouped-routes', [ReservationController::class, 'apiGroupedRoutes'])->name('api.grouped-routes');
-        Route::get('/api/route-dates', [ReservationController::class, 'apiRouteDates'])->name('api.route-dates');
-        Route::get('/api/route-schedules', [ReservationController::class, 'apiRouteSchedules'])->name('api.route-schedules');
-        Route::get('/api/return-trips', [ReservationController::class, 'apiReturnTrips'])->name('api.return-trips');
-        
-        // Modification API endpoints
-        Route::get('/reservations/{reservation}/modification-data', [ReservationController::class, 'getModificationData'])->name('reservations.modification-data');
-        Route::get('/programmes/{programme}/available-dates', [ReservationController::class, 'getAvailableDates'])->name('programmes.available-dates');
-        Route::get('/programmes/{programme}/available-times', [ReservationController::class, 'getAvailableTimes'])->name('programmes.available-times');
-        Route::get('/programmes/{programme}/seats', [ReservationController::class, 'getSeats'])->name('programmes.seats');
-        Route::post('/reservations/{reservation}/calculate-delta', [ReservationController::class, 'calculateModificationDelta'])->name('reservations.calculate-delta');
-    });
-    Route::get('/programmes/{programme}/recalculate-status', [ReservationController::class, 'recalculateProgramStatus'])->name('programmes.recalculate-status');
-    Route::post('/reservations/{reservation}/update-emergency', [ReservationController::class, 'updateEmergencyContact'])->name('user.reservation.update-emergency');
-    Route::get('/programmes/{programme}/status-for-date/{date}', [ReservationController::class, 'getProgramStatusForDate'])->name('programmes.status-for-date');
+        //Les routes pour faire une reservation 
+        Route::prefix('booking')->group(function () {
+            Route::get('/allReserve', [ReservationController::class, 'index'])->name('reservation.index');
+            Route::get('/group/{transaction_id}', [ReservationController::class, 'showGroup'])->name('user.reservation.group');
+            Route::get('/reservation', [ReservationController::class, 'create'])->name('reservation.create');
+            Route::get('/vehicle/{id}', [ReservationController::class, 'showVehicle'])->name('user.reservation.vehicle');
+            Route::get('/program/{id}', [ReservationController::class, 'getProgram'])->name('user.reservation.program');
+            Route::get('/program/{id}/default-vehicle', [ReservationController::class, 'getDefaultVehicle'])->name('user.reservation.default-vehicle');
+            Route::get('/reservation/reserved-seats/{programId}', [ReservationController::class, 'getReservedSeats'])->name('user.reservation.reserved-seats');
+            Route::post('/reservation', [ReservationController::class, 'store'])->name('reservation.store');
+            Route::get('/reservations/{reservation}', [ReservationController::class, 'show'])->name('reservations.show');
+            Route::get('/reservations/{reservation}/download', [ReservationController::class, 'download'])->name('reservations.download');
+            Route::get('/reservations/{reservation}/ticket', [ReservationController::class, 'ticket'])->name('reservations.ticket');
+            Route::delete('/reservations/{reservation}', [ReservationController::class, 'cancel'])->name('reservations.cancel');
+            Route::get('/reservations/{reservation}/refund-preview', [ReservationController::class, 'getRefundPreview'])->name('reservations.refund-preview');
+            Route::post('/reservations/{reservation}/cancel', [ReservationController::class, 'cancelReservation'])->name('reservations.cancel-refund');
+            Route::get('/reservations/{reservation}/modifier', [ReservationController::class, 'showModificationPage'])->name('reservations.modifier');
+            Route::post('/reservations/{reservation}/modify', [ReservationController::class, 'processModification'])->name('reservations.modify');
+            Route::get('/api/programmes', [ReservationController::class, 'apiProgrammes'])->name('api.programmes');
+            Route::get('/api/grouped-routes', [ReservationController::class, 'apiGroupedRoutes'])->name('api.grouped-routes');
+            Route::get('/api/route-dates', [ReservationController::class, 'apiRouteDates'])->name('api.route-dates');
+            Route::get('/api/route-schedules', [ReservationController::class, 'apiRouteSchedules'])->name('api.route-schedules');
+            Route::get('/api/return-trips', [ReservationController::class, 'apiReturnTrips'])->name('api.return-trips');
 
-    // Signalement de problèmes
-    Route::prefix('signalement')->group(function () {
-        Route::get('/create', [SignalementController::class, 'create'])->name('signalement.create');
-        Route::post('/store', [SignalementController::class, 'store'])->name('signalement.store');
-    });
+            // Modification API endpoints
+            Route::get('/reservations/{reservation}/modification-data', [ReservationController::class, 'getModificationData'])->name('reservations.modification-data');
+            Route::get('/programmes/{programme}/available-dates', [ReservationController::class, 'getAvailableDates'])->name('programmes.available-dates');
+            Route::get('/programmes/{programme}/available-times', [ReservationController::class, 'getAvailableTimes'])->name('programmes.available-times');
+            Route::get('/programmes/{programme}/seats', [ReservationController::class, 'getSeats'])->name('programmes.seats');
+            Route::post('/reservations/{reservation}/calculate-delta', [ReservationController::class, 'calculateModificationDelta'])->name('reservations.calculate-delta');
+        });
+        Route::get('/programmes/{programme}/recalculate-status', [ReservationController::class, 'recalculateProgramStatus'])->name('programmes.recalculate-status');
+        Route::post('/reservations/{reservation}/update-emergency', [ReservationController::class, 'updateEmergencyContact'])->name('user.reservation.update-emergency');
+        Route::get('/programmes/{programme}/status-for-date/{date}', [ReservationController::class, 'getProgramStatusForDate'])->name('programmes.status-for-date');
 
-    // Support Client
-    Route::prefix('support')->group(function () {
-        Route::get('/', [App\Http\Controllers\User\SupportController::class, 'index'])->name('user.support.index');
-        Route::get('/mes-declarations', [App\Http\Controllers\User\SupportController::class, 'mesDeclarations'])->name('user.support.mes-declarations');
-        Route::get('/create', [App\Http\Controllers\User\SupportController::class, 'create'])->name('user.support.create');
-        Route::post('/store', [App\Http\Controllers\User\SupportController::class, 'store'])->name('user.support.store');
-        Route::post('/{supportRequest}/repondre', [App\Http\Controllers\User\SupportController::class, 'repondre'])->name('user.support.repondre');
-        Route::post('/{supportRequest}/mark-read', [App\Http\Controllers\User\SupportController::class, 'markAsRead'])->name('user.support.mark-read');
-    });
+        // Signalement de problèmes
+        Route::prefix('signalement')->group(function () {
+            Route::get('/create', [SignalementController::class, 'create'])->name('signalement.create');
+            Route::post('/store', [SignalementController::class, 'store'])->name('signalement.store');
+        });
 
-    // Notifications
-    Route::post('/notifications/mark-read', [UserController::class, 'markNotificationRead'])->name('user.notifications.mark-read');
-    Route::post('/notifications/mark-all-read', [UserController::class, 'markAllNotificationsRead'])->name('user.notifications.mark-all-read');
+        // Support Client
+        Route::prefix('support')->group(function () {
+            Route::get('/', [App\Http\Controllers\User\SupportController::class, 'index'])->name('user.support.index');
+            Route::get('/mes-declarations', [App\Http\Controllers\User\SupportController::class, 'mesDeclarations'])->name('user.support.mes-declarations');
+            Route::get('/create', [App\Http\Controllers\User\SupportController::class, 'create'])->name('user.support.create');
+            Route::post('/store', [App\Http\Controllers\User\SupportController::class, 'store'])->name('user.support.store');
+            Route::post('/{supportRequest}/repondre', [App\Http\Controllers\User\SupportController::class, 'repondre'])->name('user.support.repondre');
+            Route::post('/{supportRequest}/mark-read', [App\Http\Controllers\User\SupportController::class, 'markAsRead'])->name('user.support.mark-read');
+        });
+
+        // Notifications
+        Route::post('/notifications/mark-read', [UserController::class, 'markNotificationRead'])->name('user.notifications.mark-read');
+        Route::post('/notifications/mark-all-read', [UserController::class, 'markAllNotificationsRead'])->name('user.notifications.mark-all-read');
     });
 });
 
@@ -583,7 +585,7 @@ Route::prefix('user')->group(function () {
     // Wallet Wave
     Route::get('/compte/wave/return', [App\Http\Controllers\User\WalletController::class, 'waveReturn'])->name('wallet.wave.return');
     Route::get('/compte/wave/cancel', [App\Http\Controllers\User\WalletController::class, 'waveCancel'])->name('wallet.wave.cancel');
-    
+
     // Route publique pour le retour de paiement Réservation (Mobile & Web)
     Route::get('/reservation/payment-result', [App\Http\Controllers\PaymentController::class, 'paymentResult'])->name('reservation.payment.result');
 
@@ -633,7 +635,7 @@ Route::prefix('sapeur-pompier')->group(function () {
                 'latitude' => $request->latitude,
                 'longitude' => $request->longitude,
             ]);
-            
+
             // On ne met à jour l'adresse et commune que s'ils sont fournis (Reverse Geocoding réussi côté JS)
             if ($request->filled('commune') && $request->filled('adresse')) {
                 $user->update([
@@ -709,9 +711,9 @@ Route::prefix('sapeur-pompier')->group(function () {
 
             // Calcul automatique depuis les sélections passagers
             $signalement->nombre_morts   = collect($bilanPassagers)->where('statut', 'mort')->count()
-                                           ?: (int) $request->input('nombre_morts', 0);
+                ?: (int) $request->input('nombre_morts', 0);
             $signalement->nombre_blesses = collect($bilanPassagers)->where('statut', 'blesse')->count()
-                                           ?: (int) $request->input('nombre_blesses', 0);
+                ?: (int) $request->input('nombre_blesses', 0);
             $signalement->bilan_passagers = $bilanPassagers;
             $signalement->statut = 'traite';
             $signalement->save();
@@ -771,9 +773,9 @@ Route::prefix('sapeur-pompier')->group(function () {
                     $nomPassager   = trim(($reservation->passager_prenom ?? '') . ' ' . ($reservation->passager_nom ?? '')) ?: 'Votre proche';
 
                     $smsBody = "ACCIDENT - {$compagnieNom}\n"
-                             . "Le {$dateAccident} sur le trajet {$trajet}.\n"
-                             . "{$nomPassager} a ete evacue(e) a : {$hopitalNom}.{$hopitalAdresse}\n"
-                             . "Presentez-vous au plus vite.";
+                        . "Le {$dateAccident} sur le trajet {$trajet}.\n"
+                        . "{$nomPassager} a ete evacue(e) a : {$hopitalNom}.{$hopitalAdresse}\n"
+                        . "Presentez-vous au plus vite.";
 
                     try {
                         $smsService->sendSms($reservation->passager_urgence, $smsBody);
@@ -875,7 +877,12 @@ Route::prefix('gare-espace')->name('gare-espace.')->group(function () {
         // Réservations
         Route::prefix('reservations')->name('reservations.')->group(function () {
             Route::get('/', [App\Http\Controllers\GareEspace\GareReservationController::class, 'index'])->name('index');
+            Route::get('/by-date/{date}', [App\Http\Controllers\GareEspace\GareReservationController::class, 'byDate'])->name('by_date');
+            Route::get('/by-month/{month}', [App\Http\Controllers\GareEspace\GareReservationController::class, 'byMonth'])->name('by_month');
             Route::get('/program/{programme}', [App\Http\Controllers\GareEspace\GareReservationController::class, 'programDetails'])->name('program');
+            Route::get('/reservations-by-date', [App\Http\Controllers\GareEspace\GareReservationController::class, 'getReservationsByDate'])->name('reservations-by-date');
+            Route::get('/occupied-seats', [App\Http\Controllers\GareEspace\GareReservationController::class, 'getOccupiedSeats'])->name('occupied-seats');
+            Route::get('/programme-vehicle', [App\Http\Controllers\GareEspace\GareReservationController::class, 'getProgrammeVehicle'])->name('programme-vehicle');
             Route::get('/{reservation}', [App\Http\Controllers\GareEspace\GareReservationController::class, 'show'])->name('show');
         });
 
@@ -961,7 +968,7 @@ Route::prefix('gare-espace')->name('gare-espace.')->group(function () {
 Route::match(['get', 'post'], '/payment/callback', function (Request $request) {
     $transactionId = $request->get('transactionId') ?? $request->get('transaction_id');
     $cancel = $request->get('cancel');
-    
+
     if ($cancel) {
         // Optionnel : Créer une vue 'payment.result' ou retourner un JSON simple pour tester
         return response()->json([
@@ -970,10 +977,10 @@ Route::match(['get', 'post'], '/payment/callback', function (Request $request) {
             'transaction_id' => $transactionId
         ]);
     }
-    
+
     // Vérifier le paiement
     $paiement = Paiement::where('transaction_id', $transactionId)->first();
-    
+
     // Si le paiement est déjà success, super.
     if ($paiement && $paiement->status === 'success') {
         return response()->json([
@@ -982,7 +989,7 @@ Route::match(['get', 'post'], '/payment/callback', function (Request $request) {
             'transaction_id' => $transactionId
         ]);
     }
-    
+
     // Sinon, on dit à l'utilisateur d'attendre (le webhook arrivera quelques secondes après)
     return response()->json([
         'success' => true, // On met true pour que l'app ne panique pas
@@ -995,12 +1002,12 @@ Route::match(['get', 'post'], '/payment/callback', function (Request $request) {
 Route::prefix('chauffeur')->name('chauffeur.')->group(function () {
     Route::get('/login', [ChauffeurAuthenticate::class, 'login'])->name('login');
     Route::post('/login', [ChauffeurAuthenticate::class, 'handleLogin'])->name('login.submit');
-    
+
     // OTP Verification routes
     Route::get('/verify-otp', [\App\Http\Controllers\Chauffeur\OtpVerificationController::class, 'showVerifyForm'])->name('verify-otp');
     Route::post('/verify-otp', [\App\Http\Controllers\Chauffeur\OtpVerificationController::class, 'verify'])->name('verify-otp.submit');
     Route::post('/verify-otp/resend', [\App\Http\Controllers\Chauffeur\OtpVerificationController::class, 'resend'])->name('verify-otp.resend');
-    
+
     Route::get('/password/forgot', [\App\Http\Controllers\Chauffeur\ChauffeurForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
     Route::post('/password/forgot', [\App\Http\Controllers\Chauffeur\ChauffeurForgotPasswordController::class, 'sendOtp'])->name('password.email');
     Route::get('/password/reset', [\App\Http\Controllers\Chauffeur\ChauffeurForgotPasswordController::class, 'showResetForm'])->name('password.reset');
@@ -1015,7 +1022,7 @@ Route::prefix('chauffeur')->name('chauffeur.')->group(function () {
         Route::get('/profile', [ChauffeurController::class, 'profile'])->name('profile');
         Route::post('/profile/update', [ChauffeurController::class, 'updateProfile'])->name('profile.update');
         Route::post('/profile/password', [ChauffeurController::class, 'updatePassword'])->name('profile.password');
-        
+
         // Voyage management routes
         Route::prefix('voyages')->name('voyages.')->group(function () {
             Route::get('/', [ChauffeurVoyageController::class, 'index'])->name('index');
