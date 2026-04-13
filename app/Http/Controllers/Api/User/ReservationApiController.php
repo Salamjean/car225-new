@@ -922,6 +922,83 @@ class ReservationApiController extends Controller
     }
 
     /**
+     * POST /api/user/payment/wave/cancel
+     * Annuler les réservations Wave non payées (appelé par le mobile quand l'utilisateur quitte Wave sans payer)
+     */
+    public function cancelWavePayment(Request $request)
+    {
+        $request->validate([
+            'transaction_id' => 'required|string',
+        ]);
+
+        $transactionId = $request->transaction_id;
+        $userId = Auth::id();
+
+        try {
+            // Récupérer toutes les réservations en_attente liées à ce paiement Wave
+            $reservations = \App\Models\Reservation::where('payment_transaction_id', $transactionId)
+                ->where('user_id', $userId)
+                ->where('statut', 'en_attente')
+                ->get();
+
+            if ($reservations->isEmpty()) {
+                // Peut-être déjà annulées ou confirmées (ex: webhook Wave reçu en parallèle)
+                $existing = \App\Models\Reservation::where('payment_transaction_id', $transactionId)
+                    ->where('user_id', $userId)
+                    ->first();
+
+                if ($existing && $existing->statut === 'confirmee') {
+                    return response()->json([
+                        'success' => true,
+                        'already_confirmed' => true,
+                        'message' => 'Le paiement a été confirmé. Votre réservation est active.',
+                    ]);
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'already_cancelled' => true,
+                    'message' => 'Les réservations sont déjà annulées ou introuvables.',
+                ]);
+            }
+
+            // Annuler toutes les réservations en_attente
+            foreach ($reservations as $reservation) {
+                $reservation->update([
+                    'statut'           => 'annulee',
+                    'annulation_reason' => 'Paiement Wave abandonné par l\'utilisateur',
+                    'annulation_date'  => now(),
+                ]);
+            }
+
+            // Marquer le paiement comme annulé si existant
+            $paiement = \App\Models\Paiement::where('transaction_id', $transactionId)->first();
+            if ($paiement && $paiement->status === 'pending') {
+                $paiement->update(['status' => 'cancelled']);
+            }
+
+            Log::info('Wave payment cancelled by user', [
+                'transaction_id'       => $transactionId,
+                'user_id'              => $userId,
+                'reservations_annulees' => $reservations->count(),
+            ]);
+
+            return response()->json([
+                'success'              => true,
+                'message'              => 'Réservation(s) annulée(s). Les sièges sont libérés.',
+                'reservations_annulees' => $reservations->count(),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Erreur cancel Wave payment: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de l\'annulation du paiement Wave',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * GET /api/user/programmes
      * Liste de tous les programmes disponibles
      */
@@ -1318,17 +1395,20 @@ class ReservationApiController extends Controller
             
             $query = Reservation::where('programme_id', $programId)
                 ->whereDate('date_voyage', $formattedDate)
+                // ✅ CORRECTION BUG : exclure TOUJOURS les annulations, peu importe leur ancienneté
+                ->whereNotIn('statut', ['annulee', 'cancelled', 'rejected'])
                 ->where(function($q) {
                     // 1. Les réservations confirmées / payées
-                    $q->whereIn('statut', ['confirmee', 'paye', 'validee'])
+                    $q->whereIn('statut', ['confirmee', 'paye', 'validee', 'terminee'])
                     
-                    // 2. OU les réservations en attente (récentes)
-                    // J'ai augmenté à 30 minutes pour vos tests, vous pourrez réduire après
+                    // 2. OU les réservations en attente récentes (moins de 20 min)
+                    // Ces places sont "temporairement bloquées" pendant que le paiement Wave est en cours
                       ->orWhere(function($sub) {
                           $sub->where('statut', 'en_attente')
-                              ->where('created_at', '>=', now()->subMinutes(30)); 
+                              ->where('created_at', '>=', now()->subMinutes(20)); 
                       });
                 });
+
 
             if ($heureDepart) {
                 $query->where('heure_depart', $heureDepart);

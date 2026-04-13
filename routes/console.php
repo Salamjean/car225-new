@@ -10,3 +10,9 @@ Artisan::command('inspire', function () {
 // Planification du nettoyage des comptes désactivés
 \Illuminate\Support\Facades\Schedule::job(new \App\Jobs\DeleteDeactivatedUsers)->daily();
 
+// Nettoyage des réservations Wave abandonnées (sièges libérés automatiquement après 20 min sans paiement)
+\Illuminate\Support\Facades\Schedule::command('reservations:clean-pending-wave --minutes=20')
+    ->everyFifteenMinutes()
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->appendOutputTo(storage_path('logs/wave-cleanup.log'));

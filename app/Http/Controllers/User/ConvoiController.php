@@ -8,9 +8,7 @@ use App\Models\Convoi;
 use App\Models\Itineraire;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 
 class ConvoiController extends Controller
 {
@@ -34,129 +32,119 @@ class ConvoiController extends Controller
         return view('user.convoi.create', compact('compagnies'));
     }
 
+    /** AJAX : itinéraires d'une compagnie avec point_depart et point_arrive */
     public function itinerairesByCompagnie($compagnieId)
     {
         $itineraires = Itineraire::where('compagnie_id', $compagnieId)
             ->orderBy('point_depart')
-            ->orderBy('point_arrive')
-            ->get(['id', 'point_depart', 'point_arrive']);
+            ->get(['id', 'point_depart', 'point_arrive', 'durer_parcours']);
 
-        return response()->json([
-            'itineraires' => $itineraires->map(function ($it) {
-                return [
-                    'id' => $it->id,
-                    'label' => $it->point_depart . ' -> ' . $it->point_arrive,
-                ];
-            }),
-        ]);
+        return response()->json(['itineraires' => $itineraires]);
     }
 
-    public function stepTwo(Request $request)
-    {
-        $validated = $request->validate([
-            'compagnie_id' => 'required|exists:compagnies,id',
-            'itineraire_id' => [
-                'required',
-                Rule::exists('itineraires', 'id')->where(function ($query) use ($request) {
-                    return $query->where('compagnie_id', $request->compagnie_id);
-                }),
-            ],
-            'nombre_personnes' => 'required|integer|min:1|max:100',
-        ], [
-            'compagnie_id.required' => 'Veuillez choisir une compagnie.',
-            'itineraire_id.required' => 'Veuillez choisir un itinéraire.',
-            'nombre_personnes.required' => 'Veuillez indiquer le nombre de personnes.',
-        ]);
-
-        session([
-            'convoi.draft' => [
-                'compagnie_id' => (int) $validated['compagnie_id'],
-                'itineraire_id' => (int) $validated['itineraire_id'],
-                'nombre_personnes' => (int) $validated['nombre_personnes'],
-            ],
-        ]);
-
-        return redirect()->route('user.convoi.passengers');
-    }
-
-    public function passengers()
-    {
-        $draft = session('convoi.draft');
-        if (!$draft) {
-            return redirect()->route('user.convoi.create')
-                ->with('error', 'Veuillez d abord choisir la compagnie et le nombre de personnes.');
-        }
-
-        $compagnie = Compagnie::findOrFail($draft['compagnie_id']);
-        $itineraire = Itineraire::find($draft['itineraire_id']);
-        $nombrePersonnes = (int) $draft['nombre_personnes'];
-
-        return view('user.convoi.passengers', compact('compagnie', 'itineraire', 'nombrePersonnes'));
-    }
-
+    /** Création du convoi en une seule étape — envoi direct à la compagnie */
     public function store(Request $request)
     {
-        $draft = session('convoi.draft');
-        if (!$draft) {
-            return redirect()->route('user.convoi.create')
-                ->with('error', 'Session expirée. Veuillez recommencer.');
-        }
-
-        $nombrePersonnes = (int) $draft['nombre_personnes'];
-
-        $rules = [
-            'passagers' => 'required|array|size:' . $nombrePersonnes,
-        ];
-
-        for ($i = 0; $i < $nombrePersonnes; $i++) {
-            $rules["passagers.$i.nom"] = 'required|string|max:100';
-            $rules["passagers.$i.prenoms"] = 'required|string|max:150';
-            $rules["passagers.$i.contact"] = 'required|string|max:30';
-            $rules["passagers.$i.email"] = 'nullable|email|max:150';
-        }
-
-        $validated = $request->validate($rules, [
-            'passagers.required' => 'Veuillez renseigner les informations des passagers.',
+        $validated = $request->validate([
+            'compagnie_id'     => 'required|exists:compagnies,id',
+            'itineraire_id'    => 'nullable|exists:itineraires,id',
+            'lieu_depart'      => 'required_without:itineraire_id|string|max:255',
+            'lieu_retour'      => 'required_without:itineraire_id|string|max:255',
+            'nombre_personnes' => 'required|integer|min:10',
+            'date_depart'      => 'required|date|after_or_equal:today',
+            'heure_depart'     => 'required|date_format:H:i',
+            'date_retour'      => 'nullable|date|after_or_equal:date_depart',
+            'heure_retour'     => 'nullable|date_format:H:i|required_with:date_retour',
+        ], [
+            'lieu_depart.required_without'   => 'Le lieu de départ est obligatoire si aucun itinéraire n\'est sélectionné.',
+            'lieu_retour.required_without'   => 'Le lieu d\'arrivée est obligatoire si aucun itinéraire n\'est sélectionné.',
+            'nombre_personnes.min'           => 'Le minimum est de 10 personnes pour un convoi.',
+            'date_depart.after_or_equal'     => 'La date de départ ne peut pas être dans le passé.',
+            'date_retour.after_or_equal'     => 'La date de retour doit être égale ou après la date de départ.',
+            'heure_retour.required_with'     => 'L\'heure de retour est obligatoire si vous indiquez une date de retour.',
         ]);
 
-        DB::transaction(function () use ($draft, $validated, $nombrePersonnes) {
-            $itineraire = Itineraire::find($draft['itineraire_id'] ?? null);
+        // Résoudre lieu_depart / lieu_retour
+        if (!empty($validated['itineraire_id'])) {
+            $itineraire = Itineraire::findOrFail($validated['itineraire_id']);
+            $lieuDepart = $itineraire->point_depart;
+            $lieuRetour = $itineraire->point_arrive;
+        } else {
+            $itineraire = null;
+            $lieuDepart = $validated['lieu_depart'];
+            $lieuRetour = $validated['lieu_retour'];
+        }
 
-            $convoi = Convoi::create([
-                'user_id' => Auth::id(),
-                'compagnie_id' => $draft['compagnie_id'],
-                'itineraire_id' => $draft['itineraire_id'] ?? null,
-                'gare_id' => $itineraire?->gare_id,
-                'nombre_personnes' => $nombrePersonnes,
-                'reference' => 'CONV-' . now()->format('Ymd') . '-' . strtoupper(Str::random(6)),
-                'statut' => 'en_attente',
-            ]);
+        $convoi = Convoi::create([
+            'user_id'          => Auth::id(),
+            'compagnie_id'     => $validated['compagnie_id'],
+            'itineraire_id'    => $validated['itineraire_id'] ?? null,
+            'lieu_depart'      => $lieuDepart,
+            'lieu_retour'      => $lieuRetour,
+            'nombre_personnes' => $validated['nombre_personnes'],
+            'date_depart'      => $validated['date_depart'],
+            'heure_depart'     => $validated['heure_depart'],
+            'date_retour'      => $validated['date_retour'] ?? null,
+            'heure_retour'     => $validated['heure_retour'] ?? null,
+            'reference'        => 'CONV-' . now()->format('Ymd') . '-' . strtoupper(Str::random(6)),
+            'statut'           => 'en_attente',
+        ]);
 
-            foreach ($validated['passagers'] as $passager) {
-                $convoi->passagers()->create([
-                    'nom' => $passager['nom'],
-                    'prenoms' => $passager['prenoms'],
-                    'contact' => $passager['contact'],
-                    'email' => $passager['email'] ?? null,
-                ]);
-            }
-        });
-
-        session()->forget('convoi.draft');
-
-        return redirect()->route('user.convoi.create')
-            ->with('success', 'Convoi enregistré avec succès. Aucune opération de paiement n a été effectuée.');
+        return redirect()->route('user.convoi.show', $convoi)
+            ->with('success', 'Votre demande de convoi a été envoyée. La compagnie reviendra vers vous rapidement.');
     }
 
     public function show(Convoi $convoi)
     {
-        if ($convoi->user_id !== Auth::id()) {
-            abort(403);
-        }
-
-        $convoi->load(['compagnie', 'itineraire', 'passagers']);
-
+        abort_if($convoi->user_id !== Auth::id(), 403);
+        $convoi->load(['compagnie', 'itineraire', 'passagers', 'gare', 'chauffeur', 'vehicule']);
         return view('user.convoi.show', compact('convoi'));
     }
-}
 
+    /** Paiement : l'utilisateur accepte le règlement et paye le montant fixé par la compagnie */
+    public function pay(Request $request, Convoi $convoi)
+    {
+        abort_if($convoi->user_id !== Auth::id(), 403);
+        abort_if($convoi->statut !== 'valide', 403);
+
+        $request->validate([
+            'reglement_accepte' => 'required|accepted',
+        ], [
+            'reglement_accepte.required' => 'Vous devez accepter le règlement des convois avant de payer.',
+            'reglement_accepte.accepted'  => 'Vous devez cocher la case pour accepter le règlement.',
+        ]);
+
+        $convoi->update(['statut' => 'paye']);
+        $convoi->compagnie()->increment('solde_convoie', $convoi->montant);
+
+        return redirect()->route('user.convoi.show', $convoi)
+            ->with('success', 'Paiement confirmé ! Vous pouvez maintenant renseigner les informations de vos passagers.');
+    }
+
+    /** Enregistrement des passagers après paiement */
+    public function storePassengers(Request $request, Convoi $convoi)
+    {
+        abort_if($convoi->user_id !== Auth::id(), 403);
+        abort_if($convoi->statut !== 'paye', 403);
+
+        $validated = $request->validate([
+            'passagers'                       => 'required|array|size:' . $convoi->nombre_personnes,
+            'passagers.*.nom'                 => 'required|string|max:100',
+            'passagers.*.prenoms'             => 'required|string|max:150',
+            'passagers.*.contact'             => ['required', 'digits:10'],
+            'passagers.*.contact_urgence'     => ['required', 'digits:10'],
+        ], [
+            'passagers.size'                          => 'Le nombre de passagers doit correspondre exactement à ' . $convoi->nombre_personnes . ' personnes.',
+            'passagers.*.contact.digits'              => 'Le contact doit contenir exactement 10 chiffres.',
+            'passagers.*.contact_urgence.required'    => 'Le contact d\'urgence est obligatoire.',
+            'passagers.*.contact_urgence.digits'      => 'Le contact d\'urgence doit contenir exactement 10 chiffres.',
+        ]);
+
+        $convoi->passagers()->delete();
+        foreach ($validated['passagers'] as $p) {
+            $convoi->passagers()->create($p);
+        }
+
+        return back()->with('success', 'Les informations des passagers ont été enregistrées avec succès.');
+    }
+}

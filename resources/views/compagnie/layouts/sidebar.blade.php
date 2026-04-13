@@ -60,6 +60,13 @@
              onclick="toggleNavSub(this)">
             <i class="nav-icon fas fa-users"></i>
             Convois
+            @php
+                $convoisEnAttente = \App\Models\Convoi::where('compagnie_id', Auth::guard('compagnie')->id())
+                    ->where('statut', 'en_attente')->count();
+            @endphp
+            @if ($convoisEnAttente > 0)
+                <span class="nav-badge" style="background:#ef4444;color:#fff;">{{ $convoisEnAttente }}</span>
+            @endif
             <i class="nav-chevron fas fa-chevron-right"></i>
         </div>
         <div class="nav-sub-wrap {{ request()->routeIs('compagnie.convois.*') ? 'open' : '' }}">
@@ -67,11 +74,18 @@
                 <a class="nav-sub-item {{ request()->routeIs('compagnie.convois.index') && request()->get('statut', 'all') === 'all' ? 'sub-active' : '' }}"
                    href="{{ route('compagnie.convois.index') }}">Tous</a>
                 <a class="nav-sub-item {{ request()->routeIs('compagnie.convois.index') && request()->get('statut') === 'en_attente' ? 'sub-active' : '' }}"
-                   href="{{ route('compagnie.convois.index', ['statut' => 'en_attente']) }}">En attente</a>
+                   href="{{ route('compagnie.convois.index', ['statut' => 'en_attente']) }}">
+                    En attente
+                    @if ($convoisEnAttente > 0)
+                        <span class="badge badge-danger ml-1" style="font-size:9px;padding:1px 5px;">{{ $convoisEnAttente }}</span>
+                    @endif
+                </a>
                 <a class="nav-sub-item {{ request()->routeIs('compagnie.convois.index') && request()->get('statut') === 'valide' ? 'sub-active' : '' }}"
                    href="{{ route('compagnie.convois.index', ['statut' => 'valide']) }}">Validés</a>
-                <a class="nav-sub-item {{ request()->routeIs('compagnie.convois.index') && request()->get('statut') === 'annule' ? 'sub-active' : '' }}"
-                   href="{{ route('compagnie.convois.index', ['statut' => 'annule']) }}">Annulés</a>
+                <a class="nav-sub-item {{ request()->routeIs('compagnie.convois.index') && request()->get('statut') === 'refuse' ? 'sub-active' : '' }}"
+                   href="{{ route('compagnie.convois.index', ['statut' => 'refuse']) }}">Refusés</a>
+                <a class="nav-sub-item {{ request()->routeIs('compagnie.convois.index') && request()->get('statut') === 'paye' ? 'sub-active' : '' }}"
+                   href="{{ route('compagnie.convois.index', ['statut' => 'paye']) }}">Payés</a>
             </div>
         </div>
 

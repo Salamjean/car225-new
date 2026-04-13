@@ -49,7 +49,13 @@
                                     {{ $convoi->compagnie->name ?? 'Compagnie' }}
                                 </td>
                                 <td class="px-5 py-4 text-sm font-semibold text-gray-700">
-                                    {{ $convoi->itineraire ? ($convoi->itineraire->point_depart . ' -> ' . $convoi->itineraire->point_arrive) : '-' }}
+                                    @if($convoi->itineraire)
+                                        {{ $convoi->itineraire->point_depart }} → {{ $convoi->itineraire->point_arrive }}
+                                    @elseif($convoi->lieu_depart)
+                                        {{ $convoi->lieu_depart }} → {{ $convoi->lieu_retour }}
+                                    @else
+                                        <span class="text-gray-400">-</span>
+                                    @endif
                                 </td>
                                 <td class="px-5 py-4 text-center">
                                     <span class="inline-flex px-3 py-1 rounded-lg bg-orange-50 text-[#e94f1b] text-xs font-black">
@@ -57,19 +63,21 @@
                                     </span>
                                 </td>
                                 <td class="px-5 py-4 text-center">
-                                    @if ($convoi->statut === 'en_attente')
-                                        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-amber-50 text-amber-700 text-[10px] font-black uppercase">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> En attente
-                                        </span>
-                                    @elseif($convoi->statut === 'valide')
-                                        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-green-50 text-green-700 text-[10px] font-black uppercase">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Validé
-                                        </span>
-                                    @else
-                                        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-red-50 text-red-700 text-[10px] font-black uppercase">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Annulé
-                                        </span>
-                                    @endif
+                                    @php
+                                        $sm = [
+                                            'en_attente' => ['En attente',  'bg-amber-50 text-amber-700',   'bg-amber-500'],
+                                            'valide'     => ['Validé',      'bg-blue-50 text-blue-700',     'bg-blue-500'],
+                                            'refuse'     => ['Refusé',      'bg-red-50 text-red-700',       'bg-red-500'],
+                                            'paye'       => ['Payé',        'bg-green-50 text-green-700',   'bg-green-500'],
+                                            'en_cours'   => ['En cours',    'bg-indigo-50 text-indigo-700', 'bg-indigo-500'],
+                                            'termine'    => ['Terminé',     'bg-gray-100 text-gray-600',    'bg-gray-400'],
+                                            'annule'     => ['Annulé',      'bg-red-50 text-red-700',       'bg-red-500'],
+                                        ];
+                                        [$slabel, $sclass, $sdot] = $sm[$convoi->statut] ?? [ucfirst($convoi->statut), 'bg-gray-100 text-gray-600', 'bg-gray-400'];
+                                    @endphp
+                                    <span class="inline-flex items-center gap-1 px-3 py-1 rounded-lg {{ $sclass }} text-[10px] font-black uppercase">
+                                        <span class="w-1.5 h-1.5 rounded-full {{ $sdot }}"></span> {{ $slabel }}
+                                    </span>
                                 </td>
                                 <td class="px-5 py-4 text-sm font-semibold text-gray-600">
                                     {{ $convoi->created_at->format('d/m/Y H:i') }}

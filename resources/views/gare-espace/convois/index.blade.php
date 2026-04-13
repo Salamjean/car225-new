@@ -301,11 +301,11 @@
 
 @section('content')
 @php
-    $allCount = $convois->total();
-    $current = $convois->getCollection();
-    $pendingCount = $current->where('statut', 'en_attente')->count();
-    $validCount = $current->where('statut', 'valide')->count();
-    $cancelCount = $current->where('statut', 'annule')->count();
+    $allCount    = $convois->total();
+    $current     = $convois->getCollection();
+    $payeCount   = $current->where('statut', 'paye')->count();
+    $coursCount  = $current->where('statut', 'en_cours')->count();
+    $termineCount = $current->where('statut', 'termine')->count();
 @endphp
 <div class="convoi-shell">
     @if(session('success'))
@@ -328,23 +328,24 @@
             <div class="metric-value">{{ $allCount }}</div>
         </div>
         <div class="metric-card">
-            <div class="metric-label">En attente (page)</div>
-            <div class="metric-value">{{ $pendingCount }}</div>
+            <div class="metric-label">Payés — à affecter</div>
+            <div class="metric-value" style="color:#7c3aed;">{{ $payeCount }}</div>
         </div>
         <div class="metric-card">
-            <div class="metric-label">Validés (page)</div>
-            <div class="metric-value">{{ $validCount }}</div>
+            <div class="metric-label">En cours</div>
+            <div class="metric-value" style="color:#0284c7;">{{ $coursCount }}</div>
         </div>
         <div class="metric-card">
-            <div class="metric-label">Annulés (page)</div>
-            <div class="metric-value">{{ $cancelCount }}</div>
+            <div class="metric-label">Terminés</div>
+            <div class="metric-value" style="color:#059669;">{{ $termineCount }}</div>
         </div>
     </div>
 
     <div class="tab-wrap">
         <a href="{{ route('gare-espace.convois.index') }}" class="tab-link {{ ($statut ?? 'all') === 'all' ? 'active' : '' }}">Tous</a>
-        <a href="{{ route('gare-espace.convois.index', ['statut' => 'en_attente']) }}" class="tab-link {{ ($statut ?? 'all') === 'en_attente' ? 'active' : '' }}">En attente</a>
-        <a href="{{ route('gare-espace.convois.index', ['statut' => 'valide']) }}" class="tab-link {{ ($statut ?? 'all') === 'valide' ? 'active' : '' }}">Validés</a>
+        <a href="{{ route('gare-espace.convois.index', ['statut' => 'paye']) }}" class="tab-link {{ ($statut ?? 'all') === 'paye' ? 'active' : '' }}">Payés</a>
+        <a href="{{ route('gare-espace.convois.index', ['statut' => 'en_cours']) }}" class="tab-link {{ ($statut ?? 'all') === 'en_cours' ? 'active' : '' }}">En cours</a>
+        <a href="{{ route('gare-espace.convois.index', ['statut' => 'termine']) }}" class="tab-link {{ ($statut ?? 'all') === 'termine' ? 'active' : '' }}">Terminés</a>
         <a href="{{ route('gare-espace.convois.index', ['statut' => 'annule']) }}" class="tab-link {{ ($statut ?? 'all') === 'annule' ? 'active' : '' }}">Annulés</a>
     </div>
 
@@ -363,34 +364,46 @@
                 </thead>
                 <tbody>
                     @forelse($convois as $convoi)
+                    @php
+                        $trajet = $convoi->lieu_depart
+                            ? ($convoi->lieu_depart . ' → ' . $convoi->lieu_retour)
+                            : ($convoi->itineraire ? ($convoi->itineraire->point_depart . ' → ' . $convoi->itineraire->point_arrive) : '-');
+
+                        $sm = [
+                            'paye'     => ['Payé',      'background:#f5f3ff;color:#7c3aed;'],
+                            'en_cours' => ['En cours',  'background:#e0f2fe;color:#0284c7;'],
+                            'termine'  => ['Terminé',   'background:#ecfdf5;color:#059669;'],
+                            'annule'   => ['Annulé',    'background:#fef2f2;color:#dc2626;'],
+                            'refuse'   => ['Refusé',    'background:#fef2f2;color:#dc2626;'],
+                            'valide'   => ['Validé',    'background:#ecfdf5;color:#059669;'],
+                        ];
+                        [$slabel, $sstyle] = $sm[$convoi->statut] ?? [ucfirst(str_replace('_',' ',$convoi->statut)), 'background:#f1f5f9;color:#475569;'];
+
+                        // Peut affecter si paye ET pas encore de chauffeur
+                        $canAssign = $convoi->statut === 'paye' && !$convoi->personnel_id;
+                    @endphp
                     <tr>
                         <td><span class="ref-badge">{{ $convoi->reference }}</span></td>
                         <td>{{ $convoi->compagnie->name ?? '-' }}</td>
-                        <td>
-                            {{ $convoi->itineraire ? ($convoi->itineraire->point_depart . ' -> ' . $convoi->itineraire->point_arrive) : '-' }}
+                        <td style="font-size:12px;">{{ $trajet }}</td>
+                        <td class="text-center">
+                            <span class="count-badge">{{ $convoi->nombre_personnes }}</span>
                         </td>
                         <td class="text-center">
-                            <span class="count-badge">
-                                {{ $convoi->passagers_count ?: $convoi->nombre_personnes }}
-                            </span>
-                        </td>
-                        <td class="text-center">
-                            @if($convoi->statut === 'en_attente')
-                                <span class="status-pill status-wait">En attente</span>
-                            @elseif($convoi->statut === 'valide')
-                                <span class="status-pill status-ok">Validé</span>
-                            @else
-                                <span class="status-pill status-cancel">Annulé</span>
-                            @endif
+                            <span class="status-pill" style="{{ $sstyle }}">{{ $slabel }}</span>
                         </td>
                         <td class="text-right">
                             <div class="actions-wrap">
-                                @if($convoi->statut === 'en_attente')
+                                @if($canAssign)
                                     <button type="button"
                                             class="btn-assign"
                                             onclick="openAssignModal('{{ $convoi->id }}', '{{ $convoi->reference }}')">
                                         <i class="fas fa-user-check"></i> Affecter
                                     </button>
+                                @elseif($convoi->statut === 'paye' && $convoi->personnel_id)
+                                    <span style="font-size:11px;font-weight:700;color:#059669;">
+                                        <i class="fas fa-check-circle mr-1"></i>Affecté
+                                    </span>
                                 @endif
                                 <a href="{{ route('gare-espace.convois.show', $convoi->id) }}" class="btn-see">
                                     <i class="fas fa-eye"></i> Voir

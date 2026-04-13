@@ -19,6 +19,14 @@ class Convoi extends Model
         'nombre_personnes',
         'reference',
         'statut',
+        'lieu_depart',
+        'lieu_retour',
+        'date_depart',
+        'heure_depart',
+        'date_retour',
+        'heure_retour',
+        'montant',
+        'motif_refus',
     ];
 
     public function user()

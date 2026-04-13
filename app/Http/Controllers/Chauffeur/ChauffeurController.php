@@ -42,7 +42,7 @@ class ChauffeurController extends Controller
             ->get();
 
         $activeConvois = Convoi::where('personnel_id', $chauffeur->id)
-            ->whereIn('statut', ['valide', 'en_cours'])
+            ->whereIn('statut', ['paye', 'en_cours'])
             ->with(['itineraire', 'gare', 'vehicule'])
             ->latest()
             ->get();

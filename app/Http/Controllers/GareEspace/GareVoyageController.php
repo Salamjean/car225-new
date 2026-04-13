@@ -80,7 +80,8 @@ class GareVoyageController extends Controller
         })->unique('id')->values();
 
         // Available drivers (station-specific)
-        $busyConvoiPersonnelIds = Convoi::whereIn('statut', ['en_attente', 'valide'])
+        // On exclut uniquement ceux qui ont un convoi en_cours actuellement
+        $busyConvoiPersonnelIds = Convoi::where('statut', 'en_cours')
             ->whereNotNull('personnel_id')
             ->pluck('personnel_id');
 
@@ -93,7 +94,7 @@ class GareVoyageController extends Controller
             ->get();
 
         // Available vehicles (station-specific)
-        $busyConvoiVehiculeIds = Convoi::whereIn('statut', ['en_attente', 'valide'])
+        $busyConvoiVehiculeIds = Convoi::where('statut', 'en_cours')
             ->whereNotNull('vehicule_id')
             ->pluck('vehicule_id');
 
@@ -241,12 +242,15 @@ class GareVoyageController extends Controller
             return back()->with('error', 'Ce chauffeur est déjà occupé par un autre voyage actif pour cette date.');
         }
 
+        // Vérifier si le chauffeur est sur un convoi qui chevauche cette date
         $chauffeurBusyOnConvoi = Convoi::where('personnel_id', $chauffeur->id)
-            ->whereIn('statut', ['en_attente', 'valide'])
+            ->whereIn('statut', ['paye', 'en_cours'])
+            ->where('date_depart', '<=', $validated['date_voyage'])
+            ->where('date_retour', '>=', $validated['date_voyage'])
             ->exists();
 
         if ($chauffeurBusyOnConvoi) {
-            return back()->with('error', 'Ce chauffeur est déjà affecté à un convoi en attente/validé.');
+            return back()->with('error', 'Ce chauffeur est affecté à un convoi qui chevauche cette date.');
         }
 
         // Check vehicle availability (ignoring cancelled trips)
@@ -259,12 +263,15 @@ class GareVoyageController extends Controller
             return back()->with('error', 'Ce véhicule est déjà utilisé pour un autre voyage actif à cette date.');
         }
 
+        // Vérifier si le véhicule est sur un convoi qui chevauche cette date
         $vehiculeBusyOnConvoi = Convoi::where('vehicule_id', $vehicule->id)
-            ->whereIn('statut', ['en_attente', 'valide'])
+            ->whereIn('statut', ['paye', 'en_cours'])
+            ->where('date_depart', '<=', $validated['date_voyage'])
+            ->where('date_retour', '>=', $validated['date_voyage'])
             ->exists();
 
         if ($vehiculeBusyOnConvoi) {
-            return back()->with('error', 'Ce véhicule est déjà affecté à un convoi en attente/validé.');
+            return back()->with('error', 'Ce véhicule est affecté à un convoi qui chevauche cette date.');
         }
 
         // Create voyage

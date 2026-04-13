@@ -14,6 +14,7 @@ class ConvoiPassager extends Model
         'nom',
         'prenoms',
         'contact',
+        'contact_urgence',
         'email',
     ];
 

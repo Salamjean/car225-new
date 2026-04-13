@@ -111,16 +111,24 @@
                                         <p class="text-xs text-indigo-600 uppercase font-bold">Convoi • Référence</p>
                                         <p class="font-extrabold text-gray-900">{{ $convoi->reference ?? '-' }}</p>
                                     </div>
-                                    <span class="px-3 py-1 rounded-full text-xs font-bold uppercase {{ $convoi->statut === 'en_cours' ? 'bg-purple-100 text-purple-700' : 'bg-green-100 text-green-700' }}">
+                                    <span class="px-3 py-1 rounded-full text-xs font-bold uppercase {{ $convoi->statut === 'en_cours' ? 'bg-purple-100 text-purple-700' : 'bg-indigo-100 text-indigo-700' }}">
                                         {{ $convoi->statut === 'en_cours' ? 'En cours' : 'Assigné' }}
                                     </span>
                                 </div>
                                 <p class="text-sm text-gray-700 font-semibold">
-                                    {{ $convoi->itineraire ? ($convoi->itineraire->point_depart . ' -> ' . $convoi->itineraire->point_arrive) : '-' }}
+                                    @if($convoi->itineraire)
+                                        {{ $convoi->itineraire->point_depart }} → {{ $convoi->itineraire->point_arrive }}
+                                    @elseif($convoi->lieu_depart)
+                                        {{ $convoi->lieu_depart }} → {{ $convoi->lieu_retour }}
+                                    @else
+                                        -
+                                    @endif
                                 </p>
                                 <div class="mt-2 text-xs text-gray-500 flex flex-wrap gap-3">
                                     <span><i class="fas fa-users mr-1"></i>{{ $convoi->nombre_personnes ?? 0 }} passagers</span>
-                                    <span><i class="fas fa-map-marker-alt mr-1"></i>{{ $convoi->gare->nom_gare ?? '-' }}</span>
+                                    @if($convoi->date_depart)
+                                        <span><i class="far fa-calendar mr-1"></i>{{ \Carbon\Carbon::parse($convoi->date_depart)->format('d/m/Y') }}@if($convoi->heure_depart) à {{ $convoi->heure_depart }}@endif</span>
+                                    @endif
                                     <span><i class="fas fa-bus mr-1"></i>{{ $convoi->vehicule->immatriculation ?? '-' }}</span>
                                 </div>
                             </a>

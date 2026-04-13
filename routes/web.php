@@ -270,6 +270,9 @@ Route::middleware('compagnie')->prefix('company')->group(function () {
         Route::get('/', [\App\Http\Controllers\Compagnie\ConvoiController::class, 'index'])->name('index');
         Route::get('/{convoi}', [\App\Http\Controllers\Compagnie\ConvoiController::class, 'show'])->name('show');
         Route::get('/{convoi}/location', [\App\Http\Controllers\Compagnie\ConvoiController::class, 'location'])->name('location');
+        Route::post('/{convoi}/valider', [\App\Http\Controllers\Compagnie\ConvoiController::class, 'valider'])->name('valider');
+        Route::post('/{convoi}/refuser', [\App\Http\Controllers\Compagnie\ConvoiController::class, 'refuser'])->name('refuser');
+        Route::post('/{convoi}/assigner-gare', [\App\Http\Controllers\Compagnie\ConvoiController::class, 'assignerGare'])->name('assigner-gare');
     });
 
     // Routes de gestion des signalements pour la compagnie
@@ -562,10 +565,10 @@ Route::middleware('auth')->prefix('user')->group(function () {
             Route::get('/mes-convois', [ConvoiController::class, 'index'])->name('index');
             Route::get('/', [ConvoiController::class, 'create'])->name('create');
             Route::get('/compagnie/{compagnie}/itineraires', [ConvoiController::class, 'itinerairesByCompagnie'])->name('itineraires-by-compagnie');
-            Route::post('/step-two', [ConvoiController::class, 'stepTwo'])->name('step-two');
-            Route::get('/passagers', [ConvoiController::class, 'passengers'])->name('passengers');
             Route::post('/store', [ConvoiController::class, 'store'])->name('store');
             Route::get('/{convoi}', [ConvoiController::class, 'show'])->name('show');
+            Route::post('/{convoi}/pay', [ConvoiController::class, 'pay'])->name('pay');
+            Route::post('/{convoi}/passengers', [ConvoiController::class, 'storePassengers'])->name('store-passengers');
         });
         Route::get('/programmes/{programme}/recalculate-status', [ReservationController::class, 'recalculateProgramStatus'])->name('programmes.recalculate-status');
         Route::post('/reservations/{reservation}/update-emergency', [ReservationController::class, 'updateEmergencyContact'])->name('user.reservation.update-emergency');
@@ -909,6 +912,8 @@ Route::prefix('gare-espace')->name('gare-espace.')->group(function () {
             Route::get('/{convoi}', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'show'])->name('show');
             Route::get('/{convoi}/location', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'location'])->name('location');
             Route::post('/{convoi}/assign', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'assign'])->name('assign');
+            Route::post('/{convoi}/reassign', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'reassign'])->name('reassign');
+            Route::post('/{convoi}/unassign', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'unassign'])->name('unassign');
         });
 
         // Personnel (CRUD)

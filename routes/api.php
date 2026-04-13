@@ -92,6 +92,10 @@ Route::prefix('user')->group(function () {
         Route::get('/payment/status/{transactionId}', [UserReservationController::class, 'getPaymentStatus']);
         Route::post('/payment/verify/{transactionId}', [UserReservationController::class, 'verifyAndConfirmPayment']);
         
+        // Annulation paiement Wave (appelé quand l'utilisateur revient sans payer)
+        Route::post('/payment/wave/cancel', [UserReservationController::class, 'cancelWavePayment']);
+
+        
         // Portefeuille (Wallet)
         Route::get('/wallet', [WalletController::class, 'index']);
         Route::post('/wallet/recharge', [WalletController::class, 'recharge']);

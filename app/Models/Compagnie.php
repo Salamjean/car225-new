@@ -29,6 +29,7 @@ class Compagnie extends Authenticatable
         'statut',
         'path_logo',
         'tickets',
+        'solde_convoie',
     ];
 
     /**

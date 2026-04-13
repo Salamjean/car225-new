@@ -5,11 +5,75 @@
 
 @section('content')
     <div class="dashboard-page">
-        <div class="premium-tabs mb-3">
+
+        {{-- Solde portefeuille convois --}}
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="dash-card p-4" style="border-left: 4px solid #10b981;">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-muted" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Solde portefeuille convois</span>
+                        <div style="width:36px;height:36px;border-radius:10px;background:#ECFDF5;display:flex;align-items:center;justify-content:center;">
+                            <i class="fas fa-wallet" style="color:#10b981;font-size:14px;"></i>
+                        </div>
+                    </div>
+                    <div style="font-size:26px;font-weight:900;color:#065f46;letter-spacing:-0.5px;">
+                        {{ number_format($soldeConvoie, 0, ',', ' ') }}
+                        <span style="font-size:13px;font-weight:700;color:#6b7280;">FCFA</span>
+                    </div>
+                    <div class="mt-1" style="font-size:11px;color:#6b7280;font-weight:600;">
+                        Cumul encaissé depuis l'ouverture
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="dash-card p-4" style="border-left: 4px solid #f97316;">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-muted" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Total paiements reçus</span>
+                        <div style="width:36px;height:36px;border-radius:10px;background:#FFF7ED;display:flex;align-items:center;justify-content:center;">
+                            <i class="fas fa-money-bill-wave" style="color:#f97316;font-size:14px;"></i>
+                        </div>
+                    </div>
+                    <div style="font-size:26px;font-weight:900;color:#9a3412;letter-spacing:-0.5px;">
+                        {{ number_format($totalPaye, 0, ',', ' ') }}
+                        <span style="font-size:13px;font-weight:700;color:#6b7280;">FCFA</span>
+                    </div>
+                    <div class="mt-1" style="font-size:11px;color:#6b7280;font-weight:600;">
+                        Convois payés + en cours + terminés
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="dash-card p-4" style="border-left: 4px solid #6366f1;">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-muted" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Convois en attente de paiement</span>
+                        <div style="width:36px;height:36px;border-radius:10px;background:#EEF2FF;display:flex;align-items:center;justify-content:center;">
+                            <i class="fas fa-hourglass-half" style="color:#6366f1;font-size:14px;"></i>
+                        </div>
+                    </div>
+                    <div style="font-size:26px;font-weight:900;color:#3730a3;letter-spacing:-0.5px;">
+                        {{ number_format(\App\Models\Convoi::where('compagnie_id', Auth::guard('compagnie')->id())->where('statut', 'valide')->sum('montant'), 0, ',', ' ') }}
+                        <span style="font-size:13px;font-weight:700;color:#6b7280;">FCFA</span>
+                    </div>
+                    <div class="mt-1" style="font-size:11px;color:#6b7280;font-weight:600;">
+                        Convois validés non encore payés
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="premium-tabs mb-3 flex-wrap" style="display:inline-flex;gap:4px;">
             <a href="{{ route('compagnie.convois.index') }}" class="p-tab {{ ($statut ?? 'all') === 'all' ? 'active' : '' }}">Tous</a>
-            <a href="{{ route('compagnie.convois.index', ['statut' => 'en_attente']) }}" class="p-tab {{ ($statut ?? 'all') === 'en_attente' ? 'active' : '' }}">En attente</a>
+            <a href="{{ route('compagnie.convois.index', ['statut' => 'en_attente']) }}" class="p-tab {{ ($statut ?? 'all') === 'en_attente' ? 'active' : '' }}">
+                En attente
+                @if ($enAttenteCount > 0)
+                    <span class="badge badge-danger ml-1" style="font-size:10px;padding:2px 6px;">{{ $enAttenteCount }}</span>
+                @endif
+            </a>
             <a href="{{ route('compagnie.convois.index', ['statut' => 'valide']) }}" class="p-tab {{ ($statut ?? 'all') === 'valide' ? 'active' : '' }}">Validés</a>
-            <a href="{{ route('compagnie.convois.index', ['statut' => 'annule']) }}" class="p-tab {{ ($statut ?? 'all') === 'annule' ? 'active' : '' }}">Annulés</a>
+            <a href="{{ route('compagnie.convois.index', ['statut' => 'refuse']) }}" class="p-tab {{ ($statut ?? 'all') === 'refuse' ? 'active' : '' }}">Refusés</a>
+            <a href="{{ route('compagnie.convois.index', ['statut' => 'paye']) }}" class="p-tab {{ ($statut ?? 'all') === 'paye' ? 'active' : '' }}">Payés</a>
+            <a href="{{ route('compagnie.convois.index', ['statut' => 'en_cours']) }}" class="p-tab {{ ($statut ?? 'all') === 'en_cours' ? 'active' : '' }}">En cours</a>
+            <a href="{{ route('compagnie.convois.index', ['statut' => 'termine']) }}" class="p-tab {{ ($statut ?? 'all') === 'termine' ? 'active' : '' }}">Terminés</a>
         </div>
 
         <div class="dash-card">
@@ -29,8 +93,8 @@
                             <th>Itinéraire</th>
                             <th>Gare</th>
                             <th class="text-center">Personnes</th>
+                            <th>Départ</th>
                             <th class="text-center">Statut</th>
-                            <th>Date</th>
                             <th class="text-right">Action</th>
                         </tr>
                     </thead>
@@ -42,7 +106,10 @@
                                     {{ trim(($convoi->user->name ?? '') . ' ' . ($convoi->user->prenom ?? '')) ?: 'Utilisateur' }}
                                 </td>
                                 <td>
-                                    {{ $convoi->itineraire ? ($convoi->itineraire->point_depart . ' -> ' . $convoi->itineraire->point_arrive) : '-' }}
+                                    {{ $convoi->lieu_depart ?? ($convoi->itineraire->point_depart ?? '-') }}
+                                    @if($convoi->lieu_retour ?? $convoi->itineraire->point_arrive ?? null)
+                                        → {{ $convoi->lieu_retour ?? $convoi->itineraire->point_arrive }}
+                                    @endif
                                 </td>
                                 <td>
                                     @if($convoi->gare)
@@ -54,18 +121,33 @@
                                     @endif
                                 </td>
                                 <td class="text-center">
-                                    <span class="badge badge-warning px-3 py-2">{{ $convoi->passagers_count ?: $convoi->nombre_personnes }}</span>
+                                    <span class="badge badge-warning px-3 py-2">{{ $convoi->nombre_personnes }}</span>
                                 </td>
-                                <td class="text-center">
-                                    @if ($convoi->statut === 'en_attente')
-                                        <span class="badge badge-secondary px-3 py-2">En attente</span>
-                                    @elseif($convoi->statut === 'valide')
-                                        <span class="badge badge-success px-3 py-2">Validé</span>
+                                <td>
+                                    @if($convoi->date_depart)
+                                        {{ \Carbon\Carbon::parse($convoi->date_depart)->format('d/m/Y') }}
+                                        @if($convoi->heure_depart)
+                                            <small class="text-muted">{{ $convoi->heure_depart }}</small>
+                                        @endif
                                     @else
-                                        <span class="badge badge-danger px-3 py-2">Annulé</span>
+                                        <span class="text-muted">-</span>
                                     @endif
                                 </td>
-                                <td>{{ $convoi->created_at->format('d/m/Y H:i') }}</td>
+                                <td class="text-center">
+                                    @php
+                                        $sm = [
+                                            'en_attente' => ['En attente',  'badge-warning'],
+                                            'valide'     => ['Validé',      'badge-primary'],
+                                            'refuse'     => ['Refusé',      'badge-danger'],
+                                            'paye'       => ['Payé',        'badge-success'],
+                                            'en_cours'   => ['En cours',    'badge-info'],
+                                            'termine'    => ['Terminé',     'badge-secondary'],
+                                            'annule'     => ['Annulé',      'badge-danger'],
+                                        ];
+                                        [$slabel, $sclass] = $sm[$convoi->statut] ?? [ucfirst($convoi->statut), 'badge-secondary'];
+                                    @endphp
+                                    <span class="badge {{ $sclass }} px-3 py-2">{{ $slabel }}</span>
+                                </td>
                                 <td class="text-right">
                                     <a href="{{ route('compagnie.convois.show', $convoi->id) }}" class="btn btn-sm btn-outline-warning">
                                         <i class="fas fa-eye mr-1"></i> Voir
@@ -93,7 +175,6 @@
 @section('styles')
     <style>
         .premium-tabs {
-            display: inline-flex;
             background: rgba(255, 255, 255, 0.6);
             padding: 5px;
             border-radius: 14px;
@@ -106,6 +187,7 @@
             font-weight: 800;
             color: #64748b;
             text-decoration: none !important;
+            white-space: nowrap;
         }
         .p-tab.active {
             background: #fff;
@@ -114,4 +196,3 @@
         }
     </style>
 @endsection
-
