@@ -63,8 +63,14 @@
         @endif
 
         <!-- Voyages List -->
+        @php
+            $showConvoisInThisTab = ($tab === 'active');
+            $hasVoyages = $voyages->count() > 0;
+            $hasConvois = $showConvoisInThisTab && isset($convois) && $convois->count() > 0;
+        @endphp
         <div class="space-y-6">
-            @forelse($voyages as $voyage)
+            @if($hasVoyages || $hasConvois)
+            @foreach($voyages as $voyage)
                 <div class="bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300"
                     @if($voyage->statut === 'en_cours')
                         data-voyage-tracking="{{ $voyage->id }}"
@@ -289,7 +295,90 @@
                         @endif
                     </div>
                 </div>
-            @empty
+            @endforeach
+
+            @if($hasConvois)
+                @foreach($convois as $convoi)
+                    <div class="bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100"
+                        @if($convoi->statut === 'en_cours')
+                            data-convoi-tracking="{{ $convoi->id }}"
+                            data-convoi-tracking-url="{{ route('chauffeur.voyages.convois.update-location', $convoi->id) }}"
+                        @endif
+                    >
+                        <div class="p-3 sm:p-5 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50">
+                            <div class="flex flex-wrap justify-between items-start gap-2">
+                                <div>
+                                    <p class="text-xs font-bold text-indigo-600 uppercase">Convoi • Référence</p>
+                                    <p class="font-extrabold text-gray-900 text-sm sm:text-base">{{ $convoi->reference ?? '-' }}</p>
+                                </div>
+                                @if($convoi->statut === 'valide')
+                                    <span class="px-3 py-1.5 bg-green-100 text-green-700 rounded-xl font-semibold text-xs sm:text-sm">Assigné</span>
+                                @elseif($convoi->statut === 'en_cours')
+                                    <span class="px-3 py-1.5 bg-purple-100 text-purple-700 rounded-xl font-semibold text-xs sm:text-sm">En cours</span>
+                                @elseif($convoi->statut === 'termine')
+                                    <span class="px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-xl font-semibold text-xs sm:text-sm">Terminé</span>
+                                @else
+                                    <span class="px-3 py-1.5 bg-red-100 text-red-700 rounded-xl font-semibold text-xs sm:text-sm">Annulé</span>
+                                @endif
+                            </div>
+                        </div>
+
+                        <div class="p-3 sm:p-5">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                <div class="bg-gray-50 p-3 rounded-xl">
+                                    <p class="text-xs font-bold text-gray-500 uppercase mb-1">Trajet</p>
+                                    <p class="font-bold text-gray-900 text-sm">{{ $convoi->itineraire ? ($convoi->itineraire->point_depart . ' -> ' . $convoi->itineraire->point_arrive) : '-' }}</p>
+                                </div>
+                                <div class="bg-gray-50 p-3 rounded-xl">
+                                    <p class="text-xs font-bold text-gray-500 uppercase mb-1">Gare</p>
+                                    <p class="font-bold text-gray-900 text-sm">{{ $convoi->gare->nom_gare ?? '-' }}</p>
+                                </div>
+                                <div class="bg-gray-50 p-3 rounded-xl">
+                                    <p class="text-xs font-bold text-gray-500 uppercase mb-1">Passagers</p>
+                                    <p class="font-bold text-gray-900 text-sm">{{ $convoi->nombre_personnes ?? 0 }}</p>
+                                </div>
+                                <div class="bg-gray-50 p-3 rounded-xl">
+                                    <p class="text-xs font-bold text-gray-500 uppercase mb-1">Véhicule</p>
+                                    <p class="font-bold text-gray-900 text-sm">{{ $convoi->vehicule->immatriculation ?? '-' }}</p>
+                                </div>
+                            </div>
+
+                            @if(in_array($convoi->statut, ['valide', 'en_cours']))
+                                <div class="mt-4 flex flex-col md:flex-row gap-3">
+                                    @if($convoi->statut === 'valide')
+                                        <form action="{{ route('chauffeur.voyages.convois.start', $convoi->id) }}" method="POST" class="flex-1">
+                                            @csrf
+                                            <button type="submit" class="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:from-green-700 hover:to-emerald-700 transition-all">
+                                                <i class="fas fa-play-circle"></i>
+                                                Démarrer le convoi
+                                            </button>
+                                        </form>
+                                    @endif
+
+                                    @if($convoi->statut === 'en_cours')
+                                        <form action="{{ route('chauffeur.voyages.convois.complete', $convoi->id) }}" method="POST" class="flex-1" onsubmit="return confirm('Confirmez-vous la fin du convoi ?')">
+                                            @csrf
+                                            <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:from-purple-700 hover:to-pink-700 transition-all">
+                                                <i class="fas fa-flag-checkered"></i>
+                                                Terminer le convoi
+                                            </button>
+                                        </form>
+                                    @endif
+
+                                    <form action="{{ route('chauffeur.voyages.convois.annuler', $convoi->id) }}" method="POST" class="flex-1" onsubmit="return confirm('Confirmez-vous l\'annulation du convoi ?')">
+                                        @csrf
+                                        <button type="submit" class="w-full bg-white border-2 border-red-200 text-red-500 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-red-50 hover:border-red-400 transition-all">
+                                            <i class="fas fa-times-circle"></i>
+                                            Annuler le convoi
+                                        </button>
+                                    </form>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
+            @endif
+            @else
                 <div class="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-200 animate-fade-in">
                     <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-inbox text-gray-300 text-4xl"></i>
@@ -302,10 +391,10 @@
                         <p class="text-gray-500 max-w-md mx-auto">Vous n'avez pas encore de voyages terminés dans votre historique.</p>
                     @else
                         <h3 class="text-xl font-bold text-gray-900 mb-2">Aucun voyage assigné</h3>
-                        <p class="text-gray-500 max-w-md mx-auto">Vous n'avez pas de voyages assignés pour cette date. Veuillez contacter votre agent.</p>
+                        <p class="text-gray-500 max-w-md mx-auto">Vous n'avez pas de voyage ou convoi assigné pour cette date.</p>
                     @endif
                 </div>
-            @endforelse
+            @endif
         </div>
 
         <!-- Pagination -->
@@ -454,6 +543,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // GPS Location Sharing for active voyages
     // ============================================
     const activeVoyages = document.querySelectorAll('[data-voyage-tracking]');
+    const activeConvois = document.querySelectorAll('[data-convoi-tracking]');
     let gpsIntervals = {};
 
     function startGPSTracking(voyageId, url) {
@@ -557,6 +647,49 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Starting GPS tracking for voyage', voyageId, 'url:', url);
         startGPSTracking(voyageId, url);
     });
+
+    // Auto-start GPS for active convois
+    activeConvois.forEach(function(el) {
+        const convoiId = el.getAttribute('data-convoi-tracking');
+        const url = el.getAttribute('data-convoi-tracking-url');
+        if (!convoiId || !url || !navigator.geolocation) return;
+
+        navigator.geolocation.getCurrentPosition(
+            function(pos) {
+                sendConvoiPosition(convoiId, url, pos);
+                gpsIntervals['convoi_' + convoiId] = setInterval(function() {
+                    navigator.geolocation.getCurrentPosition(
+                        function(p) { sendConvoiPosition(convoiId, url, p); },
+                        function(err) { console.warn('Convoi GPS error:', err.message); },
+                        { enableHighAccuracy: true, timeout: 4000, maximumAge: 2000 }
+                    );
+                }, 5000);
+            },
+            function(err) {
+                console.warn('Convoi GPS permission error:', err.message);
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+    });
+
+    function sendConvoiPosition(convoiId, url, position) {
+        const data = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            speed: position.coords.speed ? (position.coords.speed * 3.6) : null,
+            heading: position.coords.heading
+        };
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(data)
+        }).catch(err => console.error('Convoi GPS send error:', err));
+    }
 });
 </script>
 

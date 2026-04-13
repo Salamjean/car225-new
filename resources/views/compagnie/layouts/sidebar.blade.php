@@ -56,6 +56,25 @@
             @endif
         </a>
 
+        <div class="nav-item nav-has-sub {{ request()->routeIs('compagnie.convois.*') ? 'sub-open' : '' }}"
+             onclick="toggleNavSub(this)">
+            <i class="nav-icon fas fa-users"></i>
+            Convois
+            <i class="nav-chevron fas fa-chevron-right"></i>
+        </div>
+        <div class="nav-sub-wrap {{ request()->routeIs('compagnie.convois.*') ? 'open' : '' }}">
+            <div class="nav-sub">
+                <a class="nav-sub-item {{ request()->routeIs('compagnie.convois.index') && request()->get('statut', 'all') === 'all' ? 'sub-active' : '' }}"
+                   href="{{ route('compagnie.convois.index') }}">Tous</a>
+                <a class="nav-sub-item {{ request()->routeIs('compagnie.convois.index') && request()->get('statut') === 'en_attente' ? 'sub-active' : '' }}"
+                   href="{{ route('compagnie.convois.index', ['statut' => 'en_attente']) }}">En attente</a>
+                <a class="nav-sub-item {{ request()->routeIs('compagnie.convois.index') && request()->get('statut') === 'valide' ? 'sub-active' : '' }}"
+                   href="{{ route('compagnie.convois.index', ['statut' => 'valide']) }}">Validés</a>
+                <a class="nav-sub-item {{ request()->routeIs('compagnie.convois.index') && request()->get('statut') === 'annule' ? 'sub-active' : '' }}"
+                   href="{{ route('compagnie.convois.index', ['statut' => 'annule']) }}">Annulés</a>
+            </div>
+        </div>
+
         {{-- Gestion --}}
         <div class="nav-section-label">Gestion</div>
 

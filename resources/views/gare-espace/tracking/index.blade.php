@@ -279,7 +279,7 @@
             <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
                 <div class="stat-pill">
                     <i class="fas fa-bus"></i>
-                    <span id="totalEnCours">{{ $activeVoyages->count() }}</span> voyage(s) en cours
+                    <span id="totalEnCours">{{ $activeVoyages->count() + (($activeConvois ?? collect())->count()) }}</span> mission(s) en cours
                 </div>
                 <div class="stat-pill">
                     <i class="fas fa-map-pin"></i>
@@ -306,9 +306,9 @@
                         <i class="fas fa-list-ul mr-2"></i> Voyages en cours
                     </div>
                     <div class="voyage-sidebar-list" id="voyageSidebarList">
-                        @if($activeVoyages->count() > 0)
+                        @if($activeVoyages->count() > 0 || (($activeConvois ?? collect())->count() > 0))
                             @foreach($activeVoyages as $voyage)
-                            <div class="voyage-card" data-voyage-id="{{ $voyage->id }}" onclick="focusVoyage({{ $voyage->id }})">
+                            <div class="voyage-card" data-track-id="voyage_{{ $voyage->id }}" onclick="focusTrack('voyage_{{ $voyage->id }}')">
                                 <div class="route-label">
                                     {{ optional($voyage->programme->gareDepart)->nom_gare ?? $voyage->programme->point_depart }}
                                     →
@@ -323,6 +323,25 @@
                                     {{ $voyage->vehicule->immatriculation ?? 'N/A' }}
                                 </div>
                                 <div class="speed-label" id="speed-{{ $voyage->id }}">
+                                    <i class="fas fa-tachometer-alt"></i>
+                                    <span>En attente GPS...</span>
+                                </div>
+                            </div>
+                            @endforeach
+                            @foreach(($activeConvois ?? collect()) as $convoi)
+                            <div class="voyage-card" data-track-id="convoi_{{ $convoi->id }}" onclick="focusTrack('convoi_{{ $convoi->id }}')">
+                                <div class="route-label">
+                                    [Convoi] {{ $convoi->itineraire->point_depart ?? 'Convoi' }} → {{ $convoi->itineraire->point_arrive ?? 'Destination' }}
+                                </div>
+                                <div class="driver-label">
+                                    <i class="fas fa-user-circle mr-1"></i>
+                                    {{ $convoi->chauffeur->prenom ?? '' }} {{ $convoi->chauffeur->name ?? '' }}
+                                </div>
+                                <div class="vehicle-label">
+                                    <i class="fas fa-bus mr-1"></i>
+                                    {{ $convoi->vehicule->immatriculation ?? 'N/A' }}
+                                </div>
+                                <div class="speed-label" id="speed-convoi_{{ $convoi->id }}">
                                     <i class="fas fa-tachometer-alt"></i>
                                     <span>En attente GPS...</span>
                                 </div>
@@ -481,7 +500,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 const activeIds = new Set();
 
                 data.locations.forEach(loc => {
-                    activeIds.add(loc.voyage_id);
+                    const trackId = loc.track_id || (loc.voyage_id ? ('voyage_' + loc.voyage_id) : ('convoi_' + loc.convoi_id));
+                    activeIds.add(trackId);
 
                     const popupContent = `
                         <div class="popup-title">${loc.depart} → ${loc.arrivee}</div>
@@ -494,23 +514,23 @@ document.addEventListener('DOMContentLoaded', function () {
                     `;
 
                     // Update or create bus marker
-                    if (markers[loc.voyage_id]) {
-                        markers[loc.voyage_id].setLatLng([loc.latitude, loc.longitude]);
-                        markers[loc.voyage_id].setPopupContent(popupContent);
+                    if (markers[trackId]) {
+                        markers[trackId].setLatLng([loc.latitude, loc.longitude]);
+                        markers[trackId].setPopupContent(popupContent);
                     } else {
                         const marker = L.marker([loc.latitude, loc.longitude], {
                             icon: createBusIcon(true)
                         }).addTo(map);
                         marker.bindPopup(popupContent);
-                        markers[loc.voyage_id] = marker;
+                        markers[trackId] = marker;
                     }
 
                     // Tracé 1 gare→gare (dessiné une seule fois)
-                    if (!routeLayers[loc.voyage_id]
+                    if (loc.type === 'voyage' && !routeLayers[trackId]
                         && loc.gare_depart_lat && loc.gare_depart_lng
                         && loc.gare_arrivee_lat && loc.gare_arrivee_lng) {
                         drawRoute(
-                            loc.voyage_id,
+                            trackId,
                             loc.gare_depart_lat, loc.gare_depart_lng,
                             loc.gare_arrivee_lat, loc.gare_arrivee_lng,
                             loc.depart, loc.arrivee
@@ -518,15 +538,15 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
 
                     // Tracé 2 : chemin réel du chauffeur → arrivée (tiretré violet, mis à jour à chaque fetch)
-                    if (loc.gare_arrivee_lat && loc.gare_arrivee_lng) {
+                    if (loc.type === 'voyage' && loc.gare_arrivee_lat && loc.gare_arrivee_lng) {
                         drawDriverRoute(
-                            loc.voyage_id,
+                            trackId,
                             loc.latitude, loc.longitude,
                             loc.gare_arrivee_lat, loc.gare_arrivee_lng
                         );
                     }
 
-                    const speedEl = document.getElementById('speed-' + loc.voyage_id);
+                    const speedEl = document.getElementById('speed-' + trackId) || document.getElementById('speed-' + loc.voyage_id);
                     if (speedEl) {
                         speedEl.innerHTML = `<i class="fas fa-tachometer-alt"></i> <span>${loc.speed ? Math.round(loc.speed) + ' km/h' : 'GPS actif'}</span>`;
                     }
@@ -534,7 +554,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 // Supprimer les couches des voyages terminés
                 Object.keys(markers).forEach(id => {
-                    if (!activeIds.has(parseInt(id))) {
+                    if (!activeIds.has(id)) {
                         map.removeLayer(markers[id]);
                         delete markers[id];
 
@@ -567,14 +587,14 @@ document.addEventListener('DOMContentLoaded', function () {
             .catch(err => console.error('Tracking fetch error:', err));
     }
 
-    window.focusVoyage = function(voyageId) {
+    window.focusTrack = function(trackId) {
         document.querySelectorAll('.voyage-card').forEach(c => c.classList.remove('active'));
-        const card = document.querySelector(`.voyage-card[data-voyage-id="${voyageId}"]`);
+        const card = document.querySelector(`.voyage-card[data-track-id="${trackId}"]`);
         if (card) card.classList.add('active');
 
-        if (markers[voyageId]) {
-            map.setView(markers[voyageId].getLatLng(), 14, { animate: true });
-            markers[voyageId].openPopup();
+        if (markers[trackId]) {
+            map.setView(markers[trackId].getLatLng(), 14, { animate: true });
+            markers[trackId].openPopup();
         }
     };
 

@@ -26,6 +26,7 @@ use App\Http\Controllers\Home\AccueilController;
 use App\Http\Controllers\Home\HomeController;
 use App\Http\Controllers\Compagnie\CompagniePasswordResetController;
 use App\Http\Controllers\User\PasswordResetController;
+use App\Http\Controllers\User\ConvoiController;
 use App\Http\Controllers\User\ProfileController;
 use App\Http\Controllers\User\Reservation\ReservationController;
 use App\Http\Controllers\User\UserAuthenticate;
@@ -262,6 +263,13 @@ Route::middleware('compagnie')->prefix('company')->group(function () {
         Route::get('/occupied-seats', [CompagnieReservationController::class, 'getOccupiedSeats'])->name('company.reservation.occupied-seats');
         Route::get('/programme-vehicle', [CompagnieReservationController::class, 'getProgrammeVehicle'])->name('company.reservation.programme-vehicle');
         Route::get('/reservations-by-date', [CompagnieReservationController::class, 'getReservationsByDate'])->name('company.reservation.reservations-by-date');
+    });
+
+    // Convois reçus par la compagnie
+    Route::prefix('convois')->name('compagnie.convois.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Compagnie\ConvoiController::class, 'index'])->name('index');
+        Route::get('/{convoi}', [\App\Http\Controllers\Compagnie\ConvoiController::class, 'show'])->name('show');
+        Route::get('/{convoi}/location', [\App\Http\Controllers\Compagnie\ConvoiController::class, 'location'])->name('location');
     });
 
     // Routes de gestion des signalements pour la compagnie
@@ -549,6 +557,15 @@ Route::middleware('auth')->prefix('user')->group(function () {
             Route::get('/programmes/{programme}/available-times', [ReservationController::class, 'getAvailableTimes'])->name('programmes.available-times');
             Route::get('/programmes/{programme}/seats', [ReservationController::class, 'getSeats'])->name('programmes.seats');
             Route::post('/reservations/{reservation}/calculate-delta', [ReservationController::class, 'calculateModificationDelta'])->name('reservations.calculate-delta');
+        });
+        Route::prefix('convoi')->name('user.convoi.')->group(function () {
+            Route::get('/mes-convois', [ConvoiController::class, 'index'])->name('index');
+            Route::get('/', [ConvoiController::class, 'create'])->name('create');
+            Route::get('/compagnie/{compagnie}/itineraires', [ConvoiController::class, 'itinerairesByCompagnie'])->name('itineraires-by-compagnie');
+            Route::post('/step-two', [ConvoiController::class, 'stepTwo'])->name('step-two');
+            Route::get('/passagers', [ConvoiController::class, 'passengers'])->name('passengers');
+            Route::post('/store', [ConvoiController::class, 'store'])->name('store');
+            Route::get('/{convoi}', [ConvoiController::class, 'show'])->name('show');
         });
         Route::get('/programmes/{programme}/recalculate-status', [ReservationController::class, 'recalculateProgramStatus'])->name('programmes.recalculate-status');
         Route::post('/reservations/{reservation}/update-emergency', [ReservationController::class, 'updateEmergencyContact'])->name('user.reservation.update-emergency');
@@ -886,6 +903,14 @@ Route::prefix('gare-espace')->name('gare-espace.')->group(function () {
             Route::get('/{reservation}', [App\Http\Controllers\GareEspace\GareReservationController::class, 'show'])->name('show');
         });
 
+        // Convois reçus par la gare
+        Route::prefix('convois')->name('convois.')->group(function () {
+            Route::get('/', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'index'])->name('index');
+            Route::get('/{convoi}', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'show'])->name('show');
+            Route::get('/{convoi}/location', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'location'])->name('location');
+            Route::post('/{convoi}/assign', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'assign'])->name('assign');
+        });
+
         // Personnel (CRUD)
         Route::prefix('personnel')->name('personnel.')->group(function () {
             Route::get('/', [App\Http\Controllers\GareEspace\GarePersonnelController::class, 'index'])->name('index');
@@ -1030,8 +1055,12 @@ Route::prefix('chauffeur')->name('chauffeur.')->group(function () {
             Route::post('/{voyage}/start', [ChauffeurVoyageController::class, 'start'])->name('start');
             Route::post('/{voyage}/complete', [ChauffeurVoyageController::class, 'complete'])->name('complete');
             Route::post('/{voyage}/update-location', [ChauffeurVoyageController::class, 'updateLocation'])->name('update-location');
+            Route::post('/convois/{convoi}/update-location', [ChauffeurVoyageController::class, 'updateConvoiLocation'])->name('convois.update-location');
             Route::post('/{voyage}/annuler', [ChauffeurVoyageController::class, 'annuler'])->name('annuler');
             Route::get('/{voyage}/tracking', [ChauffeurVoyageController::class, 'tracking'])->name('tracking');
+            Route::post('/convois/{convoi}/start', [ChauffeurVoyageController::class, 'startConvoi'])->name('convois.start');
+            Route::post('/convois/{convoi}/complete', [ChauffeurVoyageController::class, 'completeConvoi'])->name('convois.complete');
+            Route::post('/convois/{convoi}/annuler', [ChauffeurVoyageController::class, 'annulerConvoi'])->name('convois.annuler');
         });
 
         // Inbox for Chauffeur

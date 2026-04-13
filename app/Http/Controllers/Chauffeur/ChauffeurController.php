@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Chauffeur;
 
 use App\Http\Controllers\Controller;
+use App\Models\Convoi;
 use App\Models\Programme;
 use App\Models\Vehicule;
 use App\Models\Voyage;
@@ -40,7 +41,39 @@ class ChauffeurController extends Controller
             ->orderBy('date_voyage', 'asc')
             ->get();
 
-        return view('chauffeur.dashboard', compact('todayVoyages', 'upcomingVoyages'));
+        $activeConvois = Convoi::where('personnel_id', $chauffeur->id)
+            ->whereIn('statut', ['valide', 'en_cours'])
+            ->with(['itineraire', 'gare', 'vehicule'])
+            ->latest()
+            ->get();
+
+        $recentConvois = Convoi::where('personnel_id', $chauffeur->id)
+            ->with(['itineraire', 'gare', 'vehicule'])
+            ->latest()
+            ->limit(6)
+            ->get();
+
+        $completedVoyagesToday = Voyage::where('personnel_id', $chauffeur->id)
+            ->whereDate('updated_at', Carbon::today())
+            ->whereIn('statut', ['terminé', 'succès'])
+            ->count();
+
+        $completedConvoisToday = Convoi::where('personnel_id', $chauffeur->id)
+            ->whereDate('updated_at', Carbon::today())
+            ->where('statut', 'termine')
+            ->count();
+
+        $todayMissionsCount = $todayVoyages->count() + $activeConvois->count();
+        $completedMissionsTodayCount = $completedVoyagesToday + $completedConvoisToday;
+
+        return view('chauffeur.dashboard', compact(
+            'todayVoyages',
+            'upcomingVoyages',
+            'activeConvois',
+            'recentConvois',
+            'todayMissionsCount',
+            'completedMissionsTodayCount'
+        ));
     }
 
     public function myVoyages()

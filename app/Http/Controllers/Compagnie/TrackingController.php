@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Compagnie;
 
 use App\Http\Controllers\Controller;
+use App\Models\Convoi;
 use App\Models\DriverLocation;
 use App\Models\Voyage;
 use Illuminate\Http\Request;
@@ -31,7 +32,12 @@ class TrackingController extends Controller
             ])
             ->get();
 
-        return view('compagnie.tracking.index', compact('activeVoyages'));
+        $activeConvois = Convoi::where('compagnie_id', $compagnie->id)
+            ->where('statut', 'en_cours')
+            ->with(['chauffeur', 'vehicule', 'itineraire', 'gare', 'latestLocation'])
+            ->get();
+
+        return view('compagnie.tracking.index', compact('activeVoyages', 'activeConvois'));
     }
 
     /**
@@ -54,14 +60,24 @@ class TrackingController extends Controller
             ])
             ->get();
 
+        $activeConvois = Convoi::where('compagnie_id', $compagnie->id)
+            ->where('statut', 'en_cours')
+            ->with(['chauffeur', 'vehicule', 'itineraire', 'gare', 'latestLocation'])
+            ->get();
+
         $locations = $activeVoyages->map(function ($voyage) {
             $location    = $voyage->latestLocation;
             $gareDepart  = $voyage->programme->gareDepart;
             $gareArrivee = $voyage->programme->gareArrivee;
+            $latitude = $location ? (float) $location->latitude : ($gareDepart ? (float) $gareDepart->latitude : null);
+            $longitude = $location ? (float) $location->longitude : ($gareDepart ? (float) $gareDepart->longitude : null);
+
             return [
+                'track_id'        => 'voyage_' . $voyage->id,
+                'type'            => 'voyage',
                 'voyage_id'       => $voyage->id,
-                'latitude'        => $location ? (float) $location->latitude : null,
-                'longitude'       => $location ? (float) $location->longitude : null,
+                'latitude'        => $latitude,
+                'longitude'       => $longitude,
                 'speed'           => $location ? $location->speed : null,
                 'heading'         => $location ? $location->heading : null,
                 'last_update'     => $location ? $location->updated_at->diffForHumans() : 'Jamais',
@@ -78,15 +94,46 @@ class TrackingController extends Controller
                 'gare_depart_lng' => $gareDepart ? (float) $gareDepart->longitude : null,
                 'gare_arrivee_lat'=> $gareArrivee ? (float) $gareArrivee->latitude  : null,
                 'gare_arrivee_lng'=> $gareArrivee ? (float) $gareArrivee->longitude : null,
+                'is_fallback_position' => $location ? false : true,
             ];
-        })->filter(function ($loc) {
-            return $loc['latitude'] !== null;
-        })->values();
+        })->values()->concat(
+            $activeConvois->map(function ($convoi) {
+                $location = $convoi->latestLocation;
+
+                return [
+                    'track_id' => 'convoi_' . $convoi->id,
+                    'type' => 'convoi',
+                    'voyage_id' => null,
+                    'convoi_id' => $convoi->id,
+                    'latitude' => $location ? (float) $location->latitude : null,
+                    'longitude' => $location ? (float) $location->longitude : null,
+                    'speed' => $location ? $location->speed : null,
+                    'heading' => $location ? $location->heading : null,
+                    'last_update' => $location ? $location->updated_at->diffForHumans() : 'Jamais',
+                    'chauffeur' => $convoi->chauffeur ? trim(($convoi->chauffeur->prenom ?? '') . ' ' . ($convoi->chauffeur->name ?? '')) : 'Inconnu',
+                    'vehicule' => $convoi->vehicule ? $convoi->vehicule->immatriculation : 'N/A',
+                    'depart' => $convoi->itineraire->point_depart ?? 'Convoi',
+                    'arrivee' => $convoi->itineraire->point_arrive ?? 'Destination',
+                    'heure_depart' => null,
+                    'heure_arrivee' => null,
+                    'date_voyage' => Carbon::parse($convoi->updated_at)->format('d/m/Y'),
+                    'statut' => $convoi->statut,
+                    'temps_restant' => null,
+                    'gare_depart_lat' => null,
+                    'gare_depart_lng' => null,
+                    'gare_arrivee_lat' => null,
+                    'gare_arrivee_lng' => null,
+                    'is_fallback_position' => false,
+                ];
+            })->filter(function ($loc) {
+                return $loc['latitude'] !== null && $loc['longitude'] !== null;
+            })->values()
+        )->values();
 
         return response()->json([
             'success' => true,
             'locations' => $locations,
-            'total_en_cours' => $activeVoyages->count(),
+            'total_en_cours' => $activeVoyages->count() + $activeConvois->count(),
             'total_tracked' => $locations->count(),
         ]);
     }

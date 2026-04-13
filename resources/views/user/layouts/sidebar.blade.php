@@ -24,6 +24,25 @@
                         <i class="fas fa-plus-circle text-sm {{ request()->routeIs('reservation.create') ? 'text-[#e94f1b]' : 'group-hover:text-[#1A1D1F]' }}"></i>
                         <span class="text-sm font-bold tracking-tight">Réserver un voyage</span>
                     </a>
+                    @php
+                        $isConvoiActive = request()->routeIs('user.convoi.*');
+                    @endphp
+                    <div class="px-2 py-2 rounded-2xl {{ $isConvoiActive ? 'bg-[#e94f1b]/5' : 'hover:bg-gray-50' }}">
+                        <div class="flex items-center gap-3 px-2 pb-2">
+                            <i class="fas fa-users text-sm {{ $isConvoiActive ? 'text-[#e94f1b]' : 'text-[#1A1D1F]/80' }}"></i>
+                            <span class="text-sm font-black tracking-tight {{ $isConvoiActive ? 'text-[#e94f1b]' : 'text-[#1A1D1F]/80' }}">Convoi</span>
+                        </div>
+                        <div class="pl-7 space-y-1">
+                            <a href="{{ route('user.convoi.create') }}"
+                                class="block px-3 py-2 rounded-xl text-xs font-bold tracking-wide {{ request()->routeIs('user.convoi.create') || request()->routeIs('user.convoi.passengers') ? 'bg-white text-[#e94f1b]' : 'text-[#1A1D1F]/70 hover:bg-white' }}">
+                                Nouveau convoi
+                            </a>
+                            <a href="{{ route('user.convoi.index') }}"
+                                class="block px-3 py-2 rounded-xl text-xs font-bold tracking-wide {{ request()->routeIs('user.convoi.index') || request()->routeIs('user.convoi.show') ? 'bg-white text-[#e94f1b]' : 'text-[#1A1D1F]/70 hover:bg-white' }}">
+                                Mes convois
+                            </a>
+                        </div>
+                    </div>
                     <a href="{{ route('reservation.index') }}" class="flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all group {{ request()->routeIs('reservation.index') ? 'bg-[#e94f1b]/5 text-[#e94f1b]' : 'text-[#1A1D1F]/80 hover:bg-gray-50 hover:text-[#1A1D1F]' }}">
                         <i class="fas fa-ticket-alt text-sm {{ request()->routeIs('reservation.index') ? 'text-[#e94f1b]' : 'group-hover:text-[#1A1D1F]' }}"></i>
                         <span class="text-sm font-bold tracking-tight">Mes Billets</span>

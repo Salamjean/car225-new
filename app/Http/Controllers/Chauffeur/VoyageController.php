@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Chauffeur;
 
 use App\Http\Controllers\Controller;
+use App\Models\Convoi;
 use App\Models\Voyage;
 use App\Models\Reservation;
+use App\Models\Vehicule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -42,7 +44,87 @@ class VoyageController extends Controller
 
         $voyages = $query->paginate(10);
 
-        return view('chauffeur.programmes.index', compact('voyages', 'tab', 'date'));
+        $convoiQuery = Convoi::where('personnel_id', '=', $chauffeur->id)
+            ->with(['itineraire', 'gare', 'vehicule'])
+            ->orderBy('created_at', 'desc');
+
+        if ($tab === 'effectues') {
+            $convoiQuery->where('statut', 'termine');
+        } elseif ($tab === 'non_effectues') {
+            $convoiQuery->where('statut', 'annule');
+        } else {
+            // Active convoy missions for chauffeur.
+            $convoiQuery->whereIn('statut', ['valide', 'en_cours']);
+        }
+
+        $convois = $convoiQuery->get();
+
+        return view('chauffeur.programmes.index', compact('voyages', 'tab', 'date', 'convois'));
+    }
+
+    public function startConvoi(Convoi $convoi)
+    {
+        $chauffeur = Auth::guard('chauffeur')->user();
+
+        if ((int) $convoi->personnel_id !== (int) $chauffeur->id) {
+            return back()->with('error', 'Ce convoi ne vous appartient pas.');
+        }
+
+        if ($convoi->statut !== 'valide') {
+            return back()->with('error', 'Ce convoi ne peut pas être démarré.');
+        }
+
+        $convoi->update(['statut' => 'en_cours']);
+
+        return back()->with('success', 'Convoi démarré avec succès.');
+    }
+
+    public function completeConvoi(Convoi $convoi)
+    {
+        $chauffeur = Auth::guard('chauffeur')->user();
+
+        if ((int) $convoi->personnel_id !== (int) $chauffeur->id) {
+            return back()->with('error', 'Ce convoi ne vous appartient pas.');
+        }
+
+        if ($convoi->statut !== 'en_cours') {
+            return back()->with('error', 'Ce convoi n\'est pas en cours.');
+        }
+
+        $convoi->update(['statut' => 'termine']);
+        $chauffeur->update(['statut' => 'disponible']);
+
+        \App\Models\DriverLocation::where('convoi_id', $convoi->id)->delete();
+
+        if ($convoi->vehicule_id) {
+            Vehicule::where('id', $convoi->vehicule_id)->update(['statut' => 'disponible']);
+        }
+
+        return back()->with('success', 'Convoi terminé avec succès.');
+    }
+
+    public function annulerConvoi(Convoi $convoi)
+    {
+        $chauffeur = Auth::guard('chauffeur')->user();
+
+        if ((int) $convoi->personnel_id !== (int) $chauffeur->id) {
+            return back()->with('error', 'Ce convoi ne vous appartient pas.');
+        }
+
+        if (!in_array($convoi->statut, ['valide', 'en_cours'], true)) {
+            return back()->with('error', 'Ce convoi ne peut plus être annulé.');
+        }
+
+        $convoi->update(['statut' => 'annule']);
+        $chauffeur->update(['statut' => 'disponible']);
+
+        \App\Models\DriverLocation::where('convoi_id', $convoi->id)->delete();
+
+        if ($convoi->vehicule_id) {
+            Vehicule::where('id', $convoi->vehicule_id)->update(['statut' => 'disponible']);
+        }
+
+        return back()->with('success', 'Convoi annulé avec succès.');
     }
 
     /**
@@ -89,6 +171,23 @@ class VoyageController extends Controller
         }
 
         $voyage->update(['statut' => 'en_cours']);
+
+        // Seed an initial tracking point at departure station so company/gare can see the trip immediately.
+        $voyage->loadMissing(['gareDepart', 'programme.gareDepart']);
+        $departGare = $voyage->gareDepart ?: $voyage->programme?->gareDepart;
+        $seedLat = ($departGare && $departGare->latitude) ? (float) $departGare->latitude : 6.8276;
+        $seedLng = ($departGare && $departGare->longitude) ? (float) $departGare->longitude : -5.2893;
+
+        \App\Models\DriverLocation::updateOrCreate(
+            ['voyage_id' => $voyage->id, 'personnel_id' => $chauffeur->id],
+            [
+                'convoi_id' => null,
+                'latitude' => $seedLat,
+                'longitude' => $seedLng,
+                'speed' => 0,
+                'heading' => null,
+            ]
+        );
 
         return back()->with('success', 'Bon voyage ! Le voyage a été démarré.');
     }
@@ -173,6 +272,39 @@ class VoyageController extends Controller
             'estimated_arrival' => $voyage->estimated_arrival_at ? $voyage->estimated_arrival_at->toIso8601String() : null,
             'temps_restant' => $voyage->temps_restant
         ]);
+    }
+
+    public function updateConvoiLocation(Request $request, Convoi $convoi)
+    {
+        $chauffeur = Auth::guard('chauffeur')->user();
+
+        if ((int) $convoi->personnel_id !== (int) $chauffeur->id) {
+            return response()->json(['success' => false, 'message' => 'Non autorisé'], 403);
+        }
+
+        if ($convoi->statut !== 'en_cours') {
+            return response()->json(['success' => false, 'message' => 'Le convoi n\'est pas en cours'], 422);
+        }
+
+        $request->validate([
+            'latitude'  => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
+            'speed'     => 'nullable|numeric|min:0',
+            'heading'   => 'nullable|numeric|between:0,360',
+        ]);
+
+        \App\Models\DriverLocation::updateOrCreate(
+            ['convoi_id' => $convoi->id, 'personnel_id' => $chauffeur->id],
+            [
+                'voyage_id' => null,
+                'latitude'  => $request->latitude,
+                'longitude' => $request->longitude,
+                'speed'     => $request->speed,
+                'heading'   => $request->heading,
+            ]
+        );
+
+        return response()->json(['success' => true]);
     }
 
     /**

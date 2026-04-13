@@ -8,6 +8,7 @@ class DriverLocation extends Model
 {
     protected $fillable = [
         'voyage_id',
+        'convoi_id',
         'personnel_id',
         'latitude',
         'longitude',
@@ -30,5 +31,10 @@ class DriverLocation extends Model
     public function personnel()
     {
         return $this->belongsTo(Personnel::class);
+    }
+
+    public function convoi()
+    {
+        return $this->belongsTo(Convoi::class);
     }
 }

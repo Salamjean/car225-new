@@ -80,4 +80,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(UserDevice::class);
     }
+
+    public function convois()
+    {
+        return $this->hasMany(Convoi::class);
+    }
 }

@@ -20,29 +20,29 @@
             
             <div class="mt-8 grid grid-cols-2 gap-4">
                 <div class="bg-white/20 backdrop-blur rounded-xl p-4 border border-white/30">
-                    <p class="text-sm opacity-80 uppercase font-bold tracking-wider">Aujourd'hui</p>
-                    <p class="text-3xl font-bold mt-1">{{ $todayVoyages->count() }}</p>
-                    <p class="text-xs mt-1">Voyage(s)</p>
+                    <p class="text-sm opacity-80 uppercase font-bold tracking-wider">Missions en cours</p>
+                    <p class="text-3xl font-bold mt-1">{{ $todayMissionsCount ?? ($todayVoyages->count() + $activeConvois->count()) }}</p>
+                    <p class="text-xs mt-1">Voyages + Convois actifs</p>
                 </div>
                 <div class="bg-white/20 backdrop-blur rounded-xl p-4 border border-white/30">
-                    <p class="text-sm opacity-80 uppercase font-bold tracking-wider">A venir</p>
-                    <p class="text-3xl font-bold mt-1">{{ $upcomingVoyages->count() }}</p>
-                    <p class="text-xs mt-1">Prochains jours</p>
+                    <p class="text-sm opacity-80 uppercase font-bold tracking-wider">Missions terminées (aujourd'hui)</p>
+                    <p class="text-3xl font-bold mt-1">{{ $completedMissionsTodayCount ?? 0 }}</p>
+                    <p class="text-xs mt-1">Voyages + Convois terminés</p>
                 </div>
             </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Today's Trips -->
+            <!-- Today's Missions -->
             <section>
                 <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <div class="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center">
-                        <i class="fas fa-calendar-day text-orange-500"></i>
+                        <i class="fas fa-route text-orange-500"></i>
                     </div>
-                    Voyages du jour
+                    Missions du jour (Voyages + Convois)
                 </h3>
 
-                @if($todayVoyages->count() > 0)
+                @if(($todayVoyages->count() + $activeConvois->count()) > 0)
                     <div class="space-y-4">
                         @foreach($todayVoyages as $voyage)
                             <a href="{{ route('chauffeur.voyages.index') }}" class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col sm:flex-row sm:items-center gap-4 hover:shadow-md transition-shadow text-decoration-none"
@@ -103,15 +103,37 @@
                                 </div>
                             </a>
                         @endforeach
+
+                        @foreach($activeConvois as $convoi)
+                            <a href="{{ route('chauffeur.voyages.index') }}" class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow text-decoration-none block">
+                                <div class="flex items-start justify-between gap-3 mb-3">
+                                    <div>
+                                        <p class="text-xs text-indigo-600 uppercase font-bold">Convoi • Référence</p>
+                                        <p class="font-extrabold text-gray-900">{{ $convoi->reference ?? '-' }}</p>
+                                    </div>
+                                    <span class="px-3 py-1 rounded-full text-xs font-bold uppercase {{ $convoi->statut === 'en_cours' ? 'bg-purple-100 text-purple-700' : 'bg-green-100 text-green-700' }}">
+                                        {{ $convoi->statut === 'en_cours' ? 'En cours' : 'Assigné' }}
+                                    </span>
+                                </div>
+                                <p class="text-sm text-gray-700 font-semibold">
+                                    {{ $convoi->itineraire ? ($convoi->itineraire->point_depart . ' -> ' . $convoi->itineraire->point_arrive) : '-' }}
+                                </p>
+                                <div class="mt-2 text-xs text-gray-500 flex flex-wrap gap-3">
+                                    <span><i class="fas fa-users mr-1"></i>{{ $convoi->nombre_personnes ?? 0 }} passagers</span>
+                                    <span><i class="fas fa-map-marker-alt mr-1"></i>{{ $convoi->gare->nom_gare ?? '-' }}</span>
+                                    <span><i class="fas fa-bus mr-1"></i>{{ $convoi->vehicule->immatriculation ?? '-' }}</span>
+                                </div>
+                            </a>
+                        @endforeach
                     </div>
                 @else
                     <div class="text-center py-10 bg-white rounded-2xl border border-dashed border-gray-200 shadow-sm">
                         <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <i class="fas fa-road text-gray-300 text-2xl"></i>
+                            <i class="fas fa-route text-gray-300 text-2xl"></i>
                         </div>
-                        <p class="text-gray-500 font-medium">Aucun voyage prévu aujourd'hui</p>
+                        <p class="text-gray-500 font-medium">Aucune mission prévue aujourd'hui</p>
                         <a href="{{ route('chauffeur.voyages.index') }}" class="text-orange-600 font-bold mt-2 inline-block hover:text-orange-700 transition">
-                            S'assigner un horaire &rarr;
+                            Voir mes missions &rarr;
                         </a>
                     </div>
                 @endif

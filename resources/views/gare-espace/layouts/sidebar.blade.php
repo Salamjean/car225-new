@@ -153,6 +153,13 @@
             <span class="font-medium text-sm">Historique Voyages</span>
         </a>
 
+        <!-- Convois -->
+        <a href="{{ route('gare-espace.convois.index') }}"
+           class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('gare-espace.convois.*') ? 'bg-orange-500/20 text-orange-400' : 'text-gray-300 hover:bg-gray-700/50 hover:text-white' }}">
+            <i class="fas fa-people-group w-5 text-center"></i>
+            <span class="font-medium text-sm">Convois</span>
+        </a>
+
     </nav>
 
     <!-- Footer -->

@@ -123,4 +123,9 @@ class Compagnie extends Authenticatable
     {
         return $this->hasMany(Vehicule::class);
     }
+
+    public function convois()
+    {
+        return $this->hasMany(Convoi::class);
+    }
 }

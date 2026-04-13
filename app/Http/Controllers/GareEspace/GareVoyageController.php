@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\GareEspace;
 
 use App\Http\Controllers\Controller;
+use App\Models\Convoi;
 use App\Models\Programme;
 use App\Models\Personnel;
 use App\Models\Vehicule;
@@ -79,18 +80,28 @@ class GareVoyageController extends Controller
         })->unique('id')->values();
 
         // Available drivers (station-specific)
+        $busyConvoiPersonnelIds = Convoi::whereIn('statut', ['en_attente', 'valide'])
+            ->whereNotNull('personnel_id')
+            ->pluck('personnel_id');
+
         $chauffeurs = Personnel::where('compagnie_id', '=', $compagnieId)
             ->where('gare_id', '=', $gare->id)
             ->where('type_personnel', '=', 'Chauffeur')
             ->where('statut', '=', 'disponible')
+            ->whereNotIn('id', $busyConvoiPersonnelIds)
             ->orderBy('name')
             ->get();
 
         // Available vehicles (station-specific)
+        $busyConvoiVehiculeIds = Convoi::whereIn('statut', ['en_attente', 'valide'])
+            ->whereNotNull('vehicule_id')
+            ->pluck('vehicule_id');
+
         $vehicules = Vehicule::where('compagnie_id', '=', $compagnieId)
             ->where('gare_id', '=', $gare->id)
             ->where('is_active', '=', true)
             ->where('statut', '=', 'disponible')
+            ->whereNotIn('id', $busyConvoiVehiculeIds)
             ->orderBy('immatriculation')
             ->get();
 
@@ -230,6 +241,14 @@ class GareVoyageController extends Controller
             return back()->with('error', 'Ce chauffeur est déjà occupé par un autre voyage actif pour cette date.');
         }
 
+        $chauffeurBusyOnConvoi = Convoi::where('personnel_id', $chauffeur->id)
+            ->whereIn('statut', ['en_attente', 'valide'])
+            ->exists();
+
+        if ($chauffeurBusyOnConvoi) {
+            return back()->with('error', 'Ce chauffeur est déjà affecté à un convoi en attente/validé.');
+        }
+
         // Check vehicle availability (ignoring cancelled trips)
         $vehiculeBusy = Voyage::where('vehicule_id', '=', $vehicule->id)
             ->whereDate('date_voyage', $validated['date_voyage'])
@@ -238,6 +257,14 @@ class GareVoyageController extends Controller
 
         if ($vehiculeBusy) {
             return back()->with('error', 'Ce véhicule est déjà utilisé pour un autre voyage actif à cette date.');
+        }
+
+        $vehiculeBusyOnConvoi = Convoi::where('vehicule_id', $vehicule->id)
+            ->whereIn('statut', ['en_attente', 'valide'])
+            ->exists();
+
+        if ($vehiculeBusyOnConvoi) {
+            return back()->with('error', 'Ce véhicule est déjà affecté à un convoi en attente/validé.');
         }
 
         // Create voyage
