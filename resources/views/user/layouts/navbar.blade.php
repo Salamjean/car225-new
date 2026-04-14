@@ -32,7 +32,8 @@
                     </div>
                     <div class="max-h-80 overflow-y-auto scrollbar-thin">
                         @forelse($user->notifications()->limit(10)->get() as $notification)
-                            <div class="px-4 py-4 border-b border-gray-50 hover:bg-gray-50 transition-colors {{ $notification->read_at ? 'opacity-60' : 'bg-blue-50/30' }}">
+                            <a href="{{ route('user.notifications.go', $notification->id) }}"
+                               class="block px-4 py-4 border-b border-gray-50 hover:bg-gray-50 transition-colors {{ $notification->read_at ? 'opacity-60' : 'bg-blue-50/30' }}">
                                 <div class="flex gap-3">
                                     <div class="w-2 h-2 rounded-full mt-1.5 shrink-0 {{ $notification->read_at ? 'bg-gray-300' : 'bg-[#e94f1b]' }}"></div>
                                     <div class="space-y-1">
@@ -41,7 +42,7 @@
                                         <p class="text-[9px] font-bold text-gray-400 pt-1 uppercase">{{ $notification->created_at->diffForHumans() }}</p>
                                     </div>
                                 </div>
-                            </div>
+                            </a>
                         @empty
                             <div class="px-4 py-8 text-center">
                                 <i class="far fa-bell-slash text-gray-200 text-3xl mb-2"></i>

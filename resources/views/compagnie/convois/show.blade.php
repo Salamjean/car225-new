@@ -3,291 +3,856 @@
 @section('page-title', 'Détail Convoi')
 @section('page-subtitle', 'Gestion de la demande de convoi')
 
+@section('styles')
+<style>
+/* ──────────────────────────────────────────────
+   SHOW CONVOI — Design Premium (Bootstrap-safe)
+   ────────────────────────────────────────────── */
+.sc-page { padding: 28px 32px 60px; max-width: 1120px; }
+
+/* ── Back link ── */
+.sc-back {
+    display: inline-flex; align-items: center; gap: 8px;
+    color: #6b7280; font-size: 12px; font-weight: 700;
+    text-decoration: none; margin-bottom: 16px;
+    transition: color .2s;
+}
+.sc-back:hover { color: #e94f1b; text-decoration: none; }
+.sc-back-icon {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: #fff; border: 1px solid #e5e7eb;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: #6b7280;
+    transition: background .2s, border-color .2s, color .2s;
+}
+.sc-back:hover .sc-back-icon { background: #FFF7F5; border-color: #e94f1b; color: #e94f1b; }
+
+/* ── Page Header ── */
+.sc-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
+.sc-title { font-size: 30px; font-weight: 900; color: #111827; margin: 0; letter-spacing: -0.5px; }
+.sc-title span { color: #e94f1b; }
+.sc-ref { display: inline-block; margin-top: 6px; background: #f3f4f6; color: #4b5563; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 20px; letter-spacing: .3px; }
+
+/* ── Status Badge ── */
+.sc-status {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 20px; border-radius: 50px;
+    font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .8px;
+}
+.sc-status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    animation: pulse-sm 2s infinite;
+}
+@keyframes pulse-sm { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.7)} }
+.status-en_attente { background: #fef3c7; color: #92400e; }
+.status-en_attente .sc-status-dot { background: #f59e0b; }
+.status-valide { background: #dbeafe; color: #1e3a8a; }
+.status-valide .sc-status-dot { background: #3b82f6; }
+.status-paye { background: #d1fae5; color: #065f46; }
+.status-paye .sc-status-dot { background: #10b981; }
+.status-en_cours { background: #e0e7ff; color: #3730a3; }
+.status-en_cours .sc-status-dot { background: #6366f1; }
+.status-termine { background: #f3f4f6; color: #374151; }
+.status-termine .sc-status-dot { background: #9ca3af; }
+.status-refuse, .status-annule { background: #fee2e2; color: #7f1d1d; }
+.status-refuse .sc-status-dot, .status-annule .sc-status-dot { background: #ef4444; }
+
+/* ── Alerts ── */
+.sc-alert { display: flex; align-items: flex-start; gap: 14px; padding: 16px 20px; border-radius: 14px; margin-bottom: 20px; }
+.sc-alert-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+.sc-alert-title { font-size: 13px; font-weight: 800; margin-bottom: 2px; }
+.sc-alert-body  { font-size: 13px; font-weight: 500; }
+.sc-alert-success { background: #ecfdf5; border: 1px solid #bbf7d0; color: #065f46; }
+.sc-alert-error   { background: #fef2f2; border: 1px solid #fecaca; color: #7f1d1d; }
+
+/* ── Hero Banner (Itinéraire) ── */
+.sc-hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #1a1030 100%);
+    border-radius: 24px; padding: 36px 40px; margin-bottom: 24px;
+    position: relative; overflow: hidden; color: #fff;
+}
+.sc-hero::before {
+    content: ''; position: absolute; top: -80px; right: -80px;
+    width: 320px; height: 320px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(233,79,27,.35) 0%, transparent 70%);
+    pointer-events: none;
+}
+.sc-hero::after {
+    content: ''; position: absolute; bottom: -60px; left: -60px;
+    width: 240px; height: 240px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(99,102,241,.25) 0%, transparent 70%);
+    pointer-events: none;
+}
+.sc-hero-inner { position: relative; z-index: 1; }
+.sc-hero-label {
+    font-size: 10px; font-weight: 800; letter-spacing: 2px;
+    text-transform: uppercase; color: rgba(255,255,255,.4); margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+}
+.sc-route { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; margin-bottom: 28px; }
+.sc-route-city {
+    font-size: 28px; font-weight: 900; line-height: 1.1;
+    letter-spacing: -0.5px;
+}
+.sc-route-city.dest { color: rgba(255,255,255,.75); }
+.sc-route-arrow {
+    display: flex; align-items: center; justify-content: center;
+    width: 44px; height: 44px; border-radius: 50%;
+    border: 1.5px solid rgba(255,255,255,.15);
+    color: #e94f1b; font-size: 16px; flex-shrink: 0;
+    background: rgba(255,255,255,.05);
+}
+.sc-dates { display: flex; gap: 16px; flex-wrap: wrap; }
+.sc-date-card {
+    padding: 14px 20px; border-radius: 16px; min-width: 160px;
+}
+.sc-date-depart { background: linear-gradient(135deg, #e94f1b, #f97316); }
+.sc-date-retour { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); }
+.sc-date-label {
+    font-size: 9px; font-weight: 800; letter-spacing: 2px;
+    text-transform: uppercase; color: rgba(255,255,255,.55); margin-bottom: 4px;
+}
+.sc-date-value { font-size: 17px; font-weight: 900; color: #fff; line-height: 1.2; }
+.sc-date-time  { font-size: 12px; font-weight: 600; color: rgba(255,255,255,.6); margin-top: 3px; }
+
+/* ── Info Grid (3 cartes) ── */
+.sc-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-bottom: 24px; }
+@media (max-width: 900px) { .sc-cards { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 600px) { .sc-cards { grid-template-columns: 1fr; } }
+
+.sc-card {
+    background: #fff; border-radius: 20px;
+    border: 1px solid #f1f5f9; padding: 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.05);
+    transition: box-shadow .2s, transform .2s;
+    overflow: hidden; position: relative;
+}
+.sc-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,.08); transform: translateY(-2px); }
+.sc-card-label {
+    font-size: 10px; font-weight: 800; letter-spacing: 1.5px;
+    text-transform: uppercase; color: #9ca3af; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+}
+.sc-card-label i { font-size: 12px; }
+
+/* Demandeur */
+.sc-avatar {
+    width: 52px; height: 52px; border-radius: 16px;
+    background: linear-gradient(135deg, #ff7043, #e94f1b);
+    color: #fff; font-size: 20px; font-weight: 900;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; box-shadow: 0 4px 12px rgba(233,79,27,.25);
+}
+.sc-user-name  { font-size: 16px; font-weight: 900; color: #111827; margin-bottom: 3px; }
+.sc-user-email { font-size: 12px; font-weight: 500; color: #6b7280; margin-bottom: 4px; }
+.sc-user-phone { font-size: 13px; font-weight: 700; color: #e94f1b; }
+
+/* Passagers */
+.sc-big-num { font-size: 52px; font-weight: 900; color: #111827; line-height: 1; letter-spacing: -2px; }
+.sc-sub-num { font-size: 13px; font-weight: 700; color: #6b7280; margin-top: 6px; }
+.sc-progress-track { background: #f3f4f6; border-radius: 99px; height: 6px; margin-top: 14px; overflow: hidden; }
+.sc-progress-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #3b82f6, #6366f1); transition: width 1s ease; }
+
+/* Montant */
+.sc-amount { font-size: 36px; font-weight: 900; color: #059669; letter-spacing: -1px; line-height: 1; }
+.sc-amount-unit { font-size: 13px; font-weight: 800; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+.sc-amount-empty { display: flex; align-items: center; gap: 12px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 14px; padding: 16px; }
+.sc-amount-empty p { font-size: 13px; font-weight: 700; color: #92400e; margin: 0; }
+.sc-amount-empty small { font-size: 11px; color: #b45309; }
+
+/* ── Context chips ── */
+.sc-chips { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+.sc-chip {
+    display: flex; align-items: center; gap: 10px;
+    background: #fff; border: 1px solid #e5e7eb;
+    border-radius: 14px; padding: 12px 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04);
+}
+.sc-chip-icon {
+    width: 34px; height: 34px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0;
+}
+.sc-chip-label { font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 2px; }
+.sc-chip-value { font-size: 13px; font-weight: 800; color: #111827; }
+.sc-chip-blue  .sc-chip-icon { background: #eff6ff; color: #2563eb; }
+.sc-chip-purple .sc-chip-icon { background: #f5f3ff; color: #7c3aed; }
+.sc-chip-gray   .sc-chip-icon { background: #f3f4f6; color: #4b5563; }
+
+/* Alert chips (refus/annulation) */
+.sc-banner {
+    border-radius: 16px; padding: 18px 22px; margin-bottom: 24px;
+    display: flex; align-items: flex-start; gap: 14px;
+}
+.sc-banner-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+.sc-banner-title { font-size: 13px; font-weight: 800; margin-bottom: 3px; }
+.sc-banner-body  { font-size: 13px; font-weight: 500; line-height: 1.6; }
+.sc-banner-warn { background: #fffbeb; border: 1px solid #fde68a; color: #78350f; }
+.sc-banner-danger { background: #fef2f2; border: 1px solid #fecaca; color: #7f1d1d; }
+.sc-banner-info   { background: #f5f3ff; border: 1px solid #ddd6fe; color: #3b0764; }
+.sc-banner-note { background: #fffbeb; border: 1px solid #fde68a; color: #78350f; font-size: 12px; font-weight: 600; margin-top: 8px; }
+
+/* ── Action panels ── */
+.sc-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+@media (max-width: 768px) { .sc-actions { grid-template-columns: 1fr; } }
+
+.sc-panel {
+    background: #fff; border-radius: 20px;
+    border: 1px solid #e5e7eb; overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
+.sc-panel-head {
+    padding: 20px 24px; border-bottom: 1px solid #f3f4f6;
+    display: flex; align-items: center; gap: 14px;
+}
+.sc-panel-head-icon {
+    width: 40px; height: 40px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center; font-size: 16px;
+}
+.sc-panel-title { font-size: 15px; font-weight: 900; color: #111827; margin: 0; }
+.sc-panel-sub   { font-size: 12px; font-weight: 500; color: #6b7280; margin-top: 2px; }
+.sc-panel-body  { padding: 24px; }
+
+.sc-panel-green { border-color: #a7f3d0; }
+.sc-panel-green .sc-panel-head { background: #f0fdf4; border-bottom-color: #bbf7d0; }
+.sc-panel-green .sc-panel-head-icon { background: #dcfce7; color: #16a34a; }
+
+.sc-panel-red { border-color: #fecaca; }
+.sc-panel-red .sc-panel-head { background: #fef2f2; border-bottom-color: #fecaca; }
+.sc-panel-red .sc-panel-head-icon { background: #fee2e2; color: #dc2626; }
+
+/* ── Form elements ── */
+.sc-label {
+    display: block; font-size: 11px; font-weight: 800;
+    color: #374151; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 8px;
+}
+.sc-input {
+    width: 100%; padding: 12px 16px; border-radius: 12px;
+    border: 1.5px solid #e5e7eb; font-size: 14px; font-weight: 600; color: #111827;
+    background: #f9fafb; outline: none; transition: border-color .2s, background .2s, box-shadow .2s;
+}
+.sc-input:focus { border-color: #e94f1b; background: #fff; box-shadow: 0 0 0 3px rgba(233,79,27,.1); }
+.sc-textarea { resize: vertical; min-height: 90px; }
+.sc-select { -webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: url("data:image/svg+xml,%3Csvg fill='none' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='%236b7280' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; background-size: 20px; padding-right: 44px; }
+
+/* ── Buttons ── */
+.sc-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 13px 24px; border-radius: 12px;
+    font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .8px;
+    border: none; cursor: pointer; transition: all .2s; text-decoration: none; width: 100%;
+}
+.sc-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,0,0,.15); text-decoration: none; }
+.sc-btn-green { background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; box-shadow: 0 4px 12px rgba(34,197,94,.25); }
+.sc-btn-red   { background: #fff; border: 2px solid #ef4444; color: #dc2626; }
+.sc-btn-red:hover { background: #fef2f2; box-shadow: 0 6px 18px rgba(239,68,68,.15); }
+.sc-btn-blue  { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; box-shadow: 0 4px 12px rgba(59,130,246,.25); }
+.sc-btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; box-shadow: 0 4px 12px rgba(239,68,68,.25); }
+.sc-btn:disabled { opacity: .5; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+
+/* ── GPS Card ── */
+.sc-gps {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    border-radius: 20px; padding: 28px 32px; margin-bottom: 24px; color: #fff;
+    position: relative; overflow: hidden;
+}
+.sc-gps-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+.sc-gps-title-wrap { display: flex; align-items: center; gap: 14px; }
+.sc-gps-icon { width: 44px; height: 44px; border-radius: 14px; background: rgba(99,102,241,.2); border: 1px solid rgba(99,102,241,.3); display: flex; align-items: center; justify-content: center; font-size: 18px; color: #818cf8; }
+.sc-gps-title { font-size: 17px; font-weight: 900; margin: 0; }
+.sc-gps-sub   { font-size: 12px; color: rgba(255,255,255,.4); margin-top: 2px; }
+.sc-gps-badge { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); color: rgba(255,255,255,.6); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .8px; padding: 6px 14px; border-radius: 20px; }
+.sc-gps-coords { font-size: 22px; font-weight: 900; color: #a5b4fc; font-family: monospace; letter-spacing: -0.5px; margin-bottom: 8px; }
+.sc-gps-meta   { font-size: 12px; color: rgba(255,255,255,.4); font-weight: 500; }
+.sc-gps-map-btn {
+    display: inline-flex; align-items: center; gap: 8px; margin-top: 14px;
+    padding: 10px 20px; border-radius: 12px;
+    background: rgba(99,102,241,.25); border: 1px solid rgba(99,102,241,.35);
+    color: #a5b4fc; font-size: 12px; font-weight: 800;
+    text-decoration: none; transition: background .2s;
+}
+.sc-gps-map-btn:hover { background: rgba(99,102,241,.4); color: #c7d2fe; text-decoration: none; }
+
+/* ── Passengers Table ── */
+.sc-table-card {
+    background: #fff; border-radius: 20px;
+    border: 1px solid #f1f5f9; overflow: hidden;
+    margin-bottom: 24px; box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
+.sc-table-head {
+    display: flex; align-items: center; gap: 14px;
+    padding: 20px 24px; border-bottom: 1px solid #f3f4f6; background: #fff;
+}
+.sc-table-head-icon { width: 40px; height: 40px; border-radius: 12px; background: #fff7f5; color: #e94f1b; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.sc-table-title { font-size: 16px; font-weight: 900; color: #111827; margin: 0; }
+.sc-table-sub   { font-size: 12px; color: #6b7280; margin-top: 2px; }
+.sc-table-badge { margin-left: auto; background: #f3f4f6; color: #374151; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 20px; white-space: nowrap; }
+.sc-garant-badge { background: #ede9fe; color: #5b21b6; }
+
+table.sc-tbl { width: 100%; border-collapse: collapse; }
+table.sc-tbl thead tr { background: #f8fafc; }
+table.sc-tbl th {
+    padding: 13px 22px; text-align: left; font-size: 10px;
+    font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: #9ca3af;
+    border-bottom: 1px solid #f1f5f9; white-space: nowrap;
+}
+table.sc-tbl td { padding: 15px 22px; vertical-align: middle; border-bottom: 1px solid #f9fafb; }
+table.sc-tbl tbody tr:last-child td { border-bottom: none; }
+table.sc-tbl tbody tr:hover { background: #fafafa; }
+
+.sc-pass-num {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: #f3f4f6; color: #6b7280; font-size: 12px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .2s, color .2s;
+}
+table.sc-tbl tbody tr:hover .sc-pass-num { background: #fff0ec; color: #e94f1b; }
+.sc-pass-avatar {
+    width: 36px; height: 36px; border-radius: 12px;
+    background: linear-gradient(135deg, #e94f1b20, #e94f1b10);
+    color: #e94f1b; font-size: 14px; font-weight: 900;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.sc-pass-name   { font-size: 14px; font-weight: 800; color: #111827; }
+.sc-pass-prenom { font-size: 12px; font-weight: 500; color: #6b7280; margin-top: 1px; }
+.sc-pass-phone-link {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px;
+    padding: 7px 14px; color: #374151; font-size: 13px; font-weight: 700;
+    text-decoration: none; transition: all .2s;
+}
+.sc-pass-phone-link:hover { background: #fff0ec; border-color: #e94f1b; color: #e94f1b; text-decoration: none; }
+.sc-pass-phone-link i { font-size: 11px; color: #e94f1b; }
+.sc-pass-urgence {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px;
+    padding: 7px 14px; color: #b91c1c; font-size: 13px; font-weight: 700;
+}
+.sc-pass-none { color: #d1d5db; font-size: 20px; }
+
+.sc-empty-row td { padding: 60px 24px; text-align: center; }
+.sc-empty-icon { width: 64px; height: 64px; border-radius: 50%; background: #f3f4f6; color: #d1d5db; font-size: 26px; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
+.sc-empty-text { font-size: 15px; font-weight: 800; color: #374151; margin-bottom: 4px; }
+.sc-empty-sub  { font-size: 13px; color: #9ca3af; }
+
+/* ── Danger Zone – Annulation ── */
+.sc-danger-zone {
+    background: #fff5f5; border-radius: 20px;
+    border: 1.5px solid #fecaca; padding: 28px 32px;
+}
+.sc-danger-header { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 24px; }
+.sc-danger-icon {
+    width: 48px; height: 48px; border-radius: 16px;
+    background: #fee2e2; color: #dc2626; font-size: 20px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.sc-danger-title { font-size: 17px; font-weight: 900; color: #7f1d1d; margin: 0; }
+.sc-danger-sub   { font-size: 13px; color: #b91c1c; margin-top: 4px; }
+.sc-danger-form { background: #fff; border-radius: 16px; border: 1px solid #fecaca; padding: 22px; }
+.sc-danger-footer { display: flex; justify-content: flex-end; margin-top: 16px; }
+.sc-btn-inline { width: auto !important; padding: 11px 24px; }
+
+/* ── Gare Panel ── */
+.sc-gare-panel {
+    background: #fff; border-radius: 20px;
+    border: 1px solid #bfdbfe; overflow: hidden;
+    margin-bottom: 24px; box-shadow: 0 1px 4px rgba(59,130,246,.08);
+}
+.sc-gare-head {
+    background: #eff6ff; padding: 20px 24px;
+    border-bottom: 1px solid #bfdbfe; display: flex; align-items: center; gap: 14px;
+}
+.sc-gare-icon { width: 40px; height: 40px; border-radius: 12px; background: #dbeafe; color: #1d4ed8; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+.sc-gare-title { font-size: 16px; font-weight: 900; color: #1e3a8a; margin: 0; }
+.sc-gare-sub   { font-size: 12px; color: #3b82f6; margin-top: 2px; }
+.sc-gare-body  { padding: 24px; }
+.sc-gare-row   { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.sc-gare-row .sc-input-wrap { flex: 1; min-width: 200px; }
+</style>
+@endsection
+
 @section('content')
-    <div class="dashboard-page">
-        <div class="mb-3">
-            <a href="{{ route('compagnie.convois.index') }}" class="btn btn-light">
-                <i class="fas fa-arrow-left mr-2"></i> Retour aux convois
-            </a>
+@php
+    $statuses = [
+        'en_attente' => 'En attente',
+        'valide'     => 'Validé',
+        'refuse'     => 'Refusé',
+        'paye'       => 'Payé',
+        'en_cours'   => 'En cours',
+        'termine'    => 'Terminé',
+        'annule'     => 'Annulé',
+    ];
+    $statusIcons = [
+        'en_attente' => 'fa-clock',
+        'valide'     => 'fa-check',
+        'paye'       => 'fa-money-bill-wave',
+        'en_cours'   => 'fa-route',
+        'termine'    => 'fa-flag-checkered',
+        'refuse'     => 'fa-times',
+        'annule'     => 'fa-ban',
+    ];
+    $slabel = $statuses[$convoi->statut] ?? ucfirst($convoi->statut);
+    $sicon  = $statusIcons[$convoi->statut] ?? 'fa-info-circle';
+    $passagersEnregistres = $convoi->passagers ? $convoi->passagers->count() : 0;
+    $passagersComplets    = $convoi->is_garant || ($passagersEnregistres >= $convoi->nombre_personnes);
+    $pct = $convoi->nombre_personnes > 0 ? min(100, round($passagersEnregistres / $convoi->nombre_personnes * 100)) : 0;
+@endphp
+
+<div class="sc-page">
+
+    {{-- Back --}}
+    <a href="{{ route('compagnie.convois.index') }}" class="sc-back">
+        <span class="sc-back-icon"><i class="fas fa-arrow-left"></i></span>
+        Retour à la liste des convois
+    </a>
+
+    {{-- Header --}}
+    <div class="sc-header">
+        <div>
+            <h1 class="sc-title">Détail du <span>Convoi</span></h1>
+            <span class="sc-ref">Réf : {{ $convoi->reference }}</span>
         </div>
+        <span class="sc-status status-{{ $convoi->statut }}">
+            <span class="sc-status-dot"></span>
+            <i class="fas {{ $sicon }}"></i>
+            {{ $slabel }}
+        </span>
+    </div>
 
-        @if (session('success'))
-            <div class="alert alert-success rounded-xl mb-3">{{ session('success') }}</div>
-        @endif
-        @if (session('error'))
-            <div class="alert alert-danger rounded-xl mb-3">{{ session('error') }}</div>
-        @endif
+    {{-- Alertes --}}
+    @if(session('success'))
+    <div class="sc-alert sc-alert-success">
+        <span class="sc-alert-icon">✅</span>
+        <div>
+            <div class="sc-alert-title">Opération réussie</div>
+            <div class="sc-alert-body">{{ session('success') }}</div>
+        </div>
+    </div>
+    @endif
+    @if(session('error') || $errors->any())
+    <div class="sc-alert sc-alert-error">
+        <span class="sc-alert-icon">⚠️</span>
+        <div>
+            <div class="sc-alert-title">Une erreur est survenue</div>
+            @if(session('error'))<div class="sc-alert-body">{{ session('error') }}</div>@endif
+            @foreach($errors->all() as $e)<div class="sc-alert-body">• {{ $e }}</div>@endforeach
+        </div>
+    </div>
+    @endif
 
-        {{-- Infos principales --}}
-        <div class="row mb-3">
-            <div class="col-md-3">
-                <div class="dash-card p-3">
-                    <div class="text-muted small">Référence</div>
-                    <div class="font-weight-bold">{{ $convoi->reference }}</div>
-                </div>
+    {{-- ═══ HERO ITINÉRAIRE ═══ --}}
+    <div class="sc-hero">
+        <div class="sc-hero-inner">
+            <div class="sc-hero-label">
+                <i class="fas fa-route"></i>
+                Itinéraire du convoi
             </div>
-            <div class="col-md-3">
-                <div class="dash-card p-3">
-                    <div class="text-muted small">Demandeur</div>
-                    <div class="font-weight-bold">{{ trim(($convoi->user->name ?? '') . ' ' . ($convoi->user->prenom ?? '')) ?: 'Utilisateur' }}</div>
+            <div class="sc-route">
+                <div class="sc-route-city">{{ $convoi->lieu_depart ?? ($convoi->itineraire->point_depart ?? '—') }}</div>
+                <div class="sc-route-arrow"><i class="fas fa-arrow-right"></i></div>
+                <div class="sc-route-city dest">{{ $convoi->lieu_retour ?? ($convoi->itineraire->point_arrive ?? '—') }}</div>
+            </div>
+            <div class="sc-dates">
+                <div class="sc-date-card sc-date-depart">
+                    <div class="sc-date-label">Date de départ</div>
+                    <div class="sc-date-value">{{ $convoi->date_depart ? \Carbon\Carbon::parse($convoi->date_depart)->format('d M Y') : '—' }}</div>
+                    @if($convoi->heure_depart)
+                    <div class="sc-date-time"><i class="fas fa-clock" style="font-size:10px;margin-right:4px"></i>{{ $convoi->heure_depart }}</div>
+                    @endif
+                </div>
+                @if($convoi->date_retour)
+                <div class="sc-date-card sc-date-retour">
+                    <div class="sc-date-label">Date de retour</div>
+                    <div class="sc-date-value">{{ \Carbon\Carbon::parse($convoi->date_retour)->format('d M Y') }}</div>
+                    @if($convoi->heure_retour)
+                    <div class="sc-date-time"><i class="fas fa-clock" style="font-size:10px;margin-right:4px"></i>{{ $convoi->heure_retour }}</div>
+                    @endif
+                </div>
+                @endif
+            </div>
+        </div>
+    </div>
+
+    {{-- ═══ 3 CARTES INFO ═══ --}}
+    <div class="sc-cards">
+        {{-- Demandeur --}}
+        <div class="sc-card">
+            <div class="sc-card-label"><i class="fas fa-id-card"></i> Demandeur</div>
+            <div style="display:flex;align-items:center;gap:16px">
+                <div class="sc-avatar">{{ strtoupper(substr($convoi->user->name ?? 'U', 0, 1)) }}</div>
+                <div style="min-width:0">
+                    <div class="sc-user-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                        {{ trim(($convoi->user->prenom ?? '') . ' ' . ($convoi->user->name ?? '')) ?: 'Utilisateur' }}
+                    </div>
                     @if($convoi->user->email ?? null)
-                        <div class="text-muted small">{{ $convoi->user->email }}</div>
+                    <div class="sc-user-email" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ $convoi->user->email }}</div>
+                    @endif
+                    @if($convoi->user->contact ?? null)
+                    <div class="sc-user-phone"><i class="fas fa-phone-alt" style="font-size:10px;margin-right:5px"></i>{{ $convoi->user->contact }}</div>
                     @endif
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="dash-card p-3">
-                    <div class="text-muted small">Nombre de personnes</div>
-                    <div class="font-weight-bold">{{ $convoi->nombre_personnes }}</div>
+        </div>
+
+        {{-- Passagers --}}
+        <div class="sc-card">
+            <div class="sc-card-label"><i class="fas fa-users"></i> Passagers</div>
+            <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px">
+                <div>
+                    <div class="sc-big-num">{{ $convoi->nombre_personnes }}</div>
+                    <div class="sc-sub-num">places demandées</div>
+                </div>
+                <div style="text-align:right">
+                    <div style="font-size:28px;font-weight:900;color:#3b82f6;line-height:1">{{ $passagersEnregistres }}</div>
+                    <div style="font-size:11px;font-weight:700;color:#93c5fd;text-transform:uppercase;letter-spacing:.5px">inscrits</div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="dash-card p-3">
-                    <div class="text-muted small">Statut</div>
-                    @php
-                        $sm = [
-                            'en_attente' => ['En attente',  'badge-warning'],
-                            'valide'     => ['Validé',      'badge-primary'],
-                            'refuse'     => ['Refusé',      'badge-danger'],
-                            'paye'       => ['Payé',        'badge-success'],
-                            'en_cours'   => ['En cours',    'badge-info'],
-                            'termine'    => ['Terminé',     'badge-secondary'],
-                            'annule'     => ['Annulé',      'badge-danger'],
-                        ];
-                        [$slabel, $sclass] = $sm[$convoi->statut] ?? [ucfirst($convoi->statut), 'badge-secondary'];
-                    @endphp
-                    <span class="badge {{ $sclass }} px-3 py-2 mt-1">{{ $slabel }}</span>
-                </div>
+            <div class="sc-progress-track">
+                <div class="sc-progress-fill" style="width:{{ $pct }}%"></div>
             </div>
-            <div class="col-md-6 mt-2">
-                <div class="dash-card p-3">
-                    <div class="text-muted small">Itinéraire</div>
-                    <div class="font-weight-bold">
-                        {{ $convoi->lieu_depart ?? ($convoi->itineraire->point_depart ?? '-') }}
-                        <span class="text-orange mx-1">→</span>
-                        {{ $convoi->lieu_retour ?? ($convoi->itineraire->point_arrive ?? '-') }}
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 mt-2">
-                <div class="dash-card p-3">
-                    <div class="text-muted small">Date de départ</div>
-                    <div class="font-weight-bold">
-                        @if($convoi->date_depart)
-                            {{ \Carbon\Carbon::parse($convoi->date_depart)->format('d/m/Y') }}
-                            @if($convoi->heure_depart) à {{ $convoi->heure_depart }} @endif
-                        @else — @endif
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 mt-2">
-                <div class="dash-card p-3">
-                    <div class="text-muted small">Date de retour</div>
-                    <div class="font-weight-bold">
-                        @if($convoi->date_retour)
-                            {{ \Carbon\Carbon::parse($convoi->date_retour)->format('d/m/Y') }}
-                            @if($convoi->heure_retour) à {{ $convoi->heure_retour }} @endif
-                        @else — @endif
-                    </div>
-                </div>
-            </div>
+        </div>
+
+        {{-- Montant --}}
+        <div class="sc-card">
+            <div class="sc-card-label"><i class="fas fa-coins"></i> Montant</div>
             @if($convoi->montant)
-            <div class="col-md-3 mt-2">
-                <div class="dash-card p-3">
-                    <div class="text-muted small">Montant facturé</div>
-                    <div class="font-weight-bold text-success">{{ number_format($convoi->montant, 0, ',', ' ') }} FCFA</div>
-                </div>
-            </div>
-            @endif
-            @if($convoi->motif_refus)
-            <div class="col-md-9 mt-2">
-                <div class="dash-card p-3 border-left border-danger">
-                    <div class="text-muted small">Motif de refus</div>
-                    <div class="font-weight-bold text-danger">{{ $convoi->motif_refus }}</div>
-                </div>
-            </div>
-            @endif
-            @if($convoi->gare)
-            <div class="col-md-4 mt-2">
-                <div class="dash-card p-3">
-                    <div class="text-muted small">Gare assignée</div>
-                    <div class="font-weight-bold"><i class="fas fa-building mr-1 text-orange"></i>{{ $convoi->gare->nom_gare }}</div>
+            <div class="sc-amount">{{ number_format($convoi->montant, 0, ',', ' ') }}</div>
+            <div class="sc-amount-unit">Francs CFA</div>
+            @else
+            <div class="sc-amount-empty">
+                <span style="font-size:22px;color:#f59e0b">💰</span>
+                <div>
+                    <p>Non défini</p>
+                    <small>En attente de validation par la compagnie</small>
                 </div>
             </div>
             @endif
         </div>
+    </div>
 
-        {{-- ACTION: VALIDER ou REFUSER (quand en_attente) --}}
-        @if ($convoi->statut === 'en_attente')
-        <div class="row mb-3">
-            <div class="col-md-6">
-                <div class="dash-card p-4">
-                    <h5 class="font-weight-bold text-success mb-3"><i class="fas fa-check-circle mr-2"></i> Valider le convoi</h5>
-                    <p class="text-muted small mb-3">Saisissez le montant à facturer à l'utilisateur. Il recevra une notification par email.</p>
-                    @error('montant')
-                        <div class="alert alert-danger py-2 small">{{ $message }}</div>
-                    @enderror
-                    <form action="{{ route('compagnie.convois.valider', $convoi) }}" method="POST">
-                        @csrf
-                        <div class="form-group mb-3">
-                            <label class="small font-weight-bold text-muted text-uppercase">Montant (FCFA) <span class="text-danger">*</span></label>
-                            <input type="number" name="montant" min="100" step="1"
-                                value="{{ old('montant') }}"
-                                placeholder="Ex: 150000"
-                                class="form-control rounded-xl font-weight-bold">
-                        </div>
-                        <button type="submit" class="btn btn-success btn-block rounded-xl font-weight-bold">
-                            <i class="fas fa-check mr-2"></i> Valider et notifier l'utilisateur
-                        </button>
-                    </form>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="dash-card p-4">
-                    <h5 class="font-weight-bold text-danger mb-3"><i class="fas fa-times-circle mr-2"></i> Refuser le convoi</h5>
-                    <p class="text-muted small mb-3">Indiquez le motif du refus. L'utilisateur sera notifié par email.</p>
-                    @error('motif_refus')
-                        <div class="alert alert-danger py-2 small">{{ $message }}</div>
-                    @enderror
-                    <form action="{{ route('compagnie.convois.refuser', $convoi) }}" method="POST">
-                        @csrf
-                        <div class="form-group mb-3">
-                            <label class="small font-weight-bold text-muted text-uppercase">Motif du refus <span class="text-danger">*</span></label>
-                            <textarea name="motif_refus" rows="3" maxlength="500"
-                                placeholder="Expliquez pourquoi vous refusez cette demande..."
-                                class="form-control rounded-xl font-weight-bold">{{ old('motif_refus') }}</textarea>
-                        </div>
-                        <button type="submit" class="btn btn-danger btn-block rounded-xl font-weight-bold"
-                            onclick="return confirm('Confirmer le refus de cette demande ?')">
-                            <i class="fas fa-times mr-2"></i> Refuser et notifier l'utilisateur
-                        </button>
-                    </form>
-                </div>
+    {{-- ═══ CHIPS CONTEXTUELS ═══ --}}
+    @if($convoi->lieu_rassemblement || $convoi->gare || $convoi->chauffeur || $convoi->vehicule || $convoi->is_garant)
+    <div class="sc-chips">
+        @if($convoi->lieu_rassemblement)
+        <div class="sc-chip sc-chip-blue">
+            <div class="sc-chip-icon"><i class="fas fa-map-pin"></i></div>
+            <div>
+                <div class="sc-chip-label">Rassemblement</div>
+                <div class="sc-chip-value">{{ $convoi->lieu_rassemblement }}</div>
             </div>
         </div>
         @endif
+        @if($convoi->is_garant)
+        <div class="sc-chip sc-chip-purple">
+            <div class="sc-chip-icon"><i class="fas fa-user-shield"></i></div>
+            <div>
+                <div class="sc-chip-label">Mode</div>
+                <div class="sc-chip-value">Garant désigné</div>
+            </div>
+        </div>
+        @endif
+        @if($convoi->gare)
+        <div class="sc-chip sc-chip-gray">
+            <div class="sc-chip-icon"><i class="fas fa-warehouse"></i></div>
+            <div>
+                <div class="sc-chip-label">Gare assignée</div>
+                <div class="sc-chip-value">{{ $convoi->gare->nom_gare }}</div>
+            </div>
+        </div>
+        @endif
+        @if($convoi->vehicule)
+        <div class="sc-chip sc-chip-gray">
+            <div class="sc-chip-icon"><i class="fas fa-bus"></i></div>
+            <div>
+                <div class="sc-chip-label">Véhicule</div>
+                <div class="sc-chip-value">{{ $convoi->vehicule->immatriculation }} &middot; {{ $convoi->vehicule->nombre_place ?? '?' }} pl.</div>
+            </div>
+        </div>
+        @endif
+        @if($convoi->chauffeur)
+        <div class="sc-chip sc-chip-gray">
+            <div class="sc-chip-icon"><i class="fas fa-user-tie"></i></div>
+            <div>
+                <div class="sc-chip-label">Chauffeur</div>
+                <div class="sc-chip-value">{{ trim(($convoi->chauffeur->prenom ?? '') . ' ' . ($convoi->chauffeur->name ?? '')) }}</div>
+            </div>
+        </div>
+        @endif
+    </div>
+    @endif
 
-        {{-- ACTION: ASSIGNER UNE GARE (quand paye, sans gare encore) --}}
-        @if ($convoi->statut === 'paye' && !$convoi->gare_id)
-        @php
-            $passagersEnregistres = $convoi->passagers->count();
-            $passagersComplets    = $passagersEnregistres >= $convoi->nombre_personnes;
-        @endphp
-        <div class="dash-card p-4 mb-3">
-            <h5 class="font-weight-bold text-primary mb-3"><i class="fas fa-building mr-2"></i> Assigner une gare</h5>
+    {{-- Motifs refus/annulation --}}
+    @if($convoi->motif_refus)
+    <div class="sc-banner sc-banner-danger">
+        <span class="sc-banner-icon">🚫</span>
+        <div>
+            <div class="sc-banner-title">Motif de refus</div>
+            <div class="sc-banner-body">{{ $convoi->motif_refus }}</div>
+        </div>
+    </div>
+    @endif
+    @if($convoi->motif_annulation_chauffeur)
+    <div class="sc-banner sc-banner-warn">
+        <span class="sc-banner-icon">⚠️</span>
+        <div>
+            <div class="sc-banner-title">Désistement du chauffeur</div>
+            <div class="sc-banner-body">{{ $convoi->motif_annulation_chauffeur }}</div>
+            <div class="sc-banner-note">📋 La gare doit réaffecter un chauffeur et un véhicule de remplacement.</div>
+        </div>
+    </div>
+    @endif
 
-            @if (!$passagersComplets)
-            <div class="alert mb-3 d-flex align-items-start gap-3"
-                 style="background:#FFF7ED;border:1px solid #fed7aa;border-radius:12px;padding:14px 16px;">
-                <i class="fas fa-exclamation-triangle mt-1" style="color:#f97316;font-size:16px;flex-shrink:0;"></i>
+    {{-- ═══ ACTION : VALIDER / REFUSER ═══ --}}
+    @if ($convoi->statut === 'en_attente')
+    <div class="sc-actions">
+        <div class="sc-panel sc-panel-green">
+            <div class="sc-panel-head">
+                <div class="sc-panel-head-icon"><i class="fas fa-check-circle"></i></div>
                 <div>
-                    <div style="font-weight:800;font-size:13px;color:#9a3412;">Passagers incomplets</div>
-                    <div style="font-size:12px;color:#78350f;margin-top:2px;">
-                        L'utilisateur n'a renseigné que <strong>{{ $passagersEnregistres }}</strong> passager(s) sur
-                        <strong>{{ $convoi->nombre_personnes }}</strong> attendus.
-                        L'assignation à une gare sera possible dès que tous les passagers seront enregistrés.
+                    <div class="sc-panel-title">Valider la demande</div>
+                    <div class="sc-panel-sub">L'utilisateur sera notifié pour paiement.</div>
+                </div>
+            </div>
+            <div class="sc-panel-body">
+                <form action="{{ route('compagnie.convois.valider', $convoi) }}" method="POST">
+                    @csrf
+                    <div style="margin-bottom:18px">
+                        <label class="sc-label">Montant à facturer (FCFA) <span style="color:#ef4444">*</span></label>
+                        <input type="number" name="montant" class="sc-input" min="100" step="1" value="{{ old('montant') }}" placeholder="150000" required>
+                        @error('montant')<span style="font-size:12px;color:#dc2626;margin-top:4px;display:block">{{ $message }}</span>@enderror
                     </div>
+                    <button type="submit" class="sc-btn sc-btn-green">
+                        <i class="fas fa-paper-plane"></i> Valider et notifier
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="sc-panel sc-panel-red">
+            <div class="sc-panel-head">
+                <div class="sc-panel-head-icon"><i class="fas fa-times-circle"></i></div>
+                <div>
+                    <div class="sc-panel-title">Refuser la demande</div>
+                    <div class="sc-panel-sub">Indiquez le motif ci-dessous.</div>
+                </div>
+            </div>
+            <div class="sc-panel-body">
+                <form action="{{ route('compagnie.convois.refuser', $convoi) }}" method="POST">
+                    @csrf
+                    <div style="margin-bottom:18px">
+                        <label class="sc-label">Raison du refus <span style="color:#ef4444">*</span></label>
+                        <textarea name="motif_refus" class="sc-input sc-textarea" maxlength="500" required placeholder="Expliquez la raison du refus...">{{ old('motif_refus') }}</textarea>
+                        @error('motif_refus')<span style="font-size:12px;color:#dc2626;margin-top:4px;display:block">{{ $message }}</span>@enderror
+                    </div>
+                    <button type="submit" class="sc-btn sc-btn-red" onclick="return confirm('Confirmer le refus ?')">
+                        <i class="fas fa-ban"></i> Confirmer le refus
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- ═══ ACTION : ASSIGNER UNE GARE ═══ --}}
+    @if ($convoi->statut === 'paye' && !$convoi->gare_id)
+    <div class="sc-gare-panel">
+        <div class="sc-gare-head">
+            <div class="sc-gare-icon"><i class="fas fa-warehouse"></i></div>
+            <div>
+                <div class="sc-gare-title">Assigner une gare de départ</div>
+                <div class="sc-gare-sub">Transférez ce convoi à l'une de vos gares pour planification.</div>
+            </div>
+        </div>
+        <div class="sc-gare-body">
+            @if(!$passagersComplets)
+            <div class="sc-banner sc-banner-warn" style="margin-bottom:18px">
+                <span class="sc-banner-icon">⚠️</span>
+                <div>
+                    <div class="sc-banner-title">Liste passagers incomplète</div>
+                    <div class="sc-banner-body">{{ $passagersEnregistres }} / {{ $convoi->nombre_personnes }} passagers enregistrés. Assignation bloquée.</div>
+                </div>
+            </div>
+            @elseif($convoi->is_garant)
+            <div class="sc-banner sc-banner-info" style="margin-bottom:18px">
+                <span class="sc-banner-icon">🛡️</span>
+                <div>
+                    <div class="sc-banner-title">Garant désigné</div>
+                    <div class="sc-banner-body">Le demandeur est garant — vous pouvez assigner la gare sans liste complète.</div>
                 </div>
             </div>
             @else
-            <div class="alert mb-3 d-flex align-items-start gap-3"
-                 style="background:#F0FDF4;border:1px solid #bbf7d0;border-radius:12px;padding:14px 16px;">
-                <i class="fas fa-check-circle mt-1" style="color:#16a34a;font-size:16px;flex-shrink:0;"></i>
-                <div style="font-size:12px;color:#14532d;font-weight:600;">
-                    Tous les <strong>{{ $convoi->nombre_personnes }}</strong> passagers ont été enregistrés. Vous pouvez assigner une gare.
+            <div class="sc-banner" style="background:#f0fdf4;border:1px solid #bbf7d0;color:#065f46;margin-bottom:18px">
+                <span class="sc-banner-icon">✅</span>
+                <div>
+                    <div class="sc-banner-title">Prêt pour assignation</div>
+                    <div class="sc-banner-body">Tous les {{ $convoi->nombre_personnes }} passagers sont enregistrés.</div>
                 </div>
             </div>
             @endif
 
-            @error('gare_id')
-                <div class="alert alert-danger py-2 small">{{ $message }}</div>
-            @enderror
-
-            <form action="{{ route('compagnie.convois.assigner-gare', $convoi) }}" method="POST" class="row align-items-end">
+            <form action="{{ route('compagnie.convois.assigner-gare', $convoi) }}" method="POST">
                 @csrf
-                <div class="col-md-6">
-                    <label class="small font-weight-bold text-muted text-uppercase">Gare <span class="text-danger">*</span></label>
-                    <select name="gare_id" class="form-control rounded-xl font-weight-bold" {{ !$passagersComplets ? 'disabled' : '' }}>
-                        <option value="">Choisir une gare</option>
-                        @foreach ($gares as $gare)
-                            <option value="{{ $gare->id }}" @selected(old('gare_id') == $gare->id)>{{ $gare->nom_gare }}</option>
-                        @endforeach
-                    </select>
+                <div class="sc-gare-row">
+                    <div class="sc-input-wrap">
+                        <label class="sc-label">Sélectionner la gare <span style="color:#ef4444">*</span></label>
+                        <select name="gare_id" class="sc-input sc-select" {{ !$passagersComplets ? 'disabled' : '' }} required>
+                            <option value="">Choisir une gare...</option>
+                            @foreach($gares as $gare)
+                                <option value="{{ $gare->id }}" @selected(old('gare_id') == $gare->id)>{{ $gare->nom_gare }}</option>
+                            @endforeach
+                        </select>
+                        @error('gare_id')<span style="font-size:12px;color:#dc2626;margin-top:4px;display:block">{{ $message }}</span>@enderror
+                    </div>
+                    <div style="flex-shrink:0;padding-bottom:0">
+                        <button type="submit" class="sc-btn sc-btn-blue" style="width:auto;padding:13px 28px" {{ !$passagersComplets ? 'disabled' : '' }}>
+                            <i class="fas fa-share-square"></i> Assigner
+                        </button>
+                    </div>
                 </div>
-                <div class="col-md-4 mt-2 mt-md-0">
-                    <button type="submit" class="btn btn-primary btn-block rounded-xl font-weight-bold"
-                        {{ !$passagersComplets ? 'disabled' : '' }}
-                        @if(!$passagersComplets) title="En attente des passagers" @endif>
-                        <i class="fas fa-paper-plane mr-2"></i> Assigner la gare
+            </form>
+        </div>
+    </div>
+    @endif
+
+    {{-- ═══ TRACKING GPS ═══ --}}
+    @if(in_array($convoi->statut, ['en_cours', 'termine']))
+    <div class="sc-gps">
+        <div class="sc-gps-head">
+            <div class="sc-gps-title-wrap">
+                <div class="sc-gps-icon"><i class="fas fa-satellite-dish"></i></div>
+                <div>
+                    <div class="sc-gps-title">Suivi GPS — Temps Réel</div>
+                    <div class="sc-gps-sub">Position du véhicule du convoi</div>
+                </div>
+            </div>
+            <span class="sc-gps-badge" id="trackingStatusBadge">—</span>
+        </div>
+        <div>
+            <div class="sc-gps-coords" id="trackingCoords">Recherche du signal GPS...</div>
+            <div class="sc-gps-meta" id="trackingMeta">En attente de connexion avec l'application du chauffeur.</div>
+            <a href="#" id="trackingMapLink" target="_blank" class="sc-gps-map-btn" style="display:none">
+                <i class="fas fa-map-marked-alt"></i> Voir sur Google Maps
+            </a>
+        </div>
+    </div>
+    @endif
+
+    {{-- ═══ MANIFESTE PASSAGERS ═══ --}}
+    <div class="sc-table-card">
+        <div class="sc-table-head">
+            <div class="sc-table-head-icon"><i class="fas fa-clipboard-list"></i></div>
+            <div>
+                <div class="sc-table-title">Manifeste des Passagers</div>
+                <div class="sc-table-sub">{{ $passagersEnregistres }} enregistré(s) sur {{ $convoi->nombre_personnes }} places</div>
+            </div>
+            <div class="sc-table-badge {{ $convoi->is_garant ? 'sc-garant-badge' : '' }}">
+                @if($convoi->is_garant)<i class="fas fa-shield-alt" style="margin-right:5px"></i>Garant @endif
+                {{ $passagersEnregistres }} / {{ $convoi->nombre_personnes }}
+            </div>
+        </div>
+        <div style="overflow-x:auto">
+            <table class="sc-tbl">
+                <thead>
+                    <tr>
+                        <th style="width:60px;text-align:center">#</th>
+                        <th>Passager</th>
+                        <th>Contact</th>
+                        <th>Urgence</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($convoi->passagers as $i => $passager)
+                    <tr>
+                        <td style="text-align:center">
+                            <div class="sc-pass-num" style="margin:0 auto">{{ $i + 1 }}</div>
+                        </td>
+                        <td>
+                            <div style="display:flex;align-items:center;gap:12px">
+                                <div class="sc-pass-avatar">{{ strtoupper(substr($passager->nom ?? '?', 0, 1)) }}</div>
+                                <div>
+                                    <div class="sc-pass-name">{{ $passager->nom }}</div>
+                                    <div class="sc-pass-prenom">{{ $passager->prenoms }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            @if($passager->contact)
+                            <a href="tel:{{ $passager->contact }}" class="sc-pass-phone-link">
+                                <i class="fas fa-phone-alt"></i> {{ $passager->contact }}
+                            </a>
+                            @else
+                            <span class="sc-pass-none">—</span>
+                            @endif
+                        </td>
+                        <td>
+                            @if($passager->contact_urgence)
+                            <div class="sc-pass-urgence">
+                                <i class="fas fa-heartbeat" style="font-size:11px"></i> {{ $passager->contact_urgence }}
+                            </div>
+                            @else
+                            <span class="sc-pass-none">—</span>
+                            @endif
+                        </td>
+                    </tr>
+                    @empty
+                    <tr class="sc-empty-row">
+                        <td colspan="4">
+                            <div class="sc-empty-icon"><i class="fas fa-user-slash"></i></div>
+                            <div class="sc-empty-text">Aucun passager enregistré</div>
+                            <div class="sc-empty-sub">
+                                @if($convoi->is_garant)
+                                Le demandeur administre le groupe en tant que garant.
+                                @else
+                                L'utilisateur n'a pas encore renseigné la liste.
+                                @endif
+                            </div>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {{-- ═══ ZONE DANGER : ANNULATION ═══ --}}
+    @if(!in_array($convoi->statut, ['annule', 'termine', 'en_attente']))
+    <div class="sc-danger-zone">
+        <div class="sc-danger-header">
+            <div class="sc-danger-icon"><i class="fas fa-exclamation-triangle"></i></div>
+            <div>
+                <div class="sc-danger-title">Zone de danger — Annulation forcée</div>
+                <div class="sc-danger-sub">Cette action est irréversible. Le client et la gare seront notifiés.</div>
+            </div>
+        </div>
+        <div class="sc-danger-form">
+            <form action="{{ route('compagnie.convois.annuler', $convoi) }}" method="POST"
+                  onsubmit="return confirm('Confirmer l\'annulation définitive de ce convoi ?')">
+                @csrf
+                <label class="sc-label">Motif de l'annulation <span style="color:#ef4444">*</span></label>
+                <textarea name="motif_annulation" class="sc-input sc-textarea" maxlength="500" required
+                    placeholder="Véhicule indisponible, force majeure...">{{ old('motif_annulation') }}</textarea>
+                @error('motif_annulation')<span style="font-size:12px;color:#dc2626;margin-top:4px;display:block">{{ $message }}</span>@enderror
+                <div class="sc-danger-footer">
+                    <button type="submit" class="sc-btn sc-btn-danger sc-btn-inline" style="width:auto;padding:12px 28px;margin-top:16px">
+                        <i class="fas fa-power-off"></i> Annuler définitivement
                     </button>
                 </div>
             </form>
         </div>
-        @endif
-
-        {{-- Suivi GPS (visible si en_cours) --}}
-        @if (in_array($convoi->statut, ['en_cours', 'termine']))
-        <div class="dash-card p-3 mb-3">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <div class="text-muted small">Suivi GPS temps réel</div>
-                <span class="badge badge-light" id="trackingStatusBadge">--</span>
-            </div>
-            <div class="font-weight-bold mb-1" id="trackingCoords">Position: --</div>
-            <div class="small text-muted" id="trackingMeta">Dernière mise à jour: --</div>
-            <a href="#" id="trackingMapLink" target="_blank" class="btn btn-sm btn-outline-primary mt-2 d-none">
-                <i class="fas fa-map-marker-alt mr-1"></i> Ouvrir sur Google Maps
-            </a>
-        </div>
-        @endif
-
-        {{-- Liste passagers --}}
-        <div class="dash-card">
-            <div class="dash-card-head">
-                <h3 class="dash-card-title m-0">
-                    <i class="fas fa-list mr-2 text-orange"></i>
-                    Passagers ({{ $convoi->passagers->count() }})
-                </h3>
-            </div>
-            <div class="table-responsive">
-                <table class="table mb-0">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Nom</th>
-                            <th>Prénoms</th>
-                            <th>Contact</th>
-                            <th>Contact d'urgence</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($convoi->passagers as $index => $passager)
-                            <tr>
-                                <td>{{ $index + 1 }}</td>
-                                <td class="font-weight-bold">{{ $passager->nom }}</td>
-                                <td>{{ $passager->prenoms }}</td>
-                                <td>{{ $passager->contact }}</td>
-                                <td>{{ $passager->contact_urgence ?: '-' }}</td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="5" class="text-center py-4 text-muted">Aucun passager enregistré pour le moment.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
     </div>
+    @endif
+
+</div>
 @endsection
 
 @section('scripts')
-@if (in_array($convoi->statut, ['en_cours', 'termine']))
+@if(in_array($convoi->statut, ['en_cours', 'termine']))
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const endpoint = "{{ route('compagnie.convois.location', $convoi->id) }}";
-    const coordsEl = document.getElementById('trackingCoords');
-    const metaEl = document.getElementById('trackingMeta');
-    const badgeEl = document.getElementById('trackingStatusBadge');
+    const endpoint  = "{{ route('compagnie.convois.location', $convoi->id) }}";
+    const coordsEl  = document.getElementById('trackingCoords');
+    const metaEl    = document.getElementById('trackingMeta');
+    const badgeEl   = document.getElementById('trackingStatusBadge');
     const mapLinkEl = document.getElementById('trackingMapLink');
 
     function updateTracking() {
@@ -295,22 +860,22 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(r => r.json())
             .then(data => {
                 if (!data.success) return;
-                badgeEl.textContent = (data.statut || '--').replace('_', ' ');
+                badgeEl.textContent = (data.statut || '--').replace(/_/g,' ');
                 if (data.latitude !== null && data.longitude !== null) {
-                    coordsEl.textContent = `Position: ${data.latitude}, ${data.longitude}`;
-                    metaEl.textContent = `Mise à jour: ${data.last_update} • Chauffeur: ${data.chauffeur} • Véhicule: ${data.vehicule}`;
-                    mapLinkEl.href = `https://www.google.com/maps?q=${data.latitude},${data.longitude}`;
-                    mapLinkEl.classList.remove('d-none');
+                    coordsEl.textContent = data.latitude + ', ' + data.longitude;
+                    metaEl.textContent   = 'MàJ : ' + data.last_update + '  ·  Chauffeur : ' + data.chauffeur + '  ·  Véhicule : ' + data.vehicule;
+                    mapLinkEl.href       = 'https://www.google.com/maps?q=' + data.latitude + ',' + data.longitude;
+                    mapLinkEl.style.display = 'inline-flex';
                 } else {
-                    coordsEl.textContent = 'Position: en attente du GPS chauffeur';
-                    metaEl.textContent = `Mise à jour: ${data.last_update}`;
-                    mapLinkEl.classList.add('d-none');
+                    coordsEl.textContent = 'Signal non disponible';
+                    metaEl.textContent   = 'Dernière vérification : ' + data.last_update;
+                    mapLinkEl.style.display = 'none';
                 }
-            }).catch(() => {});
+            }).catch(function(){});
     }
 
     updateTracking();
-    setInterval(updateTracking, 7000);
+    setInterval(updateTracking, 10000);
 });
 </script>
 @endif

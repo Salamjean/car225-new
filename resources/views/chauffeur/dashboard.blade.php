@@ -39,7 +39,7 @@
                     <div class="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center">
                         <i class="fas fa-route text-orange-500"></i>
                     </div>
-                    Missions du jour (Voyages + Convois)
+                    Missions du jour
                 </h3>
 
                 @if(($todayVoyages->count() + $activeConvois->count()) > 0)
@@ -191,6 +191,61 @@
                 @endif
             </section>
         </div>
+
+        {{-- Convois à venir --}}
+        @if(isset($upcomingConvois) && $upcomingConvois->count() > 0)
+        <section class="mt-8">
+            <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
+                    <i class="fas fa-route text-indigo-500"></i>
+                </div>
+                Convois à venir
+                <span class="ml-2 px-2.5 py-0.5 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-full">{{ $upcomingConvois->count() }}</span>
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                @foreach($upcomingConvois as $convoi)
+                <a href="{{ route('chauffeur.voyages.index') }}"
+                   class="bg-white rounded-2xl p-5 shadow-sm border border-indigo-100 hover:shadow-md transition-all text-decoration-none block hover:border-indigo-300">
+                    <div class="flex items-start justify-between gap-3 mb-3">
+                        <div>
+                            <p class="text-xs text-indigo-600 uppercase font-black tracking-wider">Convoi • Référence</p>
+                            <p class="font-extrabold text-gray-900 mt-0.5">{{ $convoi->reference ?? '-' }}</p>
+                        </div>
+                        <span class="flex-shrink-0 px-3 py-1 rounded-full text-xs font-black uppercase bg-indigo-100 text-indigo-700">
+                            Assigné
+                        </span>
+                    </div>
+                    <p class="text-sm font-semibold text-gray-700 mb-3">
+                        @if($convoi->itineraire)
+                            {{ $convoi->itineraire->point_depart }} → {{ $convoi->itineraire->point_arrive }}
+                        @elseif($convoi->lieu_depart)
+                            {{ $convoi->lieu_depart }} → {{ $convoi->lieu_retour }}
+                        @else -
+                        @endif
+                    </p>
+                    <div class="flex items-center justify-between border-t border-dashed border-gray-100 pt-3 text-xs text-gray-500">
+                        <span class="font-bold text-indigo-700">
+                            <i class="far fa-calendar-alt mr-1"></i>
+                            {{ \Carbon\Carbon::parse($convoi->date_depart)->translatedFormat('d F Y') }}
+                            @if($convoi->heure_depart)
+                                <span class="text-gray-500">à {{ $convoi->heure_depart }}</span>
+                            @endif
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <i class="fas fa-users text-gray-400"></i>
+                            {{ $convoi->nombre_personnes }} passagers
+                        </span>
+                    </div>
+                    @if($convoi->vehicule)
+                    <div class="mt-2 text-xs text-gray-500">
+                        <i class="fas fa-bus mr-1 text-gray-400"></i> {{ $convoi->vehicule->immatriculation }}
+                    </div>
+                    @endif
+                </a>
+                @endforeach
+            </div>
+        </section>
+        @endif
 
         <!-- Quick Action -->
         <a href="{{ route('chauffeur.voyages.index') }}" class="block mt-8 group">

@@ -311,8 +311,8 @@
                                     <p class="text-xs font-bold text-indigo-600 uppercase">Convoi • Référence</p>
                                     <p class="font-extrabold text-gray-900 text-sm sm:text-base">{{ $convoi->reference ?? '-' }}</p>
                                 </div>
-                                @if($convoi->statut === 'valide')
-                                    <span class="px-3 py-1.5 bg-green-100 text-green-700 rounded-xl font-semibold text-xs sm:text-sm">Assigné</span>
+                                @if($convoi->statut === 'paye')
+                                    <span class="px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-xl font-semibold text-xs sm:text-sm">Assigné</span>
                                 @elseif($convoi->statut === 'en_cours')
                                     <span class="px-3 py-1.5 bg-purple-100 text-purple-700 rounded-xl font-semibold text-xs sm:text-sm">En cours</span>
                                 @elseif($convoi->statut === 'termine')
@@ -327,11 +327,26 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                                 <div class="bg-gray-50 p-3 rounded-xl">
                                     <p class="text-xs font-bold text-gray-500 uppercase mb-1">Trajet</p>
-                                    <p class="font-bold text-gray-900 text-sm">{{ $convoi->itineraire ? ($convoi->itineraire->point_depart . ' -> ' . $convoi->itineraire->point_arrive) : '-' }}</p>
+                                    <p class="font-bold text-gray-900 text-sm">
+                                        @if($convoi->itineraire)
+                                            {{ $convoi->itineraire->point_depart }} → {{ $convoi->itineraire->point_arrive }}
+                                        @elseif($convoi->lieu_depart)
+                                            {{ $convoi->lieu_depart }} → {{ $convoi->lieu_retour }}
+                                        @else -
+                                        @endif
+                                    </p>
                                 </div>
                                 <div class="bg-gray-50 p-3 rounded-xl">
-                                    <p class="text-xs font-bold text-gray-500 uppercase mb-1">Gare</p>
-                                    <p class="font-bold text-gray-900 text-sm">{{ $convoi->gare->nom_gare ?? '-' }}</p>
+                                    <p class="text-xs font-bold text-gray-500 uppercase mb-1">Date départ</p>
+                                    <p class="font-bold text-gray-900 text-sm">
+                                        @if($convoi->date_depart)
+                                            {{ \Carbon\Carbon::parse($convoi->date_depart)->format('d/m/Y') }}
+                                            @if($convoi->heure_depart)
+                                                <span class="text-gray-500 text-xs">à {{ $convoi->heure_depart }}</span>
+                                            @endif
+                                        @else -
+                                        @endif
+                                    </p>
                                 </div>
                                 <div class="bg-gray-50 p-3 rounded-xl">
                                     <p class="text-xs font-bold text-gray-500 uppercase mb-1">Passagers</p>
@@ -343,16 +358,37 @@
                                 </div>
                             </div>
 
-                            @if(in_array($convoi->statut, ['valide', 'en_cours']))
+                            @if(in_array($convoi->statut, ['paye', 'en_cours']))
+                                @php
+                                    $canStart = $convoi->statut === 'paye'
+                                        && $convoi->date_depart
+                                        && !\Carbon\Carbon::parse($convoi->date_depart)->isFuture()
+                                        || ($convoi->statut === 'paye' && \Carbon\Carbon::parse($convoi->date_depart)->isToday());
+                                    $notYet = $convoi->statut === 'paye'
+                                        && $convoi->date_depart
+                                        && \Carbon\Carbon::parse($convoi->date_depart)->isFuture()
+                                        && !\Carbon\Carbon::parse($convoi->date_depart)->isToday();
+                                @endphp
                                 <div class="mt-4 flex flex-col md:flex-row gap-3">
-                                    @if($convoi->statut === 'valide')
-                                        <form action="{{ route('chauffeur.voyages.convois.start', $convoi->id) }}" method="POST" class="flex-1">
-                                            @csrf
-                                            <button type="submit" class="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:from-green-700 hover:to-emerald-700 transition-all">
-                                                <i class="fas fa-play-circle"></i>
-                                                Démarrer le convoi
-                                            </button>
-                                        </form>
+                                    @if($convoi->statut === 'paye')
+                                        @if($notYet)
+                                            {{-- Départ dans le futur : bouton disabled avec info --}}
+                                            <div class="flex-1 bg-blue-50 border border-blue-200 p-3 rounded-xl text-center">
+                                                <p class="text-blue-700 font-bold text-sm">
+                                                    <i class="fas fa-clock mr-1"></i>
+                                                    Départ prévu le {{ \Carbon\Carbon::parse($convoi->date_depart)->format('d/m/Y') }}
+                                                </p>
+                                                <p class="text-blue-500 text-xs mt-1">Vous pourrez démarrer ce convoi à partir de cette date.</p>
+                                            </div>
+                                        @else
+                                            <form action="{{ route('chauffeur.voyages.convois.start', $convoi->id) }}" method="POST" class="flex-1">
+                                                @csrf
+                                                <button type="submit" class="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:from-green-700 hover:to-emerald-700 transition-all">
+                                                    <i class="fas fa-play-circle"></i>
+                                                    Démarrer le convoi
+                                                </button>
+                                            </form>
+                                        @endif
                                     @endif
 
                                     @if($convoi->statut === 'en_cours')
@@ -365,13 +401,12 @@
                                         </form>
                                     @endif
 
-                                    <form action="{{ route('chauffeur.voyages.convois.annuler', $convoi->id) }}" method="POST" class="flex-1" onsubmit="return confirm('Confirmez-vous l\'annulation du convoi ?')">
-                                        @csrf
-                                        <button type="submit" class="w-full bg-white border-2 border-red-200 text-red-500 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-red-50 hover:border-red-400 transition-all">
-                                            <i class="fas fa-times-circle"></i>
-                                            Annuler le convoi
-                                        </button>
-                                    </form>
+                                    <button type="button"
+                                        onclick="openConvoiCancelModal('{{ $convoi->id }}')"
+                                        class="flex-1 bg-white border-2 border-red-200 text-red-500 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-red-50 hover:border-red-400 transition-all">
+                                        <i class="fas fa-times-circle"></i>
+                                        Se désister du convoi
+                                    </button>
                                 </div>
                             @endif
                         </div>
@@ -401,6 +436,54 @@
         <div class="mt-8">
             {{ $voyages->appends(['date' => $date, 'tab' => $tab])->links() }}
         </div>
+    </div>
+</div>
+
+{{-- ===== Modal Désistement convoi ===== --}}
+<div id="convoiCancelModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.55);">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="bg-gradient-to-r from-orange-500 to-red-600 p-5 text-white">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-route text-xl"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-lg">Se désister du convoi ?</h4>
+                    <p class="text-xs text-white/80">La gare sera notifiée et pourra réaffecter</p>
+                </div>
+                <button onclick="closeConvoiCancelModal()" class="ml-auto text-white/70 hover:text-white transition">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+        </div>
+        <form id="convoiCancelForm" method="POST">
+            @csrf
+            <div class="p-6">
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 text-xs text-amber-700 font-semibold">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Le convoi ne sera <strong>pas annulé</strong> — la gare pourra affecter un autre chauffeur.
+                    Seule la compagnie peut annuler définitivement.
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Motif du désistement <span class="text-red-500">*</span></label>
+                    <textarea name="motif_annulation" rows="3" required minlength="10" maxlength="500"
+                        placeholder="Expliquez pourquoi vous ne pouvez pas assurer ce convoi..."
+                        class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all bg-gray-50 text-sm font-semibold"></textarea>
+                    <p class="text-xs text-gray-400 mt-1">Ce motif sera transmis à la gare (minimum 10 caractères).</p>
+                </div>
+            </div>
+            <div class="border-t border-gray-100 p-4 flex gap-3">
+                <button type="button" onclick="closeConvoiCancelModal()"
+                    class="flex-1 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition text-sm">
+                    Annuler
+                </button>
+                <button type="submit"
+                    class="flex-1 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-bold transition text-sm flex items-center justify-center gap-2 shadow-md">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Confirmer le désistement
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -718,5 +801,20 @@ function closeCancelModal() {
     document.getElementById('cancelModal').classList.add('hidden');
     document.body.style.overflow = '';
 }
+
+function openConvoiCancelModal(convoiId) {
+    document.getElementById('convoiCancelForm').action = '/chauffeur/voyages/convois/' + convoiId + '/annuler';
+    document.getElementById('convoiCancelModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeConvoiCancelModal() {
+    document.getElementById('convoiCancelModal').classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+document.getElementById('convoiCancelModal').addEventListener('click', function(e) {
+    if (e.target === this) closeConvoiCancelModal();
+});
 </script>
 @endsection

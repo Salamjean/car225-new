@@ -98,7 +98,8 @@ class ConvoiController extends Controller
     {
         abort_if($convoi->user_id !== Auth::id(), 403);
         $convoi->load(['compagnie', 'itineraire', 'passagers', 'gare', 'chauffeur', 'vehicule']);
-        return view('user.convoi.show', compact('convoi'));
+        $authUser = Auth::user();
+        return view('user.convoi.show', compact('convoi', 'authUser'));
     }
 
     /** Paiement : l'utilisateur accepte le règlement et paye le montant fixé par la compagnie */
@@ -121,28 +122,66 @@ class ConvoiController extends Controller
             ->with('success', 'Paiement confirmé ! Vous pouvez maintenant renseigner les informations de vos passagers.');
     }
 
-    /** Enregistrement des passagers après paiement */
+    /** Enregistrement lieu de rassemblement + toggle garant */
+    public function storeLieuRassemblement(Request $request, Convoi $convoi)
+    {
+        abort_if($convoi->user_id !== Auth::id(), 403);
+        abort_if($convoi->statut !== 'paye', 403);
+
+        $request->validate([
+            'lieu_rassemblement' => 'required|string|max:255',
+            'is_garant'          => 'nullable|boolean',
+        ]);
+
+        $convoi->update([
+            'lieu_rassemblement' => $request->lieu_rassemblement ?: null,
+            'is_garant'          => (bool) $request->is_garant,
+        ]);
+
+        return back()->with('success', 'Lieu de rassemblement enregistré.');
+    }
+
+    /** Enregistrement des passagers après paiement (gère aussi lieu_rassemblement + is_garant) */
     public function storePassengers(Request $request, Convoi $convoi)
     {
         abort_if($convoi->user_id !== Auth::id(), 403);
         abort_if($convoi->statut !== 'paye', 403);
 
-        $validated = $request->validate([
-            'passagers'                       => 'required|array|size:' . $convoi->nombre_personnes,
-            'passagers.*.nom'                 => 'required|string|max:100',
-            'passagers.*.prenoms'             => 'required|string|max:150',
-            'passagers.*.contact'             => ['required', 'digits:10'],
-            'passagers.*.contact_urgence'     => ['required', 'digits:10'],
+        $request->validate([
+            'lieu_rassemblement'          => 'required|string|max:255',
+            'passagers'                   => 'nullable|array',
+            'passagers.*.nom'             => 'nullable|string|max:100',
+            'passagers.*.prenoms'         => 'nullable|string|max:150',
+            'passagers.*.contact'         => ['nullable', 'digits:10'],
+            'passagers.*.contact_urgence' => ['nullable', 'digits:10'],
         ], [
-            'passagers.size'                          => 'Le nombre de passagers doit correspondre exactement à ' . $convoi->nombre_personnes . ' personnes.',
-            'passagers.*.contact.digits'              => 'Le contact doit contenir exactement 10 chiffres.',
-            'passagers.*.contact_urgence.required'    => 'Le contact d\'urgence est obligatoire.',
-            'passagers.*.contact_urgence.digits'      => 'Le contact d\'urgence doit contenir exactement 10 chiffres.',
+            'lieu_rassemblement.required'         => 'Le lieu de rassemblement est obligatoire.',
+            'passagers.*.contact.digits'          => 'Le contact doit contenir exactement 10 chiffres.',
+            'passagers.*.contact_urgence.digits'  => 'Le contact d\'urgence doit contenir exactement 10 chiffres.',
         ]);
 
+        $isGarant = (bool) $request->input('is_garant', false);
+
+        // Sauvegarder lieu + garant
+        $convoi->update([
+            'lieu_rassemblement' => $request->lieu_rassemblement,
+            'is_garant'          => $isGarant,
+        ]);
+
+        // Ne sauvegarder que les lignes qui ont au moins un champ renseigné
         $convoi->passagers()->delete();
-        foreach ($validated['passagers'] as $p) {
-            $convoi->passagers()->create($p);
+        foreach (($request->input('passagers') ?? []) as $p) {
+            $nom     = trim($p['nom'] ?? '');
+            $prenoms = trim($p['prenoms'] ?? '');
+            $contact = trim($p['contact'] ?? '');
+            if ($nom || $prenoms || $contact) {
+                $convoi->passagers()->create([
+                    'nom'             => $nom ?: null,
+                    'prenoms'         => $prenoms ?: null,
+                    'contact'         => $contact ?: null,
+                    'contact_urgence' => trim($p['contact_urgence'] ?? '') ?: null,
+                ]);
+            }
         }
 
         return back()->with('success', 'Les informations des passagers ont été enregistrées avec succès.');

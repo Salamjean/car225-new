@@ -54,7 +54,7 @@ class VoyageController extends Controller
             $convoiQuery->where('statut', 'annule');
         } else {
             // Active convoy missions for chauffeur.
-            $convoiQuery->whereIn('statut', ['valide', 'en_cours']);
+            $convoiQuery->whereIn('statut', ['paye', 'en_cours']);
         }
 
         $convois = $convoiQuery->get();
@@ -70,8 +70,19 @@ class VoyageController extends Controller
             return back()->with('error', 'Ce convoi ne vous appartient pas.');
         }
 
-        if ($convoi->statut !== 'valide') {
-            return back()->with('error', 'Ce convoi ne peut pas être démarré.');
+        if ($convoi->statut !== 'paye') {
+            return back()->with('error', 'Ce convoi ne peut pas être démarré (statut : ' . $convoi->statut . ').');
+        }
+
+        // Vérifier qu'on est bien le jour du départ (ou après)
+        if ($convoi->date_depart && \Carbon\Carbon::parse($convoi->date_depart)->isFuture() && !\Carbon\Carbon::parse($convoi->date_depart)->isToday()) {
+            return back()->with('error', 'Le convoi ne peut être démarré qu\'à partir du ' . \Carbon\Carbon::parse($convoi->date_depart)->format('d/m/Y') . '.');
+        }
+
+        // Marquer le chauffeur et le véhicule indisponibles maintenant qu'il démarre vraiment
+        $chauffeur->update(['statut' => 'indisponible']);
+        if ($convoi->vehicule_id) {
+            \App\Models\Vehicule::where('id', $convoi->vehicule_id)->update(['statut' => 'indisponible']);
         }
 
         $convoi->update(['statut' => 'en_cours']);
@@ -103,7 +114,7 @@ class VoyageController extends Controller
         return back()->with('success', 'Convoi terminé avec succès.');
     }
 
-    public function annulerConvoi(Convoi $convoi)
+    public function annulerConvoi(Request $request, Convoi $convoi)
     {
         $chauffeur = Auth::guard('chauffeur')->user();
 
@@ -111,20 +122,49 @@ class VoyageController extends Controller
             return back()->with('error', 'Ce convoi ne vous appartient pas.');
         }
 
-        if (!in_array($convoi->statut, ['valide', 'en_cours'], true)) {
+        if (!in_array($convoi->statut, ['paye', 'en_cours'], true)) {
             return back()->with('error', 'Ce convoi ne peut plus être annulé.');
         }
 
-        $convoi->update(['statut' => 'annule']);
+        $request->validate([
+            'motif_annulation' => 'required|string|min:10|max:500',
+        ], [
+            'motif_annulation.required' => 'Veuillez indiquer le motif d\'annulation.',
+            'motif_annulation.min' => 'Le motif doit contenir au moins 10 caractères.',
+        ]);
+
+        // Le convoi repasse à "paye" sans chauffeur/véhicule → la gare peut réaffecter
+        // Seule la compagnie peut définitivement annuler
+        $convoi->update([
+            'statut'                     => 'paye',
+            'personnel_id'               => null,
+            'vehicule_id'                => null,
+            'motif_annulation_chauffeur' => $request->motif_annulation,
+        ]);
+
+        // Libérer le chauffeur et le véhicule
         $chauffeur->update(['statut' => 'disponible']);
-
-        \App\Models\DriverLocation::where('convoi_id', $convoi->id)->delete();
-
         if ($convoi->vehicule_id) {
             Vehicule::where('id', $convoi->vehicule_id)->update(['statut' => 'disponible']);
         }
 
-        return back()->with('success', 'Convoi annulé avec succès.');
+        \App\Models\DriverLocation::where('convoi_id', $convoi->id)->delete();
+
+        // Notifier la gare via message
+        if ($convoi->gare_id) {
+            \App\Models\GareMessage::create([
+                'gare_id'        => $convoi->gare_id,
+                'sender_type'    => 'App\Models\Personnel',
+                'sender_id'      => $chauffeur->id,
+                'recipient_type' => 'App\Models\Gare',
+                'recipient_id'   => $convoi->gare_id,
+                'subject'        => 'Désistement convoi ' . ($convoi->reference ?? '#' . $convoi->id),
+                'message'        => "Le chauffeur {$chauffeur->prenom} {$chauffeur->name} s'est désisté du convoi {$convoi->reference}.\n\nMotif : " . $request->motif_annulation . "\n\nVeuillez réaffecter un autre chauffeur et véhicule.",
+                'is_read'        => false,
+            ]);
+        }
+
+        return back()->with('success', 'Désistement enregistré. La gare a été notifiée et pourra réaffecter le convoi.');
     }
 
     /**

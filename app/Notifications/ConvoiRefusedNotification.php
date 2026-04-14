@@ -15,7 +15,17 @@ class ConvoiRefusedNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
+    }
+
+    public function toDatabase(object $notifiable): array
+    {
+        return [
+            'title'     => '❌ Convoi refusé — ' . $this->convoi->reference,
+            'message'   => 'Votre demande de convoi a été refusée. Motif : ' . $this->convoi->motif_refus,
+            'convoi_id' => $this->convoi->id,
+            'type'      => 'convoi_refuse',
+        ];
     }
 
     public function toMail(object $notifiable): MailMessage

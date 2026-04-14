@@ -43,14 +43,24 @@ class ChauffeurController extends Controller
 
         $activeConvois = Convoi::where('personnel_id', $chauffeur->id)
             ->whereIn('statut', ['paye', 'en_cours'])
+            ->where(function ($q) {
+                // Afficher : convois en_cours OU convois paye dont le départ est aujourd'hui ou passé
+                $q->where('statut', 'en_cours')
+                  ->orWhere(function ($q2) {
+                      $q2->where('statut', 'paye')
+                         ->whereDate('date_depart', '<=', Carbon::today());
+                  });
+            })
             ->with(['itineraire', 'gare', 'vehicule'])
             ->latest()
             ->get();
 
-        $recentConvois = Convoi::where('personnel_id', $chauffeur->id)
-            ->with(['itineraire', 'gare', 'vehicule'])
-            ->latest()
-            ->limit(6)
+        // Convois à venir (paye, départ dans le futur)
+        $upcomingConvois = Convoi::where('personnel_id', $chauffeur->id)
+            ->where('statut', 'paye')
+            ->whereDate('date_depart', '>', Carbon::today())
+            ->with(['itineraire', 'vehicule'])
+            ->orderBy('date_depart', 'asc')
             ->get();
 
         $completedVoyagesToday = Voyage::where('personnel_id', $chauffeur->id)
@@ -70,7 +80,7 @@ class ChauffeurController extends Controller
             'todayVoyages',
             'upcomingVoyages',
             'activeConvois',
-            'recentConvois',
+            'upcomingConvois',
             'todayMissionsCount',
             'completedMissionsTodayCount'
         ));

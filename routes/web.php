@@ -273,6 +273,7 @@ Route::middleware('compagnie')->prefix('company')->group(function () {
         Route::post('/{convoi}/valider', [\App\Http\Controllers\Compagnie\ConvoiController::class, 'valider'])->name('valider');
         Route::post('/{convoi}/refuser', [\App\Http\Controllers\Compagnie\ConvoiController::class, 'refuser'])->name('refuser');
         Route::post('/{convoi}/assigner-gare', [\App\Http\Controllers\Compagnie\ConvoiController::class, 'assignerGare'])->name('assigner-gare');
+        Route::post('/{convoi}/annuler', [\App\Http\Controllers\Compagnie\ConvoiController::class, 'annuler'])->name('annuler');
     });
 
     // Routes de gestion des signalements pour la compagnie
@@ -569,6 +570,7 @@ Route::middleware('auth')->prefix('user')->group(function () {
             Route::get('/{convoi}', [ConvoiController::class, 'show'])->name('show');
             Route::post('/{convoi}/pay', [ConvoiController::class, 'pay'])->name('pay');
             Route::post('/{convoi}/passengers', [ConvoiController::class, 'storePassengers'])->name('store-passengers');
+            Route::post('/{convoi}/lieu-rassemblement', [ConvoiController::class, 'storeLieuRassemblement'])->name('lieu-rassemblement');
         });
         Route::get('/programmes/{programme}/recalculate-status', [ReservationController::class, 'recalculateProgramStatus'])->name('programmes.recalculate-status');
         Route::post('/reservations/{reservation}/update-emergency', [ReservationController::class, 'updateEmergencyContact'])->name('user.reservation.update-emergency');
@@ -593,6 +595,7 @@ Route::middleware('auth')->prefix('user')->group(function () {
         // Notifications
         Route::post('/notifications/mark-read', [UserController::class, 'markNotificationRead'])->name('user.notifications.mark-read');
         Route::post('/notifications/mark-all-read', [UserController::class, 'markAllNotificationsRead'])->name('user.notifications.mark-all-read');
+        Route::get('/notifications/{id}/go', [UserController::class, 'goToNotification'])->name('user.notifications.go');
     });
 });
 
@@ -875,6 +878,31 @@ Route::prefix('gare-espace')->name('gare-espace.')->group(function () {
     Route::middleware('gare')->group(function () {
         Route::get('/dashboard', [App\Http\Controllers\GareEspace\GareDashboardController::class, 'index'])->name('dashboard');
         Route::post('/logout', [App\Http\Controllers\GareEspace\AuthenticateGare::class, 'logout'])->name('logout');
+
+        // Notifications
+        Route::post('/notifications/mark-all-read', function () {
+            auth('gare')->user()->unreadNotifications->markAsRead();
+            return back();
+        })->name('notifications.markAllRead');
+
+        Route::get('/notifications/{id}/go', function (string $id) {
+            $gare         = auth('gare')->user();
+            $notification = $gare->notifications()->findOrFail($id);
+            $notification->markAsRead();
+
+            $data = $notification->data;
+            $type = $data['type'] ?? null;
+
+            $url = match($type) {
+                'convoi_assigne_gare'
+                    => isset($data['convoi_id'])
+                        ? route('gare-espace.convois.show', $data['convoi_id'])
+                        : route('gare-espace.convois.index'),
+                default => route('gare-espace.convois.index'),
+            };
+
+            return redirect($url);
+        })->name('notifications.go');
 
         // Profile routes
         Route::get('/profile', [App\Http\Controllers\GareEspace\GareDashboardController::class, 'profile'])->name('profile');

@@ -420,6 +420,30 @@
         @endif
     </div>
 
+    {{-- Alerte désistement chauffeur --}}
+    @if($convoi->motif_annulation_chauffeur && $convoi->statut === 'paye' && !$convoi->personnel_id)
+    <div class="alert-box" style="background:#FFF7ED;border:1px solid #fed7aa;color:#92400e;margin-bottom:20px;">
+        <i class="fas fa-exclamation-triangle" style="color:#f97316;font-size:16px;"></i>
+        <div>
+            <strong style="display:block;font-size:13px;margin-bottom:4px;">Désistement du chauffeur précédent</strong>
+            <span style="font-size:12px;">{{ $convoi->motif_annulation_chauffeur }}</span>
+            <span style="display:block;font-size:11px;color:#b45309;margin-top:4px;">Veuillez affecter un nouveau chauffeur et un véhicule de remplacement.</span>
+        </div>
+    </div>
+    @endif
+
+    {{-- Lieu de rassemblement --}}
+    @if($convoi->lieu_rassemblement)
+    <div class="alert-box" style="background:#EFF6FF;border:1px solid #bfdbfe;color:#1e40af;margin-bottom:20px;">
+        <i class="fas fa-map-pin" style="font-size:16px;"></i>
+        <div>
+            <strong style="display:block;font-size:13px;margin-bottom:4px;">Lieu de rassemblement</strong>
+            <span style="font-size:14px;font-weight:800;">{{ $convoi->lieu_rassemblement }}</span>
+            <span style="display:block;font-size:11px;color:#3b82f6;margin-top:3px;">Le chauffeur devra passer à ce lieu avant le départ.</span>
+        </div>
+    </div>
+    @endif
+
     {{-- ── Affectation (uniquement si paye) ──── --}}
     @if($convoi->statut === 'paye')
     @php

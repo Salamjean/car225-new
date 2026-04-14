@@ -284,7 +284,8 @@ class CaisseController extends Controller
                     'passager_prenom' => $passenger['prenom'],
                     'passager_telephone' => $passenger['telephone'],
                     'passager_email' => $passenger['email'] ?? null,
-                    'passager_urgence' => ($passenger['urgence_nom'] ?? '') . ' (' . ($passenger['urgence_telephone'] ?? '') . ')',
+                    'passager_urgence' => $passenger['urgence_telephone'] ?? null,
+                    'nom_passager_urgence' => $passenger['urgence_nom'] ?? null,
                     
                     // ICI : On met la date d'aujourd'hui, pas la date de début du planning
                     'date_voyage' => $dateVoyageEffective, 

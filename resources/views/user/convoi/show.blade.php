@@ -180,55 +180,150 @@
                 </div>
             @endif
 
+            {{-- Lieu de rassemblement + garant + passagers — FORMULAIRE UNIQUE --}}
+            @if ($convoi->statut === 'paye')
+            <form action="{{ route('user.convoi.store-passengers', $convoi) }}" method="POST" id="mainConvoiForm">
+            @csrf
+            {{-- Hidden is_garant (synced par JS avec le toggle) --}}
+            <input type="hidden" name="is_garant" id="hiddenIsGarant" value="{{ $convoi->is_garant ? '1' : '0' }}">
+
+            {{-- Erreurs serveur --}}
+            @if ($errors->any())
+            <div class="rounded-2xl bg-red-50 border border-red-200 px-5 py-4 text-red-700 text-sm font-semibold">
+                <i class="fas fa-exclamation-circle mr-2"></i>
+                @if ($errors->has('lieu_rassemblement'))
+                    {{ $errors->first('lieu_rassemblement') }}
+                @else
+                    Veuillez corriger les erreurs ci-dessous.
+                @endif
+            </div>
+            @endif
+
+            {{-- Section: Lieu de rassemblement --}}
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                <div class="flex items-center gap-3 mb-5">
+                    <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-map-pin text-blue-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-black text-gray-900 uppercase tracking-wider">Lieu de rassemblement & options</h3>
+                        <p class="text-xs text-gray-500 font-medium">Indiquez où le car doit venir vous chercher, et choisissez votre mode d'inscription.</p>
+                    </div>
+                </div>
+                <div class="space-y-5">
+                    {{-- Lieu de rassemblement --}}
+                    <div>
+                        <label class="block text-xs font-black text-gray-600 uppercase tracking-wider mb-2">
+                            <i class="fas fa-map-marker-alt mr-1 text-[#e94f1b]"></i> Lieu de rassemblement <span class="text-[#e94f1b]">*</span>
+                        </label>
+                        <input type="text" name="lieu_rassemblement" id="lieuRassemblementInput"
+                            value="{{ old('lieu_rassemblement', $convoi->lieu_rassemblement) }}"
+                            placeholder="Ex: Devant la pharmacie centrale, Carrefour Akwaba..."
+                            required
+                            class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#e94f1b]/30 focus:border-[#e94f1b]">
+                        <p class="text-xs text-gray-400 mt-1.5">Obligatoire — le chauffeur quittera la gare pour venir vous chercher à ce lieu.</p>
+                    </div>
+
+                    {{-- Toggle garant --}}
+                    <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4">
+                        <label class="flex items-start gap-4 cursor-pointer">
+                            <div class="relative flex-shrink-0 mt-0.5">
+                                <input type="checkbox" id="toggleGarant"
+                                    {{ $convoi->is_garant ? 'checked' : '' }}
+                                    class="sr-only peer">
+                                <div class="w-10 h-6 bg-gray-200 rounded-full peer-checked:bg-[#e94f1b] transition-colors duration-200 peer-focus:ring-2 peer-focus:ring-[#e94f1b]/30"></div>
+                                <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 peer-checked:translate-x-4"></div>
+                            </div>
+                            <div>
+                                <p class="text-sm font-black text-indigo-800">Je me porte garant pour le groupe</p>
+                                <p class="text-xs text-indigo-600 font-medium mt-1">
+                                    Activez cette option si vous êtes le seul responsable du groupe (famille, collègues…).
+                                    Seules <strong>vos informations</strong> seront demandées — vous êtes le point de contact en cas de problème.
+                                    Les autres passagers n'auront pas besoin d'être enregistrés individuellement.
+                                </p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            @elseif($convoi->lieu_rassemblement || $convoi->is_garant)
+            {{-- Affichage en lecture seule si plus modifiable --}}
+            <div class="bg-blue-50 border border-blue-100 rounded-2xl p-5 flex flex-wrap gap-6">
+                @if($convoi->lieu_rassemblement)
+                <div>
+                    <p class="text-xs font-black text-blue-700 uppercase tracking-wider mb-1"><i class="fas fa-map-pin mr-1"></i> Lieu de rassemblement</p>
+                    <p class="text-sm font-bold text-blue-900">{{ $convoi->lieu_rassemblement }}</p>
+                </div>
+                @endif
+                @if($convoi->is_garant)
+                <div>
+                    <p class="text-xs font-black text-blue-700 uppercase tracking-wider mb-1"><i class="fas fa-user-shield mr-1"></i> Mode garant</p>
+                    <p class="text-sm font-bold text-blue-900">Vous êtes le garant du groupe</p>
+                </div>
+                @endif
+            </div>
+            @endif
+
             <div class="bg-white rounded-[28px] border border-gray-100 shadow-sm overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
                     <h3 class="text-sm font-black text-gray-800 uppercase tracking-wider">
                         <i class="fas fa-users text-[#e94f1b] mr-2"></i>
-                        Passagers ({{ $convoi->passagers->count() }} / {{ $convoi->nombre_personnes }})
+                        @if($convoi->is_garant)
+                            Passagers — Mode Garant
+                            <span class="ml-2 text-[10px] px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full font-black normal-case tracking-normal">
+                                <i class="fas fa-user-shield mr-1"></i>Garant
+                            </span>
+                        @else
+                            Passagers ({{ $convoi->passagers->count() }} / {{ $convoi->nombre_personnes }})
+                        @endif
                     </h3>
                 </div>
 
                 @if ($convoi->statut === 'paye')
                 @php
-                    // Construire un tableau indexé des passagers existants
                     $passagersExistants = $convoi->passagers->keyBy(fn($p, $k) => $k)->values();
                 @endphp
-                <form action="{{ route('user.convoi.store-passengers', $convoi) }}" method="POST" id="passagersForm">
-                    @csrf
+                @if($convoi->is_garant)
+                <div class="mx-6 mt-4 mb-0 px-4 py-3 bg-indigo-50 border border-indigo-100 rounded-xl text-xs font-semibold text-indigo-700" id="garantBanner">
+                    <i class="fas fa-user-shield mr-1"></i> Mode garant activé — renseignez uniquement vos informations personnelles.
+                </div>
+                @else
+                <div class="mx-6 mt-4 mb-0 px-4 py-3 bg-indigo-50 border border-indigo-100 rounded-xl text-xs font-semibold text-indigo-700 hidden" id="garantBanner">
+                    <i class="fas fa-user-shield mr-1"></i> Mode garant activé — renseignez uniquement vos informations personnelles.
+                </div>
+                @endif
                     <div class="p-6">
-                        @if ($errors->has('passagers') || $errors->has('passagers.*') || $errors->has('passagers.*.nom') || $errors->has('passagers.*.contact'))
-                            <div class="rounded-xl bg-red-50 border border-red-200 px-4 py-3 mb-4 text-red-700 text-sm font-semibold">
-                                Veuillez remplir tous les champs obligatoires (nom, prénoms, contact) pour chaque passager.
-                            </div>
-                        @endif
-                        <div class="space-y-4">
+                        <div class="space-y-4" id="passagersContainer">
                             @for ($i = 0; $i < $convoi->nombre_personnes; $i++)
                             @php $p = $passagersExistants[$i] ?? null; @endphp
-                            <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                            <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100 passenger-row" data-index="{{ $i }}"
+                                 style="{{ $convoi->is_garant && $i > 0 ? 'display:none;' : '' }}">
                                 <div class="mb-3">
-                                    <span class="text-xs font-black text-gray-500 uppercase tracking-wider">
-                                        Passager {{ $i + 1 }}
+                                    <span class="text-xs font-black text-gray-500 uppercase tracking-wider passenger-row-label" data-index="{{ $i }}">
+                                        {{ $convoi->is_garant && $i === 0 ? 'Vos informations (Garant)' : 'Passager ' . ($i + 1) }}
+                                        @if(!$convoi->is_garant)
                                         <span class="text-[10px] font-semibold text-gray-400 normal-case tracking-normal ml-1">/ {{ $convoi->nombre_personnes }}</span>
+                                        @endif
                                     </span>
                                 </div>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                                     <div>
                                         <input type="text" name="passagers[{{ $i }}][nom]"
                                             value="{{ old("passagers.$i.nom", $p->nom ?? '') }}"
-                                            placeholder="Nom *" required
+                                            placeholder="Nom"
                                             class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-[#e94f1b] outline-none">
                                     </div>
                                     <div>
                                         <input type="text" name="passagers[{{ $i }}][prenoms]"
                                             value="{{ old("passagers.$i.prenoms", $p->prenoms ?? '') }}"
-                                            placeholder="Prénoms *" required
+                                            placeholder="Prénoms"
                                             class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-[#e94f1b] outline-none">
                                     </div>
                                     <div>
                                         <input type="tel" name="passagers[{{ $i }}][contact]"
                                             value="{{ old("passagers.$i.contact", $p->contact ?? '') }}"
-                                            placeholder="Contact * (10 chiffres)"
-                                            required maxlength="10" minlength="10" pattern="[0-9]{10}"
+                                            placeholder="Contact (10 chiffres)"
+                                            maxlength="10" pattern="[0-9]{10}"
                                             inputmode="numeric"
                                             oninput="this.value=this.value.replace(/[^0-9]/g,'')"
                                             class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-[#e94f1b] outline-none">
@@ -236,8 +331,8 @@
                                     <div>
                                         <input type="tel" name="passagers[{{ $i }}][contact_urgence]"
                                             value="{{ old("passagers.$i.contact_urgence", $p->contact_urgence ?? '') }}"
-                                            placeholder="Contact d'urgence * (10 chiffres)"
-                                            required maxlength="10" minlength="10" pattern="[0-9]{10}"
+                                            placeholder="Contact d'urgence (10 chiffres)"
+                                            maxlength="10" pattern="[0-9]{10}"
                                             inputmode="numeric"
                                             oninput="this.value=this.value.replace(/[^0-9]/g,'')"
                                             class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-[#e94f1b] outline-none">
@@ -247,14 +342,14 @@
                             @endfor
                         </div>
                         <div class="flex justify-end mt-5">
-                            <button type="submit"
-                                class="inline-flex items-center gap-2 px-8 py-3 rounded-2xl bg-[#e94f1b] text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-[#e94f1b]/20 hover:bg-[#d44518] transition-all">
+                            <button type="submit" form="mainConvoiForm"
+                                class="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-[#e94f1b] text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-[#e94f1b]/20 hover:bg-[#d44518] transition-all">
                                 <i class="fas fa-save"></i>
-                                Enregistrer les passagers
+                                Enregistrer
                             </button>
                         </div>
                     </div>
-                </form>
+                </form>{{-- fin mainConvoiForm --}}
                 @else
                 {{-- Lecture seule quand en_cours ou terminé --}}
                 <div class="overflow-x-auto">
@@ -290,13 +385,182 @@
         @endif
     </div>
 
+    @php
+        $authUserData = [
+            'nom'             => $authUser->name ?? '',
+            'prenoms'         => $authUser->prenom ?? '',
+            'contact'         => $authUser->contact ?? '',
+            'contact_urgence' => $authUser->contact_urgence ?? '',
+        ];
+    @endphp
+
+    {{-- Modal confirmation mode garant --}}
+    <div id="confirmGarantModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+        {{-- Backdrop --}}
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="cancelGarant()"></div>
+        {{-- Card --}}
+        <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+            {{-- Top accent --}}
+            <div class="h-1.5 w-full bg-gradient-to-r from-indigo-500 to-[#e94f1b]"></div>
+            <div class="p-8">
+                {{-- Icon --}}
+                <div class="flex justify-center mb-5">
+                    <div class="w-16 h-16 rounded-2xl bg-indigo-50 flex items-center justify-center">
+                        <i class="fas fa-user-shield text-2xl text-indigo-600"></i>
+                    </div>
+                </div>
+                {{-- Title --}}
+                <h2 class="text-center text-lg font-black text-gray-900 mb-2">Confirmer le mode Garant</h2>
+                <p class="text-center text-sm text-gray-500 font-medium mb-6 leading-relaxed">
+                    En activant ce mode, <strong class="text-gray-800">vous serez le seul responsable</strong> du groupe.<br>
+                    Seules vos informations personnelles seront enregistrées — les autres passagers ne seront pas nominativement déclarés.
+                </p>
+                {{-- Callout --}}
+                <div class="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-6 text-xs font-semibold text-amber-800">
+                    <i class="fas fa-triangle-exclamation mr-2 text-amber-600"></i>
+                    Cette décision engage votre responsabilité envers la compagnie et les passagers que vous représentez.
+                </div>
+                {{-- Buttons --}}
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button type="button" onclick="cancelGarant()"
+                        class="flex-1 px-5 py-3 rounded-2xl border border-gray-200 bg-white text-gray-700 text-xs font-black uppercase tracking-wider hover:bg-gray-50 transition-all">
+                        <i class="fas fa-times mr-2"></i>Annuler
+                    </button>
+                    <button type="button" onclick="confirmGarant()"
+                        class="flex-1 px-5 py-3 rounded-2xl bg-[#e94f1b] text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-[#e94f1b]/25 hover:bg-[#d44518] transition-all">
+                        <i class="fas fa-check mr-2"></i>Oui, je confirme
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @push('scripts')
     <script>
-    // Forcer uniquement des chiffres sur les champs contact
-    document.querySelectorAll('input[name$="[contact]"]').forEach(function(input) {
+    // ── 1. Forcer uniquement des chiffres sur les champs contact ─────────────
+    document.querySelectorAll('input[name$="[contact]"], input[name$="[contact_urgence]"]').forEach(function(input) {
         input.addEventListener('input', function() {
             this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
         });
+    });
+
+    // ── 2. Toggle garant : afficher/masquer les lignes passagers ─────────────
+    const toggleGarant   = document.getElementById('toggleGarant');
+    const hiddenIsGarant = document.getElementById('hiddenIsGarant');
+    const passengerRows  = document.querySelectorAll('.passenger-row');
+
+    // Infos de l'utilisateur connecté (pour pré-remplir passager 0)
+    const authUser = @json($authUserData);
+
+    // Sauvegarde des valeurs originales de la ligne 0 avant pré-remplissage
+    let row0OriginalValues = null;
+
+    function getRow0Fields() {
+        const row0 = document.querySelector('.passenger-row[data-index="0"]');
+        if (!row0) return null;
+        return {
+            nom:             row0.querySelector('input[name="passagers[0][nom]"]'),
+            prenoms:         row0.querySelector('input[name="passagers[0][prenoms]"]'),
+            contact:         row0.querySelector('input[name="passagers[0][contact]"]'),
+            contact_urgence: row0.querySelector('input[name="passagers[0][contact_urgence]"]'),
+        };
+    }
+
+    function prefillRow0WithUser() {
+        const fields = getRow0Fields();
+        if (!fields) return;
+        // Sauvegarder les valeurs actuelles avant de pré-remplir
+        row0OriginalValues = {
+            nom:             fields.nom?.value ?? '',
+            prenoms:         fields.prenoms?.value ?? '',
+            contact:         fields.contact?.value ?? '',
+            contact_urgence: fields.contact_urgence?.value ?? '',
+        };
+        if (fields.nom)             fields.nom.value             = authUser.nom;
+        if (fields.prenoms)         fields.prenoms.value         = authUser.prenoms;
+        if (fields.contact)         fields.contact.value         = authUser.contact;
+        if (fields.contact_urgence) fields.contact_urgence.value = authUser.contact_urgence;
+    }
+
+    function restoreRow0() {
+        if (!row0OriginalValues) return;
+        const fields = getRow0Fields();
+        if (!fields) return;
+        if (fields.nom)             fields.nom.value             = row0OriginalValues.nom;
+        if (fields.prenoms)         fields.prenoms.value         = row0OriginalValues.prenoms;
+        if (fields.contact)         fields.contact.value         = row0OriginalValues.contact;
+        if (fields.contact_urgence) fields.contact_urgence.value = row0OriginalValues.contact_urgence;
+        row0OriginalValues = null;
+    }
+
+    function applyGarantMode(isGarant, prefill) {
+        passengerRows.forEach(function(row) {
+            const idx = parseInt(row.dataset.index, 10);
+            if (idx > 0) {
+                row.style.display = isGarant ? 'none' : '';
+            }
+        });
+        if (hiddenIsGarant) hiddenIsGarant.value = isGarant ? '1' : '0';
+
+        // Mettre à jour le label du passager 0
+        const label0 = document.querySelector('.passenger-row-label[data-index="0"]');
+        if (label0) {
+            label0.innerHTML = isGarant
+                ? 'Vos informations (Garant)'
+                : 'Passager 1 <span class="text-[10px] font-semibold text-gray-400 normal-case tracking-normal ml-1">/ {{ $convoi->nombre_personnes }}</span>';
+        }
+
+        // Afficher/masquer le bandeau garant
+        const garantBanner = document.getElementById('garantBanner');
+        if (garantBanner) {
+            garantBanner.classList.toggle('hidden', !isGarant);
+        }
+
+        if (isGarant && prefill) {
+            prefillRow0WithUser();
+        } else if (!isGarant && row0OriginalValues !== null) {
+            restoreRow0();
+        }
+    }
+
+    if (toggleGarant) {
+        toggleGarant.addEventListener('change', function() {
+            applyGarantMode(this.checked, true);
+        });
+        // Appliquer l'état initial au chargement (sans écraser les données déjà saisies)
+        applyGarantMode(toggleGarant.checked, false);
+    }
+
+    // ── 3. Confirmation modale avant enregistrement quand garant ON ──────────
+    const mainForm     = document.getElementById('mainConvoiForm');
+    const confirmModal = document.getElementById('confirmGarantModal');
+    let   garantConfirmed = false;
+
+    if (mainForm) {
+        mainForm.addEventListener('submit', function(e) {
+            if (toggleGarant && toggleGarant.checked && !garantConfirmed) {
+                e.preventDefault();
+                confirmModal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+        });
+    }
+
+    function confirmGarant() {
+        garantConfirmed = true;
+        confirmModal.classList.add('hidden');
+        document.body.style.overflow = '';
+        if (mainForm) mainForm.submit();
+    }
+
+    function cancelGarant() {
+        confirmModal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+
+    // Fermer avec Echap
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') cancelGarant();
     });
     </script>
     @endpush

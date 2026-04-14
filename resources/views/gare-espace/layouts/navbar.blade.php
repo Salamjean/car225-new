@@ -19,6 +19,52 @@
 
         <!-- Right: Profile -->
         <div class="flex items-center gap-4">
+
+            <!-- Cloche notifications -->
+            <div class="relative">
+                <button id="gare-notif-btn" class="relative w-10 h-10 flex items-center justify-center bg-gray-100 hover:bg-orange-50 rounded-xl transition-all">
+                    <i class="far fa-bell text-gray-600"></i>
+                    @if($gare->unreadNotifications->count() > 0)
+                        <span id="gare-notif-badge" class="absolute top-1.5 right-1.5 w-4 h-4 bg-[#e94f1b] text-white text-[9px] font-black flex items-center justify-center rounded-full">
+                            {{ $gare->unreadNotifications->count() > 9 ? '9+' : $gare->unreadNotifications->count() }}
+                        </span>
+                    @endif
+                </button>
+
+                <!-- Dropdown notifications -->
+                <div id="gare-notif-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 z-50">
+                    <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                        <p class="text-xs font-black text-gray-700 uppercase tracking-wider">Notifications</p>
+                        @if($gare->unreadNotifications->count() > 0)
+                        <form action="{{ route('gare-espace.notifications.markAllRead') }}" method="POST">
+                            @csrf
+                            <button type="submit" class="text-[10px] font-bold text-orange-500 hover:underline">Tout marquer lu</button>
+                        </form>
+                        @endif
+                    </div>
+                    <div class="max-h-80 overflow-y-auto divide-y divide-gray-50">
+                        @forelse($gare->notifications()->latest()->limit(10)->get() as $notif)
+                        <a href="{{ route('gare-espace.notifications.go', $notif->id) }}"
+                           class="block px-4 py-3 hover:bg-gray-50 transition-colors {{ $notif->read_at ? 'opacity-60' : 'bg-orange-50/40' }}">
+                            <div class="flex gap-3">
+                                <div class="w-2 h-2 rounded-full mt-1.5 shrink-0 {{ $notif->read_at ? 'bg-gray-300' : 'bg-[#e94f1b]' }}"></div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs font-black text-gray-900 leading-tight truncate">{{ $notif->data['title'] ?? '' }}</p>
+                                    <p class="text-[11px] font-medium text-gray-600 leading-snug mt-0.5">{{ $notif->data['message'] ?? '' }}</p>
+                                    <p class="text-[9px] font-bold text-gray-400 pt-1 uppercase">{{ $notif->created_at->diffForHumans() }}</p>
+                                </div>
+                            </div>
+                        </a>
+                        @empty
+                        <div class="px-4 py-8 text-center">
+                            <i class="far fa-bell-slash text-gray-200 text-3xl mb-2 block"></i>
+                            <p class="text-xs font-bold text-gray-400">Aucune notification</p>
+                        </div>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+
             <!-- Gare Info Badge -->
             <div class="hidden md:flex items-center gap-2 px-3 py-1.5 bg-orange-50 rounded-lg border border-orange-200">
                 <i class="fas fa-map-marker-alt text-orange-500 text-xs"></i>
@@ -65,3 +111,19 @@
         </div>
     </div>
 </nav>
+<script>
+(function() {
+    const btn      = document.getElementById('gare-notif-btn');
+    const dropdown = document.getElementById('gare-notif-dropdown');
+    if (!btn || !dropdown) return;
+
+    btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        dropdown.classList.toggle('hidden');
+    });
+    document.addEventListener('click', function() {
+        dropdown.classList.add('hidden');
+    });
+    dropdown.addEventListener('click', function(e) { e.stopPropagation(); });
+})();
+</script>

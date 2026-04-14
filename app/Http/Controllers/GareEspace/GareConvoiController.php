@@ -196,49 +196,74 @@ class GareConvoiController extends Controller
             return back()->with('error', 'Ce véhicule a des voyages programmés pendant la période du convoi.');
         }
 
+        // Vérifier que le véhicule a assez de places
+        $vehicule = Vehicule::findOrFail($validated['vehicule_id']);
+        if ($vehicule->nombre_place < $convoi->nombre_personnes) {
+            return back()->with('error',
+                "Ce véhicule n'a que {$vehicule->nombre_place} place(s) alors que le convoi nécessite {$convoi->nombre_personnes} personne(s). Veuillez choisir un véhicule adapté."
+            );
+        }
+
         $convoi->update([
             'personnel_id' => $validated['personnel_id'],
             'vehicule_id'  => $validated['vehicule_id'],
         ]);
 
-        // PAS de changement de statut personnel/vehicule — la disponibilité est gérée par dates
+        $convoi->loadMissing(['itineraire', 'vehicule', 'user']);
+        $depart     = $convoi->lieu_depart  ?? ($convoi->itineraire->point_depart  ?? 'N/A');
+        $arrivee    = $convoi->lieu_retour  ?? ($convoi->itineraire->point_arrive  ?? 'N/A');
+        $dateDepart = $convoi->date_depart  ? Carbon::parse($convoi->date_depart)->format('d/m/Y') : 'N/A';
+        $hDepart    = $convoi->heure_depart ? substr($convoi->heure_depart, 0, 5) : '';
+        $lieu       = $convoi->lieu_rassemblement ?? 'À définir';
 
+        // ── Notifier le chauffeur ──────────────────────────────────────────
         try {
             $chauffeur = Personnel::find($validated['personnel_id']);
             if ($chauffeur) {
-                $convoi->loadMissing(['itineraire', 'vehicule']);
-
-                $depart  = $convoi->lieu_depart  ?? ($convoi->itineraire->point_depart  ?? 'N/A');
-                $arrivee = $convoi->lieu_retour   ?? ($convoi->itineraire->point_arrive  ?? 'N/A');
-                $route   = "{$depart} → {$arrivee}";
-
                 $chauffeur->notify(new ConvoiAssignedNotification($convoi));
-
                 if ($chauffeur->fcm_token) {
-                    $fcmService = app(\App\Services\FcmService::class);
-                    $title = 'Nouveau Convoi Assigné';
-                    $body  = "Référence : " . ($convoi->reference ?? '-') . "\n"
-                           . "Trajet : {$route}\n"
-                           . "Passagers : " . ($convoi->nombre_personnes ?? 0) . "\n"
-                           . "Départ : " . ($convoi->date_depart ? Carbon::parse($convoi->date_depart)->format('d/m/Y') : '-') . " à " . ($convoi->heure_depart ?? '-');
-
-                    $fcmService->sendNotification(
+                    app(\App\Services\FcmService::class)->sendNotification(
                         $chauffeur->fcm_token,
-                        $title,
-                        $body,
-                        [
-                            'type'      => 'convoi_assigned',
-                            'convoi_id' => (string) $convoi->id,
-                            'reference' => (string) ($convoi->reference ?? ''),
-                        ]
+                        'Nouveau Convoi Assigné',
+                        "Ref {$convoi->reference} · {$depart} → {$arrivee} · {$dateDepart}",
+                        ['type' => 'convoi_assigned', 'convoi_id' => (string) $convoi->id]
                     );
                 }
             }
         } catch (\Exception $e) {
-            Log::error('Erreur notification convoi (GareConvoiController@assign): ' . $e->getMessage());
+            Log::error('Notif chauffeur assign: ' . $e->getMessage());
         }
 
-        return back()->with('success', 'Affectation effectuée avec succès.');
+        // ── Notifier l'utilisateur (SMS + database) ───────────────────────
+        try {
+            $user = $convoi->user;
+            if ($user) {
+                $prenom = $user->prenom ?? $user->name;
+                // Database (cloche)
+                $user->notify(new \App\Notifications\ConvoiChauffeurAssignedNotification($convoi));
+                // SMS
+                $smsMsg = "Bonjour {$prenom},\n"
+                        . "Votre convoi CAR225 ref {$convoi->reference} a ete pris en charge !\n"
+                        . "Trajet : {$depart} -> {$arrivee}\n"
+                        . "Depart : {$dateDepart}" . ($hDepart ? " a {$hDepart}" : '') . "\n"
+                        . "Lieu de rassemblement : {$lieu}\n"
+                        . "Le chauffeur sera present. Bon voyage !";
+                app(\App\Services\SmsService::class)->sendSms($user->contact, $smsMsg);
+                // FCM
+                if ($user->fcm_token) {
+                    app(\App\Services\FcmService::class)->sendNotification(
+                        $user->fcm_token,
+                        'Votre convoi est pris en charge 🚌',
+                        "Ref {$convoi->reference} · Départ le {$dateDepart} · Lieu : {$lieu}",
+                        ['type' => 'convoi_chauffeur_assigne', 'convoi_id' => (string) $convoi->id]
+                    );
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Notif user assign convoi: ' . $e->getMessage());
+        }
+
+        return back()->with('success', 'Affectation effectuée. Le chauffeur et l\'utilisateur ont été notifiés.');
     }
 
     /** Modifier l'affectation (changer chauffeur / véhicule) */
@@ -284,6 +309,14 @@ class GareConvoiController extends Controller
             if ($vehiculeBusyVoyage) {
                 return back()->with('error', 'Ce véhicule a des voyages programmés pendant la période du convoi.');
             }
+        }
+
+        // Vérifier capacité véhicule
+        $vehiculeR = Vehicule::findOrFail($validated['vehicule_id']);
+        if ($vehiculeR->nombre_place < $convoi->nombre_personnes) {
+            return back()->with('error',
+                "Ce véhicule n'a que {$vehiculeR->nombre_place} place(s) alors que le convoi nécessite {$convoi->nombre_personnes} personne(s)."
+            );
         }
 
         $convoi->update([

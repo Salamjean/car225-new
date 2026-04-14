@@ -27,6 +27,9 @@ class Convoi extends Model
         'heure_retour',
         'montant',
         'motif_refus',
+        'lieu_rassemblement',
+        'is_garant',
+        'motif_annulation_chauffeur',
     ];
 
     public function user()

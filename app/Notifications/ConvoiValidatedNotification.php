@@ -15,7 +15,17 @@ class ConvoiValidatedNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
+    }
+
+    public function toDatabase(object $notifiable): array
+    {
+        return [
+            'title'     => '✅ Convoi validé — ' . $this->convoi->reference,
+            'message'   => 'Votre convoi a été validé. Montant à payer : ' . number_format($this->convoi->montant, 0, ',', ' ') . ' FCFA. Connectez-vous pour procéder au paiement.',
+            'convoi_id' => $this->convoi->id,
+            'type'      => 'convoi_valide',
+        ];
     }
 
     public function toMail(object $notifiable): MailMessage

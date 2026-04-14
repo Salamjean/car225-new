@@ -100,6 +100,24 @@ class UserController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function goToNotification(string $id)
+    {
+        $notification = Auth::user()->notifications()->findOrFail($id);
+        $notification->markAsRead();
+
+        $data = $notification->data;
+        $type = $data['type'] ?? null;
+
+        // Rediriger vers la bonne page selon le type
+        $url = match($type) {
+            'convoi_valide', 'convoi_refuse', 'convoi_annule', 'convoi_chauffeur_assigne'
+                => isset($data['convoi_id']) ? route('user.convoi.show', $data['convoi_id']) : route('user.convoi.index'),
+            default => route('user.convoi.index'),
+        };
+
+        return redirect($url);
+    }
+
     public function markAllNotificationsRead()
     {
         Auth::user()->unreadNotifications->markAsRead();
