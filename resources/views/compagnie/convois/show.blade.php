@@ -477,18 +477,35 @@ table.sc-tbl tbody tr:hover .sc-pass-num { background: #fff0ec; color: #e94f1b; 
     <div class="sc-cards">
         {{-- Demandeur --}}
         <div class="sc-card">
-            <div class="sc-card-label"><i class="fas fa-id-card"></i> Demandeur</div>
+            <div class="sc-card-label">
+                <i class="fas fa-id-card"></i>
+                @if($convoi->created_by_gare) Client sur place @else Demandeur @endif
+            </div>
             <div style="display:flex;align-items:center;gap:16px">
-                <div class="sc-avatar">{{ strtoupper(substr($convoi->user->name ?? 'U', 0, 1)) }}</div>
+                <div class="sc-avatar">{{ strtoupper(substr($convoi->demandeur_nom, 0, 1) ?: 'C') }}</div>
                 <div style="min-width:0">
                     <div class="sc-user-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-                        {{ trim(($convoi->user->prenom ?? '') . ' ' . ($convoi->user->name ?? '')) ?: 'Utilisateur' }}
+                        {{ $convoi->demandeur_nom }}
                     </div>
-                    @if($convoi->user->email ?? null)
-                    <div class="sc-user-email" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ $convoi->user->email }}</div>
-                    @endif
-                    @if($convoi->user->contact ?? null)
-                    <div class="sc-user-phone"><i class="fas fa-phone-alt" style="font-size:10px;margin-right:5px"></i>{{ $convoi->user->contact }}</div>
+                    @if($convoi->created_by_gare)
+                        @if($convoi->client_email)
+                        <div class="sc-user-email" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ $convoi->client_email }}</div>
+                        @endif
+                        @if($convoi->client_contact)
+                        <div class="sc-user-phone"><i class="fas fa-phone-alt" style="font-size:10px;margin-right:5px"></i>{{ $convoi->client_contact }}</div>
+                        @endif
+                        <div style="margin-top:6px;">
+                            <span style="display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:900;background:#fff7ed;color:#ea580c;padding:3px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:0.4px;">
+                                <i class="fas fa-store"></i> Créé en gare
+                            </span>
+                        </div>
+                    @else
+                        @if($convoi->user->email ?? null)
+                        <div class="sc-user-email" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ $convoi->user->email }}</div>
+                        @endif
+                        @if($convoi->user->contact ?? null)
+                        <div class="sc-user-phone"><i class="fas fa-phone-alt" style="font-size:10px;margin-right:5px"></i>{{ $convoi->user->contact }}</div>
+                        @endif
                     @endif
                 </div>
             </div>

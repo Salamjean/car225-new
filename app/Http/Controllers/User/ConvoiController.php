@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Compagnie;
 use App\Models\Convoi;
 use App\Models\Itineraire;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -92,6 +93,26 @@ class ConvoiController extends Controller
 
         return redirect()->route('user.convoi.show', $convoi)
             ->with('success', 'Votre demande de convoi a été envoyée. La compagnie reviendra vers vous rapidement.');
+    }
+
+    /** Télécharger / imprimer le reçu PDF du convoi (disponible après paiement) */
+    public function downloadRecu(Convoi $convoi)
+    {
+        abort_if($convoi->user_id !== Auth::id(), 403);
+        abort_if(!in_array($convoi->statut, ['paye', 'en_cours', 'termine']), 403);
+
+        $convoi->load(['compagnie', 'gare', 'itineraire', 'chauffeur', 'vehicule', 'user']);
+
+        $pdf = Pdf::loadView('pdf.convoi_recu', compact('convoi'))
+            ->setPaper('a4', 'portrait')
+            ->setOptions([
+                'defaultFont'          => 'DejaVu Sans',
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled'      => false,
+                'dpi'                  => 120,
+            ]);
+
+        return $pdf->stream("recu-convoi-{$convoi->reference}.pdf");
     }
 
     public function show(Convoi $convoi)

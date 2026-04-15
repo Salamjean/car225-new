@@ -289,6 +289,173 @@
         padding: 4px 8px;
     }
 
+    /* ── Passagers form ────────────────────────── */
+    .pass-section { border-color: #e2e8f0; }
+    .pass-section .section-head { background: #f8fafc; }
+    .pass-section .icon-circle  { background: #fff7ed; color: #ea580c; }
+
+    /* Toggle garant */
+    .garant-toggle-wrap {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 16px 20px;
+        background: #f5f3ff;
+        border: 1.5px solid #c4b5fd;
+        border-radius: 14px;
+        margin-bottom: 18px;
+        cursor: pointer;
+    }
+    .garant-toggle-wrap input[type="checkbox"] { display: none; }
+    .garant-slider {
+        position: relative;
+        width: 48px;
+        height: 26px;
+        background: #cbd5e1;
+        border-radius: 99px;
+        flex-shrink: 0;
+        transition: background .2s;
+        cursor: pointer;
+    }
+    .garant-slider::after {
+        content: '';
+        position: absolute;
+        top: 3px; left: 3px;
+        width: 20px; height: 20px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 1px 4px rgba(0,0,0,.2);
+        transition: transform .2s;
+    }
+    .garant-slider.on { background: #7c3aed; }
+    .garant-slider.on::after { transform: translateX(22px); }
+
+    .garant-text-title {
+        font-size: 13px;
+        font-weight: 900;
+        color: #3b0764;
+    }
+    .garant-text-sub {
+        font-size: 11px;
+        font-weight: 600;
+        color: #7c3aed;
+        margin-top: 2px;
+    }
+
+    /* Garant banner */
+    .garant-banner {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        background: #f5f3ff;
+        border: 1px solid #ddd6fe;
+        border-radius: 12px;
+        margin-bottom: 16px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #5b21b6;
+    }
+
+    /* Passager row card */
+    .passager-row {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 16px 18px;
+        margin-bottom: 12px;
+    }
+    .passager-row-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 14px;
+    }
+    .passager-num {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 11px;
+        font-weight: 900;
+        color: #ea580c;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .passager-num-dot {
+        width: 24px;
+        height: 24px;
+        border-radius: 8px;
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 900;
+        color: #ea580c;
+        flex-shrink: 0;
+    }
+    .pass-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+    .pass-grid-4 {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        gap: 12px;
+    }
+    .pass-field label {
+        display: block;
+        font-size: 10px;
+        font-weight: 900;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 5px;
+    }
+    .pass-input {
+        width: 100%;
+        border: 1px solid #e2e8f0;
+        border-radius: 9px;
+        padding: 9px 12px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #1e293b;
+        background: #fff;
+        transition: border-color .2s, box-shadow .2s;
+        outline: none;
+    }
+    .pass-input:focus {
+        border-color: #f97316;
+        box-shadow: 0 0 0 3px rgba(249,115,22,.1);
+    }
+
+    /* Save button */
+    .btn-save-pass {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 28px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #f97316, #ea580c);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 4px 14px rgba(249,115,22,.3);
+        transition: all .2s;
+    }
+    .btn-save-pass:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(249,115,22,.4); }
+
+    @media (max-width: 600px) {
+        .pass-grid-4 { grid-template-columns: 1fr 1fr; }
+        .pass-grid   { grid-template-columns: 1fr; }
+    }
+
     /* ── Alerts ─────────────────────────────────── */
     .alert-box {
         padding: 14px 18px;
@@ -329,9 +496,17 @@
             <h1>Détail <span>Convoi</span></h1>
             <div class="convoi-ref"><i class="fas fa-hashtag mr-1"></i> {{ $convoi->reference }}</div>
         </div>
-        <a href="{{ route('gare-espace.convois.index') }}" class="btn-back-show">
-            <i class="fas fa-arrow-left"></i> Retour aux convois
-        </a>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+            @if($convoi->created_by_gare)
+            <a href="{{ route('gare-espace.convois.recu-pdf', $convoi) }}" target="_blank"
+               style="display:inline-flex;align-items:center;gap:7px;padding:10px 18px;border-radius:12px;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:0.4px;text-decoration:none;box-shadow:0 3px 10px rgba(249,115,22,.3);transition:all .2s;">
+                <i class="fas fa-print"></i> Imprimer le reçu
+            </a>
+            @endif
+            <a href="{{ route('gare-espace.convois.index') }}" class="btn-back-show">
+                <i class="fas fa-arrow-left"></i> Retour aux convois
+            </a>
+        </div>
     </div>
 
     {{-- ── Alerts ────────────────────────────── --}}
@@ -388,10 +563,20 @@
             <div class="value">{{ $convoi->nombre_personnes }} <span style="font-size:11px;color:#94a3b8;">passagers</span></div>
         </div>
         <div class="info-card demandeur-card">
-            <div class="label"><i class="fas fa-user mr-1"></i> Demandeur</div>
-            <div class="value">{{ trim(($convoi->user->name ?? '') . ' ' . ($convoi->user->prenom ?? '')) ?: 'Utilisateur' }}</div>
-            @if($convoi->user->contact ?? null)
-                <div style="font-size:11px;color:#16a34a;margin-top:4px;font-weight:700;"><i class="fas fa-phone mr-1"></i>{{ $convoi->user->contact }}</div>
+            <div class="label">
+                <i class="fas fa-user mr-1"></i>
+                @if($convoi->created_by_gare) Client sur place @else Demandeur @endif
+            </div>
+            <div class="value">{{ $convoi->demandeur_nom }}</div>
+            @if($convoi->demandeur_contact)
+                <div style="font-size:11px;color:#16a34a;margin-top:4px;font-weight:700;"><i class="fas fa-phone mr-1"></i>{{ $convoi->demandeur_contact }}</div>
+            @endif
+            @if($convoi->created_by_gare)
+                <div style="margin-top:5px;">
+                    <span style="display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:900;background:#fff7ed;color:#ea580c;padding:3px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:0.4px;">
+                        <i class="fas fa-store"></i> Créé en gare
+                    </span>
+                </div>
             @endif
         </div>
         @if($convoi->montant)
@@ -567,11 +752,140 @@
     @endif
 
     {{-- ── Passagers ─────────────────────────── --}}
+    @php
+        $passagersExistants = $convoi->passagers->values();
+    @endphp
+
+    {{-- Formulaire interactif — uniquement pour les convois walk-in payés --}}
+    @if($convoi->created_by_gare && $convoi->statut === 'paye')
     <div class="section-block pass-section">
         <div class="section-head">
             <div class="icon-circle"><i class="fas fa-users"></i></div>
-            <h3>Passagers ({{ $convoi->passagers->count() }} / {{ $convoi->nombre_personnes }})</h3>
+            <h3>
+                @if($convoi->is_garant)
+                    Garant du groupe
+                @else
+                    Passagers
+                    <span style="font-size:11px;color:#94a3b8;margin-left:6px;font-weight:700;">
+                        {{ $passagersExistants->count() }} / {{ $convoi->nombre_personnes }} enregistrés
+                    </span>
+                @endif
+            </h3>
         </div>
+        <div class="section-body">
+
+            @php
+                // Infos client walk-in pour pré-remplissage
+                $clientNom     = $convoi->client_nom    ?? '';
+                $clientPrenom  = $convoi->client_prenom ?? '';
+                $clientContact = $convoi->client_contact ?? '';
+            @endphp
+
+            <form action="{{ route('gare-espace.convois.store-passagers', $convoi) }}" method="POST" id="passForm">
+                @csrf
+
+                {{-- Toggle garant --}}
+                <div class="garant-toggle-wrap" onclick="toggleGarant()">
+                    <input type="checkbox" id="garantCheck" name="is_garant" value="1"
+                           {{ $convoi->is_garant ? 'checked' : '' }}>
+                    <div class="garant-slider {{ $convoi->is_garant ? 'on' : '' }}" id="garantSlider"></div>
+                    <div>
+                        <div class="garant-text-title">
+                            <i class="fas fa-user-shield mr-1"></i> Le client se porte garant pour le groupe
+                        </div>
+                        <div class="garant-text-sub">
+                            Seules ses informations personnelles seront enregistrées.
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Bannière garant --}}
+                <div class="garant-banner {{ $convoi->is_garant ? '' : 'hidden' }}" id="garantBanner">
+                    <i class="fas fa-shield-alt" style="color:#7c3aed;font-size:16px;flex-shrink:0;"></i>
+                    <span>Mode garant activé — seules les informations du responsable du groupe sont enregistrées.</span>
+                </div>
+
+                {{-- Lignes passagers --}}
+                <div id="passagersContainer">
+                    @for($i = 0; $i < $convoi->nombre_personnes; $i++)
+                    @php $p = $passagersExistants[$i] ?? null; @endphp
+                    <div class="passager-row {{ $convoi->is_garant && $i > 0 ? 'hidden' : '' }}"
+                         data-row="{{ $i }}">
+                        <div class="passager-row-head">
+                            <span class="passager-num">
+                                <span class="passager-num-dot">{{ $i + 1 }}</span>
+                                <span id="rowLabel{{ $i }}">
+                                    @if($convoi->is_garant && $i === 0)
+                                        Responsable du groupe (Garant)
+                                    @else
+                                        Passager {{ $i + 1 }}
+                                    @endif
+                                </span>
+                            </span>
+                        </div>
+                        <div class="pass-grid-4">
+                            <div class="pass-field">
+                                <label>Nom <span style="color:#ef4444;">*</span></label>
+                                <input type="text" name="passagers[{{ $i }}][nom]" class="pass-input"
+                                       value="{{ old("passagers.$i.nom", $p->nom ?? '') }}"
+                                       placeholder="Yao" required>
+                            </div>
+                            <div class="pass-field">
+                                <label>Prénoms <span style="color:#ef4444;">*</span></label>
+                                <input type="text" name="passagers[{{ $i }}][prenoms]" class="pass-input"
+                                       value="{{ old("passagers.$i.prenoms", $p->prenoms ?? '') }}"
+                                       placeholder="Kouassi" required>
+                            </div>
+                            <div class="pass-field">
+                                <label>Contact <span style="color:#ef4444;">*</span></label>
+                                <input type="tel" name="passagers[{{ $i }}][contact]" class="pass-input"
+                                       value="{{ old("passagers.$i.contact", $p->contact ?? '') }}"
+                                       placeholder="07xxxxxxxx" required>
+                            </div>
+                            <div class="pass-field">
+                                <label>Contact urgence <span style="color:#ef4444;">*</span></label>
+                                <input type="tel" name="passagers[{{ $i }}][contact_urgence]" class="pass-input"
+                                       value="{{ old("passagers.$i.contact_urgence", $p->contact_urgence ?? '') }}"
+                                       placeholder="05xxxxxxxx" required>
+                            </div>
+                        </div>
+                    </div>
+                    @endfor
+                </div>
+
+                <div style="display:flex;justify-content:flex-end;margin-top:8px;">
+                    <button type="submit" class="btn-save-pass">
+                        <i class="fas fa-save"></i> Enregistrer les passagers
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @else
+    {{-- Table lecture seule pour les autres convois ou statuts non-paye --}}
+    <div class="section-block pass-section">
+        <div class="section-head">
+            <div class="icon-circle"><i class="fas fa-users"></i></div>
+            <h3>
+                @if($convoi->is_garant)
+                    Garant du groupe
+                @else
+                    Passagers ({{ $passagersExistants->count() }} / {{ $convoi->nombre_personnes }})
+                @endif
+            </h3>
+        </div>
+        @if($convoi->is_garant && $passagersExistants->count() > 0)
+        <div style="padding:14px 20px;">
+            <div class="garant-banner" style="display:flex;">
+                <i class="fas fa-shield-alt" style="color:#7c3aed;font-size:16px;flex-shrink:0;"></i>
+                <span>
+                    <strong>{{ $passagersExistants->first()->prenoms ?? '' }} {{ $passagersExistants->first()->nom ?? '' }}</strong>
+                    est le garant du groupe de {{ $convoi->nombre_personnes }} personnes.
+                </span>
+            </div>
+        </div>
+        @endif
         <div style="overflow-x:auto;">
             <table class="table-clean">
                 <thead>
@@ -580,22 +894,22 @@
                         <th>Nom</th>
                         <th>Prénoms</th>
                         <th>Contact</th>
-                        <th>Contact d'urgence</th>
+                        <th>Contact urgence</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($convoi->passagers as $i => $p)
+                    @forelse($passagersExistants as $i => $p)
                         <tr>
                             <td><span class="num-pill">{{ $i + 1 }}</span></td>
-                            <td>{{ $p->nom }}</td>
-                            <td>{{ $p->prenoms }}</td>
-                            <td>{{ $p->contact }}</td>
-                            <td>{{ $p->contact_urgence ?: '-' }}</td>
+                            <td>{{ $p->nom ?: '—' }}</td>
+                            <td>{{ $p->prenoms ?: '—' }}</td>
+                            <td>{{ $p->contact ?: '—' }}</td>
+                            <td>{{ $p->contact_urgence ?: '—' }}</td>
                         </tr>
                     @empty
                         <tr>
                             <td colspan="5" style="text-align:center;padding:36px 20px;color:#94a3b8;font-weight:600;">
-                                <i class="fas fa-user-slash mr-2"></i> Aucun passager enregistré pour le moment.
+                                <i class="fas fa-user-slash mr-2"></i> Aucun passager enregistré.
                             </td>
                         </tr>
                     @endforelse
@@ -603,10 +917,84 @@
             </table>
         </div>
     </div>
+    @endif
+
 </div>
 @endsection
 
 @section('scripts')
+@if($convoi->created_by_gare && $convoi->statut === 'paye')
+<script>
+(function() {
+    // Infos du client walk-in pour pré-remplir la première ligne
+    const clientInfo = {
+        nom:     @json($convoi->client_nom ?? ''),
+        prenoms: @json($convoi->client_prenom ?? ''),
+        contact: @json($convoi->client_contact ?? ''),
+    };
+
+    const garantCheck  = document.getElementById('garantCheck');
+    const garantSlider = document.getElementById('garantSlider');
+    const garantBanner = document.getElementById('garantBanner');
+    const container    = document.getElementById('passagersContainer');
+
+    function getRow(i) {
+        return container.querySelector('[data-row="' + i + '"]');
+    }
+    function getInput(row, field) {
+        return row.querySelector('input[name*="[' + field + ']"]');
+    }
+
+    function setRowInputsDisabled(row, disabled) {
+        row.querySelectorAll('input').forEach(function(input) {
+            input.disabled = disabled;
+        });
+    }
+
+    function applyGarantState(isOn) {
+        // Slider visuel
+        garantSlider.classList.toggle('on', isOn);
+        garantBanner.classList.toggle('hidden', !isOn);
+
+        const rows = container.querySelectorAll('.passager-row');
+        rows.forEach(function(row, i) {
+            const label = document.getElementById('rowLabel' + i);
+            if (isOn) {
+                if (i === 0) {
+                    row.classList.remove('hidden');
+                    setRowInputsDisabled(row, false);
+                    if (label) label.textContent = 'Responsable du groupe (Garant)';
+                    // Pré-remplir avec infos client si les champs sont vides
+                    const nomField     = getInput(row, 'nom');
+                    const prenomsField = getInput(row, 'prenoms');
+                    const contactField = getInput(row, 'contact');
+                    if (nomField && !nomField.value)          nomField.value     = clientInfo.nom;
+                    if (prenomsField && !prenomsField.value)  prenomsField.value = clientInfo.prenoms;
+                    if (contactField && !contactField.value)  contactField.value = clientInfo.contact;
+                } else {
+                    row.classList.add('hidden');
+                    setRowInputsDisabled(row, true); // désactivés = pas soumis, pas validés
+                }
+            } else {
+                row.classList.remove('hidden');
+                setRowInputsDisabled(row, false);
+                if (label) label.textContent = 'Passager ' + (i + 1);
+            }
+        });
+    }
+
+    window.toggleGarant = function() {
+        const newState = !garantCheck.checked;
+        garantCheck.checked = newState;
+        applyGarantState(newState);
+    };
+
+    // Init au chargement
+    applyGarantState(garantCheck.checked);
+})();
+</script>
+@endif
+
 @if(in_array($convoi->statut, ['en_cours', 'termine']))
 <script>
 document.addEventListener('DOMContentLoaded', function () {

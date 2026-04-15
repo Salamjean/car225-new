@@ -20,11 +20,21 @@
                 </h1>
                 <p class="text-sm text-gray-500 font-medium">Référence : {{ $convoi->reference }}</p>
             </div>
-            <a href="{{ route('user.convoi.index') }}"
-                class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gray-100 text-gray-700 text-xs font-black uppercase tracking-wider hover:bg-gray-200 transition-all">
-                <i class="fas fa-arrow-left"></i>
-                Retour
-            </a>
+            <div class="flex items-center gap-3 flex-wrap">
+                @if(in_array($convoi->statut, ['paye', 'en_cours', 'termine']))
+                <a href="{{ route('user.convoi.recu-pdf', $convoi) }}" target="_blank"
+                   class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all"
+                   style="background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;box-shadow:0 4px 14px rgba(249,115,22,.35);">
+                    <i class="fas fa-print"></i>
+                    Imprimer le reçu
+                </a>
+                @endif
+                <a href="{{ route('user.convoi.index') }}"
+                    class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gray-100 text-gray-700 text-xs font-black uppercase tracking-wider hover:bg-gray-200 transition-all">
+                    <i class="fas fa-arrow-left"></i>
+                    Retour
+                </a>
+            </div>
         </div>
 
         @if (session('success'))

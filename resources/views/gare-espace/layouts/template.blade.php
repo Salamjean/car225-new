@@ -14,6 +14,10 @@
     <style>
         * { font-family: 'Inter', sans-serif; }
         .sidebar-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Masquer la scrollbar du sidebar (scroll fonctionnel mais invisible) */
+        .sidebar-nav-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+        .sidebar-nav-scroll::-webkit-scrollbar { display: none; }
     </style>
     @yield('styles')
 </head>

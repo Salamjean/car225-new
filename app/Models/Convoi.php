@@ -30,7 +30,28 @@ class Convoi extends Model
         'lieu_rassemblement',
         'is_garant',
         'motif_annulation_chauffeur',
+        // Champs client walk-in (client sans compte utilisateur)
+        'client_nom',
+        'client_prenom',
+        'client_contact',
+        'client_email',
+        'created_by_gare',
     ];
+
+    /** Nom affiché du demandeur (user ou client walk-in) */
+    public function getDemandeurNomAttribute(): string
+    {
+        if ($this->user_id && $this->user) {
+            return trim(($this->user->prenom ?? '') . ' ' . ($this->user->name ?? '')) ?: 'Utilisateur';
+        }
+        return trim(($this->client_prenom ?? '') . ' ' . ($this->client_nom ?? '')) ?: 'Client sur place';
+    }
+
+    /** Contact du demandeur */
+    public function getDemandeurContactAttribute(): ?string
+    {
+        return $this->user_id ? ($this->user->contact ?? null) : $this->client_contact;
+    }
 
     public function user()
     {

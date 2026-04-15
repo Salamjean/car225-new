@@ -1,5 +1,6 @@
 @php
     $gare = auth('gare')->user();
+    $convoiOpen = request()->routeIs('gare-espace.convois.*');
 
     $liveCount = \App\Models\Voyage::where('statut', 'en_cours')
         ->whereHas('programme', function ($q) use ($gare) {
@@ -42,7 +43,7 @@
     </div>
 
     <!-- Navigation -->
-    <nav class="flex-1 overflow-y-auto p-4 space-y-1">
+    <nav class="flex-1 overflow-y-auto p-4 space-y-1 sidebar-nav-scroll">
 
         <!-- Dashboard -->
         <a href="{{ route('gare-espace.dashboard') }}"
@@ -89,6 +90,26 @@
                    class="block py-2 text-xs font-medium transition-colors {{ request('tab') == 'details' ? 'text-orange-400' : 'text-gray-400 hover:text-white' }}">
                     Détails & Stats
                 </a>
+            </div>
+        </div>
+   <!-- Convois (collapsible) -->
+        <div>
+            <button onclick="toggleConvois()"
+                class="flex items-center gap-3 w-full px-4 py-3 rounded-xl transition-all duration-200 {{ $convoiOpen ? 'bg-orange-500/20 text-orange-400' : 'text-gray-300 hover:bg-gray-700/50 hover:text-white' }}">
+                <i class="fas fa-people-group w-5 text-center"></i>
+                <span class="font-medium text-sm flex-1 text-left">Convois</span>
+                <i id="convoi-chevron" class="fas fa-chevron-down text-[10px] transition-transform duration-200 {{ $convoiOpen ? 'rotate-180' : '' }}"></i>
+            </button>
+            <div id="convoi-submenu" class="{{ $convoiOpen ? '' : 'hidden' }} pl-12 pt-1 space-y-1 overflow-hidden">
+              <a href="{{ route('gare-espace.convois.create') }}"
+                   class="block py-2 text-xs font-medium transition-colors {{ request()->routeIs('gare-espace.convois.create') ? 'text-orange-400' : 'text-gray-400 hover:text-white' }}">
+                    Créer un convoi
+                </a>   
+            <a href="{{ route('gare-espace.convois.index') }}"
+                   class="block py-2 text-xs font-medium transition-colors {{ request()->routeIs('gare-espace.convois.index') ? 'text-orange-400' : 'text-gray-400 hover:text-white' }}">
+                    Convois reçus
+                </a>
+              
             </div>
         </div>
 
@@ -153,13 +174,7 @@
             <span class="font-medium text-sm">Historique Voyages</span>
         </a>
 
-        <!-- Convois -->
-        <a href="{{ route('gare-espace.convois.index') }}"
-           class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('gare-espace.convois.*') ? 'bg-orange-500/20 text-orange-400' : 'text-gray-300 hover:bg-gray-700/50 hover:text-white' }}">
-            <i class="fas fa-people-group w-5 text-center"></i>
-            <span class="font-medium text-sm">Convois</span>
-        </a>
-
+     
     </nav>
 
     <!-- Footer -->
@@ -186,6 +201,13 @@ function toggleSidebar() {
 function toggleReservations() {
     const menu    = document.getElementById('res-submenu');
     const chevron = document.getElementById('res-chevron');
+    menu.classList.toggle('hidden');
+    chevron.classList.toggle('rotate-180');
+}
+
+function toggleConvois() {
+    const menu    = document.getElementById('convoi-submenu');
+    const chevron = document.getElementById('convoi-chevron');
     menu.classList.toggle('hidden');
     chevron.classList.toggle('rotate-180');
 }

@@ -568,6 +568,7 @@ Route::middleware('auth')->prefix('user')->group(function () {
             Route::get('/compagnie/{compagnie}/itineraires', [ConvoiController::class, 'itinerairesByCompagnie'])->name('itineraires-by-compagnie');
             Route::post('/store', [ConvoiController::class, 'store'])->name('store');
             Route::get('/{convoi}', [ConvoiController::class, 'show'])->name('show');
+            Route::get('/{convoi}/recu-pdf', [ConvoiController::class, 'downloadRecu'])->name('recu-pdf');
             Route::post('/{convoi}/pay', [ConvoiController::class, 'pay'])->name('pay');
             Route::post('/{convoi}/passengers', [ConvoiController::class, 'storePassengers'])->name('store-passengers');
             Route::post('/{convoi}/lieu-rassemblement', [ConvoiController::class, 'storeLieuRassemblement'])->name('lieu-rassemblement');
@@ -937,6 +938,10 @@ Route::prefix('gare-espace')->name('gare-espace.')->group(function () {
         // Convois reçus par la gare
         Route::prefix('convois')->name('convois.')->group(function () {
             Route::get('/', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'index'])->name('index');
+            Route::get('/creer', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'createWalkin'])->name('create');
+            Route::post('/creer', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'storeWalkin'])->name('store');
+            Route::get('/{convoi}/recu-pdf', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'downloadRecu'])->name('recu-pdf');
+            Route::post('/{convoi}/passagers', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'storeWalkinPassengers'])->name('store-passagers');
             Route::get('/{convoi}', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'show'])->name('show');
             Route::get('/{convoi}/location', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'location'])->name('location');
             Route::post('/{convoi}/assign', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'assign'])->name('assign');
