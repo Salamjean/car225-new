@@ -12,6 +12,10 @@
         })->count();
 
     $reservationOpen = request()->routeIs('gare-espace.reservations.*');
+
+    $convoiEnAttenteCount = \App\Models\Convoi::where('gare_id', $gare->id)
+        ->where('statut', 'en_attente')
+        ->count();
 @endphp
 
 <!-- Mobile Overlay -->
@@ -98,6 +102,9 @@
                 class="flex items-center gap-3 w-full px-4 py-3 rounded-xl transition-all duration-200 {{ $convoiOpen ? 'bg-orange-500/20 text-orange-400' : 'text-gray-300 hover:bg-gray-700/50 hover:text-white' }}">
                 <i class="fas fa-people-group w-5 text-center"></i>
                 <span class="font-medium text-sm flex-1 text-left">Convois</span>
+                @if($convoiEnAttenteCount > 0)
+                    <span class="bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">{{ $convoiEnAttenteCount }}</span>
+                @endif
                 <i id="convoi-chevron" class="fas fa-chevron-down text-[10px] transition-transform duration-200 {{ $convoiOpen ? 'rotate-180' : '' }}"></i>
             </button>
             <div id="convoi-submenu" class="{{ $convoiOpen ? '' : 'hidden' }} pl-12 pt-1 space-y-1 overflow-hidden">

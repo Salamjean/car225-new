@@ -53,7 +53,14 @@ use Illuminate\Support\Facades\Route;
 Route::get('/auth/google', [UserAuthenticate::class, 'redirectToGoogle'])->name('auth.google');
 Route::get('/auth/google/callback', [UserAuthenticate::class, 'handleGoogleCallback'])->name('auth.google.callback');
 
-//Les routes de la pages 
+// ── Routes publiques — formulaire passagers convoi (lien envoyé par SMS/email) ──
+Route::prefix('convoi/passagers')->name('public.convoi.passagers.')->group(function () {
+    Route::get('/{token}', [\App\Http\Controllers\PublicConvoiPassagerController::class, 'show'])->name('form');
+    Route::post('/{token}', [\App\Http\Controllers\PublicConvoiPassagerController::class, 'store'])->name('store');
+    Route::get('/{token}/merci', [\App\Http\Controllers\PublicConvoiPassagerController::class, 'confirmation'])->name('confirmation');
+});
+
+//Les routes de la pages
 Route::prefix('/')->group(function () {
     Route::get('/', [HomeController::class, 'home'])->name('home');
     Route::get('/itineraires/search', [HomeController::class, 'search'])->name('programmes.search');
@@ -566,6 +573,7 @@ Route::middleware('auth')->prefix('user')->group(function () {
             Route::get('/mes-convois', [ConvoiController::class, 'index'])->name('index');
             Route::get('/', [ConvoiController::class, 'create'])->name('create');
             Route::get('/compagnie/{compagnie}/itineraires', [ConvoiController::class, 'itinerairesByCompagnie'])->name('itineraires-by-compagnie');
+            Route::get('/compagnie/{compagnie}/gares', [ConvoiController::class, 'garesByCompagnie'])->name('gares-by-compagnie');
             Route::post('/store', [ConvoiController::class, 'store'])->name('store');
             Route::get('/{convoi}', [ConvoiController::class, 'show'])->name('show');
             Route::get('/{convoi}/recu-pdf', [ConvoiController::class, 'downloadRecu'])->name('recu-pdf');
@@ -947,6 +955,9 @@ Route::prefix('gare-espace')->name('gare-espace.')->group(function () {
             Route::post('/{convoi}/assign', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'assign'])->name('assign');
             Route::post('/{convoi}/reassign', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'reassign'])->name('reassign');
             Route::post('/{convoi}/unassign', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'unassign'])->name('unassign');
+            Route::post('/{convoi}/valider', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'valider'])->name('valider');
+            Route::post('/{convoi}/refuser', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'refuser'])->name('refuser');
+            Route::post('/{convoi}/save-full', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'saveFull'])->name('save-full');
         });
 
         // Personnel (CRUD)

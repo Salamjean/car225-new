@@ -85,35 +85,35 @@
             </div>
 
             <div class="table-responsive">
-                <table class="table mb-0">
-                    <thead>
+                <table class="table mb-0 align-middle">
+                    <thead class="bg-light">
                         <tr>
-                            <th>Référence</th>
-                            <th>Demandeur</th>
-                            <th>Itinéraire</th>
-                            <th>Gare</th>
-                            <th class="text-center">Personnes</th>
-                            <th>Départ</th>
-                            <th class="text-center">Statut</th>
-                            <th class="text-right">Action</th>
+                            <th class="text-nowrap text-muted" style="font-size:12px;font-weight:700;">RÉFÉRENCE</th>
+                            <th class="text-nowrap text-muted" style="font-size:12px;font-weight:700;">DEMANDEUR</th>
+                            <th class="text-muted" style="font-size:12px;font-weight:700;min-width:180px;">ITINÉRAIRE</th>
+                            <th class="text-nowrap text-muted" style="font-size:12px;font-weight:700;">GARE</th>
+                            <th class="text-center text-nowrap text-muted" style="font-size:12px;font-weight:700;">PERSONNES</th>
+                            <th class="text-nowrap text-muted" style="font-size:12px;font-weight:700;">DÉPART</th>
+                            <th class="text-center text-nowrap text-muted" style="font-size:12px;font-weight:700;">STATUT</th>
+                            <th class="text-right text-nowrap text-muted" style="font-size:12px;font-weight:700;width:100px;">ACTION</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody style="font-size: 14px;">
                         @forelse ($convois as $convoi)
                             <tr>
-                                <td class="font-weight-bold">{{ $convoi->reference }}</td>
-                                <td>
+                                <td class="font-weight-bold text-nowrap text-dark">{{ $convoi->reference }}</td>
+                                <td class="text-nowrap">
                                     {{ trim(($convoi->user->name ?? '') . ' ' . ($convoi->user->prenom ?? '')) ?: 'Utilisateur' }}
                                 </td>
                                 <td>
-                                    {{ $convoi->lieu_depart ?? ($convoi->itineraire->point_depart ?? '-') }}
+                                    <div style="font-weight:600;color:#334155;line-height:1.2;">{{ $convoi->lieu_depart ?? ($convoi->itineraire->point_depart ?? '-') }}</div>
                                     @if($convoi->lieu_retour ?? $convoi->itineraire->point_arrive ?? null)
-                                        → {{ $convoi->lieu_retour ?? $convoi->itineraire->point_arrive }}
+                                        <div class="text-muted mt-1" style="font-size:12px;line-height:1.2;"><i class="fas fa-arrow-right text-orange mr-1" style="font-size:10px;"></i>{{ $convoi->lieu_retour ?? $convoi->itineraire->point_arrive }}</div>
                                     @endif
                                 </td>
-                                <td>
+                                <td class="text-nowrap">
                                     @if($convoi->gare)
-                                        <span class="badge badge-info px-2 py-1" style="font-size:10px;">
+                                        <span class="badge badge-info px-2 py-1" style="font-size:11px;">
                                             <i class="fas fa-building mr-1"></i>{{ $convoi->gare->nom_gare }}
                                         </span>
                                     @else
@@ -121,19 +121,21 @@
                                     @endif
                                 </td>
                                 <td class="text-center">
-                                    <span class="badge badge-warning px-3 py-2">{{ $convoi->nombre_personnes }}</span>
+                                    <span class="badge badge-warning" style="padding: 6px 14px; font-size:12px; font-weight:800;">{{ $convoi->nombre_personnes }}</span>
                                 </td>
-                                <td>
+                                <td class="text-nowrap">
                                     @if($convoi->date_depart)
-                                        {{ \Carbon\Carbon::parse($convoi->date_depart)->format('d/m/Y') }}
+                                        <div class="font-weight-bold text-dark">{{ \Carbon\Carbon::parse($convoi->date_depart)->format('d/m/Y') }}</div>
                                         @if($convoi->heure_depart)
-                                            <small class="text-muted">{{ $convoi->heure_depart }}</small>
+                                            <div class="text-muted mt-1" style="font-size:12px; font-weight:600;">
+                                                <i class="far fa-clock mr-1" style="color:#f97316;"></i>{{ substr($convoi->heure_depart, 0, 5) }}
+                                            </div>
                                         @endif
                                     @else
                                         <span class="text-muted">-</span>
                                     @endif
                                 </td>
-                                <td class="text-center">
+                                <td class="text-center text-nowrap">
                                     @php
                                         $sm = [
                                             'en_attente' => ['En attente',  'badge-warning'],
@@ -146,17 +148,20 @@
                                         ];
                                         [$slabel, $sclass] = $sm[$convoi->statut] ?? [ucfirst($convoi->statut), 'badge-secondary'];
                                     @endphp
-                                    <span class="badge {{ $sclass }} px-3 py-2">{{ $slabel }}</span>
+                                    <span class="badge {{ $sclass }}" style="padding: 6px 12px; font-weight:700;">{{ $slabel }}</span>
                                 </td>
-                                <td class="text-right">
-                                    <a href="{{ route('compagnie.convois.show', $convoi->id) }}" class="btn btn-sm btn-outline-warning">
+                                <td class="text-right text-nowrap">
+                                    <a href="{{ route('compagnie.convois.show', $convoi->id) }}" class="btn btn-sm btn-outline-secondary" style="font-weight: 600; padding: 4px 12px; border-radius: 8px;">
                                         <i class="fas fa-eye mr-1"></i> Voir
                                     </a>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center py-5 text-muted">Aucun convoi reçu pour le moment.</td>
+                                <td colspan="8" class="text-center py-5 text-muted">
+                                    <i class="fas fa-box-open text-muted mb-3" style="font-size: 32px; opacity: 0.5;"></i><br>
+                                    Aucun convoi reçu pour le moment.
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>

@@ -17,7 +17,7 @@
             <h1 class="text-2xl sm:text-3xl font-black text-[#1A1D1F] tracking-tight">
                 Demande de <span class="text-[#e94f1b]">Convoi</span>
             </h1>
-            <p class="text-sm text-gray-500 font-medium mt-1">Remplissez le formulaire. La compagnie vous recontactera avec un devis.</p>
+            <p class="text-sm text-gray-500 font-medium mt-1">Remplissez le formulaire. Choisissez votre gare la plus proche — elle traitera votre demande.</p>
         </div>
 
         @if (session('success'))
@@ -54,6 +54,20 @@
                         @endforeach
                     </select>
                     @error('compagnie_id')
+                        <p class="text-xs font-semibold text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                {{-- Gare la plus proche --}}
+                <div class="space-y-2" id="gareSection">
+                    <label class="block text-[11px] font-black uppercase tracking-widest text-gray-500">Gare la plus proche <span class="text-red-500">*</span></label>
+                    <select id="gareSelect" name="gare_id"
+                        class="w-full px-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-[#e94f1b] focus:bg-white outline-none text-sm font-bold"
+                        disabled required>
+                        <option value="">Choisir d'abord une compagnie</option>
+                    </select>
+                    <p class="text-[11px] text-gray-400 font-semibold">La gare sélectionnée recevra et traitera votre demande directement.</p>
+                    @error('gare_id')
                         <p class="text-xs font-semibold text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
@@ -246,6 +260,7 @@
     <script>
     // ── State ──────────────────────────────────────────────────────────────
     const oldItineraire = "{{ old('itineraire_id') }}";
+    const oldGare       = "{{ old('gare_id') }}";
     let autocompleteDepart = null;
     let autocompleteArrive = null;
     let directionsService  = null;
@@ -254,6 +269,7 @@
 
     // ── DOM refs ───────────────────────────────────────────────────────────
     const compagnieSelect  = document.getElementById('compagnieSelect');
+    const gareSelect       = document.getElementById('gareSelect');
     const itineraireSelect = document.getElementById('itineraireSelect');
     const lieuDepart       = document.getElementById('lieuDepart');
     const lieuArrivee      = document.getElementById('lieuArrivee');
@@ -288,6 +304,37 @@
         autocompleteArrive = new google.maps.places.Autocomplete(lieuArrivee, opts);
         autocompleteDepart.addListener('place_changed', tryCalculateDuration);
         autocompleteArrive.addListener('place_changed', tryCalculateDuration);
+    }
+
+    // ── Gares AJAX ────────────────────────────────────────────────────────
+    function resetGares(msg) {
+        gareSelect.innerHTML = `<option value="">${msg}</option>`;
+        gareSelect.disabled = true;
+    }
+
+    async function loadGares(compagnieId) {
+        if (!compagnieId) { resetGares('Choisir d\'abord une compagnie'); return; }
+        gareSelect.innerHTML = '<option value="">Chargement...</option>';
+        gareSelect.disabled = true;
+        try {
+            const res   = await fetch(`/user/convoi/compagnie/${compagnieId}/gares`, { headers: { 'Accept': 'application/json' } });
+            const data  = await res.json();
+            const items = data.gares || [];
+            if (items.length === 0) {
+                resetGares('Aucune gare disponible');
+                return;
+            }
+            let opts = '<option value="">Choisir une gare...</option>';
+            items.forEach(g => {
+                const label = g.nom_gare + (g.ville ? ' — ' + g.ville : '');
+                const selected = oldGare && String(oldGare) === String(g.id) ? ' selected' : '';
+                opts += `<option value="${g.id}"${selected}>${label}</option>`;
+            });
+            gareSelect.innerHTML = opts;
+            gareSelect.disabled = false;
+        } catch (e) {
+            resetGares('Erreur de chargement');
+        }
     }
 
     // ── Itinéraires AJAX ───────────────────────────────────────────────────
@@ -396,6 +443,8 @@
     function resetForm() {
         // Compagnie
         compagnieSelect.value = '';
+        // Gare
+        resetGares('Choisir d\'abord une compagnie');
         // Itinéraire
         const $sel = $('#itineraireSelect');
         $sel.empty().append(new Option("Choisir d'abord une compagnie", '', true, true)).prop('disabled', true);
@@ -416,11 +465,17 @@
     }
 
     // ── Events ─────────────────────────────────────────────────────────────
-    compagnieSelect.addEventListener('change', () => loadItineraires(compagnieSelect.value));
+    compagnieSelect.addEventListener('change', () => {
+        loadItineraires(compagnieSelect.value);
+        loadGares(compagnieSelect.value);
+    });
     lieuDepart.addEventListener('blur',  () => { if (!itineraireMode) tryCalculateDuration(); });
     lieuArrivee.addEventListener('blur', () => { if (!itineraireMode) tryCalculateDuration(); });
 
-    if (compagnieSelect.value) loadItineraires(compagnieSelect.value);
+    if (compagnieSelect.value) {
+        loadItineraires(compagnieSelect.value);
+        loadGares(compagnieSelect.value);
+    }
     </script>
     @endpush
 @endsection

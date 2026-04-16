@@ -296,15 +296,18 @@
     @media (max-width: 991px) {
         .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
+    @media (max-width: 640px) {
+        .financial-cards { grid-template-columns: 1fr !important; }
+    }
 </style>
 @endsection
 
 @section('content')
 @php
-    $allCount    = $convois->total();
-    $current     = $convois->getCollection();
-    $payeCount   = $current->where('statut', 'paye')->count();
-    $coursCount  = $current->where('statut', 'en_cours')->count();
+    $allCount     = $convois->total();
+    $current      = $convois->getCollection();
+    $payeCount    = $current->where('statut', 'paye')->count();
+    $coursCount   = $current->where('statut', 'en_cours')->count();
     $termineCount = $current->where('statut', 'termine')->count();
 @endphp
 <div class="convoi-shell">
@@ -318,14 +321,19 @@
     <div class="convoi-head">
         <div>
             <h1>Convois <span class="text-orange">reçus</span></h1>
-            <p>Convois rattachés à votre gare via l'itinéraire choisi.</p>
+            <p>Demandes de convois envoyées directement à votre gare.</p>
         </div>
     </div>
 
+    {{-- Métriques principales --}}
     <div class="metric-grid">
         <div class="metric-card">
             <div class="metric-label">Total</div>
             <div class="metric-value">{{ $allCount }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label" style="color:#ea580c;">En attente</div>
+            <div class="metric-value" style="color:#ea580c;">{{ $enAttenteCount }}</div>
         </div>
         <div class="metric-card">
             <div class="metric-label">Payés — à affecter</div>
@@ -335,18 +343,46 @@
             <div class="metric-label">En cours</div>
             <div class="metric-value" style="color:#0284c7;">{{ $coursCount }}</div>
         </div>
-        <div class="metric-card">
-            <div class="metric-label">Terminés</div>
-            <div class="metric-value" style="color:#059669;">{{ $termineCount }}</div>
+    </div>
+
+    {{-- Cards financières --}}
+    <div class="financial-cards" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:16px;">
+        <div style="background:#ecfdf5;border:1px solid #bbf7d0;border-radius:16px;padding:16px 20px;display:flex;align-items:center;gap:16px;">
+            <div style="width:44px;height:44px;border-radius:12px;background:#d1fae5;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="fas fa-check-circle" style="color:#059669;font-size:18px;"></i>
+            </div>
+            <div>
+                <div style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:0.6px;color:#065f46;margin-bottom:4px;">Montants encaissés</div>
+                <div style="font-size:22px;font-weight:900;color:#065f46;line-height:1;">{{ number_format($montantPaye, 0, ',', ' ') }} <span style="font-size:12px;font-weight:700;">FCFA</span></div>
+                <div style="font-size:11px;font-weight:600;color:#059669;margin-top:2px;">Convois payés, en cours, terminés</div>
+            </div>
+        </div>
+        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:16px;padding:16px 20px;display:flex;align-items:center;gap:16px;">
+            <div style="width:44px;height:44px;border-radius:12px;background:#fef3c7;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="fas fa-hourglass-half" style="color:#d97706;font-size:18px;"></i>
+            </div>
+            <div>
+                <div style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:0.6px;color:#92400e;margin-bottom:4px;">Montants à percevoir</div>
+                <div style="font-size:22px;font-weight:900;color:#92400e;line-height:1;">{{ number_format($montantAPayer, 0, ',', ' ') }} <span style="font-size:12px;font-weight:700;">FCFA</span></div>
+                <div style="font-size:11px;font-weight:600;color:#d97706;margin-top:2px;">Convois validés — en attente de paiement</div>
+            </div>
         </div>
     </div>
 
     <div class="tab-wrap">
         <a href="{{ route('gare-espace.convois.index') }}" class="tab-link {{ ($statut ?? 'all') === 'all' ? 'active' : '' }}">Tous</a>
+        <a href="{{ route('gare-espace.convois.index', ['statut' => 'en_attente']) }}" class="tab-link {{ ($statut ?? 'all') === 'en_attente' ? 'active' : '' }}">
+            En attente
+            @if($enAttenteCount > 0)
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#ef4444;color:#fff;font-size:9px;font-weight:900;margin-left:4px;">{{ $enAttenteCount > 9 ? '9+' : $enAttenteCount }}</span>
+            @endif
+        </a>
+        <a href="{{ route('gare-espace.convois.index', ['statut' => 'valide']) }}" class="tab-link {{ ($statut ?? 'all') === 'valide' ? 'active' : '' }}">Validés</a>
         <a href="{{ route('gare-espace.convois.index', ['statut' => 'paye']) }}" class="tab-link {{ ($statut ?? 'all') === 'paye' ? 'active' : '' }}">Payés</a>
         <a href="{{ route('gare-espace.convois.index', ['statut' => 'en_cours']) }}" class="tab-link {{ ($statut ?? 'all') === 'en_cours' ? 'active' : '' }}">En cours</a>
         <a href="{{ route('gare-espace.convois.index', ['statut' => 'termine']) }}" class="tab-link {{ ($statut ?? 'all') === 'termine' ? 'active' : '' }}">Terminés</a>
         <a href="{{ route('gare-espace.convois.index', ['statut' => 'annule']) }}" class="tab-link {{ ($statut ?? 'all') === 'annule' ? 'active' : '' }}">Annulés</a>
+        <a href="{{ route('gare-espace.convois.index', ['statut' => 'refuse']) }}" class="tab-link {{ ($statut ?? 'all') === 'refuse' ? 'active' : '' }}">Refusés</a>
     </div>
 
     <div class="table-card">
@@ -355,9 +391,10 @@
                 <thead>
                     <tr>
                         <th style="text-align: center;">Référence</th>
-                        <th style="text-align: center;">Compagnie</th>
+                        <th style="text-align: center;">Demandeur</th>
                         <th style="text-align: center;">Itinéraire</th>
                         <th style="text-align: center;">Personnes</th>
+                        <th style="text-align: center;">Départ</th>
                         <th style="text-align: center;">Statut</th>
                         <th style="text-align: center;">Action</th>
                     </tr>
@@ -370,31 +407,58 @@
                             : ($convoi->itineraire ? ($convoi->itineraire->point_depart . ' → ' . $convoi->itineraire->point_arrive) : '-');
 
                         $sm = [
-                            'paye'     => ['Payé',      'background:#f5f3ff;color:#7c3aed;'],
-                            'en_cours' => ['En cours',  'background:#e0f2fe;color:#0284c7;'],
-                            'termine'  => ['Terminé',   'background:#ecfdf5;color:#059669;'],
-                            'annule'   => ['Annulé',    'background:#fef2f2;color:#dc2626;'],
-                            'refuse'   => ['Refusé',    'background:#fef2f2;color:#dc2626;'],
-                            'valide'   => ['Validé',    'background:#ecfdf5;color:#059669;'],
+                            'en_attente' => ['En attente', 'background:#fff7ed;color:#ea580c;'],
+                            'valide'     => ['Validé',     'background:#ecfdf5;color:#059669;'],
+                            'paye'       => ['Payé',       'background:#f5f3ff;color:#7c3aed;'],
+                            'en_cours'   => ['En cours',   'background:#e0f2fe;color:#0284c7;'],
+                            'termine'    => ['Terminé',    'background:#ecfdf5;color:#059669;'],
+                            'annule'     => ['Annulé',     'background:#fef2f2;color:#dc2626;'],
+                            'refuse'     => ['Refusé',     'background:#fef2f2;color:#dc2626;'],
                         ];
                         [$slabel, $sstyle] = $sm[$convoi->statut] ?? [ucfirst(str_replace('_',' ',$convoi->statut)), 'background:#f1f5f9;color:#475569;'];
 
                         // Peut affecter si paye ET pas encore de chauffeur
-                        $canAssign = $convoi->statut === 'paye' && !$convoi->personnel_id;
+                        $canAssign  = $convoi->statut === 'paye' && !$convoi->personnel_id;
+                        $isEnAttente = $convoi->statut === 'en_attente';
                     @endphp
                     <tr>
                         <td><span class="ref-badge">{{ $convoi->reference }}</span></td>
-                        <td>{{ $convoi->compagnie->name ?? '-' }}</td>
+                        <td style="font-size:12px;">
+                            @if($convoi->created_by_gare)
+                                <span style="font-weight:800;color:#334155;">{{ $convoi->client_prenom }} {{ $convoi->client_nom }}</span>
+                                <span style="display:block;font-size:10px;color:#94a3b8;font-weight:700;">Sur place</span>
+                            @elseif($convoi->user)
+                                <span style="font-weight:800;color:#334155;">{{ trim(($convoi->user->prenom ?? '') . ' ' . ($convoi->user->name ?? '')) }}</span>
+                                <span style="display:block;font-size:10px;color:#94a3b8;font-weight:700;">App</span>
+                            @else
+                                <span style="color:#94a3b8;">—</span>
+                            @endif
+                        </td>
                         <td style="font-size:12px;">{{ $trajet }}</td>
                         <td class="text-center">
                             <span class="count-badge">{{ $convoi->nombre_personnes }}</span>
+                        </td>
+                        <td style="font-size:12px;font-weight:700;color:#334155;white-space:nowrap;">
+                            @if($convoi->date_depart)
+                                {{ \Carbon\Carbon::parse($convoi->date_depart)->format('d/m/Y') }}
+                                @if($convoi->heure_depart)
+                                    <span style="display:block;font-size:10px;color:#94a3b8;">{{ substr($convoi->heure_depart, 0, 5) }}</span>
+                                @endif
+                            @else
+                                <span style="color:#94a3b8;">—</span>
+                            @endif
                         </td>
                         <td class="text-center">
                             <span class="status-pill" style="{{ $sstyle }}">{{ $slabel }}</span>
                         </td>
                         <td class="text-right">
                             <div class="actions-wrap">
-                                @if($canAssign)
+                                @if($isEnAttente)
+                                    <a href="{{ route('gare-espace.convois.show', $convoi->id) }}"
+                                       style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:10px;background:#fff7ed;color:#ea580c;font-size:11px;font-weight:900;text-transform:uppercase;text-decoration:none;border:1px solid #fed7aa;transition:.2s ease;">
+                                        <i class="fas fa-tasks"></i> Traiter
+                                    </a>
+                                @elseif($canAssign)
                                     <button type="button"
                                             class="btn-assign"
                                             onclick="openAssignModal('{{ $convoi->id }}', '{{ $convoi->reference }}')">
@@ -413,7 +477,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="text-center text-sm text-gray-500 py-10">
+                        <td colspan="7" class="text-center text-sm text-gray-500 py-10">
                             Aucun convoi reçu pour votre gare.
                         </td>
                     </tr>

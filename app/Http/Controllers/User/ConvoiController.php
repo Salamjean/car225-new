@@ -5,6 +5,7 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\Controller;
 use App\Models\Compagnie;
 use App\Models\Convoi;
+use App\Models\Gare;
 use App\Models\Itineraire;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -33,6 +34,16 @@ class ConvoiController extends Controller
         return view('user.convoi.create', compact('compagnies'));
     }
 
+    /** AJAX : gares d'une compagnie (pour le formulaire de demande de convoi) */
+    public function garesByCompagnie($compagnieId)
+    {
+        $gares = Gare::where('compagnie_id', $compagnieId)
+            ->orderBy('nom_gare')
+            ->get(['id', 'nom_gare', 'ville', 'adresse']);
+
+        return response()->json(['gares' => $gares]);
+    }
+
     /** AJAX : itinéraires d'une compagnie avec point_depart et point_arrive */
     public function itinerairesByCompagnie($compagnieId)
     {
@@ -43,11 +54,12 @@ class ConvoiController extends Controller
         return response()->json(['itineraires' => $itineraires]);
     }
 
-    /** Création du convoi en une seule étape — envoi direct à la compagnie */
+    /** Création du convoi en une seule étape — envoi direct à la gare choisie */
     public function store(Request $request)
     {
         $validated = $request->validate([
             'compagnie_id'     => 'required|exists:compagnies,id',
+            'gare_id'          => 'required|exists:gares,id',
             'itineraire_id'    => 'nullable|exists:itineraires,id',
             'lieu_depart'      => 'required_without:itineraire_id|string|max:255',
             'lieu_retour'      => 'required_without:itineraire_id|string|max:255',
@@ -57,6 +69,7 @@ class ConvoiController extends Controller
             'date_retour'      => 'nullable|date|after_or_equal:date_depart',
             'heure_retour'     => 'nullable|date_format:H:i|required_with:date_retour',
         ], [
+            'gare_id.required'               => 'Veuillez choisir votre gare la plus proche.',
             'lieu_depart.required_without'   => 'Le lieu de départ est obligatoire si aucun itinéraire n\'est sélectionné.',
             'lieu_retour.required_without'   => 'Le lieu d\'arrivée est obligatoire si aucun itinéraire n\'est sélectionné.',
             'nombre_personnes.min'           => 'Le minimum est de 10 personnes pour un convoi.',
@@ -79,6 +92,7 @@ class ConvoiController extends Controller
         $convoi = Convoi::create([
             'user_id'          => Auth::id(),
             'compagnie_id'     => $validated['compagnie_id'],
+            'gare_id'          => $validated['gare_id'],
             'itineraire_id'    => $validated['itineraire_id'] ?? null,
             'lieu_depart'      => $lieuDepart,
             'lieu_retour'      => $lieuRetour,
@@ -92,7 +106,7 @@ class ConvoiController extends Controller
         ]);
 
         return redirect()->route('user.convoi.show', $convoi)
-            ->with('success', 'Votre demande de convoi a été envoyée. La compagnie reviendra vers vous rapidement.');
+            ->with('success', 'Votre demande de convoi a été envoyée à la gare. Celle-ci vous contactera rapidement pour confirmation.');
     }
 
     /** Télécharger / imprimer le reçu PDF du convoi (disponible après paiement) */
@@ -118,7 +132,7 @@ class ConvoiController extends Controller
     public function show(Convoi $convoi)
     {
         abort_if($convoi->user_id !== Auth::id(), 403);
-        $convoi->load(['compagnie', 'itineraire', 'passagers', 'gare', 'chauffeur', 'vehicule']);
+        $convoi->load(['compagnie', 'itineraire', 'passagers', 'gare', 'chauffeur', 'vehicule', 'user']);
         $authUser = Auth::user();
         return view('user.convoi.show', compact('convoi', 'authUser'));
     }

@@ -36,6 +36,8 @@ class Convoi extends Model
         'client_contact',
         'client_email',
         'created_by_gare',
+        'passenger_form_token',
+        'passagers_soumis',
     ];
 
     /** Nom affiché du demandeur (user ou client walk-in) */

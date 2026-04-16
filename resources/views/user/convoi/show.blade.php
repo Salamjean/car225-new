@@ -105,6 +105,29 @@
             @endif
         </div>
 
+        {{-- STATUT: EN_ATTENTE → info gare --}}
+        @if ($convoi->statut === 'en_attente')
+            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-6">
+                <div class="flex items-start gap-4">
+                    <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-hourglass-half text-amber-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-black text-amber-800 uppercase tracking-wider mb-1">Demande envoyée à la gare</h3>
+                        <p class="text-sm text-amber-700 font-medium">
+                            Votre demande a bien été transmise à
+                            @if($convoi->gare)
+                                <strong>{{ $convoi->gare->nom_gare }}</strong>.
+                            @else
+                                la gare sélectionnée.
+                            @endif
+                            La gare examine votre demande et vous contactera rapidement pour vous communiquer le montant.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         {{-- STATUT: REFUSE → afficher motif --}}
         @if ($convoi->statut === 'refuse')
             <div class="bg-red-50 border border-red-200 rounded-2xl p-6">
@@ -134,7 +157,7 @@
                     </div>
                     <div>
                         <h3 class="text-sm font-black text-gray-900 uppercase tracking-wider">Convoi validé — Paiement requis</h3>
-                        <p class="text-xs text-gray-500 font-medium">La compagnie a fixé le montant. Lisez le règlement et procédez au paiement.</p>
+                        <p class="text-xs text-gray-500 font-medium">La gare a validé votre demande et fixé le montant. Lisez le règlement et procédez au paiement.</p>
                     </div>
                 </div>
 
@@ -148,7 +171,7 @@
                 {{-- Règlement --}}
                 <div class="bg-gray-50 border border-gray-100 rounded-2xl p-5 mb-5 max-h-48 overflow-y-auto text-sm text-gray-700 leading-relaxed space-y-2">
                     <p class="font-black text-gray-900 text-xs uppercase tracking-wider mb-3">Règlement des convois CAR225</p>
-                    <p><strong>1. Réservation :</strong> Toute demande de convoi est soumise à la validation préalable de la compagnie. Le montant fixé par la compagnie est définitif.</p>
+                    <p><strong>1. Réservation :</strong> Toute demande de convoi est soumise à la validation par la gare. Le montant fixé est définitif.</p>
                     <p><strong>2. Paiement :</strong> Le paiement doit être effectué en totalité avant la mise à disposition du véhicule et du chauffeur. Aucun remboursement ne sera effectué après le départ.</p>
                     <p><strong>3. Passagers :</strong> La liste des passagers doit être complète avant la date de départ. La compagnie se réserve le droit de refuser tout passager non enregistré.</p>
                     <p><strong>4. Annulation :</strong> Toute annulation doit être notifiée à la compagnie au moins 48h avant la date de départ. Au-delà, aucun remboursement ne sera possible.</p>
@@ -184,7 +207,7 @@
                         <i class="fas fa-clock text-amber-600"></i>
                         <div>
                             <p class="text-sm font-black text-amber-800">Paiement confirmé</p>
-                            <p class="text-xs text-amber-700 font-medium">La compagnie va assigner une gare à votre convoi. Vous pouvez d'ores et déjà renseigner vos passagers.</p>
+                            <p class="text-xs text-amber-700 font-medium">Paiement confirmé ! La gare va affecter un chauffeur et un véhicule. Vous pouvez dès maintenant renseigner vos passagers.</p>
                         </div>
                     </div>
                 </div>

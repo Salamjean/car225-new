@@ -180,6 +180,45 @@
     }
     .section-body { padding: 20px 24px; }
 
+    /* ── Validate / Refuse panels ─────────────── */
+    .validate-section { border-color: #bbf7d0; }
+    .validate-section .section-head { background: #f0fdf4; }
+    .validate-section .section-head h3 { color: #166534; }
+    .validate-section .icon-circle { background: #dcfce7; color: #16a34a; }
+
+    .refuse-section { border-color: #fecaca; }
+    .refuse-section .section-head { background: #fef2f2; }
+    .refuse-section .section-head h3 { color: #7f1d1d; }
+    .refuse-section .icon-circle { background: #fee2e2; color: #dc2626; }
+
+    .btn-validate {
+        padding: 11px 24px; border-radius: 12px;
+        background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff;
+        font-size: 12px; font-weight: 900; text-transform: uppercase;
+        letter-spacing: 0.4px; border: none; cursor: pointer; transition: all .2s;
+    }
+    .btn-validate:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(34,197,94,.3); }
+
+    .btn-refuse {
+        padding: 11px 24px; border-radius: 12px;
+        background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff;
+        font-size: 12px; font-weight: 900; text-transform: uppercase;
+        letter-spacing: 0.4px; border: none; cursor: pointer; transition: all .2s;
+    }
+    .btn-refuse:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(239,68,68,.3); }
+
+    .form-field-label {
+        display: block; font-size: 10px; font-weight: 900;
+        color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 7px;
+    }
+    .form-input {
+        width: 100%; padding: 11px 14px; border: 1px solid #e2e8f0; border-radius: 12px;
+        font-size: 13px; font-weight: 700; color: #334155; background: #f8fafc;
+        transition: border-color .2s;
+    }
+    .form-input:focus { outline: none; border-color: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,.1); }
+    .form-textarea { resize: vertical; min-height: 80px; }
+
     /* ── Assign section ────────────────────────── */
     .assign-section { border-color: #c7d2fe; }
     .assign-section .section-head { background: #eef2ff; }
@@ -522,12 +561,13 @@
         $trajetArrivee = $convoi->lieu_retour   ?? ($convoi->itineraire->point_arrive ?? '-');
 
         $sm = [
-            'paye'     => ['Payé',    '#7c3aed', '#f5f3ff'],
-            'en_cours' => ['En cours','#0284c7', '#e0f2fe'],
-            'termine'  => ['Terminé', '#059669', '#ecfdf5'],
-            'annule'   => ['Annulé',  '#dc2626', '#fef2f2'],
-            'valide'   => ['Validé',  '#059669', '#ecfdf5'],
-            'refuse'   => ['Refusé',  '#dc2626', '#fef2f2'],
+            'en_attente' => ['En attente', '#ea580c', '#fff7ed'],
+            'valide'     => ['Validé',     '#059669', '#ecfdf5'],
+            'paye'       => ['Payé',       '#7c3aed', '#f5f3ff'],
+            'en_cours'   => ['En cours',   '#0284c7', '#e0f2fe'],
+            'termine'    => ['Terminé',    '#059669', '#ecfdf5'],
+            'annule'     => ['Annulé',     '#dc2626', '#fef2f2'],
+            'refuse'     => ['Refusé',     '#dc2626', '#fef2f2'],
         ];
         [$sLabel, $sColor, $sBg] = $sm[$convoi->statut] ?? [ucfirst(str_replace('_',' ',$convoi->statut)), '#475569', '#f1f5f9'];
     @endphp
@@ -629,12 +669,79 @@
     </div>
     @endif
 
-    {{-- ── Affectation (uniquement si paye) ──── --}}
+    {{-- ── Motif refus --}}
+    @if($convoi->motif_refus && $convoi->statut === 'refuse')
+    <div class="alert-box" style="background:#fef2f2;border:1px solid #fecaca;color:#7f1d1d;margin-bottom:20px;">
+        <i class="fas fa-ban" style="color:#dc2626;font-size:16px;"></i>
+        <div>
+            <strong style="display:block;font-size:13px;margin-bottom:4px;">Motif du refus</strong>
+            <span style="font-size:12px;">{{ $convoi->motif_refus }}</span>
+        </div>
+    </div>
+    @endif
+
+    {{-- ── Valider / Refuser (uniquement si en_attente) ───────────────── --}}
+    @if($convoi->statut === 'en_attente')
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-bottom:24px;">
+        {{-- Panel Valider --}}
+        <div class="section-block validate-section" style="margin-bottom:0;">
+            <div class="section-head">
+                <div class="icon-circle"><i class="fas fa-check-circle"></i></div>
+                <h3>Valider la demande</h3>
+            </div>
+            <div class="section-body">
+                <p style="font-size:12px;color:#6b7280;font-weight:600;margin-bottom:14px;">
+                    Fixez le montant — le demandeur sera notifié par SMS et peut procéder au paiement.
+                </p>
+                <form action="{{ route('gare-espace.convois.valider', $convoi) }}" method="POST">
+                    @csrf
+                    <div style="margin-bottom:14px;">
+                        <label class="form-field-label">Montant (FCFA) <span style="color:#ef4444;">*</span></label>
+                        <input type="number" name="montant" class="form-input" min="100" step="1"
+                               value="{{ old('montant') }}" placeholder="Ex : 150000" required
+                               style="border-color:#22c55e20;">
+                        @error('montant')<span style="font-size:11px;color:#dc2626;margin-top:4px;display:block;">{{ $message }}</span>@enderror
+                    </div>
+                    <button type="submit" class="btn-validate">
+                        <i class="fas fa-paper-plane mr-1"></i> Valider et notifier
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        {{-- Panel Refuser --}}
+        <div class="section-block refuse-section" style="margin-bottom:0;">
+            <div class="section-head">
+                <div class="icon-circle"><i class="fas fa-times-circle"></i></div>
+                <h3>Refuser la demande</h3>
+            </div>
+            <div class="section-body">
+                <p style="font-size:12px;color:#6b7280;font-weight:600;margin-bottom:14px;">
+                    Indiquez le motif. Le demandeur sera notifié par SMS.
+                </p>
+                <form action="{{ route('gare-espace.convois.refuser', $convoi) }}" method="POST"
+                      onsubmit="return confirm('Confirmer le refus de cette demande ?')">
+                    @csrf
+                    <div style="margin-bottom:14px;">
+                        <label class="form-field-label">Raison du refus <span style="color:#ef4444;">*</span></label>
+                        <textarea name="motif_refus" class="form-input form-textarea" maxlength="500" required
+                                  placeholder="Expliquez la raison du refus...">{{ old('motif_refus') }}</textarea>
+                        @error('motif_refus')<span style="font-size:11px;color:#dc2626;margin-top:4px;display:block;">{{ $message }}</span>@enderror
+                    </div>
+                    <button type="submit" class="btn-refuse">
+                        <i class="fas fa-ban mr-1"></i> Confirmer le refus
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- ── Affectation + Passagers (paye) ──── --}}
     @if($convoi->statut === 'paye')
     @php
         $gareId = Auth::guard('gare')->id();
 
-        // Chauffeurs disponibles : statut=disponible + pas en voyage en_cours + pas sur un convoi chevauchant
         $busyVoyPersonnel = \App\Models\Voyage::where('statut', 'en_cours')->whereNotNull('personnel_id')->pluck('personnel_id');
         $busyConvoiPersonnel = \App\Models\Convoi::whereNotNull('personnel_id')
             ->whereIn('statut', ['paye', 'en_cours'])
@@ -649,7 +756,6 @@
             ->whereNull('archived_at')->whereNotIn('id', $excludePersonnel)
             ->orderBy('prenom')->get(['id', 'name', 'prenom']);
 
-        // Véhicules disponibles
         $busyVoyVehicule = \App\Models\Voyage::where('statut', 'en_cours')->whereNotNull('vehicule_id')->pluck('vehicule_id');
         $busyConvoiVehicule = \App\Models\Convoi::whereNotNull('vehicule_id')
             ->whereIn('statut', ['paye', 'en_cours'])
@@ -665,6 +771,161 @@
             ->orderBy('immatriculation')->get(['id', 'immatriculation', 'modele', 'nombre_place']);
     @endphp
 
+    @if($convoi->created_by_gare && !$convoi->passagers_soumis)
+    {{-- ════════════════════════════════════════════════════════════════════
+         WALK-IN + PASSAGERS NON SOUMIS : formulaire unifié — 1 seul bouton
+         ════════════════════════════════════════════════════════════════════ --}}
+    <form action="{{ route('gare-espace.convois.save-full', $convoi) }}" method="POST" id="saveFullForm">
+        @csrf
+
+        {{-- Affectation (sans bouton propre) --}}
+        <div class="section-block assign-section" style="margin-bottom:16px;">
+            <div class="section-head">
+                <div class="icon-circle"><i class="fas fa-user-cog"></i></div>
+                <h3>@if($convoi->personnel_id) Modifier l'affectation @else Affecter chauffeur & véhicule @endif</h3>
+                @if($convoi->personnel_id)
+                    <span style="margin-left:auto;font-size:10px;font-weight:900;background:#e0e7ff;color:#4338ca;padding:4px 10px;border-radius:8px;text-transform:uppercase;letter-spacing:0.4px;">
+                        <i class="fas fa-check-circle mr-1"></i> Affecté
+                    </span>
+                @else
+                    <span style="margin-left:auto;font-size:10px;font-weight:700;color:#94a3b8;">Optionnel — vous pouvez enregistrer sans affecter</span>
+                @endif
+            </div>
+            <div class="section-body">
+                <div class="assign-row" style="grid-template-columns:1fr 1fr;">
+                    <div>
+                        <label>Chauffeur</label>
+                        <select name="personnel_id">
+                            <option value="">-- Choisir un chauffeur --</option>
+                            @foreach($chauffeursDispo as $ch)
+                                <option value="{{ $ch->id }}" {{ $convoi->personnel_id == $ch->id ? 'selected' : '' }}>
+                                    {{ trim(($ch->prenom ?? '') . ' ' . ($ch->name ?? '')) }}
+                                </option>
+                            @endforeach
+                            @if($convoi->chauffeur && !$chauffeursDispo->contains('id', $convoi->personnel_id))
+                                <option value="{{ $convoi->personnel_id }}" selected>
+                                    {{ trim(($convoi->chauffeur->prenom ?? '') . ' ' . ($convoi->chauffeur->name ?? '')) }} (actuel)
+                                </option>
+                            @endif
+                        </select>
+                    </div>
+                    <div>
+                        <label>Véhicule</label>
+                        <select name="vehicule_id">
+                            <option value="">-- Choisir un véhicule --</option>
+                            @foreach($vehiculesDispo as $v)
+                                <option value="{{ $v->id }}" {{ $convoi->vehicule_id == $v->id ? 'selected' : '' }}>
+                                    {{ $v->immatriculation }}{{ $v->modele ? ' — ' . $v->modele : '' }} ({{ $v->nombre_place }} pl.)
+                                </option>
+                            @endforeach
+                            @if($convoi->vehicule && !$vehiculesDispo->contains('id', $convoi->vehicule_id))
+                                <option value="{{ $convoi->vehicule_id }}" selected>
+                                    {{ $convoi->vehicule->immatriculation }} (actuel)
+                                </option>
+                            @endif
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Passagers / Garant (sans bouton propre) --}}
+        <div class="section-block pass-section" style="margin-bottom:16px;">
+            <div class="section-head">
+                <div class="icon-circle"><i class="fas fa-users"></i></div>
+                <h3>Passagers du convoi</h3>
+            </div>
+            <div class="section-body">
+                {{-- Toggle garant --}}
+                <div class="garant-toggle-wrap" onclick="toggleGarant()">
+                    <input type="checkbox" id="garantCheck" name="is_garant" value="1"
+                           {{ $convoi->is_garant ? 'checked' : '' }}>
+                    <div class="garant-slider {{ $convoi->is_garant ? 'on' : '' }}" id="garantSlider"></div>
+                    <div>
+                        <div class="garant-text-title">
+                            <i class="fas fa-user-shield mr-1"></i> Le client se porte garant pour le groupe
+                        </div>
+                        <div class="garant-text-sub" id="garantSubText">
+                            @if($convoi->is_garant)
+                                Seules ses informations personnelles seront enregistrées.
+                            @else
+                                Un lien sécurisé sera envoyé au client pour saisir la liste des passagers.
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Bannière garant --}}
+                <div class="garant-banner {{ $convoi->is_garant ? '' : 'hidden' }}" id="garantBanner">
+                    <i class="fas fa-shield-alt" style="color:#7c3aed;font-size:16px;flex-shrink:0;"></i>
+                    <span>Mode garant activé — le client représente l'ensemble du groupe. L'affectation peut être faite immédiatement.</span>
+                </div>
+
+                {{-- Bannière lien --}}
+                <div id="linkBanner" class="{{ $convoi->is_garant ? 'hidden' : '' }}"
+                     style="display:{{ $convoi->is_garant ? 'none' : 'flex' }};align-items:flex-start;gap:12px;padding:14px 18px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;">
+                    <i class="fas fa-paper-plane" style="color:#3b82f6;font-size:16px;flex-shrink:0;margin-top:2px;"></i>
+                    <div>
+                        <div style="font-size:13px;font-weight:900;color:#1e40af;margin-bottom:3px;">Envoi d'un lien au client</div>
+                        <div style="font-size:12px;font-weight:600;color:#3b82f6;line-height:1.5;">
+                            Un SMS (et email si disponible) sera envoyé à <strong>{{ $convoi->client_contact }}</strong> avec un lien sécurisé pour que le client renseigne lui-même la liste des {{ $convoi->nombre_personnes }} passagers.
+                        </div>
+                        @if($convoi->passenger_form_token)
+                        <div style="margin-top:6px;font-size:11px;color:#94a3b8;font-weight:600;">
+                            <i class="fas fa-redo mr-1 text-orange-400"></i> Un lien a déjà été envoyé — un nouveau lien sera généré et envoyé.
+                        </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- ─── BOUTON UNIQUE ─── --}}
+        <div style="display:flex;justify-content:flex-end;margin-bottom:24px;">
+            <button type="submit" id="saveFullBtn" class="btn-save-pass"
+                    style="padding:14px 40px;font-size:14px;gap:10px;border-radius:14px;">
+                <i class="fas fa-save" id="saveFullIcon"></i>
+                <span id="saveFullLabel">Enregistrer</span>
+            </button>
+        </div>
+    </form>
+
+    {{-- Annuler l'affectation (en dehors du formulaire principal) --}}
+    @if($convoi->personnel_id)
+    <div style="margin-bottom:20px;">
+        <form action="{{ route('gare-espace.convois.unassign', $convoi) }}" method="POST"
+              onsubmit="return confirm('Annuler l\'affectation ? Le chauffeur et le véhicule seront libérés.')">
+            @csrf
+            <button type="submit" class="btn-unassign">
+                <i class="fas fa-times-circle"></i> Annuler l'affectation et reprogrammer
+            </button>
+        </form>
+    </div>
+    @endif
+
+    {{-- Lien déjà envoyé : copier / renvoyer (en dehors du formulaire principal) --}}
+    @if(!$convoi->is_garant && $convoi->passenger_form_token)
+    <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:14px;padding:16px 18px;margin-bottom:20px;display:flex;align-items:flex-start;gap:12px;">
+        <i class="fas fa-clock" style="color:#f97316;font-size:16px;flex-shrink:0;margin-top:2px;"></i>
+        <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:900;color:#92400e;margin-bottom:4px;">En attente de la liste passagers</div>
+            <div style="font-size:12px;font-weight:600;color:#b45309;margin-bottom:10px;">Le client n'a pas encore soumis la liste. Le lien a été envoyé au {{ $convoi->client_contact }}.</div>
+            @php $lienPassager = route('public.convoi.passagers.form', $convoi->passenger_form_token); @endphp
+            <div style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #fed7aa;border-radius:10px;padding:8px 12px;margin-bottom:10px;">
+                <i class="fas fa-link" style="color:#f97316;font-size:11px;flex-shrink:0;"></i>
+                <span style="font-size:11px;color:#92400e;font-weight:700;word-break:break-all;flex:1;" id="lienPassagerText">{{ $lienPassager }}</span>
+                <button type="button" onclick="copyLink()" style="flex-shrink:0;padding:5px 10px;border-radius:7px;background:#f97316;color:#fff;border:none;font-size:10px;font-weight:900;cursor:pointer;transition:background .2s;" id="copyBtn">
+                    <i class="fas fa-copy"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    @else
+    {{-- ════════════════════════════════════════════════════════════════════
+         CAS STANDARD (non walk-in ou passagers déjà soumis) : formulaires séparés
+         ════════════════════════════════════════════════════════════════════ --}}
     <div class="section-block assign-section">
         <div class="section-head">
             <div class="icon-circle"><i class="fas fa-user-cog"></i></div>
@@ -730,7 +991,9 @@
             @endif
         </div>
     </div>
-    @endif
+    @endif {{-- end created_by_gare && !passagers_soumis --}}
+
+    @endif {{-- end statut=paye --}}
 
     {{-- ── GPS temps réel (en_cours / terminé) ── --}}
     @if(in_array($convoi->statut, ['en_cours', 'termine']))
@@ -756,8 +1019,8 @@
         $passagersExistants = $convoi->passagers->values();
     @endphp
 
-    {{-- Formulaire interactif — uniquement pour les convois walk-in payés --}}
-    @if($convoi->created_by_gare && $convoi->statut === 'paye')
+    {{-- Section passagers walk-in (paye, passagers déjà soumis) --}}
+    @if($convoi->created_by_gare && $convoi->statut === 'paye' && $convoi->passagers_soumis)
     <div class="section-block pass-section">
         <div class="section-head">
             <div class="icon-circle"><i class="fas fa-users"></i></div>
@@ -765,104 +1028,51 @@
                 @if($convoi->is_garant)
                     Garant du groupe
                 @else
-                    Passagers
-                    <span style="font-size:11px;color:#94a3b8;margin-left:6px;font-weight:700;">
-                        {{ $passagersExistants->count() }} / {{ $convoi->nombre_personnes }} enregistrés
-                    </span>
+                    Passagers <span style="font-size:11px;color:#059669;margin-left:6px;">✓ soumis par le client</span>
                 @endif
             </h3>
         </div>
         <div class="section-body">
-
-            @php
-                // Infos client walk-in pour pré-remplissage
-                $clientNom     = $convoi->client_nom    ?? '';
-                $clientPrenom  = $convoi->client_prenom ?? '';
-                $clientContact = $convoi->client_contact ?? '';
-            @endphp
-
-            <form action="{{ route('gare-espace.convois.store-passagers', $convoi) }}" method="POST" id="passForm">
-                @csrf
-
-                {{-- Toggle garant --}}
-                <div class="garant-toggle-wrap" onclick="toggleGarant()">
-                    <input type="checkbox" id="garantCheck" name="is_garant" value="1"
-                           {{ $convoi->is_garant ? 'checked' : '' }}>
-                    <div class="garant-slider {{ $convoi->is_garant ? 'on' : '' }}" id="garantSlider"></div>
-                    <div>
-                        <div class="garant-text-title">
-                            <i class="fas fa-user-shield mr-1"></i> Le client se porte garant pour le groupe
-                        </div>
-                        <div class="garant-text-sub">
-                            Seules ses informations personnelles seront enregistrées.
-                        </div>
-                    </div>
+            {{-- Passagers soumis : afficher en lecture seule --}}
+            @if($passagersExistants->count() > 0)
+            <div style="background:#ecfdf5;border:1px solid #bbf7d0;border-radius:14px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">
+                <i class="fas fa-check-circle" style="color:#059669;font-size:16px;"></i>
+                <div style="font-size:13px;font-weight:700;color:#065f46;">
+                    @if($convoi->is_garant)
+                        <strong>{{ $passagersExistants->first()->prenoms ?? '' }} {{ $passagersExistants->first()->nom ?? '' }}</strong>
+                        est le garant du groupe de {{ $convoi->nombre_personnes }} personnes.
+                    @else
+                        Le client a soumis la liste — {{ $passagersExistants->count() }} passager(s) enregistré(s).
+                    @endif
                 </div>
-
-                {{-- Bannière garant --}}
-                <div class="garant-banner {{ $convoi->is_garant ? '' : 'hidden' }}" id="garantBanner">
-                    <i class="fas fa-shield-alt" style="color:#7c3aed;font-size:16px;flex-shrink:0;"></i>
-                    <span>Mode garant activé — seules les informations du responsable du groupe sont enregistrées.</span>
-                </div>
-
-                {{-- Lignes passagers --}}
-                <div id="passagersContainer">
-                    @for($i = 0; $i < $convoi->nombre_personnes; $i++)
-                    @php $p = $passagersExistants[$i] ?? null; @endphp
-                    <div class="passager-row {{ $convoi->is_garant && $i > 0 ? 'hidden' : '' }}"
-                         data-row="{{ $i }}">
-                        <div class="passager-row-head">
-                            <span class="passager-num">
-                                <span class="passager-num-dot">{{ $i + 1 }}</span>
-                                <span id="rowLabel{{ $i }}">
-                                    @if($convoi->is_garant && $i === 0)
-                                        Responsable du groupe (Garant)
-                                    @else
-                                        Passager {{ $i + 1 }}
-                                    @endif
-                                </span>
-                            </span>
-                        </div>
-                        <div class="pass-grid-4">
-                            <div class="pass-field">
-                                <label>Nom <span style="color:#ef4444;">*</span></label>
-                                <input type="text" name="passagers[{{ $i }}][nom]" class="pass-input"
-                                       value="{{ old("passagers.$i.nom", $p->nom ?? '') }}"
-                                       placeholder="Yao" required>
-                            </div>
-                            <div class="pass-field">
-                                <label>Prénoms <span style="color:#ef4444;">*</span></label>
-                                <input type="text" name="passagers[{{ $i }}][prenoms]" class="pass-input"
-                                       value="{{ old("passagers.$i.prenoms", $p->prenoms ?? '') }}"
-                                       placeholder="Kouassi" required>
-                            </div>
-                            <div class="pass-field">
-                                <label>Contact <span style="color:#ef4444;">*</span></label>
-                                <input type="tel" name="passagers[{{ $i }}][contact]" class="pass-input"
-                                       value="{{ old("passagers.$i.contact", $p->contact ?? '') }}"
-                                       placeholder="07xxxxxxxx" required>
-                            </div>
-                            <div class="pass-field">
-                                <label>Contact urgence <span style="color:#ef4444;">*</span></label>
-                                <input type="tel" name="passagers[{{ $i }}][contact_urgence]" class="pass-input"
-                                       value="{{ old("passagers.$i.contact_urgence", $p->contact_urgence ?? '') }}"
-                                       placeholder="05xxxxxxxx" required>
-                            </div>
-                        </div>
-                    </div>
-                    @endfor
-                </div>
-
-                <div style="display:flex;justify-content:flex-end;margin-top:8px;">
-                    <button type="submit" class="btn-save-pass">
-                        <i class="fas fa-save"></i> Enregistrer les passagers
-                    </button>
-                </div>
-            </form>
+            </div>
+            @if(!$convoi->is_garant)
+            <div style="overflow-x:auto;">
+                <table class="table-clean">
+                    <thead>
+                        <tr>
+                            <th>#</th><th>Nom</th><th>Prénoms</th><th>Contact</th><th>Urgence</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($passagersExistants as $i => $p)
+                        <tr>
+                            <td><span class="num-pill">{{ $i + 1 }}</span></td>
+                            <td>{{ $p->nom ?: '—' }}</td>
+                            <td>{{ $p->prenoms ?: '—' }}</td>
+                            <td>{{ $p->contact ?: '—' }}</td>
+                            <td>{{ $p->contact_urgence ?: '—' }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            @endif
+            @endif
         </div>
     </div>
 
-    @else
+    @elseif(!$convoi->created_by_gare || $convoi->statut !== 'paye')
     {{-- Table lecture seule pour les autres convois ou statuts non-paye --}}
     <div class="section-block pass-section">
         <div class="section-head">
@@ -923,64 +1133,24 @@
 @endsection
 
 @section('scripts')
-@if($convoi->created_by_gare && $convoi->statut === 'paye')
+@if($convoi->created_by_gare && $convoi->statut === 'paye' && !$convoi->passagers_soumis)
 <script>
 (function() {
-    // Infos du client walk-in pour pré-remplir la première ligne
-    const clientInfo = {
-        nom:     @json($convoi->client_nom ?? ''),
-        prenoms: @json($convoi->client_prenom ?? ''),
-        contact: @json($convoi->client_contact ?? ''),
-    };
-
     const garantCheck  = document.getElementById('garantCheck');
     const garantSlider = document.getElementById('garantSlider');
     const garantBanner = document.getElementById('garantBanner');
-    const container    = document.getElementById('passagersContainer');
-
-    function getRow(i) {
-        return container.querySelector('[data-row="' + i + '"]');
-    }
-    function getInput(row, field) {
-        return row.querySelector('input[name*="[' + field + ']"]');
-    }
-
-    function setRowInputsDisabled(row, disabled) {
-        row.querySelectorAll('input').forEach(function(input) {
-            input.disabled = disabled;
-        });
-    }
+    const linkBanner   = document.getElementById('linkBanner');
+    const subText      = document.getElementById('garantSubText');
 
     function applyGarantState(isOn) {
-        // Slider visuel
-        garantSlider.classList.toggle('on', isOn);
-        garantBanner.classList.toggle('hidden', !isOn);
-
-        const rows = container.querySelectorAll('.passager-row');
-        rows.forEach(function(row, i) {
-            const label = document.getElementById('rowLabel' + i);
-            if (isOn) {
-                if (i === 0) {
-                    row.classList.remove('hidden');
-                    setRowInputsDisabled(row, false);
-                    if (label) label.textContent = 'Responsable du groupe (Garant)';
-                    // Pré-remplir avec infos client si les champs sont vides
-                    const nomField     = getInput(row, 'nom');
-                    const prenomsField = getInput(row, 'prenoms');
-                    const contactField = getInput(row, 'contact');
-                    if (nomField && !nomField.value)          nomField.value     = clientInfo.nom;
-                    if (prenomsField && !prenomsField.value)  prenomsField.value = clientInfo.prenoms;
-                    if (contactField && !contactField.value)  contactField.value = clientInfo.contact;
-                } else {
-                    row.classList.add('hidden');
-                    setRowInputsDisabled(row, true); // désactivés = pas soumis, pas validés
-                }
-            } else {
-                row.classList.remove('hidden');
-                setRowInputsDisabled(row, false);
-                if (label) label.textContent = 'Passager ' + (i + 1);
-            }
-        });
+        if (garantSlider) garantSlider.classList.toggle('on', isOn);
+        if (garantBanner) garantBanner.classList.toggle('hidden', !isOn);
+        if (linkBanner)   linkBanner.style.display = isOn ? 'none' : 'flex';
+        if (subText) {
+            subText.textContent = isOn
+                ? 'Seules ses informations personnelles seront enregistrées.'
+                : 'Un lien sécurisé sera envoyé au client pour saisir la liste des passagers.';
+        }
     }
 
     window.toggleGarant = function() {
@@ -989,9 +1159,44 @@
         applyGarantState(newState);
     };
 
-    // Init au chargement
-    applyGarantState(garantCheck.checked);
+    // Spinner sur le bouton unique lors de la soumission
+    const form = document.getElementById('saveFullForm');
+    const btn  = document.getElementById('saveFullBtn');
+    const icon = document.getElementById('saveFullIcon');
+    const lbl  = document.getElementById('saveFullLabel');
+    if (form && btn) {
+        form.addEventListener('submit', function() {
+            btn.disabled = true;
+            if (icon) icon.className = 'fas fa-spinner fa-spin';
+            if (lbl)  lbl.textContent = 'Enregistrement…';
+        });
+    }
+
+    applyGarantState(garantCheck ? garantCheck.checked : false);
 })();
+
+function copyLink() {
+    const text = document.getElementById('lienPassagerText');
+    const btn  = document.getElementById('copyBtn');
+    if (!text) return;
+    navigator.clipboard.writeText(text.textContent.trim()).then(function() {
+        btn.innerHTML = '<i class="fas fa-check"></i>';
+        btn.style.background = '#059669';
+        setTimeout(function() {
+            btn.innerHTML = '<i class="fas fa-copy"></i>';
+            btn.style.background = '#f97316';
+        }, 2000);
+    }).catch(function() {
+        const el = document.createElement('textarea');
+        el.value = text.textContent.trim();
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+        btn.innerHTML = '<i class="fas fa-check"></i>';
+        setTimeout(function() { btn.innerHTML = '<i class="fas fa-copy"></i>'; }, 2000);
+    });
+}
 </script>
 @endif
 

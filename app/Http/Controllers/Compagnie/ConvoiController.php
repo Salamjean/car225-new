@@ -30,7 +30,7 @@ class ConvoiController extends Controller
             $query->where('statut', $statut);
         }
 
-        $convois = $query->paginate(12)->withQueryString();
+        $convois = $query->paginate(10)->withQueryString();
 
         $enAttenteCount = Convoi::where('compagnie_id', $compagnie->id)
             ->where('statut', 'en_attente')

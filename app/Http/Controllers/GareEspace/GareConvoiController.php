@@ -187,7 +187,7 @@ class GareConvoiController extends Controller
             ->with('success', "Convoi {$convoi->reference} créé avec succès. Un SMS de confirmation a été envoyé au client." . ($convoi->client_email ? " Le reçu PDF a également été envoyé par e-mail." : ''));
     }
 
-    /** Enregistrement des passagers pour un convoi walk-in depuis la gare */
+    /** Enregistrement / envoi lien passagers pour un convoi walk-in depuis la gare */
     public function storeWalkinPassengers(Request $request, Convoi $convoi)
     {
         $gare = Auth::guard('gare')->user();
@@ -197,41 +197,58 @@ class GareConvoiController extends Controller
         }
 
         $request->validate([
-            'is_garant'                   => 'nullable|boolean',
-            'passagers'                   => 'nullable|array',
-            'passagers.*.nom'             => 'required|string|max:100',
-            'passagers.*.prenoms'         => 'required|string|max:150',
-            'passagers.*.contact'         => 'required|string|max:20',
-            'passagers.*.contact_urgence' => 'required|string|max:20',
-        ], [
-            'passagers.*.nom.required'             => 'Le nom de chaque passager est obligatoire.',
-            'passagers.*.prenoms.required'         => 'Les prénoms de chaque passager sont obligatoires.',
-            'passagers.*.contact.required'         => 'Le contact de chaque passager est obligatoire.',
-            'passagers.*.contact_urgence.required' => 'Le contact d\'urgence de chaque passager est obligatoire.',
+            'is_garant' => 'nullable|boolean',
         ]);
 
         $isGarant = (bool) $request->input('is_garant', false);
 
         $convoi->update(['is_garant' => $isGarant]);
 
-        // Remplace les passagers existants
-        $convoi->passagers()->delete();
+        if ($isGarant) {
+            // ── Mode garant : on enregistre directement les infos du client comme passager unique ──
+            $convoi->passagers()->delete();
+            $convoi->passagers()->create([
+                'nom'             => $convoi->client_nom,
+                'prenoms'         => $convoi->client_prenom,
+                'contact'         => $convoi->client_contact,
+                'contact_urgence' => $convoi->client_contact,
+            ]);
+            $convoi->update(['passagers_soumis' => true]);
+            return back()->with('success', 'Le client est enregistré comme garant du groupe. L\'affectation peut être réalisée.');
+        }
 
-        foreach (($request->input('passagers') ?? []) as $p) {
-            $nom     = trim($p['nom'] ?? '');
-            $prenoms = trim($p['prenoms'] ?? '');
-            $contact = trim($p['contact'] ?? '');
-            if ($nom || $prenoms || $contact) {
-                $convoi->passagers()->create([
-                    'nom'             => $nom,
-                    'prenoms'         => $prenoms,
-                    'contact'         => $contact,
-                    'contact_urgence' => trim($p['contact_urgence'] ?? ''),
-                ]);
+        // ── Mode liste complète : générer un lien sécurisé et l'envoyer au client ──
+        $token = bin2hex(random_bytes(24)); // 48 caractères hex
+        $convoi->update([
+            'passenger_form_token' => $token,
+            'passagers_soumis'     => false,
+        ]);
+
+        $lien = route('public.convoi.passagers.form', $token);
+
+        // SMS
+        try {
+            $prenom = $convoi->client_prenom ?? 'Client';
+            $msg = "Bonjour {$prenom},\n"
+                 . "CAR225 - Votre convoi ref {$convoi->reference} est enregistre.\n"
+                 . "Veuillez renseigner la liste de vos {$convoi->nombre_personnes} passagers via ce lien :\n"
+                 . $lien;
+            app(\App\Services\SmsService::class)->sendSms($convoi->client_contact, $msg);
+        } catch (\Exception $e) {
+            Log::error('SMS lien passagers convoi: ' . $e->getMessage());
+        }
+
+        // Email si disponible
+        if ($convoi->client_email) {
+            try {
+                \Illuminate\Support\Facades\Mail::to($convoi->client_email)
+                    ->send(new \App\Mail\ConvoiPassagerLinkMail($convoi, $lien));
+            } catch (\Exception $e) {
+                Log::error('Email lien passagers convoi: ' . $e->getMessage());
             }
         }
 
-        return back()->with('success', 'Liste des passagers enregistrée avec succès.');
+        return back()->with('success', "Lien envoyé au client ({$convoi->client_contact}) par SMS" . ($convoi->client_email ? " et par email" : '') . ". Il peut maintenant renseigner la liste de ses passagers.");
     }
 
     /** Télécharger / imprimer le reçu PDF d'un convoi walk-in */
@@ -267,11 +284,20 @@ class GareConvoiController extends Controller
             ->where('gare_id', $gare->id)
             ->latest();
 
-        if (in_array($statut, ['paye', 'en_cours', 'termine', 'annule'])) {
+        if (in_array($statut, ['en_attente', 'valide', 'refuse', 'paye', 'en_cours', 'termine', 'annule'])) {
             $query->where('statut', $statut);
         }
 
-        $convois = $query->paginate(12)->withQueryString();
+        // Montants financiers pour cette gare
+        $montantPaye = Convoi::where('gare_id', $gare->id)
+            ->whereIn('statut', ['paye', 'en_cours', 'termine'])
+            ->sum('montant');
+
+        $montantAPayer = Convoi::where('gare_id', $gare->id)
+            ->where('statut', 'valide')
+            ->sum('montant');
+
+        $convois = $query->paginate(10)->withQueryString();
 
         // Pour le dropdown d'affectation, on récupère les chauffeurs/vehicules disponibles
         // On ne peut pas filtrer par date ici car chaque convoi a ses propres dates
@@ -300,7 +326,10 @@ class GareConvoiController extends Controller
             ->orderBy('immatriculation')
             ->get(['id', 'immatriculation', 'modele', 'nombre_place']);
 
-        return view('gare-espace.convois.index', compact('convois', 'statut', 'chauffeurs', 'vehicules'));
+        // Nombre de convois en attente pour le badge
+        $enAttenteCount = Convoi::where('gare_id', $gare->id)->where('statut', 'en_attente')->count();
+
+        return view('gare-espace.convois.index', compact('convois', 'statut', 'chauffeurs', 'vehicules', 'montantPaye', 'montantAPayer', 'enAttenteCount'));
     }
 
     public function show(Convoi $convoi)
@@ -598,6 +627,313 @@ class GareConvoiController extends Controller
         ]);
 
         return back()->with('success', 'Affectation annulée. Le convoi peut être réaffecté.');
+    }
+
+    /** Valider une demande de convoi en attente — la gare fixe le montant et notifie l'utilisateur */
+    public function valider(Request $request, Convoi $convoi)
+    {
+        $gare = Auth::guard('gare')->user();
+
+        if ($convoi->gare_id !== $gare->id) {
+            abort(403);
+        }
+
+        if ($convoi->statut !== 'en_attente') {
+            return back()->with('error', 'Ce convoi ne peut plus être validé (statut : ' . $convoi->statut . ').');
+        }
+
+        $validated = $request->validate([
+            'montant' => 'required|numeric|min:100',
+        ], [
+            'montant.required' => 'Le montant est obligatoire pour valider la demande.',
+            'montant.min'      => 'Le montant doit être d\'au moins 100 FCFA.',
+        ]);
+
+        $convoi->update([
+            'statut'  => 'valide',
+            'montant' => $validated['montant'],
+        ]);
+
+        $convoi->loadMissing(['user', 'itineraire']);
+        $depart     = $convoi->lieu_depart  ?? ($convoi->itineraire->point_depart  ?? 'N/A');
+        $arrivee    = $convoi->lieu_retour   ?? ($convoi->itineraire->point_arrive  ?? 'N/A');
+        $dateDepart = $convoi->date_depart   ? Carbon::parse($convoi->date_depart)->format('d/m/Y') : 'N/A';
+        $montantF   = number_format($validated['montant'], 0, ',', ' ');
+
+        $user = $convoi->user;
+        if ($user) {
+            // Notifier par DB
+            try {
+                $user->notify(new \App\Notifications\ConvoiValidatedNotification($convoi));
+            } catch (\Exception $e) {
+                Log::error('Notif DB valider convoi: ' . $e->getMessage());
+            }
+
+            // SMS
+            try {
+                $prenom = $user->prenom ?? $user->name;
+                app(\App\Services\SmsService::class)->sendSms(
+                    $user->contact,
+                    "Bonjour {$prenom},\n"
+                    . "Votre demande de convoi CAR225 (ref {$convoi->reference}) a ete VALIDEE !\n"
+                    . "Trajet : {$depart} -> {$arrivee}\n"
+                    . "Depart : {$dateDepart}\n"
+                    . "Montant a payer : {$montantF} FCFA\n"
+                    . "Connectez-vous a l'application pour effectuer le paiement."
+                );
+            } catch (\Exception $e) {
+                Log::error('SMS valider convoi: ' . $e->getMessage());
+            }
+
+            // FCM
+            try {
+                if ($user->fcm_token) {
+                    app(\App\Services\FcmService::class)->sendNotification(
+                        $user->fcm_token,
+                        'Demande de convoi validée ✅',
+                        "Ref {$convoi->reference} · {$depart} → {$arrivee} · Montant : {$montantF} FCFA",
+                        ['type' => 'convoi_valide', 'convoi_id' => (string) $convoi->id]
+                    );
+                }
+            } catch (\Exception $e) {
+                Log::error('FCM valider convoi: ' . $e->getMessage());
+            }
+        }
+
+        return back()->with('success', "Convoi {$convoi->reference} validé. Le montant de {$montantF} FCFA a été communiqué au demandeur.");
+    }
+
+    /** Refuser une demande de convoi en attente */
+    public function refuser(Request $request, Convoi $convoi)
+    {
+        $gare = Auth::guard('gare')->user();
+
+        if ($convoi->gare_id !== $gare->id) {
+            abort(403);
+        }
+
+        if ($convoi->statut !== 'en_attente') {
+            return back()->with('error', 'Ce convoi ne peut plus être refusé (statut : ' . $convoi->statut . ').');
+        }
+
+        $validated = $request->validate([
+            'motif_refus' => 'required|string|max:500',
+        ], [
+            'motif_refus.required' => 'Le motif du refus est obligatoire.',
+        ]);
+
+        $convoi->update([
+            'statut'      => 'refuse',
+            'motif_refus' => $validated['motif_refus'],
+        ]);
+
+        $convoi->loadMissing(['user', 'itineraire']);
+        $user = $convoi->user;
+
+        if ($user) {
+            try {
+                $prenom     = $user->prenom ?? $user->name;
+                $depart     = $convoi->lieu_depart  ?? ($convoi->itineraire->point_depart  ?? 'N/A');
+                $arrivee    = $convoi->lieu_retour   ?? ($convoi->itineraire->point_arrive  ?? 'N/A');
+                app(\App\Services\SmsService::class)->sendSms(
+                    $user->contact,
+                    "Bonjour {$prenom},\n"
+                    . "Votre demande de convoi CAR225 (ref {$convoi->reference}) a ete refusee.\n"
+                    . "Trajet : {$depart} -> {$arrivee}\n"
+                    . "Motif : {$validated['motif_refus']}\n"
+                    . "Contactez-nous pour plus d'informations."
+                );
+            } catch (\Exception $e) {
+                Log::error('SMS refuser convoi: ' . $e->getMessage());
+            }
+
+            try {
+                if ($user->fcm_token) {
+                    app(\App\Services\FcmService::class)->sendNotification(
+                        $user->fcm_token,
+                        'Demande de convoi refusée',
+                        "Ref {$convoi->reference} · Motif : {$validated['motif_refus']}",
+                        ['type' => 'convoi_refuse', 'convoi_id' => (string) $convoi->id]
+                    );
+                }
+            } catch (\Exception $e) {
+                Log::error('FCM refuser convoi: ' . $e->getMessage());
+            }
+        }
+
+        return back()->with('success', "Demande {$convoi->reference} refusée. Le demandeur a été notifié.");
+    }
+
+    /**
+     * Enregistrement unifié : affectation + garant/passagers en un seul POST.
+     * Utilisé pour les convois walk-in (statut=paye) afin d'avoir un seul bouton "Enregistrer".
+     */
+    public function saveFull(Request $request, Convoi $convoi)
+    {
+        $gare = Auth::guard('gare')->user();
+
+        if ($convoi->gare_id !== $gare->id) {
+            abort(403);
+        }
+
+        if ($convoi->statut !== 'paye') {
+            return back()->with('error', 'Action impossible : le convoi n\'est pas dans le statut approprié.');
+        }
+
+        $request->validate([
+            'personnel_id' => 'nullable|exists:personnels,id',
+            'vehicule_id'  => 'nullable|exists:vehicules,id',
+            'is_garant'    => 'nullable|boolean',
+        ]);
+
+        $messages = [];
+
+        // ── 1. Affectation (si les deux champs sont renseignés) ──────────────
+        $personnelId = $request->filled('personnel_id') ? $request->input('personnel_id') : null;
+        $vehiculeId  = $request->filled('vehicule_id')  ? $request->input('vehicule_id')  : null;
+
+        if ($personnelId && $vehiculeId) {
+            // Vérifier chevauchement avec voyages en cours
+            $chauffeurOnActiveVoyage = Voyage::where('personnel_id', $personnelId)->where('statut', 'en_cours')->exists();
+            if ($chauffeurOnActiveVoyage) {
+                return back()->with('error', 'Ce chauffeur est actuellement en course (voyage en cours).');
+            }
+
+            // Vérifier chevauchement de dates avec d'autres convois (exclure ce convoi)
+            $busyPersonnel = $this->busyPersonnelIdsForDateRange($convoi->date_depart, $convoi->date_retour, $convoi->id);
+            if (in_array((int) $personnelId, $busyPersonnel, true)) {
+                return back()->with('error', 'Ce chauffeur est déjà assigné à un autre convoi sur cette période.');
+            }
+
+            $busyVehicules = $this->busyVehiculeIdsForDateRange($convoi->date_depart, $convoi->date_retour, $convoi->id);
+            if (in_array((int) $vehiculeId, $busyVehicules, true)) {
+                return back()->with('error', 'Ce véhicule est déjà assigné à un autre convoi sur cette période.');
+            }
+
+            // Vérifier chevauchement avec voyages programmés
+            $voyageDates = $this->getDateRange($convoi->date_depart, $convoi->date_retour);
+            if (!empty($voyageDates)) {
+                if (Voyage::where('personnel_id', $personnelId)->whereIn('date_voyage', $voyageDates)->whereNotIn('statut', ['annulé', 'terminé'])->exists()) {
+                    return back()->with('error', 'Ce chauffeur a des voyages programmés pendant la période du convoi.');
+                }
+                if (Voyage::where('vehicule_id', $vehiculeId)->whereIn('date_voyage', $voyageDates)->whereNotIn('statut', ['annulé', 'terminé'])->exists()) {
+                    return back()->with('error', 'Ce véhicule a des voyages programmés pendant la période du convoi.');
+                }
+            }
+
+            // Vérifier capacité véhicule
+            $vehicule = Vehicule::findOrFail($vehiculeId);
+            if ($vehicule->nombre_place < $convoi->nombre_personnes) {
+                return back()->with('error', "Ce véhicule n'a que {$vehicule->nombre_place} place(s) alors que le convoi nécessite {$convoi->nombre_personnes} personne(s).");
+            }
+
+            $convoi->update(['personnel_id' => $personnelId, 'vehicule_id' => $vehiculeId]);
+
+            $convoi->loadMissing(['itineraire', 'vehicule', 'user']);
+            $depart     = $convoi->lieu_depart  ?? ($convoi->itineraire->point_depart  ?? 'N/A');
+            $arrivee    = $convoi->lieu_retour   ?? ($convoi->itineraire->point_arrive  ?? 'N/A');
+            $dateDepart = $convoi->date_depart   ? Carbon::parse($convoi->date_depart)->format('d/m/Y') : 'N/A';
+            $hDepart    = $convoi->heure_depart  ? substr($convoi->heure_depart, 0, 5) : '';
+            $lieu       = $convoi->lieu_rassemblement ?? 'À définir';
+
+            // Notifier le chauffeur
+            try {
+                $chauffeur = Personnel::find($personnelId);
+                if ($chauffeur) {
+                    $chauffeur->notify(new ConvoiAssignedNotification($convoi));
+                    if ($chauffeur->fcm_token) {
+                        app(\App\Services\FcmService::class)->sendNotification(
+                            $chauffeur->fcm_token,
+                            'Nouveau Convoi Assigné',
+                            "Ref {$convoi->reference} · {$depart} → {$arrivee} · {$dateDepart}",
+                            ['type' => 'convoi_assigned', 'convoi_id' => (string) $convoi->id]
+                        );
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error('saveFull notif chauffeur: ' . $e->getMessage());
+            }
+
+            // Notifier le demandeur
+            try {
+                $smsBase = "Votre convoi CAR225 ref {$convoi->reference} a ete pris en charge !\n"
+                         . "Trajet : {$depart} -> {$arrivee}\n"
+                         . "Depart : {$dateDepart}" . ($hDepart ? " a {$hDepart}" : '') . "\n"
+                         . "Lieu de rassemblement : {$lieu}\n"
+                         . "Le chauffeur sera present. Bon voyage !";
+
+                $user = $convoi->user;
+                if ($user) {
+                    $prenom = $user->prenom ?? $user->name;
+                    $user->notify(new \App\Notifications\ConvoiChauffeurAssignedNotification($convoi));
+                    app(\App\Services\SmsService::class)->sendSms($user->contact, "Bonjour {$prenom},\n" . $smsBase);
+                    if ($user->fcm_token) {
+                        app(\App\Services\FcmService::class)->sendNotification(
+                            $user->fcm_token,
+                            'Votre convoi est pris en charge 🚌',
+                            "Ref {$convoi->reference} · Départ le {$dateDepart} · Lieu : {$lieu}",
+                            ['type' => 'convoi_chauffeur_assigne', 'convoi_id' => (string) $convoi->id]
+                        );
+                    }
+                } elseif ($convoi->created_by_gare && $convoi->client_contact) {
+                    $prenom = $convoi->client_prenom ?? 'Client';
+                    app(\App\Services\SmsService::class)->sendSms($convoi->client_contact, "Bonjour {$prenom},\n" . $smsBase);
+                }
+            } catch (\Exception $e) {
+                Log::error('saveFull notif demandeur: ' . $e->getMessage());
+            }
+
+            $messages[] = 'Affectation enregistrée. Le chauffeur et le demandeur ont été notifiés.';
+        }
+
+        // ── 2. Garant / Passagers (walk-in uniquement, passagers non encore soumis) ──
+        if ($convoi->created_by_gare && !$convoi->passagers_soumis) {
+            $isGarant = (bool) $request->input('is_garant', false);
+            $convoi->update(['is_garant' => $isGarant]);
+
+            if ($isGarant) {
+                $convoi->passagers()->delete();
+                $convoi->passagers()->create([
+                    'nom'             => $convoi->client_nom,
+                    'prenoms'         => $convoi->client_prenom,
+                    'contact'         => $convoi->client_contact,
+                    'contact_urgence' => $convoi->client_contact,
+                ]);
+                $convoi->update(['passagers_soumis' => true]);
+                $messages[] = 'Client enregistré comme garant du groupe.';
+            } else {
+                // Générer un nouveau token et envoyer le lien
+                $token = bin2hex(random_bytes(24));
+                $convoi->update(['passenger_form_token' => $token, 'passagers_soumis' => false]);
+                $lien = route('public.convoi.passagers.form', $token);
+
+                try {
+                    $prenom = $convoi->client_prenom ?? 'Client';
+                    $msg = "Bonjour {$prenom},\n"
+                         . "CAR225 - Votre convoi ref {$convoi->reference} est enregistre.\n"
+                         . "Veuillez renseigner la liste de vos {$convoi->nombre_personnes} passagers via ce lien :\n"
+                         . $lien;
+                    app(\App\Services\SmsService::class)->sendSms($convoi->client_contact, $msg);
+                } catch (\Exception $e) {
+                    Log::error('saveFull SMS lien passagers: ' . $e->getMessage());
+                }
+
+                if ($convoi->client_email) {
+                    try {
+                        \Illuminate\Support\Facades\Mail::to($convoi->client_email)
+                            ->send(new \App\Mail\ConvoiPassagerLinkMail($convoi, $lien));
+                    } catch (\Exception $e) {
+                        Log::error('saveFull email lien passagers: ' . $e->getMessage());
+                    }
+                }
+
+                $messages[] = 'Lien passagers envoyé au client (' . $convoi->client_contact . ') par SMS'
+                    . ($convoi->client_email ? ' et par email' : '') . '.';
+            }
+        }
+
+        $finalMsg = !empty($messages) ? implode(' ', $messages) : 'Enregistrement effectué.';
+        return back()->with('success', $finalMsg);
     }
 
     /**

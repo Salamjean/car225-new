@@ -619,114 +619,19 @@ table.sc-tbl tbody tr:hover .sc-pass-num { background: #fff0ec; color: #e94f1b; 
     </div>
     @endif
 
-    {{-- ═══ ACTION : VALIDER / REFUSER ═══ --}}
-    @if ($convoi->statut === 'en_attente')
-    <div class="sc-actions">
-        <div class="sc-panel sc-panel-green">
-            <div class="sc-panel-head">
-                <div class="sc-panel-head-icon"><i class="fas fa-check-circle"></i></div>
-                <div>
-                    <div class="sc-panel-title">Valider la demande</div>
-                    <div class="sc-panel-sub">L'utilisateur sera notifié pour paiement.</div>
-                </div>
+    {{-- ═══ INFO : Traitement géré par la gare ═══ --}}
+    @if (in_array($convoi->statut, ['en_attente', 'valide', 'refuse']))
+    <div class="sc-banner sc-banner-info" style="margin-bottom:24px;">
+        <span class="sc-banner-icon">🏢</span>
+        <div>
+            <div class="sc-banner-title">Traitement délégué à la gare</div>
+            <div class="sc-banner-body">
+                @if($convoi->gare)
+                    La gare <strong>{{ $convoi->gare->nom_gare }}</strong> prend en charge la validation et la gestion de ce convoi.
+                @else
+                    Ce convoi est en attente d'une gare pour traitement.
+                @endif
             </div>
-            <div class="sc-panel-body">
-                <form action="{{ route('compagnie.convois.valider', $convoi) }}" method="POST">
-                    @csrf
-                    <div style="margin-bottom:18px">
-                        <label class="sc-label">Montant à facturer (FCFA) <span style="color:#ef4444">*</span></label>
-                        <input type="number" name="montant" class="sc-input" min="100" step="1" value="{{ old('montant') }}" placeholder="150000" required>
-                        @error('montant')<span style="font-size:12px;color:#dc2626;margin-top:4px;display:block">{{ $message }}</span>@enderror
-                    </div>
-                    <button type="submit" class="sc-btn sc-btn-green">
-                        <i class="fas fa-paper-plane"></i> Valider et notifier
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        <div class="sc-panel sc-panel-red">
-            <div class="sc-panel-head">
-                <div class="sc-panel-head-icon"><i class="fas fa-times-circle"></i></div>
-                <div>
-                    <div class="sc-panel-title">Refuser la demande</div>
-                    <div class="sc-panel-sub">Indiquez le motif ci-dessous.</div>
-                </div>
-            </div>
-            <div class="sc-panel-body">
-                <form action="{{ route('compagnie.convois.refuser', $convoi) }}" method="POST">
-                    @csrf
-                    <div style="margin-bottom:18px">
-                        <label class="sc-label">Raison du refus <span style="color:#ef4444">*</span></label>
-                        <textarea name="motif_refus" class="sc-input sc-textarea" maxlength="500" required placeholder="Expliquez la raison du refus...">{{ old('motif_refus') }}</textarea>
-                        @error('motif_refus')<span style="font-size:12px;color:#dc2626;margin-top:4px;display:block">{{ $message }}</span>@enderror
-                    </div>
-                    <button type="submit" class="sc-btn sc-btn-red" onclick="return confirm('Confirmer le refus ?')">
-                        <i class="fas fa-ban"></i> Confirmer le refus
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-    @endif
-
-    {{-- ═══ ACTION : ASSIGNER UNE GARE ═══ --}}
-    @if ($convoi->statut === 'paye' && !$convoi->gare_id)
-    <div class="sc-gare-panel">
-        <div class="sc-gare-head">
-            <div class="sc-gare-icon"><i class="fas fa-warehouse"></i></div>
-            <div>
-                <div class="sc-gare-title">Assigner une gare de départ</div>
-                <div class="sc-gare-sub">Transférez ce convoi à l'une de vos gares pour planification.</div>
-            </div>
-        </div>
-        <div class="sc-gare-body">
-            @if(!$passagersComplets)
-            <div class="sc-banner sc-banner-warn" style="margin-bottom:18px">
-                <span class="sc-banner-icon">⚠️</span>
-                <div>
-                    <div class="sc-banner-title">Liste passagers incomplète</div>
-                    <div class="sc-banner-body">{{ $passagersEnregistres }} / {{ $convoi->nombre_personnes }} passagers enregistrés. Assignation bloquée.</div>
-                </div>
-            </div>
-            @elseif($convoi->is_garant)
-            <div class="sc-banner sc-banner-info" style="margin-bottom:18px">
-                <span class="sc-banner-icon">🛡️</span>
-                <div>
-                    <div class="sc-banner-title">Garant désigné</div>
-                    <div class="sc-banner-body">Le demandeur est garant — vous pouvez assigner la gare sans liste complète.</div>
-                </div>
-            </div>
-            @else
-            <div class="sc-banner" style="background:#f0fdf4;border:1px solid #bbf7d0;color:#065f46;margin-bottom:18px">
-                <span class="sc-banner-icon">✅</span>
-                <div>
-                    <div class="sc-banner-title">Prêt pour assignation</div>
-                    <div class="sc-banner-body">Tous les {{ $convoi->nombre_personnes }} passagers sont enregistrés.</div>
-                </div>
-            </div>
-            @endif
-
-            <form action="{{ route('compagnie.convois.assigner-gare', $convoi) }}" method="POST">
-                @csrf
-                <div class="sc-gare-row">
-                    <div class="sc-input-wrap">
-                        <label class="sc-label">Sélectionner la gare <span style="color:#ef4444">*</span></label>
-                        <select name="gare_id" class="sc-input sc-select" {{ !$passagersComplets ? 'disabled' : '' }} required>
-                            <option value="">Choisir une gare...</option>
-                            @foreach($gares as $gare)
-                                <option value="{{ $gare->id }}" @selected(old('gare_id') == $gare->id)>{{ $gare->nom_gare }}</option>
-                            @endforeach
-                        </select>
-                        @error('gare_id')<span style="font-size:12px;color:#dc2626;margin-top:4px;display:block">{{ $message }}</span>@enderror
-                    </div>
-                    <div style="flex-shrink:0;padding-bottom:0">
-                        <button type="submit" class="sc-btn sc-btn-blue" style="width:auto;padding:13px 28px" {{ !$passagersComplets ? 'disabled' : '' }}>
-                            <i class="fas fa-share-square"></i> Assigner
-                        </button>
-                    </div>
-                </div>
-            </form>
         </div>
     </div>
     @endif
@@ -831,33 +736,7 @@ table.sc-tbl tbody tr:hover .sc-pass-num { background: #fff0ec; color: #e94f1b; 
         </div>
     </div>
 
-    {{-- ═══ ZONE DANGER : ANNULATION ═══ --}}
-    @if(!in_array($convoi->statut, ['annule', 'termine', 'en_attente']))
-    <div class="sc-danger-zone">
-        <div class="sc-danger-header">
-            <div class="sc-danger-icon"><i class="fas fa-exclamation-triangle"></i></div>
-            <div>
-                <div class="sc-danger-title">Zone de danger — Annulation forcée</div>
-                <div class="sc-danger-sub">Cette action est irréversible. Le client et la gare seront notifiés.</div>
-            </div>
-        </div>
-        <div class="sc-danger-form">
-            <form action="{{ route('compagnie.convois.annuler', $convoi) }}" method="POST"
-                  onsubmit="return confirm('Confirmer l\'annulation définitive de ce convoi ?')">
-                @csrf
-                <label class="sc-label">Motif de l'annulation <span style="color:#ef4444">*</span></label>
-                <textarea name="motif_annulation" class="sc-input sc-textarea" maxlength="500" required
-                    placeholder="Véhicule indisponible, force majeure...">{{ old('motif_annulation') }}</textarea>
-                @error('motif_annulation')<span style="font-size:12px;color:#dc2626;margin-top:4px;display:block">{{ $message }}</span>@enderror
-                <div class="sc-danger-footer">
-                    <button type="submit" class="sc-btn sc-btn-danger sc-btn-inline" style="width:auto;padding:12px 28px;margin-top:16px">
-                        <i class="fas fa-power-off"></i> Annuler définitivement
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-    @endif
+    {{-- Annulation supprimée — la gare gère les convois --}}
 
 </div>
 @endsection
