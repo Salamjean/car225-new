@@ -288,6 +288,9 @@
             }
         });
 
+        // Initialiser Select2 sur la gare (état initial désactivé)
+        initGareSelect2();
+
         // Écouter le changement Select2
         $('#itineraireSelect').on('change', applyItineraireSelection);
 
@@ -308,20 +311,26 @@
 
     // ── Gares AJAX ────────────────────────────────────────────────────────
     function resetGares(msg) {
+        if ($('#gareSelect').data('select2')) $('#gareSelect').select2('destroy');
         gareSelect.innerHTML = `<option value="">${msg}</option>`;
         gareSelect.disabled = true;
+        initGareSelect2();
     }
 
-    async function loadGares(compagnieId) {
+    async function loadGares(compagnieId, itineraireId) {
         if (!compagnieId) { resetGares('Choisir d\'abord une compagnie'); return; }
+        if ($('#gareSelect').data('select2')) $('#gareSelect').select2('destroy');
         gareSelect.innerHTML = '<option value="">Chargement...</option>';
         gareSelect.disabled = true;
         try {
-            const res   = await fetch(`/user/convoi/compagnie/${compagnieId}/gares`, { headers: { 'Accept': 'application/json' } });
+            let url = `/user/convoi/compagnie/${compagnieId}/gares`;
+            if (itineraireId) url = `/user/convoi/itineraire/${itineraireId}/gares`;
+            const res   = await fetch(url, { headers: { 'Accept': 'application/json' } });
             const data  = await res.json();
             const items = data.gares || [];
             if (items.length === 0) {
                 resetGares('Aucune gare disponible');
+                initGareSelect2();
                 return;
             }
             let opts = '<option value="">Choisir une gare...</option>';
@@ -332,9 +341,22 @@
             });
             gareSelect.innerHTML = opts;
             gareSelect.disabled = false;
+            initGareSelect2();
         } catch (e) {
             resetGares('Erreur de chargement');
+            initGareSelect2();
         }
+    }
+
+    function initGareSelect2() {
+        $('#gareSelect').select2({
+            placeholder: 'Choisir une gare...',
+            allowClear: true,
+            language: {
+                noResults: () => 'Aucune gare trouvée',
+                searching: () => 'Recherche...'
+            }
+        });
     }
 
     // ── Itinéraires AJAX ───────────────────────────────────────────────────
@@ -375,18 +397,20 @@
     function applyItineraireSelection() {
         const $sel = $('#itineraireSelect');
         const selectedVal = $sel.val();
-        if (!selectedVal) { setManualMode(); return; }
-
-        const $opt = $sel.find('option:selected');
-        const depart   = $opt.data('depart');
-        const arrive   = $opt.data('arrive');
-        const duration = $opt.data('duration');
-
-        if (depart && arrive) {
-            setReadonlyMode(depart, arrive, duration);
-        } else {
+        const compagnieId = compagnieSelect.value;
+        if (!selectedVal) {
             setManualMode();
+            if (compagnieId) loadGares(compagnieId, null);
+            return;
         }
+        const $opt    = $sel.find('option:selected');
+        const depart  = $opt.data('depart');
+        const arrive  = $opt.data('arrive');
+        const duration = $opt.data('duration');
+        if (depart && arrive) setReadonlyMode(depart, arrive, duration);
+        else setManualMode();
+        // Filtrer les gares par itinéraire
+        if (compagnieId) loadGares(compagnieId, selectedVal);
     }
 
     function setReadonlyMode(depart, arrive, duration) {
@@ -467,14 +491,14 @@
     // ── Events ─────────────────────────────────────────────────────────────
     compagnieSelect.addEventListener('change', () => {
         loadItineraires(compagnieSelect.value);
-        loadGares(compagnieSelect.value);
+        loadGares(compagnieSelect.value, null);
     });
     lieuDepart.addEventListener('blur',  () => { if (!itineraireMode) tryCalculateDuration(); });
     lieuArrivee.addEventListener('blur', () => { if (!itineraireMode) tryCalculateDuration(); });
 
     if (compagnieSelect.value) {
         loadItineraires(compagnieSelect.value);
-        loadGares(compagnieSelect.value);
+        loadGares(compagnieSelect.value, null);
     }
     </script>
     @endpush

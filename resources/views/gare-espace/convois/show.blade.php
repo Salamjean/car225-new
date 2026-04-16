@@ -563,6 +563,7 @@
         $sm = [
             'en_attente' => ['En attente', '#ea580c', '#fff7ed'],
             'valide'     => ['Validé',     '#059669', '#ecfdf5'],
+            'confirme'   => ['Confirmé',   '#4f46e5', '#eef2ff'],
             'paye'       => ['Payé',       '#7c3aed', '#f5f3ff'],
             'en_cours'   => ['En cours',   '#0284c7', '#e0f2fe'],
             'termine'    => ['Terminé',    '#059669', '#ecfdf5'],
@@ -734,6 +735,72 @@
                 </form>
             </div>
         </div>
+    </div>
+    @endif
+
+    {{-- ── Solder (uniquement si confirme, non walk-in) ── --}}
+    @if($convoi->statut === 'confirme' && !$convoi->created_by_gare)
+
+    {{-- Bandeau info + affectation grisée --}}
+    <div style="background:#eef2ff;border:1px solid #c7d2fe;border-radius:14px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:flex-start;gap:12px;">
+        <i class="fas fa-user-check" style="color:#4f46e5;font-size:16px;flex-shrink:0;margin-top:2px;"></i>
+        <div>
+            <div style="font-size:13px;font-weight:900;color:#3730a3;margin-bottom:3px;">Client a accepté le montant — paiement physique en attente</div>
+            <div style="font-size:12px;font-weight:600;color:#4f46e5;">
+                <strong>{{ $convoi->demandeur_nom }}</strong> a confirmé le montant de <strong>{{ number_format($convoi->montant, 0, ',', ' ') }} FCFA</strong>.
+                Cliquez sur <strong>Solder</strong> dès réception du paiement en gare. L'affectation du chauffeur et du véhicule sera disponible après encaissement.
+            </div>
+        </div>
+    </div>
+
+    {{-- Affectation grisée / verrouillée (lecture seule) --}}
+    <div class="section-block assign-section" style="opacity:.45;pointer-events:none;user-select:none;margin-bottom:18px;">
+        <div class="section-head">
+            <div class="icon-circle"><i class="fas fa-user-cog"></i></div>
+            <h3>Affecter chauffeur & véhicule</h3>
+            <span style="margin-left:auto;font-size:10px;font-weight:900;background:#e0e7ff;color:#6366f1;padding:4px 10px;border-radius:8px;text-transform:uppercase;letter-spacing:0.4px;">
+                <i class="fas fa-lock mr-1"></i> Disponible après encaissement
+            </span>
+        </div>
+        <div class="section-body">
+            <div class="assign-row" style="grid-template-columns:1fr 1fr auto;">
+                <div>
+                    <label>Chauffeur</label>
+                    <select disabled style="background:#f1f5f9;color:#94a3b8;cursor:not-allowed;">
+                        <option>-- Disponible après encaissement --</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Véhicule</label>
+                    <select disabled style="background:#f1f5f9;color:#94a3b8;cursor:not-allowed;">
+                        <option>-- Disponible après encaissement --</option>
+                    </select>
+                </div>
+                <div>
+                    <label>&nbsp;</label>
+                    <button type="button" class="btn-assign" disabled style="opacity:.5;cursor:not-allowed;">
+                        <i class="fas fa-lock mr-1"></i> Affecter
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Bouton Solder --}}
+    <div style="background:#ecfdf5;border:1px solid #bbf7d0;border-radius:16px;padding:20px 24px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;">
+        <div>
+            <div style="font-size:13px;font-weight:900;color:#166534;margin-bottom:4px;"><i class="fas fa-money-bill-wave mr-2" style="color:#16a34a;"></i>Encaissement en gare</div>
+            <div style="font-size:12px;font-weight:600;color:#15803d;">Cliquez sur <strong>Solder</strong> dès que vous avez reçu le paiement du client. L'affectation chauffeur/véhicule sera débloquée.</div>
+        </div>
+        @php $montantSolderConfirm = number_format($convoi->montant, 0, ',', ' '); @endphp
+        <form action="{{ route('gare-espace.convois.solder', $convoi) }}" method="POST"
+              onsubmit="return confirm('Confirmer la réception du paiement de {{ $montantSolderConfirm }} FCFA pour ce convoi ?')">
+            @csrf
+            <button type="submit"
+                    style="display:inline-flex;align-items:center;gap:8px;padding:13px 28px;border-radius:12px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:0.4px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(34,197,94,.3);transition:all .2s;">
+                <i class="fas fa-hand-holding-usd"></i> Solder — {{ number_format($convoi->montant, 0, ',', ' ') }} FCFA
+            </button>
+        </form>
     </div>
     @endif
 

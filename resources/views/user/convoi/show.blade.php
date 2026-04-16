@@ -21,14 +21,6 @@
                 <p class="text-sm text-gray-500 font-medium">Référence : {{ $convoi->reference }}</p>
             </div>
             <div class="flex items-center gap-3 flex-wrap">
-                @if(in_array($convoi->statut, ['paye', 'en_cours', 'termine']))
-                <a href="{{ route('user.convoi.recu-pdf', $convoi) }}" target="_blank"
-                   class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all"
-                   style="background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;box-shadow:0 4px 14px rgba(249,115,22,.35);">
-                    <i class="fas fa-print"></i>
-                    Imprimer le reçu
-                </a>
-                @endif
                 <a href="{{ route('user.convoi.index') }}"
                     class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gray-100 text-gray-700 text-xs font-black uppercase tracking-wider hover:bg-gray-200 transition-all">
                     <i class="fas fa-arrow-left"></i>
@@ -63,13 +55,14 @@
                 <p class="text-[10px] font-black uppercase tracking-wider text-gray-500 mb-1">Statut</p>
                 @php
                     $statusMap = [
-                        'en_attente' => ['label' => 'En attente',   'class' => 'bg-amber-50 text-amber-700'],
-                        'valide'     => ['label' => 'Validé',       'class' => 'bg-blue-50 text-blue-700'],
-                        'refuse'     => ['label' => 'Refusé',       'class' => 'bg-red-50 text-red-700'],
-                        'paye'       => ['label' => 'Payé',         'class' => 'bg-green-50 text-green-700'],
-                        'en_cours'   => ['label' => 'En cours',     'class' => 'bg-indigo-50 text-indigo-700'],
-                        'termine'    => ['label' => 'Terminé',      'class' => 'bg-gray-50 text-gray-700'],
-                        'annule'     => ['label' => 'Annulé',       'class' => 'bg-red-50 text-red-700'],
+                        'en_attente' => ['label' => 'En attente',  'class' => 'bg-amber-50 text-amber-700'],
+                        'valide'     => ['label' => 'Validé',      'class' => 'bg-blue-50 text-blue-700'],
+                        'confirme'   => ['label' => 'Confirmé',    'class' => 'bg-indigo-50 text-indigo-700'],
+                        'refuse'     => ['label' => 'Refusé',      'class' => 'bg-red-50 text-red-700'],
+                        'paye'       => ['label' => 'Payé',        'class' => 'bg-green-50 text-green-700'],
+                        'en_cours'   => ['label' => 'En cours',    'class' => 'bg-indigo-50 text-indigo-700'],
+                        'termine'    => ['label' => 'Terminé',     'class' => 'bg-gray-50 text-gray-700'],
+                        'annule'     => ['label' => 'Annulé',      'class' => 'bg-red-50 text-red-700'],
                     ];
                     $s = $statusMap[$convoi->statut] ?? ['label' => ucfirst($convoi->statut), 'class' => 'bg-gray-50 text-gray-700'];
                 @endphp
@@ -148,7 +141,7 @@
             </div>
         @endif
 
-        {{-- STATUT: VALIDE → paiement --}}
+        {{-- STATUT: VALIDE → Accepter ou Refuser le montant --}}
         @if ($convoi->statut === 'valide')
             <div class="bg-white rounded-[28px] border border-blue-100 shadow-sm p-6 sm:p-8">
                 <div class="flex items-center gap-3 mb-5">
@@ -156,13 +149,13 @@
                         <i class="fas fa-check-circle text-blue-600"></i>
                     </div>
                     <div>
-                        <h3 class="text-sm font-black text-gray-900 uppercase tracking-wider">Convoi validé — Paiement requis</h3>
-                        <p class="text-xs text-gray-500 font-medium">La gare a validé votre demande et fixé le montant. Lisez le règlement et procédez au paiement.</p>
+                        <h3 class="text-sm font-black text-gray-900 uppercase tracking-wider">Convoi validé — Confirmation requise</h3>
+                        <p class="text-xs text-gray-500 font-medium">La gare a validé votre demande et fixé le montant. Acceptez ou refusez la proposition.</p>
                     </div>
                 </div>
 
                 <div class="bg-blue-50 rounded-2xl p-5 mb-5">
-                    <p class="text-[10px] font-black uppercase tracking-wider text-blue-500 mb-1">Montant à régler</p>
+                    <p class="text-[10px] font-black uppercase tracking-wider text-blue-500 mb-1">Montant proposé par la gare</p>
                     <p class="text-3xl font-black text-blue-800">
                         {{ number_format($convoi->montant, 0, ',', ' ') }} <span class="text-lg">FCFA</span>
                     </p>
@@ -172,9 +165,9 @@
                 <div class="bg-gray-50 border border-gray-100 rounded-2xl p-5 mb-5 max-h-48 overflow-y-auto text-sm text-gray-700 leading-relaxed space-y-2">
                     <p class="font-black text-gray-900 text-xs uppercase tracking-wider mb-3">Règlement des convois CAR225</p>
                     <p><strong>1. Réservation :</strong> Toute demande de convoi est soumise à la validation par la gare. Le montant fixé est définitif.</p>
-                    <p><strong>2. Paiement :</strong> Le paiement doit être effectué en totalité avant la mise à disposition du véhicule et du chauffeur. Aucun remboursement ne sera effectué après le départ.</p>
+                    <p><strong>2. Paiement :</strong> Le paiement doit être effectué en totalité à la gare avant la mise à disposition du véhicule et du chauffeur.</p>
                     <p><strong>3. Passagers :</strong> La liste des passagers doit être complète avant la date de départ. La compagnie se réserve le droit de refuser tout passager non enregistré.</p>
-                    <p><strong>4. Annulation :</strong> Toute annulation doit être notifiée à la compagnie au moins 48h avant la date de départ. Au-delà, aucun remboursement ne sera possible.</p>
+                    <p><strong>4. Annulation :</strong> Toute annulation doit être notifiée à la compagnie au moins 48h avant la date de départ.</p>
                     <p><strong>5. Responsabilité :</strong> CAR225 et la compagnie ne sauraient être tenus responsables de tout incident imputable au non-respect de ce règlement par le demandeur.</p>
                 </div>
 
@@ -184,43 +177,104 @@
                     </div>
                 @endif
 
-                <form action="{{ route('user.convoi.pay', $convoi) }}" method="POST">
-                    @csrf
-                    <label class="flex items-start gap-3 cursor-pointer mb-5">
-                        <input type="checkbox" name="reglement_accepte" value="1" class="mt-1 rounded accent-[#e94f1b]" @checked(old('reglement_accepte'))>
-                        <span class="text-sm text-gray-700 font-semibold">J'ai lu et j'accepte le règlement des convois CAR225.</span>
-                    </label>
-                    <button type="submit"
-                        class="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-[#e94f1b] text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-[#e94f1b]/20 hover:bg-[#d44518] transition-all">
-                        <i class="fas fa-credit-card"></i>
-                        Payer {{ number_format($convoi->montant, 0, ',', ' ') }} FCFA
-                    </button>
-                </form>
-            </div>
-        @endif
+                {{-- Boutons Accepter / Refuser --}}
+                <div class="flex flex-col sm:flex-row gap-3">
+                    {{-- Accepter --}}
+                    <form action="{{ route('user.convoi.accepter', $convoi) }}" method="POST" class="flex-1">
+                        @csrf
+                        <label class="flex items-start gap-3 cursor-pointer mb-4">
+                            <input type="checkbox" name="reglement_accepte" value="1" class="mt-1 rounded accent-[#e94f1b]" @checked(old('reglement_accepte'))>
+                            <span class="text-sm text-gray-700 font-semibold">J'ai lu et j'accepte le règlement des convois CAR225.</span>
+                        </label>
+                        <button type="submit"
+                            class="w-full inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl text-white text-xs font-black uppercase tracking-widest shadow-lg transition-all"
+                            style="background:linear-gradient(135deg,#22c55e,#16a34a);box-shadow:0 4px 14px rgba(34,197,94,.3);">
+                            <i class="fas fa-check-circle"></i>
+                            Accepter — {{ number_format($convoi->montant, 0, ',', ' ') }} FCFA
+                        </button>
+                    </form>
 
-        {{-- STATUT: PAYE → formulaire passagers --}}
-        @if ($convoi->statut === 'paye' || $convoi->statut === 'en_cours' || $convoi->statut === 'termine')
-            @if ($convoi->statut === 'paye' && !$convoi->gare_id)
-                <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5">
-                    <div class="flex items-center gap-3">
-                        <i class="fas fa-clock text-amber-600"></i>
-                        <div>
-                            <p class="text-sm font-black text-amber-800">Paiement confirmé</p>
-                            <p class="text-xs text-amber-700 font-medium">Paiement confirmé ! La gare va affecter un chauffeur et un véhicule. Vous pouvez dès maintenant renseigner vos passagers.</p>
+                    {{-- Refuser --}}
+                    <div class="flex-1">
+                        <div class="mb-4 px-4 py-3 rounded-xl bg-red-50 border border-red-100 text-xs font-semibold text-red-700">
+                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                            En refusant, le convoi sera annulé et vous devrez faire une nouvelle demande.
+                        </div>
+                        <button type="button" onclick="openRefusModal()"
+                            class="w-full inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-black uppercase tracking-widest hover:bg-red-100 transition-all">
+                            <i class="fas fa-times-circle"></i>
+                            Refuser ce montant
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Modal de confirmation refus --}}
+            <div id="refusModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeRefusModal()"></div>
+                <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+                    <div class="h-1.5 w-full bg-gradient-to-r from-red-500 to-red-700"></div>
+                    <div class="p-8">
+                        <div class="flex justify-center mb-5">
+                            <div class="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center">
+                                <i class="fas fa-times-circle text-3xl text-red-600"></i>
+                            </div>
+                        </div>
+                        <h2 class="text-center text-lg font-black text-gray-900 mb-2">Refuser ce montant ?</h2>
+                        <p class="text-center text-sm text-gray-500 font-medium mb-6 leading-relaxed">
+                            Vous êtes sur le point de <strong class="text-red-700">refuser le montant de {{ number_format($convoi->montant, 0, ',', ' ') }} FCFA</strong> proposé par la gare.<br>
+                            Le convoi sera <strong>annulé définitivement</strong>. Vous pourrez faire une nouvelle demande.
+                        </p>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <button type="button" onclick="closeRefusModal()"
+                                class="flex-1 px-5 py-3 rounded-2xl border border-gray-200 bg-white text-gray-700 text-xs font-black uppercase tracking-wider hover:bg-gray-50 transition-all">
+                                <i class="fas fa-arrow-left mr-2"></i>Revenir
+                            </button>
+                            <form action="{{ route('user.convoi.refuser-montant', $convoi) }}" method="POST" class="flex-1">
+                                @csrf
+                                <button type="submit"
+                                    class="w-full px-5 py-3 rounded-2xl bg-red-600 text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-red-600/25 hover:bg-red-700 transition-all">
+                                    <i class="fas fa-ban mr-2"></i>Oui, refuser et annuler
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
-            @endif
+            </div>
+        @endif
+
+        {{-- STATUT: CONFIRME → formulaire passagers + message 24h --}}
+        @if ($convoi->statut === 'confirme')
+            <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-6">
+                <div class="flex items-start gap-4">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-clock text-indigo-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-black text-indigo-800 uppercase tracking-wider mb-1">Convoi confirmé — Paiement en gare requis</h3>
+                        <p class="text-sm text-indigo-700 font-medium">
+                            Vous avez accepté le montant de <strong>{{ number_format($convoi->montant, 0, ',', ' ') }} FCFA</strong>.
+                            Présentez-vous à la gare <strong>{{ $convoi->gare->nom_gare ?? '' }}</strong> pour solder votre paiement
+                            <strong>avant votre départ du {{ $convoi->date_depart ? \Carbon\Carbon::parse($convoi->date_depart)->format('d/m/Y') : '' }}</strong>.
+                        </p>
+                        @if($convoi->gare)
+                        <div class="mt-3 flex items-center gap-2 text-xs font-bold text-indigo-600">
+                            <i class="fas fa-map-marker-alt"></i>
+                            {{ $convoi->gare->adresse ?? $convoi->gare->ville ?? 'Gare ' . $convoi->gare->nom_gare }}
+                            @if($convoi->gare->contact ?? null)
+                                &bull; <i class="fas fa-phone ml-1"></i> {{ $convoi->gare->contact }}
+                            @endif
+                        </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
 
             {{-- Lieu de rassemblement + garant + passagers — FORMULAIRE UNIQUE --}}
-            @if ($convoi->statut === 'paye')
             <form action="{{ route('user.convoi.store-passengers', $convoi) }}" method="POST" id="mainConvoiForm">
             @csrf
-            {{-- Hidden is_garant (synced par JS avec le toggle) --}}
             <input type="hidden" name="is_garant" id="hiddenIsGarant" value="{{ $convoi->is_garant ? '1' : '0' }}">
 
-            {{-- Erreurs serveur --}}
             @if ($errors->any())
             <div class="rounded-2xl bg-red-50 border border-red-200 px-5 py-4 text-red-700 text-sm font-semibold">
                 <i class="fas fa-exclamation-circle mr-2"></i>
@@ -244,7 +298,6 @@
                     </div>
                 </div>
                 <div class="space-y-5">
-                    {{-- Lieu de rassemblement --}}
                     <div>
                         <label class="block text-xs font-black text-gray-600 uppercase tracking-wider mb-2">
                             <i class="fas fa-map-marker-alt mr-1 text-[#e94f1b]"></i> Lieu de rassemblement <span class="text-[#e94f1b]">*</span>
@@ -256,8 +309,6 @@
                             class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#e94f1b]/30 focus:border-[#e94f1b]">
                         <p class="text-xs text-gray-400 mt-1.5">Obligatoire — le chauffeur quittera la gare pour venir vous chercher à ce lieu.</p>
                     </div>
-
-                    {{-- Toggle garant --}}
                     <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4">
                         <label class="flex items-start gap-4 cursor-pointer">
                             <div class="relative flex-shrink-0 mt-0.5">
@@ -271,16 +322,99 @@
                                 <p class="text-sm font-black text-indigo-800">Je me porte garant pour le groupe</p>
                                 <p class="text-xs text-indigo-600 font-medium mt-1">
                                     Activez cette option si vous êtes le seul responsable du groupe (famille, collègues…).
-                                    Seules <strong>vos informations</strong> seront demandées — vous êtes le point de contact en cas de problème.
-                                    Les autres passagers n'auront pas besoin d'être enregistrés individuellement.
+                                    Seules <strong>vos informations</strong> seront demandées.
                                 </p>
                             </div>
                         </label>
                     </div>
                 </div>
             </div>
-            @elseif($convoi->lieu_rassemblement || $convoi->is_garant)
-            {{-- Affichage en lecture seule si plus modifiable --}}
+
+            <div class="bg-white rounded-[28px] border border-gray-100 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                    <h3 class="text-sm font-black text-gray-800 uppercase tracking-wider">
+                        <i class="fas fa-users text-[#e94f1b] mr-2"></i>
+                        @if($convoi->is_garant)
+                            Passagers — Mode Garant
+                            <span class="ml-2 text-[10px] px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full font-black normal-case tracking-normal">
+                                <i class="fas fa-user-shield mr-1"></i>Garant
+                            </span>
+                        @else
+                            Passagers ({{ $convoi->passagers->count() }} / {{ $convoi->nombre_personnes }})
+                        @endif
+                    </h3>
+                </div>
+                @php $passagersExistants = $convoi->passagers->keyBy(fn($p, $k) => $k)->values(); @endphp
+                @if($convoi->is_garant)
+                <div class="mx-6 mt-4 mb-0 px-4 py-3 bg-indigo-50 border border-indigo-100 rounded-xl text-xs font-semibold text-indigo-700" id="garantBanner">
+                    <i class="fas fa-user-shield mr-1"></i> Mode garant activé — renseignez uniquement vos informations personnelles.
+                </div>
+                @else
+                <div class="mx-6 mt-4 mb-0 px-4 py-3 bg-indigo-50 border border-indigo-100 rounded-xl text-xs font-semibold text-indigo-700 hidden" id="garantBanner">
+                    <i class="fas fa-user-shield mr-1"></i> Mode garant activé — renseignez uniquement vos informations personnelles.
+                </div>
+                @endif
+                <div class="p-6">
+                    <div class="space-y-4" id="passagersContainer">
+                        @for ($i = 0; $i < $convoi->nombre_personnes; $i++)
+                        @php $p = $passagersExistants[$i] ?? null; @endphp
+                        <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100 passenger-row" data-index="{{ $i }}"
+                             style="{{ $convoi->is_garant && $i > 0 ? 'display:none;' : '' }}">
+                            <div class="mb-3">
+                                <span class="text-xs font-black text-gray-500 uppercase tracking-wider passenger-row-label" data-index="{{ $i }}">
+                                    {{ $convoi->is_garant && $i === 0 ? 'Vos informations (Garant)' : 'Passager ' . ($i + 1) }}
+                                    @if(!$convoi->is_garant)
+                                    <span class="text-[10px] font-semibold text-gray-400 normal-case tracking-normal ml-1">/ {{ $convoi->nombre_personnes }}</span>
+                                    @endif
+                                </span>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                <div><input type="text" name="passagers[{{ $i }}][nom]" value="{{ old("passagers.$i.nom", $p->nom ?? '') }}" placeholder="Nom" class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-[#e94f1b] outline-none"></div>
+                                <div><input type="text" name="passagers[{{ $i }}][prenoms]" value="{{ old("passagers.$i.prenoms", $p->prenoms ?? '') }}" placeholder="Prénoms" class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-[#e94f1b] outline-none"></div>
+                                <div><input type="tel" name="passagers[{{ $i }}][contact]" value="{{ old("passagers.$i.contact", $p->contact ?? '') }}" placeholder="Contact (10 chiffres)" maxlength="10" pattern="[0-9]{10}" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'')" class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-[#e94f1b] outline-none"></div>
+                                <div><input type="tel" name="passagers[{{ $i }}][contact_urgence]" value="{{ old("passagers.$i.contact_urgence", $p->contact_urgence ?? '') }}" placeholder="Contact d'urgence" maxlength="10" pattern="[0-9]{10}" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'')" class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-[#e94f1b] outline-none"></div>
+                            </div>
+                        </div>
+                        @endfor
+                    </div>
+                    <div class="flex justify-end mt-5">
+                        <button type="submit" form="mainConvoiForm"
+                            class="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-[#e94f1b] text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-[#e94f1b]/20 hover:bg-[#d44518] transition-all">
+                            <i class="fas fa-save"></i>
+                            Enregistrer
+                        </button>
+                    </div>
+                </div>
+            </div>
+            </form>{{-- fin mainConvoiForm --}}
+        @endif
+
+        {{-- STATUT: PAYE → ticket + passagers lecture seule --}}
+        @if (in_array($convoi->statut, ['paye', 'en_cours', 'termine']))
+            <div class="bg-green-50 border border-green-200 rounded-2xl p-5">
+                <div class="flex items-start gap-4 flex-wrap">
+                    <div class="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-check-circle text-green-600 text-lg"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-black text-green-800">Paiement confirmé par la gare</p>
+                        <p class="text-xs text-green-700 font-medium mt-1">
+                            Montant réglé : <strong>{{ number_format($convoi->montant, 0, ',', ' ') }} FCFA</strong>.
+                            @if($convoi->lieu_rassemblement)
+                                Lieu de rassemblement : <strong>{{ $convoi->lieu_rassemblement }}</strong>.
+                            @endif
+                        </p>
+                    </div>
+                    <a href="{{ route('user.convoi.recu-pdf', $convoi) }}" target="_blank"
+                       class="inline-flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex-shrink-0"
+                       style="background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;box-shadow:0 4px 14px rgba(249,115,22,.3);">
+                        <i class="fas fa-ticket-alt"></i> Imprimer le ticket
+                    </a>
+                </div>
+            </div>
+
+            {{-- Lieu rassemblement / garant lecture seule --}}
+            @if($convoi->lieu_rassemblement || $convoi->is_garant)
             <div class="bg-blue-50 border border-blue-100 rounded-2xl p-5 flex flex-wrap gap-6">
                 @if($convoi->lieu_rassemblement)
                 <div>
@@ -297,94 +431,14 @@
             </div>
             @endif
 
+            {{-- Table passagers lecture seule --}}
             <div class="bg-white rounded-[28px] border border-gray-100 shadow-sm overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
                     <h3 class="text-sm font-black text-gray-800 uppercase tracking-wider">
                         <i class="fas fa-users text-[#e94f1b] mr-2"></i>
-                        @if($convoi->is_garant)
-                            Passagers — Mode Garant
-                            <span class="ml-2 text-[10px] px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full font-black normal-case tracking-normal">
-                                <i class="fas fa-user-shield mr-1"></i>Garant
-                            </span>
-                        @else
-                            Passagers ({{ $convoi->passagers->count() }} / {{ $convoi->nombre_personnes }})
-                        @endif
+                        Passagers ({{ $convoi->passagers->count() }} / {{ $convoi->nombre_personnes }})
                     </h3>
                 </div>
-
-                @if ($convoi->statut === 'paye')
-                @php
-                    $passagersExistants = $convoi->passagers->keyBy(fn($p, $k) => $k)->values();
-                @endphp
-                @if($convoi->is_garant)
-                <div class="mx-6 mt-4 mb-0 px-4 py-3 bg-indigo-50 border border-indigo-100 rounded-xl text-xs font-semibold text-indigo-700" id="garantBanner">
-                    <i class="fas fa-user-shield mr-1"></i> Mode garant activé — renseignez uniquement vos informations personnelles.
-                </div>
-                @else
-                <div class="mx-6 mt-4 mb-0 px-4 py-3 bg-indigo-50 border border-indigo-100 rounded-xl text-xs font-semibold text-indigo-700 hidden" id="garantBanner">
-                    <i class="fas fa-user-shield mr-1"></i> Mode garant activé — renseignez uniquement vos informations personnelles.
-                </div>
-                @endif
-                    <div class="p-6">
-                        <div class="space-y-4" id="passagersContainer">
-                            @for ($i = 0; $i < $convoi->nombre_personnes; $i++)
-                            @php $p = $passagersExistants[$i] ?? null; @endphp
-                            <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100 passenger-row" data-index="{{ $i }}"
-                                 style="{{ $convoi->is_garant && $i > 0 ? 'display:none;' : '' }}">
-                                <div class="mb-3">
-                                    <span class="text-xs font-black text-gray-500 uppercase tracking-wider passenger-row-label" data-index="{{ $i }}">
-                                        {{ $convoi->is_garant && $i === 0 ? 'Vos informations (Garant)' : 'Passager ' . ($i + 1) }}
-                                        @if(!$convoi->is_garant)
-                                        <span class="text-[10px] font-semibold text-gray-400 normal-case tracking-normal ml-1">/ {{ $convoi->nombre_personnes }}</span>
-                                        @endif
-                                    </span>
-                                </div>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                                    <div>
-                                        <input type="text" name="passagers[{{ $i }}][nom]"
-                                            value="{{ old("passagers.$i.nom", $p->nom ?? '') }}"
-                                            placeholder="Nom"
-                                            class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-[#e94f1b] outline-none">
-                                    </div>
-                                    <div>
-                                        <input type="text" name="passagers[{{ $i }}][prenoms]"
-                                            value="{{ old("passagers.$i.prenoms", $p->prenoms ?? '') }}"
-                                            placeholder="Prénoms"
-                                            class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-[#e94f1b] outline-none">
-                                    </div>
-                                    <div>
-                                        <input type="tel" name="passagers[{{ $i }}][contact]"
-                                            value="{{ old("passagers.$i.contact", $p->contact ?? '') }}"
-                                            placeholder="Contact (10 chiffres)"
-                                            maxlength="10" pattern="[0-9]{10}"
-                                            inputmode="numeric"
-                                            oninput="this.value=this.value.replace(/[^0-9]/g,'')"
-                                            class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-[#e94f1b] outline-none">
-                                    </div>
-                                    <div>
-                                        <input type="tel" name="passagers[{{ $i }}][contact_urgence]"
-                                            value="{{ old("passagers.$i.contact_urgence", $p->contact_urgence ?? '') }}"
-                                            placeholder="Contact d'urgence (10 chiffres)"
-                                            maxlength="10" pattern="[0-9]{10}"
-                                            inputmode="numeric"
-                                            oninput="this.value=this.value.replace(/[^0-9]/g,'')"
-                                            class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-[#e94f1b] outline-none">
-                                    </div>
-                                </div>
-                            </div>
-                            @endfor
-                        </div>
-                        <div class="flex justify-end mt-5">
-                            <button type="submit" form="mainConvoiForm"
-                                class="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-[#e94f1b] text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-[#e94f1b]/20 hover:bg-[#d44518] transition-all">
-                                <i class="fas fa-save"></i>
-                                Enregistrer
-                            </button>
-                        </div>
-                    </div>
-                </form>{{-- fin mainConvoiForm --}}
-                @else
-                {{-- Lecture seule quand en_cours ou terminé --}}
                 <div class="overflow-x-auto">
                     <table class="w-full text-left">
                         <thead class="bg-gray-50 border-b border-gray-100">
@@ -413,7 +467,6 @@
                         </tbody>
                     </table>
                 </div>
-                @endif
             </div>
         @endif
     </div>
@@ -470,22 +523,20 @@
 
     @push('scripts')
     <script>
-    // ── 1. Forcer uniquement des chiffres sur les champs contact ─────────────
+    // ── Chiffres uniquement sur les contacts ─────────────────────────────
     document.querySelectorAll('input[name$="[contact]"], input[name$="[contact_urgence]"]').forEach(function(input) {
         input.addEventListener('input', function() {
             this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
         });
     });
 
-    // ── 2. Toggle garant : afficher/masquer les lignes passagers ─────────────
+    // ── Toggle garant ────────────────────────────────────────────────────
     const toggleGarant   = document.getElementById('toggleGarant');
     const hiddenIsGarant = document.getElementById('hiddenIsGarant');
     const passengerRows  = document.querySelectorAll('.passenger-row');
 
-    // Infos de l'utilisateur connecté (pour pré-remplir passager 0)
-    const authUser = @json($authUserData);
+    const authUser = @json($authUserData ?? []);
 
-    // Sauvegarde des valeurs originales de la ligne 0 avant pré-remplissage
     let row0OriginalValues = null;
 
     function getRow0Fields() {
@@ -502,17 +553,16 @@
     function prefillRow0WithUser() {
         const fields = getRow0Fields();
         if (!fields) return;
-        // Sauvegarder les valeurs actuelles avant de pré-remplir
         row0OriginalValues = {
             nom:             fields.nom?.value ?? '',
             prenoms:         fields.prenoms?.value ?? '',
             contact:         fields.contact?.value ?? '',
             contact_urgence: fields.contact_urgence?.value ?? '',
         };
-        if (fields.nom)             fields.nom.value             = authUser.nom;
-        if (fields.prenoms)         fields.prenoms.value         = authUser.prenoms;
-        if (fields.contact)         fields.contact.value         = authUser.contact;
-        if (fields.contact_urgence) fields.contact_urgence.value = authUser.contact_urgence;
+        if (fields.nom)             fields.nom.value             = authUser.nom || '';
+        if (fields.prenoms)         fields.prenoms.value         = authUser.prenoms || '';
+        if (fields.contact)         fields.contact.value         = authUser.contact || '';
+        if (fields.contact_urgence) fields.contact_urgence.value = authUser.contact_urgence || '';
     }
 
     function restoreRow0() {
@@ -529,47 +579,32 @@
     function applyGarantMode(isGarant, prefill) {
         passengerRows.forEach(function(row) {
             const idx = parseInt(row.dataset.index, 10);
-            if (idx > 0) {
-                row.style.display = isGarant ? 'none' : '';
-            }
+            if (idx > 0) row.style.display = isGarant ? 'none' : '';
         });
         if (hiddenIsGarant) hiddenIsGarant.value = isGarant ? '1' : '0';
-
-        // Mettre à jour le label du passager 0
         const label0 = document.querySelector('.passenger-row-label[data-index="0"]');
         if (label0) {
             label0.innerHTML = isGarant
                 ? 'Vos informations (Garant)'
                 : 'Passager 1 <span class="text-[10px] font-semibold text-gray-400 normal-case tracking-normal ml-1">/ {{ $convoi->nombre_personnes }}</span>';
         }
-
-        // Afficher/masquer le bandeau garant
         const garantBanner = document.getElementById('garantBanner');
-        if (garantBanner) {
-            garantBanner.classList.toggle('hidden', !isGarant);
-        }
-
-        if (isGarant && prefill) {
-            prefillRow0WithUser();
-        } else if (!isGarant && row0OriginalValues !== null) {
-            restoreRow0();
-        }
+        if (garantBanner) garantBanner.classList.toggle('hidden', !isGarant);
+        if (isGarant && prefill) prefillRow0WithUser();
+        else if (!isGarant && row0OriginalValues !== null) restoreRow0();
     }
 
     if (toggleGarant) {
-        toggleGarant.addEventListener('change', function() {
-            applyGarantMode(this.checked, true);
-        });
-        // Appliquer l'état initial au chargement (sans écraser les données déjà saisies)
+        toggleGarant.addEventListener('change', function() { applyGarantMode(this.checked, true); });
         applyGarantMode(toggleGarant.checked, false);
     }
 
-    // ── 3. Confirmation modale avant enregistrement quand garant ON ──────────
+    // ── Modale confirmation garant ───────────────────────────────────────
     const mainForm     = document.getElementById('mainConvoiForm');
     const confirmModal = document.getElementById('confirmGarantModal');
     let   garantConfirmed = false;
 
-    if (mainForm) {
+    if (mainForm && confirmModal) {
         mainForm.addEventListener('submit', function(e) {
             if (toggleGarant && toggleGarant.checked && !garantConfirmed) {
                 e.preventDefault();
@@ -581,19 +616,27 @@
 
     function confirmGarant() {
         garantConfirmed = true;
-        confirmModal.classList.add('hidden');
+        if (confirmModal) confirmModal.classList.add('hidden');
         document.body.style.overflow = '';
         if (mainForm) mainForm.submit();
     }
-
     function cancelGarant() {
-        confirmModal.classList.add('hidden');
+        if (confirmModal) confirmModal.classList.add('hidden');
         document.body.style.overflow = '';
     }
 
-    // Fermer avec Echap
+    // ── Modale refus montant ─────────────────────────────────────────────
+    function openRefusModal() {
+        const m = document.getElementById('refusModal');
+        if (m) { m.classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
+    }
+    function closeRefusModal() {
+        const m = document.getElementById('refusModal');
+        if (m) { m.classList.add('hidden'); document.body.style.overflow = ''; }
+    }
+
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') cancelGarant();
+        if (e.key === 'Escape') { cancelGarant(); closeRefusModal(); }
     });
     </script>
     @endpush

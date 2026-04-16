@@ -27,7 +27,7 @@ class GareConvoiController extends Controller
     private function busyPersonnelIdsForDateRange(?string $dateDepart, ?string $dateRetour, ?int $excludeConvoiId = null): array
     {
         $query = Convoi::whereNotNull('personnel_id')
-            ->whereIn('statut', ['paye', 'en_cours']);
+            ->whereIn('statut', ['confirme', 'paye', 'en_cours']);
 
         if ($excludeConvoiId) {
             $query->where('id', '!=', $excludeConvoiId);
@@ -49,7 +49,7 @@ class GareConvoiController extends Controller
     private function busyVehiculeIdsForDateRange(?string $dateDepart, ?string $dateRetour, ?int $excludeConvoiId = null): array
     {
         $query = Convoi::whereNotNull('vehicule_id')
-            ->whereIn('statut', ['paye', 'en_cours']);
+            ->whereIn('statut', ['confirme', 'paye', 'en_cours']);
 
         if ($excludeConvoiId) {
             $query->where('id', '!=', $excludeConvoiId);
@@ -284,7 +284,7 @@ class GareConvoiController extends Controller
             ->where('gare_id', $gare->id)
             ->latest();
 
-        if (in_array($statut, ['en_attente', 'valide', 'refuse', 'paye', 'en_cours', 'termine', 'annule'])) {
+        if (in_array($statut, ['en_attente', 'valide', 'confirme', 'refuse', 'paye', 'en_cours', 'termine', 'annule'])) {
             $query->where('statut', $statut);
         }
 
@@ -294,7 +294,7 @@ class GareConvoiController extends Controller
             ->sum('montant');
 
         $montantAPayer = Convoi::where('gare_id', $gare->id)
-            ->where('statut', 'valide')
+            ->whereIn('statut', ['valide', 'confirme'])
             ->sum('montant');
 
         $convois = $query->paginate(10)->withQueryString();
@@ -505,7 +505,7 @@ class GareConvoiController extends Controller
     {
         $gare = Auth::guard('gare')->user();
         if ($convoi->gare_id !== $gare->id) abort(403);
-        if ($convoi->statut !== 'paye') {
+        if (!in_array($convoi->statut, ['confirme', 'paye'])) {
             return back()->with('error', 'Modification impossible : le convoi n\'est plus en attente d\'affectation.');
         }
 
@@ -617,7 +617,7 @@ class GareConvoiController extends Controller
     {
         $gare = Auth::guard('gare')->user();
         if ($convoi->gare_id !== $gare->id) abort(403);
-        if ($convoi->statut !== 'paye') {
+        if (!in_array($convoi->statut, ['confirme', 'paye'])) {
             return back()->with('error', 'Impossible d\'annuler l\'affectation : le convoi est déjà en cours ou terminé.');
         }
 
@@ -934,6 +934,67 @@ class GareConvoiController extends Controller
 
         $finalMsg = !empty($messages) ? implode(' ', $messages) : 'Enregistrement effectué.';
         return back()->with('success', $finalMsg);
+    }
+
+    /** La gare encaisse le paiement physique → statut paye */
+    public function solder(Request $request, Convoi $convoi)
+    {
+        $gare = Auth::guard('gare')->user();
+
+        if ($convoi->gare_id !== $gare->id) {
+            abort(403);
+        }
+
+        if ($convoi->statut !== 'confirme') {
+            return back()->with('error', 'Ce convoi ne peut pas être soldé (statut : ' . $convoi->statut . ').');
+        }
+
+        $convoi->update(['statut' => 'paye']);
+        $convoi->compagnie()->increment('solde_convoie', $convoi->montant);
+
+        $convoi->loadMissing(['user', 'itineraire']);
+        $user = $convoi->user;
+        if ($user) {
+            $prenom     = $user->prenom ?? $user->name;
+            $depart     = $convoi->lieu_depart  ?? ($convoi->itineraire->point_depart  ?? 'N/A');
+            $arrivee    = $convoi->lieu_retour   ?? ($convoi->itineraire->point_arrive  ?? 'N/A');
+            $dateDepart = $convoi->date_depart   ? \Carbon\Carbon::parse($convoi->date_depart)->format('d/m/Y') : 'N/A';
+            $montantF   = number_format($convoi->montant, 0, ',', ' ');
+
+            try {
+                $user->notify(new \App\Notifications\ConvoiValidatedNotification($convoi));
+            } catch (\Exception $e) {
+                Log::error('Notif DB solder convoi: ' . $e->getMessage());
+            }
+
+            try {
+                app(\App\Services\SmsService::class)->sendSms(
+                    $user->contact,
+                    "Bonjour {$prenom},\n"
+                    . "Votre paiement de {$montantF} FCFA pour le convoi CAR225 ref {$convoi->reference} a bien ete enregistre !\n"
+                    . "Trajet : {$depart} -> {$arrivee}\n"
+                    . "Depart : {$dateDepart}\n"
+                    . "Vous pouvez maintenant telecharger votre ticket depuis l'application."
+                );
+            } catch (\Exception $e) {
+                Log::error('SMS solder convoi: ' . $e->getMessage());
+            }
+
+            try {
+                if ($user->fcm_token) {
+                    app(\App\Services\FcmService::class)->sendNotification(
+                        $user->fcm_token,
+                        'Paiement confirmé ✅',
+                        "Ref {$convoi->reference} · {$depart} → {$arrivee} · Montant : {$montantF} FCFA — Votre ticket est disponible.",
+                        ['type' => 'convoi_paye', 'convoi_id' => (string) $convoi->id]
+                    );
+                }
+            } catch (\Exception $e) {
+                Log::error('FCM solder convoi: ' . $e->getMessage());
+            }
+        }
+
+        return back()->with('success', "Convoi {$convoi->reference} soldé. Le client a été notifié et peut télécharger son ticket.");
     }
 
     /**

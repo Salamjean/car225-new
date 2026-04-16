@@ -578,6 +578,9 @@ Route::middleware('auth')->prefix('user')->group(function () {
             Route::get('/{convoi}', [ConvoiController::class, 'show'])->name('show');
             Route::get('/{convoi}/recu-pdf', [ConvoiController::class, 'downloadRecu'])->name('recu-pdf');
             Route::post('/{convoi}/pay', [ConvoiController::class, 'pay'])->name('pay');
+            Route::post('/{convoi}/accepter', [ConvoiController::class, 'accepterMontant'])->name('accepter');
+            Route::post('/{convoi}/refuser-montant', [ConvoiController::class, 'refuserMontant'])->name('refuser-montant');
+            Route::get('/itineraire/{itineraire}/gares', [ConvoiController::class, 'garesByItineraire'])->name('gares-by-itineraire');
             Route::post('/{convoi}/passengers', [ConvoiController::class, 'storePassengers'])->name('store-passengers');
             Route::post('/{convoi}/lieu-rassemblement', [ConvoiController::class, 'storeLieuRassemblement'])->name('lieu-rassemblement');
         });
@@ -957,6 +960,7 @@ Route::prefix('gare-espace')->name('gare-espace.')->group(function () {
             Route::post('/{convoi}/unassign', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'unassign'])->name('unassign');
             Route::post('/{convoi}/valider', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'valider'])->name('valider');
             Route::post('/{convoi}/refuser', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'refuser'])->name('refuser');
+            Route::post('/{convoi}/solder', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'solder'])->name('solder');
             Route::post('/{convoi}/save-full', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'saveFull'])->name('save-full');
         });
 

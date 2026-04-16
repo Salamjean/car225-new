@@ -44,6 +44,16 @@ class ConvoiController extends Controller
         return response()->json(['gares' => $gares]);
     }
 
+    /** AJAX : gares d'une compagnie filtrées par itinéraire */
+    public function garesByItineraire($itineraireId)
+    {
+        $itineraire = Itineraire::findOrFail($itineraireId);
+        $gares = Gare::where('compagnie_id', $itineraire->compagnie_id)
+            ->orderBy('nom_gare')
+            ->get(['id', 'nom_gare', 'ville', 'adresse']);
+        return response()->json(['gares' => $gares]);
+    }
+
     /** AJAX : itinéraires d'une compagnie avec point_depart et point_arrive */
     public function itinerairesByCompagnie($compagnieId)
     {
@@ -137,6 +147,56 @@ class ConvoiController extends Controller
         return view('user.convoi.show', compact('convoi', 'authUser'));
     }
 
+    /** Utilisateur accepte le montant fixé par la gare → confirme */
+    public function accepterMontant(Request $request, Convoi $convoi)
+    {
+        abort_if($convoi->user_id !== Auth::id(), 403);
+        abort_if($convoi->statut !== 'valide', 403);
+
+        $request->validate([
+            'reglement_accepte' => 'required|accepted',
+        ], [
+            'reglement_accepte.required' => 'Vous devez accepter le règlement des convois avant de confirmer.',
+            'reglement_accepte.accepted' => 'Vous devez cocher la case pour accepter le règlement.',
+        ]);
+
+        $convoi->update(['statut' => 'confirme']);
+
+        // Notifier la gare
+        try {
+            $gare = $convoi->gare;
+            if ($gare) {
+                $depart     = $convoi->lieu_depart ?? ($convoi->itineraire->point_depart ?? 'N/A');
+                $arrivee    = $convoi->lieu_retour ?? ($convoi->itineraire->point_arrive ?? 'N/A');
+                $montantF   = number_format($convoi->montant, 0, ',', ' ');
+                app(\App\Services\SmsService::class)->sendSms(
+                    $gare->contact ?? '',
+                    "CAR225 : Le client {$convoi->demandeur_nom} a ACCEPTE le montant de {$montantF} FCFA pour le convoi ref {$convoi->reference} ({$depart} → {$arrivee}). Solde en attente."
+                );
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('SMS accepter convoi: ' . $e->getMessage());
+        }
+
+        return redirect()->route('user.convoi.show', $convoi)
+            ->with('success', 'Vous avez confirmé votre convoi. Présentez-vous à la gare pour effectuer le paiement avant votre départ.');
+    }
+
+    /** Utilisateur refuse le montant → annule */
+    public function refuserMontant(Request $request, Convoi $convoi)
+    {
+        abort_if($convoi->user_id !== Auth::id(), 403);
+        abort_if($convoi->statut !== 'valide', 403);
+
+        $convoi->update([
+            'statut'      => 'annule',
+            'motif_refus' => 'Montant refusé par le client.',
+        ]);
+
+        return redirect()->route('user.convoi.show', $convoi)
+            ->with('success', 'Vous avez refusé le montant proposé. Le convoi a été annulé. Vous pouvez faire une nouvelle demande.');
+    }
+
     /** Paiement : l'utilisateur accepte le règlement et paye le montant fixé par la compagnie */
     public function pay(Request $request, Convoi $convoi)
     {
@@ -161,7 +221,7 @@ class ConvoiController extends Controller
     public function storeLieuRassemblement(Request $request, Convoi $convoi)
     {
         abort_if($convoi->user_id !== Auth::id(), 403);
-        abort_if($convoi->statut !== 'paye', 403);
+        abort_if(!in_array($convoi->statut, ['confirme', 'paye']), 403);
 
         $request->validate([
             'lieu_rassemblement' => 'required|string|max:255',
@@ -180,7 +240,7 @@ class ConvoiController extends Controller
     public function storePassengers(Request $request, Convoi $convoi)
     {
         abort_if($convoi->user_id !== Auth::id(), 403);
-        abort_if($convoi->statut !== 'paye', 403);
+        abort_if(!in_array($convoi->statut, ['confirme', 'paye']), 403);
 
         $request->validate([
             'lieu_rassemblement'          => 'required|string|max:255',
