@@ -1054,13 +1054,22 @@
          CAS STANDARD (non walk-in ou passagers déjà soumis) : formulaires séparés
          ════════════════════════════════════════════════════════════════════ --}}
 
-    {{-- Avertissement si passagers pas encore soumis (non walk-in) --}}
-    @if(!$convoi->is_garant && !$convoi->passagers_soumis && !$convoi->personnel_id)
+    {{-- Avertissement si 0 passager et pas garant (non walk-in) --}}
+    @php $passagersCount = $convoi->passagers->count(); @endphp
+    @if(!$convoi->is_garant && $passagersCount === 0 && !$convoi->personnel_id)
     <div class="alert-box" style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;margin-bottom:16px;">
         <i class="fas fa-exclamation-triangle" style="color:#d97706;font-size:16px;flex-shrink:0;"></i>
         <div>
-            <strong style="display:block;font-size:13px;margin-bottom:3px;">En attente de la liste des passagers</strong>
-            <span style="font-size:12px;font-weight:600;">L'utilisateur n'a pas encore soumis sa liste de passagers ni choisi l'option "garant". L'affectation sera disponible dès qu'il complètera cette étape depuis son espace.</span>
+            <strong style="display:block;font-size:13px;margin-bottom:3px;">Aucun passager enregistré</strong>
+            <span style="font-size:12px;font-weight:600;">Au moins 1 passager doit être enregistré (ou le client doit choisir le mode garant) avant de pouvoir affecter un chauffeur.</span>
+        </div>
+    </div>
+    @elseif(!$convoi->is_garant && !$convoi->passagers_soumis && $passagersCount > 0 && !$convoi->personnel_id)
+    <div class="alert-box" style="background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;margin-bottom:16px;">
+        <i class="fas fa-info-circle" style="color:#3b82f6;font-size:16px;flex-shrink:0;"></i>
+        <div>
+            <strong style="display:block;font-size:13px;margin-bottom:3px;">{{ $passagersCount }} / {{ $convoi->nombre_personnes }} passager(s) enregistré(s)</strong>
+            <span style="font-size:12px;font-weight:600;">La liste n'est pas encore complète. Vous pouvez affecter dès maintenant ou attendre que tous les passagers soient enregistrés.</span>
         </div>
     </div>
     @endif

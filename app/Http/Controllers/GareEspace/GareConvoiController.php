@@ -429,6 +429,11 @@ class GareConvoiController extends Controller
             'vehicule_id' => 'required|exists:vehicules,id',
         ]);
 
+        // Vérifier qu'au moins 1 passager est enregistré ou que le client est garant
+        if (!$convoi->is_garant && $convoi->passagers()->count() === 0) {
+            return back()->with('error', 'Impossible d\'affecter : au moins 1 passager doit être enregistré, ou le client doit avoir choisi le mode garant.');
+        }
+
         // Vérifier que le chauffeur n'a pas un voyage en_cours maintenant
         $chauffeurOnActiveVoyage = Voyage::where('personnel_id', $validated['personnel_id'])
             ->where('statut', 'en_cours')
@@ -589,6 +594,11 @@ class GareConvoiController extends Controller
             'personnel_id' => 'required|exists:personnels,id',
             'vehicule_id'  => 'required|exists:vehicules,id',
         ]);
+
+        // Vérifier qu'au moins 1 passager est enregistré ou que le client est garant
+        if (!$convoi->is_garant && $convoi->passagers()->count() === 0) {
+            return back()->with('error', 'Impossible de modifier l\'affectation : au moins 1 passager doit être enregistré, ou le client doit avoir choisi le mode garant.');
+        }
 
         // Vérifier chevauchement de dates (exclure le convoi courant)
         $busyPersonnel = $this->busyPersonnelIdsForDateRange($convoi->date_depart, $convoi->date_retour, $convoi->id);
@@ -1117,7 +1127,7 @@ class GareConvoiController extends Controller
                     . "Votre paiement de {$montantF} FCFA pour le convoi CAR225 ref {$convoi->reference} a bien ete enregistre !\n"
                     . "Trajet : {$depart} -> {$arrivee}\n"
                     . "Depart : {$dateDepart}\n"
-                    . "Vous pouvez maintenant telecharger votre ticket depuis l'application."
+                    . "Vous pouvez maintenant telecharger votre ticket depuis l'application ou sur le site web : " . route('home.download-app') . ""
                 );
             } catch (\Exception $e) {
                 Log::error('SMS solder convoi: ' . $e->getMessage());

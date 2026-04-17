@@ -282,16 +282,19 @@ class ConvoiController extends Controller
             }
         }
 
+        $retourObligatoire = !empty($convoi->date_retour);
+
         $request->validate([
             'lieu_rassemblement'          => 'required|string|max:255',
-            'lieu_rassemblement_retour'   => 'nullable|string|max:255',
+            'lieu_rassemblement_retour'   => $retourObligatoire ? 'required|string|max:255' : 'nullable|string|max:255',
             'passagers'                   => 'nullable|array',
             'passagers.*.nom'             => 'nullable|string|max:100',
             'passagers.*.prenoms'         => 'nullable|string|max:150',
             'passagers.*.contact'         => ['nullable', 'digits:10'],
             'passagers.*.contact_urgence' => ['nullable', 'digits:10'],
         ], [
-            'lieu_rassemblement.required'         => 'Le lieu de rassemblement est obligatoire.',
+            'lieu_rassemblement.required'         => 'Le lieu de rassemblement (aller) est obligatoire.',
+            'lieu_rassemblement_retour.required'  => 'Le lieu de rassemblement pour le retour est obligatoire car un retour est prévu.',
             'passagers.*.contact.digits'          => 'Le contact doit contenir exactement 10 chiffres.',
             'passagers.*.contact_urgence.digits'  => 'Le contact d\'urgence doit contenir exactement 10 chiffres.',
         ]);
