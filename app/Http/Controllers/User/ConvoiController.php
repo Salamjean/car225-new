@@ -301,17 +301,16 @@ class ConvoiController extends Controller
 
         $isGarant = (bool) $request->input('is_garant', false);
 
-        // Vérifier les doublons de contact dans la liste soumise
+        // Vérifier les doublons exacts (même nom + prénoms + contact)
         if (!$isGarant) {
-            $contacts = collect($request->input('passagers', []))
-                ->pluck('contact')
-                ->filter(fn($c) => !empty(trim($c ?? '')))
-                ->map(fn($c) => trim($c));
+            $signatures = collect($request->input('passagers', []))
+                ->filter(fn($p) => !empty(trim($p['nom'] ?? '')) || !empty(trim($p['contact'] ?? '')))
+                ->map(fn($p) => strtolower(trim($p['nom'] ?? '')) . '|' . strtolower(trim($p['prenoms'] ?? '')) . '|' . trim($p['contact'] ?? ''));
 
-            if ($contacts->count() !== $contacts->unique()->count()) {
+            if ($signatures->count() !== $signatures->unique()->count()) {
                 return back()
                     ->withInput()
-                    ->with('error', 'Deux passagers ne peuvent pas avoir le même numéro de contact. Veuillez corriger les doublons.');
+                    ->with('error', 'Deux passagers ont exactement les mêmes informations (nom, prénoms et contact identiques). Veuillez corriger les doublons.');
             }
         }
 
