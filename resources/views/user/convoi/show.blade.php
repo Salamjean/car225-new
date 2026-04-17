@@ -243,7 +243,7 @@
             </div>
         @endif
 
-        {{-- STATUT: CONFIRME → formulaire passagers + message 24h --}}
+        {{-- STATUT: CONFIRME → info paiement en gare uniquement --}}
         @if ($convoi->statut === 'confirme')
             <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-6">
                 <div class="flex items-start gap-4">
@@ -266,11 +266,61 @@
                             @endif
                         </div>
                         @endif
+                        <div class="mt-4 p-4 bg-white rounded-xl border border-indigo-100">
+                            <p class="text-xs font-black text-indigo-700 uppercase tracking-wider mb-2"><i class="fas fa-info-circle mr-1"></i> Prochaines étapes</p>
+                            <ol class="text-sm text-indigo-700 font-medium space-y-1 list-decimal list-inside">
+                                <li>Rendez-vous à la gare et payez le montant en caisse</li>
+                                <li>La gare confirme votre paiement</li>
+                                <li>Renseignez votre lieu de rassemblement et vos passagers</li>
+                                <li>Un chauffeur vous sera assigné</li>
+                            </ol>
+                        </div>
                     </div>
                 </div>
             </div>
+        @endif
 
-            {{-- Lieu de rassemblement + garant + passagers — FORMULAIRE UNIQUE --}}
+        {{-- STATUT: PAYE → ticket + formulaire passagers + lecture seule --}}
+        @if (in_array($convoi->statut, ['paye', 'en_cours', 'termine']))
+            <div class="bg-green-50 border border-green-200 rounded-2xl p-5">
+                <div class="flex items-start gap-4 flex-wrap">
+                    <div class="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-check-circle text-green-600 text-lg"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-black text-green-800">Paiement confirmé par la gare</p>
+                        <p class="text-xs text-green-700 font-medium mt-1">
+                            Montant réglé : <strong>{{ number_format($convoi->montant, 0, ',', ' ') }} FCFA</strong>.
+                            @if($convoi->lieu_rassemblement)
+                                Lieu de rassemblement : <strong>{{ $convoi->lieu_rassemblement }}</strong>.
+                            @endif
+                        </p>
+                    </div>
+                    <a href="{{ route('user.convoi.recu-pdf', $convoi) }}" target="_blank"
+                       class="inline-flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex-shrink-0"
+                       style="background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;box-shadow:0 4px 14px rgba(249,115,22,.3);">
+                        <i class="fas fa-ticket-alt"></i> Imprimer le ticket
+                    </a>
+                </div>
+            </div>
+
+            {{-- Formulaire lieu de rassemblement + passagers --}}
+            @if($convoi->statut === 'paye')
+            @php
+                $canEditPassengers = true;
+                if ($convoi->date_depart && $convoi->heure_depart) {
+                    $depAt = \Carbon\Carbon::parse($convoi->date_depart . ' ' . $convoi->heure_depart);
+                    $canEditPassengers = $depAt->diffInMinutes(now(), false) < -60;
+                }
+                $showPassengerForm = !$convoi->passagers_soumis || (request()->has('edit_passengers') && $canEditPassengers);
+            @endphp
+            @if($showPassengerForm)
+            @if($convoi->passagers_soumis)
+            <div class="rounded-2xl bg-amber-50 border border-amber-200 px-5 py-3 text-amber-800 text-sm font-semibold flex items-center gap-2">
+                <i class="fas fa-edit text-amber-600"></i>
+                Modification de la liste des passagers. Cliquez sur Enregistrer pour valider les changements.
+            </div>
+            @endif
             <form action="{{ route('user.convoi.store-passengers', $convoi) }}" method="POST" id="mainConvoiForm">
             @csrf
             <input type="hidden" name="is_garant" id="hiddenIsGarant" value="{{ $convoi->is_garant ? '1' : '0' }}">
@@ -278,11 +328,32 @@
             @if ($errors->any())
             <div class="rounded-2xl bg-red-50 border border-red-200 px-5 py-4 text-red-700 text-sm font-semibold">
                 <i class="fas fa-exclamation-circle mr-2"></i>
-                @if ($errors->has('lieu_rassemblement'))
-                    {{ $errors->first('lieu_rassemblement') }}
-                @else
-                    Veuillez corriger les erreurs ci-dessous.
-                @endif
+                @if ($errors->has('lieu_rassemblement')){{ $errors->first('lieu_rassemblement') }}
+                @else Veuillez corriger les erreurs ci-dessous. @endif
+            </div>
+            @endif
+
+            {{-- Lien partageable --}}
+            @if($convoi->passenger_form_token)
+            <div class="bg-orange-50 border border-orange-200 rounded-2xl p-5">
+                <div class="flex items-start gap-3 mb-3">
+                    <div class="w-9 h-9 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-share-alt text-orange-600"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-black text-orange-800">Lien de saisie pour vos passagers</p>
+                        <p class="text-xs text-orange-600 font-medium mt-1">Partagez ce lien à vos passagers pour qu'ils renseignent eux-mêmes leurs informations.</p>
+                    </div>
+                </div>
+                @php $lienPassagerUser = route('public.convoi.passagers.form', $convoi->passenger_form_token); @endphp
+                <div class="flex items-center gap-2 bg-white border border-orange-200 rounded-xl p-3">
+                    <i class="fas fa-link text-orange-400 text-xs flex-shrink-0"></i>
+                    <span class="text-xs text-orange-800 font-semibold break-all flex-1" id="lienPassagerUserText">{{ $lienPassagerUser }}</span>
+                    <button type="button" onclick="copyUserLink()" id="copyUserBtn"
+                            class="flex-shrink-0 px-3 py-1.5 rounded-lg bg-[#e94f1b] text-white text-xs font-black">
+                        <i class="fas fa-copy"></i> Copier
+                    </button>
+                </div>
             </div>
             @endif
 
@@ -294,13 +365,13 @@
                     </div>
                     <div>
                         <h3 class="text-sm font-black text-gray-900 uppercase tracking-wider">Lieu de rassemblement & options</h3>
-                        <p class="text-xs text-gray-500 font-medium">Indiquez où le car doit venir vous chercher, et choisissez votre mode d'inscription.</p>
+                        <p class="text-xs text-gray-500 font-medium">Indiquez où le car doit venir vous chercher.</p>
                     </div>
                 </div>
                 <div class="space-y-5">
                     <div>
                         <label class="block text-xs font-black text-gray-600 uppercase tracking-wider mb-2">
-                            <i class="fas fa-map-marker-alt mr-1 text-[#e94f1b]"></i> Lieu de rassemblement <span class="text-[#e94f1b]">*</span>
+                            <i class="fas fa-map-marker-alt mr-1 text-[#e94f1b]"></i> Lieu de rassemblement (aller) <span class="text-[#e94f1b]">*</span>
                         </label>
                         <input type="text" name="lieu_rassemblement" id="lieuRassemblementInput"
                             value="{{ old('lieu_rassemblement', $convoi->lieu_rassemblement) }}"
@@ -309,6 +380,20 @@
                             class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#e94f1b]/30 focus:border-[#e94f1b]">
                         <p class="text-xs text-gray-400 mt-1.5">Obligatoire — le chauffeur quittera la gare pour venir vous chercher à ce lieu.</p>
                     </div>
+
+                    @if($convoi->date_retour)
+                    <div>
+                        <label class="block text-xs font-black text-gray-600 uppercase tracking-wider mb-2">
+                            <i class="fas fa-map-marker-alt mr-1 text-green-600"></i> Lieu de rassemblement (retour)
+                        </label>
+                        <input type="text" name="lieu_rassemblement_retour" id="lieuRassemblementRetourInput"
+                            value="{{ old('lieu_rassemblement_retour', $convoi->lieu_rassemblement_retour) }}"
+                            placeholder="Ex: Gare routière de Bouaké..."
+                            class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500">
+                        <p class="text-xs text-gray-400 mt-1.5">Optionnel — où le chauffeur viendra vous récupérer au retour.</p>
+                    </div>
+                    @endif
+
                     <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4">
                         <label class="flex items-start gap-4 cursor-pointer">
                             <div class="relative flex-shrink-0 mt-0.5">
@@ -344,7 +429,7 @@
                         @endif
                     </h3>
                 </div>
-                @php $passagersExistants = $convoi->passagers->keyBy(fn($p, $k) => $k)->values(); @endphp
+                @php $passagersExistants = $convoi->passagers->values(); @endphp
                 @if($convoi->is_garant)
                 <div class="mx-6 mt-4 mb-0 px-4 py-3 bg-indigo-50 border border-indigo-100 rounded-xl text-xs font-semibold text-indigo-700" id="garantBanner">
                     <i class="fas fa-user-shield mr-1"></i> Mode garant activé — renseignez uniquement vos informations personnelles.
@@ -387,39 +472,31 @@
                 </div>
             </div>
             </form>{{-- fin mainConvoiForm --}}
-        @endif
+            @endif {{-- showPassengerForm --}}
 
-        {{-- STATUT: PAYE → ticket + passagers lecture seule --}}
-        @if (in_array($convoi->statut, ['paye', 'en_cours', 'termine']))
-            <div class="bg-green-50 border border-green-200 rounded-2xl p-5">
-                <div class="flex items-start gap-4 flex-wrap">
-                    <div class="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
-                        <i class="fas fa-check-circle text-green-600 text-lg"></i>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm font-black text-green-800">Paiement confirmé par la gare</p>
-                        <p class="text-xs text-green-700 font-medium mt-1">
-                            Montant réglé : <strong>{{ number_format($convoi->montant, 0, ',', ' ') }} FCFA</strong>.
-                            @if($convoi->lieu_rassemblement)
-                                Lieu de rassemblement : <strong>{{ $convoi->lieu_rassemblement }}</strong>.
-                            @endif
-                        </p>
-                    </div>
-                    <a href="{{ route('user.convoi.recu-pdf', $convoi) }}" target="_blank"
-                       class="inline-flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex-shrink-0"
-                       style="background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;box-shadow:0 4px 14px rgba(249,115,22,.3);">
-                        <i class="fas fa-ticket-alt"></i> Imprimer le ticket
-                    </a>
-                </div>
+            @if($convoi->passagers_soumis && $canEditPassengers && !$showPassengerForm)
+            <div class="flex justify-end">
+                <a href="{{ route('user.convoi.show', $convoi) }}?edit_passengers=1"
+                   class="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-black uppercase tracking-wider hover:bg-amber-100 transition-all">
+                    <i class="fas fa-edit"></i> Modifier les passagers
+                </a>
             </div>
+            @endif
+            @endif {{-- statut === 'paye' --}}
 
             {{-- Lieu rassemblement / garant lecture seule --}}
-            @if($convoi->lieu_rassemblement || $convoi->is_garant)
+            @if($convoi->lieu_rassemblement || $convoi->is_garant || $convoi->lieu_rassemblement_retour)
             <div class="bg-blue-50 border border-blue-100 rounded-2xl p-5 flex flex-wrap gap-6">
                 @if($convoi->lieu_rassemblement)
                 <div>
-                    <p class="text-xs font-black text-blue-700 uppercase tracking-wider mb-1"><i class="fas fa-map-pin mr-1"></i> Lieu de rassemblement</p>
+                    <p class="text-xs font-black text-blue-700 uppercase tracking-wider mb-1"><i class="fas fa-map-pin mr-1"></i> Lieu de rassemblement (aller)</p>
                     <p class="text-sm font-bold text-blue-900">{{ $convoi->lieu_rassemblement }}</p>
+                </div>
+                @endif
+                @if($convoi->lieu_rassemblement_retour)
+                <div>
+                    <p class="text-xs font-black text-green-700 uppercase tracking-wider mb-1"><i class="fas fa-map-pin mr-1"></i> Lieu de rassemblement (retour)</p>
+                    <p class="text-sm font-bold text-green-900">{{ $convoi->lieu_rassemblement_retour }}</p>
                 </div>
                 @endif
                 @if($convoi->is_garant)
@@ -432,6 +509,7 @@
             @endif
 
             {{-- Table passagers lecture seule --}}
+            @if($convoi->passagers_soumis || $convoi->statut !== 'paye')
             <div class="bg-white rounded-[28px] border border-gray-100 shadow-sm overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
                     <h3 class="text-sm font-black text-gray-800 uppercase tracking-wider">
@@ -468,6 +546,7 @@
                     </table>
                 </div>
             </div>
+            @endif
         @endif
     </div>
 
@@ -638,6 +717,44 @@
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') { cancelGarant(); closeRefusModal(); }
     });
+
+    // ── Copy lien passagers (user side) ─────────────────────────────
+    function copyUserLink() {
+        const text = document.getElementById('lienPassagerUserText');
+        const btn  = document.getElementById('copyUserBtn');
+        if (!text) return;
+        navigator.clipboard.writeText(text.textContent.trim()).then(function() {
+            btn.innerHTML = '<i class="fas fa-check"></i> Copié !';
+            btn.style.background = '#059669';
+            setTimeout(function() { btn.innerHTML = '<i class="fas fa-copy"></i> Copier'; btn.style.background = '#e94f1b'; }, 2500);
+        }).catch(function() {
+            const el = document.createElement('textarea');
+            el.value = text.textContent.trim();
+            document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el);
+            btn.innerHTML = '<i class="fas fa-check"></i> Copié !';
+            setTimeout(function() { btn.innerHTML = '<i class="fas fa-copy"></i> Copier'; }, 2500);
+        });
+    }
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCRXwpzz4SVK_wQpOeh4p3-sSOq1c7Qqg4&libraries=places&callback=initUserPlaces" async defer></script>
+    <script>
+    function initUserPlaces() {
+        const opts = { componentRestrictions: { country: 'ci' }, fields: ['formatted_address', 'name'] };
+        const inputs = [
+            document.getElementById('lieuRassemblementInput'),
+            document.getElementById('lieuRassemblementRetourInput'),
+        ];
+        inputs.forEach(function(inp) {
+            if (!inp) return;
+            const ac = new google.maps.places.Autocomplete(inp, opts);
+            ac.addListener('place_changed', function() {
+                const p = ac.getPlace();
+                if (p && p.formatted_address) inp.value = p.formatted_address;
+                else if (p && p.name) inp.value = p.name;
+            });
+        });
+    }
+    window.initUserPlaces = window.initUserPlaces || function() {};
     </script>
     @endpush
 @endsection

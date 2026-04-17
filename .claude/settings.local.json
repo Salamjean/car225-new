@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(php artisan:*)",
-      "Bash(grep -n \"statut\\\\|confirme\\\\|paye\\\\|enum\" C:\\\\Users\\\\THEWAYNE\\\\Documents\\\\car225-new\\\\database\\\\migrations\\\\*convoi*)"
+      "Bash(grep -n \"statut\\\\|confirme\\\\|paye\\\\|enum\" C:\\\\Users\\\\THEWAYNE\\\\Documents\\\\car225-new\\\\database\\\\migrations\\\\*convoi*)",
+      "Bash(php -l app/Http/Controllers/GareEspace/GareConvoiController.php)",
+      "Bash(php -l app/Http/Controllers/User/ConvoiController.php)",
+      "Bash(php -l app/Mail/ConvoiChauffeurAssigneMail.php)"
     ]
   }
 }

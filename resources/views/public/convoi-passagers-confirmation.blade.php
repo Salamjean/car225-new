@@ -27,14 +27,24 @@
             <i class="fas fa-check text-green-500 text-4xl"></i>
         </div>
 
-        <h1 class="text-2xl font-black text-gray-900 mb-2">Liste envoyée !</h1>
+        <h1 class="text-2xl font-black text-gray-900 mb-2">Inscription confirmée !</h1>
         <p class="text-gray-500 font-semibold text-sm mb-6">
-            Les informations de vos passagers ont bien été transmises à la gare
+            Vos informations ont bien été transmises à la gare
             @if($convoi->gare)
                 <strong class="text-gray-700">{{ $convoi->gare->nom_gare }}</strong>.
             @endif
             Vous serez contacté prochainement pour la suite.
         </p>
+
+        @if($myPassager)
+        <div class="bg-gray-50 rounded-2xl p-4 text-left mb-4">
+            <div class="text-xs font-black text-gray-500 uppercase tracking-wider mb-3">Votre inscription</div>
+            <div class="space-y-1 text-sm font-semibold text-gray-700">
+                <div><i class="fas fa-user text-orange-400 mr-2"></i>{{ $myPassager->prenoms }} {{ $myPassager->nom }}</div>
+                <div><i class="fas fa-phone text-orange-400 mr-2"></i>{{ $myPassager->contact }}</div>
+            </div>
+        </div>
+        @endif
 
         {{-- Recap --}}
         <div class="bg-white border border-gray-100 rounded-2xl p-5 text-left mb-6 shadow-sm">
@@ -66,7 +76,12 @@
             </div>
         </div>
 
-        <p class="text-xs text-gray-400 font-semibold">
+        <a href="{{ route('public.convoi.passagers.form', $token) }}"
+           class="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-orange-50 border border-orange-200 text-orange-700 text-xs font-black uppercase tracking-wider hover:bg-orange-100 transition-all mt-3">
+            <i class="fas fa-edit"></i> Modifier mes informations
+        </a>
+
+        <p class="text-xs text-gray-400 font-semibold mt-4">
             <i class="fas fa-shield-alt mr-1 text-orange-400"></i>
             Formulaire sécurisé CAR225 — Merci de votre confiance.
         </p>

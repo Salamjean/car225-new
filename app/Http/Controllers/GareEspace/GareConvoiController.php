@@ -98,8 +98,9 @@ class GareConvoiController extends Controller
             'date_retour'       => 'nullable|date|after_or_equal:date_depart',
             'heure_retour'      => 'nullable|required_with:date_retour|date_format:H:i',
             'montant'           => 'required|numeric|min:0',
-            'lieu_rassemblement'=> 'required|string|max:255',
-            'motif'             => 'nullable|string|max:500',
+            'lieu_rassemblement'       => 'required|string|max:255',
+            'lieu_rassemblement_retour'=> 'nullable|string|max:255',
+            'motif'                    => 'nullable|string|max:500',
         ], [
             'client_nom.required'       => 'Le nom du client est obligatoire.',
             'client_prenom.required'    => 'Le prénom du client est obligatoire.',
@@ -136,9 +137,10 @@ class GareConvoiController extends Controller
             'date_retour'         => $validated['date_retour'] ?? null,
             'heure_retour'        => $validated['heure_retour'] ?? null,
             'montant'             => $validated['montant'],
-            'lieu_rassemblement'  => $validated['lieu_rassemblement'] ?? null,
-            'reference'           => 'CONV-' . now()->format('Ymd') . '-' . strtoupper(Str::random(6)),
-            'statut'              => 'paye',
+            'lieu_rassemblement'        => $validated['lieu_rassemblement'] ?? null,
+            'lieu_rassemblement_retour' => $validated['lieu_rassemblement_retour'] ?? null,
+            'reference'                 => 'CONV-' . now()->format('Ymd') . '-' . strtoupper(Str::random(6)),
+            'statut'                    => 'confirme',
             // Champs walk-in
             'client_nom'          => $validated['client_nom'],
             'client_prenom'       => $validated['client_prenom'],
@@ -148,10 +150,7 @@ class GareConvoiController extends Controller
             'is_garant'           => true, // Par défaut, le client est garant pour son groupe
         ]);
 
-        // Créditer le compte convoi de la compagnie
-        $convoi->compagnie()->increment('solde_convoie', $convoi->montant);
-
-        // Envoyer un SMS de confirmation au client
+        // Envoyer un SMS de création au client
         try {
             $prenom     = $convoi->client_prenom;
             $depart     = $lieuDepart;
@@ -161,30 +160,75 @@ class GareConvoiController extends Controller
             $lieu       = $convoi->lieu_rassemblement ?? 'À définir';
 
             $smsMsg = "Bonjour {$prenom},\n"
-                    . "Votre convoi CAR225 (ref {$convoi->reference}) a ete enregistre avec succes !\n"
+                    . "Votre convoi CAR225 (ref {$convoi->reference}) a ete enregistre.\n"
                     . "Trajet : {$depart} -> {$arrivee}\n"
                     . "Depart : {$dateDepart}" . ($hDepart ? " a {$hDepart}" : '') . "\n"
                     . "Lieu rassemblement : {$lieu}\n"
-                    . "Montant : " . number_format($convoi->montant, 0, ',', ' ') . " FCFA. Merci !";
+                    . "Presentez-vous en caisse pour finaliser le paiement.";
 
             app(\App\Services\SmsService::class)->sendSms($convoi->client_contact, $smsMsg);
         } catch (\Exception $e) {
             Log::error('SMS walk-in convoi: ' . $e->getMessage());
         }
 
-        // Envoyer l'email avec le reçu PDF si le client a fourni un mail
+        return redirect()
+            ->route('gare-espace.convois.show', $convoi)
+            ->with('success', "Convoi {$convoi->reference} créé. Un SMS a été envoyé au client. Cliquez sur « Faire le paiement » pour encaisser et finaliser.");
+    }
+
+    /**
+     * Encaissement du paiement d'un convoi walk-in créé par la gare.
+     * Passe le statut de 'confirme' à 'paye' et crédite la compagnie.
+     */
+    public function payerWalkin(Request $request, Convoi $convoi)
+    {
+        $gare = Auth::guard('gare')->user();
+
+        if ($convoi->gare_id !== $gare->id || !$convoi->created_by_gare) {
+            abort(403);
+        }
+
+        if ($convoi->statut !== 'confirme') {
+            return back()->with('error', 'Ce convoi ne peut pas être encaissé (statut : ' . $convoi->statut . ').');
+        }
+
+        $convoi->update(['statut' => 'paye']);
+        $convoi->compagnie()->increment('solde_convoie', $convoi->montant);
+
+        $convoi->loadMissing(['compagnie', 'gare', 'itineraire', 'chauffeur', 'vehicule']);
+
+        // Envoyer le reçu par email si disponible
         if ($convoi->client_email) {
             try {
-                $convoi->loadMissing(['compagnie', 'gare', 'itineraire', 'chauffeur', 'vehicule']);
                 Mail::to($convoi->client_email)->send(new ConvoiWalkinReceiptMail($convoi));
             } catch (\Exception $e) {
-                Log::error('Email reçu walk-in convoi: ' . $e->getMessage());
+                Log::error('Email reçu walk-in paiement: ' . $e->getMessage());
             }
         }
 
-        return redirect()
-            ->route('gare-espace.convois.show', $convoi)
-            ->with('success', "Convoi {$convoi->reference} créé avec succès. Un SMS de confirmation a été envoyé au client." . ($convoi->client_email ? " Le reçu PDF a également été envoyé par e-mail." : ''));
+        // Envoyer SMS de confirmation de paiement
+        try {
+            $prenom     = $convoi->client_prenom;
+            $depart     = $convoi->lieu_depart ?? ($convoi->itineraire->point_depart ?? 'N/A');
+            $arrivee    = $convoi->lieu_retour ?? ($convoi->itineraire->point_arrive ?? 'N/A');
+            $dateDepart = Carbon::parse($convoi->date_depart)->format('d/m/Y');
+            $montantF   = number_format($convoi->montant, 0, ',', ' ');
+            $lieu       = $convoi->lieu_rassemblement ?? 'À définir';
+
+            app(\App\Services\SmsService::class)->sendSms(
+                $convoi->client_contact,
+                "Bonjour {$prenom},\n"
+                . "Paiement de {$montantF} FCFA confirme pour votre convoi CAR225 ref {$convoi->reference} !\n"
+                . "Trajet : {$depart} -> {$arrivee}\n"
+                . "Depart : {$dateDepart}\n"
+                . "Lieu rassemblement : {$lieu}\n"
+                . "Merci de votre confiance. Bon voyage !"
+            );
+        } catch (\Exception $e) {
+            Log::error('SMS paiement walk-in: ' . $e->getMessage());
+        }
+
+        return back()->with('success', "Paiement de {$convoi->reference} encaissé. Le client peut maintenant recevoir son ticket et la liste des passagers peut être complétée.");
     }
 
     /** Enregistrement / envoi lien passagers pour un convoi walk-in depuis la gare */
@@ -464,9 +508,10 @@ class GareConvoiController extends Controller
         try {
             $smsBase = "Votre convoi CAR225 ref {$convoi->reference} a ete pris en charge !\n"
                      . "Trajet : {$depart} -> {$arrivee}\n"
-                     . "Depart : {$dateDepart}" . ($hDepart ? " a {$hDepart}" : '') . "\n"
+                     . "Depart : {$dateDepart}" . ($hDepart ? " à {$hDepart}" : '') . "\n"
                      . "Lieu de rassemblement : {$lieu}\n"
-                     . "Le chauffeur sera present. Bon voyage !";
+                     . "Le chauffeur sera present. Bon voyage !"
+                     . "veuillez telecharger l'application car225 sur : " . route('home.download-app') . " pour suivre votre convoi en temps reel.";
 
             $user = $convoi->user;
             if ($user) {
@@ -497,7 +542,38 @@ class GareConvoiController extends Controller
             Log::error('Notif demandeur assign convoi: ' . $e->getMessage());
         }
 
-        return back()->with('success', 'Affectation effectuée. Le chauffeur et le demandeur ont été notifiés.');
+        // ── Email au client si disponible ─────────────────────────────────
+        try {
+            $convoi->loadMissing(['chauffeur', 'vehicule', 'passagers', 'itineraire', 'user']);
+            $emailTo = $convoi->user ? ($convoi->user->email ?? null) : ($convoi->client_email ?? null);
+            if ($emailTo) {
+                Mail::to($emailTo)->send(new \App\Mail\ConvoiChauffeurAssigneMail($convoi));
+            }
+        } catch (\Exception $e) {
+            Log::error('Email chauffeur assign: ' . $e->getMessage());
+        }
+
+        // ── SMS à chaque passager (hors demandeur principal déjà notifié) ─
+        try {
+            $convoi->loadMissing(['passagers']);
+            $demandeurContact = $convoi->user ? ($convoi->user->contact ?? null) : ($convoi->client_contact ?? null);
+            $smsPassager = "Bonjour,\n"
+                         . "Vous etes passager d'un convoi CAR225 ref {$convoi->reference}.\n"
+                         . "Trajet : {$depart} -> {$arrivee}\n"
+                         . "Depart : {$dateDepart}" . ($hDepart ? " à {$hDepart}" : '') . "\n"
+                         . "Lieu de rassemblement : {$lieu}\n"
+                         . "Un chauffeur a ete affecte a votre convoi. Bon voyage !"
+                         . "veuillez telecharger l'application car225 sur : " . route('home.download-app') . " pour suivre votre convoi en temps reel.";
+            foreach ($convoi->passagers as $passager) {
+                if ($passager->contact && $passager->contact !== $demandeurContact) {
+                    app(\App\Services\SmsService::class)->sendSms($passager->contact, $smsPassager);
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('SMS passagers assign convoi: ' . $e->getMessage());
+        }
+
+        return back()->with('success', 'Affectation effectuée. Le chauffeur, le demandeur et les passagers ont été notifiés.');
     }
 
     /** Modifier l'affectation (changer chauffeur / véhicule) */
@@ -609,7 +685,34 @@ class GareConvoiController extends Controller
             Log::error('Erreur notification demandeur (reassign): ' . $e->getMessage());
         }
 
-        return back()->with('success', 'Affectation modifiée avec succès. Le demandeur a été notifié par SMS.');
+        // ── FCM au demandeur (utilisateur avec compte) ───────────────────
+        try {
+            $convoi->loadMissing(['user', 'itineraire']);
+            $userR = $convoi->user;
+            if ($userR && $userR->fcm_token) {
+                app(\App\Services\FcmService::class)->sendNotification(
+                    $userR->fcm_token,
+                    'Affectation mise à jour 🔄',
+                    "Réf. {$convoi->reference} · Nouveau chauffeur/véhicule affecté. Départ le {$rDateDepart}" . ($rHDepart ? " à {$rHDepart}" : '') . '.',
+                    ['type' => 'convoi_reassigne', 'convoi_id' => (string) $convoi->id]
+                );
+            }
+        } catch (\Exception $e) {
+            Log::error('FCM user reassign convoi: ' . $e->getMessage());
+        }
+
+        // ── Email au client si disponible ─────────────────────────────────
+        try {
+            $convoi->loadMissing(['chauffeur', 'vehicule', 'passagers', 'itineraire', 'user']);
+            $emailTo = $convoi->user ? ($convoi->user->email ?? null) : ($convoi->client_email ?? null);
+            if ($emailTo) {
+                Mail::to($emailTo)->send(new \App\Mail\ConvoiChauffeurAssigneMail($convoi));
+            }
+        } catch (\Exception $e) {
+            Log::error('Email chauffeur reassign: ' . $e->getMessage());
+        }
+
+        return back()->with('success', 'Affectation modifiée. Le demandeur a été notifié.');
     }
 
     /** Annuler l'affectation pour reprogrammer */
@@ -858,9 +961,10 @@ class GareConvoiController extends Controller
             try {
                 $smsBase = "Votre convoi CAR225 ref {$convoi->reference} a ete pris en charge !\n"
                          . "Trajet : {$depart} -> {$arrivee}\n"
-                         . "Depart : {$dateDepart}" . ($hDepart ? " a {$hDepart}" : '') . "\n"
+                         . "Depart : {$dateDepart}" . ($hDepart ? " à {$hDepart}" : '') . "\n"
                          . "Lieu de rassemblement : {$lieu}\n"
-                         . "Le chauffeur sera present. Bon voyage !";
+                         . "Le chauffeur sera present. Bon voyage !"
+                         . "veuillez telecharger l'application car225 sur : " . route('home.download-app') . " pour suivre votre convoi en temps reel.";
 
                 $user = $convoi->user;
                 if ($user) {
@@ -883,7 +987,41 @@ class GareConvoiController extends Controller
                 Log::error('saveFull notif demandeur: ' . $e->getMessage());
             }
 
-            $messages[] = 'Affectation enregistrée. Le chauffeur et le demandeur ont été notifiés.';
+            // Email au client walk-in si disponible
+            try {
+                $convoi->loadMissing(['chauffeur', 'vehicule', 'passagers', 'itineraire']);
+                if ($convoi->client_email) {
+                    Mail::to($convoi->client_email)->send(new \App\Mail\ConvoiChauffeurAssigneMail($convoi));
+                }
+            } catch (\Exception $e) {
+                Log::error('Email chauffeur saveFull: ' . $e->getMessage());
+            }
+
+            // SMS à chaque passager walk-in déjà enregistré (hors client principal)
+            try {
+                $convoi->loadMissing(['passagers']);
+                $sfDepart  = $convoi->lieu_depart ?? ($convoi->itineraire->point_depart ?? 'N/A');
+                $sfArrivee = $convoi->lieu_retour ?? ($convoi->itineraire->point_arrive ?? 'N/A');
+                $sfDate    = $convoi->date_depart ? Carbon::parse($convoi->date_depart)->format('d/m/Y') : 'N/A';
+                $sfHeure   = $convoi->heure_depart ? substr($convoi->heure_depart, 0, 5) : '';
+                $sfLieu    = $convoi->lieu_rassemblement ?? 'À définir';
+                $sfSms = "Bonjour,\n"
+                       . "Vous etes passager d'un convoi CAR225 ref {$convoi->reference}.\n"
+                       . "Trajet : {$sfDepart} -> {$sfArrivee}\n"
+                       . "Depart : {$sfDate}" . ($sfHeure ? " a {$sfHeure}" : '') . "\n"
+                       . "Lieu de rassemblement : {$sfLieu}\n"
+                       . "Un chauffeur a ete affecte. Bon voyage !"
+                       . "veuillez telecharger l'application car225 sur : " . route('home.download-app') . " pour suivre votre convoi en temps reel.";
+                foreach ($convoi->passagers as $passager) {
+                    if ($passager->contact && $passager->contact !== $convoi->client_contact) {
+                        app(\App\Services\SmsService::class)->sendSms($passager->contact, $sfSms);
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error('SMS passagers saveFull: ' . $e->getMessage());
+            }
+
+            $messages[] = 'Affectation enregistrée. Le chauffeur, le demandeur et les passagers ont été notifiés.';
         }
 
         // ── 2. Garant / Passagers (walk-in uniquement, passagers non encore soumis) ──
@@ -951,6 +1089,11 @@ class GareConvoiController extends Controller
 
         $convoi->update(['statut' => 'paye']);
         $convoi->compagnie()->increment('solde_convoie', $convoi->montant);
+
+        // Générer un token passagers pour permettre le partage du lien
+        if (!$convoi->passenger_form_token) {
+            $convoi->update(['passenger_form_token' => bin2hex(random_bytes(24))]);
+        }
 
         $convoi->loadMissing(['user', 'itineraire']);
         $user = $convoi->user;

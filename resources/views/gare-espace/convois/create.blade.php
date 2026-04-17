@@ -387,7 +387,7 @@
                            min="10" max="500">
                 </div>
                 <div class="wk-field" style="grid-column: span 2;">
-                    <label class="wk-label">Montant payé (FCFA) <span class="req">*</span></label>
+                    <label class="wk-label">Montant à payé (FCFA) <span class="req">*</span></label>
                     <div class="montant-wrap">
                         <input type="number" name="montant" class="wk-input"
                                value="{{ old('montant', 0) }}"
@@ -401,6 +401,13 @@
                 <input type="text" name="lieu_rassemblement" class="wk-input"
                        value="{{ old('lieu_rassemblement') }}"
                        placeholder="Ex: Devant la gare routière d'Adjamé">
+            </div>
+            <div class="wk-field" id="lieuRetourWrap" style="{{ old('date_retour') ? '' : 'display:none;' }}" >
+                <label class="wk-label">Lieu de rassemblement (retour) <span class="req" id="retourReq">*</span></label>
+                <input type="text" name="lieu_rassemblement_retour" id="lieuRassemblementRetourInput" class="wk-input"
+                       value="{{ old('lieu_rassemblement_retour') }}"
+                       placeholder="Ex: Devant la gare routière de Bouaké">
+                <span style="font-size:11px;color:#94a3b8;font-weight:600;">Obligatoire car vous avez indiqué une date de retour.</span>
             </div>
             <div class="wk-field">
                 <label class="wk-label">Motif / observations <span style="font-size:9px;color:#94a3b8;">(optionnel)</span></label>
@@ -417,8 +424,8 @@
                         <i class="fas fa-info-circle mr-1"></i>Récapitulatif
                     </p>
                     <p style="font-size:12px;font-weight:700;color:#78350f;margin:0;line-height:1.6;">
-                        Le convoi sera créé directement avec le statut <strong>Payé</strong>.<br>
-                        Un SMS de confirmation sera envoyé au contact du client.<br>
+                        Le convoi sera créé et en attente de paiement. Cliquez sur <strong>Faire le paiement</strong> depuis la fiche du convoi pour encaisser.<br>
+                        Un SMS sera envoyé au contact du client.<br>
                         La gare <strong>{{ $gare->nom_gare }}</strong> sera automatiquement affectée.
                     </p>
                 </div>
@@ -438,40 +445,65 @@
 @endsection
 
 @push('scripts')
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCRXwpzz4SVK_wQpOeh4p3-sSOq1c7Qqg4&libraries=places&callback=initPlaces" async defer></script>
 <script>
     function setTrajetMode(mode) {
         document.getElementById('mode_trajet').value = mode;
-
         const btnItineraire = document.getElementById('btn-itineraire');
         const btnLibre      = document.getElementById('btn-libre');
         const blockItin     = document.getElementById('block-itineraire');
         const blockLibre    = document.getElementById('block-libre');
-
         if (mode === 'itineraire') {
-            btnItineraire.classList.add('active');
-            btnLibre.classList.remove('active');
-            blockItin.classList.remove('hidden');
-            blockLibre.classList.add('hidden');
+            btnItineraire.classList.add('active'); btnLibre.classList.remove('active');
+            blockItin.classList.remove('hidden'); blockLibre.classList.add('hidden');
         } else {
-            btnLibre.classList.add('active');
-            btnItineraire.classList.remove('active');
-            blockLibre.classList.remove('hidden');
-            blockItin.classList.add('hidden');
-            // Clear itineraire_id when switching to libre
+            btnLibre.classList.add('active'); btnItineraire.classList.remove('active');
+            blockLibre.classList.remove('hidden'); blockItin.classList.add('hidden');
             document.getElementById('itineraireSelect').value = '';
         }
     }
 
-    // Sync date retour min with date depart
+    // Sync date retour min + toggle lieu retour
     const dateDepart  = document.querySelector('[name="date_depart"]');
     const dateRetour  = document.querySelector('[name="date_retour"]');
+    const lieuRetourWrap = document.getElementById('lieuRetourWrap');
+    const lieuRetourInput = document.getElementById('lieuRassemblementRetourInput');
+
     if (dateDepart && dateRetour) {
         dateDepart.addEventListener('change', function () {
             dateRetour.min = this.value;
-            if (dateRetour.value && dateRetour.value < this.value) {
-                dateRetour.value = this.value;
-            }
+            if (dateRetour.value && dateRetour.value < this.value) dateRetour.value = this.value;
+        });
+        dateRetour.addEventListener('change', function () {
+            if (lieuRetourWrap) lieuRetourWrap.style.display = this.value ? '' : 'none';
+            if (lieuRetourInput) lieuRetourInput.required = !!this.value;
+        });
+        // Init on load
+        if (dateRetour.value && lieuRetourWrap) lieuRetourWrap.style.display = '';
+    }
+
+    function initPlaces() {
+        const options = { componentRestrictions: { country: 'ci' }, fields: ['formatted_address', 'name', 'geometry'] };
+
+        const targets = [
+            { id: 'lieu_rassemblement', input: document.querySelector('[name="lieu_rassemblement"]') },
+            { id: 'lieu_rassemblement_retour', input: document.getElementById('lieuRassemblementRetourInput') },
+            { id: 'lieu_depart', input: document.querySelector('[name="lieu_depart"]') },
+            { id: 'lieu_retour_libre', input: document.querySelector('[name="lieu_retour"]') },
+        ];
+
+        targets.forEach(function(t) {
+            if (!t.input) return;
+            const ac = new google.maps.places.Autocomplete(t.input, options);
+            ac.addListener('place_changed', function() {
+                const place = ac.getPlace();
+                if (place && place.formatted_address) t.input.value = place.formatted_address;
+                else if (place && place.name) t.input.value = place.name;
+            });
         });
     }
+
+    // Fallback if Google Maps fails to load
+    window.initPlaces = window.initPlaces || function() {};
 </script>
 @endpush

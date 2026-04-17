@@ -115,6 +115,22 @@ class ConvoiController extends Controller
             'statut'           => 'en_attente',
         ]);
 
+        // ── Notification push de confirmation au demandeur ────────────────
+        try {
+            $user = Auth::user();
+            if ($user && $user->fcm_token) {
+                $dateDepart = \Carbon\Carbon::parse($convoi->date_depart)->format('d/m/Y');
+                app(\App\Services\FcmService::class)->sendNotification(
+                    $user->fcm_token,
+                    'Demande de convoi envoyée 📋',
+                    "Réf. {$convoi->reference} · {$lieuDepart} → {$lieuRetour} · Départ le {$dateDepart}. La gare examine votre demande.",
+                    ['type' => 'convoi_en_attente', 'convoi_id' => (string) $convoi->id]
+                );
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('FCM store convoi: ' . $e->getMessage());
+        }
+
         return redirect()->route('user.convoi.show', $convoi)
             ->with('success', 'Votre demande de convoi a été envoyée à la gare. Celle-ci vous contactera rapidement pour confirmation.');
     }
@@ -162,7 +178,23 @@ class ConvoiController extends Controller
 
         $convoi->update(['statut' => 'confirme']);
 
-        // Notifier la gare
+        // ── Notification push de confirmation à l'utilisateur ─────────────
+        try {
+            $user = Auth::user();
+            if ($user && $user->fcm_token) {
+                $montantF = number_format($convoi->montant, 0, ',', ' ');
+                app(\App\Services\FcmService::class)->sendNotification(
+                    $user->fcm_token,
+                    'Convoi confirmé ✅',
+                    "Réf. {$convoi->reference} · Montant accepté : {$montantF} FCFA. Rendez-vous à la gare pour régler le paiement.",
+                    ['type' => 'convoi_confirme', 'convoi_id' => (string) $convoi->id]
+                );
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('FCM accepterMontant convoi: ' . $e->getMessage());
+        }
+
+        // Notifier la gare (SMS)
         try {
             $gare = $convoi->gare;
             if ($gare) {
@@ -221,7 +253,7 @@ class ConvoiController extends Controller
     public function storeLieuRassemblement(Request $request, Convoi $convoi)
     {
         abort_if($convoi->user_id !== Auth::id(), 403);
-        abort_if(!in_array($convoi->statut, ['confirme', 'paye']), 403);
+        abort_if($convoi->statut !== 'paye', 403);
 
         $request->validate([
             'lieu_rassemblement' => 'required|string|max:255',
@@ -240,10 +272,19 @@ class ConvoiController extends Controller
     public function storePassengers(Request $request, Convoi $convoi)
     {
         abort_if($convoi->user_id !== Auth::id(), 403);
-        abort_if(!in_array($convoi->statut, ['confirme', 'paye']), 403);
+        abort_if($convoi->statut !== 'paye', 403);
+
+        // Bloquer la modification si le départ est dans moins d'1 heure
+        if ($convoi->date_depart && $convoi->heure_depart) {
+            $departureAt = \Carbon\Carbon::parse($convoi->date_depart . ' ' . $convoi->heure_depart);
+            if ($departureAt->diffInMinutes(now(), false) > -60) {
+                return back()->with('error', 'Impossible de modifier les passagers moins d\'1 heure avant le départ.');
+            }
+        }
 
         $request->validate([
             'lieu_rassemblement'          => 'required|string|max:255',
+            'lieu_rassemblement_retour'   => 'nullable|string|max:255',
             'passagers'                   => 'nullable|array',
             'passagers.*.nom'             => 'nullable|string|max:100',
             'passagers.*.prenoms'         => 'nullable|string|max:150',
@@ -257,10 +298,12 @@ class ConvoiController extends Controller
 
         $isGarant = (bool) $request->input('is_garant', false);
 
-        // Sauvegarder lieu + garant
+        // Sauvegarder lieu + garant + marquer passagers soumis
         $convoi->update([
-            'lieu_rassemblement' => $request->lieu_rassemblement,
-            'is_garant'          => $isGarant,
+            'lieu_rassemblement'        => $request->lieu_rassemblement,
+            'lieu_rassemblement_retour' => $request->lieu_rassemblement_retour,
+            'is_garant'                 => $isGarant,
+            'passagers_soumis'          => true,
         ]);
 
         // Ne sauvegarder que les lignes qui ont au moins un champ renseigné

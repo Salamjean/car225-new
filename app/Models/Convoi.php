@@ -28,6 +28,7 @@ class Convoi extends Model
         'montant',
         'motif_refus',
         'lieu_rassemblement',
+        'lieu_rassemblement_retour',
         'is_garant',
         'motif_annulation_chauffeur',
         // Champs client walk-in (client sans compte utilisateur)

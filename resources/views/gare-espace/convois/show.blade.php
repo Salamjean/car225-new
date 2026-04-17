@@ -536,7 +536,7 @@
             <div class="convoi-ref"><i class="fas fa-hashtag mr-1"></i> {{ $convoi->reference }}</div>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-            @if($convoi->created_by_gare)
+            @if($convoi->created_by_gare && $convoi->statut === 'paye')
             <a href="{{ route('gare-espace.convois.recu-pdf', $convoi) }}" target="_blank"
                style="display:inline-flex;align-items:center;gap:7px;padding:10px 18px;border-radius:12px;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:0.4px;text-decoration:none;box-shadow:0 3px 10px rgba(249,115,22,.3);transition:all .2s;">
                 <i class="fas fa-print"></i> Imprimer le reçu
@@ -670,6 +670,18 @@
     </div>
     @endif
 
+    {{-- Lieu de rassemblement retour --}}
+    @if($convoi->lieu_rassemblement_retour)
+    <div class="alert-box" style="background:#F0FDF4;border:1px solid #bbf7d0;color:#166534;margin-bottom:20px;">
+        <i class="fas fa-map-marker-alt" style="font-size:16px;color:#16a34a;"></i>
+        <div>
+            <strong style="display:block;font-size:13px;margin-bottom:4px;">Lieu de rassemblement (retour)</strong>
+            <span style="font-size:14px;font-weight:800;">{{ $convoi->lieu_rassemblement_retour }}</span>
+            <span style="display:block;font-size:11px;color:#15803d;margin-top:3px;">Le chauffeur devra passer à ce lieu au retour.</span>
+        </div>
+    </div>
+    @endif
+
     {{-- ── Motif refus --}}
     @if($convoi->motif_refus && $convoi->statut === 'refuse')
     <div class="alert-box" style="background:#fef2f2;border:1px solid #fecaca;color:#7f1d1d;margin-bottom:20px;">
@@ -738,6 +750,54 @@
     </div>
     @endif
 
+    {{-- ── Paiement Walk-in (confirme + created_by_gare) ── --}}
+    @if($convoi->statut === 'confirme' && $convoi->created_by_gare)
+    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:14px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:flex-start;gap:12px;">
+        <i class="fas fa-cash-register" style="color:#d97706;font-size:16px;flex-shrink:0;margin-top:2px;"></i>
+        <div>
+            <div style="font-size:13px;font-weight:900;color:#92400e;margin-bottom:3px;">Convoi créé — Paiement client en attente</div>
+            <div style="font-size:12px;font-weight:600;color:#b45309;">
+                Le convoi a été enregistré. Cliquez sur <strong>Faire le paiement</strong> dès que le client règle les <strong>{{ number_format($convoi->montant, 0, ',', ' ') }} FCFA</strong> en caisse. Cela débloquera l'affectation et l'impression du ticket.
+            </div>
+        </div>
+    </div>
+  {{-- Bouton Faire le paiement --}}
+    <div style="background:#ecfdf5;border:1px solid #bbf7d0;border-radius:16px;padding:20px 24px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;">
+        <div>
+            <div style="font-size:13px;font-weight:900;color:#166534;margin-bottom:4px;"><i class="fas fa-cash-register mr-2" style="color:#16a34a;"></i>Encaisser le paiement</div>
+            <div style="font-size:12px;font-weight:600;color:#15803d;">Cliquez sur <strong>Faire le paiement</strong> dès que le client règle en caisse. L'affectation chauffeur/véhicule sera débloquée et le ticket sera imprimable.</div>
+        </div>
+        @php $montantPayerConfirm = number_format($convoi->montant, 0, ',', ' '); @endphp
+        <form action="{{ route('gare-espace.convois.payer-walkin', $convoi) }}" method="POST"
+              onsubmit="return confirm('Confirmer la réception du paiement de {{ $montantPayerConfirm }} FCFA pour ce convoi ?')">
+            @csrf
+            <button type="submit"
+                    style="display:inline-flex;align-items:center;gap:8px;padding:13px 28px;border-radius:12px;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:0.4px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(249,115,22,.3);transition:all .2s;">
+                <i class="fas fa-cash-register"></i> Faire le paiement — {{ number_format($convoi->montant, 0, ',', ' ') }} FCFA
+            </button>
+        </form>
+    </div>
+    {{-- Affectation grisée / verrouillée (walk-in avant paiement) --}}
+    <div class="section-block assign-section" style="opacity:.45;pointer-events:none;user-select:none;margin-bottom:18px;">
+        <div class="section-head">
+            <div class="icon-circle"><i class="fas fa-user-cog"></i></div>
+            <h3>Affecter chauffeur & véhicule</h3>
+            <span style="margin-left:auto;font-size:10px;font-weight:900;background:#e0e7ff;color:#6366f1;padding:4px 10px;border-radius:8px;text-transform:uppercase;letter-spacing:0.4px;">
+                <i class="fas fa-lock mr-1"></i> Disponible après paiement
+            </span>
+        </div>
+        <div class="section-body">
+            <div class="assign-row" style="grid-template-columns:1fr 1fr auto;">
+                <div><label>Chauffeur</label><select disabled style="background:#f1f5f9;color:#94a3b8;cursor:not-allowed;"><option>-- Disponible après paiement --</option></select></div>
+                <div><label>Véhicule</label><select disabled style="background:#f1f5f9;color:#94a3b8;cursor:not-allowed;"><option>-- Disponible après paiement --</option></select></div>
+                <div><label>&nbsp;</label><button type="button" class="btn-assign" disabled style="opacity:.5;cursor:not-allowed;"><i class="fas fa-lock mr-1"></i> Affecter</button></div>
+            </div>
+        </div>
+    </div>
+
+  
+    @endif
+
     {{-- ── Solder (uniquement si confirme, non walk-in) ── --}}
     @if($convoi->statut === 'confirme' && !$convoi->created_by_gare)
 
@@ -752,7 +812,22 @@
             </div>
         </div>
     </div>
-
+  {{-- Bouton Solder --}}
+    <div style="background:#ecfdf5;border:1px solid #bbf7d0;border-radius:16px;padding:20px 24px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;">
+        <div>
+            <div style="font-size:13px;font-weight:900;color:#166534;margin-bottom:4px;"><i class="fas fa-money-bill-wave mr-2" style="color:#16a34a;"></i>Encaissement en gare</div>
+            <div style="font-size:12px;font-weight:600;color:#15803d;">Cliquez sur <strong>Solder</strong> dès que vous avez reçu le paiement du client. L'affectation chauffeur/véhicule sera débloquée.</div>
+        </div>
+        @php $montantSolderConfirm = number_format($convoi->montant, 0, ',', ' '); @endphp
+        <form action="{{ route('gare-espace.convois.solder', $convoi) }}" method="POST"
+              onsubmit="return confirm('Confirmer la réception du paiement de {{ $montantSolderConfirm }} FCFA pour ce convoi ?')">
+            @csrf
+            <button type="submit"
+                    style="display:inline-flex;align-items:center;gap:8px;padding:13px 28px;border-radius:12px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:0.4px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(34,197,94,.3);transition:all .2s;">
+                <i class="fas fa-hand-holding-usd"></i> Solder — {{ number_format($convoi->montant, 0, ',', ' ') }} FCFA
+            </button>
+        </form>
+    </div>
     {{-- Affectation grisée / verrouillée (lecture seule) --}}
     <div class="section-block assign-section" style="opacity:.45;pointer-events:none;user-select:none;margin-bottom:18px;">
         <div class="section-head">
@@ -786,22 +861,7 @@
         </div>
     </div>
 
-    {{-- Bouton Solder --}}
-    <div style="background:#ecfdf5;border:1px solid #bbf7d0;border-radius:16px;padding:20px 24px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;">
-        <div>
-            <div style="font-size:13px;font-weight:900;color:#166534;margin-bottom:4px;"><i class="fas fa-money-bill-wave mr-2" style="color:#16a34a;"></i>Encaissement en gare</div>
-            <div style="font-size:12px;font-weight:600;color:#15803d;">Cliquez sur <strong>Solder</strong> dès que vous avez reçu le paiement du client. L'affectation chauffeur/véhicule sera débloquée.</div>
-        </div>
-        @php $montantSolderConfirm = number_format($convoi->montant, 0, ',', ' '); @endphp
-        <form action="{{ route('gare-espace.convois.solder', $convoi) }}" method="POST"
-              onsubmit="return confirm('Confirmer la réception du paiement de {{ $montantSolderConfirm }} FCFA pour ce convoi ?')">
-            @csrf
-            <button type="submit"
-                    style="display:inline-flex;align-items:center;gap:8px;padding:13px 28px;border-radius:12px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:0.4px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(34,197,94,.3);transition:all .2s;">
-                <i class="fas fa-hand-holding-usd"></i> Solder — {{ number_format($convoi->montant, 0, ',', ' ') }} FCFA
-            </button>
-        </form>
-    </div>
+  
     @endif
 
     {{-- ── Affectation + Passagers (paye) ──── --}}
@@ -993,6 +1053,18 @@
     {{-- ════════════════════════════════════════════════════════════════════
          CAS STANDARD (non walk-in ou passagers déjà soumis) : formulaires séparés
          ════════════════════════════════════════════════════════════════════ --}}
+
+    {{-- Avertissement si passagers pas encore soumis (non walk-in) --}}
+    @if(!$convoi->is_garant && !$convoi->passagers_soumis && !$convoi->personnel_id)
+    <div class="alert-box" style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;margin-bottom:16px;">
+        <i class="fas fa-exclamation-triangle" style="color:#d97706;font-size:16px;flex-shrink:0;"></i>
+        <div>
+            <strong style="display:block;font-size:13px;margin-bottom:3px;">En attente de la liste des passagers</strong>
+            <span style="font-size:12px;font-weight:600;">L'utilisateur n'a pas encore soumis sa liste de passagers ni choisi l'option "garant". L'affectation sera disponible dès qu'il complètera cette étape depuis son espace.</span>
+        </div>
+    </div>
+    @endif
+
     <div class="section-block assign-section">
         <div class="section-head">
             <div class="icon-circle"><i class="fas fa-user-cog"></i></div>

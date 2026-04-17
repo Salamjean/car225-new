@@ -16,6 +16,7 @@ class ConvoiPassager extends Model
         'contact',
         'contact_urgence',
         'email',
+        'device_id',
     ];
 
     public function convoi()

@@ -83,6 +83,7 @@ Route::prefix('/')->group(function () {
     Route::get('/home/mes-reservations', [AccueilController::class, 'mesReservations'])->name('home.reservations');
     Route::get('/home/mes-reservations/download/{reservation}', [AccueilController::class, 'downloadTicket'])->name('home.reservations.download');
     Route::post('/home/contact/store', [AccueilController::class, 'storeContact'])->name('home.contact.store');
+    Route::get('/download-app', [AccueilController::class, 'downloadApp'])->name('home.download-app');
 });
 
 // Route de Connexion Unifiée
@@ -961,6 +962,7 @@ Route::prefix('gare-espace')->name('gare-espace.')->group(function () {
             Route::post('/{convoi}/valider', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'valider'])->name('valider');
             Route::post('/{convoi}/refuser', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'refuser'])->name('refuser');
             Route::post('/{convoi}/solder', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'solder'])->name('solder');
+            Route::post('/{convoi}/payer-walkin', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'payerWalkin'])->name('payer-walkin');
             Route::post('/{convoi}/save-full', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'saveFull'])->name('save-full');
         });
 

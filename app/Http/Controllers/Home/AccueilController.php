@@ -225,4 +225,9 @@ class AccueilController extends Controller
 
         return back()->with('success', 'Votre message a bien été envoyé. Notre équipe vous répondra très prochainement.');
     }
+
+    public function downloadApp()
+    {
+        return view('landing.download');
+    }
 }
