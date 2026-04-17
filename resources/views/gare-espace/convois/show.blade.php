@@ -1118,7 +1118,11 @@
                     </div>
                     <div>
                         <label>&nbsp;</label>
-                        <button type="submit" class="btn-assign">
+                        @php $assignBlocked = !$convoi->is_garant && $passagersCount === 0; @endphp
+                        <button type="submit" class="btn-assign"
+                            {{ $assignBlocked ? 'disabled' : '' }}
+                            @if($assignBlocked) title="Au moins 1 passager doit être enregistré avant d'affecter" @endif
+                            style="{{ $assignBlocked ? 'opacity:.45;cursor:not-allowed;pointer-events:none;filter:grayscale(.4);' : '' }}">
                             <i class="fas fa-{{ $convoi->personnel_id ? 'sync-alt' : 'user-check' }} mr-1"></i>
                             {{ $convoi->personnel_id ? 'Modifier' : 'Affecter' }}
                         </button>
