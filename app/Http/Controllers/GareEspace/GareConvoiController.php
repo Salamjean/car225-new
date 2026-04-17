@@ -490,17 +490,28 @@ class GareConvoiController extends Controller
         $dateDepart = $convoi->date_depart  ? Carbon::parse($convoi->date_depart)->format('d/m/Y') : 'N/A';
         $hDepart    = $convoi->heure_depart ? substr($convoi->heure_depart, 0, 5) : '';
         $lieu       = $convoi->lieu_rassemblement ?? 'À définir';
+        
+        // Infos Retour
+        $dateRetour = $convoi->date_retour ? Carbon::parse($convoi->date_retour)->format('d/m/Y') : null;
+        $hRetour    = $convoi->heure_retour ? substr($convoi->heure_retour, 0, 5) : null;
+        $lieuRet    = $convoi->lieu_rassemblement_retour;
 
         // ── Notifier le chauffeur ──────────────────────────────────────────
         try {
             $chauffeur = Personnel::find($validated['personnel_id']);
             if ($chauffeur) {
                 $chauffeur->notify(new ConvoiAssignedNotification($convoi));
+                
+                $fcmBody = "Ref {$convoi->reference} · {$depart} → {$arrivee} · {$dateDepart}";
+                if ($dateRetour) {
+                    $fcmBody .= " | Retour : {$dateRetour}";
+                }
+
                 if ($chauffeur->fcm_token) {
                     app(\App\Services\FcmService::class)->sendNotification(
                         $chauffeur->fcm_token,
                         'Nouveau Convoi Assigné',
-                        "Ref {$convoi->reference} · {$depart} → {$arrivee} · {$dateDepart}",
+                        $fcmBody,
                         ['type' => 'convoi_assigned', 'convoi_id' => (string) $convoi->id]
                     );
                 }
@@ -514,9 +525,15 @@ class GareConvoiController extends Controller
             $smsBase = "Votre convoi CAR225 ref {$convoi->reference} a ete pris en charge !\n"
                      . "Trajet : {$depart} -> {$arrivee}\n"
                      . "Depart : {$dateDepart}" . ($hDepart ? " à {$hDepart}" : '') . "\n"
-                     . "Lieu de rassemblement : {$lieu}\n"
-                     . "Le chauffeur sera present. Bon voyage !"
-                     . "veuillez telecharger l'application car225 sur : " . route('home.download-app') . " pour suivre votre convoi en temps reel.";
+                     . "Lieu de ressemblement pour l'aller : {$lieu}\n";
+
+            if ($dateRetour) {
+                $smsBase .= "Retour : {$dateRetour}" . ($hRetour ? " à {$hRetour}" : '') . "\n"
+                          . "Lieu de ressemblement pour le retour : " . ($lieuRet ?? 'À definir') . "\n";
+            }
+
+            $smsBase .= "Le chauffeur sera present. Bon voyage !\n"
+                      . "Telechargez l'application : " . route('home.download-app');
 
             $user = $convoi->user;
             if ($user) {
@@ -566,9 +583,15 @@ class GareConvoiController extends Controller
                          . "Vous etes passager d'un convoi CAR225 ref {$convoi->reference}.\n"
                          . "Trajet : {$depart} -> {$arrivee}\n"
                          . "Depart : {$dateDepart}" . ($hDepart ? " à {$hDepart}" : '') . "\n"
-                         . "Lieu de rassemblement : {$lieu}\n"
-                         . "Un chauffeur a ete affecte a votre convoi. Bon voyage !"
-                         . "veuillez telecharger l'application car225 sur : " . route('home.download-app') . " pour suivre votre convoi en temps reel.";
+                         . "Lieu de ressemblement pour l'aller : {$lieu}\n";
+
+            if ($dateRetour) {
+                $smsPassager .= "Retour : {$dateRetour}" . ($hRetour ? " à {$hRetour}" : '') . "\n"
+                             . "Lieu de ressemblement pour le retour : " . ($lieuRet ?? 'À definir') . "\n";
+            }
+
+            $smsPassager .= "Un chauffeur a ete affecte. Bon voyage !\n"
+                          . "Suivez votre convoi : " . route('home.download-app');
             foreach ($convoi->passagers as $passager) {
                 if ($passager->contact && $passager->contact !== $demandeurContact) {
                     app(\App\Services\SmsService::class)->sendSms($passager->contact, $smsPassager);

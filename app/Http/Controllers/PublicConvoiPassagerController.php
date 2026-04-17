@@ -124,22 +124,32 @@ class PublicConvoiPassagerController extends Controller
             ]);
         }
 
-        // Vérifier si toutes les places sont maintenant remplies
-        $newTotal = $convoi->passagers()->count();
-        if ($newTotal >= $convoi->nombre_personnes && !$convoi->passagers_soumis) {
-            $convoi->update(['passagers_soumis' => true]);
-            // Notifier la gare que le convoi est complet
-            try {
-                $gare = $convoi->gare;
-                if ($gare && $gare->contact) {
-                    app(\App\Services\SmsService::class)->sendSms(
-                        $gare->contact,
-                        "CAR225 - Toutes les {$convoi->nombre_personnes} places du convoi {$convoi->reference} ont ete renseignees. Vous pouvez proceder a l'affectation chauffeur/vehicule."
-                    );
-                }
-            } catch (\Exception $e) {
-                Log::error('SMS gare passagers complet: ' . $e->getMessage());
+        // ── Envoi SMS au passager ───────────────────────────────────────────
+        try {
+            $depart     = $convoi->lieu_depart ?? ($convoi->itineraire->point_depart ?? 'N/A');
+            $arrivee    = $convoi->lieu_retour ?? ($convoi->itineraire->point_arrive ?? 'N/A');
+            $dateDepart = $convoi->date_depart ? \Carbon\Carbon::parse($convoi->date_depart)->format('d/m/Y') : 'N/A';
+            $hDepart    = $convoi->heure_depart ? substr($convoi->heure_depart, 0, 5) : '';
+            $lieu       = $convoi->lieu_rassemblement;
+
+            $smsBody = "Bonjour {$request->prenoms}, vous etes enregistre pour le convoi CAR225 ref {$convoi->reference}.\n"
+                     . "Trajet : {$depart} -> {$arrivee}\n"
+                     . "Depart : {$dateDepart}" . ($hDepart ? " à {$hDepart}" : '') . "\n"
+                     . "Lieu de ressemblement pour l'aller : {$lieu}";
+
+            if ($convoi->date_retour) {
+                $dateRetour = \Carbon\Carbon::parse($convoi->date_retour)->format('d/m/Y');
+                $hRetour    = $convoi->heure_retour ? substr($convoi->heure_retour, 0, 5) : '';
+                $lieuRet    = $convoi->lieu_rassemblement_retour;
+                $smsBody .= "\nRetour : {$dateRetour}" . ($hRetour ? " à {$hRetour}" : '') . "\n"
+                          . "Lieu de ressemblement pour le retour : " . ($lieuRet ?? 'À definir');
             }
+
+            $smsBody .= "\nBon voyage ! Telechargez l'app : " . route('home.download-app');
+
+            app(\App\Services\SmsService::class)->sendSms($request->contact, $smsBody);
+        } catch (\Exception $e) {
+            Log::error('SMS public store passager: ' . $e->getMessage());
         }
 
         $response = redirect()->route('public.convoi.passagers.confirmation', $token);

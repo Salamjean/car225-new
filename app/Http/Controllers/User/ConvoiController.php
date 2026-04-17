@@ -324,6 +324,7 @@ class ConvoiController extends Controller
 
         // Ne sauvegarder que les lignes qui ont au moins un champ renseigné
         $convoi->passagers()->delete();
+        $passengersData = [];
         foreach (($request->input('passagers') ?? []) as $p) {
             $nom     = trim($p['nom'] ?? '');
             $prenoms = trim($p['prenoms'] ?? '');
@@ -335,7 +336,41 @@ class ConvoiController extends Controller
                     'contact'         => $contact ?: null,
                     'contact_urgence' => trim($p['contact_urgence'] ?? '') ?: null,
                 ]);
+                if ($contact) {
+                    $passengersData[] = $contact;
+                }
             }
+        }
+
+        // ── Envoi SMS aux passagers ─────────────────────────────────────────
+        try {
+            $depart     = $convoi->lieu_depart ?? ($convoi->itineraire->point_depart ?? 'N/A');
+            $arrivee    = $convoi->lieu_retour ?? ($convoi->itineraire->point_arrive ?? 'N/A');
+            $dateDepart = $convoi->date_depart ? \Carbon\Carbon::parse($convoi->date_depart)->format('d/m/Y') : 'N/A';
+            $hDepart    = $convoi->heure_depart ? substr($convoi->heure_depart, 0, 5) : '';
+            $lieu       = $convoi->lieu_rassemblement;
+
+            $smsBody = "CAR225 : Vous etes passager d'un convoi ref {$convoi->reference}.\n"
+                     . "Trajet : {$depart} -> {$arrivee}\n"
+                     . "Depart : {$dateDepart}" . ($hDepart ? " à {$hDepart}" : '') . "\n"
+                     . "Lieu de ressemblement pour l'aller : {$lieu}";
+
+            if ($convoi->date_retour) {
+                $dateRetour = \Carbon\Carbon::parse($convoi->date_retour)->format('d/m/Y');
+                $hRetour    = $convoi->heure_retour ? substr($convoi->heure_retour, 0, 5) : '';
+                $lieuRet    = $convoi->lieu_rassemblement_retour;
+                $smsBody .= "\nRetour : {$dateRetour}" . ($hRetour ? " à {$hRetour}" : '') . "\n"
+                          . "Lieu de ressemblement pour le retour : " . ($lieuRet ?? 'À definir');
+            }
+
+            $smsBody .= "\nSuivez le convoi : " . route('home.download-app');
+
+            $smsService = app(\App\Services\SmsService::class);
+            foreach (array_unique($passengersData) as $phone) {
+                $smsService->sendSms($phone, $smsBody);
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('SMS storePassengers: ' . $e->getMessage());
         }
 
         return back()->with('success', 'Les informations des passagers ont été enregistrées avec succès.');
