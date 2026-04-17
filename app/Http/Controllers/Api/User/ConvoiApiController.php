@@ -90,6 +90,48 @@ class ConvoiApiController extends Controller
     }
 
     // ──────────────────────────────────────────────────────────────────────────
+    //  RÈGLEMENT (statique)
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /**
+     * GET /api/user/convois-form/reglement
+     * Retourne le texte du règlement des convois CAR225
+     */
+    public function reglement(): JsonResponse
+    {
+        return response()->json([
+            'success'   => true,
+            'reglement' => [
+                [
+                    'numero' => 1,
+                    'titre'  => 'Réservation',
+                    'texte'  => 'Toute demande de convoi est soumise à la validation par la gare. Le montant fixé est définitif.',
+                ],
+                [
+                    'numero' => 2,
+                    'titre'  => 'Paiement',
+                    'texte'  => 'Le paiement doit être effectué en totalité à la gare avant la mise à disposition du véhicule et du chauffeur.',
+                ],
+                [
+                    'numero' => 3,
+                    'titre'  => 'Passagers',
+                    'texte'  => 'La liste des passagers doit être complète avant la date de départ. La compagnie se réserve le droit de refuser tout passager non enregistré.',
+                ],
+                [
+                    'numero' => 4,
+                    'titre'  => 'Annulation',
+                    'texte'  => 'Toute annulation doit être notifiée à la compagnie au moins 48h avant la date de départ.',
+                ],
+                [
+                    'numero' => 5,
+                    'titre'  => 'Responsabilité',
+                    'texte'  => 'CAR225 et la compagnie ne sauraient être tenus responsables de tout incident imputable au non-respect de ce règlement par le demandeur.',
+                ],
+            ],
+        ]);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
     //  DONNÉES DE FORMULAIRE (publiques)
     // ──────────────────────────────────────────────────────────────────────────
 

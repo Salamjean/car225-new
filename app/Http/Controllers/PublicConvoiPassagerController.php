@@ -91,15 +91,20 @@ class PublicConvoiPassagerController extends Controller
         // Vérifier si ce device a déjà un slot
         $existingPassager = $convoi->passagers()->where('device_id', $deviceId)->first();
 
-        // Vérifier doublon de contact (un autre passager a déjà ce numéro)
-        $contactPris = $convoi->passagers()
+        // Vérifier doublon (même nom + même prénoms + même contact)
+        // On autorise par exemple le même numéro pour un père et son fils (noms/prénoms différents)
+        $isDoublon = $convoi->passagers()
+            ->where('nom', $request->nom)
+            ->where('prenoms', $request->prenoms)
             ->where('contact', $request->contact)
             ->when($existingPassager, fn($q) => $q->where('id', '!=', $existingPassager->id))
             ->exists();
-        if ($contactPris) {
-            return back()->withErrors(['contact' => 'Ce numéro de contact est déjà utilisé par un autre passager de ce convoi.'])->withInput();
+
+        if ($isDoublon) {
+            return back()->withErrors(['nom' => 'Ce passager est déjà enregistré pour ce convoi.'])->withInput();
         }
 
+        $isNewRegistration = false;
         if ($existingPassager) {
             // Mise à jour du slot existant
             $existingPassager->update([
@@ -122,34 +127,37 @@ class PublicConvoiPassagerController extends Controller
                 'contact_urgence' => $request->contact_urgence,
                 'device_id'       => $deviceId,
             ]);
+            $isNewRegistration = true;
         }
 
-        // ── Envoi SMS au passager ───────────────────────────────────────────
-        try {
-            $depart     = $convoi->lieu_depart ?? ($convoi->itineraire->point_depart ?? 'N/A');
-            $arrivee    = $convoi->lieu_retour ?? ($convoi->itineraire->point_arrive ?? 'N/A');
-            $dateDepart = $convoi->date_depart ? \Carbon\Carbon::parse($convoi->date_depart)->format('d/m/Y') : 'N/A';
-            $hDepart    = $convoi->heure_depart ? substr($convoi->heure_depart, 0, 5) : '';
-            $lieu       = $convoi->lieu_rassemblement;
+        // ── Envoi SMS au passager (UNIQUEMENT pour une nouvelle inscription) 
+        if ($isNewRegistration) {
+            try {
+                $depart     = $convoi->lieu_depart ?? ($convoi->itineraire->point_depart ?? 'N/A');
+                $arrivee    = $convoi->lieu_retour ?? ($convoi->itineraire->point_arrive ?? 'N/A');
+                $dateDepart = $convoi->date_depart ? \Carbon\Carbon::parse($convoi->date_depart)->format('d/m/Y') : 'N/A';
+                $hDepart    = $convoi->heure_depart ? substr($convoi->heure_depart, 0, 5) : '';
+                $lieu       = $convoi->lieu_rassemblement;
 
-            $smsBody = "Bonjour {$request->prenoms}, vous etes enregistre pour le convoi CAR225 ref {$convoi->reference}.\n"
-                     . "Trajet : {$depart} -> {$arrivee}\n"
-                     . "Depart : {$dateDepart}" . ($hDepart ? " à {$hDepart}" : '') . "\n"
-                     . "Lieu de ressemblement pour l'aller : {$lieu}";
+                $smsBody = "Bonjour {$request->prenoms}, vous etes enregistre pour le convoi CAR225 ref {$convoi->reference}.\n"
+                         . "Trajet : {$depart} -> {$arrivee}\n"
+                         . "Depart : {$dateDepart}" . ($hDepart ? " à {$hDepart}" : '') . "\n"
+                         . "Lieu : {$lieu}";
 
-            if ($convoi->date_retour) {
-                $dateRetour = \Carbon\Carbon::parse($convoi->date_retour)->format('d/m/Y');
-                $hRetour    = $convoi->heure_retour ? substr($convoi->heure_retour, 0, 5) : '';
-                $lieuRet    = $convoi->lieu_rassemblement_retour;
-                $smsBody .= "\nRetour : {$dateRetour}" . ($hRetour ? " à {$hRetour}" : '') . "\n"
-                          . "Lieu de ressemblement pour le retour : " . ($lieuRet ?? 'À definir');
-            }
+                if ($convoi->date_retour) {
+                    $dateRetour = \Carbon\Carbon::parse($convoi->date_retour)->format('d/m/Y');
+                    $hRetour    = $convoi->heure_retour ? substr($convoi->heure_retour, 0, 5) : '';
+                    $lieuRet    = $convoi->lieu_rassemblement_retour;
+                    $smsBody .= "\nRetour : {$dateRetour}" . ($hRetour ? " à {$hRetour}" : '') . "\n"
+                              . "Lieu retour : " . ($lieuRet ?? 'À definir');
+                }
 
-            $smsBody .= "\nBon voyage ! Telechargez l'app : " . route('home.download-app');
+                $smsBody .= "\nBon voyage ! Telechargez l'app : " . route('home.download-app');
 
             app(\App\Services\SmsService::class)->sendSms($request->contact, $smsBody);
-        } catch (\Exception $e) {
-            Log::error('SMS public store passager: ' . $e->getMessage());
+            } catch (\Exception $e) {
+                Log::error('SMS public store passager: ' . $e->getMessage());
+            }
         }
 
         $response = redirect()->route('public.convoi.passagers.confirmation', $token);

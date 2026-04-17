@@ -124,6 +124,28 @@ Route::prefix('user')->group(function () {
         Route::post('/notifications/{id}/mark-as-read', [\App\Http\Controllers\Api\User\NotificationApiController::class, 'markAsRead']);
         Route::post('/notifications/mark-all-as-read', [\App\Http\Controllers\Api\User\NotificationApiController::class, 'markAllAsRead']);
         Route::delete('/notifications/{id}', [\App\Http\Controllers\Api\User\NotificationApiController::class, 'destroy']);
+
+        // ── Convois ──────────────────────────────────────────────────────────
+        Route::prefix('convois')->name('api.user.convois.')->group(function () {
+            // CRUD
+            Route::get('/',    [\App\Http\Controllers\Api\User\ConvoiApiController::class, 'index']);
+            Route::post('/',   [\App\Http\Controllers\Api\User\ConvoiApiController::class, 'store']);
+            Route::get('/{id}',[\App\Http\Controllers\Api\User\ConvoiApiController::class, 'show']);
+
+            // Actions sur le montant (statut valide)
+            Route::post('/{id}/accepter-montant', [\App\Http\Controllers\Api\User\ConvoiApiController::class, 'accepterMontant']);
+            Route::post('/{id}/refuser-montant',  [\App\Http\Controllers\Api\User\ConvoiApiController::class, 'refuserMontant']);
+
+            // Passagers + lieu de rassemblement (statut paye)
+            Route::post('/{id}/passagers',                    [\App\Http\Controllers\Api\User\ConvoiApiController::class, 'storePassagers']);
+            Route::delete('/{id}/passagers/{passagerId}',     [\App\Http\Controllers\Api\User\ConvoiApiController::class, 'deletePassager']);
+        });
+
+        // Données formulaire convois (compagnies / gares / itinéraires / règlement)
+        Route::get('/convois-form/compagnies',                   [\App\Http\Controllers\Api\User\ConvoiApiController::class, 'compagnies']);
+        Route::get('/convois-form/compagnies/{id}/gares',        [\App\Http\Controllers\Api\User\ConvoiApiController::class, 'garesByCompagnie']);
+        Route::get('/convois-form/compagnies/{id}/itineraires',  [\App\Http\Controllers\Api\User\ConvoiApiController::class, 'itinerairesByCompagnie']);
+        Route::get('/convois-form/reglement',                    [\App\Http\Controllers\Api\User\ConvoiApiController::class, 'reglement']);
     });
 
     // Routes Publiques (Recherche & Programmes)
