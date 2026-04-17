@@ -445,18 +445,27 @@
                         @php $p = $passagersExistants[$i] ?? null; @endphp
                         <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100 passenger-row" data-index="{{ $i }}"
                              style="{{ $convoi->is_garant && $i > 0 ? 'display:none;' : '' }}">
-                            <div class="mb-3">
+                            <div class="mb-3 flex items-center justify-between">
                                 <span class="text-xs font-black text-gray-500 uppercase tracking-wider passenger-row-label" data-index="{{ $i }}">
                                     {{ $convoi->is_garant && $i === 0 ? 'Vos informations (Garant)' : 'Passager ' . ($i + 1) }}
                                     @if(!$convoi->is_garant)
                                     <span class="text-[10px] font-semibold text-gray-400 normal-case tracking-normal ml-1">/ {{ $convoi->nombre_personnes }}</span>
                                     @endif
                                 </span>
+                                @if(!$convoi->is_garant || $i > 0)
+                                <button type="button"
+                                    onclick="clearPassengerRow({{ $i }})"
+                                    class="passenger-clear-btn flex items-center gap-1 px-2 py-1 rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 transition-all text-xs font-black"
+                                    title="Retirer ce passager"
+                                    style="{{ $p ? '' : 'display:none;' }}">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                                @endif
                             </div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                                <div><input type="text" name="passagers[{{ $i }}][nom]" value="{{ old("passagers.$i.nom", $p->nom ?? '') }}" placeholder="Nom" class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-[#e94f1b] outline-none"></div>
-                                <div><input type="text" name="passagers[{{ $i }}][prenoms]" value="{{ old("passagers.$i.prenoms", $p->prenoms ?? '') }}" placeholder="Prénoms" class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-[#e94f1b] outline-none"></div>
-                                <div><input type="tel" name="passagers[{{ $i }}][contact]" value="{{ old("passagers.$i.contact", $p->contact ?? '') }}" placeholder="Contact (10 chiffres)" maxlength="10" pattern="[0-9]{10}" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'')" class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-[#e94f1b] outline-none"></div>
+                                <div><input type="text" name="passagers[{{ $i }}][nom]" value="{{ old("passagers.$i.nom", $p->nom ?? '') }}" placeholder="Nom" class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-[#e94f1b] outline-none" oninput="updateClearBtn({{ $i }})"></div>
+                                <div><input type="text" name="passagers[{{ $i }}][prenoms]" value="{{ old("passagers.$i.prenoms", $p->prenoms ?? '') }}" placeholder="Prénoms" class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-[#e94f1b] outline-none" oninput="updateClearBtn({{ $i }})"></div>
+                                <div><input type="tel" name="passagers[{{ $i }}][contact]" value="{{ old("passagers.$i.contact", $p->contact ?? '') }}" placeholder="Contact (10 chiffres)" maxlength="10" pattern="[0-9]{10}" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'');updateClearBtn({{ $i }})" class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-[#e94f1b] outline-none"></div>
                                 <div><input type="tel" name="passagers[{{ $i }}][contact_urgence]" value="{{ old("passagers.$i.contact_urgence", $p->contact_urgence ?? '') }}" placeholder="Contact d'urgence" maxlength="10" pattern="[0-9]{10}" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'')" class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-[#e94f1b] outline-none"></div>
                             </div>
                         </div>
@@ -608,6 +617,27 @@
             this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
         });
     });
+
+    // ── Réinitialiser les champs d'un passager ───────────────────────────
+    function clearPassengerRow(idx) {
+        const row = document.querySelector('.passenger-row[data-index="' + idx + '"]');
+        if (!row) return;
+        row.querySelectorAll('input[type="text"], input[type="tel"]').forEach(function(inp) {
+            inp.value = '';
+        });
+        updateClearBtn(idx);
+    }
+
+    // Afficher / masquer le X selon si la ligne a du contenu
+    function updateClearBtn(idx) {
+        const row = document.querySelector('.passenger-row[data-index="' + idx + '"]');
+        if (!row) return;
+        const btn = row.querySelector('.passenger-clear-btn');
+        if (!btn) return;
+        const hasContent = Array.from(row.querySelectorAll('input[type="text"], input[type="tel"]'))
+            .some(function(inp) { return inp.value.trim() !== ''; });
+        btn.style.display = hasContent ? '' : 'none';
+    }
 
     // ── Toggle garant ────────────────────────────────────────────────────
     const toggleGarant   = document.getElementById('toggleGarant');

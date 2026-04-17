@@ -1257,6 +1257,9 @@
                         <th>Prénoms</th>
                         <th>Contact</th>
                         <th>Contact urgence</th>
+                        @if(!in_array($convoi->statut, ['en_cours', 'termine', 'annule']))
+                        <th style="width:56px;"></th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody>
@@ -1267,10 +1270,28 @@
                             <td>{{ $p->prenoms ?: '—' }}</td>
                             <td>{{ $p->contact ?: '—' }}</td>
                             <td>{{ $p->contact_urgence ?: '—' }}</td>
+                            @if(!in_array($convoi->statut, ['en_cours', 'termine', 'annule']))
+                            <td style="text-align:center;padding:8px 10px;">
+                                <form action="{{ route('gare-espace.convois.delete-passager', [$convoi, $p]) }}"
+                                      method="POST"
+                                      onsubmit="return confirm('Supprimer {{ addslashes($p->nom . ' ' . $p->prenoms) }} ?\nCette place sera libérée.')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit"
+                                        style="background:none;border:none;cursor:pointer;padding:5px 7px;border-radius:8px;color:#ef4444;transition:background .15s;"
+                                        title="Supprimer ce passager"
+                                        onmouseover="this.style.background='#fee2e2'"
+                                        onmouseout="this.style.background='none'">
+                                        <i class="fas fa-trash-alt" style="font-size:13px;"></i>
+                                    </button>
+                                </form>
+                            </td>
+                            @endif
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" style="text-align:center;padding:36px 20px;color:#94a3b8;font-weight:600;">
+                            <td colspan="{{ in_array($convoi->statut, ['en_cours', 'termine', 'annule']) ? 5 : 6 }}"
+                                style="text-align:center;padding:36px 20px;color:#94a3b8;font-weight:600;">
                                 <i class="fas fa-user-slash mr-2"></i> Aucun passager enregistré.
                             </td>
                         </tr>

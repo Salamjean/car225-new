@@ -301,6 +301,20 @@ class ConvoiController extends Controller
 
         $isGarant = (bool) $request->input('is_garant', false);
 
+        // Vérifier les doublons de contact dans la liste soumise
+        if (!$isGarant) {
+            $contacts = collect($request->input('passagers', []))
+                ->pluck('contact')
+                ->filter(fn($c) => !empty(trim($c ?? '')))
+                ->map(fn($c) => trim($c));
+
+            if ($contacts->count() !== $contacts->unique()->count()) {
+                return back()
+                    ->withInput()
+                    ->with('error', 'Deux passagers ne peuvent pas avoir le même numéro de contact. Veuillez corriger les doublons.');
+            }
+        }
+
         // Sauvegarder lieu + garant + marquer passagers soumis
         $convoi->update([
             'lieu_rassemblement'        => $request->lieu_rassemblement,

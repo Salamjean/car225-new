@@ -1084,6 +1084,35 @@ class GareConvoiController extends Controller
         return back()->with('success', $finalMsg);
     }
 
+    /** Supprimer un passager d'un convoi (libère une place) */
+    public function deletePassager(Request $request, Convoi $convoi, \App\Models\ConvoiPassager $passager)
+    {
+        $gare = Auth::guard('gare')->user();
+
+        if ($convoi->gare_id !== $gare->id) {
+            abort(403);
+        }
+
+        if ($passager->convoi_id !== $convoi->id) {
+            abort(404);
+        }
+
+        // Bloquer si le convoi est déjà en cours ou terminé
+        if (in_array($convoi->statut, ['en_cours', 'termine', 'annule'])) {
+            return back()->with('error', 'Impossible de supprimer un passager : le convoi est déjà ' . $convoi->statut . '.');
+        }
+
+        $passager->delete();
+
+        // Si on passe sous le seuil, remettre passagers_soumis à false pour inciter à compléter
+        $remaining = $convoi->passagers()->count();
+        if ($remaining < $convoi->nombre_personnes && $convoi->passagers_soumis) {
+            $convoi->update(['passagers_soumis' => false]);
+        }
+
+        return back()->with('success', 'Passager supprimé. La place est maintenant disponible.');
+    }
+
     /** La gare encaisse le paiement physique → statut paye */
     public function solder(Request $request, Convoi $convoi)
     {

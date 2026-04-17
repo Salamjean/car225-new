@@ -91,6 +91,15 @@ class PublicConvoiPassagerController extends Controller
         // Vérifier si ce device a déjà un slot
         $existingPassager = $convoi->passagers()->where('device_id', $deviceId)->first();
 
+        // Vérifier doublon de contact (un autre passager a déjà ce numéro)
+        $contactPris = $convoi->passagers()
+            ->where('contact', $request->contact)
+            ->when($existingPassager, fn($q) => $q->where('id', '!=', $existingPassager->id))
+            ->exists();
+        if ($contactPris) {
+            return back()->withErrors(['contact' => 'Ce numéro de contact est déjà utilisé par un autre passager de ce convoi.'])->withInput();
+        }
+
         if ($existingPassager) {
             // Mise à jour du slot existant
             $existingPassager->update([

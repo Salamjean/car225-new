@@ -964,6 +964,7 @@ Route::prefix('gare-espace')->name('gare-espace.')->group(function () {
             Route::post('/{convoi}/solder', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'solder'])->name('solder');
             Route::post('/{convoi}/payer-walkin', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'payerWalkin'])->name('payer-walkin');
             Route::post('/{convoi}/save-full', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'saveFull'])->name('save-full');
+            Route::delete('/{convoi}/passagers/{passager}', [App\Http\Controllers\GareEspace\GareConvoiController::class, 'deletePassager'])->name('delete-passager');
         });
 
         // Personnel (CRUD)
