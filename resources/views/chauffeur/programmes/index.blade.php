@@ -311,10 +311,12 @@
                                     <p class="text-xs font-bold text-indigo-600 uppercase">Convoi • Référence</p>
                                     <p class="font-extrabold text-gray-900 text-sm sm:text-base">{{ $convoi->reference ?? '-' }}</p>
                                 </div>
-                                @if($convoi->statut === 'paye')
+                                @if($convoi->statut === 'en_cours')
+                                    <span class="px-3 py-1.5 bg-purple-100 text-purple-700 rounded-xl font-semibold text-xs sm:text-sm animate-pulse">En cours</span>
+                                @elseif($convoi->statut === 'paye' && $convoi->aller_done)
+                                    <span class="px-3 py-1.5 bg-purple-50 text-purple-600 rounded-xl font-semibold text-xs sm:text-sm border border-purple-200">↩ Retour en attente</span>
+                                @elseif($convoi->statut === 'paye')
                                     <span class="px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-xl font-semibold text-xs sm:text-sm">Assigné</span>
-                                @elseif($convoi->statut === 'en_cours')
-                                    <span class="px-3 py-1.5 bg-purple-100 text-purple-700 rounded-xl font-semibold text-xs sm:text-sm">En cours</span>
                                 @elseif($convoi->statut === 'termine')
                                     <span class="px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-xl font-semibold text-xs sm:text-sm">Terminé</span>
                                 @else
@@ -360,43 +362,67 @@
 
                             @if(in_array($convoi->statut, ['paye', 'en_cours']))
                                 @php
-                                    $canStart = $convoi->statut === 'paye'
-                                        && $convoi->date_depart
-                                        && !\Carbon\Carbon::parse($convoi->date_depart)->isFuture()
-                                        || ($convoi->statut === 'paye' && \Carbon\Carbon::parse($convoi->date_depart)->isToday());
-                                    $notYet = $convoi->statut === 'paye'
-                                        && $convoi->date_depart
-                                        && \Carbon\Carbon::parse($convoi->date_depart)->isFuture()
-                                        && !\Carbon\Carbon::parse($convoi->date_depart)->isToday();
+                                    $isRetour  = (bool) $convoi->aller_done;
+                                    $startDate = $isRetour ? $convoi->date_retour : $convoi->date_depart;
+                                    $notYet    = $convoi->statut === 'paye'
+                                        && $startDate
+                                        && \Carbon\Carbon::parse($startDate)->isFuture()
+                                        && !\Carbon\Carbon::parse($startDate)->isToday();
                                 @endphp
-                                <div class="mt-4 flex flex-col md:flex-row gap-3">
+
+                                {{-- Bandeau "Retour" si aller terminé --}}
+                                @if($isRetour && $convoi->statut === 'paye')
+                                <div class="mt-3 mb-1 flex items-center gap-2 px-3 py-2 bg-purple-50 border border-purple-200 rounded-xl">
+                                    <i class="fas fa-undo-alt text-purple-500 text-sm flex-shrink-0"></i>
+                                    <div>
+                                        <p class="text-purple-700 font-bold text-xs">Trajet aller terminé — En attente du retour</p>
+                                        @if($convoi->date_retour)
+                                            <p class="text-purple-500 text-xs mt-0.5">Retour prévu le {{ \Carbon\Carbon::parse($convoi->date_retour)->format('d/m/Y') }}@if($convoi->heure_retour) à {{ substr($convoi->heure_retour, 0, 5) }}@endif</p>
+                                        @endif
+                                    </div>
+                                </div>
+                                @endif
+
+                                <div class="mt-3 flex flex-col md:flex-row gap-3">
                                     @if($convoi->statut === 'paye')
                                         @if($notYet)
-                                            {{-- Départ dans le futur : bouton disabled avec info --}}
+                                            {{-- Départ/retour dans le futur : info --}}
                                             <div class="flex-1 bg-blue-50 border border-blue-200 p-3 rounded-xl text-center">
                                                 <p class="text-blue-700 font-bold text-sm">
                                                     <i class="fas fa-clock mr-1"></i>
-                                                    Départ prévu le {{ \Carbon\Carbon::parse($convoi->date_depart)->format('d/m/Y') }}
+                                                    {{ $isRetour ? 'Retour prévu' : 'Départ prévu' }} le {{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') }}
                                                 </p>
-                                                <p class="text-blue-500 text-xs mt-1">Vous pourrez démarrer ce convoi à partir de cette date.</p>
+                                                <p class="text-blue-500 text-xs mt-1">Vous pourrez démarrer {{ $isRetour ? 'le retour' : 'ce convoi' }} à partir de cette date.</p>
                                             </div>
                                         @else
                                             <form action="{{ route('chauffeur.voyages.convois.start', $convoi->id) }}" method="POST" class="flex-1">
                                                 @csrf
                                                 <button type="submit" class="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:from-green-700 hover:to-emerald-700 transition-all">
                                                     <i class="fas fa-play-circle"></i>
-                                                    Démarrer le convoi
+                                                    {{ $isRetour ? 'Démarrer le retour' : 'Démarrer le convoi' }}
                                                 </button>
                                             </form>
                                         @endif
                                     @endif
 
                                     @if($convoi->statut === 'en_cours')
-                                        <form action="{{ route('chauffeur.voyages.convois.complete', $convoi->id) }}" method="POST" class="flex-1" onsubmit="return confirm('Confirmez-vous la fin du convoi ?')">
+                                        {{-- Bouton Suivi GPS temps réel --}}
+                                        <a href="{{ route('chauffeur.voyages.convois.tracking', $convoi->id) }}"
+                                            class="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-white transition-all shadow-md"
+                                            style="background: linear-gradient(135deg, #1d4ed8, #3b82f6); box-shadow: 0 4px 14px rgba(59,130,246,0.3);">
+                                            <span class="relative flex h-2.5 w-2.5">
+                                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                                                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
+                                            </span>
+                                            <i class="fas fa-satellite-dish"></i>
+                                            Suivi GPS temps réel
+                                        </a>
+                                        <form action="{{ route('chauffeur.voyages.convois.complete', $convoi->id) }}" method="POST" class="flex-1"
+                                              onsubmit="return confirm('{{ $convoi->date_retour && !$convoi->aller_done ? 'Confirmez-vous la fin du trajet ALLER ? Le retour sera disponible à la date prévue.' : 'Confirmez-vous la fin du convoi ?' }}')">
                                             @csrf
                                             <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:from-purple-700 hover:to-pink-700 transition-all">
                                                 <i class="fas fa-flag-checkered"></i>
-                                                Terminer le convoi
+                                                {{ $convoi->date_retour && !$convoi->aller_done ? 'Terminer l\'aller' : 'Terminer le convoi' }}
                                             </button>
                                         </form>
                                     @endif
@@ -405,7 +431,7 @@
                                         onclick="openConvoiCancelModal('{{ $convoi->id }}')"
                                         class="flex-1 bg-white border-2 border-red-200 text-red-500 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-red-50 hover:border-red-400 transition-all">
                                         <i class="fas fa-times-circle"></i>
-                                        Se désister du convoi
+                                        Se désister
                                     </button>
                                 </div>
                             @endif

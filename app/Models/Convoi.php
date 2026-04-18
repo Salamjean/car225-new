@@ -39,6 +39,14 @@ class Convoi extends Model
         'created_by_gare',
         'passenger_form_token',
         'passagers_soumis',
+        'aller_done',
+    ];
+
+    protected $casts = [
+        'aller_done'       => 'boolean',
+        'is_garant'        => 'boolean',
+        'created_by_gare'  => 'boolean',
+        'passagers_soumis' => 'boolean',
     ];
 
     /** Nom affiché du demandeur (user ou client walk-in) */

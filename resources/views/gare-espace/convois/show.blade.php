@@ -561,16 +561,23 @@
         $trajetArrivee = $convoi->lieu_retour   ?? ($convoi->itineraire->point_arrive ?? '-');
 
         $sm = [
-            'en_attente' => ['En attente', '#ea580c', '#fff7ed'],
-            'valide'     => ['Validé',     '#059669', '#ecfdf5'],
-            'confirme'   => ['Confirmé',   '#4f46e5', '#eef2ff'],
-            'paye'       => ['Payé',       '#7c3aed', '#f5f3ff'],
-            'en_cours'   => ['En cours',   '#0284c7', '#e0f2fe'],
-            'termine'    => ['Terminé',    '#059669', '#ecfdf5'],
-            'annule'     => ['Annulé',     '#dc2626', '#fef2f2'],
-            'refuse'     => ['Refusé',     '#dc2626', '#fef2f2'],
+            'en_attente' => ['En attente',            '#ea580c', '#fff7ed'],
+            'valide'     => ['Validé',                '#059669', '#ecfdf5'],
+            'confirme'   => ['Confirmé',              '#4f46e5', '#eef2ff'],
+            'paye'       => ['Payé',                  '#7c3aed', '#f5f3ff'],
+            'en_cours'   => ['En cours',              '#0284c7', '#e0f2fe'],
+            'termine'    => ['Terminé',               '#059669', '#ecfdf5'],
+            'annule'     => ['Annulé',                '#dc2626', '#fef2f2'],
+            'refuse'     => ['Refusé',                '#dc2626', '#fef2f2'],
         ];
         [$sLabel, $sColor, $sBg] = $sm[$convoi->statut] ?? [ucfirst(str_replace('_',' ',$convoi->statut)), '#475569', '#f1f5f9'];
+
+        // Surcharge du label si l'aller est terminé et retour en attente
+        if ($convoi->statut === 'paye' && $convoi->aller_done) {
+            $sLabel = 'Aller terminé — Retour en attente';
+            $sColor = '#7c3aed';
+            $sBg    = '#f5f3ff';
+        }
     @endphp
 
     {{-- ── Route card (full width) ───────────── --}}
@@ -645,6 +652,25 @@
         </div>
         @endif
     </div>
+
+    {{-- Bannière : aller terminé, retour en attente --}}
+    @if($convoi->aller_done && $convoi->statut === 'paye')
+    <div class="alert-box" style="background:#f5f3ff;border:1.5px solid #c4b5fd;color:#3b0764;margin-bottom:20px;">
+        <i class="fas fa-undo-alt" style="color:#7c3aed;font-size:18px;flex-shrink:0;"></i>
+        <div>
+            <strong style="display:block;font-size:13px;margin-bottom:4px;">
+                Trajet aller terminé — Retour en attente
+            </strong>
+            <span style="font-size:12px;font-weight:600;">
+                Le chauffeur a complété le trajet aller.
+                @if($convoi->date_retour)
+                    Le retour est prévu le <strong>{{ \Carbon\Carbon::parse($convoi->date_retour)->format('d/m/Y') }}</strong>@if($convoi->heure_retour) à <strong>{{ substr($convoi->heure_retour, 0, 5) }}</strong>@endif.
+                    Le chauffeur et le véhicule restent assignés pour le retour.
+                @endif
+            </span>
+        </div>
+    </div>
+    @endif
 
     {{-- Alerte désistement chauffeur --}}
     @if($convoi->motif_annulation_chauffeur && $convoi->statut === 'paye' && !$convoi->personnel_id)

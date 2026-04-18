@@ -1,0 +1,700 @@
+{
+  "info": {
+    "name": "CAR225 — API Convois",
+    "description": "Collection Postman complète pour tester les endpoints convois de l'API mobile CAR225.\n\n**Setup :**\n1. Créez un environnement Postman avec les variables listées ci-dessous\n2. Exécutez d'abord la requête **Login** — le token sera automatiquement sauvegardé\n3. Toutes les requêtes protégées utilisent `{{token}}` en Bearer Auth",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url",   "value": "http://127.0.0.1:8000/api",  "type": "string" },
+    { "key": "token",      "value": "",                            "type": "string" },
+    { "key": "convoi_id",  "value": "",                            "type": "string" },
+    { "key": "passager_id","value": "",                            "type": "string" }
+  ],
+  "item": [
+
+    {
+      "name": "🔐 Authentification",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.token) {",
+                  "    pm.collectionVariables.set('token', res.token);",
+                  "    console.log('Token sauvegardé :', res.token);",
+                  "}",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Token présent', () => pm.expect(res.token).to.be.a('string'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Accept",        "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"redfieldluise@gmail.com\",\n  \"password\": \"password\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/user/login", "host": ["{{base_url}}"], "path": ["user","login"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "📋 Formulaire — Données de création",
+      "item": [
+        {
+          "name": "Liste des compagnies",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('Array compagnies', () => pm.expect(res.compagnies).to.be.an('array'));",
+                  "if (res.compagnies.length > 0) {",
+                  "    console.log('Première compagnie :', res.compagnies[0]);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept",         "value": "application/json" },
+              { "key": "Authorization",  "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/user/convois-form/compagnies", "host": ["{{base_url}}"], "path": ["user","convois-form","compagnies"] }
+          }
+        },
+        {
+          "name": "Gares d'une compagnie",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept",         "value": "application/json" },
+              { "key": "Authorization",  "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/convois-form/compagnies/1/gares",
+              "host": ["{{base_url}}"],
+              "path": ["user","convois-form","compagnies","1","gares"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('Array gares', () => pm.expect(res.gares).to.be.an('array'));",
+                  "if (res.gares.length > 0) console.log('Gares dispo :', res.gares.map(g => g.nom_gare));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Itinéraires d'une compagnie",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept",         "value": "application/json" },
+              { "key": "Authorization",  "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/convois-form/compagnies/1/itineraires",
+              "host": ["{{base_url}}"],
+              "path": ["user","convois-form","compagnies","1","itineraires"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('Array itineraires', () => pm.expect(res.itineraires).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Règlement des convois",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('5 articles', () => pm.expect(res.reglement).to.have.lengthOf(5));",
+                  "pm.test('Structure article', () => {",
+                  "    const art = res.reglement[0];",
+                  "    pm.expect(art).to.have.all.keys('numero','titre','texte');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept",         "value": "application/json" },
+              { "key": "Authorization",  "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/user/convois-form/reglement", "host": ["{{base_url}}"], "path": ["user","convois-form","reglement"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "🚌 Convois CRUD",
+      "item": [
+        {
+          "name": "Mes convois (liste)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('Pagination présente', () => pm.expect(res.pagination).to.be.an('object'));",
+                  "pm.test('Data est un array', () => pm.expect(res.data).to.be.an('array'));",
+                  "if (res.data.length > 0) {",
+                  "    pm.collectionVariables.set('convoi_id', res.data[0].id);",
+                  "    console.log('Premier convoi ID sauvegardé :', res.data[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept",         "value": "application/json" },
+              { "key": "Authorization",  "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/convois?per_page=10",
+              "host": ["{{base_url}}"],
+              "path": ["user","convois"],
+              "query": [
+                { "key": "per_page", "value": "10" },
+                { "key": "statut",   "value": "",    "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mes convois — filtre statut (paye)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept",         "value": "application/json" },
+              { "key": "Authorization",  "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/convois?statut=paye",
+              "host": ["{{base_url}}"],
+              "path": ["user","convois"],
+              "query": [{ "key": "statut", "value": "paye" }]
+            }
+          }
+        },
+        {
+          "name": "Créer un convoi (avec itinéraire)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const res = pm.response.json();",
+                  "pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('Référence générée', () => pm.expect(res.convoi.reference).to.match(/^CONV-/));",
+                  "pm.test('Statut en_attente', () => pm.expect(res.convoi.statut).to.eql('en_attente'));",
+                  "pm.collectionVariables.set('convoi_id', res.convoi.id);",
+                  "console.log('Nouveau convoi ID :', res.convoi.id, '| Ref :', res.convoi.reference);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",   "value": "application/json" },
+              { "key": "Accept",         "value": "application/json" },
+              { "key": "Authorization",  "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"compagnie_id\": 1,\n  \"gare_id\": 1,\n  \"itineraire_id\": 1,\n  \"nombre_personnes\": 15,\n  \"date_depart\": \"2026-05-10\",\n  \"heure_depart\": \"08:00\",\n  \"date_retour\": null,\n  \"heure_retour\": null\n}"
+            },
+            "url": { "raw": "{{base_url}}/user/convois", "host": ["{{base_url}}"], "path": ["user","convois"] }
+          }
+        },
+        {
+          "name": "Créer un convoi (trajet personnalisé)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const res = pm.response.json();",
+                  "pm.test('Lieu départ enregistré', () => pm.expect(res.convoi.lieu_depart).to.eql('Cocody, Abidjan'));",
+                  "pm.collectionVariables.set('convoi_id', res.convoi.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",   "value": "application/json" },
+              { "key": "Accept",         "value": "application/json" },
+              { "key": "Authorization",  "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"compagnie_id\": 1,\n  \"gare_id\": 1,\n  \"lieu_depart\": \"Cocody, Abidjan\",\n  \"lieu_retour\": \"Bouaké Centre\",\n  \"nombre_personnes\": 20,\n  \"date_depart\": \"2026-05-15\",\n  \"heure_depart\": \"07:30\",\n  \"date_retour\": \"2026-05-20\",\n  \"heure_retour\": \"14:00\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/user/convois", "host": ["{{base_url}}"], "path": ["user","convois"] }
+          }
+        },
+        {
+          "name": "Créer un convoi — validation (< 10 personnes)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 422', () => pm.response.to.have.status(422));",
+                  "const res = pm.response.json();",
+                  "pm.test('Erreur nombre_personnes', () => pm.expect(res.errors).to.have.property('nombre_personnes'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",   "value": "application/json" },
+              { "key": "Accept",         "value": "application/json" },
+              { "key": "Authorization",  "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"compagnie_id\": 1,\n  \"gare_id\": 1,\n  \"lieu_depart\": \"Abidjan\",\n  \"lieu_retour\": \"Yamoussoukro\",\n  \"nombre_personnes\": 5,\n  \"date_depart\": \"2026-05-15\",\n  \"heure_depart\": \"07:30\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/user/convois", "host": ["{{base_url}}"], "path": ["user","convois"] }
+          }
+        },
+        {
+          "name": "Détail d'un convoi",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('Champs essentiels', () => {",
+                  "    const c = res.convoi;",
+                  "    pm.expect(c).to.have.all.keys(",
+                  "        'id','reference','statut','montant','nombre_personnes',",
+                  "        'lieu_depart','lieu_retour','lieu_rassemblement',",
+                  "        'date_depart','heure_depart','is_garant','passagers_soumis',",
+                  "        'passenger_form_url','compagnie','gare','chauffeur',",
+                  "        'vehicule','passagers','passagers_count'",
+                  "    );",
+                  "});",
+                  "if (res.convoi.passagers.length > 0) {",
+                  "    pm.collectionVariables.set('passager_id', res.convoi.passagers[0].id);",
+                  "    console.log('Premier passager ID sauvegardé :', res.convoi.passagers[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept",         "value": "application/json" },
+              { "key": "Authorization",  "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/convois/{{convoi_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["user","convois","{{convoi_id}}"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "✅ Actions sur le montant (statut VALIDÉ)",
+      "item": [
+        {
+          "name": "Accepter le montant",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('Statut confirme', () => pm.expect(res.convoi.statut).to.eql('confirme'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",   "value": "application/json" },
+              { "key": "Accept",         "value": "application/json" },
+              { "key": "Authorization",  "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reglement_accepte\": \"1\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/user/convois/{{convoi_id}}/accepter-montant",
+              "host": ["{{base_url}}"],
+              "path": ["user","convois","{{convoi_id}}","accepter-montant"]
+            }
+          }
+        },
+        {
+          "name": "Accepter le montant — sans cocher le règlement",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 422', () => pm.response.to.have.status(422));",
+                  "const res = pm.response.json();",
+                  "pm.test('Erreur reglement_accepte', () => pm.expect(res.errors).to.have.property('reglement_accepte'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",   "value": "application/json" },
+              { "key": "Accept",         "value": "application/json" },
+              { "key": "Authorization",  "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{base_url}}/user/convois/{{convoi_id}}/accepter-montant",
+              "host": ["{{base_url}}"],
+              "path": ["user","convois","{{convoi_id}}","accepter-montant"]
+            }
+          }
+        },
+        {
+          "name": "Refuser le montant",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('Statut annule', () => pm.expect(res.convoi.statut).to.eql('annule'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept",         "value": "application/json" },
+              { "key": "Authorization",  "value": "Bearer {{token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{}" },
+            "url": {
+              "raw": "{{base_url}}/user/convois/{{convoi_id}}/refuser-montant",
+              "host": ["{{base_url}}"],
+              "path": ["user","convois","{{convoi_id}}","refuser-montant"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "👥 Passagers & Lieu de rassemblement (statut PAYÉ)",
+      "item": [
+        {
+          "name": "Enregistrer passagers — liste complète",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('passagers_soumis true', () => pm.expect(res.convoi.passagers_soumis).to.be.true);",
+                  "pm.test('Lieu rassemblement enregistré', () => pm.expect(res.convoi.lieu_rassemblement).to.be.a('string'));",
+                  "console.log('Passagers enregistrés :', res.passagers_count);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",   "value": "application/json" },
+              { "key": "Accept",         "value": "application/json" },
+              { "key": "Authorization",  "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lieu_rassemblement\": \"Carrefour Akwaba, Cocody\",\n  \"lieu_rassemblement_retour\": null,\n  \"is_garant\": false,\n  \"passagers\": [\n    { \"nom\": \"KONAN\",   \"prenoms\": \"Aya Marie\",  \"contact\": \"0701234567\", \"contact_urgence\": \"0709876543\" },\n    { \"nom\": \"YAO\",     \"prenoms\": \"Koffi Jean\", \"contact\": \"0712345678\", \"contact_urgence\": \"\" },\n    { \"nom\": \"KOUASSI\", \"prenoms\": \"Brice\",      \"contact\": \"0723456789\", \"contact_urgence\": \"0700000000\" },\n    { \"nom\": \"N'GUESSAN\",\"prenoms\": \"Sandra\",   \"contact\": \"0734567890\", \"contact_urgence\": \"\" },\n    { \"nom\": \"BAMBA\",   \"prenoms\": \"Ibrahim\",   \"contact\": \"0745678901\", \"contact_urgence\": \"\" }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/user/convois/{{convoi_id}}/passagers",
+              "host": ["{{base_url}}"],
+              "path": ["user","convois","{{convoi_id}}","passagers"]
+            }
+          }
+        },
+        {
+          "name": "Enregistrer passagers — mode garant",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('is_garant true', () => pm.expect(res.convoi.is_garant).to.be.true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",   "value": "application/json" },
+              { "key": "Accept",         "value": "application/json" },
+              { "key": "Authorization",  "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lieu_rassemblement\": \"Gare de Yopougon\",\n  \"is_garant\": true,\n  \"passagers\": []\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/user/convois/{{convoi_id}}/passagers",
+              "host": ["{{base_url}}"],
+              "path": ["user","convois","{{convoi_id}}","passagers"]
+            }
+          }
+        },
+        {
+          "name": "Enregistrer passagers — doublon détecté",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 422', () => pm.response.to.have.status(422));",
+                  "const res = pm.response.json();",
+                  "pm.test('Message doublon', () => pm.expect(res.message).to.include('doublon'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",   "value": "application/json" },
+              { "key": "Accept",         "value": "application/json" },
+              { "key": "Authorization",  "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lieu_rassemblement\": \"Cocody\",\n  \"is_garant\": false,\n  \"passagers\": [\n    { \"nom\": \"KONAN\", \"prenoms\": \"Aya\", \"contact\": \"0701234567\", \"contact_urgence\": \"\" },\n    { \"nom\": \"KONAN\", \"prenoms\": \"Aya\", \"contact\": \"0701234567\", \"contact_urgence\": \"\" }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/user/convois/{{convoi_id}}/passagers",
+              "host": ["{{base_url}}"],
+              "path": ["user","convois","{{convoi_id}}","passagers"]
+            }
+          }
+        },
+        {
+          "name": "Enregistrer passagers — retour obligatoire manquant",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 422', () => pm.response.to.have.status(422));",
+                  "const res = pm.response.json();",
+                  "pm.test('Erreur lieu_retour', () => pm.expect(res.errors).to.have.property('lieu_rassemblement_retour'));"
+                ]
+              }
+            }
+          ],
+          "note": "Fonctionne uniquement si le convoi a une date_retour",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",   "value": "application/json" },
+              { "key": "Accept",         "value": "application/json" },
+              { "key": "Authorization",  "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lieu_rassemblement\": \"Cocody, Abidjan\",\n  \"lieu_rassemblement_retour\": \"\",\n  \"is_garant\": false,\n  \"passagers\": []\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/user/convois/{{convoi_id}}/passagers",
+              "host": ["{{base_url}}"],
+              "path": ["user","convois","{{convoi_id}}","passagers"]
+            }
+          }
+        },
+        {
+          "name": "Supprimer un passager",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('Nombre passagers retourné', () => pm.expect(res.passagers_count).to.be.a('number'));",
+                  "console.log('Passagers restants :', res.passagers_count);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept",         "value": "application/json" },
+              { "key": "Authorization",  "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/convois/{{convoi_id}}/passagers/{{passager_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["user","convois","{{convoi_id}}","passagers","{{passager_id}}"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "🔒 Erreurs & Sécurité",
+      "item": [
+        {
+          "name": "Sans token — accès refusé",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/user/convois", "host": ["{{base_url}}"], "path": ["user","convois"] }
+          }
+        },
+        {
+          "name": "Convoi inexistant — 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept",         "value": "application/json" },
+              { "key": "Authorization",  "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/user/convois/999999", "host": ["{{base_url}}"], "path": ["user","convois","999999"] }
+          }
+        },
+        {
+          "name": "Accepter montant — statut incorrect",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 422', () => pm.response.to.have.status(422));",
+                  "const res = pm.response.json();",
+                  "pm.test('Message erreur statut', () => pm.expect(res.message).to.include('statut'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",   "value": "application/json" },
+              { "key": "Accept",         "value": "application/json" },
+              { "key": "Authorization",  "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"reglement_accepte\": \"1\" }"
+            },
+            "url": {
+              "raw": "{{base_url}}/user/convois/{{convoi_id}}/accepter-montant",
+              "host": ["{{base_url}}"],
+              "path": ["user","convois","{{convoi_id}}","accepter-montant"]
+            }
+          }
+        }
+      ]
+    }
+
+  ]
+}

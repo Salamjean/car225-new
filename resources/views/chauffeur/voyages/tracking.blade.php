@@ -15,11 +15,14 @@
 
     #driverMap {
         position: fixed;
-        inset: 118px 0 0 0; /* sous navbar (64px) + topbar (54px) */
+        inset: 118px 0 0 0; /* sous navbar (64px) + topbar (~54px) */
         z-index: 1;
     }
     @media (max-width: 767.98px) {
-        #driverMap { inset: 106px 0 0 0; }
+        #driverMap { inset: 110px 0 0 0; }
+    }
+    @media (max-width: 480px) {
+        #driverMap { inset: 126px 0 0 0; }
     }
 
     /* ── Top bar ── */
@@ -30,29 +33,38 @@
         right: 0;
         z-index: 10;
         background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
-        padding: 12px 24px;
+        padding: 10px 20px;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 12px;
+        gap: 10px;
         flex-wrap: wrap;
         border-bottom: 1px solid rgba(255,255,255,0.08);
         backdrop-filter: blur(10px);
     }
     @media (max-width: 767.98px) {
-        .driver-topbar { top: 56px; padding: 10px 16px; }
+        .driver-topbar { top: 56px; padding: 8px 14px; }
+    }
+    @media (max-width: 480px) {
+        .driver-topbar {
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 8px 12px;
+            gap: 5px;
+        }
     }
 
     .route-pill {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
         font-weight: 800;
         color: white;
-        font-size: 1rem;
+        font-size: .95rem;
+        flex-wrap: wrap;
     }
-    .route-pill .city { font-size: 0.9rem; }
-    .route-pill .arrow { color: #3b82f6; font-size: 1rem; }
+    .route-pill .city { font-size: 0.85rem; }
+    .route-pill .arrow { color: #3b82f6; font-size: 0.9rem; }
 
     .live-badge {
         display: inline-flex;
@@ -81,36 +93,51 @@
     /* ── HUD bottom ── */
     .driver-hud {
         position: fixed;
-        bottom: 24px;
+        bottom: 20px;
         left: 50%;
         transform: translateX(-50%);
         z-index: 10;
         display: flex;
-        gap: 12px;
+        gap: 10px;
         flex-wrap: wrap;
         justify-content: center;
+        padding: 0 12px;
+        width: 100%;
+        box-sizing: border-box;
     }
     @media (max-width: 767.98px) {
-        .driver-hud { bottom: 16px; padding: 0 12px; }
+        .driver-hud { bottom: 14px; gap: 8px; }
+    }
+    @media (max-width: 480px) {
+        .driver-hud { bottom: 10px; }
+        .hud-card {
+            min-width: 80px !important;
+            padding: 9px 12px !important;
+            border-radius: 14px !important;
+        }
+        .hud-card .hud-val { font-size: 1.2rem !important; }
+        .hud-card .hud-lbl { font-size: 0.58rem !important; }
     }
 
     .hud-card {
         background: rgba(15,23,42,0.92);
         border: 1px solid rgba(255,255,255,0.1);
         backdrop-filter: blur(16px);
-        border-radius: 20px;
-        padding: 14px 20px;
-        min-width: 130px;
+        border-radius: 18px;
+        padding: 12px 16px;
+        min-width: 110px;
+        flex: 1;
+        max-width: 150px;
         text-align: center;
         color: white;
     }
     .hud-card .hud-val {
-        font-size: 1.6rem;
+        font-size: 1.5rem;
         font-weight: 900;
         line-height: 1;
     }
     .hud-card .hud-lbl {
-        font-size: 0.65rem;
+        font-size: 0.63rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: .08em;
@@ -124,25 +151,26 @@
     /* ── Back button ── */
     .back-btn {
         position: fixed;
-        top: 128px; /* sous navbar (64px) + topbar (~54px) + gap */
-        left: 16px;
+        top: 126px;
+        left: 14px;
         z-index: 10;
         background: rgba(15,23,42,0.85);
         border: 1px solid rgba(255,255,255,0.12);
-        border-radius: 12px;
+        border-radius: 11px;
         color: rgba(255,255,255,0.7);
-        padding: 8px 14px;
-        font-size: 0.78rem;
+        padding: 7px 12px;
+        font-size: 0.75rem;
         font-weight: 700;
         text-decoration: none;
         display: flex;
         align-items: center;
-        gap: 7px;
+        gap: 6px;
         backdrop-filter: blur(8px);
         transition: all .2s;
     }
     .back-btn:hover { color: white; border-color: rgba(59,130,246,.5); text-decoration: none; }
-    @media (max-width: 767.98px) { .back-btn { left: 12px; } }
+    @media (max-width: 767.98px) { .back-btn { left: 10px; top: 118px; } }
+    @media (max-width: 480px) { .back-btn { top: 134px; } }
 
     /* ── Driver marker ── */
     .driver-marker-wrap {
@@ -193,17 +221,15 @@
         <span class="city">{{ $gareArrivee->nom_gare ?? $voyage->programme->point_arrive }}</span>
     </div>
 
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-        <span style="font-size:.78rem;color:rgba(255,255,255,.5);font-weight:600;">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span style="font-size:.72rem;color:rgba(255,255,255,.5);font-weight:600;">
             <i class="fas fa-calendar mr-1"></i>{{ \Carbon\Carbon::parse($voyage->date_voyage)->format('d/m/Y') }}
             &nbsp;·&nbsp;
             <i class="fas fa-clock mr-1"></i>{{ \Carbon\Carbon::parse($voyage->programme->heure_depart)->format('H:i') }}
+            @if($voyage->vehicule)
+                &nbsp;·&nbsp;<i class="fas fa-id-card mr-1"></i>{{ $voyage->vehicule->immatriculation }}
+            @endif
         </span>
-        @if($voyage->vehicule)
-        <span style="font-size:.78rem;color:rgba(255,255,255,.5);font-weight:600;">
-            <i class="fas fa-id-card mr-1"></i>{{ $voyage->vehicule->immatriculation }}
-        </span>
-        @endif
         <div class="live-badge">
             <div class="live-dot"></div> EN COURS
         </div>

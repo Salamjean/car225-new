@@ -105,29 +105,48 @@
                         @endforeach
 
                         @foreach($activeConvois as $convoi)
-                            <a href="{{ route('chauffeur.voyages.index') }}" class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow text-decoration-none block">
+                        @php
+                            $isRetourDash = (bool) $convoi->aller_done;
+                            $dashDate   = $isRetourDash ? $convoi->date_retour : $convoi->date_depart;
+                            $dashHeure  = $isRetourDash ? $convoi->heure_retour : $convoi->heure_depart;
+                        @endphp
+                            <a href="{{ route('chauffeur.voyages.index') }}" class="bg-white rounded-2xl p-5 shadow-sm border {{ $isRetourDash ? 'border-purple-100' : 'border-gray-100' }} hover:shadow-md transition-shadow text-decoration-none block">
                                 <div class="flex items-start justify-between gap-3 mb-3">
                                     <div>
-                                        <p class="text-xs text-indigo-600 uppercase font-bold">Convoi • Référence</p>
+                                        <p class="text-xs {{ $isRetourDash ? 'text-purple-600' : 'text-indigo-600' }} uppercase font-bold">
+                                            Convoi {{ $isRetourDash ? '↩ Retour' : '' }} • Référence
+                                        </p>
                                         <p class="font-extrabold text-gray-900">{{ $convoi->reference ?? '-' }}</p>
                                     </div>
-                                    <span class="px-3 py-1 rounded-full text-xs font-bold uppercase {{ $convoi->statut === 'en_cours' ? 'bg-purple-100 text-purple-700' : 'bg-indigo-100 text-indigo-700' }}">
-                                        {{ $convoi->statut === 'en_cours' ? 'En cours' : 'Assigné' }}
-                                    </span>
+                                    @if($convoi->statut === 'en_cours')
+                                        <span class="px-3 py-1 rounded-full text-xs font-bold uppercase bg-purple-100 text-purple-700 animate-pulse">En cours</span>
+                                    @elseif($isRetourDash)
+                                        <span class="px-3 py-1 rounded-full text-xs font-bold uppercase bg-purple-100 text-purple-700">Retour</span>
+                                    @else
+                                        <span class="px-3 py-1 rounded-full text-xs font-bold uppercase bg-indigo-100 text-indigo-700">Assigné</span>
+                                    @endif
                                 </div>
                                 <p class="text-sm text-gray-700 font-semibold">
                                     @if($convoi->itineraire)
-                                        {{ $convoi->itineraire->point_depart }} → {{ $convoi->itineraire->point_arrive }}
+                                        @if($isRetourDash)
+                                            {{ $convoi->itineraire->point_arrive }} → {{ $convoi->itineraire->point_depart }}
+                                        @else
+                                            {{ $convoi->itineraire->point_depart }} → {{ $convoi->itineraire->point_arrive }}
+                                        @endif
                                     @elseif($convoi->lieu_depart)
-                                        {{ $convoi->lieu_depart }} → {{ $convoi->lieu_retour }}
+                                        @if($isRetourDash)
+                                            {{ $convoi->lieu_retour }} → {{ $convoi->lieu_depart }}
+                                        @else
+                                            {{ $convoi->lieu_depart }} → {{ $convoi->lieu_retour }}
+                                        @endif
                                     @else
                                         -
                                     @endif
                                 </p>
                                 <div class="mt-2 text-xs text-gray-500 flex flex-wrap gap-3">
                                     <span><i class="fas fa-users mr-1"></i>{{ $convoi->nombre_personnes ?? 0 }} passagers</span>
-                                    @if($convoi->date_depart)
-                                        <span><i class="far fa-calendar mr-1"></i>{{ \Carbon\Carbon::parse($convoi->date_depart)->format('d/m/Y') }}@if($convoi->heure_depart) à {{ $convoi->heure_depart }}@endif</span>
+                                    @if($dashDate)
+                                        <span><i class="far fa-calendar mr-1"></i>{{ \Carbon\Carbon::parse($dashDate)->format('d/m/Y') }}@if($dashHeure) à {{ $dashHeure }}@endif</span>
                                     @endif
                                     <span><i class="fas fa-bus mr-1"></i>{{ $convoi->vehicule->immatriculation ?? '-' }}</span>
                                 </div>
@@ -204,31 +223,46 @@
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @foreach($upcomingConvois as $convoi)
+                @php
+                    $isUpRetour  = (bool) $convoi->aller_done;
+                    $upDate      = $isUpRetour ? $convoi->date_retour  : $convoi->date_depart;
+                    $upHeure     = $isUpRetour ? $convoi->heure_retour : $convoi->heure_depart;
+                @endphp
                 <a href="{{ route('chauffeur.voyages.index') }}"
-                   class="bg-white rounded-2xl p-5 shadow-sm border border-indigo-100 hover:shadow-md transition-all text-decoration-none block hover:border-indigo-300">
+                   class="bg-white rounded-2xl p-5 shadow-sm border {{ $isUpRetour ? 'border-purple-100' : 'border-indigo-100' }} hover:shadow-md transition-all text-decoration-none block hover:border-indigo-300">
                     <div class="flex items-start justify-between gap-3 mb-3">
                         <div>
-                            <p class="text-xs text-indigo-600 uppercase font-black tracking-wider">Convoi • Référence</p>
+                            <p class="text-xs {{ $isUpRetour ? 'text-purple-600' : 'text-indigo-600' }} uppercase font-black tracking-wider">
+                                Convoi {{ $isUpRetour ? '↩ Retour' : '' }} • Référence
+                            </p>
                             <p class="font-extrabold text-gray-900 mt-0.5">{{ $convoi->reference ?? '-' }}</p>
                         </div>
-                        <span class="flex-shrink-0 px-3 py-1 rounded-full text-xs font-black uppercase bg-indigo-100 text-indigo-700">
-                            Assigné
+                        <span class="flex-shrink-0 px-3 py-1 rounded-full text-xs font-black uppercase {{ $isUpRetour ? 'bg-purple-100 text-purple-700' : 'bg-indigo-100 text-indigo-700' }}">
+                            {{ $isUpRetour ? 'Retour' : 'Assigné' }}
                         </span>
                     </div>
                     <p class="text-sm font-semibold text-gray-700 mb-3">
                         @if($convoi->itineraire)
-                            {{ $convoi->itineraire->point_depart }} → {{ $convoi->itineraire->point_arrive }}
+                            @if($isUpRetour)
+                                {{ $convoi->itineraire->point_arrive }} → {{ $convoi->itineraire->point_depart }}
+                            @else
+                                {{ $convoi->itineraire->point_depart }} → {{ $convoi->itineraire->point_arrive }}
+                            @endif
                         @elseif($convoi->lieu_depart)
-                            {{ $convoi->lieu_depart }} → {{ $convoi->lieu_retour }}
+                            @if($isUpRetour)
+                                {{ $convoi->lieu_retour }} → {{ $convoi->lieu_depart }}
+                            @else
+                                {{ $convoi->lieu_depart }} → {{ $convoi->lieu_retour }}
+                            @endif
                         @else -
                         @endif
                     </p>
                     <div class="flex items-center justify-between border-t border-dashed border-gray-100 pt-3 text-xs text-gray-500">
-                        <span class="font-bold text-indigo-700">
+                        <span class="font-bold {{ $isUpRetour ? 'text-purple-700' : 'text-indigo-700' }}">
                             <i class="far fa-calendar-alt mr-1"></i>
-                            {{ \Carbon\Carbon::parse($convoi->date_depart)->translatedFormat('d F Y') }}
-                            @if($convoi->heure_depart)
-                                <span class="text-gray-500">à {{ $convoi->heure_depart }}</span>
+                            {{ $upDate ? \Carbon\Carbon::parse($upDate)->translatedFormat('d F Y') : '-' }}
+                            @if($upHeure)
+                                <span class="text-gray-500">à {{ $upHeure }}</span>
                             @endif
                         </span>
                         <span class="flex items-center gap-1">

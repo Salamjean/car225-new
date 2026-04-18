@@ -1117,6 +1117,7 @@ Route::prefix('chauffeur')->name('chauffeur.')->group(function () {
             Route::post('/convois/{convoi}/start', [ChauffeurVoyageController::class, 'startConvoi'])->name('convois.start');
             Route::post('/convois/{convoi}/complete', [ChauffeurVoyageController::class, 'completeConvoi'])->name('convois.complete');
             Route::post('/convois/{convoi}/annuler', [ChauffeurVoyageController::class, 'annulerConvoi'])->name('convois.annuler');
+            Route::get('/convois/{convoi}/tracking', [ChauffeurVoyageController::class, 'trackingConvoi'])->name('convois.tracking');
         });
 
         // Inbox for Chauffeur

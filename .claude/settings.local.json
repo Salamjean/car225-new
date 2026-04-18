@@ -5,7 +5,10 @@
       "Bash(grep -n \"statut\\\\|confirme\\\\|paye\\\\|enum\" C:\\\\Users\\\\THEWAYNE\\\\Documents\\\\car225-new\\\\database\\\\migrations\\\\*convoi*)",
       "Bash(php -l app/Http/Controllers/GareEspace/GareConvoiController.php)",
       "Bash(php -l app/Http/Controllers/User/ConvoiController.php)",
-      "Bash(php -l app/Mail/ConvoiChauffeurAssigneMail.php)"
+      "Bash(php -l app/Mail/ConvoiChauffeurAssigneMail.php)",
+      "Bash(dir \"C:\\\\Users\\\\THEWAYNE\\\\Documents\\\\car225-new\\\\database\\\\migrations\")",
+      "Bash(findstr convoi *)",
+      "Bash(dir \"C:\\\\Users\\\\THEWAYNE\\\\Documents\\\\car225-new\\\\resources\\\\views\\\\gare-espace\\\\convois\")"
     ]
   }
 }

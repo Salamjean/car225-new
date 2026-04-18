@@ -44,23 +44,42 @@ class ChauffeurController extends Controller
         $activeConvois = Convoi::where('personnel_id', $chauffeur->id)
             ->whereIn('statut', ['paye', 'en_cours'])
             ->where(function ($q) {
-                // Afficher : convois en_cours OU convois paye dont le départ est aujourd'hui ou passé
+                // en_cours = toujours actif
                 $q->where('statut', 'en_cours')
+                  // aller : paye + aller_done = false + date_depart <= aujourd'hui
                   ->orWhere(function ($q2) {
                       $q2->where('statut', 'paye')
+                         ->where('aller_done', false)
                          ->whereDate('date_depart', '<=', Carbon::today());
+                  })
+                  // retour : paye + aller_done = true + date_retour <= aujourd'hui
+                  ->orWhere(function ($q3) {
+                      $q3->where('statut', 'paye')
+                         ->where('aller_done', true)
+                         ->whereDate('date_retour', '<=', Carbon::today());
                   });
             })
             ->with(['itineraire', 'gare', 'vehicule'])
             ->latest()
             ->get();
 
-        // Convois à venir (paye, départ dans le futur)
+        // Convois à venir (paye, départ dans le futur + aller non encore fait)
+        // OU retour à venir (aller_done = true, date_retour dans le futur)
         $upcomingConvois = Convoi::where('personnel_id', $chauffeur->id)
             ->where('statut', 'paye')
-            ->whereDate('date_depart', '>', Carbon::today())
+            ->where(function ($q) {
+                $q->where(function ($q2) {
+                    // Aller à venir
+                    $q2->where('aller_done', false)
+                       ->whereDate('date_depart', '>', Carbon::today());
+                })->orWhere(function ($q3) {
+                    // Retour à venir
+                    $q3->where('aller_done', true)
+                       ->whereDate('date_retour', '>', Carbon::today());
+                });
+            })
             ->with(['itineraire', 'vehicule'])
-            ->orderBy('date_depart', 'asc')
+            ->orderByRaw("CASE WHEN aller_done = 0 THEN date_depart ELSE date_retour END ASC")
             ->get();
 
         $completedVoyagesToday = Voyage::where('personnel_id', $chauffeur->id)
@@ -92,9 +111,16 @@ class ChauffeurController extends Controller
         $voyages = Voyage::where('personnel_id', $chauffeur->id)
             ->with(['programme', 'vehicule', 'gareDepart', 'gareArrivee'])
             ->orderBy('date_voyage', 'desc')
-            ->paginate(10);
+            ->paginate(15);
 
-        return view('chauffeur.voyages.history', compact('voyages'));
+        // Convois terminés du chauffeur (tous, y compris ceux encore en statut paye/en_cours passés)
+        $convoisHistory = Convoi::where('personnel_id', $chauffeur->id)
+            ->where('statut', 'termine')
+            ->with(['itineraire', 'vehicule', 'gare'])
+            ->orderBy('updated_at', 'desc')
+            ->get();
+
+        return view('chauffeur.voyages.history', compact('voyages', 'convoisHistory'));
     }
 
     /**

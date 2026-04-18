@@ -53,8 +53,35 @@ class VoyageController extends Controller
         } elseif ($tab === 'non_effectues') {
             $convoiQuery->where('statut', 'annule');
         } else {
-            // Active convoy missions for chauffeur.
-            $convoiQuery->whereIn('statut', ['paye', 'en_cours']);
+            // Active convoy missions for chauffeur (aller ou retour actifs pour la date sélectionnée)
+            $convoiQuery->whereIn('statut', ['paye', 'en_cours'])
+                ->where(function ($q) use ($date) {
+                    $q->where('statut', 'en_cours')
+                      ->orWhere(function ($q2) use ($date) {
+                          // Aller : paye + aller_done = false + date_depart == date filtre
+                          $q2->where('statut', 'paye')
+                             ->where('aller_done', false)
+                             ->whereDate('date_depart', $date);
+                      })
+                      ->orWhere(function ($q3) use ($date) {
+                          // Retour : paye + aller_done = true + date_retour == date filtre
+                          $q3->where('statut', 'paye')
+                             ->where('aller_done', true)
+                             ->whereDate('date_retour', $date);
+                      })
+                      ->orWhere(function ($q4) use ($date) {
+                          // Aller passé non démarré (en retard) : paye + aller_done = false + date_depart < date filtre
+                          $q4->where('statut', 'paye')
+                             ->where('aller_done', false)
+                             ->whereDate('date_depart', '<', $date);
+                      })
+                      ->orWhere(function ($q5) use ($date) {
+                          // Retour passé non démarré (en retard)
+                          $q5->where('statut', 'paye')
+                             ->where('aller_done', true)
+                             ->whereDate('date_retour', '<', $date);
+                      });
+                });
         }
 
         $convois = $convoiQuery->get();
@@ -74,9 +101,18 @@ class VoyageController extends Controller
             return back()->with('error', 'Ce convoi ne peut pas être démarré (statut : ' . $convoi->statut . ').');
         }
 
-        // Vérifier qu'on est bien le jour du départ (ou après)
-        if ($convoi->date_depart && \Carbon\Carbon::parse($convoi->date_depart)->isFuture() && !\Carbon\Carbon::parse($convoi->date_depart)->isToday()) {
-            return back()->with('error', 'Le convoi ne peut être démarré qu\'à partir du ' . \Carbon\Carbon::parse($convoi->date_depart)->format('d/m/Y') . '.');
+        // Pour le retour (aller_done = true), vérifier la date_retour
+        // Pour l'aller (aller_done = false), vérifier la date_depart
+        if ($convoi->aller_done) {
+            // Démarrage du retour
+            if ($convoi->date_retour && Carbon::parse($convoi->date_retour)->isFuture() && !Carbon::parse($convoi->date_retour)->isToday()) {
+                return back()->with('error', 'Le retour ne peut être démarré qu\'à partir du ' . Carbon::parse($convoi->date_retour)->format('d/m/Y') . '.');
+            }
+        } else {
+            // Démarrage de l'aller
+            if ($convoi->date_depart && Carbon::parse($convoi->date_depart)->isFuture() && !Carbon::parse($convoi->date_depart)->isToday()) {
+                return back()->with('error', 'Le convoi ne peut être démarré qu\'à partir du ' . Carbon::parse($convoi->date_depart)->format('d/m/Y') . '.');
+            }
         }
 
         // Marquer le chauffeur et le véhicule indisponibles maintenant qu'il démarre vraiment
@@ -87,7 +123,8 @@ class VoyageController extends Controller
 
         $convoi->update(['statut' => 'en_cours']);
 
-        return back()->with('success', 'Convoi démarré avec succès.');
+        $msg = $convoi->aller_done ? 'Retour démarré avec succès. Bon voyage !' : 'Convoi démarré avec succès.';
+        return back()->with('success', $msg);
     }
 
     public function completeConvoi(Convoi $convoi)
@@ -102,16 +139,80 @@ class VoyageController extends Controller
             return back()->with('error', 'Ce convoi n\'est pas en cours.');
         }
 
+        // Supprimer le GPS de ce trajet
+        \App\Models\DriverLocation::where('convoi_id', $convoi->id)->delete();
+
+        // Convoi avec retour ET aller pas encore marqué terminé → terminer l'aller seulement
+        if ($convoi->date_retour && !$convoi->aller_done) {
+            $convoi->update([
+                'statut'     => 'paye',      // retour en attente (réutilise statut "assigné")
+                'aller_done' => true,
+            ]);
+            // Libérer le chauffeur et le véhicule entre les deux trajets
+            $chauffeur->update(['statut' => 'disponible']);
+            if ($convoi->vehicule_id) {
+                Vehicule::where('id', $convoi->vehicule_id)->update(['statut' => 'disponible']);
+            }
+
+            $dateRetour = Carbon::parse($convoi->date_retour)->translatedFormat('d F Y');
+            $hRetour    = $convoi->heure_retour ? ' à ' . substr($convoi->heure_retour, 0, 5) : '';
+            return back()->with('success', "Trajet aller terminé ✅ Le retour est prévu le {$dateRetour}{$hRetour}. Il apparaîtra sur votre tableau de bord à cette date.");
+        }
+
+        // Pas de retour (ou c'est le retour qui se termine) → terminaison définitive
         $convoi->update(['statut' => 'termine']);
         $chauffeur->update(['statut' => 'disponible']);
-
-        \App\Models\DriverLocation::where('convoi_id', $convoi->id)->delete();
 
         if ($convoi->vehicule_id) {
             Vehicule::where('id', $convoi->vehicule_id)->update(['statut' => 'disponible']);
         }
 
-        return back()->with('success', 'Convoi terminé avec succès.');
+        $msg = $convoi->aller_done ? 'Convoi retour terminé avec succès. Bienvenue !' : 'Convoi terminé avec succès.';
+        return back()->with('success', $msg);
+    }
+
+    /**
+     * Page de suivi GPS en temps réel pour un convoi en cours
+     */
+    public function trackingConvoi(Convoi $convoi)
+    {
+        $chauffeur = Auth::guard('chauffeur')->user();
+
+        if ((int) $convoi->personnel_id !== (int) $chauffeur->id) {
+            abort(403, 'Ce convoi ne vous appartient pas.');
+        }
+
+        if ($convoi->statut !== 'en_cours') {
+            return redirect()->route('chauffeur.voyages.index')
+                ->with('error', 'Le suivi en temps réel est uniquement disponible pour un convoi en cours.');
+        }
+
+        $convoi->load(['itineraire', 'vehicule', 'latestLocation']);
+
+        // Position initiale : dernière position connue → sinon centre CI
+        $initialLat = $convoi->latestLocation?->latitude  ?? 6.8276;
+        $initialLng = $convoi->latestLocation?->longitude ?? -5.2893;
+
+        // Déterminer le trajet à afficher (aller ou retour)
+        $isRetour  = (bool) $convoi->aller_done;
+        $depart    = $convoi->lieu_depart  ?? ($convoi->itineraire?->point_depart  ?? 'Départ');
+        $arrivee   = $convoi->lieu_retour  ?? ($convoi->itineraire?->point_arrive  ?? 'Arrivée');
+        $dateLabel = $isRetour
+            ? Carbon::parse($convoi->date_retour)->format('d/m/Y')
+            : Carbon::parse($convoi->date_depart)->format('d/m/Y');
+        $heureLabel = $isRetour
+            ? substr($convoi->heure_retour ?? '', 0, 5)
+            : substr($convoi->heure_depart ?? '', 0, 5);
+
+        if ($isRetour) {
+            // Pour le retour, on inverse le sens
+            [$depart, $arrivee] = [$arrivee, $depart];
+        }
+
+        return view('chauffeur.voyages.tracking-convoi', compact(
+            'convoi', 'chauffeur', 'initialLat', 'initialLng',
+            'depart', 'arrivee', 'dateLabel', 'heureLabel', 'isRetour'
+        ));
     }
 
     public function annulerConvoi(Request $request, Convoi $convoi)

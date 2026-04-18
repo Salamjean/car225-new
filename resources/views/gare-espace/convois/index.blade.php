@@ -417,8 +417,14 @@
                         ];
                         [$slabel, $sstyle] = $sm[$convoi->statut] ?? [ucfirst(str_replace('_',' ',$convoi->statut)), 'background:#f1f5f9;color:#475569;'];
 
+                        // Surcharge label si aller terminé et retour en attente
+                        if ($convoi->statut === 'paye' && $convoi->aller_done) {
+                            $slabel  = 'Aller ✓ · Retour ⏳';
+                            $sstyle  = 'background:#f5f3ff;color:#7c3aed;';
+                        }
+
                         // Peut affecter si paye ET pas encore de chauffeur
-                        $canAssign  = $convoi->statut === 'paye' && !$convoi->personnel_id;
+                        $canAssign  = $convoi->statut === 'paye' && !$convoi->personnel_id && !$convoi->aller_done;
                         $isEnAttente = $convoi->statut === 'en_attente';
                     @endphp
                     <tr>
