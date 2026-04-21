@@ -352,7 +352,19 @@
                                 </div>
                                 <div class="bg-gray-50 p-3 rounded-xl">
                                     <p class="text-xs font-bold text-gray-500 uppercase mb-1">Passagers</p>
-                                    <p class="font-bold text-gray-900 text-sm">{{ $convoi->nombre_personnes ?? 0 }}</p>
+                                    @php
+                                        $totalDeclares   = $convoi->nombre_personnes ?? 0;
+                                        $confirmes       = $convoi->passagers->count();
+                                        $showRatio       = !$convoi->is_garant && $confirmes < $totalDeclares;
+                                    @endphp
+                                    @if($showRatio)
+                                        <p class="font-bold text-gray-900 text-sm">
+                                            <span class="{{ $confirmes === 0 ? 'text-red-500' : 'text-amber-600' }}">{{ str_pad($confirmes, 2, '0', STR_PAD_LEFT) }}</span><span class="text-gray-400 font-medium">/{{ str_pad($totalDeclares, 2, '0', STR_PAD_LEFT) }}</span>
+                                        </p>
+                                        <p class="text-xs text-gray-400 mt-0.5">confirmés / déclarés</p>
+                                    @else
+                                        <p class="font-bold text-gray-900 text-sm">{{ $totalDeclares }}</p>
+                                    @endif
                                 </div>
                                 <div class="bg-gray-50 p-3 rounded-xl">
                                     <p class="text-xs font-bold text-gray-500 uppercase mb-1">Véhicule</p>
@@ -425,6 +437,10 @@
                                                 {{ $convoi->date_retour && !$convoi->aller_done ? 'Terminer l\'aller' : 'Terminer le convoi' }}
                                             </button>
                                         </form>
+                                        <a href="{{ route('chauffeur.signalements.create', ['convoi_id' => $convoi->id]) }}" class="flex-1 bg-red-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-red-600 transition-all shadow-md">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            Signaler un problème
+                                        </a>
                                     @endif
 
                                     <button type="button"

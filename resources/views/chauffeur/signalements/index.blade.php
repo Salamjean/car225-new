@@ -119,22 +119,46 @@
                 {{-- Trajet + Gare --}}
                 <div class="col-12 col-md-3 p-3 border-top border-md-top-0 border-start-md border-end-md">
                     @if($s->voyage && $s->voyage->programme)
-                    <div class="fw-bold text-dark small">{{ $s->voyage->programme->point_depart ?? '' }} → {{ $s->voyage->programme->point_arrive ?? '' }}</div>
-                    <div class="text-muted" style="font-size: 0.7rem;">
-                        <i class="fas fa-building me-1"></i>{{ $s->voyage->gareDepart->nom_gare ?? 'N/A' }}
-                    </div>
-                    <div class="d-flex gap-1 mt-1 flex-wrap">
-                        <span class="badge bg-light text-dark border passengers-badge" style="font-size: 0.65rem;" onclick="showPassengers(this)" data-passengers="{{ htmlspecialchars(json_encode($passengersData)) }}">
-                            <i class="fas fa-users text-primary me-1"></i>{{ count($passengersData) }} passagers
-                        </span>
-                        @if($s->vehicule)
-                        <span class="badge bg-light text-dark border" style="font-size: 0.65rem;">
-                            <i class="fas fa-bus text-secondary me-1"></i>{{ $s->vehicule->immatriculation }}
-                        </span>
-                        @endif
-                    </div>
+                        <div class="fw-bold text-dark small">{{ $s->voyage->programme->point_depart ?? '' }} → {{ $s->voyage->programme->point_arrive ?? '' }}</div>
+                        <div class="text-muted" style="font-size: 0.7rem;">
+                            <i class="fas fa-building me-1"></i>{{ $s->voyage->gareDepart->nom_gare ?? 'N/A' }}
+                        </div>
+                        <div class="d-flex gap-1 mt-1 flex-wrap">
+                            <span class="badge bg-light text-dark border passengers-badge" style="font-size: 0.65rem;" onclick="showPassengers(this)" data-passengers="{{ htmlspecialchars(json_encode($passengersData)) }}">
+                                <i class="fas fa-users text-primary me-1"></i>{{ count($passengersData) }} passagers
+                            </span>
+                            @if($s->vehicule)
+                            <span class="badge bg-light text-dark border" style="font-size: 0.65rem;">
+                                <i class="fas fa-bus text-secondary me-1"></i>{{ $s->vehicule->immatriculation }}
+                            </span>
+                            @endif
+                        </div>
+                    @elseif($s->convoi)
+                        <div class="fw-bold text-dark small">
+                            @if($s->convoi->itineraire)
+                                {{ $s->convoi->itineraire->point_depart }} → {{ $s->convoi->itineraire->point_arrive }}
+                            @elseif($s->convoi->lieu_depart)
+                                {{ $s->convoi->lieu_depart }} → {{ $s->convoi->lieu_retour ?? '...' }}
+                            @else
+                                Convoi
+                            @endif
+                        </div>
+                        <div class="text-muted" style="font-size: 0.7rem;">
+                            <i class="fas fa-route me-1 text-primary"></i>Réf : {{ $s->convoi->reference }}
+                        </div>
+                        <div class="d-flex gap-1 mt-1 flex-wrap">
+                            @php $veh = $s->vehicule ?? $s->convoi->vehicule; @endphp
+                            @if($veh)
+                            <span class="badge bg-light text-dark border" style="font-size: 0.65rem;">
+                                <i class="fas fa-bus text-secondary me-1"></i>{{ $veh->immatriculation }}
+                            </span>
+                            @endif
+                            <span class="badge" style="font-size:0.62rem; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;">
+                                <i class="fas fa-users me-1"></i>{{ $s->convoi->nombre_personnes ?? 0 }} pers.
+                            </span>
+                        </div>
                     @else
-                    <span class="text-muted small">N/A</span>
+                        <span class="text-muted small">N/A</span>
                     @endif
                 </div>
 

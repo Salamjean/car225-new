@@ -45,7 +45,7 @@ class VoyageController extends Controller
         $voyages = $query->paginate(10);
 
         $convoiQuery = Convoi::where('personnel_id', '=', $chauffeur->id)
-            ->with(['itineraire', 'gare', 'vehicule'])
+            ->with(['itineraire', 'gare', 'vehicule', 'passagers'])
             ->orderBy('created_at', 'desc');
 
         if ($tab === 'effectues') {

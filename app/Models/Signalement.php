@@ -14,6 +14,7 @@ class Signalement extends Model
         'programme_id',
         'personnel_id',
         'voyage_id',
+        'convoi_id',
         'compagnie_id',
         'sapeur_pompier_id',
         'type',
@@ -64,6 +65,11 @@ class Signalement extends Model
     public function voyage()
     {
         return $this->belongsTo(Voyage::class);
+    }
+
+    public function convoi()
+    {
+        return $this->belongsTo(Convoi::class);
     }
 
     public function compagnie()

@@ -241,6 +241,31 @@
                 <span class="data-value">{{ $convoi->compagnie->name ?? '—' }}</span>
             </div>
         </div>
+
+        {{-- Ligne retour si applicable --}}
+        @if($convoi->date_retour)
+        <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #fed7aa;">
+            <div style="display: table; width: 100%;">
+                <div style="display: table-cell; width: 50%;">
+                    <span class="data-label" style="color: #7c3aed;">Date Retour</span>
+                    <span class="data-value" style="color: #6d28d9; font-weight: 800;">
+                        {{ \Carbon\Carbon::parse($convoi->date_retour)->format('d/m/Y') }}
+                        @if($convoi->heure_retour)
+                            <span style="color:#7c3aed;">· {{ substr($convoi->heure_retour, 0, 5) }}</span>
+                        @endif
+                    </span>
+                </div>
+                <div style="display: table-cell; width: 50%; text-align: right;">
+                    <span class="data-label" style="color: #7c3aed;">Trajet retour</span>
+                    <span class="data-value" style="color: #6d28d9; font-size: 10px;">
+                        {{ $convoi->lieu_retour ?? ($convoi->itineraire->point_arrive ?? '—') }}
+                        <span style="color:#e94e1a; margin: 0 4px;">→</span>
+                        {{ $convoi->lieu_depart ?? ($convoi->itineraire->point_depart ?? '—') }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        @endif
     </div>
 
     {{-- MAIN CONTENT --}}
@@ -269,11 +294,45 @@
             </div>
 
             @if($convoi->lieu_rassemblement)
-            <h3 class="section-title">Rassemblement</h3>
+            <h3 class="section-title">Rassemblement Aller</h3>
             <div class="card" style="background: #fdf2f2; border-color: #fecaca;">
                 <div class="data-row">
-                    <span class="data-label">Lieu</span>
+                    <span class="data-label">Lieu de rassemblement</span>
                     <span class="data-value" style="color: #b91c1c;">📍 {{ $convoi->lieu_rassemblement }}</span>
+                </div>
+            </div>
+            @endif
+
+            @if($convoi->date_retour && $convoi->lieu_rassemblement_retour)
+            <h3 class="section-title" style="border-color: #7c3aed; color: #5b21b6;">Rassemblement Retour</h3>
+            <div class="card" style="background: #f5f3ff; border-color: #c4b5fd;">
+                <div class="data-row">
+                    <span class="data-label" style="color: #7c3aed;">Lieu de rassemblement (retour)</span>
+                    <span class="data-value" style="color: #5b21b6;">📍 {{ $convoi->lieu_rassemblement_retour }}</span>
+                </div>
+                @if($convoi->date_retour)
+                <div class="data-row" style="margin-top: 4px;">
+                    <span class="data-label" style="color: #7c3aed;">Date retour</span>
+                    <span class="data-value" style="color: #6d28d9;">
+                        {{ \Carbon\Carbon::parse($convoi->date_retour)->format('d/m/Y') }}
+                        @if($convoi->heure_retour) · {{ substr($convoi->heure_retour, 0, 5) }} @endif
+                    </span>
+                </div>
+                @endif
+            </div>
+            @elseif($convoi->date_retour && !$convoi->lieu_rassemblement_retour)
+            <h3 class="section-title" style="border-color: #7c3aed; color: #5b21b6;">Rassemblement Retour</h3>
+            <div class="card" style="background: #f5f3ff; border-color: #c4b5fd;">
+                <div class="data-row">
+                    <span class="data-label" style="color: #7c3aed;">Lieu de rassemblement (retour)</span>
+                    <span class="data-value" style="color: #6d28d9; font-style: italic;">À définir — le chauffeur vous contactera</span>
+                </div>
+                <div class="data-row" style="margin-top: 4px;">
+                    <span class="data-label" style="color: #7c3aed;">Date retour</span>
+                    <span class="data-value" style="color: #6d28d9;">
+                        {{ \Carbon\Carbon::parse($convoi->date_retour)->format('d/m/Y') }}
+                        @if($convoi->heure_retour) · {{ substr($convoi->heure_retour, 0, 5) }} @endif
+                    </span>
                 </div>
             </div>
             @endif
@@ -323,7 +382,14 @@
 
     {{-- FOOTER NOTE --}}
     <div class="footer-note">
-        <strong>À SAVOIR :</strong> Ce document confirme votre réservation. En cas de modification d'affectation (Chauffeur/Véhicule), vous recevrez une notification par SMS. Veuillez vous présenter au lieu de rassemblement 15 minutes avant l'heure indiquée.
+        <strong>À SAVOIR :</strong> Ce document confirme votre réservation. En cas de modification d'affectation (Chauffeur/Véhicule), vous recevrez une notification par SMS. Veuillez vous présenter au lieu de rassemblement <strong>15 minutes avant l'heure indiquée</strong>.
+        @if($convoi->date_retour)
+            <br><strong style="color: #5b21b6;">RETOUR :</strong> Présentez-vous au lieu de rassemblement retour
+            @if($convoi->lieu_rassemblement_retour)
+                (<strong>{{ $convoi->lieu_rassemblement_retour }}</strong>)
+            @endif
+            le <strong>{{ \Carbon\Carbon::parse($convoi->date_retour)->format('d/m/Y') }}</strong>@if($convoi->heure_retour) à <strong>{{ substr($convoi->heure_retour, 0, 5) }}</strong>@endif.
+        @endif
     </div>
 
     {{-- FOOTER --}}

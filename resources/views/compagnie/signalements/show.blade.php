@@ -190,16 +190,17 @@
                     {{-- PANNE --}}
                     @if($signalement->type === 'panne')
                         <div class="row">
-                            <div class="col-md-6 mb-3 mb-md-0">
+                            <div class="{{ $signalement->convoi_id ? 'col-12' : 'col-md-6 mb-3 mb-md-0' }}">
                                 <div style="background: #ECFDF5; border: 1px solid #A7F3D0; padding: 16px; border-radius: var(--radius-sm); height: 100%;">
                                     <h4 style="font-size: 11px; font-weight: 800; color: #047857; text-transform: uppercase; margin-bottom: 8px;">Panne réparée</h4>
-                                    <p style="font-size: 11px; color: #059669; margin-bottom: 16px; font-weight: 600;">Le car peut reprendre la route.</p>
+                                    <p style="font-size: 11px; color: #059669; margin-bottom: 16px; font-weight: 600;">Le véhicule peut reprendre la route.</p>
                                     <form action="{{ route('compagnie.signalements.resume', $signalement->id) }}" method="POST">
                                         @csrf
                                         <button type="submit" class="btn-logistic green"><i class="fas fa-play"></i> Reprendre la route</button>
                                     </form>
                                 </div>
                             </div>
+                            @if(!$signalement->convoi_id)
                             <div class="col-md-6">
                                 <div style="background: #EFF6FF; border: 1px solid #BFDBFE; padding: 16px; border-radius: var(--radius-sm); height: 100%;">
                                     <h4 style="font-size: 11px; font-weight: 800; color: #1D4ED8; text-transform: uppercase; margin-bottom: 8px;">Transbordement</h4>
@@ -218,7 +219,9 @@
                                     </form>
                                 </div>
                             </div>
+                            @endif
                         </div>
+                        @if(!$signalement->convoi_id)
                         <div class="mt-3 text-center">
                             <form action="{{ route('compagnie.signalements.interrupt', $signalement->id) }}" method="POST">
                                 @csrf
@@ -227,6 +230,7 @@
                                 </button>
                             </form>
                         </div>
+                        @endif
                     @endif
 
                     {{-- AUTRE (Default) --}}
@@ -281,17 +285,34 @@
                     <div class="d-flex align-items-start gap-2 mb-3">
                         <i class="fas fa-bus text-muted mt-1"></i>
                         <div>
-                            <div style="font-weight: 800; font-size: 13px; color: var(--text-1);">{{ $signalement->vehicule?->immatriculation ?? $signalement->programme?->vehicule?->immatriculation ?? 'Non assigné' }}</div>
-                            <div style="font-size: 11px; color: var(--text-3); font-weight: 600;">{{ $signalement->vehicule?->marque ?? $signalement->programme?->vehicule?->marque ?? '' }}</div>
+                            <div style="font-weight: 800; font-size: 13px; color: var(--text-1);">{{ $signalement->vehicule?->immatriculation ?? $signalement->programme?->vehicule?->immatriculation ?? $signalement->convoi?->vehicule?->immatriculation ?? 'Non assigné' }}</div>
+                            <div style="font-size: 11px; color: var(--text-3); font-weight: 600;">{{ $signalement->vehicule?->marque ?? $signalement->programme?->vehicule?->marque ?? $signalement->convoi?->vehicule?->marque ?? '' }}</div>
                         </div>
                     </div>
                     <div class="d-flex align-items-start gap-2">
                         <i class="fas fa-route text-muted mt-1"></i>
                         <div>
                             <div style="font-weight: 800; font-size: 12px; color: var(--text-1);">
-                                {{ $signalement->programme?->point_depart ?? '?' }} <i class="fas fa-arrow-right text-muted mx-1" style="font-size: 9px;"></i> {{ $signalement->programme?->point_arrive ?? '?' }}
+                                @if($signalement->convoi_id)
+                                    @if($signalement->convoi?->itineraire)
+                                        {{ $signalement->convoi->itineraire->point_depart }} <i class="fas fa-arrow-right text-muted mx-1" style="font-size: 9px;"></i> {{ $signalement->convoi->itineraire->point_arrive }}
+                                    @elseif($signalement->convoi?->lieu_depart)
+                                        {{ $signalement->convoi->lieu_depart }} <i class="fas fa-arrow-right text-muted mx-1" style="font-size: 9px;"></i> {{ $signalement->convoi->lieu_retour ?? '...' }}
+                                    @else
+                                        Convoi
+                                    @endif
+                                @else
+                                    {{ $signalement->programme?->point_depart ?? '?' }} <i class="fas fa-arrow-right text-muted mx-1" style="font-size: 9px;"></i> {{ $signalement->programme?->point_arrive ?? '?' }}
+                                @endif
                             </div>
-                            <div style="font-size: 10px; color: var(--text-3); font-weight: 600; margin-top: 2px;">Programme #{{ $signalement->programme_id }}</div>
+                            <div style="font-size: 10px; color: var(--text-3); font-weight: 600; margin-top: 2px;">
+                                @if($signalement->convoi_id)
+                                    <span style="font-family: monospace;">Réf : {{ $signalement->convoi?->reference }}</span>
+                                    <span style="background:#EFF6FF;color:#1D4ED8;padding:1px 5px;border-radius:3px;font-size:9px;font-weight:800;margin-left:4px;">CONVOI</span>
+                                @else
+                                    Programme #{{ $signalement->programme_id }}
+                                @endif
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -99,7 +99,7 @@
                         </div>
                         @endif
 
-                        {{-- Passagers à Bord --}}
+                        {{-- Passagers à Bord (Voyage) --}}
                         @if($signalement->voyage)
                         @php
                             $scannedPassengers = $signalement->voyage->scanned_passengers;
@@ -138,6 +138,36 @@
                                 <p class="small mb-0">Aucun passager scanné pour ce voyage.</p>
                             </div>
                             @endif
+                        </div>
+                        @endif
+
+                        {{-- Passagers Convoi (non-garant uniquement) --}}
+                        @if($signalement->convoi && !$signalement->convoi->is_garant && $signalement->convoi->passagers->count() > 0)
+                        <div class="detail-card p-4 mb-4">
+                            <div class="section-title">
+                                <i class="fas fa-users"></i> Passagers du Convoi
+                                <span class="badge bg-primary rounded-pill ms-1" style="font-size: 0.7rem;">{{ $signalement->convoi->passagers->count() }}</span>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table passenger-table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-center" style="width: 50px;">#</th>
+                                            <th>Nom & Prénom</th>
+                                            <th>Téléphone</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($signalement->convoi->passagers as $i => $cp)
+                                        <tr>
+                                            <td class="text-center fw-bold">{{ $i + 1 }}</td>
+                                            <td class="fw-medium">{{ trim(($cp->prenoms ?? '') . ' ' . ($cp->nom ?? '')) ?: 'Passager '.($i+1) }}</td>
+                                            <td class="text-muted">{{ $cp->contact ?? '-' }}</td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                         @endif
 
@@ -186,6 +216,82 @@
                                     <div class="info-tile">
                                         <div class="label">Gare de départ</div>
                                         <div class="value"><i class="fas fa-building text-primary me-1" style="font-size: 0.8rem;"></i>{{ $signalement->voyage->gareDepart->nom_gare }}</div>
+                                    </div>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+                        @endif
+
+                        {{-- Informations Convoi --}}
+                        @if($signalement->convoi)
+                        @php
+                            $c   = $signalement->convoi;
+                            $veh = $signalement->vehicule ?? $c->vehicule;
+                        @endphp
+                        <div class="detail-card p-4 mb-4">
+                            <div class="section-title"><i class="fas fa-route"></i> Informations Convoi</div>
+                            <div class="row g-2">
+                                <div class="col-12">
+                                    <div class="info-tile">
+                                        <div class="label">Trajet</div>
+                                        <div class="value">
+                                            @if($c->itineraire)
+                                                {{ $c->itineraire->point_depart }} → {{ $c->itineraire->point_arrive }}
+                                            @elseif($c->lieu_depart)
+                                                {{ $c->lieu_depart }} → {{ $c->lieu_retour ?? '...' }}
+                                            @else
+                                                Convoi
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="info-tile">
+                                        <div class="label">Date départ</div>
+                                        <div class="value">{{ $c->date_depart ? \Carbon\Carbon::parse($c->date_depart)->format('d/m/Y') : 'N/A' }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="info-tile">
+                                        <div class="label">Heure départ</div>
+                                        <div class="value">{{ $c->heure_depart ? substr($c->heure_depart, 0, 5) : 'N/A' }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="info-tile">
+                                        <div class="label">Véhicule</div>
+                                        <div class="value">{{ $veh->immatriculation ?? 'N/A' }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="info-tile">
+                                        <div class="label">Passagers</div>
+                                        <div class="value">{{ $c->nombre_personnes ?? '-' }} pers.</div>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="info-tile">
+                                        <div class="label">Référence</div>
+                                        <div class="value" style="font-size: 0.82rem; color: #6b7280; font-family: monospace;">{{ $c->reference }}</div>
+                                    </div>
+                                </div>
+                                @if($c->gare)
+                                <div class="col-12">
+                                    <div class="info-tile">
+                                        <div class="label">Gare</div>
+                                        <div class="value"><i class="fas fa-building text-primary me-1" style="font-size: 0.8rem;"></i>{{ $c->gare->nom_gare }}</div>
+                                    </div>
+                                </div>
+                                @endif
+                                @if($c->date_retour)
+                                <div class="col-12">
+                                    <div class="info-tile" style="background: #f5f3ff; border-color: #c4b5fd;">
+                                        <div class="label" style="color: #7c3aed;">Retour prévu</div>
+                                        <div class="value" style="color: #6d28d9;">
+                                            {{ \Carbon\Carbon::parse($c->date_retour)->format('d/m/Y') }}
+                                            @if($c->heure_retour) à {{ substr($c->heure_retour, 0, 5) }} @endif
+                                        </div>
                                     </div>
                                 </div>
                                 @endif

@@ -80,9 +80,21 @@ class GareVoyageController extends Controller
         })->unique('id')->values();
 
         // Available drivers (station-specific)
-        // On exclut uniquement ceux qui ont un convoi en_cours actuellement
-        $busyConvoiPersonnelIds = Convoi::where('statut', 'en_cours')
+        // On exclut ceux qui ont un convoi (en_cours OU paye) sur la date sélectionnée
+        $busyConvoiPersonnelIds = Convoi::whereIn('statut', ['paye', 'en_cours'])
             ->whereNotNull('personnel_id')
+            ->where(function ($q) use ($date) {
+                $q->where(function ($q2) use ($date) {
+                    // Convoi aller-retour couvrant la date
+                    $q2->whereNotNull('date_retour')
+                       ->where('date_depart', '<=', $date)
+                       ->where('date_retour', '>=', $date);
+                })->orWhere(function ($q3) use ($date) {
+                    // Convoi simple (aller seul) ce jour-là
+                    $q3->whereNull('date_retour')
+                       ->whereDate('date_depart', $date);
+                })->orWhere('statut', 'en_cours'); // en cours peu importe la date
+            })
             ->pluck('personnel_id');
 
         $chauffeurs = Personnel::where('compagnie_id', '=', $compagnieId)
@@ -94,8 +106,18 @@ class GareVoyageController extends Controller
             ->get();
 
         // Available vehicles (station-specific)
-        $busyConvoiVehiculeIds = Convoi::where('statut', 'en_cours')
+        $busyConvoiVehiculeIds = Convoi::whereIn('statut', ['paye', 'en_cours'])
             ->whereNotNull('vehicule_id')
+            ->where(function ($q) use ($date) {
+                $q->where(function ($q2) use ($date) {
+                    $q2->whereNotNull('date_retour')
+                       ->where('date_depart', '<=', $date)
+                       ->where('date_retour', '>=', $date);
+                })->orWhere(function ($q3) use ($date) {
+                    $q3->whereNull('date_retour')
+                       ->whereDate('date_depart', $date);
+                })->orWhere('statut', 'en_cours');
+            })
             ->pluck('vehicule_id');
 
         $vehicules = Vehicule::where('compagnie_id', '=', $compagnieId)
@@ -243,14 +265,25 @@ class GareVoyageController extends Controller
         }
 
         // Vérifier si le chauffeur est sur un convoi qui chevauche cette date
+        $dateVoyage = $validated['date_voyage'];
         $chauffeurBusyOnConvoi = Convoi::where('personnel_id', $chauffeur->id)
             ->whereIn('statut', ['paye', 'en_cours'])
-            ->where('date_depart', '<=', $validated['date_voyage'])
-            ->where('date_retour', '>=', $validated['date_voyage'])
+            ->where(function ($q) use ($dateVoyage) {
+                $q->where(function ($q2) use ($dateVoyage) {
+                    // Aller-retour couvrant la date
+                    $q2->whereNotNull('date_retour')
+                       ->where('date_depart', '<=', $dateVoyage)
+                       ->where('date_retour', '>=', $dateVoyage);
+                })->orWhere(function ($q3) use ($dateVoyage) {
+                    // Convoi simple ce jour-là (pas de retour)
+                    $q3->whereNull('date_retour')
+                       ->whereDate('date_depart', $dateVoyage);
+                });
+            })
             ->exists();
 
         if ($chauffeurBusyOnConvoi) {
-            return back()->with('error', 'Ce chauffeur est affecté à un convoi qui chevauche cette date.');
+            return back()->with('error', 'Ce chauffeur est affecté à un convoi ce jour-là et ne peut pas être assigné à un voyage.');
         }
 
         // Check vehicle availability (ignoring cancelled trips)
@@ -266,12 +299,20 @@ class GareVoyageController extends Controller
         // Vérifier si le véhicule est sur un convoi qui chevauche cette date
         $vehiculeBusyOnConvoi = Convoi::where('vehicule_id', $vehicule->id)
             ->whereIn('statut', ['paye', 'en_cours'])
-            ->where('date_depart', '<=', $validated['date_voyage'])
-            ->where('date_retour', '>=', $validated['date_voyage'])
+            ->where(function ($q) use ($dateVoyage) {
+                $q->where(function ($q2) use ($dateVoyage) {
+                    $q2->whereNotNull('date_retour')
+                       ->where('date_depart', '<=', $dateVoyage)
+                       ->where('date_retour', '>=', $dateVoyage);
+                })->orWhere(function ($q3) use ($dateVoyage) {
+                    $q3->whereNull('date_retour')
+                       ->whereDate('date_depart', $dateVoyage);
+                });
+            })
             ->exists();
 
         if ($vehiculeBusyOnConvoi) {
-            return back()->with('error', 'Ce véhicule est affecté à un convoi qui chevauche cette date.');
+            return back()->with('error', 'Ce véhicule est affecté à un convoi ce jour-là et ne peut pas être utilisé pour ce voyage.');
         }
 
         // Create voyage

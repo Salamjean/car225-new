@@ -19,15 +19,28 @@ use Illuminate\Support\Facades\Notification;
 class SignalementController extends Controller
 {
     /**
+     * Scope : signalements appartenant à la compagnie connectée.
+     * Couvre à la fois les signalements liés à un programme (voyages réguliers)
+     * et les signalements liés à un convoi (compagnie_id directement).
+     */
+    private function compagnieQuery(int $compagnieId)
+    {
+        return Signalement::where(function ($q) use ($compagnieId) {
+            $q->whereHas('programme', fn($sub) => $sub->where('compagnie_id', $compagnieId))
+              ->orWhere('compagnie_id', $compagnieId);
+        });
+    }
+
+    /**
      * Affiche la liste des signalements pour la compagnie connectée.
      */
     public function index(Request $request)
     {
         $compagnieId = Auth::guard('compagnie')->id();
 
-        $query = Signalement::whereHas('programme', function ($q) use ($compagnieId) {
-            $q->where('compagnie_id', $compagnieId);
-        })->with(['user', 'personnel', 'programme', 'vehicule', 'voyage']);
+        $query = $this->compagnieQuery($compagnieId)
+            ->with(['user', 'personnel', 'programme', 'vehicule', 'voyage',
+                    'convoi.itineraire', 'convoi.vehicule', 'convoi.gare']);
 
         // Filtre par source (chauffeur ou utilisateur)
         if ($request->filled('source')) {
@@ -51,16 +64,13 @@ class SignalementController extends Controller
         $signalements = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
 
         // Stats
-        $baseQuery = Signalement::whereHas('programme', function ($q) use ($compagnieId) {
-            $q->where('compagnie_id', $compagnieId);
-        });
-
+        $baseQuery = $this->compagnieQuery($compagnieId);
         $stats = [
-            'total' => (clone $baseQuery)->count(),
-            'nouveaux' => (clone $baseQuery)->where('statut', 'nouveau')->count(),
-            'traites' => (clone $baseQuery)->where('statut', 'traite')->count(),
-            'from_chauffeurs' => (clone $baseQuery)->whereNotNull('personnel_id')->whereNull('user_id')->count(),
-            'from_users' => (clone $baseQuery)->whereNotNull('user_id')->count(),
+            'total'          => (clone $baseQuery)->count(),
+            'nouveaux'       => (clone $baseQuery)->where('statut', 'nouveau')->count(),
+            'traites'        => (clone $baseQuery)->where('statut', 'traite')->count(),
+            'from_chauffeurs'=> (clone $baseQuery)->whereNotNull('personnel_id')->whereNull('user_id')->count(),
+            'from_users'     => (clone $baseQuery)->whereNotNull('user_id')->count(),
         ];
 
         return view('compagnie.signalements.index', compact('signalements', 'stats'));
@@ -73,10 +83,11 @@ class SignalementController extends Controller
     {
         $compagnieId = Auth::guard('compagnie')->id();
 
-        $signalement = Signalement::whereHas('programme', function ($q) use ($compagnieId) {
-            $q->where('compagnie_id', $compagnieId);
-        })
-            ->with(['user', 'personnel', 'programme.gareDepart', 'programme.gareArrivee', 'vehicule', 'voyage', 'sapeurPompier'])
+        $signalement = $this->compagnieQuery($compagnieId)
+            ->with(['user', 'personnel',
+                    'programme.gareDepart', 'programme.gareArrivee',
+                    'vehicule', 'voyage', 'sapeurPompier',
+                    'convoi.itineraire', 'convoi.gare', 'convoi.vehicule', 'convoi.passagers'])
             ->findOrFail($id);
 
         if (!$signalement->is_read_by_company) {
@@ -84,31 +95,30 @@ class SignalementController extends Controller
             $signalement->save();
         }
 
-        // Récupérer la gare de départ liée au programme
-        $gareDepart = $signalement->programme?->gareDepart;
+        // Gare concernée : programme pour les voyages, gare du convoi sinon
+        $gareDepart = $signalement->programme?->gareDepart ?? $signalement->convoi?->gare;
 
         // Récupérer le sapeur pompier assigné ou le plus proche
         $sapeurPompier = $signalement->sapeurPompier;
         if (!$sapeurPompier && $signalement->latitude && $signalement->longitude) {
             $sapeurPompier = $this->findNearestSapeurPompier($signalement->latitude, $signalement->longitude);
         }
-        // Récupérer les véhicules disponibles pour un éventuel transbordement
-        // On filtre par la gare de départ ET le même nombre de places/type
+
+        // Véhicules disponibles pour transbordement (voyages uniquement)
         $availableVehicles = collect();
         if ($signalement->programme && $signalement->programme->gare_depart_id) {
             $currentVehicule = $signalement->vehicule ?? $signalement->programme->vehicule;
-            
-            $query = \App\Models\Vehicule::where('gare_id', $signalement->programme->gare_depart_id)
+
+            $vQuery = \App\Models\Vehicule::where('gare_id', $signalement->programme->gare_depart_id)
                 ->where('statut', 'disponible')
                 ->where('is_active', true);
 
-            // On s'assure que le nouveau car a au moins les mêmes caractéristiques
             if ($currentVehicule) {
-                $query->where('nombre_place', $currentVehicule->nombre_place)
-                      ->where('type_range', $currentVehicule->type_range);
+                $vQuery->where('nombre_place', $currentVehicule->nombre_place)
+                       ->where('type_range', $currentVehicule->type_range);
             }
 
-            $availableVehicles = $query->get();
+            $availableVehicles = $vQuery->get();
         }
 
         return view('compagnie.signalements.show', compact('signalement', 'gareDepart', 'sapeurPompier', 'availableVehicles'));
@@ -120,36 +130,47 @@ class SignalementController extends Controller
     public function alertGare(Request $request, $id)
     {
         $compagnieId = Auth::guard('compagnie')->id();
-        $compagnie = Auth::guard('compagnie')->user();
+        $compagnie   = Auth::guard('compagnie')->user();
 
-        $signalement = Signalement::whereHas('programme', function ($q) use ($compagnieId) {
-            $q->where('compagnie_id', $compagnieId);
-        })->with(['programme.gareDepart', 'vehicule'])->findOrFail($id);
+        $signalement = $this->compagnieQuery($compagnieId)
+            ->with(['programme.gareDepart', 'convoi.gare', 'vehicule'])
+            ->findOrFail($id);
 
-        $gare = $signalement->programme?->gareDepart;
+        // Gare : programme pour les voyages, gare du convoi sinon
+        $gare = $signalement->programme?->gareDepart ?? $signalement->convoi?->gare;
 
         if (!$gare) {
-            return back()->with('error', 'Aucune gare de départ trouvée pour ce trajet.');
+            return back()->with('error', 'Aucune gare trouvée pour ce signalement.');
         }
 
         $customMessage = $request->input('message', '');
 
-        // Construire le sujet et le message
         $typeLabels = [
-            'accident' => '🚨 ACCIDENT',
-            'panne' => '🔧 PANNE',
-            'retard' => '⏰ RETARD',
-            'comportement' => '⚠️ COMPORTEMENT',
-            'autre' => '📋 SIGNALEMENT',
+            'accident'      => '🚨 ACCIDENT',
+            'panne'         => '🔧 PANNE',
+            'retard'        => '⏰ RETARD',
+            'comportement'  => '⚠️ COMPORTEMENT',
+            'autre'         => '📋 SIGNALEMENT',
         ];
 
-        $subject = ($typeLabels[$signalement->type] ?? 'SIGNALEMENT') . ' - ' .
-                   ($signalement->programme?->point_depart ?? '?') . ' → ' .
-                   ($signalement->programme?->point_arrive ?? '?');
+        // Trajet selon voyage ou convoi
+        if ($signalement->programme) {
+            $trajet = ($signalement->programme->point_depart ?? '?') . ' → ' . ($signalement->programme->point_arrive ?? '?');
+        } elseif ($signalement->convoi?->itineraire) {
+            $trajet = $signalement->convoi->itineraire->point_depart . ' → ' . $signalement->convoi->itineraire->point_arrive;
+        } elseif ($signalement->convoi?->lieu_depart) {
+            $trajet = $signalement->convoi->lieu_depart . ' → ' . ($signalement->convoi->lieu_retour ?? '...');
+        } else {
+            $trajet = 'Convoi';
+        }
 
-        $vehicleInfo = $signalement->vehicule?->immatriculation ?? $signalement->programme?->vehicule?->immatriculation ?? 'Non assigné';
+        $subject     = ($typeLabels[$signalement->type] ?? 'SIGNALEMENT') . ' - ' . $trajet;
+        $vehicleInfo = $signalement->vehicule?->immatriculation
+                    ?? $signalement->programme?->vehicule?->immatriculation
+                    ?? $signalement->convoi?->vehicule?->immatriculation
+                    ?? 'Non assigné';
 
-        $messageBody = "⚠️ ALERTE SIGNALEMENT - {$subject}\n\n";
+        $messageBody  = "⚠️ ALERTE SIGNALEMENT - {$subject}\n\n";
         $messageBody .= "Type: " . ucfirst($signalement->type) . "\n";
         $messageBody .= "Véhicule: {$vehicleInfo}\n";
         $messageBody .= "Description: {$signalement->description}\n";
@@ -169,9 +190,9 @@ class SignalementController extends Controller
         // Créer le CompanyMessage pour la gare
         $message = new CompanyMessage([
             'compagnie_id' => $compagnie->id,
-            'subject' => $subject,
-            'message' => $messageBody,
-            'is_read' => false,
+            'subject'      => $subject,
+            'message'      => $messageBody,
+            'is_read'      => false,
         ]);
         $message->recipient()->associate($gare);
         $message->save();
@@ -206,11 +227,8 @@ class SignalementController extends Controller
     {
         $compagnieId = Auth::guard('compagnie')->id();
 
-        $signalement = Signalement::whereHas('programme', function ($q) use ($compagnieId) {
-            $q->where('compagnie_id', $compagnieId);
-        })->findOrFail($id);
+        $signalement = $this->compagnieQuery($compagnieId)->findOrFail($id);
 
-        // Trouver ou utiliser le pompier déjà assigné
         $pompier = null;
         if ($signalement->sapeur_pompier_id) {
             $pompier = SapeurPompier::find($signalement->sapeur_pompier_id);
@@ -224,13 +242,11 @@ class SignalementController extends Controller
             return back()->with('error', 'Aucun sapeur pompier disponible trouvé à proximité. Vérifiez que les coordonnées GPS sont renseignées.');
         }
 
-        // Assigner le pompier au signalement s'il ne l'est pas déjà
         if (!$signalement->sapeur_pompier_id) {
             $signalement->sapeur_pompier_id = $pompier->id;
             $signalement->save();
         }
 
-        // Envoyer la notification par email + base de données
         try {
             Notification::send($pompier, new NewSignalementNotification($signalement));
         } catch (\Exception $e) {
@@ -239,12 +255,11 @@ class SignalementController extends Controller
 
         $customMessage = $request->input('message', '');
 
-        // Envoi email supplémentaire si message personnalisé
         if ($pompier->email && $customMessage) {
             try {
-                $compagnie = Auth::guard('compagnie')->user();
-                $emailBody = "🚨 ALERTE ACCIDENT - Via {$compagnie->name}\n\n";
-                $emailBody .= "Description: {$signalement->description}\n";
+                $compagnie   = Auth::guard('compagnie')->user();
+                $emailBody   = "🚨 ALERTE ACCIDENT - Via {$compagnie->name}\n\n";
+                $emailBody  .= "Description: {$signalement->description}\n";
                 if ($signalement->latitude && $signalement->longitude) {
                     $emailBody .= "GPS: {$signalement->latitude}, {$signalement->longitude}\n";
                     $emailBody .= "Google Maps: https://www.google.com/maps/search/?api=1&query={$signalement->latitude},{$signalement->longitude}\n";
@@ -271,9 +286,7 @@ class SignalementController extends Controller
     {
         $compagnieId = Auth::guard('compagnie')->id();
 
-        $signalement = Signalement::whereHas('programme', function ($q) use ($compagnieId) {
-            $q->where('compagnie_id', $compagnieId);
-        })->findOrFail($id);
+        $signalement = $this->compagnieQuery($compagnieId)->findOrFail($id);
 
         $signalement->statut = 'traite';
         $signalement->save();
@@ -283,33 +296,33 @@ class SignalementController extends Controller
 
     /**
      * Action d'urgence : Interrompre le voyage suite à un accident.
-     * Libère le chauffeur et immobilise le véhicule pour la journée.
+     * Libère le chauffeur et immobilise le véhicule. Pour les convois, le voyage n'est pas marqué.
      */
     public function interruptVoyage($id)
     {
         $compagnieId = Auth::guard('compagnie')->id();
 
-        $signalement = Signalement::whereHas('programme', function ($q) use ($compagnieId) {
-            $q->where('compagnie_id', $compagnieId);
-        })->with(['voyage', 'vehicule', 'personnel'])->findOrFail($id);
+        $signalement = $this->compagnieQuery($compagnieId)
+            ->with(['voyage', 'vehicule', 'personnel'])
+            ->findOrFail($id);
 
-        // 1. Marquer le voyage comme interrompu (pour l'affichage utilisateur)
+        // 1. Marquer le voyage comme interrompu (uniquement pour les voyages)
         if ($signalement->voyage) {
             $signalement->voyage->statut = 'interrompu';
             $signalement->voyage->save();
         }
 
-        // 2. Immobiliser le véhicule pour la journée (Accident)
+        // 2. Immobiliser le véhicule
         if ($signalement->vehicule) {
-            $signalement->vehicule->statut = 'indisponible';
-            $signalement->vehicule->motif = 'Immobilisé suite à un accident';
+            $signalement->vehicule->statut    = 'indisponible';
+            $signalement->vehicule->motif     = 'Immobilisé suite à un accident';
             $signalement->vehicule->is_active = false;
             $signalement->vehicule->save();
         }
 
-        // 3. Libérer le chauffeur mais le mettre au repos (Inapte pour aujourd'hui)
+        // 3. Mettre le chauffeur hors service
         if ($signalement->personnel) {
-            $signalement->personnel->statut = 'indisponible'; // Ne pourra pas être repris aujourd'hui
+            $signalement->personnel->statut = 'indisponible';
             $signalement->personnel->save();
         }
 
@@ -321,14 +334,12 @@ class SignalementController extends Controller
     }
 
     /**
-     * Action Panne : Reprendre la route (La panne a été réparée)
+     * Action Panne : Reprendre la route (La panne a été réparée).
      */
     public function resumeVoyage($id)
     {
         $compagnieId = Auth::guard('compagnie')->id();
-        $signalement = Signalement::whereHas('programme', function ($q) use ($compagnieId) {
-            $q->where('compagnie_id', $compagnieId);
-        })->findOrFail($id);
+        $signalement = $this->compagnieQuery($compagnieId)->findOrFail($id);
 
         $signalement->statut = 'traite';
         $signalement->save();
@@ -337,25 +348,25 @@ class SignalementController extends Controller
     }
 
     /**
-     * Action Panne : Transbordement (Changement de véhicule)
+     * Action Panne : Transbordement (Changement de véhicule) — voyages uniquement.
      */
     public function transbordement(Request $request, $id)
     {
         $compagnieId = Auth::guard('compagnie')->id();
         $request->validate(['new_vehicule_id' => 'required|exists:vehicules,id']);
 
-        $signalement = Signalement::whereHas('programme', function ($q) use ($compagnieId) {
-            $q->where('compagnie_id', $compagnieId);
-        })->with(['voyage', 'vehicule'])->findOrFail($id);
+        $signalement = $this->compagnieQuery($compagnieId)
+            ->with(['voyage', 'vehicule'])
+            ->findOrFail($id);
 
         if (!$signalement->voyage) {
-            return back()->with('error', 'Aucun voyage actif trouvé pour ce signalement.');
+            return back()->with('error', 'Le transbordement n\'est disponible que pour les signalements liés à un voyage.');
         }
 
         // 1. L'ancien véhicule passe en panne (donc indisponible)
         if ($signalement->vehicule) {
             $signalement->vehicule->statut = 'indisponible';
-            $signalement->vehicule->motif = 'Panne sur route - En attente de dépannage';
+            $signalement->vehicule->motif  = 'Panne sur route - En attente de dépannage';
             $signalement->vehicule->save();
         }
 
@@ -377,9 +388,7 @@ class SignalementController extends Controller
     {
         $compagnieId = Auth::guard('compagnie')->id();
 
-        $signalement = Signalement::whereHas('programme', function ($q) use ($compagnieId) {
-            $q->where('compagnie_id', $compagnieId);
-        })->findOrFail($id);
+        $signalement = $this->compagnieQuery($compagnieId)->findOrFail($id);
 
         if (!$signalement->is_read_by_company) {
             $signalement->is_read_by_company = true;
@@ -399,14 +408,14 @@ class SignalementController extends Controller
             ->where('statut', 'actif')
             ->get();
 
-        $nearest = null;
+        $nearest     = null;
         $minDistance = PHP_FLOAT_MAX;
 
         foreach ($pompiers as $pompier) {
             $distance = $this->calculateDistance($lat, $lon, $pompier->latitude, $pompier->longitude);
             if ($distance < $minDistance) {
                 $minDistance = $distance;
-                $nearest = $pompier;
+                $nearest     = $pompier;
             }
         }
 
@@ -418,10 +427,10 @@ class SignalementController extends Controller
         $earthRadius = 6371;
         $dLat = deg2rad($lat2 - $lat1);
         $dLon = deg2rad($lon2 - $lon1);
-        $a = sin($dLat / 2) * sin($dLat / 2) +
-            cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
-            sin($dLon / 2) * sin($dLon / 2);
-        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+        $a    = sin($dLat / 2) * sin($dLat / 2) +
+                cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+                sin($dLon / 2) * sin($dLon / 2);
+        $c    = 2 * atan2(sqrt($a), sqrt(1 - $a));
         return $earthRadius * $c;
     }
 
@@ -431,15 +440,15 @@ class SignalementController extends Controller
     public function notificationAccident($id)
     {
         $compagnieId = Auth::guard('compagnie')->id();
-        $compagnie = Auth::guard('compagnie')->user();
+        $compagnie   = Auth::guard('compagnie')->user();
 
-        $signalement = Signalement::whereHas('programme', function ($q) use ($compagnieId) {
-            $q->where('compagnie_id', $compagnieId);
-        })->with(['programme.gareDepart', 'programme.gareArrivee', 'vehicule', 'voyage', 'sapeurPompier'])
-          ->findOrFail($id);
+        $signalement = $this->compagnieQuery($compagnieId)
+            ->with(['programme.gareDepart', 'programme.gareArrivee', 'vehicule', 'voyage', 'sapeurPompier',
+                    'convoi.itineraire', 'convoi.gare'])
+            ->findOrFail($id);
 
         $bilanPassagers = $signalement->bilan_passagers ?? [];
-        $evacueeIds = collect($bilanPassagers)->where('statut', 'evacue')->pluck('reservation_id')->toArray();
+        $evacueeIds     = collect($bilanPassagers)->where('statut', 'evacue')->pluck('reservation_id')->toArray();
 
         // Récupérer les réservations des passagers évacués
         $reservationsEvacuees = \App\Models\Reservation::whereIn('id', $evacueeIds)
@@ -450,15 +459,15 @@ class SignalementController extends Controller
         $passagersEvacues = $reservationsEvacuees->map(function ($res) use ($bilanPassagers) {
             $bilanEntry = collect($bilanPassagers)->firstWhere('reservation_id', $res->id);
             return [
-                'reservation' => $res,
-                'nom' => trim(($res->passager_nom ?? '') . ' ' . ($res->passager_prenom ?? '')) ?: ($res->user->name ?? 'Inconnu'),
-                'contact_urgence' => $res->passager_urgence ?? $res->ice_contact ?? null,
-                'nom_contact_urgence' => $res->nom_passager_urgence ?? 'Contact d\'urgence',
-                'email_passager' => $res->passager_email ?? ($res->user->email ?? null),
-                'telephone_passager' => $res->passager_telephone ?? null,
-                'hopital_nom' => $bilanEntry['hopital_nom'] ?? 'Non précisé',
-                'hopital_adresse' => $bilanEntry['hopital_adresse'] ?? '',
-                'seat' => $res->seat_number ?? '?',
+                'reservation'          => $res,
+                'nom'                  => trim(($res->passager_nom ?? '') . ' ' . ($res->passager_prenom ?? '')) ?: ($res->user->name ?? 'Inconnu'),
+                'contact_urgence'      => $res->passager_urgence ?? $res->ice_contact ?? null,
+                'nom_contact_urgence'  => $res->nom_passager_urgence ?? 'Contact d\'urgence',
+                'email_passager'       => $res->passager_email ?? ($res->user->email ?? null),
+                'telephone_passager'   => $res->passager_telephone ?? null,
+                'hopital_nom'          => $bilanEntry['hopital_nom'] ?? 'Non précisé',
+                'hopital_adresse'      => $bilanEntry['hopital_adresse'] ?? '',
+                'seat'                 => $res->seat_number ?? '?',
             ];
         });
 
@@ -466,7 +475,7 @@ class SignalementController extends Controller
         $parHopital = $passagersEvacues->groupBy('hopital_nom');
 
         // Récupérer aussi les indemnes
-        $indemneIds = collect($bilanPassagers)->where('statut', 'indemne')->pluck('reservation_id')->toArray();
+        $indemneIds    = collect($bilanPassagers)->where('statut', 'indemne')->pluck('reservation_id')->toArray();
         $countIndemnes = count($indemneIds);
 
         return view('compagnie.signalements.notification-accident', compact(
@@ -480,36 +489,33 @@ class SignalementController extends Controller
 
     /**
      * Envoyer les notifications aux contacts d'urgence des passagers évacués.
-     * Chaque contact reçoit un message personnalisé avec uniquement l'hôpital de SON proche.
      */
     public function envoyerNotifications(Request $request, $id)
     {
         $compagnieId = Auth::guard('compagnie')->id();
         $compagnie   = Auth::guard('compagnie')->user();
 
-        $signalement = Signalement::whereHas('programme', function ($q) use ($compagnieId) {
-            $q->where('compagnie_id', $compagnieId);
-        })->with(['programme'])->findOrFail($id);
+        $signalement = $this->compagnieQuery($compagnieId)
+            ->with(['programme'])
+            ->findOrFail($id);
 
         $request->validate([
-            'message'       => 'required|string|min:10',
-            'reservations'  => 'required|array|min:1',
-            'reservations.*'=> 'required|integer',
+            'message'        => 'required|string|min:10',
+            'reservations'   => 'required|array|min:1',
+            'reservations.*' => 'required|integer',
         ]);
 
         $messageTemplate = $request->input('message');
         $reservationIds  = $request->input('reservations');
         $bilanPassagers  = $signalement->bilan_passagers ?? [];
 
-        $sent = 0;
-        $errors = 0;
+        $sent       = 0;
+        $errors     = 0;
         $smsService = app(SmsService::class);
 
-        // Récupérer uniquement les réservations sélectionnées
         $reservations = Reservation::whereIn('id', $reservationIds)->with('user')->get();
 
         foreach ($reservations as $res) {
-            // Trouver l'entrée bilan spécifique à ce passager
             $bilanEntry = collect($bilanPassagers)->firstWhere('reservation_id', $res->id);
             if (!$bilanEntry || ($bilanEntry['statut'] ?? '') !== 'evacue') {
                 continue;
@@ -519,14 +525,12 @@ class SignalementController extends Controller
             $hopitalAdresse = $bilanEntry['hopital_adresse'] ?? '';
             $hopitalInfo    = $hopitalNom . ($hopitalAdresse ? "\nLocalisation : " . $hopitalAdresse : '');
 
-            // Construire le message personnalisé pour CE passager
             $messagePersonnalise = str_replace('{HOPITAL}', $hopitalInfo, $messageTemplate);
 
             $contactUrgence = $res->passager_urgence ?? $res->ice_contact ?? null;
             $emailPassager  = $res->passager_email ?? ($res->user->email ?? null);
 
             try {
-                // 1. Envoi par email si disponible
                 if ($emailPassager && filter_var($emailPassager, FILTER_VALIDATE_EMAIL)) {
                     Mail::raw($messagePersonnalise, function ($mail) use ($emailPassager, $compagnie, $signalement) {
                         $mail->to($emailPassager)
@@ -536,7 +540,6 @@ class SignalementController extends Controller
                     $sent++;
                 }
 
-                // 2. Envoi SMS si contact d'urgence disponible
                 if ($contactUrgence) {
                     $smsSent = $smsService->sendSms($contactUrgence, $messagePersonnalise);
                     if ($smsSent) {
@@ -544,13 +547,9 @@ class SignalementController extends Controller
                         Log::info("SMS accident envoyé", ['to' => $contactUrgence, 'reservation_id' => $res->id]);
                     } else {
                         $errors++;
-                        Log::error("Échec SMS accident", [
-                            'to'             => $contactUrgence,
-                            'reservation_id' => $res->id,
-                        ]);
+                        Log::error("Échec SMS accident", ['to' => $contactUrgence, 'reservation_id' => $res->id]);
                     }
                 }
-
             } catch (\Exception $e) {
                 $errors++;
                 Log::error("Erreur envoi notification accident #{$signalement->id}: " . $e->getMessage(), [

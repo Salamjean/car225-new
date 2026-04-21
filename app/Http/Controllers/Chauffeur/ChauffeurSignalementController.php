@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Chauffeur;
 
 use App\Http\Controllers\Controller;
 use App\Models\Signalement;
+use App\Models\Convoi;
 use App\Models\Voyage;
 use App\Models\Programme;
 use App\Models\SapeurPompier;
@@ -24,7 +25,8 @@ class ChauffeurSignalementController extends Controller
         $signalements = Signalement::where('personnel_id', $chauffeur->id)
             ->whereNotNull('compagnie_id')
             ->whereNull('user_id')
-            ->with(['voyage.gareDepart', 'voyage.gareArrivee', 'compagnie', 'vehicule'])
+            ->with(['voyage.gareDepart', 'voyage.gareArrivee', 'compagnie', 'vehicule',
+                    'convoi.itineraire', 'convoi.vehicule', 'convoi.gare'])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -35,8 +37,28 @@ class ChauffeurSignalementController extends Controller
     {
         $chauffeur = Auth::guard('chauffeur')->user();
         $preselectedVoyageId = $request->query('voyage_id');
-        
-        // On récupère les voyages en cours ou confirmés du chauffeur
+        $preselectedConvoiId  = $request->query('convoi_id');
+
+        // ── Convois en cours pour ce chauffeur ──
+        $activeConvoi = null;
+        if ($preselectedConvoiId) {
+            $activeConvoi = Convoi::where('personnel_id', $chauffeur->id)
+                ->where('statut', 'en_cours')
+                ->with(['vehicule', 'itineraire'])
+                ->find($preselectedConvoiId);
+        }
+
+        // Si un convoi est pré-sélectionné, on n'a pas besoin du dropdown de voyages
+        if ($activeConvoi) {
+            return view('chauffeur.signalements.create', [
+                'voyages'              => collect(),
+                'preselectedVoyageId'  => null,
+                'activeVoyage'         => null,
+                'activeConvoi'         => $activeConvoi,
+            ]);
+        }
+
+        // ── Voyages en cours ou confirmés du chauffeur ──
         $voyages = Voyage::where('personnel_id', $chauffeur->id)
             ->whereIn('statut', ['confirmé', 'en_cours'])
             ->with(['programme', 'vehicule', 'gareDepart'])
@@ -45,48 +67,65 @@ class ChauffeurSignalementController extends Controller
 
         // Auto-detect the active voyage (en_cours)
         $activeVoyage = $voyages->firstWhere('statut', 'en_cours');
-        
-        // If a voyage_id was passed via query string, use that
+
         if ($preselectedVoyageId) {
             $activeVoyage = $voyages->firstWhere('id', $preselectedVoyageId) ?? $activeVoyage;
         }
 
-        // If we have an active voyage, auto-select it
         if ($activeVoyage && !$preselectedVoyageId) {
             $preselectedVoyageId = $activeVoyage->id;
         }
 
-        return view('chauffeur.signalements.create', compact('voyages', 'preselectedVoyageId', 'activeVoyage'));
+        return view('chauffeur.signalements.create', [
+            'voyages'             => $voyages,
+            'preselectedVoyageId' => $preselectedVoyageId,
+            'activeVoyage'        => $activeVoyage,
+            'activeConvoi'        => null,
+        ]);
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'voyage_id' => 'required|exists:voyages,id',
-            'type' => 'required|in:accident,panne,retard,comportement,autre',
+        // Soit un voyage, soit un convoi — l'un des deux est obligatoire
+        $request->validate([
+            'type'        => 'required|in:accident,panne,retard,comportement,autre',
             'description' => 'required|string',
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
-            'photo' => 'nullable|image|max:10240',
+            'latitude'    => 'nullable|numeric',
+            'longitude'   => 'nullable|numeric',
+            'photo'       => 'nullable|image|max:10240',
+            'voyage_id'   => 'nullable|exists:voyages,id',
+            'convoi_id'   => 'nullable|exists:convois,id',
         ]);
+
+        if (!$request->filled('voyage_id') && !$request->filled('convoi_id')) {
+            return back()->withErrors(['voyage_id' => 'Veuillez sélectionner un voyage ou un convoi.'])->withInput();
+        }
 
         try {
             DB::beginTransaction();
 
             $chauffeur = Auth::guard('chauffeur')->user();
-            $voyage = Voyage::findOrFail($validated['voyage_id']);
 
             $signalement = new Signalement();
             $signalement->personnel_id = $chauffeur->id;
             $signalement->compagnie_id = $chauffeur->compagnie_id;
-            $signalement->voyage_id = $voyage->id;
-            $signalement->programme_id = $voyage->programme_id;
-            $signalement->vehicule_id = $voyage->vehicule_id;
-            $signalement->type = $validated['type'];
-            $signalement->description = $validated['description'];
-            $signalement->latitude = $validated['latitude'] ?? null;
-            $signalement->longitude = $validated['longitude'] ?? null;
-            $signalement->statut = 'nouveau';
+            $signalement->type        = $request->type;
+            $signalement->description = $request->description;
+            $signalement->latitude    = $request->latitude ?? null;
+            $signalement->longitude   = $request->longitude ?? null;
+            $signalement->statut      = 'nouveau';
+
+            if ($request->filled('convoi_id')) {
+                $convoi = Convoi::with('gare')->findOrFail($request->convoi_id);
+                $signalement->convoi_id   = $convoi->id;
+                $signalement->vehicule_id = $convoi->vehicule_id;
+                // programme_id nullable, on laisse null pour les convois
+            } else {
+                $voyage = Voyage::findOrFail($request->voyage_id);
+                $signalement->voyage_id    = $voyage->id;
+                $signalement->programme_id = $voyage->programme_id;
+                $signalement->vehicule_id  = $voyage->vehicule_id;
+            }
 
             if ($request->hasFile('photo')) {
                 $path = $request->file('photo')->store('signalements', 'public');
@@ -121,6 +160,16 @@ class ChauffeurSignalementController extends Controller
                 Log::error('Erreur envoi email chauffeur compagnie: ' . $e->getMessage());
             }
 
+            // Notification Gare (pour les signalements liés à un convoi)
+            if (isset($convoi) && $convoi->gare && $convoi->gare->email) {
+                try {
+                    Mail::to($convoi->gare->email)
+                        ->send(new SignalementCompagnieNotification($signalement));
+                } catch (\Exception $e) {
+                    Log::error('Erreur envoi email gare signalement convoi: ' . $e->getMessage());
+                }
+            }
+
             DB::commit();
 
             return redirect()->route('chauffeur.signalements.index')->with('success', 'Votre signalement a été envoyé avec succès à la compagnie.');
@@ -139,7 +188,10 @@ class ChauffeurSignalementController extends Controller
             abort(403);
         }
 
-        $signalement->load(['voyage.programme', 'voyage.gareDepart', 'vehicule', 'compagnie']);
+        $signalement->load([
+            'voyage.programme', 'voyage.gareDepart', 'vehicule', 'compagnie',
+            'convoi.itineraire', 'convoi.gare', 'convoi.vehicule', 'convoi.passagers',
+        ]);
 
         return view('chauffeur.signalements.show', compact('signalement'));
     }

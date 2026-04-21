@@ -196,10 +196,21 @@
                         </td>
                         <td>
                             <div style="font-family: monospace; font-size: 12px; font-weight: 800; color: var(--text-1); background: var(--surface-2); border: 1px solid var(--border-strong); padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 4px;">
-                                <i class="fas fa-bus mr-1 text-muted"></i> {{ $signalement->vehicule?->immatriculation ?? $signalement->programme?->vehicule?->immatriculation ?? '---' }}
+                                <i class="fas fa-bus mr-1 text-muted"></i> {{ $signalement->vehicule?->immatriculation ?? $signalement->programme?->vehicule?->immatriculation ?? $signalement->convoi?->vehicule?->immatriculation ?? '---' }}
                             </div>
                             <div style="font-size: 11px; font-weight: 600; color: var(--text-2);">
-                                {{ $signalement->programme?->point_depart ?? '?' }} <i class="fas fa-arrow-right text-muted mx-1" style="font-size: 9px;"></i> {{ $signalement->programme?->point_arrive ?? '?' }}
+                                @if($signalement->convoi_id)
+                                    @if($signalement->convoi?->itineraire)
+                                        {{ $signalement->convoi->itineraire->point_depart }} <i class="fas fa-arrow-right text-muted mx-1" style="font-size: 9px;"></i> {{ $signalement->convoi->itineraire->point_arrive }}
+                                    @elseif($signalement->convoi?->lieu_depart)
+                                        {{ $signalement->convoi->lieu_depart }} <i class="fas fa-arrow-right text-muted mx-1" style="font-size: 9px;"></i> {{ $signalement->convoi->lieu_retour ?? '...' }}
+                                    @else
+                                        Convoi
+                                    @endif
+                                    <span style="background:#EFF6FF;color:#1D4ED8;font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;margin-left:4px;letter-spacing:0.3px;">CONVOI</span>
+                                @else
+                                    {{ $signalement->programme?->point_depart ?? '?' }} <i class="fas fa-arrow-right text-muted mx-1" style="font-size: 9px;"></i> {{ $signalement->programme?->point_arrive ?? '?' }}
+                                @endif
                             </div>
                         </td>
                         <td>

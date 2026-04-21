@@ -700,9 +700,12 @@ Route::prefix('sapeur-pompier')->group(function () {
                 return redirect()->route('sapeur-pompier.signalement.show', $signalement->id)
                     ->with('info', 'Ce signalement a déjà été clôturé.');
             }
-            $signalement->load(['user', 'personnel', 'compagnie', 'voyage', 'programme.compagnie', 'vehicule']);
+            $signalement->load(['user', 'personnel', 'compagnie', 'voyage', 'programme.compagnie', 'vehicule',
+                               'convoi.passagers', 'convoi.itineraire']);
 
-            $reservations = collect();
+            $reservations       = collect();
+            $convoisPassagers   = collect();
+
             if ($signalement->voyage_id) {
                 $reservations = \App\Models\Reservation::where('voyage_id', $signalement->voyage_id)
                     ->whereIn('statut', ['confirmee', 'terminee'])
@@ -715,9 +718,12 @@ Route::prefix('sapeur-pompier')->group(function () {
                     ->whereIn('statut', ['confirmee', 'terminee'])
                     ->with('user')
                     ->get();
+            } elseif ($signalement->convoi_id && $signalement->convoi && !$signalement->convoi->is_garant) {
+                // Passagers manuellement renseignés (client non-garant)
+                $convoisPassagers = $signalement->convoi->passagers;
             }
 
-            return view('sapeur_pompier.signalement.bilan', compact('signalement', 'reservations'));
+            return view('sapeur_pompier.signalement.bilan', compact('signalement', 'reservations', 'convoisPassagers'));
         })->name('sapeur-pompier.signalement.bilan');
 
         // Route pour marquer comme traité avec bilan passagers
@@ -826,6 +832,43 @@ Route::prefix('sapeur-pompier')->group(function () {
                             'reservation_id' => $reservation->id,
                             'error' => $e->getMessage(),
                         ]);
+                    }
+                }
+            }
+
+            // SMS contacts d'urgence — passagers de convoi (non-garant)
+            if ($signalement->convoi_id) {
+                $evacuees = collect($bilanPassagers)->where('statut', 'evacue');
+                if ($evacuees->count() > 0) {
+                    $smsService = app(\App\Services\SmsService::class);
+                    $signalement->loadMissing(['convoi.itineraire', 'compagnie']);
+                    $compagnieNom = $signalement->compagnie->name ?? 'Votre compagnie de transport';
+                    $dateAccident = \Carbon\Carbon::parse($signalement->created_at)->format('d/m/Y a H:i');
+                    $itineraire   = $signalement->convoi->itineraire;
+                    $trajet       = ($itineraire->point_depart ?? 'Départ') . ' -> ' . ($itineraire->point_arrive ?? 'Arrivée');
+
+                    foreach ($evacuees as $evacuee) {
+                        $passager = \App\Models\ConvoiPassager::find($evacuee['reservation_id']);
+                        if (!$passager || empty($passager->contact_urgence)) continue;
+
+                        $hopitalNom     = $evacuee['hopital_nom'] ?? 'un hôpital proche';
+                        $hopitalAdresse = !empty($evacuee['hopital_adresse']) ? "\nLocalisation : " . $evacuee['hopital_adresse'] : '';
+                        $nomPassager    = trim(($passager->prenoms ?? '') . ' ' . ($passager->nom ?? '')) ?: 'Votre proche';
+
+                        $smsBody = "ACCIDENT - {$compagnieNom}\n"
+                            . "Le {$dateAccident} sur le trajet {$trajet}.\n"
+                            . "{$nomPassager} a ete evacue(e) a : {$hopitalNom}.{$hopitalAdresse}\n"
+                            . "Presentez-vous au plus vite.";
+
+                        try {
+                            $smsService->sendSms($passager->contact_urgence, $smsBody);
+                        } catch (\Exception $e) {
+                            \Illuminate\Support\Facades\Log::error('Échec SMS accident convoi passager (SP)', [
+                                'to' => $passager->contact_urgence,
+                                'convoi_passager_id' => $passager->id,
+                                'error' => $e->getMessage(),
+                            ]);
+                        }
                     }
                 }
             }

@@ -21,6 +21,13 @@
         <div class="w-40"></div>
     </div>
 
+    {{-- Variables calculées (avant les compteurs) --}}
+    @php
+        $allPassengers  = $reservations->count() > 0 ? $reservations : $convoisPassagers;
+        $totalPassengers = $allPassengers->count();
+        $isConvoiMode   = $reservations->isEmpty() && $convoisPassagers->count() > 0;
+    @endphp
+
     {{-- Bilan chiffré (4 compteurs auto) --}}
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex items-center gap-4">
@@ -56,7 +63,7 @@
             </div>
             <div>
                 <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Indemnes</p>
-                <p class="text-3xl font-black text-green-600" id="cnt-indemne">{{ $reservations->count() }}</p>
+                <p class="text-3xl font-black text-green-600" id="cnt-indemne">{{ $totalPassengers }}</p>
             </div>
         </div>
     </div>
@@ -82,31 +89,36 @@
                 <div class="bg-gray-800 text-white px-5 py-4 flex items-center justify-between flex-shrink-0">
                     <div class="flex items-center gap-2 font-bold text-sm">
                         <i class="fas fa-users"></i>
-                        Passagers <span class="ml-1 bg-gray-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ $reservations->count() }}</span>
+                        Passagers <span class="ml-1 bg-gray-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ $totalPassengers }}</span>
+                        @if($isConvoiMode)
+                            <span class="ml-1 text-[10px] font-bold bg-blue-600 px-2 py-0.5 rounded-full">CONVOI</span>
+                        @endif
                     </div>
                     <div class="text-xs text-gray-400">Cliquer pour sélectionner</div>
                 </div>
 
-                @if($reservations->isEmpty())
+                @if($totalPassengers === 0)
                     <div class="flex-1 flex items-center justify-center p-6 text-center text-gray-400">
                         <div>
                             <i class="fas fa-user-slash text-3xl mb-3"></i>
-                            <p class="text-sm">Aucun passager trouvé pour ce voyage</p>
+                            @if($signalement->convoi_id && $signalement->convoi && $signalement->convoi->is_garant)
+                                <p class="text-sm">Le client a déclaré se porter garant pour tous les passagers — aucun passager individuel enregistré</p>
+                            @else
+                                <p class="text-sm">Aucun passager trouvé pour ce {{ $signalement->convoi_id ? 'convoi' : 'voyage' }}</p>
+                            @endif
                         </div>
                     </div>
                 @else
                     <div class="overflow-y-auto flex-1">
+
+                        {{-- ── Passagers de VOYAGE (reservations) ── --}}
                         @foreach($reservations as $res)
                             @php
                                 $name = trim(($res->passager_nom ?? '') . ' ' . ($res->passager_prenom ?? ''));
                                 if (!$name) $name = $res->user->name ?? 'Inconnu';
                                 $seat = $res->seat_number ?? '?';
-                                
-                                // Photo profile
                                 $photoPath = ($res->user && $res->user->photo_profile_path) ? $res->user->photo_profile_path : null;
                                 $photo = $photoPath ? asset('storage/' . $photoPath) : '';
-                                
-                                // Infos d'urgence
                                 $urgenceNom = $res->nom_passager_urgence ?: ($res->user->nom_urgence ?? '');
                                 $urgenceContact = $res->passager_urgence ?: ($res->user->contact_urgence ?? '');
                             @endphp
@@ -119,7 +131,6 @@
                                  data-urgence-contact="{{ $urgenceContact }}"
                                  data-statut="indemne"
                                  onclick="selectPassenger(this)">
-                                {{-- Photo ou Numéro de place --}}
                                 <div class="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center flex-shrink-0 text-indigo-700 font-black text-sm overflow-hidden border border-indigo-200 shadow-sm">
                                     @if($photo)
                                         <img src="{{ $photo }}" alt="{{ $name }}" class="w-full h-full object-cover">
@@ -127,17 +138,49 @@
                                         {{ $seat }}
                                     @endif
                                 </div>
-                                {{-- Nom --}}
                                 <div class="flex-1 min-w-0">
                                     <p class="font-bold text-gray-800 text-sm truncate">{{ $name }}</p>
                                     <p class="text-xs text-gray-400">Place n°{{ $seat }}</p>
                                 </div>
-                                {{-- Badge statut --}}
                                 <span class="status-badge text-[10px] font-black px-2 py-0.5 rounded-full bg-green-100 text-green-700 flex-shrink-0">
                                     Indemne
                                 </span>
                             </div>
                         @endforeach
+
+                        {{-- ── Passagers de CONVOI (manuellement ajoutés, non-garant) ── --}}
+                        @foreach($convoisPassagers as $index => $cp)
+                            @php
+                                $name = trim(($cp->prenoms ?? '') . ' ' . ($cp->nom ?? '')) ?: 'Passager '.($index+1);
+                                $seat = $index + 1; // numéro d'ordre
+                                $urgenceContact = $cp->contact_urgence ?? '';
+                            @endphp
+                            <div class="passenger-item border-b border-gray-50 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors flex items-center gap-3"
+                                 data-res-id="{{ $cp->id }}"
+                                 data-name="{{ $name }}"
+                                 data-seat="{{ $seat }}"
+                                 data-photo=""
+                                 data-urgence-nom=""
+                                 data-urgence-contact="{{ $urgenceContact }}"
+                                 data-statut="indemne"
+                                 onclick="selectPassenger(this)">
+                                <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0 text-blue-700 font-black text-sm border border-blue-200 shadow-sm">
+                                    {{ $seat }}
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="font-bold text-gray-800 text-sm truncate">{{ $name }}</p>
+                                    @if($cp->contact)
+                                        <p class="text-xs text-gray-400"><i class="fas fa-phone mr-1"></i>{{ $cp->contact }}</p>
+                                    @else
+                                        <p class="text-xs text-gray-400">Passager n°{{ $seat }}</p>
+                                    @endif
+                                </div>
+                                <span class="status-badge text-[10px] font-black px-2 py-0.5 rounded-full bg-green-100 text-green-700 flex-shrink-0">
+                                    Indemne
+                                </span>
+                            </div>
+                        @endforeach
+
                     </div>
                 @endif
             </div>
@@ -172,12 +215,12 @@
                             <i class="fas fa-exclamation-triangle"></i> Informations d'urgence
                         </p>
                         <div class="grid grid-cols-1 gap-1">
-                            <div class="flex items-center gap-2 text-sm font-black text-gray-900">
-                                <span class="text-red-400 text-xs font-medium uppercase tracking-tighter">Contact:</span>
+                            <div id="urgence-nom-row" class="flex items-center gap-2 text-sm font-black text-gray-900">
+                                <span class="text-red-400 text-xs font-medium uppercase tracking-tighter">Nom:</span>
                                 <span id="sel-urgence-nom">—</span>
                             </div>
                             <div class="flex items-center gap-2 text-sm font-bold text-gray-600">
-                                <span class="text-red-400 text-xs font-medium uppercase tracking-tighter">Tel:</span>
+                                <span class="text-red-400 text-xs font-medium uppercase tracking-tighter">Tel urgence:</span>
                                 <span id="sel-urgence-contact">—</span>
                             </div>
                         </div>
@@ -332,6 +375,9 @@
             urgenceSection.classList.remove('hidden');
             document.getElementById('sel-urgence-nom').textContent = urgNom || 'Non renseigné';
             document.getElementById('sel-urgence-contact').textContent = urgTel || 'Non renseigné';
+            // Masquer la ligne "Nom" si vide (passagers convoi)
+            const nomRow = document.getElementById('urgence-nom-row');
+            if (nomRow) nomRow.style.display = urgNom ? '' : 'none';
         } else {
             urgenceSection.classList.add('hidden');
         }

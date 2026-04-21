@@ -1184,9 +1184,14 @@
         <div class="section-body">
             <div style="font-weight:800;color:#1e293b;margin-bottom:6px;" id="trackingCoords">Position : --</div>
             <div style="font-size:12px;color:#6b7280;font-weight:600;" id="trackingMeta">Dernière mise à jour : --</div>
-            <a href="#" id="trackingMapLink" target="_blank"
-               style="display:none;margin-top:12px;padding:9px 16px;border-radius:10px;background:#0284c7;color:#fff;font-size:12px;font-weight:800;text-decoration:none;text-transform:uppercase;letter-spacing:.3px;">
-                <i class="fas fa-map-marker-alt mr-1"></i> Voir sur Google Maps
+            {{-- Bouton suivi → page temps réel de la gare --}}
+            <a href="{{ route('gare-espace.tracking.index') }}" id="trackingMapLink"
+               style="display:none;margin-top:12px;padding:10px 20px;border-radius:10px;background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;font-size:12px;font-weight:900;text-decoration:none;text-transform:uppercase;letter-spacing:.4px;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 12px rgba(2,132,199,.3);transition:all .2s;">
+                <span class="relative flex h-2 w-2" style="flex-shrink:0;">
+                    <span style="position:absolute;inset:0;border-radius:50%;background:#fff;opacity:.75;animation:trackPulse 1.4s ease-in-out infinite;"></span>
+                    <span style="position:relative;display:inline-flex;border-radius:50%;height:8px;width:8px;background:#fff;"></span>
+                </span>
+                <i class="fas fa-satellite-dish"></i> Ouvrir le suivi en temps réel
             </a>
         </div>
     </div>

@@ -263,6 +263,50 @@
         flex-shrink: 0;
     }
     .legend-toggle.off { background: #d1d5db; color: #6b7280; }
+
+    /* ── Responsive layout ── */
+    .tracking-layout {
+        display: flex;
+        gap: 24px;
+        align-items: flex-start;
+    }
+
+    .tracking-map-col {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .tracking-sidebar-col {
+        width: 320px;
+        flex-shrink: 0;
+    }
+
+    @media (max-width: 767px) {
+        #trackingMap {
+            height: 55vw;
+            min-height: 260px;
+        }
+
+        .tracking-layout {
+            flex-direction: column;
+        }
+
+        .tracking-sidebar-col {
+            width: 100%;
+        }
+
+        .voyage-sidebar {
+            max-height: 320px;
+        }
+
+        .tracking-header {
+            padding: 16px 18px;
+        }
+
+        .tracking-header h1 {
+            font-size: 1.15rem;
+        }
+    }
 </style>
 @endsection
 
@@ -293,14 +337,14 @@
         </div>
 
         <!-- Map + Sidebar -->
-        <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start;">
+        <div class="tracking-layout">
             <!-- Map -->
-            <div style="flex:1; min-width:0;">
+            <div class="tracking-map-col">
                 <div id="trackingMap"></div>
             </div>
 
             <!-- Sidebar -->
-            <div style="width:320px; flex-shrink:0;">
+            <div class="tracking-sidebar-col">
                 <div class="voyage-sidebar">
                     <div class="voyage-sidebar-header">
                         <i class="fas fa-list-ul mr-2"></i> Voyages en cours

@@ -59,20 +59,55 @@
                         </div>
                         @endif
 
-                        {{-- STEP 1: Voyage --}}
+                        {{-- STEP 1: Voyage / Convoi concerné --}}
                         <div class="mb-4">
                             <h6 class="fw-bold d-flex align-items-center gap-2 mb-3">
-                                <span class="step-num">1</span> Voyage concerné
+                                <span class="step-num">1</span>
+                                {{ isset($activeConvoi) && $activeConvoi ? 'Convoi concerné' : 'Voyage concerné' }}
                             </h6>
 
-                            @if(isset($activeVoyage) && $activeVoyage)
-                                {{-- Active Voyage Auto-Selected --}}
+                            @if(isset($activeConvoi) && $activeConvoi)
+                                {{-- ── Convoi auto-sélectionné ── --}}
+                                <div class="active-voyage-card" style="background: linear-gradient(135deg, #eff6ff, #dbeafe); border-color: #93c5fd;">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div><span class="pulse-dot" style="background:#3b82f6;"></span></div>
+                                            <div>
+                                                <div class="fw-bold text-dark" style="font-size:0.85rem;">
+                                                    <i class="fas fa-route me-1 text-primary"></i>
+                                                    @if($activeConvoi->itineraire)
+                                                        {{ $activeConvoi->itineraire->point_depart }} → {{ $activeConvoi->itineraire->point_arrive }}
+                                                    @elseif($activeConvoi->lieu_depart)
+                                                        {{ $activeConvoi->lieu_depart }} → {{ $activeConvoi->lieu_retour }}
+                                                    @else
+                                                        Convoi #{{ $activeConvoi->reference }}
+                                                    @endif
+                                                </div>
+                                                <div class="text-muted" style="font-size: 0.78rem;">
+                                                    {{ \Carbon\Carbon::parse($activeConvoi->date_depart)->format('d/m/Y') }}
+                                                    @if($activeConvoi->heure_depart) à {{ substr($activeConvoi->heure_depart, 0, 5) }} @endif
+                                                    @if($activeConvoi->vehicule)
+                                                        · <i class="fas fa-bus"></i> {{ $activeConvoi->vehicule->immatriculation }}
+                                                    @endif
+                                                </div>
+                                                <div style="font-size:0.72rem; color:#6b7280; margin-top:2px;">
+                                                    Réf : <strong>{{ $activeConvoi->reference }}</strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <span class="badge text-white rounded-pill px-3 py-2 fw-bold" style="background:#3b82f6; font-size: 0.7rem;">
+                                            <i class="fas fa-road me-1"></i> EN COURS
+                                        </span>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="convoi_id" value="{{ $activeConvoi->id }}">
+
+                            @elseif(isset($activeVoyage) && $activeVoyage)
+                                {{-- ── Voyage auto-sélectionné ── --}}
                                 <div class="active-voyage-card">
                                     <div class="d-flex align-items-center justify-content-between">
                                         <div class="d-flex align-items-center gap-3">
-                                            <div>
-                                                <span class="pulse-dot"></span>
-                                            </div>
+                                            <div><span class="pulse-dot"></span></div>
                                             <div>
                                                 <div class="fw-bold text-dark">
                                                     {{ $activeVoyage->programme->point_depart ?? '' }} → {{ $activeVoyage->programme->point_arrive ?? '' }}
@@ -80,7 +115,7 @@
                                                 <div class="text-muted" style="font-size: 0.8rem;">
                                                     {{ \Carbon\Carbon::parse($activeVoyage->date_voyage)->format('d/m/Y') }} à {{ $activeVoyage->programme->heure_depart ?? '' }}
                                                     @if($activeVoyage->vehicule)
-                                                     · <i class="fas fa-bus"></i> {{ $activeVoyage->vehicule->immatriculation }}
+                                                        · <i class="fas fa-bus"></i> {{ $activeVoyage->vehicule->immatriculation }}
                                                     @endif
                                                 </div>
                                             </div>
@@ -91,7 +126,9 @@
                                     </div>
                                 </div>
                                 <input type="hidden" name="voyage_id" value="{{ $activeVoyage->id }}">
+
                             @else
+                                {{-- ── Dropdown (aucun voyage/convoi actif ou pré-sélectionné) ── --}}
                                 <select name="voyage_id" class="form-select @error('voyage_id') is-invalid @enderror" required>
                                     <option value="">-- Choisir un voyage --</option>
                                     @foreach($voyages as $v)
