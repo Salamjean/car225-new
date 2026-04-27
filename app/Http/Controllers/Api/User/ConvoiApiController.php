@@ -52,7 +52,7 @@ class ConvoiApiController extends Controller
                 'id'    => $convoi->compagnie->id,
                 'name'  => $convoi->compagnie->name,
                 'sigle' => $convoi->compagnie->sigle,
-                'logo'  => $convoi->compagnie->logo ? asset('storage/' . $convoi->compagnie->logo) : null,
+                'logo'  => $convoi->compagnie->path_logo ? asset('storage/' . $convoi->compagnie->path_logo) : null,
             ] : null,
             'gare' => $convoi->gare ? [
                 'id'       => $convoi->gare->id,
@@ -143,12 +143,12 @@ class ConvoiApiController extends Controller
     {
         $compagnies = Compagnie::where('statut', 'actif')
             ->orderBy('name')
-            ->get(['id', 'name', 'sigle', 'logo'])
+            ->get(['id', 'name', 'sigle', 'path_logo'])
             ->map(fn($c) => [
                 'id'    => $c->id,
                 'name'  => $c->name,
                 'sigle' => $c->sigle,
-                'logo'  => $c->logo ? asset('storage/' . $c->logo) : null,
+                'logo'  => $c->path_logo ? asset('storage/' . $c->path_logo) : null,
             ]);
 
         return response()->json(['success' => true, 'compagnies' => $compagnies]);
@@ -359,14 +359,17 @@ class ConvoiApiController extends Controller
             Log::error('FCM API accepterMontant: ' . $e->getMessage());
         }
 
-        // SMS gare
+        // SMS gare (même format que le web)
         try {
+            $convoi->loadMissing(['gare', 'itineraire']);
             $gare = $convoi->gare;
-            if ($gare && $gare->contact) {
+            if ($gare) {
+                $depart   = $convoi->lieu_depart ?? ($convoi->itineraire->point_depart ?? 'N/A');
+                $arrivee  = $convoi->lieu_retour ?? ($convoi->itineraire->point_arrive ?? 'N/A');
                 $montantF = number_format($convoi->montant, 0, ',', ' ');
                 app(\App\Services\SmsService::class)->sendSms(
-                    $gare->contact,
-                    "CAR225 : Le client a ACCEPTE le montant de {$montantF} FCFA pour le convoi ref {$convoi->reference}. Solde en attente."
+                    $gare->contact ?? '',
+                    "CAR225 : Le client {$convoi->demandeur_nom} a ACCEPTE le montant de {$montantF} FCFA pour le convoi ref {$convoi->reference} ({$depart} → {$arrivee}). Solde en attente."
                 );
             }
         } catch (\Exception $e) {
@@ -454,6 +457,8 @@ class ConvoiApiController extends Controller
             }
         }
 
+        $previouslySubmitted = (bool) $convoi->passagers_soumis;
+
         $convoi->update([
             'lieu_rassemblement'        => $request->lieu_rassemblement,
             'lieu_rassemblement_retour' => $request->lieu_rassemblement_retour,
@@ -462,6 +467,7 @@ class ConvoiApiController extends Controller
         ]);
 
         $convoi->passagers()->delete();
+        $passengersData = [];
         foreach (($request->input('passagers') ?? []) as $p) {
             $nom     = trim($p['nom'] ?? '');
             $prenoms = trim($p['prenoms'] ?? '');
@@ -473,6 +479,43 @@ class ConvoiApiController extends Controller
                     'contact'         => $contact ?: null,
                     'contact_urgence' => trim($p['contact_urgence'] ?? '') ?: null,
                 ]);
+                if ($contact) {
+                    $passengersData[] = $contact;
+                }
+            }
+        }
+
+        // ── SMS aux passagers — uniquement à la première soumission (identique au web) ──
+        if (!$previouslySubmitted && !empty($passengersData)) {
+            try {
+                $convoi->loadMissing('itineraire');
+                $depart     = $convoi->lieu_depart ?? ($convoi->itineraire->point_depart ?? 'N/A');
+                $arrivee    = $convoi->lieu_retour ?? ($convoi->itineraire->point_arrive ?? 'N/A');
+                $dateDepart = $convoi->date_depart ? Carbon::parse($convoi->date_depart)->format('d/m/Y') : 'N/A';
+                $hDepart    = $convoi->heure_depart ? substr($convoi->heure_depart, 0, 5) : '';
+                $lieu       = $convoi->lieu_rassemblement;
+
+                $smsBody = "CAR225 : Vous etes passager d'un convoi ref {$convoi->reference}.\n"
+                         . "Trajet : {$depart} -> {$arrivee}\n"
+                         . "Depart : {$dateDepart}" . ($hDepart ? " a {$hDepart}" : '') . "\n"
+                         . "Lieu : {$lieu}";
+
+                if ($convoi->date_retour) {
+                    $dateRetour = Carbon::parse($convoi->date_retour)->format('d/m/Y');
+                    $hRetour    = $convoi->heure_retour ? substr($convoi->heure_retour, 0, 5) : '';
+                    $lieuRet    = $convoi->lieu_rassemblement_retour;
+                    $smsBody .= "\nRetour : {$dateRetour}" . ($hRetour ? " a {$hRetour}" : '') . "\n"
+                              . "Lieu retour : " . ($lieuRet ?? 'A definir');
+                }
+
+                $smsBody .= "\nSuivez le convoi : " . route('home.download-app');
+
+                $smsService = app(\App\Services\SmsService::class);
+                foreach (array_unique($passengersData) as $phone) {
+                    $smsService->sendSms($phone, $smsBody);
+                }
+            } catch (\Exception $e) {
+                Log::error('SMS API storePassagers: ' . $e->getMessage());
             }
         }
 

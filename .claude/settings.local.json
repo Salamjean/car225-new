@@ -8,7 +8,14 @@
       "Bash(php -l app/Mail/ConvoiChauffeurAssigneMail.php)",
       "Bash(dir \"C:\\\\Users\\\\THEWAYNE\\\\Documents\\\\car225-new\\\\database\\\\migrations\")",
       "Bash(findstr convoi *)",
-      "Bash(dir \"C:\\\\Users\\\\THEWAYNE\\\\Documents\\\\car225-new\\\\resources\\\\views\\\\gare-espace\\\\convois\")"
+      "Bash(dir \"C:\\\\Users\\\\THEWAYNE\\\\Documents\\\\car225-new\\\\resources\\\\views\\\\gare-espace\\\\convois\")",
+      "Bash(grep -E \"\\\\.\\(dart\\)$\")",
+      "Bash(grep -E \"\\\\.dart$\")",
+      "Bash(php -l app/Http/Controllers/Api/Chauffeur/ConvoiApiController.php)",
+      "Bash(php -l app/Http/Controllers/Api/Chauffeur/SignalementApiController.php)",
+      "Read(//c/Users/THEWAYNE/Documents/CAR225Mobile/**)",
+      "Bash(flutter analyze *)",
+      "Bash(php -l \"C:\\\\Users\\\\THEWAYNE\\\\Documents\\\\car225-new\\\\app\\\\Http\\\\Controllers\\\\Api\\\\Chauffeur\\\\ChauffeurApiController.php\")"
     ]
   }
 }

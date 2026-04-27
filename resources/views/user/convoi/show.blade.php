@@ -321,9 +321,9 @@
                 Modification de la liste des passagers. Cliquez sur Enregistrer pour valider les changements.
             </div>
             @endif
-            <form action="{{ route('user.convoi.store-passengers', $convoi) }}" method="POST" id="mainConvoiForm">
+          <form action="{{ route('user.convoi.store-passengers', $convoi) }}" method="POST" id="mainConvoiForm" class="space-y-6">
             @csrf
-            <input type="hidden" name="is_garant" id="hiddenIsGarant" value="{{ $convoi->is_garant ? '1' : '0' }}">
+          <input type="hidden" name="is_garant" id="hiddenIsGarant" value="{{ ($convoi->is_garant || !$convoi->passagers_soumis) ? '1' : '0' }}">
 
             @if ($errors->any())
             <div class="rounded-2xl bg-red-50 border border-red-200 px-5 py-4 text-red-700 text-sm font-semibold">
@@ -333,29 +333,6 @@
             </div>
             @endif
 
-            {{-- Lien partageable --}}
-            @if($convoi->passenger_form_token)
-            <div class="bg-orange-50 border border-orange-200 rounded-2xl p-5">
-                <div class="flex items-start gap-3 mb-3">
-                    <div class="w-9 h-9 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0">
-                        <i class="fas fa-share-alt text-orange-600"></i>
-                    </div>
-                    <div>
-                        <p class="text-sm font-black text-orange-800">Lien de saisie pour vos passagers</p>
-                        <p class="text-xs text-orange-600 font-medium mt-1">Partagez ce lien à vos passagers pour qu'ils renseignent eux-mêmes leurs informations.</p>
-                    </div>
-                </div>
-                @php $lienPassagerUser = route('public.convoi.passagers.form', $convoi->passenger_form_token); @endphp
-                <div class="flex items-center gap-2 bg-white border border-orange-200 rounded-xl p-3">
-                    <i class="fas fa-link text-orange-400 text-xs flex-shrink-0"></i>
-                    <span class="text-xs text-orange-800 font-semibold break-all flex-1" id="lienPassagerUserText">{{ $lienPassagerUser }}</span>
-                    <button type="button" onclick="copyUserLink()" id="copyUserBtn"
-                            class="flex-shrink-0 px-3 py-1.5 rounded-lg bg-[#e94f1b] text-white text-xs font-black">
-                        <i class="fas fa-copy"></i> Copier
-                    </button>
-                </div>
-            </div>
-            @endif
 
             {{-- Section: Lieu de rassemblement --}}
             <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
@@ -398,7 +375,7 @@
                         <label class="flex items-start gap-4 cursor-pointer">
                             <div class="relative flex-shrink-0 mt-0.5">
                                 <input type="checkbox" id="toggleGarant"
-                                    {{ $convoi->is_garant ? 'checked' : '' }}
+                                    {{ ($convoi->is_garant || !$convoi->passagers_soumis) ? 'checked' : '' }}
                                     class="sr-only peer">
                                 <div class="w-10 h-6 bg-gray-200 rounded-full peer-checked:bg-[#e94f1b] transition-colors duration-200 peer-focus:ring-2 peer-focus:ring-[#e94f1b]/30"></div>
                                 <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 peer-checked:translate-x-4"></div>
@@ -414,7 +391,29 @@
                     </div>
                 </div>
             </div>
-
+  {{-- Lien partageable --}}
+            @if($convoi->passenger_form_token)
+           <div class="bg-orange-50 border border-orange-200 rounded-2xl p-5" id="lienSaisieBlock">
+                <div class="flex items-start gap-3 mb-3">
+                    <div class="w-9 h-9 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-share-alt text-orange-600"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-black text-orange-800">Ou partagez le lien aux passagers</p>
+                        <p class="text-xs text-orange-600 font-medium mt-1">Partagez ce lien aux passagers pour qu'ils renseignent eux-mêmes leurs informations.</p>
+                    </div>
+                </div>
+                @php $lienPassagerUser = route('public.convoi.passagers.form', $convoi->passenger_form_token); @endphp
+                <div class="flex items-center gap-2 bg-white border border-orange-200 rounded-xl p-3">
+                    <i class="fas fa-link text-orange-400 text-xs flex-shrink-0"></i>
+                    <span class="text-xs text-orange-800 font-semibold break-all flex-1" id="lienPassagerUserText">{{ $lienPassagerUser }}</span>
+                    <button type="button" onclick="copyUserLink()" id="copyUserBtn"
+                            class="flex-shrink-0 px-3 py-1.5 rounded-lg bg-[#e94f1b] text-white text-xs font-black">
+                        <i class="fas fa-copy"></i> Copier
+                    </button>
+                </div>
+            </div>
+            @endif
             <div class="bg-white rounded-[28px] border border-gray-100 shadow-sm overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
                     <h3 class="text-sm font-black text-gray-800 uppercase tracking-wider">
@@ -685,12 +684,20 @@
         row0OriginalValues = null;
     }
 
-    function applyGarantMode(isGarant, prefill) {
+   function applyGarantMode(isGarant, prefill) {
         passengerRows.forEach(function(row) {
             const idx = parseInt(row.dataset.index, 10);
             if (idx > 0) row.style.display = isGarant ? 'none' : '';
         });
         if (hiddenIsGarant) hiddenIsGarant.value = isGarant ? '1' : '0';
+
+        // --- NOUVEAU : Cacher ou afficher le bloc du lien ---
+        const lienSaisieBlock = document.getElementById('lienSaisieBlock');
+        if (lienSaisieBlock) {
+            lienSaisieBlock.style.display = isGarant ? 'none' : 'block';
+        }
+        // ----------------------------------------------------
+
         const label0 = document.querySelector('.passenger-row-label[data-index="0"]');
         if (label0) {
             label0.innerHTML = isGarant

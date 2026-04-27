@@ -249,6 +249,14 @@ Route::prefix('chauffeur')->group(function () {
         Route::post('/voyages/{voyage}/annuler', [\App\Http\Controllers\Api\Chauffeur\VoyageApiController::class, 'annuler']);
         Route::post('/voyages/{voyage}/update-location', [\App\Http\Controllers\Api\Chauffeur\VoyageApiController::class, 'updateLocation']);
 
+        // Convois (missions de convoyage affectées au chauffeur)
+        Route::get('/convois', [\App\Http\Controllers\Api\Chauffeur\ConvoiApiController::class, 'index']);
+        Route::get('/convois/{convoi}', [\App\Http\Controllers\Api\Chauffeur\ConvoiApiController::class, 'show']);
+        Route::post('/convois/{convoi}/start', [\App\Http\Controllers\Api\Chauffeur\ConvoiApiController::class, 'start']);
+        Route::post('/convois/{convoi}/complete', [\App\Http\Controllers\Api\Chauffeur\ConvoiApiController::class, 'complete']);
+        Route::post('/convois/{convoi}/annuler', [\App\Http\Controllers\Api\Chauffeur\ConvoiApiController::class, 'annuler']);
+        Route::post('/convois/{convoi}/update-location', [\App\Http\Controllers\Api\Chauffeur\ConvoiApiController::class, 'updateLocation']);
+
         // Scan QR des réservations
         Route::get('/reservations/scan-info', [\App\Http\Controllers\Api\Chauffeur\ReservationApiController::class, 'scanInfo']);
         Route::post('/reservations/search', [\App\Http\Controllers\Api\Chauffeur\ReservationApiController::class, 'search']);

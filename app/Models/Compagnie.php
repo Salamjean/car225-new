@@ -129,4 +129,12 @@ class Compagnie extends Authenticatable
     {
         return $this->hasMany(Convoi::class);
     }
+
+    /**
+     * Get the logo path (accessor for backward compatibility)
+     */
+    public function getLogoAttribute()
+    {
+        return $this->path_logo;
+    }
 }

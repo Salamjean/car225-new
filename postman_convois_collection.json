@@ -1,22 +1,24 @@
 {
   "info": {
     "name": "CAR225 — API Convois",
-    "description": "Collection Postman complète pour tester les endpoints convois de l'API mobile CAR225.\n\n**Setup :**\n1. Créez un environnement Postman avec les variables listées ci-dessous\n2. Exécutez d'abord la requête **Login** — le token sera automatiquement sauvegardé\n3. Toutes les requêtes protégées utilisent `{{token}}` en Bearer Auth",
+    "description": "Collection Postman complète pour tester les endpoints convois de l'API mobile CAR225.\n\n**Setup :**\n1. Créez un environnement Postman avec les variables listées ci-dessous\n2. Exécutez d'abord la requête **Login (contact / code_id)** — le token sera automatiquement sauvegardé\n3. Toutes les requêtes protégées utilisent `{{token}}` en Bearer Auth\n\n**Méthodes d'authentification disponibles :**\n- `POST /api/user/login` → contact ou code_id + mot de passe\n- `POST /api/user/google-auth` → authentification Google OAuth\n- `POST /api/user/register` → inscription classique (renvoie un OTP à vérifier)\n- `POST /api/user/verify-phone-otp` → validation OTP après inscription/login non vérifié",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "base_url",   "value": "http://127.0.0.1:8000/api",  "type": "string" },
-    { "key": "token",      "value": "",                            "type": "string" },
-    { "key": "convoi_id",  "value": "",                            "type": "string" },
-    { "key": "passager_id","value": "",                            "type": "string" }
+    { "key": "base_url",    "value": "http://127.0.0.1:8000/api", "type": "string" },
+    { "key": "token",       "value": "",                           "type": "string" },
+    { "key": "convoi_id",   "value": "",                           "type": "string" },
+    { "key": "passager_id", "value": "",                           "type": "string" },
+    { "key": "otp_contact", "value": "",                           "type": "string" }
   ],
   "item": [
 
     {
       "name": "🔐 Authentification",
       "item": [
+
         {
-          "name": "Login",
+          "name": "Login — par contact (téléphone)",
           "event": [
             {
               "listen": "test",
@@ -25,10 +27,117 @@
                   "const res = pm.response.json();",
                   "if (res.token) {",
                   "    pm.collectionVariables.set('token', res.token);",
-                  "    console.log('Token sauvegardé :', res.token);",
+                  "    console.log('✅ Token sauvegardé :', res.token);",
+                  "}",
+                  "if (res.requires_otp) {",
+                  "    pm.collectionVariables.set('otp_contact', res.contact);",
+                  "    console.log('⚠️ OTP requis pour :', res.contact);",
                   "}",
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Token présent', () => pm.expect(res.token).to.be.a('string'));"
+                  "pm.test('Token OU OTP requis', () => {",
+                  "    pm.expect(res.token || res.requires_otp).to.be.ok;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept",       "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"0701234567\",\n  \"password\": \"password\",\n  \"fcm_token\": null,\n  \"nom_device\": \"Postman\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/user/login", "host": ["{{base_url}}"], "path": ["user","login"] },
+            "description": "Connexion avec le numéro de téléphone (champ `login`).\nLe champ `login` accepte le contact OU le code_id."
+          }
+        },
+
+        {
+          "name": "Login — par code_id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.token) {",
+                  "    pm.collectionVariables.set('token', res.token);",
+                  "    console.log('✅ Token sauvegardé :', res.token);",
+                  "}",
+                  "if (res.requires_otp) {",
+                  "    pm.collectionVariables.set('otp_contact', res.contact);",
+                  "    console.log('⚠️ OTP requis pour :', res.contact);",
+                  "}",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept",       "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"CAR-XXXXXXXX\",\n  \"password\": \"password\",\n  \"fcm_token\": null,\n  \"nom_device\": \"Postman\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/user/login", "host": ["{{base_url}}"], "path": ["user","login"] },
+            "description": "Connexion avec le code_id CAR225 (champ `login`).\nMême endpoint que par contact — `login` accepte contact OU code_id."
+          }
+        },
+
+        {
+          "name": "Login — via Google (google-auth)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.token) {",
+                  "    pm.collectionVariables.set('token', res.token);",
+                  "    console.log('✅ Token Google sauvegardé :', res.token);",
+                  "}",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Token présent', () => pm.expect(res.token).to.be.a('string'));",
+                  "if (res.requires_contact) {",
+                  "    console.log('⚠️ Numéro de téléphone requis pour cet utilisateur Google');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept",       "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"utilisateur@gmail.com\",\n  \"google_id\": \"1234567890abcdef\",\n  \"name\": \"KONAN\",\n  \"prenom\": \"Aya\",\n  \"avatar_url\": \"https://lh3.googleusercontent.com/...\",\n  \"google_token\": \"ya29.a0AfH...\",\n  \"fcm_token\": null,\n  \"nom_device\": \"Postman\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/user/google-auth", "host": ["{{base_url}}"], "path": ["user","google-auth"] },
+            "description": "Connexion / Inscription via Google OAuth.\nSi `requires_contact: true` dans la réponse, appeler `update-contact` ensuite.\n\nChamps requis : `email`, `google_id`, `name`.\nChamps optionnels : `prenom`, `avatar_url`, `google_token`, `contact`, `fcm_token`, `nom_device`."
+          }
+        },
+
+        {
+          "name": "Google — Mettre à jour le contact (après Google Auth)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('Contact mis à jour', () => pm.expect(res.success).to.be.true);"
                 ]
               }
             }
@@ -37,15 +146,230 @@
             "method": "POST",
             "header": [
               { "key": "Content-Type",  "value": "application/json" },
-              { "key": "Accept",        "value": "application/json" }
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"redfieldluise@gmail.com\",\n  \"password\": \"password\"\n}"
+              "raw": "{\n  \"contact\": \"0701234567\"\n}"
             },
-            "url": { "raw": "{{base_url}}/user/login", "host": ["{{base_url}}"], "path": ["user","login"] }
+            "url": { "raw": "{{base_url}}/user/update-contact", "host": ["{{base_url}}"], "path": ["user","update-contact"] },
+            "description": "Obligatoire pour les utilisateurs connectés via Google qui n'ont pas encore de numéro de téléphone.\nRépondre à `requires_contact: true` retourné par `google-auth`."
+          }
+        },
+
+        {
+          "name": "Inscription",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const res = pm.response.json();",
+                  "pm.test('OTP envoyé', () => pm.expect(res.requires_otp).to.be.true);",
+                  "pm.collectionVariables.set('otp_contact', res.contact);",
+                  "console.log('⚠️ OTP envoyé au numéro :', res.contact, '| Code ID :', res.user?.code_id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept",       "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"KONAN\",\n  \"prenom\": \"Aya Marie\",\n  \"email\": \"aya.konan@example.com\",\n  \"contact\": \"0701234567\",\n  \"password\": \"password12\",\n  \"password_confirmation\": \"password12\",\n  \"fcm_token\": null\n}"
+            },
+            "url": { "raw": "{{base_url}}/user/register", "host": ["{{base_url}}"], "path": ["user","register"] },
+            "description": "Crée un compte et envoie un OTP SMS au numéro de contact.\nAprès inscription, appeler `Vérifier OTP téléphone` pour activer le compte et récupérer le token."
+          }
+        },
+
+        {
+          "name": "Vérifier OTP téléphone (après inscription / login non vérifié)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('Token présent', () => pm.expect(res.token).to.be.a('string'));",
+                  "if (res.token) {",
+                  "    pm.collectionVariables.set('token', res.token);",
+                  "    console.log('✅ Compte vérifié — Token sauvegardé :', res.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept",       "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contact\": \"{{otp_contact}}\",\n  \"otp\": \"123456\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/user/verify-phone-otp", "host": ["{{base_url}}"], "path": ["user","verify-phone-otp"] },
+            "description": "Valide le code OTP reçu par SMS après inscription ou tentative de login sur un compte non vérifié.\nRetourne le token Sanctum en cas de succès."
+          }
+        },
+
+        {
+          "name": "Renvoyer OTP téléphone",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('Success true', () => pm.expect(res.success).to.be.true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept",       "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contact\": \"{{otp_contact}}\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/user/resend-phone-otp", "host": ["{{base_url}}"], "path": ["user","resend-phone-otp"] }
+          }
+        },
+
+        {
+          "name": "Déconnexion",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+                  "pm.collectionVariables.set('token', '');",
+                  "console.log('Token effacé');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/user/logout", "host": ["{{base_url}}"], "path": ["user","logout"] }
           }
         }
+
+      ]
+    },
+
+    {
+      "name": "🔑 Mot de passe oublié",
+      "item": [
+
+        {
+          "name": "1. Envoyer OTP (email / contact / code_id)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('OTP envoyé', () => pm.expect(res.success).to.be.true);",
+                  "console.log('OTP envoyé à :', res.email);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept",       "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identity\": \"0701234567\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/user/password/send-otp", "host": ["{{base_url}}"], "path": ["user","password","send-otp"] },
+            "description": "Envoie un OTP 6 chiffres par email et/ou SMS.\nLe champ `identity` accepte : email, numéro de contact, ou code_id."
+          }
+        },
+
+        {
+          "name": "2. Vérifier OTP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('OTP valide', () => pm.expect(res.success).to.be.true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept",       "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"0701234567\",\n  \"otp\": \"123456\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/user/password/verify-otp", "host": ["{{base_url}}"], "path": ["user","password","verify-otp"] },
+            "description": "Vérifie le code OTP. Le champ `email` doit contenir la valeur retournée par `send-otp` (res.email)."
+          }
+        },
+
+        {
+          "name": "3. Réinitialiser le mot de passe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('Mot de passe réinitialisé', () => pm.expect(res.success).to.be.true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept",       "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"0701234567\",\n  \"otp\": \"123456\",\n  \"password\": \"nouveauMdp12\",\n  \"password_confirmation\": \"nouveauMdp12\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/user/password/reset", "host": ["{{base_url}}"], "path": ["user","password","reset"] }
+          }
+        }
+
       ]
     },
 
@@ -73,8 +397,8 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Accept",         "value": "application/json" },
-              { "key": "Authorization",  "value": "Bearer {{token}}" }
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "url": { "raw": "{{base_url}}/user/convois-form/compagnies", "host": ["{{base_url}}"], "path": ["user","convois-form","compagnies"] }
           }
@@ -84,8 +408,8 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Accept",         "value": "application/json" },
-              { "key": "Authorization",  "value": "Bearer {{token}}" }
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "url": {
               "raw": "{{base_url}}/user/convois-form/compagnies/1/gares",
@@ -112,8 +436,8 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Accept",         "value": "application/json" },
-              { "key": "Authorization",  "value": "Bearer {{token}}" }
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "url": {
               "raw": "{{base_url}}/user/convois-form/compagnies/1/itineraires",
@@ -155,8 +479,8 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Accept",         "value": "application/json" },
-              { "key": "Authorization",  "value": "Bearer {{token}}" }
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "url": { "raw": "{{base_url}}/user/convois-form/reglement", "host": ["{{base_url}}"], "path": ["user","convois-form","reglement"] }
           }
@@ -190,8 +514,8 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Accept",         "value": "application/json" },
-              { "key": "Authorization",  "value": "Bearer {{token}}" }
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "url": {
               "raw": "{{base_url}}/user/convois?per_page=10",
@@ -199,7 +523,7 @@
               "path": ["user","convois"],
               "query": [
                 { "key": "per_page", "value": "10" },
-                { "key": "statut",   "value": "",    "disabled": true }
+                { "key": "statut",   "value": "",   "disabled": true }
               ]
             }
           }
@@ -209,8 +533,8 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Accept",         "value": "application/json" },
-              { "key": "Authorization",  "value": "Bearer {{token}}" }
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "url": {
               "raw": "{{base_url}}/user/convois?statut=paye",
@@ -241,9 +565,9 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type",   "value": "application/json" },
-              { "key": "Accept",         "value": "application/json" },
-              { "key": "Authorization",  "value": "Bearer {{token}}" }
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "body": {
               "mode": "raw",
@@ -270,9 +594,9 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type",   "value": "application/json" },
-              { "key": "Accept",         "value": "application/json" },
-              { "key": "Authorization",  "value": "Bearer {{token}}" }
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "body": {
               "mode": "raw",
@@ -298,9 +622,9 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type",   "value": "application/json" },
-              { "key": "Accept",         "value": "application/json" },
-              { "key": "Authorization",  "value": "Bearer {{token}}" }
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "body": {
               "mode": "raw",
@@ -340,8 +664,8 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Accept",         "value": "application/json" },
-              { "key": "Authorization",  "value": "Bearer {{token}}" }
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "url": {
               "raw": "{{base_url}}/user/convois/{{convoi_id}}",
@@ -374,9 +698,9 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type",   "value": "application/json" },
-              { "key": "Accept",         "value": "application/json" },
-              { "key": "Authorization",  "value": "Bearer {{token}}" }
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "body": {
               "mode": "raw",
@@ -406,14 +730,11 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type",   "value": "application/json" },
-              { "key": "Accept",         "value": "application/json" },
-              { "key": "Authorization",  "value": "Bearer {{token}}" }
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{}"
-            },
+            "body": { "mode": "raw", "raw": "{}" },
             "url": {
               "raw": "{{base_url}}/user/convois/{{convoi_id}}/accepter-montant",
               "host": ["{{base_url}}"],
@@ -438,8 +759,8 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Accept",         "value": "application/json" },
-              { "key": "Authorization",  "value": "Bearer {{token}}" }
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "body": { "mode": "raw", "raw": "{}" },
             "url": {
@@ -475,13 +796,13 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type",   "value": "application/json" },
-              { "key": "Accept",         "value": "application/json" },
-              { "key": "Authorization",  "value": "Bearer {{token}}" }
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"lieu_rassemblement\": \"Carrefour Akwaba, Cocody\",\n  \"lieu_rassemblement_retour\": null,\n  \"is_garant\": false,\n  \"passagers\": [\n    { \"nom\": \"KONAN\",   \"prenoms\": \"Aya Marie\",  \"contact\": \"0701234567\", \"contact_urgence\": \"0709876543\" },\n    { \"nom\": \"YAO\",     \"prenoms\": \"Koffi Jean\", \"contact\": \"0712345678\", \"contact_urgence\": \"\" },\n    { \"nom\": \"KOUASSI\", \"prenoms\": \"Brice\",      \"contact\": \"0723456789\", \"contact_urgence\": \"0700000000\" },\n    { \"nom\": \"N'GUESSAN\",\"prenoms\": \"Sandra\",   \"contact\": \"0734567890\", \"contact_urgence\": \"\" },\n    { \"nom\": \"BAMBA\",   \"prenoms\": \"Ibrahim\",   \"contact\": \"0745678901\", \"contact_urgence\": \"\" }\n  ]\n}"
+              "raw": "{\n  \"lieu_rassemblement\": \"Carrefour Akwaba, Cocody\",\n  \"lieu_rassemblement_retour\": null,\n  \"is_garant\": false,\n  \"passagers\": [\n    { \"nom\": \"KONAN\",    \"prenoms\": \"Aya Marie\",  \"contact\": \"0701234567\", \"contact_urgence\": \"0709876543\" },\n    { \"nom\": \"YAO\",      \"prenoms\": \"Koffi Jean\", \"contact\": \"0712345678\", \"contact_urgence\": \"\" },\n    { \"nom\": \"KOUASSI\",  \"prenoms\": \"Brice\",      \"contact\": \"0723456789\", \"contact_urgence\": \"0700000000\" },\n    { \"nom\": \"N'GUESSAN\",\"prenoms\": \"Sandra\",     \"contact\": \"0734567890\", \"contact_urgence\": \"\" },\n    { \"nom\": \"BAMBA\",    \"prenoms\": \"Ibrahim\",    \"contact\": \"0745678901\", \"contact_urgence\": \"\" }\n  ]\n}"
             },
             "url": {
               "raw": "{{base_url}}/user/convois/{{convoi_id}}/passagers",
@@ -507,9 +828,9 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type",   "value": "application/json" },
-              { "key": "Accept",         "value": "application/json" },
-              { "key": "Authorization",  "value": "Bearer {{token}}" }
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "body": {
               "mode": "raw",
@@ -539,9 +860,9 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type",   "value": "application/json" },
-              { "key": "Accept",         "value": "application/json" },
-              { "key": "Authorization",  "value": "Bearer {{token}}" }
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "body": {
               "mode": "raw",
@@ -572,9 +893,9 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type",   "value": "application/json" },
-              { "key": "Accept",         "value": "application/json" },
-              { "key": "Authorization",  "value": "Bearer {{token}}" }
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "body": {
               "mode": "raw",
@@ -606,8 +927,8 @@
           "request": {
             "method": "DELETE",
             "header": [
-              { "key": "Accept",         "value": "application/json" },
-              { "key": "Authorization",  "value": "Bearer {{token}}" }
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "url": {
               "raw": "{{base_url}}/user/convois/{{convoi_id}}/passagers/{{passager_id}}",
@@ -622,6 +943,33 @@
     {
       "name": "🔒 Erreurs & Sécurité",
       "item": [
+        {
+          "name": "Login — identifiants incorrects",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 422', () => pm.response.to.have.status(422));",
+                  "const res = pm.response.json();",
+                  "pm.test('Erreur login', () => pm.expect(res.errors).to.have.property('login'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept",       "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"0600000000\",\n  \"password\": \"mauvaismdp\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/user/login", "host": ["{{base_url}}"], "path": ["user","login"] }
+          }
+        },
         {
           "name": "Sans token — accès refusé",
           "event": [
@@ -655,8 +1003,8 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Accept",         "value": "application/json" },
-              { "key": "Authorization",  "value": "Bearer {{token}}" }
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "url": { "raw": "{{base_url}}/user/convois/999999", "host": ["{{base_url}}"], "path": ["user","convois","999999"] }
           }
@@ -678,9 +1026,9 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type",   "value": "application/json" },
-              { "key": "Accept",         "value": "application/json" },
-              { "key": "Authorization",  "value": "Bearer {{token}}" }
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "body": {
               "mode": "raw",
