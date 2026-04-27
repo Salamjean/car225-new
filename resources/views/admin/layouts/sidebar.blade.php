@@ -73,6 +73,27 @@
           </div>
         </div>
         <div class="mdc-list-item mdc-drawer-item">
+          <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel" data-target="ui-sub-onpc">
+            <i class="fas fa-shield-alt mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
+            ONPC
+            <i class="mdc-drawer-arrow material-icons">chevron_right</i>
+          </a>
+          <div class="mdc-expansion-panel" id="ui-sub-onpc">
+            <nav class="mdc-list mdc-drawer-submenu">
+              <div class="mdc-list-item mdc-drawer-item">
+                <a class="mdc-drawer-link" href="{{route('admin.onpc.create')}}">
+                  Ajouter
+                </a>
+              </div>
+              <div class="mdc-list-item mdc-drawer-item">
+                <a class="mdc-drawer-link" href="{{route('admin.onpc.index')}}">
+                  Liste
+                </a>
+              </div>
+            </nav>
+          </div>
+        </div>
+        <div class="mdc-list-item mdc-drawer-item">
           <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel" data-target="ui-sub-hotesse">
             <i class="fas fa-user-tie mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
             Gestion Hôtesses

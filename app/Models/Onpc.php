@@ -6,7 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class SapeurPompier extends Authenticatable
+/**
+ * Agent ONPC (Office National de la Protection Civile).
+ *
+ * Authentifié via le guard `onpc`. Voir config/auth.php.
+ */
+class Onpc extends Authenticatable
 {
     use HasFactory, Notifiable;
 
@@ -14,31 +19,19 @@ class SapeurPompier extends Authenticatable
         'name',
         'email',
         'password',
-        'commune',
-        'adresse',
         'contact',
-        'path_logo',
-        'latitude',
-        'longitude',
+        'localisation',
+        'photo_path',
         'statut',
     ];
 
     protected $hidden = [
         'password',
+        'remember_token',
     ];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
-        'latitude' => 'float',
-        'longitude' => 'float',
     ];
-
-    /**
-     * Tous les signalements assignés à cette caserne.
-     */
-    public function signalementsAssigned()
-    {
-        return $this->hasMany(Signalement::class, 'sapeur_pompier_id');
-    }
 }

@@ -15,7 +15,17 @@
       "Bash(php -l app/Http/Controllers/Api/Chauffeur/SignalementApiController.php)",
       "Read(//c/Users/THEWAYNE/Documents/CAR225Mobile/**)",
       "Bash(flutter analyze *)",
-      "Bash(php -l \"C:\\\\Users\\\\THEWAYNE\\\\Documents\\\\car225-new\\\\app\\\\Http\\\\Controllers\\\\Api\\\\Chauffeur\\\\ChauffeurApiController.php\")"
+      "Bash(php -l \"C:\\\\Users\\\\THEWAYNE\\\\Documents\\\\car225-new\\\\app\\\\Http\\\\Controllers\\\\Api\\\\Chauffeur\\\\ChauffeurApiController.php\")",
+      "Bash(grep -nE \"^use App\\\\\\\\\\\\\\\\Http\\\\\\\\\\\\\\\\Controllers\" routes/web.php)",
+      "Bash(php -l app/Http/Controllers/Admin/OnpcController.php)",
+      "Bash(php -l app/Http/Controllers/Onpc/OnpcAuthenticate.php)",
+      "Bash(php -l app/Http/Controllers/Onpc/OnpcPasswordResetController.php)",
+      "Bash(php -l app/Http/Controllers/Onpc/OnpcDashboardController.php)",
+      "Bash(php -l app/Http/Middleware/OnpcMiddleware.php)",
+      "Bash(php -l app/Models/User.php)",
+      "Bash(php -l app/Models/Reservation.php)",
+      "Bash(php -l app/Models/ConvoiPassager.php)",
+      "Bash(php -l database/migrations/2026_04_27_171500_add_passenger_profile_fields.php)"
     ]
   }
 }

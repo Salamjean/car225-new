@@ -75,6 +75,10 @@ return [
             'driver' => 'session',
             'provider' => 'gares',
         ],
+        'onpc' => [
+            'driver' => 'session',
+            'provider' => 'onpcs',
+        ],
     ],
 
     /*
@@ -133,6 +137,10 @@ return [
         'gares' => [
             'driver' => 'eloquent',
             'model' => App\Models\Gare::class,
+        ],
+        'onpcs' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Onpc::class,
         ],
 
         // 'users' => [

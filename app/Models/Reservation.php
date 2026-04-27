@@ -51,6 +51,9 @@ class Reservation extends Model
         'statut_aller',
         'statut_retour',
         'date_retour',
+        'passager_date_naissance',
+        'passager_genre',
+        'passager_piece_identite',
     ];
 
     protected $appends = ['voyage_statut', 'trajet', 'montant_formatted'];
@@ -60,6 +63,7 @@ class Reservation extends Model
         'date_voyage' => 'date',
         'embarquement_scanned_at' => 'datetime',
         'qr_code_data' => 'array',
+        'passager_date_naissance' => 'date',
     ];
 
     // ========================================

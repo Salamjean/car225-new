@@ -17,6 +17,14 @@ class ConvoiPassager extends Model
         'contact_urgence',
         'email',
         'device_id',
+        'date_naissance',
+        'genre',
+        'piece_identite',
+        'photo_path',
+    ];
+
+    protected $casts = [
+        'date_naissance' => 'date',
     ];
 
     public function convoi()

@@ -42,6 +42,9 @@ class User extends Authenticatable
         'is_active',
         'deactivated_at',
         'phone_verified_at',
+        'date_naissance',
+        'genre',
+        'piece_identite',
     ];
 
     /**
@@ -68,6 +71,7 @@ class User extends Authenticatable
             'solde' => 'decimal:2',
             'is_active' => 'boolean',
             'deactivated_at' => 'datetime',
+            'date_naissance' => 'date',
         ];
     }
 

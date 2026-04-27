@@ -134,6 +134,17 @@ Route::middleware('admin')->prefix('admin')->group(function () {
     // Gestion des Sapeurs Pompiers
     Route::resource('sapeur-pompier', SapeurPompierController::class);
 
+    // Gestion des agents ONPC (Office National de la Protection Civile)
+    Route::prefix('onpc')->name('admin.onpc.')->group(function () {
+        Route::get('/',                 [App\Http\Controllers\Admin\OnpcController::class, 'index'])->name('index');
+        Route::get('/create',           [App\Http\Controllers\Admin\OnpcController::class, 'create'])->name('create');
+        Route::post('/',                [App\Http\Controllers\Admin\OnpcController::class, 'store'])->name('store');
+        Route::get('/{onpc}/edit',      [App\Http\Controllers\Admin\OnpcController::class, 'edit'])->name('edit');
+        Route::put('/{onpc}',           [App\Http\Controllers\Admin\OnpcController::class, 'update'])->name('update');
+        Route::delete('/{onpc}',        [App\Http\Controllers\Admin\OnpcController::class, 'destroy'])->name('destroy');
+        Route::post('/{onpc}/resend-otp', [App\Http\Controllers\Admin\OnpcController::class, 'resendOtp'])->name('resend-otp');
+    });
+
     // Gestion des Hotesses
     Route::prefix('hotesse')->group(function () {
         Route::get('/', [App\Http\Controllers\Admin\HotesseController::class, 'index'])->name('admin.hotesse.index');
@@ -1184,5 +1195,52 @@ Route::prefix('chauffeur')->name('chauffeur.')->group(function () {
             Route::post('/search', [ChauffeurReservationController::class, 'search'])->name('search');
             Route::post('/confirm', [ChauffeurReservationController::class, 'confirm'])->name('confirm');
         });
+    });
+});
+
+
+// ==========================================================================
+// Routes ONPC (Office National de la Protection Civile)
+// ==========================================================================
+Route::prefix('onpc')->name('onpc.')->group(function () {
+    // Auth (publiques)
+    Route::get('/login',  [App\Http\Controllers\Onpc\OnpcAuthenticate::class, 'login'])->name('login');
+    Route::post('/login', [App\Http\Controllers\Onpc\OnpcAuthenticate::class, 'handleLogin'])->name('handleLogin');
+
+    Route::get('/define-access/{email}',  [App\Http\Controllers\Onpc\OnpcAuthenticate::class, 'defineAccess'])->name('define-access');
+    Route::post('/define-access',         [App\Http\Controllers\Onpc\OnpcAuthenticate::class, 'submitDefineAccess'])->name('submit-define-access');
+
+    // Mot de passe oublié
+    Route::get('/password/reset',        [App\Http\Controllers\Onpc\OnpcPasswordResetController::class, 'showResetForm'])->name('password.request');
+    Route::post('/password/send-otp',    [App\Http\Controllers\Onpc\OnpcPasswordResetController::class, 'sendOtp'])->name('password.sendOtp');
+    Route::post('/password/verify-otp',  [App\Http\Controllers\Onpc\OnpcPasswordResetController::class, 'verifyOtp'])->name('password.verifyOtp');
+    Route::post('/password/reset',       [App\Http\Controllers\Onpc\OnpcPasswordResetController::class, 'resetPassword'])->name('password.reset');
+
+    // Espace ONPC (protégé)
+    Route::middleware('onpc')->group(function () {
+        Route::post('/logout', [App\Http\Controllers\Onpc\OnpcAuthenticate::class, 'logout'])->name('logout');
+
+        Route::get('/dashboard', [App\Http\Controllers\Onpc\OnpcDashboardController::class, 'dashboard'])->name('dashboard');
+
+        // Sapeurs Pompiers
+        Route::prefix('sapeurs')->name('sapeurs.')->group(function () {
+            Route::get('/',                  [App\Http\Controllers\Onpc\OnpcDashboardController::class, 'sapeursPompiers'])->name('index');
+            Route::get('/{sapeurPompier}',   [App\Http\Controllers\Onpc\OnpcDashboardController::class, 'sapeurPompierShow'])->name('show');
+        });
+
+        // Signalements
+        Route::prefix('signalements')->name('signalements.')->group(function () {
+            Route::get('/',              [App\Http\Controllers\Onpc\OnpcDashboardController::class, 'signalements'])->name('index');
+            Route::get('/{signalement}', [App\Http\Controllers\Onpc\OnpcDashboardController::class, 'signalementShow'])->name('show');
+        });
+
+        // Passagers évacués
+        Route::prefix('evacues')->name('evacues.')->group(function () {
+            Route::get('/', [App\Http\Controllers\Onpc\OnpcDashboardController::class, 'evacues'])->name('index');
+        });
+
+        // Profil
+        Route::get('/profile',  [App\Http\Controllers\Onpc\OnpcDashboardController::class, 'profile'])->name('profile');
+        Route::post('/profile', [App\Http\Controllers\Onpc\OnpcDashboardController::class, 'updateProfile'])->name('profile.update');
     });
 });
