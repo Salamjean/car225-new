@@ -8,6 +8,10 @@
             <h1 class="text-2xl md:text-3xl font-black text-gray-900">Sapeurs Pompiers</h1>
             <p class="text-sm text-gray-500 mt-1">Toutes les casernes et leur activité</p>
         </div>
+        <a href="{{ route('onpc.sapeurs.create') }}"
+            class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-800 hover:to-indigo-800 text-white font-bold shadow-lg transition-all">
+            <i class="fas fa-plus-circle"></i> Ajouter une caserne
+        </a>
     </div>
 
     <form method="GET" action="{{ route('onpc.sapeurs.index') }}" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6 grid grid-cols-1 md:grid-cols-4 gap-3">

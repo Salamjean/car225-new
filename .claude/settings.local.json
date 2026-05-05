@@ -25,7 +25,13 @@
       "Bash(php -l app/Models/User.php)",
       "Bash(php -l app/Models/Reservation.php)",
       "Bash(php -l app/Models/ConvoiPassager.php)",
-      "Bash(php -l database/migrations/2026_04_27_171500_add_passenger_profile_fields.php)"
+      "Bash(php -l database/migrations/2026_04_27_171500_add_passenger_profile_fields.php)",
+      "Bash(php -l app/Http/Controllers/Onpc/OnpcSapeurPompierController.php)",
+      "Bash(php -l config/sapeur_pompiers_ci.php)",
+      "Bash(php -l routes/web.php)",
+      "Bash(echo \"exit:$?\")",
+      "Bash(php -l app/Http/Controllers/Concerns/HandlesSapeurPompierStations.php)",
+      "Bash(php -l app/Http/Controllers/SapeurPompier/SapeurPompierController.php)"
     ]
   }
 }

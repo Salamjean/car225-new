@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\SapeurPompier;
 
+use App\Http\Controllers\Concerns\HandlesSapeurPompierStations;
 use App\Http\Controllers\Controller;
 use App\Models\SapeurPompier;
 use App\Models\ResetCodePasswordSapeurPompier;
@@ -15,6 +16,8 @@ use Illuminate\Support\Str;
 
 class SapeurPompierController extends Controller
 {
+    use HandlesSapeurPompierStations;
+
     /**
      * Afficher la liste des sapeurs pompiers
      */
@@ -56,11 +59,26 @@ class SapeurPompierController extends Controller
             'email' => 'required|email|unique:sapeur_pompiers,email',
             'commune' => 'required|string|max:255',
             'adresse' => 'required|string|max:255',
-            'contact' => 'required|string|max:255',
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
+            'contact' => 'required|digits:10',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
             'path_logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+        ], [
+            'contact.digits' => 'Le numéro de téléphone doit contenir exactement 10 chiffres.',
         ]);
+
+        // Empêche la création de doublons aux mêmes coordonnées GPS (~55 m)
+        $duplicate = $this->findDuplicateByCoords(
+            $validated['latitude']  ?? null,
+            $validated['longitude'] ?? null,
+        );
+        if ($duplicate) {
+            return redirect()->back()->withInput()->with(
+                'error',
+                'Une caserne existe déjà à ces coordonnées : ' . $duplicate->name
+                . ' (' . $duplicate->commune . '). Veuillez choisir une localisation différente.'
+            );
+        }
 
         try {
             DB::beginTransaction();
@@ -136,10 +154,27 @@ class SapeurPompierController extends Controller
             'email' => 'required|email|unique:sapeur_pompiers,email,' . $sapeurPompier->id,
             'commune' => 'required|string|max:255',
             'adresse' => 'required|string|max:255',
-            'contact' => 'required|string|max:255',
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
+            'contact' => 'required|digits:10',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+            'path_logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ], [
+            'contact.digits' => 'Le numéro de téléphone doit contenir exactement 10 chiffres.',
         ]);
+
+        // Empêche la mise à jour vers les coordonnées d'une autre caserne existante
+        $duplicate = $this->findDuplicateByCoords(
+            $validated['latitude']  ?? null,
+            $validated['longitude'] ?? null,
+            $sapeurPompier->id,
+        );
+        if ($duplicate) {
+            return redirect()->back()->withInput()->with(
+                'error',
+                'Une autre caserne existe déjà à ces coordonnées : ' . $duplicate->name
+                . ' (' . $duplicate->commune . ').'
+            );
+        }
 
         try {
             if ($request->hasFile('path_logo')) {

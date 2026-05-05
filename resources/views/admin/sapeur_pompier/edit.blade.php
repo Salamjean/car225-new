@@ -3,20 +3,18 @@
 @section('content')
     <div class="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-7xl mx-auto">
 
-        <!-- Header -->
         <div class="mb-8 bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div class="flex items-center gap-4">
                 <div class="w-12 h-12 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center text-xl shadow-inner">
-                    <i class="fas fa-fire-extinguisher"></i>
+                    <i class="fas fa-edit"></i>
                 </div>
                 <div>
-                    <h1 class="text-2xl font-black text-gray-900 tracking-tight">Nouvelle caserne</h1>
-                    <p class="text-sm text-gray-500 font-medium mt-1">Ajout d'un sapeur-pompier au système de secours</p>
+                    <h1 class="text-2xl font-black text-gray-900 tracking-tight">Modifier {{ $sapeurPompier->name }}</h1>
+                    <p class="text-sm text-gray-500 font-medium mt-1">{{ $sapeurPompier->email }}</p>
                 </div>
             </div>
-            <a href="{{ route('sapeur-pompier.index') }}" class="group flex items-center justify-center px-5 py-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 rounded-xl font-bold transition-all hover:shadow-md">
-                <i class="fas fa-arrow-left mr-2 text-gray-400 group-hover:text-gray-600"></i>
-                Retour à la liste
+            <a href="{{ route('sapeur-pompier.index') }}" class="flex items-center gap-2 px-5 py-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 rounded-xl font-bold">
+                <i class="fas fa-arrow-left"></i> Liste
             </a>
         </div>
 
@@ -26,23 +24,24 @@
             </div>
         @endif
 
-        <form action="{{ route('sapeur-pompier.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+        <form action="{{ route('sapeur-pompier.update', $sapeurPompier->id) }}" method="POST" enctype="multipart/form-data" class="space-y-6">
             @csrf
+            @method('PUT')
 
-            {{-- ───────────── COMBOBOX RECHERCHE ───────────── --}}
+            {{-- ───────────── COMBOBOX RECHERCHE (changer de localisation) ───────────── --}}
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
                 <div class="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-red-600 to-orange-500 text-white flex items-center gap-3 rounded-t-2xl">
                     <i class="fas fa-search-location text-xl"></i>
                     <div>
-                        <h2 class="font-bold">Recherche d'une caserne en Côte d'Ivoire</h2>
-                        <p class="text-xs text-red-100 mt-0.5">Sélectionnez une caserne dans la liste — tous les champs seront pré-remplis. Vous pouvez les modifier avant validation.</p>
+                        <h2 class="font-bold">Modifier la localisation (facultatif)</h2>
+                        <p class="text-xs text-red-100 mt-0.5">Recherchez une autre caserne pour mettre à jour adresse et coordonnées GPS, ou laissez tel quel.</p>
                     </div>
                 </div>
                 <div class="p-6">
                     <div class="relative">
                         <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 z-10"></i>
                         <input type="text" id="stationSearch" autocomplete="off"
-                            placeholder="Ex: Plateau, Yopougon, Bouaké, GSPM Cocody..."
+                            placeholder="Ex: Plateau, Yopougon, Bouaké..."
                             class="block w-full pl-11 pr-12 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500/30 focus:border-red-500 focus:bg-white text-base">
                         <span id="stationLoader" class="hidden absolute right-4 top-1/2 -translate-y-1/2 text-red-600 z-10">
                             <i class="fas fa-spinner fa-spin"></i>
@@ -52,71 +51,63 @@
                             class="hidden absolute left-0 right-0 top-full mt-2 z-50 bg-white border border-gray-200 rounded-xl shadow-2xl max-h-96 overflow-y-auto">
                         </div>
                     </div>
-
-                    <p class="text-xs text-gray-500 mt-3">
-                        <i class="fas fa-info-circle text-red-500"></i>
-                        Recherche dans la base CAR225 + OpenStreetMap. Vous pouvez aussi saisir manuellement les champs ci-dessous.
-                    </p>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                {{-- ───────────── INFOS GÉNÉRALES ───────────── --}}
+                {{-- INFOS GÉNÉRALES --}}
                 <div class="lg:col-span-2 space-y-6">
                     <div class="bg-white rounded-[24px] shadow-sm border border-gray-100">
                         <div class="px-6 py-5 border-b border-gray-100 bg-gray-50/50 flex items-center gap-3 rounded-t-[24px]">
                             <i class="fas fa-info-circle text-red-500"></i>
-                            <h2 class="text-lg font-bold text-gray-800">Informations Générales</h2>
+                            <h2 class="text-lg font-bold text-gray-800">Informations</h2>
                         </div>
                         <div class="p-6 space-y-5">
+                            @if($sapeurPompier->path_logo)
+                                <div class="flex items-center gap-3 mb-3">
+                                    <img src="{{ Storage::url($sapeurPompier->path_logo) }}" class="w-16 h-16 rounded-full object-cover border border-gray-200">
+                                    <p class="text-xs text-gray-500">Logo actuel — un nouveau fichier remplacera celui-ci</p>
+                                </div>
+                            @endif
+
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div>
-                                    <label class="block text-sm font-bold text-gray-700 mb-1.5" for="f_name">Nom / Caserne <span class="text-red-500">*</span></label>
-                                    <div class="relative">
-                                        <i class="fas fa-building absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                                        <input id="f_name" name="name" required value="{{ old('name') }}" placeholder="Ex: GSPM Indénié"
-                                            class="block w-full pl-11 pr-4 py-3 bg-gray-50 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500 focus:bg-white font-medium">
-                                    </div>
-                                    @error('name') <span class="text-red-500 text-xs font-medium mt-1 inline-block">{{ $message }}</span> @enderror
+                                    <label class="block text-sm font-bold text-gray-700 mb-1.5">Nom / Caserne <span class="text-red-500">*</span></label>
+                                    <input id="f_name" name="name" required value="{{ old('name', $sapeurPompier->name) }}"
+                                        class="block w-full px-4 py-3 bg-gray-50 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500 focus:bg-white font-medium">
+                                    @error('name') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>
 
                                 <div>
-                                    <label class="block text-sm font-bold text-gray-700 mb-1.5" for="email">Email Officiel <span class="text-red-500">*</span></label>
-                                    <div class="relative">
-                                        <i class="fas fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                                        <input id="email" name="email" type="email" required value="{{ old('email') }}" placeholder="contact@gspm.ci"
-                                            class="block w-full pl-11 pr-4 py-3 bg-gray-50 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500 focus:bg-white font-medium">
-                                    </div>
-                                    @error('email') <span class="text-red-500 text-xs font-medium mt-1 inline-block">{{ $message }}</span> @enderror
+                                    <label class="block text-sm font-bold text-gray-700 mb-1.5">Email Officiel <span class="text-red-500">*</span></label>
+                                    <input type="email" name="email" required value="{{ old('email', $sapeurPompier->email) }}"
+                                        class="block w-full px-4 py-3 bg-gray-50 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500 focus:bg-white font-medium">
+                                    @error('email') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>
 
                                 <div>
-                                    <label class="block text-sm font-bold text-gray-700 mb-1.5" for="contact">Téléphone <span class="text-red-500">*</span></label>
-                                    <div class="relative">
-                                        <i class="fas fa-phone-alt absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                                        <input id="contact" name="contact" required value="{{ old('contact') }}"
-                                            type="tel" inputmode="numeric" pattern="\d{10}" maxlength="10" minlength="10"
-                                            title="10 chiffres exactement" placeholder="0708325027"
-                                            oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)"
-                                            class="block w-full pl-11 pr-4 py-3 bg-gray-50 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500 focus:bg-white font-medium">
-                                    </div>
-                                    <p class="text-[11px] text-gray-400 mt-1">Format : 10 chiffres (ex. 0708325027)</p>
-                                    @error('contact') <span class="text-red-500 text-xs font-medium mt-1 inline-block">{{ $message }}</span> @enderror
+                                    <label class="block text-sm font-bold text-gray-700 mb-1.5">Téléphone <span class="text-red-500">*</span></label>
+                                    <input name="contact" required value="{{ old('contact', $sapeurPompier->contact) }}"
+                                        type="tel" inputmode="numeric" pattern="\d{10}" maxlength="10" minlength="10"
+                                        title="10 chiffres exactement"
+                                        oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)"
+                                        class="block w-full px-4 py-3 bg-gray-50 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500 focus:bg-white font-medium">
+                                    <p class="text-[11px] text-gray-400 mt-1">Format : 10 chiffres</p>
+                                    @error('contact') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>
 
                                 <div>
-                                    <label class="block text-sm font-bold text-gray-700 mb-1.5" for="path_logo">Logo de la caserne</label>
-                                    <input id="path_logo" name="path_logo" type="file" accept="image/*"
+                                    <label class="block text-sm font-bold text-gray-700 mb-1.5">Logo (remplacer)</label>
+                                    <input type="file" name="path_logo" accept="image/*"
                                         class="block w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl file:mr-4 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-600 hover:file:bg-red-100">
-                                    @error('path_logo') <span class="text-red-500 text-xs font-medium mt-1 inline-block">{{ $message }}</span> @enderror
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {{-- ───────────── GÉOLOCALISATION ───────────── --}}
+                {{-- GÉOLOCALISATION --}}
                 <div class="space-y-6">
                     <div class="bg-white rounded-[24px] shadow-sm border border-gray-100 relative">
                         <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 to-orange-500 rounded-t-[24px]"></div>
@@ -127,17 +118,15 @@
                         </div>
                         <div class="p-6 space-y-5">
                             <div>
-                                <label class="block text-sm font-bold text-gray-700 mb-1.5" for="f_commune">Commune <span class="text-red-500">*</span></label>
-                                <input id="f_commune" name="commune" required value="{{ old('commune') }}" placeholder="Ex: Adjamé"
+                                <label class="block text-sm font-bold text-gray-700 mb-1.5">Commune <span class="text-red-500">*</span></label>
+                                <input id="f_commune" name="commune" required value="{{ old('commune', $sapeurPompier->commune) }}"
                                     class="block w-full px-4 py-3 bg-gray-50 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500 focus:bg-white font-medium">
-                                @error('commune') <span class="text-red-500 text-xs font-medium mt-1 inline-block">{{ $message }}</span> @enderror
                             </div>
 
                             <div>
-                                <label class="block text-sm font-bold text-gray-700 mb-1.5" for="f_adresse">Adresse de la caserne <span class="text-red-500">*</span></label>
-                                <input id="f_adresse" name="adresse" required value="{{ old('adresse') }}" placeholder="Ex: Face à la corniche"
+                                <label class="block text-sm font-bold text-gray-700 mb-1.5">Adresse <span class="text-red-500">*</span></label>
+                                <input id="f_adresse" name="adresse" required value="{{ old('adresse', $sapeurPompier->adresse) }}"
                                     class="block w-full px-4 py-3 bg-gray-50 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500 focus:bg-white font-medium">
-                                @error('adresse') <span class="text-red-500 text-xs font-medium mt-1 inline-block">{{ $message }}</span> @enderror
                             </div>
 
                             <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-3">
@@ -146,32 +135,30 @@
                                 </div>
                                 <div class="grid grid-cols-2 gap-3">
                                     <div>
-                                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1" for="f_latitude">Latitude</label>
-                                        <input id="f_latitude" name="latitude" value="{{ old('latitude') }}"
+                                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Latitude</label>
+                                        <input id="f_latitude" name="latitude" value="{{ old('latitude', $sapeurPompier->latitude) }}"
                                             class="block w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-mono">
                                     </div>
                                     <div>
-                                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1" for="f_longitude">Longitude</label>
-                                        <input id="f_longitude" name="longitude" value="{{ old('longitude') }}"
+                                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Longitude</label>
+                                        <input id="f_longitude" name="longitude" value="{{ old('longitude', $sapeurPompier->longitude) }}"
                                             class="block w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-mono">
                                     </div>
                                 </div>
                                 <p class="text-[10px] text-gray-400 leading-tight">
-                                    <i class="fas fa-info-circle"></i> Ces coordonnées servent à calculer la distance avec les accidents pour le dispatch automatique. Une caserne ne peut pas être créée à la même position qu'une caserne existante.
+                                    <i class="fas fa-info-circle"></i> Une caserne ne peut pas être enregistrée à la même position qu'une autre caserne déjà existante.
                                 </p>
                             </div>
 
-                            {{-- Mini-carte de prévisualisation --}}
                             <div id="mapPreview" class="hidden bg-white rounded-xl border border-gray-200 overflow-hidden">
                                 <iframe id="mapFrame" width="100%" height="220" frameborder="0" style="border:0"></iframe>
                             </div>
                         </div>
                     </div>
 
-                    <button type="submit" class="w-full relative group overflow-hidden flex items-center justify-center gap-3 py-4 bg-red-600 border border-red-700 text-white rounded-[20px] font-black text-lg transition-all shadow-[0_8px_20px_rgba(220,38,38,0.3)] hover:shadow-[0_12px_25px_rgba(220,38,38,0.4)] hover:-translate-y-1 active:translate-y-0">
-                        <div class="absolute inset-0 bg-gradient-to-r from-red-600 via-red-500 to-orange-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                        <i class="fas fa-save relative z-10 text-xl"></i>
-                        <span class="relative z-10">Créer la Caserne</span>
+                    <button type="submit" class="w-full flex items-center justify-center gap-3 py-4 bg-red-600 hover:bg-red-700 text-white rounded-[20px] font-black text-lg shadow-[0_8px_20px_rgba(220,38,38,0.3)] hover:shadow-[0_12px_25px_rgba(220,38,38,0.4)] transition-all">
+                        <i class="fas fa-save text-xl"></i>
+                        <span>Enregistrer les modifications</span>
                     </button>
                 </div>
             </div>
@@ -200,8 +187,10 @@
             abortCtrl = new AbortController();
             $loader.classList.remove('hidden');
             try {
-                const url = SEARCH_URL + '?q=' + encodeURIComponent(q || '');
-                const r = await fetch(url, { signal: abortCtrl.signal, headers: { 'Accept': 'application/json' } });
+                const r = await fetch(SEARCH_URL + '?q=' + encodeURIComponent(q || ''), {
+                    signal: abortCtrl.signal,
+                    headers: { 'Accept': 'application/json' }
+                });
                 const data = await r.json();
                 renderResults(data.results || []);
             } catch (e) {
@@ -213,7 +202,7 @@
 
         function renderResults(items) {
             if (!items.length) {
-                $results.innerHTML = '<div class="p-4 text-sm text-gray-500 text-center">Aucune caserne trouvée. Vous pouvez saisir manuellement les champs ci-dessous.</div>';
+                $results.innerHTML = '<div class="p-4 text-sm text-gray-500 text-center">Aucune caserne trouvée.</div>';
                 $results.classList.remove('hidden');
                 return;
             }
@@ -224,9 +213,7 @@
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="font-semibold text-gray-900 truncate">${escapeHtml(it.name)}</div>
-                        <div class="text-xs text-gray-500 truncate">
-                            ${escapeHtml(it.commune || '—')} · ${escapeHtml(it.adresse || '')}
-                        </div>
+                        <div class="text-xs text-gray-500 truncate">${escapeHtml(it.commune || '—')} · ${escapeHtml(it.adresse || '')}</div>
                     </div>
                     <span class="text-[10px] font-bold uppercase ${it.source === 'curated' ? 'text-red-600' : 'text-blue-600'}">${it.source === 'curated' ? 'GSPM' : 'OSM'}</span>
                 </button>
@@ -238,7 +225,7 @@
         }
 
         function pickStation(it) {
-            $name.value    = it.name || '';
+            $name.value    = it.name || $name.value;
             $commune.value = it.commune || '';
             $adresse.value = it.adresse || '';
             $lat.value     = (it.latitude  ?? '').toString();
@@ -270,8 +257,6 @@
         document.addEventListener('click', (e) => {
             if (!$results.contains(e.target) && e.target !== $search) $results.classList.add('hidden');
         });
-
-        // Carte mise à jour quand l'utilisateur édite manuellement les coords
         [$lat, $lng].forEach(el => el.addEventListener('change', () => updateMapPreview($lat.value, $lng.value)));
 
         if ($lat.value && $lng.value) updateMapPreview($lat.value, $lng.value);

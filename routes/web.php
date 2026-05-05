@@ -132,6 +132,10 @@ Route::middleware('admin')->prefix('admin')->group(function () {
     Route::get('/voyages-en-cours/api', [AdminSettingController::class, 'voyagesEnCoursApi'])->name('admin.voyages.en-cours.api');
 
     // Gestion des Sapeurs Pompiers
+    // ⚠️ Route additionnelle DÉCLARÉE AVANT le `resource` pour éviter
+    // qu'elle soit capturée par le wildcard `{sapeur_pompier}`.
+    Route::get('sapeur-pompier/search-stations', [SapeurPompierController::class, 'searchStations'])
+        ->name('sapeur-pompier.search-stations');
     Route::resource('sapeur-pompier', SapeurPompierController::class);
 
     // Gestion des agents ONPC (Office National de la Protection Civile)
@@ -1225,6 +1229,12 @@ Route::prefix('onpc')->name('onpc.')->group(function () {
         // Sapeurs Pompiers
         Route::prefix('sapeurs')->name('sapeurs.')->group(function () {
             Route::get('/',                  [App\Http\Controllers\Onpc\OnpcDashboardController::class, 'sapeursPompiers'])->name('index');
+            // Création (avant les routes wildcards pour éviter les collisions)
+            Route::get('/create',            [App\Http\Controllers\Onpc\OnpcSapeurPompierController::class, 'create'])->name('create');
+            Route::post('/',                 [App\Http\Controllers\Onpc\OnpcSapeurPompierController::class, 'store'])->name('store');
+            // Endpoint JSON consommé par le combobox autocomplete
+            Route::get('/search-stations',   [App\Http\Controllers\Onpc\OnpcSapeurPompierController::class, 'searchStations'])->name('search-stations');
+            // Détails — wildcard en dernier
             Route::get('/{sapeurPompier}',   [App\Http\Controllers\Onpc\OnpcDashboardController::class, 'sapeurPompierShow'])->name('show');
         });
 
