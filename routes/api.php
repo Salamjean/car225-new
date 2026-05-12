@@ -42,6 +42,7 @@ Route::prefix('user')->group(function () {
     Route::post('/login', [UserAuthController::class, 'login']);
     Route::post('/register', [UserAuthController::class, 'register']);
     Route::post('/google-auth', [UserAuthController::class, 'googleAuth']);
+    Route::post('/apple-auth',  [UserAuthController::class, 'appleAuth']);
     
     // Mot de passe oublié
     Route::post('/password/send-otp', [UserAuthController::class, 'sendOtp']);
@@ -57,6 +58,7 @@ Route::prefix('user')->group(function () {
         // Authentification
         Route::post('/logout', [UserAuthController::class, 'logout']);
         Route::post('/update-contact', [UserAuthController::class, 'updateContact']);
+        Route::delete('/account', [UserAuthController::class, 'deleteAccount']);
         
         // Profil utilisateur
         Route::get('/profile', [UserController::class, 'profile']);

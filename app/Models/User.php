@@ -28,6 +28,7 @@ class User extends Authenticatable
         'google_id',
         'google_token',
         'google_refresh_token',
+        'apple_id',
         'contact',
         'contact_urgence',
         'nom_urgence',

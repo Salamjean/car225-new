@@ -55,6 +55,20 @@ return [
        'redirect' => env('GOOGLE_REDIRECT_URL'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Sign in with Apple
+    |--------------------------------------------------------------------------
+    |
+    | client_ids : audiences acceptées dans le JWT Apple. Liste séparée par
+    | des virgules (Bundle ID iOS + Service ID Web le cas échéant).
+    | Exemple .env :
+    |   APPLE_CLIENT_IDS=com.car225.app,com.car225.app.web
+    */
+    'apple' => [
+        'client_ids' => env('APPLE_CLIENT_IDS', ''),
+    ],
+
     'yellika' => [
         'api_url' => env('YELLIKA_API_URL', 'http://app.1smsafrica.com/api/v3/'),
         'api_key' => env('YELLIKA_API_KEY'),

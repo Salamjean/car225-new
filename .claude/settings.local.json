@@ -31,7 +31,21 @@
       "Bash(php -l routes/web.php)",
       "Bash(echo \"exit:$?\")",
       "Bash(php -l app/Http/Controllers/Concerns/HandlesSapeurPompierStations.php)",
-      "Bash(php -l app/Http/Controllers/SapeurPompier/SapeurPompierController.php)"
+      "Bash(php -l app/Http/Controllers/SapeurPompier/SapeurPompierController.php)",
+      "Bash(xargs grep *)",
+      "Bash(composer show *)",
+      "Bash(grep -nE \"^\\\\s*\\\\}\\\\s*$|public function\" app/Http/Controllers/Api/User/AuthController.php)",
+      "Bash(php -l app/Services/AppleAuthService.php)",
+      "Bash(php -l app/Http/Controllers/Api/User/AuthController.php)",
+      "Bash(php -l routes/api.php)",
+      "Bash(php -l config/services.php)",
+      "Bash(php -l database/migrations/2026_05_07_092639_add_apple_auth_to_users.php)",
+      "Bash(flutter pub *)",
+      "Bash(mkdir -p \"C:\\\\Users\\\\THEWAYNE\\\\Documents\\\\car225-new\\\\storage\\\\app\\\\apple\" && cp \"C:\\\\Users\\\\THEWAYNE\\\\Downloads\\\\AuthKey_VYBL8FKY39.p8\" \"C:\\\\Users\\\\THEWAYNE\\\\Documents\\\\car225-new\\\\storage\\\\app\\\\apple\\\\AuthKey_VYBL8FKY39.p8\" && echo \"✅ Fichier copié\")",
+      "Bash(ls /mnt/c/Users/THEWAYNE/Documents/car225-new/storage/app/apple/)",
+      "PowerShell(New-Item -ItemType Directory -Force -Path \"C:\\\\Users\\\\THEWAYNE\\\\Documents\\\\car225-new\\\\storage\\\\app\\\\apple\")",
+      "PowerShell(Copy-Item \"C:\\\\Users\\\\THEWAYNE\\\\Downloads\\\\AuthKey_VYBL8FKY39.p8\" -Destination \"C:\\\\Users\\\\THEWAYNE\\\\Documents\\\\car225-new\\\\storage\\\\app\\\\apple\\\\AuthKey_VYBL8FKY39.p8\")",
+      "Bash(cd /mnt/c/Users/THEWAYNE/Documents/car225-new && php artisan cache:clear)"
     ]
   }
 }

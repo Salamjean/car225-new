@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Api\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\AppleAuthService;
 use App\Services\SmsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use App\Services\FcmService;
@@ -695,6 +697,201 @@ class AuthController extends Controller
                 'success' => false,
                 'message' => 'Une erreur est survenue lors de l\'authentification Google.',
                 'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Connexion / Inscription via Sign in with Apple (API mobile)
+     *
+     * Le client envoie l'`identityToken` (JWT) renvoyé par Apple.
+     * On vérifie sa signature avec les clés publiques d'Apple, on extrait
+     * le `sub` (identifiant unique pérenne), puis on connecte ou crée
+     * l'utilisateur.
+     *
+     * Note importante : Apple ne renvoie l'`email` et le `fullName` qu'à
+     * la PREMIÈRE connexion uniquement. On les sauve donc immédiatement.
+     */
+    public function appleAuth(Request $request, AppleAuthService $appleAuth)
+    {
+        $request->validate([
+            'identity_token' => 'required|string',
+            'authorization_code' => 'nullable|string',
+            'email'          => 'nullable|email',     // 1ʳᵉ connexion uniquement
+            'full_name'      => 'nullable|string',    // 1ʳᵉ connexion uniquement
+            'fcm_token'      => 'nullable|string',
+            'nom_device'     => 'nullable|string|max:255',
+        ]);
+
+        try {
+            // 1. Vérification cryptographique du JWT Apple
+            $payload = $appleAuth->verifyIdentityToken($request->input('identity_token'));
+
+            $appleId       = $payload['sub'];
+            $emailFromJwt  = $payload['email'] ?? null;
+            $emailVerified = filter_var($payload['email_verified'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+            // 2. Email de référence : priorité au JWT, fallback sur le payload
+            $email = $emailFromJwt ?? $request->input('email');
+
+            // 3. Recherche de l'utilisateur par apple_id, puis par email
+            $user = User::where('apple_id', $appleId)->first();
+            if (!$user && $email) {
+                $user = User::where('email', $email)->first();
+            }
+
+            $isNewUser = !$user;
+
+            if ($isNewUser) {
+                // Première connexion : on doit avoir au moins un email pour créer.
+                if (!$email) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Email indisponible. Réinitialisez la connexion Apple depuis Réglages > Apple ID > Connexion avec Apple.',
+                    ], 422);
+                }
+
+                // Découpe « full_name » → name + prenom (best effort)
+                $fullName = trim((string) $request->input('full_name', ''));
+                $name     = '';
+                $prenom   = '';
+                if ($fullName !== '') {
+                    $parts  = preg_split('/\s+/', $fullName, 2);
+                    $prenom = $parts[0] ?? '';
+                    $name   = $parts[1] ?? '';
+                }
+                if ($name === '' && $prenom === '') {
+                    $name = 'Utilisateur Apple';
+                }
+
+                $user = User::create([
+                    'name'              => $name ?: 'Apple',
+                    'prenom'            => $prenom,
+                    'email'             => $email,
+                    'apple_id'          => $appleId,
+                    'password'          => null, // pas de mot de passe — auth Apple
+                    'is_active'         => true,
+                    'email_verified_at' => $emailVerified ? now() : null,
+                ]);
+            } else {
+                // Utilisateur existant : on lie son apple_id si pas déjà fait
+                $updateData = [];
+                if (empty($user->apple_id)) $updateData['apple_id'] = $appleId;
+                if ($emailVerified && empty($user->email_verified_at)) {
+                    $updateData['email_verified_at'] = now();
+                }
+                if (!empty($updateData)) $user->update($updateData);
+            }
+
+            // 4. FCM + device tracking (mêmes pattern que googleAuth)
+            if ($request->filled('fcm_token')) {
+                $user->update(['fcm_token' => $request->fcm_token]);
+            }
+            if ($request->filled('nom_device')) {
+                $user->update(['nom_device' => $request->nom_device]);
+                $device = $user->devices()->where('nom_device', $request->nom_device)->first();
+                if ($device) {
+                    $device->update(['last_login_at' => now(), 'ip_address' => $request->ip()]);
+                } else {
+                    $user->devices()->create([
+                        'nom_device'    => $request->nom_device,
+                        'last_login_at' => now(),
+                        'ip_address'    => $request->ip(),
+                    ]);
+                }
+            }
+
+            // 5. Token Sanctum
+            $token = $user->createToken('mobile-app')->plainTextToken;
+
+            $photoUrl = $user->photo_profile_path;
+            if ($photoUrl && !str_starts_with($photoUrl, 'http')) {
+                $photoUrl = str_starts_with($photoUrl, 'storage/') ? $photoUrl : 'storage/' . $photoUrl;
+            }
+
+            return response()->json([
+                'success'          => true,
+                'message'          => $isNewUser
+                    ? 'Compte Apple créé avec succès.'
+                    : 'Authentification Apple réussie.',
+                'requires_contact' => empty($user->contact),
+                'user' => [
+                    'id'                => $user->id,
+                    'name'              => $user->name,
+                    'prenom'            => $user->prenom,
+                    'email'             => $user->email,
+                    'contact'           => $user->contact,
+                    'photo_profile_path'=> $photoUrl,
+                    'apple_id'          => $user->apple_id,
+                    'fcm_token'         => $user->fcm_token,
+                ],
+                'token'      => $token,
+                'token_type' => 'Bearer',
+            ]);
+
+        } catch (\RuntimeException $e) {
+            // JWT invalide / audience non autorisée
+            Log::warning('Apple auth rejected: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Token Apple invalide.',
+                'error'   => $e->getMessage(),
+            ], 401);
+        } catch (\Throwable $e) {
+            Log::error('Erreur API Apple Auth: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Une erreur est survenue lors de l\'authentification Apple.',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Suppression définitive du compte utilisateur (RGPD + obligation
+     * App Store pour les apps qui proposent Sign in with Apple).
+     *
+     * Suppression des tokens Sanctum, anonymisation des données minimales
+     * conservées pour audit, puis soft-delete ou hard-delete selon la
+     * politique de l'app. Ici on hard-delete l'utilisateur.
+     */
+    public function deleteAccount(Request $request)
+    {
+        try {
+            $user = $request->user();
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'Non authentifié.'], 401);
+            }
+
+            DB::beginTransaction();
+
+            // Révoquer tous les tokens Sanctum
+            $user->tokens()->delete();
+
+            // Supprimer la photo de profil si stockée localement
+            if ($user->photo_profile_path && !str_starts_with($user->photo_profile_path, 'http')) {
+                $path = preg_replace('#^storage/#', '', $user->photo_profile_path);
+                if ($path && Storage::disk('public')->exists($path)) {
+                    Storage::disk('public')->delete($path);
+                }
+            }
+
+            // Suppression du compte
+            $user->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Votre compte a été supprimé définitivement.',
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Erreur suppression compte: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Une erreur est survenue lors de la suppression.',
+                'error'   => $e->getMessage(),
             ], 500);
         }
     }
