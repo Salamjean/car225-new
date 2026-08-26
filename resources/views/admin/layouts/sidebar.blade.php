@@ -114,6 +114,37 @@
             </nav>
           </div>
         </div>
+
+        <div class="mdc-list-item mdc-drawer-item">
+          @php
+            $pendingParticuliersCount = \App\Models\Particulier::where('statut', 'en_attente')->count();
+          @endphp
+          <a class="mdc-expansion-panel-link" href="#" data-toggle="expansionPanel" data-target="ui-sub-particulier" style="display: flex; align-items: center; gap: 4px;">
+            <i class="fas fa-user-friends mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true"></i>
+            <span style="flex-grow: 1;">Convois Particuliers</span>
+            @if($pendingParticuliersCount > 0)
+              <span class="badge badge-danger" style="border-radius: 12px; font-size: 10px; padding: 2px 6px; background-color: #dc3545; color: white; margin-right: 6px;">{{ $pendingParticuliersCount }}</span>
+            @endif
+            <i class="mdc-drawer-arrow material-icons">chevron_right</i>
+          </a>
+          <div class="mdc-expansion-panel" id="ui-sub-particulier">
+            <nav class="mdc-list mdc-drawer-submenu">
+              <div class="mdc-list-item mdc-drawer-item">
+                <a class="mdc-drawer-link" href="{{route('admin.particulier.demandes')}}" style="display: flex; align-items: center; gap: 4px;">
+                  Demandes d'inscription
+                  @if($pendingParticuliersCount > 0)
+                    <span class="badge badge-danger" style="border-radius: 12px; font-size: 10px; padding: 2px 6px; background-color: #dc3545; color: white; margin-left: 4px;">{{ $pendingParticuliersCount }}</span>
+                  @endif
+                </a>
+              </div>
+              <div class="mdc-list-item mdc-drawer-item">
+                <a class="mdc-drawer-link" href="{{route('admin.particulier.index')}}">
+                  Liste des particuliers
+                </a>
+              </div>
+            </nav>
+          </div>
+        </div>
         <div class="mdc-list-item mdc-drawer-item">
           <a class="mdc-drawer-link" href="{{route('admin.itineraire.index')}}">
             <i class="fas fa-route mdc-list-item__start-detail mdc-drawer-item-icon"></i>

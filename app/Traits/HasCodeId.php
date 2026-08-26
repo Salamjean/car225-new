@@ -28,12 +28,13 @@ trait HasCodeId
     public static function generateUniqueCodeId(): string
     {
         $prefixes = [
-            'User'      => 'USR',
-            'Agent'     => 'AGT',
-            'Hotesse'   => 'HTS',
-            'Caisse'    => 'CSS',
-            'Personnel' => 'CHF',
-            'Gare'      => 'GAR',
+            'User'        => 'USR',
+            'Agent'       => 'AGT',
+            'Hotesse'     => 'HTS',
+            'Caisse'      => 'CSS',
+            'Personnel'   => 'CHF',
+            'Gare'        => 'GAR',
+            'Particulier' => 'PTC',
         ];
 
         $className = class_basename(static::class);

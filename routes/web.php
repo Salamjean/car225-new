@@ -84,6 +84,8 @@ Route::prefix('/')->group(function () {
     Route::get('/home/mes-reservations/download/{reservation}', [AccueilController::class, 'downloadTicket'])->name('home.reservations.download');
     Route::post('/home/contact/store', [AccueilController::class, 'storeContact'])->name('home.contact.store');
     Route::get('/download-app', [AccueilController::class, 'downloadApp'])->name('home.download-app');
+    Route::get('/home/convoi', [AccueilController::class, 'convoi'])->name('home.convoi');
+    Route::post('/home/convoi/particulier/register', [AccueilController::class, 'storeParticulierRegister'])->name('home.convoi.particulier.register');
 });
 
 // Route de Connexion Unifiée
@@ -158,6 +160,15 @@ Route::middleware('admin')->prefix('admin')->group(function () {
         Route::post('/{hotesse}/recharge', [App\Http\Controllers\Admin\HotesseController::class, 'recharge'])->name('admin.hotesse.recharge');
         Route::post('/{hotesse}/toggle-archive', [App\Http\Controllers\Admin\HotesseController::class, 'toggleArchive'])->name('admin.hotesse.toggle-archive');
         Route::delete('/{hotesse}', [App\Http\Controllers\Admin\HotesseController::class, 'destroy'])->name('admin.hotesse.destroy');
+    });
+
+    // Gestion des Particuliers (Convois Particuliers)
+    Route::prefix('particuliers')->name('admin.particulier.')->group(function () {
+        Route::get('/demandes', [App\Http\Controllers\Admin\ParticulierController::class, 'demandes'])->name('demandes');
+        Route::get('/liste', [App\Http\Controllers\Admin\ParticulierController::class, 'index'])->name('index');
+        Route::get('/{particulier}', [App\Http\Controllers\Admin\ParticulierController::class, 'show'])->name('show');
+        Route::post('/{particulier}/valider', [App\Http\Controllers\Admin\ParticulierController::class, 'valider'])->name('valider');
+        Route::post('/{particulier}/refuser', [App\Http\Controllers\Admin\ParticulierController::class, 'refuser'])->name('refuser');
     });
 
     // Gestion des Notifications
@@ -1253,4 +1264,16 @@ Route::prefix('onpc')->name('onpc.')->group(function () {
         Route::get('/profile',  [App\Http\Controllers\Onpc\OnpcDashboardController::class, 'profile'])->name('profile');
         Route::post('/profile', [App\Http\Controllers\Onpc\OnpcDashboardController::class, 'updateProfile'])->name('profile.update');
     });
+});
+
+// Espace Particulier (protégé)
+Route::middleware('particulier')->prefix('particulier')->name('particulier.')->group(function () {
+    Route::post('/logout', [App\Http\Controllers\Particulier\ParticulierDashboardController::class, 'logout'])->name('logout');
+    Route::get('/dashboard', [App\Http\Controllers\Particulier\ParticulierDashboardController::class, 'dashboard'])->name('dashboard');
+    Route::get('/convois/{convoi}', [App\Http\Controllers\Particulier\ParticulierDashboardController::class, 'showConvoi'])->name('convoi.show');
+    Route::get('/convois/{convoi}/check-claim', [App\Http\Controllers\Particulier\ParticulierDashboardController::class, 'checkClaimStatus'])->name('convoi.check-claim');
+    Route::post('/convois/{convoi}/valider', [App\Http\Controllers\Particulier\ParticulierDashboardController::class, 'validerConvoi'])->name('convoi.valider');
+    Route::post('/convois/{convoi}/refuser', [App\Http\Controllers\Particulier\ParticulierDashboardController::class, 'refuserConvoi'])->name('convoi.refuser');
+    Route::post('/convois/{convoi}/annuler', [App\Http\Controllers\Particulier\ParticulierDashboardController::class, 'annulerConvoi'])->name('convoi.annuler');
+    Route::get('/profile', [App\Http\Controllers\Particulier\ParticulierDashboardController::class, 'profile'])->name('profile');
 });

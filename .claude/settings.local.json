@@ -45,7 +45,8 @@
       "Bash(ls /mnt/c/Users/THEWAYNE/Documents/car225-new/storage/app/apple/)",
       "PowerShell(New-Item -ItemType Directory -Force -Path \"C:\\\\Users\\\\THEWAYNE\\\\Documents\\\\car225-new\\\\storage\\\\app\\\\apple\")",
       "PowerShell(Copy-Item \"C:\\\\Users\\\\THEWAYNE\\\\Downloads\\\\AuthKey_VYBL8FKY39.p8\" -Destination \"C:\\\\Users\\\\THEWAYNE\\\\Documents\\\\car225-new\\\\storage\\\\app\\\\apple\\\\AuthKey_VYBL8FKY39.p8\")",
-      "Bash(cd /mnt/c/Users/THEWAYNE/Documents/car225-new && php artisan cache:clear)"
+      "Bash(cd /mnt/c/Users/THEWAYNE/Documents/car225-new && php artisan cache:clear)",
+      "Bash(find /mnt/c/Users/THEWAYNE/Plateau-app-new/app/Http/Controllers/Api -name \"*.php\" 2>/dev/null | head -30)"
     ]
   }
 }

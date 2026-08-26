@@ -79,6 +79,10 @@ return [
             'driver' => 'session',
             'provider' => 'onpcs',
         ],
+        'particulier' => [
+            'driver' => 'session',
+            'provider' => 'particuliers',
+        ],
     ],
 
     /*
@@ -141,6 +145,10 @@ return [
         'onpcs' => [
             'driver' => 'eloquent',
             'model' => App\Models\Onpc::class,
+        ],
+        'particuliers' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Particulier::class,
         ],
 
         // 'users' => [

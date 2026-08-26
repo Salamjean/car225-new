@@ -43,10 +43,23 @@
 
         {{-- Infos générales --}}
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div class="bg-white rounded-2xl border border-gray-100 p-5">
-                <p class="text-[10px] font-black uppercase tracking-wider text-gray-500 mb-1">Compagnie</p>
-                <p class="text-sm font-bold text-gray-900">{{ $convoi->compagnie->name ?? '-' }}</p>
-            </div>
+            @if ($convoi->particulier_id)
+                <div class="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3">
+                    <div class="logo-circle overflow-hidden rounded-full bg-gray-50 flex items-center justify-center border" style="width: 44px; height: 44px; border-radius: 50%; min-width: 44px;">
+                        <img src="{{ $convoi->particulier->photo_proprietaire_url }}" alt="Chauffeur" class="w-full h-full object-cover" style="border-radius: 50%;">
+                    </div>
+                    <div class="text-left">
+                        <p class="text-[10px] font-black uppercase tracking-wider text-gray-500 mb-0">Particulier</p>
+                        <p class="text-xs font-bold text-gray-900 mb-0 truncate" style="max-width: 140px;">{{ $convoi->particulier->full_name }}</p>
+                        <span class="text-[9px] text-gray-400 font-mono" style="font-size: 9px;">{{ $convoi->particulier->immatriculation }}</span>
+                    </div>
+                </div>
+            @else
+                <div class="bg-white rounded-2xl border border-gray-100 p-5">
+                    <p class="text-[10px] font-black uppercase tracking-wider text-gray-500 mb-1">Compagnie</p>
+                    <p class="text-sm font-bold text-gray-900">{{ $convoi->compagnie->name ?? '-' }}</p>
+                </div>
+            @endif
             <div class="bg-white rounded-2xl border border-gray-100 p-5">
                 <p class="text-[10px] font-black uppercase tracking-wider text-gray-500 mb-1">Personnes</p>
                 <p class="text-sm font-bold text-gray-900">{{ $convoi->nombre_personnes }}</p>
@@ -243,41 +256,73 @@
             </div>
         @endif
 
-        {{-- STATUT: CONFIRME → info paiement en gare uniquement --}}
+        {{-- STATUT: CONFIRME → info paiement en gare (compagnie) ou direct (particulier) --}}
         @if ($convoi->statut === 'confirme')
-            <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-6">
-                <div class="flex items-start gap-4">
-                    <div class="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                        <i class="fas fa-clock text-indigo-600"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-sm font-black text-indigo-800 uppercase tracking-wider mb-1">Convoi confirmé — Paiement en gare requis</h3>
-                        <p class="text-sm text-indigo-700 font-medium">
-                            Vous avez accepté le montant de <strong>{{ number_format($convoi->montant, 0, ',', ' ') }} FCFA</strong>.
-                            Présentez-vous à la gare <strong>{{ $convoi->gare->nom_gare ?? '' }}</strong> pour solder votre paiement
-                            <strong>avant votre départ du {{ $convoi->date_depart ? \Carbon\Carbon::parse($convoi->date_depart)->format('d/m/Y') : '' }}</strong>.
-                        </p>
-                        @if($convoi->gare)
-                        <div class="mt-3 flex items-center gap-2 text-xs font-bold text-indigo-600">
-                            <i class="fas fa-map-marker-alt"></i>
-                            {{ $convoi->gare->adresse ?? $convoi->gare->ville ?? 'Gare ' . $convoi->gare->nom_gare }}
-                            @if($convoi->gare->contact ?? null)
-                                &bull; <i class="fas fa-phone ml-1"></i> {{ $convoi->gare->contact }}
-                            @endif
+            @if ($convoi->particulier_id)
+                <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-6">
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-clock text-indigo-600"></i>
                         </div>
-                        @endif
-                        <div class="mt-4 p-4 bg-white rounded-xl border border-indigo-100">
-                            <p class="text-xs font-black text-indigo-700 uppercase tracking-wider mb-2"><i class="fas fa-info-circle mr-1"></i> Prochaines étapes</p>
-                            <ol class="text-sm text-indigo-700 font-medium space-y-1 list-decimal list-inside">
-                                <li>Rendez-vous à la gare et payez le montant en caisse</li>
-                                <li>La gare confirme votre paiement</li>
-                                <li>Renseignez votre lieu de rassemblement et vos passagers</li>
-                                <li>Un chauffeur vous sera assigné</li>
-                            </ol>
+                        <div>
+                            <h3 class="text-sm font-black text-indigo-800 uppercase tracking-wider mb-1">Convoi confirmé — Règlement requis</h3>
+                            <p class="text-sm text-indigo-700 font-medium">
+                                Vous avez accepté le montant de <strong>{{ number_format($convoi->montant, 0, ',', ' ') }} FCFA</strong>.
+                                Veuillez contacter directement le transporteur particulier <strong>{{ $convoi->particulier->full_name }}</strong> pour solder votre paiement
+                                <strong>avant votre départ du {{ $convoi->date_depart ? \Carbon\Carbon::parse($convoi->date_depart)->format('d/m/Y') : '' }}</strong>.
+                            </p>
+                            <div class="mt-3 flex items-center gap-3 text-xs font-bold text-indigo-600">
+                                <span><i class="fas fa-phone mr-1"></i> {{ $convoi->particulier->contact }}</span>
+                                <span>&bull;</span>
+                                <span><i class="fas fa-envelope mr-1"></i> {{ $convoi->particulier->email }}</span>
+                            </div>
+                            <div class="mt-4 p-4 bg-white rounded-xl border border-indigo-100 text-left">
+                                <p class="text-xs font-black text-indigo-700 uppercase tracking-wider mb-2"><i class="fas fa-info-circle mr-1"></i> Prochaines étapes</p>
+                                <ol class="text-sm text-indigo-700 font-medium space-y-1 list-decimal list-inside">
+                                    <li>Contactez le transporteur particulier et effectuez le règlement</li>
+                                    <li>Le transporteur valide le paiement sur son espace particulier</li>
+                                    <li>Renseignez votre lieu de rassemblement et vos passagers</li>
+                                    <li>Le transporteur particulier effectuera le convoi le jour J</li>
+                                </ol>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            @else
+                <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-6">
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-clock text-indigo-600"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-black text-indigo-800 uppercase tracking-wider mb-1">Convoi confirmé — Paiement en gare requis</h3>
+                            <p class="text-sm text-indigo-700 font-medium">
+                                Vous avez accepté le montant de <strong>{{ number_format($convoi->montant, 0, ',', ' ') }} FCFA</strong>.
+                                Présentez-vous à la gare <strong>{{ $convoi->gare->nom_gare ?? '' }}</strong> pour solder votre paiement
+                                <strong>avant votre départ du {{ $convoi->date_depart ? \Carbon\Carbon::parse($convoi->date_depart)->format('d/m/Y') : '' }}</strong>.
+                            </p>
+                            @if($convoi->gare)
+                            <div class="mt-3 flex items-center gap-2 text-xs font-bold text-indigo-600">
+                                <i class="fas fa-map-marker-alt"></i>
+                                {{ $convoi->gare->adresse ?? $convoi->gare->ville ?? 'Gare ' . $convoi->gare->nom_gare }}
+                                @if($convoi->gare->contact ?? null)
+                                    &bull; <i class="fas fa-phone ml-1"></i> {{ $convoi->gare->contact }}
+                                @endif
+                            </div>
+                            @endif
+                            <div class="mt-4 p-4 bg-white rounded-xl border border-indigo-100">
+                                <p class="text-xs font-black text-indigo-700 uppercase tracking-wider mb-2"><i class="fas fa-info-circle mr-1"></i> Prochaines étapes</p>
+                                <ol class="text-sm text-indigo-700 font-medium space-y-1 list-decimal list-inside">
+                                    <li>Rendez-vous à la gare et payez le montant en caisse</li>
+                                    <li>La gare confirme votre paiement</li>
+                                    <li>Renseignez votre lieu de rassemblement et vos passagers</li>
+                                    <li>Un chauffeur vous sera assigné</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
         @endif
 
         {{-- STATUT: PAYE → ticket + formulaire passagers + lecture seule --}}

@@ -23,6 +23,7 @@ class PortailAuthController extends Controller
         if (Auth::guard('hotesse')->check()) return redirect()->route('hotesse.dashboard');
         if (Auth::guard('chauffeur')->check()) return redirect()->route('chauffeur.dashboard');
         if (Auth::guard('gare')->check()) return redirect()->route('gare-espace.dashboard');
+        if (Auth::guard('particulier')->check()) return redirect()->route('particulier.dashboard');
 
         return view('portail.auth.login');
     }
@@ -76,6 +77,19 @@ class PortailAuthController extends Controller
                 // 4. Gare
                 if (Auth::guard('gare')->attempt(['code_id' => $identifiant, 'password' => $password])) {
                     return redirect()->route('gare-espace.dashboard')->with('success', 'Bienvenue sur votre espace Gare !');
+                }
+
+                // 5. Particulier (Convoi)
+                $particulier = \App\Models\Particulier::where('code_id', $identifiant)->first();
+                if ($particulier) {
+                    if ($particulier->statut !== 'valide') {
+                        return redirect()->back()
+                            ->withInput($request->only('identifiant'))
+                            ->with('error', 'Votre compte n\'est pas encore validé par l\'administration.');
+                    }
+                    if (Auth::guard('particulier')->attempt(['code_id' => $identifiant, 'password' => $password])) {
+                        return redirect()->route('particulier.dashboard')->with('success', 'Bienvenue sur votre espace Transporteur Particulier !');
+                    }
                 }
             }
 

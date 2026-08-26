@@ -12,6 +12,7 @@ class Convoi extends Model
     protected $fillable = [
         'user_id',
         'compagnie_id',
+        'particulier_id',
         'itineraire_id',
         'gare_id',
         'personnel_id',
@@ -72,6 +73,22 @@ class Convoi extends Model
     public function compagnie()
     {
         return $this->belongsTo(Compagnie::class);
+    }
+
+    public function particulier()
+    {
+        return $this->belongsTo(Particulier::class);
+    }
+
+    public function getTransporterNameAttribute(): string
+    {
+        if ($this->compagnie_id && $this->compagnie) {
+            return $this->compagnie->name;
+        }
+        if ($this->particulier_id && $this->particulier) {
+            return $this->particulier->full_name;
+        }
+        return 'Aucun';
     }
 
     public function itineraire()

@@ -32,6 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'gare' => \App\Http\Middleware\GareMiddleware::class,
             'onpc' => \App\Http\Middleware\OnpcMiddleware::class,
             'check_contact' => \App\Http\Middleware\CheckUserContact::class,
+            'particulier' => \App\Http\Middleware\ParticulierMiddleware::class,
         ]);
 
         $middleware->web(append: [

@@ -346,7 +346,7 @@
                     // Logic for automatic hyphen insertion
                     // We only do this if it's not a deletion
                     if (e.inputType !== 'deleteContentBackward' && e.inputType !== 'deleteContentForward') {
-                        const prefixes = ['USR', 'AGT', 'HTS', 'CSS', 'CHF', 'GAR', 'ADM', 'SST'];
+                        const prefixes = ['USR', 'AGT', 'HTS', 'CSS', 'CHF', 'GAR', 'ADM', 'SST', 'PTC'];
                         
                         // If exactly 3 chars, check if it's a professional prefix
                         if (value.length === 3) {

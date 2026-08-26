@@ -41,47 +41,85 @@
             <form action="{{ route('user.convoi.store') }}" method="POST" class="space-y-6" id="convoiForm">
                 @csrf
 
-                {{-- Compagnie --}}
+                {{-- Type de Prestataire Toggle --}}
                 <div class="space-y-2">
-                    <label class="block text-[11px] font-black uppercase tracking-widest text-gray-500">Compagnie <span class="text-red-500">*</span></label>
-                    <select id="compagnieSelect" name="compagnie_id"
-                        class="w-full px-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-[#e94f1b] focus:bg-white outline-none text-sm font-bold">
-                        <option value="">Choisir une compagnie</option>
-                        @foreach ($compagnies as $compagnie)
-                            <option value="{{ $compagnie->id }}" @selected(old('compagnie_id') == $compagnie->id)>
-                                {{ $compagnie->name }}{{ $compagnie->sigle ? ' (' . $compagnie->sigle . ')' : '' }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('compagnie_id')
-                        <p class="text-xs font-semibold text-red-600">{{ $message }}</p>
-                    @enderror
+                    <label class="block text-[11px] font-black uppercase tracking-widest text-gray-500">Type de Prestataire <span class="text-red-500">*</span></label>
+                    <div class="grid grid-cols-2 gap-3 p-1 bg-gray-50 border border-gray-100 rounded-2xl">
+                        <button type="button" id="toggleCompagnieBtn" onclick="selectType('compagnie')"
+                            class="py-3.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all bg-[#e94f1b] text-white shadow-sm">
+                            <i class="fas fa-building me-1.5"></i> Compagnie Officielle
+                        </button>
+                        <button type="button" id="toggleParticulierBtn" onclick="selectType('particulier')"
+                            class="py-3.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all text-gray-500 hover:text-gray-800">
+                            <i class="fas fa-user-friends me-1.5"></i> Particulier Agréé
+                        </button>
+                    </div>
+                    <input type="hidden" name="type_transporteur" id="type_transporteur" value="{{ old('type_transporteur', 'compagnie') }}">
                 </div>
 
-                {{-- Gare la plus proche --}}
-                <div class="space-y-2" id="gareSection">
-                    <label class="block text-[11px] font-black uppercase tracking-widest text-gray-500">Gare la plus proche <span class="text-red-500">*</span></label>
-                    <select id="gareSelect" name="gare_id"
-                        class="w-full px-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-[#e94f1b] focus:bg-white outline-none text-sm font-bold"
-                        disabled required>
-                        <option value="">Choisir d'abord une compagnie</option>
-                    </select>
-                    <p class="text-[11px] text-gray-400 font-semibold">La gare sélectionnée recevra et traitera votre demande directement.</p>
-                    @error('gare_id')
-                        <p class="text-xs font-semibold text-red-600">{{ $message }}</p>
-                    @enderror
+                {{-- Compagnie Group --}}
+                <div id="compagnieFields" class="space-y-6">
+                    {{-- Compagnie --}}
+                    <div class="space-y-2">
+                        <label class="block text-[11px] font-black uppercase tracking-widest text-gray-500">Compagnie <span class="text-red-500">*</span></label>
+                        <select id="compagnieSelect" name="compagnie_id"
+                            class="w-full px-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-[#e94f1b] focus:bg-white outline-none text-sm font-bold">
+                            <option value="">Choisir une compagnie</option>
+                            @foreach ($compagnies as $compagnie)
+                                <option value="{{ $compagnie->id }}" @selected(old('compagnie_id') == $compagnie->id)>
+                                    {{ $compagnie->name }}{{ $compagnie->sigle ? ' (' . $compagnie->sigle . ')' : '' }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('compagnie_id')
+                            <p class="text-xs font-semibold text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    {{-- Gare la plus proche --}}
+                    <div class="space-y-2" id="gareSection">
+                        <label class="block text-[11px] font-black uppercase tracking-widest text-gray-500">Gare la plus proche <span class="text-red-500">*</span></label>
+                        <select id="gareSelect" name="gare_id"
+                            class="w-full px-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-[#e94f1b] focus:bg-white outline-none text-sm font-bold"
+                            disabled required>
+                            <option value="">Choisir d'abord une compagnie</option>
+                        </select>
+                        <p class="text-[11px] text-gray-400 font-semibold">La gare sélectionnée recevra et traitera votre demande directement.</p>
+                        @error('gare_id')
+                            <p class="text-xs font-semibold text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    {{-- Itinéraire (Select2 avec recherche) --}}
+                    <div class="space-y-2">
+                        <label class="block text-[11px] font-black uppercase tracking-widest text-gray-500">Itinéraire <span class="text-gray-400 font-normal">(optionnel — ou saisir manuellement)</span></label>
+                        <select id="itineraireSelect" name="itineraire_id" disabled
+                            class="w-full itineraire-select2">
+                            <option value="">Choisir d'abord une compagnie</option>
+                        </select>
+                        @error('itineraire_id')
+                            <p class="text-xs font-semibold text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
                 </div>
 
-                {{-- Itinéraire (Select2 avec recherche) --}}
-                <div class="space-y-2">
-                    <label class="block text-[11px] font-black uppercase tracking-widest text-gray-500">Itinéraire <span class="text-gray-400 font-normal">(optionnel — ou saisir manuellement)</span></label>
-                    <select id="itineraireSelect" name="itineraire_id" disabled
-                        class="w-full itineraire-select2">
-                        <option value="">Choisir d'abord une compagnie</option>
-                    </select>
-                    @error('itineraire_id')
-                        <p class="text-xs font-semibold text-red-600">{{ $message }}</p>
-                    @enderror
+                {{-- Particulier Group --}}
+                <div id="particulierFields" class="hidden space-y-6">
+                    <div class="space-y-2">
+                        <label class="block text-[11px] font-black uppercase tracking-widest text-gray-500">Transporteur Particulier <span class="text-red-500">*</span></label>
+                        <select id="particulierSelect" name="particulier_id"
+                            class="w-full px-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-[#e94f1b] focus:bg-white outline-none text-sm font-bold">
+                            <option value="">Choisir un transporteur particulier</option>
+                            @foreach ($particuliers as $particulier)
+                                <option value="{{ $particulier->id }}" @selected(old('particulier_id') == $particulier->id)>
+                                    {{ $particulier->name }} {{ $particulier->prenom }} ({{ $particulier->nombre_place_car }} places - {{ $particulier->immatriculation }})
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('particulier_id')
+                            <p class="text-xs font-semibold text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
                 </div>
 
                 {{-- Lieux (auto-rempli ou manuel) --}}
@@ -488,6 +526,47 @@
         document.getElementById('nombre_personnes').value = 10;
     }
 
+    // ── Toggle Prestataire ──────────────────────────────────────────────────
+    window.selectType = function(type) {
+        document.getElementById('type_transporteur').value = type;
+
+        const compBtn = document.getElementById('toggleCompagnieBtn');
+        const partBtn = document.getElementById('toggleParticulierBtn');
+        const compFields = document.getElementById('compagnieFields');
+        const partFields = document.getElementById('particulierFields');
+        const compSelect = document.getElementById('compagnieSelect');
+        const gareSelect = document.getElementById('gareSelect');
+        const partSelect = document.getElementById('particulierSelect');
+
+        if (type === 'compagnie') {
+            // Styling buttons
+            compBtn.className = "py-3.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all bg-[#e94f1b] text-white shadow-sm";
+            partBtn.className = "py-3.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all text-gray-500 hover:text-gray-800";
+
+            // Show/Hide fields
+            compFields.classList.remove('hidden');
+            partFields.classList.add('hidden');
+
+            // Required logic
+            compSelect.required = true;
+            gareSelect.required = true;
+            if (partSelect) partSelect.required = false;
+        } else {
+            // Styling buttons
+            compBtn.className = "py-3.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all text-gray-500 hover:text-gray-800";
+            partBtn.className = "py-3.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all bg-[#e94f1b] text-white shadow-sm";
+
+            // Show/Hide fields
+            compFields.classList.add('hidden');
+            partFields.classList.remove('hidden');
+
+            // Required logic
+            compSelect.required = false;
+            gareSelect.required = false;
+            if (partSelect) partSelect.required = true;
+        }
+    };
+
     // ── Events ─────────────────────────────────────────────────────────────
     compagnieSelect.addEventListener('change', () => {
         loadItineraires(compagnieSelect.value);
@@ -500,6 +579,10 @@
         loadItineraires(compagnieSelect.value);
         loadGares(compagnieSelect.value, null);
     }
+
+    // Restore initial state (compagnie or particulier)
+    const oldType = "{{ old('type_transporteur', 'compagnie') }}";
+    selectType(oldType);
     </script>
     @endpush
 @endsection

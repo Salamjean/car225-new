@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Home;
 use App\Http\Controllers\Controller;
 use App\Models\Compagnie;
 use App\Models\Itineraire;
+use App\Models\Convoi;
+use App\Models\Particulier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\ContactFormNotification;
+use Illuminate\Support\Str;
 
 class AccueilController extends Controller
 {
@@ -229,5 +232,95 @@ class AccueilController extends Controller
     public function downloadApp()
     {
         return view('landing.download');
+    }
+
+    public function convoi(Request $request)
+    {
+        $type = $request->query('type', 'all');
+
+        $query = Convoi::with(['compagnie', 'particulier', 'itineraire'])
+            ->whereIn('statut', ['valide', 'paye', 'en_cours', 'termine']);
+
+        if ($type === 'compagnie') {
+            $query->whereNotNull('compagnie_id');
+        } elseif ($type === 'particulier') {
+            $query->whereNotNull('particulier_id');
+        }
+
+        $convois = $query->latest()->paginate(9)->withQueryString();
+
+        $compagnies = Compagnie::where('statut', 'actif')->orderBy('name')->get();
+        $particuliers = Particulier::where('statut', 'valide')->orderBy('name')->get();
+
+        return view('home.pages.convoi', compact('convois', 'compagnies', 'particuliers'));
+    }
+
+    public function storeParticulierRegister(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'prenom' => 'required|string|max:255',
+            'email' => 'required|email|unique:particuliers,email',
+            'contact' => 'required|digits:10',
+            'nombre_place_car' => 'required|integer|min:10',
+            'date_mise_service' => 'required|date|before_or_equal:today',
+            'immatriculation' => 'required|string|max:255',
+            'photo_proprietaire' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'photo_complete_car' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'photo_avant_car' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'photo_arriere_car' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'carte_grise' => 'required|file|mimes:pdf,jpeg,png,jpg|max:4096',
+            'visite_technique' => 'required|file|mimes:pdf,jpeg,png,jpg|max:4096',
+        ], [
+            'contact.digits' => 'Le numéro de téléphone doit contenir exactement 10 chiffres.',
+            'nombre_place_car.min' => 'Le véhicule doit disposer d\'au moins 10 places.',
+            'date_mise_service.before_or_equal' => 'La date de mise en service ne peut pas être dans le futur.',
+        ]);
+
+        try {
+            // Uploads
+            $paths = [];
+            $filesToUpload = [
+                'photo_proprietaire' => 'particuliers/photos',
+                'photo_complete_car' => 'particuliers/photos',
+                'photo_avant_car'    => 'particuliers/photos',
+                'photo_arriere_car'  => 'particuliers/photos',
+                'carte_grise'        => 'particuliers/documents',
+                'visite_technique'   => 'particuliers/documents'
+            ];
+
+            foreach ($filesToUpload as $field => $folder) {
+                if ($request->hasFile($field)) {
+                    $file = $request->file($field);
+                    $fileName = $field . '_' . time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
+                    $paths[$field] = $file->storeAs($folder, $fileName, 'public');
+                }
+            }
+
+            Particulier::create([
+                'name' => $validated['name'],
+                'prenom' => $validated['prenom'],
+                'email' => $validated['email'],
+                'contact' => $validated['contact'],
+                'nombre_place_car' => $validated['nombre_place_car'],
+                'date_mise_service' => $validated['date_mise_service'],
+                'immatriculation' => $validated['immatriculation'],
+                'photo_proprietaire' => $paths['photo_proprietaire'] ?? null,
+                'photo_complete_car' => $paths['photo_complete_car'] ?? null,
+                'photo_avant_car'    => $paths['photo_avant_car'] ?? null,
+                'photo_arriere_car'  => $paths['photo_arriere_car'] ?? null,
+                'carte_grise'        => $paths['carte_grise'] ?? null,
+                'visite_technique'   => $paths['visite_technique'] ?? null,
+                'statut' => 'en_attente',
+            ]);
+
+            return redirect()->route('home.convoi')->with('success', 'Votre demande d\'inscription a été enregistrée avec succès. L\'administrateur va l\'étudier et vous recevrez vos accès très prochainement.');
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Erreur inscription particulier convoi: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Une erreur est survenue lors de l\'enregistrement : ' . $e->getMessage())
+                ->withInput();
+        }
     }
 }

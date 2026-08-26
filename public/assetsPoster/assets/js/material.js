@@ -19,13 +19,14 @@
   const menuEls = Array.from(document.querySelectorAll('.mdc-menu'));
   menuEls.forEach((menuEl, index) => {
     
-    const menu = new mdc.menu.MDCMenu(menuEl);
-    const buttonEl = menuEl.parentElement.querySelector('.mdc-menu-button');
-    buttonEl.addEventListener('click', () => {
-      menu.open = !menu.open;
-    })
-    menu.setAnchorCorner(mdc.menu.Corner.BOTTOM_LEFT);
-    menu.setAnchorElement(buttonEl)
+    const buttonEl = menuEl.parentElement ? menuEl.parentElement.querySelector('.mdc-menu-button') : null;
+    if (buttonEl) {
+      buttonEl.addEventListener('click', () => {
+        menu.open = !menu.open;
+      });
+      menu.setAnchorCorner(mdc.menu.Corner.BOTTOM_LEFT);
+      menu.setAnchorElement(buttonEl);
+    }
   });
 
   // Tabs

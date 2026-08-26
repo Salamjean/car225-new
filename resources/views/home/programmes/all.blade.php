@@ -320,7 +320,9 @@
                 ? 'bg-[#e94e1a] text-white border-transparent cursor-not-allowed opacity-90' 
                 : 'bg-blue-500 text-white hover:bg-blue-600 cursor-pointer shadow-sm';
             
-            html += `<div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center font-bold text-sm sm:text-base transition-all duration-200 ${styleClass}" title="Place ${sn}">
+            const onClickAttr = isRes ? '' : 'onclick="window.handleSeatClick()"';
+            
+            html += `<div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center font-bold text-sm sm:text-base transition-all duration-200 ${styleClass}" title="Place ${sn}" ${onClickAttr}>
                         ${sn}
                      </div>`;
         }
@@ -344,8 +346,10 @@
             const styleClass = isRes 
                 ? 'bg-[#e94e1a] text-white border-transparent cursor-not-allowed opacity-90' 
                 : 'bg-green-500 text-white hover:bg-green-600 cursor-pointer shadow-sm';
+            
+            const onClickAttr = isRes ? '' : 'onclick="window.handleSeatClick()"';
 
-             html += `<div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center font-bold text-sm sm:text-base transition-all duration-200 ${styleClass}" title="Place ${sn}">
+             html += `<div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center font-bold text-sm sm:text-base transition-all duration-200 ${styleClass}" title="Place ${sn}" ${onClickAttr}>
                         ${sn}
                      </div>`;
         }
@@ -378,5 +382,32 @@
     
     return html;
 }
+
+const isUserLoggedIn = @json(auth()->check());
+
+window.handleSeatClick = function() {
+    Swal.close();
+    if (isUserLoggedIn) {
+        window.location.href = "{{ route('reservation.create') }}";
+    } else {
+        Swal.fire({
+            icon: 'info',
+            title: 'Connexion requise',
+            text: 'Veuillez vous connecter pour réserver votre siège.',
+            showCancelButton: true,
+            confirmButtonText: 'Se connecter',
+            cancelButtonText: 'Annuler',
+            confirmButtonColor: '#e94e1a',
+            customClass: {
+                popup: 'rounded-3xl border-none shadow-2xl',
+                closeButton: 'focus:outline-none'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = "{{ route('login') }}";
+            }
+        });
+    }
+};
     </script>
 @endsection
