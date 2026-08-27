@@ -36,14 +36,16 @@ class Particulier extends Authenticatable
         'code_id',
         'password',
         'fcm_token',
+        'must_change_password',
         'solde_convoie',
         'motif_rejet',
     ];
 
     protected $casts = [
-        'password' => 'hashed',
-        'date_mise_service' => 'date',
-        'solde_convoie' => 'decimal:2',
+        'password'            => 'hashed',
+        'date_mise_service'   => 'date',
+        'solde_convoie'       => 'decimal:2',
+        'must_change_password'=> 'boolean',
     ];
 
     /** Getter pour le nom complet */

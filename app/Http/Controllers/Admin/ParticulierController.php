@@ -96,24 +96,28 @@ class ParticulierController extends Controller
 
         try {
             // Génération du mot de passe aléatoire
-            $rawPassword = Str::random(10);
+            $chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+            $rawPassword = substr(str_shuffle(str_repeat($chars, 3)), 0, 10);
             
             // Génération du code_id se fait via bootHasCodeId du HasCodeId trait lors de la sauvegarde s'il est vide.
             // On le génère manuellement ici pour l'envoyer par mail/SMS.
             $codeId = Particulier::generateUniqueCodeId();
 
             $particulier->update([
-                'statut' => 'valide',
-                'code_id' => $codeId,
-                'password' => Hash::make($rawPassword),
+                'statut'               => 'valide',
+                'code_id'              => $codeId,
+                'password'             => Hash::make($rawPassword),
+                'must_change_password' => true,
             ]);
 
             // Envoi de l'email d'approbation
-            try {
-                Notification::route('mail', $particulier->email)
-                    ->notify(new ParticulierRegistrationApprovedNotification($codeId, $rawPassword, $particulier->email));
-            } catch (\Exception $e) {
-                Log::error('Erreur envoi email validation particulier: ' . $e->getMessage());
+            if (!empty($particulier->email)) {
+                try {
+                    Notification::route('mail', $particulier->email)
+                        ->notify(new ParticulierRegistrationApprovedNotification($codeId, $rawPassword, $particulier->email));
+                } catch (\Exception $e) {
+                    Log::error('Erreur envoi email validation particulier: ' . $e->getMessage());
+                }
             }
 
             // Envoi du SMS

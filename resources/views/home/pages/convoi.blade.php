@@ -3,7 +3,7 @@
 @section('content')
     <!-- Hero Section -->
     <section class="contact-hero-section"
-        style="background: linear-gradient(rgba(5, 30, 35, 0.85), rgba(5, 30, 35, 0.85)), url('{{ asset('assets/img/travel/destination-18.webp') }}') center/cover no-repeat;">
+        style="background: linear-gradient(rgba(5, 30, 35, 0.85), rgba(5, 30, 35, 0.85)), url('{{ asset('assets/img/travel/abidjan-contact-bg.jpg') }}') center/cover no-repeat;">
         <div class="container">
             <div class="row align-items-center py-5">
                 <div class="col-lg-8 offset-lg-2 text-center" data-aos="fade-up">
@@ -58,7 +58,7 @@
             <div class="d-flex justify-content-center mb-5">
                 <div class="nav-pills-wrapper p-1 rounded-4 shadow-sm" style="background: white; border: 1px solid rgba(0,0,0,0.05); display: inline-flex;">
                     <button class="nav-link-btn active" id="tab-listings-btn" onclick="switchTab('listings')">
-                        <i class="fas fa-list-ul me-2"></i> Convois Disponibles
+                        <i class="fas fa-list-ul me-2"></i> {{ $type == 'particulier' ? 'Particuliers Disponibles' : 'Convois Disponibles' }}
                     </button>
                     <button class="nav-link-btn" id="tab-request-btn" onclick="switchTab('request')">
                         <i class="fas fa-bus-alt me-2"></i> Demander un Convoi
@@ -69,28 +69,110 @@
                 </div>
             </div>
 
-            <!-- Tab: Convois Disponibles -->
+            <!-- Tab: Convois / Particuliers Disponibles -->
             <div class="tab-content-panel active" id="tab-listings">
                 <!-- Filters -->
                 <div class="d-flex flex-wrap gap-2 justify-content-center mb-4">
-                    <a href="{{ route('home.convoi', ['type' => 'all']) }}" class="btn-filter {{ request('type') == 'all' || !request('type') ? 'active' : '' }}">
-                        Tout afficher
-                    </a>
-                    <a href="{{ route('home.convoi', ['type' => 'compagnie']) }}" class="btn-filter {{ request('type') == 'compagnie' ? 'active' : '' }}">
-                        <i class="fas fa-building me-1"></i> Par Compagnie
-                    </a>
-                    <a href="{{ route('home.convoi', ['type' => 'particulier']) }}" class="btn-filter {{ request('type') == 'particulier' ? 'active' : '' }}">
-                        <i class="fas fa-user me-1"></i> Par Particulier
+                    <a href="{{ route('home.convoi', ['type' => 'particulier']) }}" class="btn-filter {{ $type == 'particulier' ? 'active' : '' }}">
+                        <i class="fas fa-user me-1"></i> Particuliers Disponibles
                     </a>
                 </div>
 
+                {{-- === VUE PARTICULIERS DISPONIBLES === --}}
+                @if($type === 'particulier')
+                    <div class="mb-4 text-center">
+                        <h5 class="fw-bold text-dark mb-1">Transporteurs <span style="color:#e94f1b;">Particuliers Agréés</span></h5>
+                        <p class="text-muted" style="font-size:13px;">Ces transporteurs particuliers sont vérifiés et validés par CAR225. Vous pouvez faire une demande directement.</p>
+                    </div>
+                    @if($particuliers->isEmpty())
+                        <div class="col-12 text-center py-5">
+                            <i class="fas fa-user-slash text-muted" style="font-size:48px;"></i>
+                            <p class="text-muted fw-bold mt-3">Aucun transporteur particulier disponible pour le moment.</p>
+                        </div>
+                    @else
+                    <div class="row g-4">
+                        @foreach($particuliers as $part)
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card-convoi p-0 rounded-4 shadow-sm h-100 overflow-hidden">
+                                {{-- Photo véhicule (bannière) --}}
+                                <div style="height:140px; background: #f3f4f6; position:relative; overflow:hidden;">
+                                    @if($part->photo_complete_car_url)
+                                        <img src="{{ $part->photo_complete_car_url }}" alt="Véhicule" style="width:100%;height:100%;object-fit:cover;">
+                                    @elseif($part->photo_avant_car_url)
+                                        <img src="{{ $part->photo_avant_car_url }}" alt="Véhicule" style="width:100%;height:100%;object-fit:cover;">
+                                    @else
+                                        <div class="d-flex align-items-center justify-content-center h-100">
+                                            <i class="fas fa-bus text-muted" style="font-size:48px; opacity:0.3;"></i>
+                                        </div>
+                                    @endif
+                                    {{-- Badge --}}
+                                    <span style="position:absolute;top:10px;left:10px;background:#eff6ff;color:#2563eb;font-size:10px;font-weight:800;padding:3px 9px;border-radius:10px;text-transform:uppercase;">
+                                        <i class="fas fa-user-check me-1"></i> Particulier Agréé
+                                    </span>
+                                    {{-- Immatriculation --}}
+                                    @if($part->immatriculation)
+                                    <span style="position:absolute;bottom:8px;right:10px;background:rgba(0,0,0,0.6);color:#fff;font-size:10px;font-weight:800;padding:2px 8px;border-radius:6px;">
+                                        {{ strtoupper($part->immatriculation) }}
+                                    </span>
+                                    @endif
+                                </div>
+
+                                {{-- Content --}}
+                                <div class="p-4">
+                                    {{-- Profil du propriétaire --}}
+                                    <div class="d-flex align-items-center gap-3 mb-3">
+                                        <div style="flex-shrink:0;">
+                                            @if($part->photo_proprietaire_url)
+                                                <img src="{{ $part->photo_proprietaire_url }}" alt="{{ $part->full_name }}" class="rounded-circle shadow-sm" style="width:52px;height:52px;object-fit:cover;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.12);">
+                                            @else
+                                                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:52px;height:52px;background:linear-gradient(135deg,#e94f1b,#f97316);color:#fff;font-size:18px;font-weight:900;">
+                                                    {{ strtoupper(substr($part->name, 0, 1)) }}
+                                                </div>
+                                            @endif
+                                        </div>
+                                        <div>
+                                            <p class="mb-0 fw-bold text-dark" style="font-size:14px;">{{ $part->full_name }}</p>
+                                            <p class="mb-0 text-muted" style="font-size:11px;"><i class="fas fa-id-badge me-1"></i>{{ $part->code_id }}</p>
+                                        </div>
+                                    </div>
+
+                                    {{-- Infos véhicule --}}
+                                    <div class="d-flex flex-wrap gap-2 mb-3">
+                                        <span style="background:#fff7ed;color:#ea580c;font-size:11px;font-weight:700;padding:4px 10px;border-radius:10px;">
+                                            <i class="fas fa-users me-1"></i>{{ $part->nombre_place_car }} places
+                                        </span>
+                                        @if($part->date_mise_service)
+                                        <span style="background:#f0fdf4;color:#16a34a;font-size:11px;font-weight:700;padding:4px 10px;border-radius:10px;">
+                                            <i class="fas fa-calendar-check me-1"></i>En service depuis {{ \Carbon\Carbon::parse($part->date_mise_service)->year }}
+                                        </span>
+                                        @endif
+                                        <span style="background:#f5f3ff;color:#7c3aed;font-size:11px;font-weight:700;padding:4px 10px;border-radius:10px;">
+                                            <i class="fas fa-phone me-1"></i>{{ $part->contact }}
+                                        </span>
+                                    </div>
+
+                                    {{-- CTA --}}
+                                    <button type="button"
+                                        onclick="demanderConvoiAvecParticulier({{ $part->id }})"
+                                        class="btn btn-sm w-100 fw-bold text-white text-uppercase rounded-3 py-2"
+                                        style="background:linear-gradient(135deg,#e94f1b,#f97316);font-size:11px;letter-spacing:.5px;">
+                                        <i class="fas fa-bus-alt me-1"></i> Demander un convoi avec ce transporteur
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                    @endif
+
+                {{-- === VUE CONVOIS (tout / compagnie) === --}}
+                @else
                 <div class="row g-4">
                     @forelse ($convois as $convoi)
                         <div class="col-md-6 col-lg-4">
                             <div class="card-convoi p-4 rounded-4 shadow-sm h-100 position-relative">
                                 @php
                                     $isParticulier = (bool)$convoi->particulier_id;
-                                    $transporter = $isParticulier ? $convoi->particulier : $convoi->compagnie;
                                     $bgBadge = $isParticulier ? 'background: #eff6ff; color: #2563eb;' : 'background: #fff7ed; color: #ea580c;';
                                     $iconType = $isParticulier ? 'fa-user' : 'fa-building';
                                 @endphp
@@ -171,6 +253,7 @@
                 <div class="d-flex justify-content-center mt-4">
                     {{ $convois->links() }}
                 </div>
+                @endif
             </div>
 
             <!-- Tab: Demander un convoi -->
@@ -413,16 +496,15 @@
 
                                 <div class="row g-3">
                                     <div class="col-sm-6">
-                                        <div class="mb-3">
-                                            <label class="form-label-custom">EMAIL <span class="text-danger">*</span></label>
-                                            <input type="email" name="email" class="form-control form-input-premium" placeholder="adresse@exemple.com" value="{{ old('email') }}" required>
-                                        </div>
+                                         <div class="mb-3">
+                                             <label class="form-label-custom">EMAIL <span class="text-gray-400 font-normal normal-case">(optionnel)</span></label>
+                                             <input type="email" name="email" class="form-control form-input-premium" placeholder="adresse@exemple.com" value="{{ old('email') }}">
+                                         </div>
                                     </div>
                                     <div class="col-sm-6">
-                                        <div class="mb-3">
-                                            <label class="form-label-custom">CONTACT TÉLÉPHONIQUE <span class="text-danger">*</span></label>
-                                            <input type="tel" name="contact" class="form-control form-input-premium" placeholder="Ex: 0707070707" value="{{ old('contact') }}" required>
-                                        </div>
+                                        <label class="form-label-custom">CONTACT TÉLÉPHONIQUE <span class="text-danger">*</span></label>
+                                        <input type="tel" name="contact" id="particulierContact" class="form-control form-input-premium" placeholder="Ex: 0707070707" value="{{ old('contact') }}" required maxlength="10" minlength="10" pattern="[0-9]{10}" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)">
+                                        <div id="contactFeedback" class="text-xs mt-1 font-semibold" style="color:#e94f1b; display:none;">Le numéro doit comporter exactement 10 chiffres.</div>
                                     </div>
                                 </div>
 
@@ -861,12 +943,37 @@
                 partSelect.value = id;
             }
 
-            // Close the select modal programmatically
-            const modalEl = document.getElementById('particulierSelectModal');
-            if (modalEl) {
-                const modalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-                modalInstance.hide();
+            // Close the select modal programmatically if open
+            try {
+                const modalEl = document.getElementById('particulierSelectModal');
+                if (modalEl) {
+                    const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                    if (modalInstance) {
+                        modalInstance.hide();
+                    }
+                }
+            } catch(e) {
+                console.error("Erreur fermeture modal:", e);
             }
+        }
+
+        function demanderConvoiAvecParticulier(id) {
+            // 1. Basculer immédiatement vers l'onglet Demander un convoi
+            switchTab('request');
+
+            // 2. Sélectionner le type de prestataire "particulier"
+            selectProviderType('particulier');
+
+            // 3. Sélectionner le transporteur spécifique
+            selectParticulierCard(id);
+
+            // 4. Défiler directement vers le formulaire
+            setTimeout(function() {
+                const target = document.getElementById('tab-request');
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 60);
         }
 
         function clearParticulierSelection() {
@@ -920,18 +1027,27 @@
                 switchTab(hash);
             }
 
-            // Restore provider type and selections
-            const oldType = "{{ old('type_transporteur', 'compagnie') }}";
-            selectProviderType(oldType);
+            // Check URL query parameters for predefined particulier selection
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlPartId = urlParams.get('particulier_id');
 
-            const oldCompId = "{{ old('compagnie_id') }}";
-            if (oldCompId) {
-                selectCompagnieCard(oldCompId);
-            }
+            if (urlPartId) {
+                selectProviderType('particulier');
+                selectParticulierCard(urlPartId);
+            } else {
+                // Restore provider type and selections from old validation errors
+                const oldType = "{{ old('type_transporteur', 'compagnie') }}";
+                selectProviderType(oldType);
 
-            const oldPartId = "{{ old('particulier_id') }}";
-            if (oldPartId) {
-                selectParticulierCard(oldPartId);
+                const oldCompId = "{{ old('compagnie_id') }}";
+                if (oldCompId) {
+                    selectCompagnieCard(oldCompId);
+                }
+
+                const oldPartId = "{{ old('particulier_id') }}";
+                if (oldPartId) {
+                    selectParticulierCard(oldPartId);
+                }
             }
 
             // Real-time Vehicle Age calculation in JS

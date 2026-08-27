@@ -27,6 +27,8 @@ class Convoi extends Model
         'date_retour',
         'heure_retour',
         'montant',
+        'montant_propose_client',
+        'dernier_offreur',
         'motif_refus',
         'lieu_rassemblement',
         'lieu_rassemblement_retour',

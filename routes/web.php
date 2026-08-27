@@ -607,6 +607,7 @@ Route::middleware('auth')->prefix('user')->group(function () {
             Route::post('/{convoi}/pay', [ConvoiController::class, 'pay'])->name('pay');
             Route::post('/{convoi}/accepter', [ConvoiController::class, 'accepterMontant'])->name('accepter');
             Route::post('/{convoi}/refuser-montant', [ConvoiController::class, 'refuserMontant'])->name('refuser-montant');
+            Route::post('/{convoi}/proposer-montant', [ConvoiController::class, 'proposerMontant'])->name('proposer-montant');
             Route::get('/itineraire/{itineraire}/gares', [ConvoiController::class, 'garesByItineraire'])->name('gares-by-itineraire');
             Route::post('/{convoi}/passengers', [ConvoiController::class, 'storePassengers'])->name('store-passengers');
             Route::post('/{convoi}/lieu-rassemblement', [ConvoiController::class, 'storeLieuRassemblement'])->name('lieu-rassemblement');
@@ -1275,5 +1276,8 @@ Route::middleware('particulier')->prefix('particulier')->name('particulier.')->g
     Route::post('/convois/{convoi}/valider', [App\Http\Controllers\Particulier\ParticulierDashboardController::class, 'validerConvoi'])->name('convoi.valider');
     Route::post('/convois/{convoi}/refuser', [App\Http\Controllers\Particulier\ParticulierDashboardController::class, 'refuserConvoi'])->name('convoi.refuser');
     Route::post('/convois/{convoi}/annuler', [App\Http\Controllers\Particulier\ParticulierDashboardController::class, 'annulerConvoi'])->name('convoi.annuler');
+    Route::post('/convois/{convoi}/accepter-offre-client', [App\Http\Controllers\Particulier\ParticulierDashboardController::class, 'accepterOffreClient'])->name('convoi.accepter-offre-client');
+    Route::post('/convois/{convoi}/contre-proposer', [App\Http\Controllers\Particulier\ParticulierDashboardController::class, 'contreProposer'])->name('convoi.contre-proposer');
     Route::get('/profile', [App\Http\Controllers\Particulier\ParticulierDashboardController::class, 'profile'])->name('profile');
+    Route::post('/profile/update', [App\Http\Controllers\Particulier\ParticulierDashboardController::class, 'updateProfile'])->name('profile.update');
 });

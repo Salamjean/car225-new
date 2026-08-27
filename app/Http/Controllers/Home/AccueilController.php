@@ -236,23 +236,18 @@ class AccueilController extends Controller
 
     public function convoi(Request $request)
     {
-        $type = $request->query('type', 'all');
+        $type = $request->query('type', 'particulier');
 
         $query = Convoi::with(['compagnie', 'particulier', 'itineraire'])
-            ->whereIn('statut', ['valide', 'paye', 'en_cours', 'termine']);
-
-        if ($type === 'compagnie') {
-            $query->whereNotNull('compagnie_id');
-        } elseif ($type === 'particulier') {
-            $query->whereNotNull('particulier_id');
-        }
+            ->whereIn('statut', ['valide', 'paye', 'en_cours', 'termine'])
+            ->whereNotNull('compagnie_id'); // Only show company convois publicly
 
         $convois = $query->latest()->paginate(9)->withQueryString();
 
         $compagnies = Compagnie::where('statut', 'actif')->orderBy('name')->get();
         $particuliers = Particulier::where('statut', 'valide')->orderBy('name')->get();
 
-        return view('home.pages.convoi', compact('convois', 'compagnies', 'particuliers'));
+        return view('home.pages.convoi', compact('convois', 'compagnies', 'particuliers', 'type'));
     }
 
     public function storeParticulierRegister(Request $request)
@@ -260,7 +255,7 @@ class AccueilController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'prenom' => 'required|string|max:255',
-            'email' => 'required|email|unique:particuliers,email',
+            'email' => 'nullable|email|unique:particuliers,email',
             'contact' => 'required|digits:10',
             'nombre_place_car' => 'required|integer|min:10',
             'date_mise_service' => 'required|date|before_or_equal:today',

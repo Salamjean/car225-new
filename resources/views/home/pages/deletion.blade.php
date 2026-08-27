@@ -3,7 +3,7 @@
 
     <!-- Hero Deletion -->
     <section class="deletion-hero-section"
-        style="background: linear-gradient(rgba(5, 30, 35, 0.8), rgba(5, 30, 35, 0.8)), url('{{ asset('assets/img/travel/destination-18.webp') }}') center/cover no-repeat; padding: 120px 0 60px;">
+        style="background: linear-gradient(rgba(5, 30, 35, 0.8), rgba(5, 30, 35, 0.8)), url('{{ asset('assets/img/travel/abidjan-contact-bg.jpg') }}') center/cover no-repeat; padding: 120px 0 60px;">
         <div class="container">
             <div class="row align-items-center py-5">
                 <div class="col-lg-8 offset-lg-2 text-center" data-aos="fade-up">

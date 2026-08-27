@@ -28,6 +28,7 @@ class ParticulierDashboardController extends Controller
                 $q->where('particulier_id', $particulier->id)
                   ->orWhere(function ($sq) {
                       $sq->whereNull('particulier_id')
+                         ->whereNull('compagnie_id')
                          ->where('statut', 'en_attente');
                   });
             })
@@ -47,6 +48,7 @@ class ParticulierDashboardController extends Controller
                 $q->where('particulier_id', $particulier->id)
                   ->orWhere(function ($sq) {
                       $sq->whereNull('particulier_id')
+                         ->whereNull('compagnie_id')
                          ->where('statut', 'en_attente');
                   });
             })
@@ -70,7 +72,7 @@ class ParticulierDashboardController extends Controller
         $particulier = Auth::guard('particulier')->user();
 
         if ($convoi->particulier_id !== $particulier->id) {
-            if (!($convoi->particulier_id === null && $convoi->statut === 'en_attente')) {
+            if (!($convoi->particulier_id === null && $convoi->compagnie_id === null && $convoi->statut === 'en_attente')) {
                 abort(403);
             }
         }
@@ -88,7 +90,7 @@ class ParticulierDashboardController extends Controller
         $particulier = Auth::guard('particulier')->user();
 
         if ($convoi->particulier_id !== $particulier->id) {
-            if ($convoi->particulier_id === null && $convoi->statut === 'en_attente') {
+            if ($convoi->particulier_id === null && $convoi->compagnie_id === null && $convoi->statut === 'en_attente') {
                 $convoi->update([
                     'particulier_id' => $particulier->id
                 ]);
@@ -152,7 +154,7 @@ class ParticulierDashboardController extends Controller
         $particulier = Auth::guard('particulier')->user();
 
         if ($convoi->particulier_id !== $particulier->id) {
-            if ($convoi->particulier_id === null && $convoi->statut === 'en_attente') {
+            if ($convoi->particulier_id === null && $convoi->compagnie_id === null && $convoi->statut === 'en_attente') {
                 $convoi->update([
                     'particulier_id' => $particulier->id
                 ]);
@@ -286,12 +288,187 @@ class ParticulierDashboardController extends Controller
     }
 
     /**
+     * Le chauffeur accepte le prix proposé par le client
+     */
+    public function accepterOffreClient(Request $request, Convoi $convoi)
+    {
+        $particulier = Auth::guard('particulier')->user();
+
+        if ($convoi->particulier_id !== $particulier->id) {
+            abort(403);
+        }
+
+        if ($convoi->statut !== 'en_attente' || $convoi->dernier_offreur !== 'client' || !$convoi->montant_propose_client) {
+            return back()->with('error', 'Aucune offre client en attente pour ce convoi.');
+        }
+
+        $convoi->update([
+            'montant'                => $convoi->montant_propose_client,
+            'montant_propose_client' => null,
+            'dernier_offreur'        => null,
+            'statut'                 => 'valide',
+        ]);
+
+        // Notifier le client
+        if ($convoi->user) {
+            $user = $convoi->user;
+            $montantF = number_format($convoi->montant, 0, ',', ' ');
+
+            try { $user->notify(new ConvoiValidatedNotification($convoi)); } catch (\Exception $e) { Log::error('Notif accepter offre: ' . $e->getMessage()); }
+
+            $smsMsg = "Bonjour " . ($user->prenom ?? $user->name) . ",\n"
+                    . "Bonne nouvelle ! Le transporteur a ACCEPTE votre offre de {$montantF} FCFA pour le convoi {$convoi->reference}.\n"
+                    . "Connectez-vous pour confirmer votre convoi.";
+            try { app(SmsService::class)->sendSms($user->contact, $smsMsg); } catch (\Exception $e) { Log::error('SMS accepter offre: ' . $e->getMessage()); }
+
+            if ($user->fcm_token) {
+                try {
+                    app(\App\Services\FcmService::class)->sendNotification(
+                        $user->fcm_token,
+                        'Offre acceptée par le transporteur ✅',
+                        "Votre offre de {$montantF} FCFA pour le convoi {$convoi->reference} a été acceptée.",
+                        ['type' => 'offre_acceptee_particulier', 'convoi_id' => (string) $convoi->id]
+                    );
+                } catch (\Exception $e) { Log::error('FCM accepter offre: ' . $e->getMessage()); }
+            }
+        }
+
+        return back()->with('success', 'Vous avez accepté le montant proposé par le client. Il a été notifié.');
+    }
+
+    /**
+     * Le chauffeur fait une contre-proposition au client
+     */
+    public function contreProposer(Request $request, Convoi $convoi)
+    {
+        $particulier = Auth::guard('particulier')->user();
+
+        if ($convoi->particulier_id !== $particulier->id) {
+            abort(403);
+        }
+
+        if (!in_array($convoi->statut, ['en_attente', 'valide'])) {
+            return back()->with('error', 'Ce convoi ne peut pas faire l\'objet d\'une négociation dans son état actuel.');
+        }
+
+        $validated = $request->validate([
+            'montant' => 'required|numeric|min:100',
+        ], [
+            'montant.required' => 'Veuillez saisir le montant à proposer.',
+            'montant.min'      => 'Le montant doit être au minimum de 100 FCFA.',
+        ]);
+
+        $convoi->update([
+            'montant'                => $validated['montant'],
+            'montant_propose_client' => null,
+            'dernier_offreur'        => 'particulier',
+            'statut'                 => 'valide',
+        ]);
+
+        // Notifier le client
+        if ($convoi->user) {
+            $user = $convoi->user;
+            $montantF = number_format($validated['montant'], 0, ',', ' ');
+
+            try { $user->notify(new ConvoiValidatedNotification($convoi)); } catch (\Exception $e) { Log::error('Notif contre-proposition: ' . $e->getMessage()); }
+
+            $smsMsg = "Bonjour " . ($user->prenom ?? $user->name) . ",\n"
+                    . "Le transporteur vous propose un nouveau tarif de {$montantF} FCFA pour le convoi ref {$convoi->reference}.\n"
+                    . "Connectez-vous pour accepter, négocier ou annuler.";
+            try { app(SmsService::class)->sendSms($user->contact, $smsMsg); } catch (\Exception $e) { Log::error('SMS contre-proposition: ' . $e->getMessage()); }
+
+            if ($user->fcm_token) {
+                try {
+                    app(\App\Services\FcmService::class)->sendNotification(
+                        $user->fcm_token,
+                        'Nouveau prix proposé par le transporteur 💰',
+                        "Le transporteur propose {$montantF} FCFA pour le convoi {$convoi->reference}.",
+                        ['type' => 'contre_proposition_particulier', 'convoi_id' => (string) $convoi->id]
+                    );
+                } catch (\Exception $e) { Log::error('FCM contre-proposition: ' . $e->getMessage()); }
+            }
+        }
+
+        return back()->with('success', 'Votre nouvelle proposition a été envoyée au client. Il a été notifié.');
+    }
+
+    /**
      * Profil du particulier
      */
     public function profile()
     {
         $particulier = Auth::guard('particulier')->user();
         return view('particulier.profile', compact('particulier'));
+    }
+
+    /**
+     * Mettre à jour le profil (mot de passe, photo, email optionnel)
+     */
+    public function updateProfile(Request $request)
+    {
+        $particulier = Auth::guard('particulier')->user();
+
+        $rules = [
+            'photo_proprietaire' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'email'              => 'nullable|email|unique:particuliers,email,' . $particulier->id,
+        ];
+
+        $changingPassword = $request->filled('new_password');
+
+        if ($changingPassword) {
+            $rules['current_password'] = 'required|string';
+            $rules['new_password']     = 'required|string|min:8|confirmed';
+        }
+
+        $request->validate($rules, [
+            'new_password.min'       => 'Le nouveau mot de passe doit comporter au moins 8 caractères.',
+            'new_password.confirmed' => 'La confirmation du mot de passe ne correspond pas.',
+            'email.unique'           => 'Cette adresse email est déjà utilisée par un autre compte.',
+            'current_password.required' => 'Veuillez saisir votre mot de passe actuel.',
+        ]);
+
+        // Vérification mot de passe actuel
+        if ($changingPassword) {
+            if (!\Illuminate\Support\Facades\Hash::check($request->current_password, $particulier->password)) {
+                return back()->withErrors(['current_password' => 'Le mot de passe actuel est incorrect.'])->withInput();
+            }
+        }
+
+        $data = [];
+
+        // Email optionnel
+        if ($request->filled('email')) {
+            $data['email'] = $request->email;
+        }
+
+        // Nouveau mot de passe
+        if ($changingPassword) {
+            $data['password']             = $request->new_password; // hashed via cast
+            $data['must_change_password'] = false;
+        }
+
+        // Photo de profil
+        if ($request->hasFile('photo_proprietaire')) {
+            // Supprimer l'ancienne photo si elle existe
+            if ($particulier->photo_proprietaire) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($particulier->photo_proprietaire);
+            }
+            $file     = $request->file('photo_proprietaire');
+            $fileName = 'proprietaire_' . $particulier->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $path     = $file->storeAs('particuliers/photos', $fileName, 'public');
+            $data['photo_proprietaire'] = $path;
+        }
+
+        if (!empty($data)) {
+            $particulier->update($data);
+        }
+
+        $msg = 'Votre profil a été mis à jour avec succès.';
+        if ($changingPassword) {
+            $msg = 'Mot de passe changé avec succès. Bienvenue sur votre espace !';
+        }
+
+        return back()->with('success', $msg);
     }
 
     /**

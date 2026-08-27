@@ -93,8 +93,8 @@
                     </div>
                 </div>
 
-                <!-- Passengers List (Visible if paid or completed) -->
-                @if(in_array($convoi->statut, ['paye', 'en_cours', 'termine']))
+                <!-- Passengers List (Visible from confirme status) -->
+                @if(in_array($convoi->statut, ['confirme', 'paye', 'en_cours', 'termine']))
                     <div class="bg-white rounded-3xl p-6 border border-gray-200/80 shadow-sm space-y-4">
                         <div class="flex justify-between items-center border-b border-gray-100 pb-3">
                             <h3 class="font-black text-gray-800 text-base">
@@ -105,6 +105,26 @@
                             </span>
                         </div>
 
+                        {{-- Lieux de rassemblement --}}
+                        @if($convoi->lieu_rassemblement)
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-100">
+                                    <span class="text-[10px] font-black uppercase text-emerald-700 block mb-0.5"><i class="fas fa-map-pin me-1"></i> Lieu rassemblement aller</span>
+                                    <span class="text-sm font-bold text-gray-800">{{ $convoi->lieu_rassemblement }}</span>
+                                </div>
+                                @if($convoi->lieu_rassemblement_retour)
+                                    <div class="p-3 rounded-xl bg-blue-50 border border-blue-100">
+                                        <span class="text-[10px] font-black uppercase text-blue-700 block mb-0.5"><i class="fas fa-map-pin me-1"></i> Lieu rassemblement retour</span>
+                                        <span class="text-sm font-bold text-gray-800">{{ $convoi->lieu_rassemblement_retour }}</span>
+                                    </div>
+                                @endif
+                            </div>
+                        @else
+                            <div class="p-3 rounded-xl bg-amber-50 border border-amber-100">
+                                <p class="text-xs font-semibold text-amber-700"><i class="fas fa-hourglass-half me-1"></i> L'utilisateur n'a pas encore renseigné le lieu de rassemblement.</p>
+                            </div>
+                        @endif
+
                         @if($convoi->passagers->isEmpty())
                             <p class="text-center py-6 text-gray-400 font-semibold">L'utilisateur n'a pas encore renseigné la liste des passagers.</p>
                         @else
@@ -112,7 +132,7 @@
                                 <table class="w-full text-left">
                                     <thead class="bg-gray-50 text-xs font-semibold text-gray-500 uppercase border-b border-gray-100">
                                         <tr>
-                                            <th class="px-4 py-3">Nom & Prénoms</th>
+                                            <th class="px-4 py-3">Nom &amp; Prénoms</th>
                                             <th class="px-4 py-3">Contact</th>
                                             <th class="px-4 py-3">Contact d'urgence</th>
                                         </tr>
@@ -139,7 +159,7 @@
                 @else
                     <div class="bg-white rounded-3xl p-6 border border-gray-200/80 shadow-sm text-center py-8">
                         <i class="fas fa-users-slash text-gray-300 text-4xl mb-2"></i>
-                        <p class="text-sm text-gray-500 font-semibold">La liste des passagers sera visible après confirmation du paiement par l'utilisateur.</p>
+                        <p class="text-sm text-gray-500 font-semibold">La liste des passagers sera visible après que le client ait confirmé le convoi.</p>
                     </div>
                 @endif
             </div>
@@ -190,37 +210,67 @@
                     @endif
 
                     <!-- Warning banner if claimed by another carrier -->
-                    <div id="alreadyClaimedWarning" class="d-none p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold leading-normal">
+                    <div id="alreadyClaimedWarning" class="hidden p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold leading-normal">
                         <i class="fas fa-exclamation-circle me-1 text-red-600"></i> Ce convoi vient d'être récupéré par un autre transporteur particulier. Vous ne pouvez plus y répondre.
                     </div>
 
                     <!-- ACTIONS FOR EN_ATTENTE -->
                     @if($convoi->statut === 'en_attente')
-                        <!-- Valider & Fixer le prix -->
-                        <form action="{{ route('particulier.convoi.valider', $convoi) }}" method="POST" class="space-y-3 pt-2">
-                            @csrf
-                            <div>
-                                <label class="text-[10px] font-black uppercase text-gray-400 block mb-1.5">Saisir le montant de la prestation (FCFA)</label>
-                                <input type="number" name="montant" placeholder="Ex: 150000" min="100" required
-                                    class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:bg-white outline-none font-bold text-sm">
-                            </div>
-                            <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-[#e94f1b] hover:bg-[#d44518] text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md">
-                                <i class="fas fa-check"></i> Valider & Fixer le prix
-                            </button>
-                        </form>
 
-                        <!-- Refuser convoi -->
-                        <form action="{{ route('particulier.convoi.refuser', $convoi) }}" method="POST" class="space-y-3 pt-2">
-                            @csrf
-                            <div>
-                                <label class="text-[10px] font-black uppercase text-gray-400 block mb-1.5">Motif du refus</label>
-                                <textarea name="motif_refus" placeholder="Expliquez la raison du refus (indisponibilité, capacité insuffisante, etc.)" required rows="3"
-                                    class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:bg-white outline-none font-semibold text-xs"></textarea>
+                        {{-- Si le client a fait une contre-offre, proposer d'accepter ou de contre-proposer --}}
+                        @if($convoi->dernier_offreur === 'client' && $convoi->montant_propose_client)
+                            <div class="p-4 rounded-xl bg-blue-50 border border-blue-200 space-y-3">
+                                <div class="text-center">
+                                    <span class="text-[10px] font-black uppercase text-blue-600 block mb-1"><i class="fas fa-handshake me-1"></i> Offre du client</span>
+                                    <span class="text-2xl font-black text-blue-700">{{ number_format($convoi->montant_propose_client, 0, ',', ' ') }} <span class="text-sm">FCFA</span></span>
+                                </div>
+                                {{-- Accepter l'offre du client --}}
+                                <form action="{{ route('particulier.convoi.accepter-offre-client', $convoi) }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md">
+                                        <i class="fas fa-check-circle"></i> Accepter cette offre
+                                    </button>
+                                </form>
                             </div>
-                            <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold text-xs uppercase tracking-wider rounded-xl transition-all">
-                                <i class="fas fa-ban"></i> Refuser la demande
-                            </button>
-                        </form>
+
+                            {{-- Faire une contre-proposition --}}
+                            <form action="{{ route('particulier.convoi.contre-proposer', $convoi) }}" method="POST" class="space-y-2 border-t border-gray-100 pt-3">
+                                @csrf
+                                <label class="text-[10px] font-black uppercase text-gray-400 block mb-1.5">Proposer un autre montant (FCFA)</label>
+                                <input type="number" name="montant" placeholder="Ex: 135000" min="100" required
+                                    class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:bg-white outline-none font-bold text-sm">
+                                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md">
+                                    <i class="fas fa-paper-plane"></i> Envoyer ma contre-offre
+                                </button>
+                            </form>
+
+                        @else
+                            {{-- Cas normal : fixer le prix et valider --}}
+                            <form action="{{ route('particulier.convoi.valider', $convoi) }}" method="POST" class="space-y-3 pt-2">
+                                @csrf
+                                <div>
+                                    <label class="text-[10px] font-black uppercase text-gray-400 block mb-1.5">Saisir le montant de la prestation (FCFA)</label>
+                                    <input type="number" name="montant" placeholder="Ex: 150000" min="100" required
+                                        class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:bg-white outline-none font-bold text-sm">
+                                </div>
+                                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-[#e94f1b] hover:bg-[#d44518] text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md">
+                                    <i class="fas fa-check"></i> Valider &amp; Fixer le prix
+                                </button>
+                            </form>
+
+                            <!-- Refuser convoi -->
+                            <form action="{{ route('particulier.convoi.refuser', $convoi) }}" method="POST" class="space-y-3 pt-2">
+                                @csrf
+                                <div>
+                                    <label class="text-[10px] font-black uppercase text-gray-400 block mb-1.5">Motif du refus</label>
+                                    <textarea name="motif_refus" placeholder="Expliquez la raison du refus (indisponibilité, capacité insuffisante, etc.)" required rows="3"
+                                        class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:bg-white outline-none font-semibold text-xs"></textarea>
+                                </div>
+                                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold text-xs uppercase tracking-wider rounded-xl transition-all">
+                                    <i class="fas fa-ban"></i> Refuser la demande
+                                </button>
+                            </form>
+                        @endif
                     @endif
 
                     <!-- ACTIONS FOR PAID / IN_PROGRESS -->
@@ -265,9 +315,22 @@
                     @endif
 
                     @if($convoi->statut === 'valide')
-                        <div class="p-3 bg-blue-50 border border-blue-100 rounded-xl text-center">
-                            <p class="text-xs font-semibold text-blue-700"><i class="fas fa-info-circle me-1"></i> En attente de paiement par l'utilisateur.</p>
+                        <div class="p-3 bg-blue-50 border border-blue-100 rounded-xl text-center space-y-1">
+                            <p class="text-xs font-semibold text-blue-700"><i class="fas fa-clock me-1"></i> En attente de confirmation par le client.</p>
+                            @if($convoi->dernier_offreur === 'particulier')
+                                <p class="text-[10px] text-blue-500 font-medium">Vous avez proposé <strong>{{ number_format($convoi->montant, 0, ',', ' ') }} FCFA</strong>. Le client examine votre offre.</p>
+                            @endif
                         </div>
+                        {{-- Option contre-proposer quand c'est le chauffeur qui a fait la dernière offre --}}
+                        <form action="{{ route('particulier.convoi.contre-proposer', $convoi) }}" method="POST" class="space-y-2 pt-2">
+                            @csrf
+                            <label class="text-[10px] font-black uppercase text-gray-400 block mb-1.5">Modifier votre offre (FCFA)</label>
+                            <input type="number" name="montant" placeholder="Ex: 130000" min="100" value="{{ $convoi->montant }}"
+                                class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#e94f1b] focus:bg-white outline-none font-bold text-sm">
+                            <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md">
+                                <i class="fas fa-sync-alt"></i> Mettre à jour l'offre
+                            </button>
+                        </form>
                     @endif
 
                     @if($convoi->statut === 'termine')
@@ -317,7 +380,7 @@
                             // Show warning banner
                             const warningEl = document.getElementById('alreadyClaimedWarning');
                             if (warningEl) {
-                                warningEl.classList.remove('d-none');
+                                warningEl.classList.remove('hidden');
                             }
                             
                             // Disable forms & inputs

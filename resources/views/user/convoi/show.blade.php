@@ -111,27 +111,51 @@
             @endif
         </div>
 
-        {{-- STATUT: EN_ATTENTE → info gare --}}
+        {{-- STATUT: EN_ATTENTE → info gare / négo --}}
         @if ($convoi->statut === 'en_attente')
-            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-6">
-                <div class="flex items-start gap-4">
-                    <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
-                        <i class="fas fa-hourglass-half text-amber-600"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-sm font-black text-amber-800 uppercase tracking-wider mb-1">Demande envoyée à la gare</h3>
-                        <p class="text-sm text-amber-700 font-medium">
-                            Votre demande a bien été transmise à
-                            @if($convoi->gare)
-                                <strong>{{ $convoi->gare->nom_gare }}</strong>.
-                            @else
-                                la gare sélectionnée.
-                            @endif
-                            La gare examine votre demande et vous contactera rapidement pour vous communiquer le montant.
-                        </p>
+            @if ($convoi->particulier_id && $convoi->montant_propose_client)
+                <div class="bg-blue-50 border border-blue-200 rounded-2xl p-6">
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-handshake text-blue-600"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-black text-blue-800 uppercase tracking-wider mb-1">Négociation de prix en cours</h3>
+                            <p class="text-sm text-blue-700 font-medium">
+                                Vous avez proposé un montant de <strong>{{ number_format($convoi->montant_propose_client, 0, ',', ' ') }} FCFA</strong>.
+                                Le transporteur particulier examine votre proposition et vous répondra très rapidement.
+                            </p>
+                        </div>
                     </div>
                 </div>
-            </div>
+            @else
+                <div class="bg-amber-50 border border-amber-200 rounded-2xl p-6">
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-hourglass-half text-amber-600"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-black text-amber-800 uppercase tracking-wider mb-1">
+                                {{ $convoi->particulier_id ? 'Demande envoyée au transporteur' : 'Demande envoyée à la gare' }}
+                            </h3>
+                            <p class="text-sm text-amber-700 font-medium">
+                                @if ($convoi->particulier_id)
+                                    Votre demande a bien été transmise à <strong>{{ $convoi->particulier->full_name }}</strong>.
+                                    Le transporteur examine votre demande pour vous proposer son tarif.
+                                @else
+                                    Votre demande a bien été transmise à
+                                    @if($convoi->gare)
+                                        <strong>{{ $convoi->gare->nom_gare }}</strong>.
+                                    @else
+                                        la gare sélectionnée.
+                                    @endif
+                                    La gare examine votre demande et vous contactera rapidement pour vous communiquer le montant.
+                                @endif
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            @endif
         @endif
 
         {{-- STATUT: REFUSE → afficher motif --}}
@@ -190,39 +214,46 @@
                     </div>
                 @endif
 
-                {{-- Boutons Accepter / Refuser --}}
-                <div class="flex flex-col sm:flex-row gap-3">
-                    {{-- Accepter --}}
-                    <form action="{{ route('user.convoi.accepter', $convoi) }}" method="POST" class="flex-1">
+                {{-- Boutons Accepter / Proposer / Annuler --}}
+                <div class="flex flex-col gap-4">
+                    {{-- Form d'acceptation avec case à cocher pour le règlement --}}
+                    <form action="{{ route('user.convoi.accepter', $convoi) }}" method="POST" class="w-full">
                         @csrf
                         <label class="flex items-start gap-3 cursor-pointer mb-4">
                             <input type="checkbox" name="reglement_accepte" value="1" class="mt-1 rounded accent-[#e94f1b]" @checked(old('reglement_accepte'))>
                             <span class="text-sm text-gray-700 font-semibold">J'ai lu et j'accepte le règlement des convois CAR225.</span>
                         </label>
-                        <button type="submit"
-                            class="w-full inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl text-white text-xs font-black uppercase tracking-widest shadow-lg transition-all"
-                            style="background:linear-gradient(135deg,#22c55e,#16a34a);box-shadow:0 4px 14px rgba(34,197,94,.3);">
-                            <i class="fas fa-check-circle"></i>
-                            Accepter — {{ number_format($convoi->montant, 0, ',', ' ') }} FCFA
-                        </button>
-                    </form>
+                        
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            {{-- Button 1: Accepter --}}
+                            <button type="submit"
+                                class="flex-1 inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl text-white text-xs font-black uppercase tracking-widest shadow-lg transition-all"
+                                style="background:linear-gradient(135deg,#22c55e,#16a34a);box-shadow:0 4px 14px rgba(34,197,94,.3);">
+                                <i class="fas fa-check-circle"></i>
+                                Accepter — {{ number_format($convoi->montant, 0, ',', ' ') }} FCFA
+                            </button>
 
-                    {{-- Refuser --}}
-                    <div class="flex-1">
-                        <div class="mb-4 px-4 py-3 rounded-xl bg-red-50 border border-red-100 text-xs font-semibold text-red-700">
-                            <i class="fas fa-exclamation-triangle mr-1"></i>
-                            En refusant, le convoi sera annulé et vous devrez faire une nouvelle demande.
+                            {{-- Button 2: Proposer votre montant (uniquement pour Particulier) --}}
+                            @if ($convoi->particulier_id)
+                                <button type="button" onclick="openNegocierModal()"
+                                    class="flex-1 inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-blue-50 border border-blue-200 text-blue-700 text-xs font-black uppercase tracking-widest hover:bg-blue-100 transition-all">
+                                    <i class="fas fa-hand-holding-usd"></i>
+                                    Proposer votre montant
+                                </button>
+                            @endif
+
+                            {{-- Button 3: Annuler le convoi --}}
+                            <button type="button" onclick="openRefusModal()"
+                                class="flex-1 inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-black uppercase tracking-widest hover:bg-red-100 transition-all">
+                                <i class="fas fa-ban"></i>
+                                Annuler ce convoi
+                            </button>
                         </div>
-                        <button type="button" onclick="openRefusModal()"
-                            class="w-full inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-black uppercase tracking-widest hover:bg-red-100 transition-all">
-                            <i class="fas fa-times-circle"></i>
-                            Refuser ce montant
-                        </button>
-                    </div>
+                    </form>
                 </div>
             </div>
 
-            {{-- Modal de confirmation refus --}}
+            {{-- Modal de confirmation refus (Annulation) --}}
             <div id="refusModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeRefusModal()"></div>
                 <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
@@ -233,10 +264,10 @@
                                 <i class="fas fa-times-circle text-3xl text-red-600"></i>
                             </div>
                         </div>
-                        <h2 class="text-center text-lg font-black text-gray-900 mb-2">Refuser ce montant ?</h2>
+                        <h2 class="text-center text-lg font-black text-gray-900 mb-2">Annuler ce convoi ?</h2>
                         <p class="text-center text-sm text-gray-500 font-medium mb-6 leading-relaxed">
-                            Vous êtes sur le point de <strong class="text-red-700">refuser le montant de {{ number_format($convoi->montant, 0, ',', ' ') }} FCFA</strong> proposé par la gare.<br>
-                            Le convoi sera <strong>annulé définitivement</strong>. Vous pourrez faire une nouvelle demande.
+                            Vous êtes sur le point d'<strong>annuler définitivement ce convoi</strong>.<br>
+                            Cette action est irréversible.
                         </p>
                         <div class="flex flex-col sm:flex-row gap-3">
                             <button type="button" onclick="closeRefusModal()"
@@ -247,10 +278,47 @@
                                 @csrf
                                 <button type="submit"
                                     class="w-full px-5 py-3 rounded-2xl bg-red-600 text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-red-600/25 hover:bg-red-700 transition-all">
-                                    <i class="fas fa-ban mr-2"></i>Oui, refuser et annuler
+                                    <i class="fas fa-ban mr-2"></i>Oui, annuler le convoi
                                 </button>
                             </form>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Modal de négociation --}}
+            <div id="negocierModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeNegocierModal()"></div>
+                <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+                    <div class="h-1.5 w-full bg-gradient-to-r from-blue-500 to-indigo-600"></div>
+                    <div class="p-8">
+                        <div class="flex justify-center mb-5">
+                            <div class="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center">
+                                <i class="fas fa-hand-holding-usd text-3xl text-blue-600"></i>
+                            </div>
+                        </div>
+                        <h2 class="text-center text-lg font-black text-gray-900 mb-2">Proposer votre montant</h2>
+                        <p class="text-center text-xs text-gray-500 font-medium mb-6 leading-relaxed">
+                            Saisissez le montant en FCFA que vous souhaitez proposer au chauffeur particulier.
+                        </p>
+                        <form action="{{ route('user.convoi.proposer-montant', $convoi) }}" method="POST" class="space-y-4">
+                            @csrf
+                            <div>
+                                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">Votre offre (FCFA) <span class="text-red-500">*</span></label>
+                                <input type="number" name="montant_propose" placeholder="Ex: 120000" min="100" required
+                                    class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500">
+                            </div>
+                            <div class="flex flex-col sm:flex-row gap-3 pt-2">
+                                <button type="button" onclick="closeNegocierModal()"
+                                    class="flex-1 px-5 py-3 rounded-2xl border border-gray-200 bg-white text-gray-700 text-xs font-black uppercase tracking-wider hover:bg-gray-50 transition-all">
+                                    Annuler
+                                </button>
+                                <button type="submit"
+                                    class="flex-1 px-5 py-3 rounded-2xl bg-blue-600 text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-600/25 hover:bg-blue-700 transition-all">
+                                    Envoyer l'offre
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -325,32 +393,34 @@
             @endif
         @endif
 
-        {{-- STATUT: PAYE → ticket + formulaire passagers + lecture seule --}}
-        @if (in_array($convoi->statut, ['paye', 'en_cours', 'termine']))
-            <div class="bg-green-50 border border-green-200 rounded-2xl p-5">
-                <div class="flex items-start gap-4 flex-wrap">
-                    <div class="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
-                        <i class="fas fa-check-circle text-green-600 text-lg"></i>
+        {{-- STATUT: CONFIRME, PAYE, EN_COURS, TERMINE → ticket + formulaire passagers --}}
+        @if (in_array($convoi->statut, ['confirme', 'paye', 'en_cours', 'termine']))
+            @if (in_array($convoi->statut, ['paye', 'en_cours', 'termine']))
+                <div class="bg-green-50 border border-green-200 rounded-2xl p-5">
+                    <div class="flex items-start gap-4 flex-wrap">
+                        <div class="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-check-circle text-green-600 text-lg"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-black text-green-800">Paiement confirmé par la gare</p>
+                            <p class="text-xs text-green-700 font-medium mt-1">
+                                Montant réglé : <strong>{{ number_format($convoi->montant, 0, ',', ' ') }} FCFA</strong>.
+                                @if($convoi->lieu_rassemblement)
+                                    Lieu de rassemblement : <strong>{{ $convoi->lieu_rassemblement }}</strong>.
+                                @endif
+                            </p>
+                        </div>
+                        <a href="{{ route('user.convoi.recu-pdf', $convoi) }}" target="_blank"
+                           class="inline-flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex-shrink-0"
+                           style="background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;box-shadow:0 4px 14px rgba(249,115,22,.3);">
+                            <i class="fas fa-ticket-alt"></i> Imprimer le ticket
+                        </a>
                     </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm font-black text-green-800">Paiement confirmé par la gare</p>
-                        <p class="text-xs text-green-700 font-medium mt-1">
-                            Montant réglé : <strong>{{ number_format($convoi->montant, 0, ',', ' ') }} FCFA</strong>.
-                            @if($convoi->lieu_rassemblement)
-                                Lieu de rassemblement : <strong>{{ $convoi->lieu_rassemblement }}</strong>.
-                            @endif
-                        </p>
-                    </div>
-                    <a href="{{ route('user.convoi.recu-pdf', $convoi) }}" target="_blank"
-                       class="inline-flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex-shrink-0"
-                       style="background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;box-shadow:0 4px 14px rgba(249,115,22,.3);">
-                        <i class="fas fa-ticket-alt"></i> Imprimer le ticket
-                    </a>
                 </div>
-            </div>
+            @endif
 
             {{-- Formulaire lieu de rassemblement + passagers --}}
-            @if($convoi->statut === 'paye')
+            @if(in_array($convoi->statut, ['confirme', 'paye']))
             @php
                 $canEditPassengers = true;
                 if ($convoi->date_depart && $convoi->heure_depart) {
@@ -786,7 +856,7 @@
         document.body.style.overflow = '';
     }
 
-    // ── Modale refus montant ─────────────────────────────────────────────
+    // ── Modales refus & négociation ──────────────────────────────────────
     function openRefusModal() {
         const m = document.getElementById('refusModal');
         if (m) { m.classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
@@ -795,9 +865,17 @@
         const m = document.getElementById('refusModal');
         if (m) { m.classList.add('hidden'); document.body.style.overflow = ''; }
     }
+    function openNegocierModal() {
+        const m = document.getElementById('negocierModal');
+        if (m) { m.classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
+    }
+    function closeNegocierModal() {
+        const m = document.getElementById('negocierModal');
+        if (m) { m.classList.add('hidden'); document.body.style.overflow = ''; }
+    }
 
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') { cancelGarant(); closeRefusModal(); }
+        if (e.key === 'Escape') { cancelGarant(); closeRefusModal(); closeNegocierModal(); }
     });
 
     // ── Copy lien passagers (user side) ─────────────────────────────

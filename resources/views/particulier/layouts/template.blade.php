@@ -109,6 +109,27 @@
 
         <!-- Main Content -->
         <main class="flex-1 p-8">
+            {{-- ⚠️ Bannière première connexion : changer le mot de passe --}}
+            @if(Auth::guard('particulier')->check() && Auth::guard('particulier')->user()->must_change_password)
+            <div class="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 flex items-start gap-4 shadow-sm" id="firstLoginBanner">
+                <div class="w-10 h-10 flex-shrink-0 rounded-xl bg-amber-100 flex items-center justify-center">
+                    <i class="fas fa-key text-amber-600 text-lg"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="font-black text-amber-800 text-sm">🔐 Première connexion détectée</p>
+                    <p class="text-xs text-amber-700 font-medium mt-0.5">
+                        Pour la sécurité de votre compte, veuillez <strong>changer votre mot de passe</strong> dès maintenant. Votre mot de passe actuel a été généré automatiquement par l'administration.
+                    </p>
+                </div>
+                <a href="{{ route('particulier.profile') }}" class="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-black transition-all shadow-sm">
+                    <i class="fas fa-edit"></i> Changer maintenant
+                </a>
+                <button onclick="document.getElementById('firstLoginBanner').remove()" class="flex-shrink-0 text-amber-400 hover:text-amber-600 transition-colors ml-1">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+            @endif
+
             @yield('content')
         </main>
     </div>

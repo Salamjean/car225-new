@@ -248,7 +248,11 @@ class ConvoiController extends Controller
             'reglement_accepte.accepted' => 'Vous devez cocher la case pour accepter le règlement.',
         ]);
 
-        $convoi->update(['statut' => 'confirme']);
+        $updates = ['statut' => 'confirme'];
+        if (!$convoi->passenger_form_token) {
+            $updates['passenger_form_token'] = bin2hex(random_bytes(24));
+        }
+        $convoi->update($updates);
 
         // ── Notification push de confirmation à l'utilisateur ─────────────
         try {
@@ -298,11 +302,64 @@ class ConvoiController extends Controller
 
         $convoi->update([
             'statut'      => 'annule',
-            'motif_refus' => 'Montant refusé par le client.',
+            'motif_refus' => 'Convoi annulé par le client.',
         ]);
 
         return redirect()->route('user.convoi.show', $convoi)
-            ->with('success', 'Vous avez refusé le montant proposé. Le convoi a été annulé. Vous pouvez faire une nouvelle demande.');
+            ->with('success', 'Le convoi a été annulé avec succès.');
+    }
+
+    /** Le client propose son propre prix au chauffeur particulier */
+    public function proposerMontant(Request $request, Convoi $convoi)
+    {
+        abort_if($convoi->user_id !== Auth::id(), 403);
+        abort_if($convoi->statut !== 'valide', 403);
+        abort_if(!$convoi->particulier_id, 403);
+
+        $request->validate([
+            'montant_propose' => 'required|numeric|min:100',
+        ], [
+            'montant_propose.required' => 'Veuillez renseigner le montant proposé.',
+            'montant_propose.min' => 'Le montant doit être de 100 FCFA minimum.',
+        ]);
+
+        $convoi->update([
+            'montant_propose_client' => $request->montant_propose,
+            'dernier_offreur' => 'client',
+            'statut' => 'en_attente',
+        ]);
+
+        $particulier = $convoi->particulier;
+        if ($particulier) {
+            $depart = $convoi->lieu_depart ?? ($convoi->itineraire->point_depart ?? 'N/A');
+            $arrivee = $convoi->lieu_retour ?? ($convoi->itineraire->point_arrive ?? 'N/A');
+            $montantF = number_format($request->montant_propose, 0, ',', ' ');
+
+            // SMS
+            try {
+                $smsMsg = "CAR225 : Le client {$convoi->demandeur_nom} vous propose {$montantF} FCFA pour le convoi {$convoi->reference} ({$depart} -> {$arrivee}). Connectez-vous pour accepter ou faire une contre-offre.";
+                app(\App\Services\SmsService::class)->sendSms($particulier->contact, $smsMsg);
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('SMS negociation client convoi: ' . $e->getMessage());
+            }
+
+            // FCM Push
+            try {
+                if ($particulier->fcm_token) {
+                    app(\App\Services\FcmService::class)->sendNotification(
+                        $particulier->fcm_token,
+                        'Nouvelle offre de prix reçue 💰',
+                        "Le client propose {$montantF} FCFA pour le convoi {$convoi->reference}.",
+                        ['type' => 'offre_negociation_client', 'convoi_id' => (string) $convoi->id]
+                    );
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('FCM negociation client convoi: ' . $e->getMessage());
+            }
+        }
+
+        return redirect()->route('user.convoi.show', $convoi)
+            ->with('success', 'Votre proposition de montant a bien été transmise au transporteur particulier.');
     }
 
     /** Paiement : l'utilisateur accepte le règlement et paye le montant fixé par la compagnie */
@@ -333,7 +390,7 @@ class ConvoiController extends Controller
     public function storeLieuRassemblement(Request $request, Convoi $convoi)
     {
         abort_if($convoi->user_id !== Auth::id(), 403);
-        abort_if($convoi->statut !== 'paye', 403);
+        abort_if(!in_array($convoi->statut, ['confirme', 'paye', 'en_cours']), 403);
 
         $request->validate([
             'lieu_rassemblement' => 'required|string|max:255',
@@ -352,7 +409,7 @@ class ConvoiController extends Controller
     public function storePassengers(Request $request, Convoi $convoi)
     {
         abort_if($convoi->user_id !== Auth::id(), 403);
-        abort_if($convoi->statut !== 'paye', 403);
+        abort_if(!in_array($convoi->statut, ['confirme', 'paye', 'en_cours']), 403);
 
         // Bloquer la modification si le départ est dans moins d'1 heure
         if ($convoi->date_depart && $convoi->heure_depart) {
