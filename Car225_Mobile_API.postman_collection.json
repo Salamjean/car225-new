@@ -1,0 +1,650 @@
+{
+  "info": {
+    "name": "CAR225 — Mobile API (Convois & Unified Auth)",
+    "description": "Collection Postman / Insomnia complète pour l'API Mobile CAR225 :\n1. Connexion Unifiée Mobile (`/api/unified-login`) — y compris Transporteur Particulier\n2. Demandes de Convois côté Client (Compagnie & Transporteur Particulier)\n3. Espace Transporteur Particulier (Validation, Négociation, Encaissement/Solder, Suivi du Trajet)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "particulier_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "convoi_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "passager_id",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Authentification Unifiée (Mobile)",
+      "item": [
+        {
+          "name": "Connexion Unifiée — Client (par contact / code_id)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.token) {",
+                  "    pm.collectionVariables.set('token', res.token);",
+                  "    console.log('✅ Token Client sauvegardé :', res.token);",
+                  "}",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"0700000000\",\n  \"password\": \"password\",\n  \"nom_device\": \"Postman Mobile Client\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/unified-login",
+              "host": ["{{base_url}}"],
+              "path": ["unified-login"]
+            },
+            "description": "Connexion unifiée pour un client (User) via son numéro de contact ou son Code ID."
+          }
+        },
+        {
+          "name": "Connexion Unifiée — Transporteur Particulier",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.token) {",
+                  "    pm.collectionVariables.set('particulier_token', res.token);",
+                  "    console.log('✅ Token Particulier sauvegardé :', res.token);",
+                  "}",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"PART-001\",\n  \"password\": \"password\",\n  \"nom_device\": \"Postman Mobile Particulier\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/unified-login",
+              "host": ["{{base_url}}"],
+              "path": ["unified-login"]
+            },
+            "description": "Connexion unifiée pour le Transporteur Particulier via son code_id, email ou contact."
+          }
+        },
+        {
+          "name": "Connexion Unifiée — Agent / Chauffeur / Caisse",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"AG-001\",\n  \"password\": \"password\",\n  \"nom_device\": \"Postman Agent\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/unified-login",
+              "host": ["{{base_url}}"],
+              "path": ["unified-login"]
+            },
+            "description": "Connexion unifiée pour les agents, chauffeurs, caissiers ou hôtesses."
+          }
+        }
+      ]
+    },
+    {
+      "name": "🚌 Convois — Côté Client (User)",
+      "item": [
+        {
+          "name": "Formulaire : Liste des Compagnies",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/convois-form/compagnies",
+              "host": ["{{base_url}}"],
+              "path": ["user", "convois-form", "compagnies"]
+            },
+            "description": "Liste des compagnies actives pour création de convoi."
+          }
+        },
+        {
+          "name": "Formulaire : Liste des Particuliers",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/convois-form/particuliers",
+              "host": ["{{base_url}}"],
+              "path": ["user", "convois-form", "particuliers"]
+            },
+            "description": "Liste des transporteurs particuliers validés."
+          }
+        },
+        {
+          "name": "Formulaire : Gares d'une Compagnie",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/convois-form/compagnies/1/gares",
+              "host": ["{{base_url}}"],
+              "path": ["user", "convois-form", "compagnies", "1", "gares"]
+            }
+          }
+        },
+        {
+          "name": "Formulaire : Itinéraires d'une Compagnie",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/convois-form/compagnies/1/itineraires",
+              "host": ["{{base_url}}"],
+              "path": ["user", "convois-form", "compagnies", "1", "itineraires"]
+            }
+          }
+        },
+        {
+          "name": "Formulaire : Règlement Convois",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/convois-form/reglement",
+              "host": ["{{base_url}}"],
+              "path": ["user", "convois-form", "reglement"]
+            }
+          }
+        },
+        {
+          "name": "Créer Convoi — Compagnie",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.convoi && res.convoi.id) {",
+                  "    pm.collectionVariables.set('convoi_id', res.convoi.id);",
+                  "    console.log('✅ ID Convoi créé :', res.convoi.id);",
+                  "}",
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type_transporteur\": \"compagnie\",\n  \"compagnie_id\": 1,\n  \"gare_id\": 1,\n  \"itineraire_id\": null,\n  \"lieu_depart\": \"Abidjan Gare Nord\",\n  \"lieu_retour\": \"Yamoussoukro\",\n  \"nombre_personnes\": 15,\n  \"date_depart\": \"2026-09-15\",\n  \"heure_depart\": \"08:00\",\n  \"date_retour\": \"2026-09-18\",\n  \"heure_retour\": \"16:00\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/user/convois",
+              "host": ["{{base_url}}"],
+              "path": ["user", "convois"]
+            }
+          }
+        },
+        {
+          "name": "Créer Convoi — Particulier (Ciblé)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.convoi && res.convoi.id) {",
+                  "    pm.collectionVariables.set('convoi_id', res.convoi.id);",
+                  "    console.log('✅ ID Convoi Particulier créé :', res.convoi.id);",
+                  "}",
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type_transporteur\": \"particulier\",\n  \"particulier_id\": 1,\n  \"lieu_depart\": \"Yopougon Keney\",\n  \"lieu_retour\": \"San-Pédro\",\n  \"nombre_personnes\": 20,\n  \"date_depart\": \"2026-09-20\",\n  \"heure_depart\": \"07:30\",\n  \"date_retour\": \"2026-09-25\",\n  \"heure_retour\": \"18:00\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/user/convois",
+              "host": ["{{base_url}}"],
+              "path": ["user", "convois"]
+            }
+          }
+        },
+        {
+          "name": "Créer Convoi — Particulier (Tous les particuliers)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type_transporteur\": \"particulier\",\n  \"particulier_id\": null,\n  \"lieu_depart\": \"Adjamé Renault\",\n  \"lieu_retour\": \"Korhogo\",\n  \"nombre_personnes\": 30,\n  \"date_depart\": \"2026-10-01\",\n  \"heure_depart\": \"06:00\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/user/convois",
+              "host": ["{{base_url}}"],
+              "path": ["user", "convois"]
+            }
+          }
+        },
+        {
+          "name": "Liste de mes convois (Client)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/convois?statut=en_attente",
+              "host": ["{{base_url}}"],
+              "path": ["user", "convois"],
+              "query": [{ "key": "statut", "value": "en_attente" }]
+            }
+          }
+        },
+        {
+          "name": "Détail d'un convoi (Client)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/convois/{{convoi_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["user", "convois", "{{convoi_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Négocier — Client propose un tarif",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"montant_propose\": 150000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/user/convois/{{convoi_id}}/proposer-montant",
+              "host": ["{{base_url}}"],
+              "path": ["user", "convois", "{{convoi_id}}", "proposer-montant"]
+            },
+            "description": "Le client propose son propre prix au transporteur particulier (lorsque le convoi est au statut 'valide')."
+          }
+        },
+        {
+          "name": "Accepter le montant fixé",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reglement_accepte\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/user/convois/{{convoi_id}}/accepter-montant",
+              "host": ["{{base_url}}"],
+              "path": ["user", "convois", "{{convoi_id}}", "accepter-montant"]
+            }
+          }
+        },
+        {
+          "name": "Refuser le montant fixé",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/convois/{{convoi_id}}/refuser-montant",
+              "host": ["{{base_url}}"],
+              "path": ["user", "convois", "{{convoi_id}}", "refuser-montant"]
+            }
+          }
+        },
+        {
+          "name": "Enregistrer Passagers & Lieu de Rassemblement",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lieu_rassemblement\": \"Devant la Pharmacie Saint-Jean\",\n  \"lieu_rassemblement_retour\": \"Gare routière de Yamoussoukro\",\n  \"is_garant\": false,\n  \"passagers\": [\n    {\n      \"nom\": "Kouassi",\n      \"prenoms\": \"Jean\",\n      \"contact\": \"0701020304\",\n      \"contact_urgence\": \"0501020304\"\n    },\n    {\n      \"nom\": \"Yao\",\n      \"prenoms\": \"Alice\",\n      \"contact\": \"0709080706\",\n      \"contact_urgence\": \"0102030405\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/user/convois/{{convoi_id}}/passagers",
+              "host": ["{{base_url}}"],
+              "path": ["user", "convois", "{{convoi_id}}", "passagers"]
+            }
+          }
+        },
+        {
+          "name": "Supprimer un Passager",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/convois/{{convoi_id}}/passagers/{{passager_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["user", "convois", "{{convoi_id}}", "passagers", "{{passager_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🚗 Convois — Côté Transporteur Particulier",
+      "item": [
+        {
+          "name": "Mon Profil Particulier",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{particulier_token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/particulier/profile",
+              "host": ["{{base_url}}"],
+              "path": ["particulier", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Mettre à jour Token FCM",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{particulier_token}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fcm_token\": \"fcm_token_particulier_123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/particulier/fcm-token",
+              "host": ["{{base_url}}"],
+              "path": ["particulier", "fcm-token"]
+            }
+          }
+        },
+        {
+          "name": "Lister les Convois (Particulier)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{particulier_token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/particulier/convois?statut=en_attente",
+              "host": ["{{base_url}}"],
+              "path": ["particulier", "convois"],
+              "query": [{ "key": "statut", "value": "en_attente" }]
+            },
+            "description": "Permet au transporteur particulier de voir les convois qui lui sont attribués ou les offres publiques non attribuées."
+          }
+        },
+        {
+          "name": "Détail d'un Convoi (Particulier)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{particulier_token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/particulier/convois/{{convoi_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["particulier", "convois", "{{convoi_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Valider la demande & Fixer le tarif",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{particulier_token}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"montant\": 180000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/particulier/convois/{{convoi_id}}/valider",
+              "host": ["{{base_url}}"],
+              "path": ["particulier", "convois", "{{convoi_id}}", "valider"]
+            },
+            "description": "Le transporteur valide le convoi et fixe le montant en FCFA."
+          }
+        },
+        {
+          "name": "Refuser la demande de convoi",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{particulier_token}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motif_refus\": \"Véhicule indisponible aux dates sélectionnées.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/particulier/convois/{{convoi_id}}/refuser",
+              "host": ["{{base_url}}"],
+              "path": ["particulier", "convois", "{{convoi_id}}", "refuser"]
+            }
+          }
+        },
+        {
+          "name": "Accepter l'offre de prix du client",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{particulier_token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/particulier/convois/{{convoi_id}}/accepter-offre-client",
+              "host": ["{{base_url}}"],
+              "path": ["particulier", "convois", "{{convoi_id}}", "accepter-offre-client"]
+            },
+            "description": "Le transporteur accepte la proposition `montant_propose_client` faite par le client."
+          }
+        },
+        {
+          "name": "Faire une contre-proposition de prix",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{particulier_token}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"montant\": 165000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/particulier/convois/{{convoi_id}}/contre-proposer",
+              "host": ["{{base_url}}"],
+              "path": ["particulier", "convois", "{{convoi_id}}", "contre-proposer"]
+            }
+          }
+        },
+        {
+          "name": "Solder le convoi (Confirmer le paiement reçu)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{particulier_token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/particulier/convois/{{convoi_id}}/solder",
+              "host": ["{{base_url}}"],
+              "path": ["particulier", "convois", "{{convoi_id}}", "solder"]
+            },
+            "description": "Le particulier confirme la réception du paiement. Le convoi passe au statut 'paye' et son solde est crédité."
+          }
+        },
+        {
+          "name": "Démarrer le voyage",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{particulier_token}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"demarrer\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/particulier/convois/{{convoi_id}}/update-statut",
+              "host": ["{{base_url}}"],
+              "path": ["particulier", "convois", "{{convoi_id}}", "update-statut"]
+            }
+          }
+        },
+        {
+          "name": "Terminer le voyage",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{particulier_token}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"terminer\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/particulier/convois/{{convoi_id}}/update-statut",
+              "host": ["{{base_url}}"],
+              "path": ["particulier", "convois", "{{convoi_id}}", "update-statut"]
+            }
+          }
+        },
+        {
+          "name": "Annuler le voyage",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{particulier_token}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"annuler\",\n  \"motif_annulation\": \"Panne mécanique imprévue du véhicule.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/particulier/convois/{{convoi_id}}/update-statut",
+              "host": ["{{base_url}}"],
+              "path": ["particulier", "convois", "{{convoi_id}}", "update-statut"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -23,7 +23,7 @@ class ConvoiApiController extends Controller
 
     private function formatConvoi(Convoi $convoi): array
     {
-        $convoi->loadMissing(['compagnie', 'gare', 'itineraire', 'chauffeur', 'vehicule', 'passagers']);
+        $convoi->loadMissing(['compagnie', 'particulier', 'gare', 'itineraire', 'chauffeur', 'vehicule', 'passagers']);
 
         $passagerFormUrl = $convoi->passenger_form_token
             ? route('public.convoi.passagers.form', $convoi->passenger_form_token)
@@ -34,6 +34,8 @@ class ConvoiApiController extends Controller
             'reference'                 => $convoi->reference,
             'statut'                    => $convoi->statut,
             'montant'                   => $convoi->montant,
+            'montant_propose_client'    => $convoi->montant_propose_client,
+            'dernier_offreur'           => $convoi->dernier_offreur,
             'nombre_personnes'          => $convoi->nombre_personnes,
             'lieu_depart'               => $convoi->lieu_depart,
             'lieu_retour'               => $convoi->lieu_retour,
@@ -48,11 +50,20 @@ class ConvoiApiController extends Controller
             'passenger_form_url'        => $passagerFormUrl,
             'motif_refus'               => $convoi->motif_refus,
             'created_at'                => $convoi->created_at?->toIso8601String(),
+            'type_transporteur'         => $convoi->particulier_id ? 'particulier' : ($convoi->compagnie_id ? 'compagnie' : ($convoi->particulier ? 'particulier' : 'compagnie')),
             'compagnie' => $convoi->compagnie ? [
                 'id'    => $convoi->compagnie->id,
                 'name'  => $convoi->compagnie->name,
                 'sigle' => $convoi->compagnie->sigle,
                 'logo'  => $convoi->compagnie->path_logo ? asset('storage/' . $convoi->compagnie->path_logo) : null,
+            ] : null,
+            'particulier' => $convoi->particulier ? [
+                'id'                 => $convoi->particulier->id,
+                'full_name'          => $convoi->particulier->full_name,
+                'contact'            => $convoi->particulier->contact,
+                'photo'              => $convoi->particulier->photo_proprietaire_url,
+                'immatriculation'    => $convoi->particulier->immatriculation,
+                'nombre_place_car'   => $convoi->particulier->nombre_place_car,
             ] : null,
             'gare' => $convoi->gare ? [
                 'id'       => $convoi->gare->id,
@@ -105,27 +116,27 @@ class ConvoiApiController extends Controller
                 [
                     'numero' => 1,
                     'titre'  => 'Réservation',
-                    'texte'  => 'Toute demande de convoi est soumise à la validation par la gare. Le montant fixé est définitif.',
+                    'texte'  => 'Toute demande de convoi est soumise à la validation par le prestataire. Le montant fixé est définitif.',
                 ],
                 [
                     'numero' => 2,
                     'titre'  => 'Paiement',
-                    'texte'  => 'Le paiement doit être effectué en totalité à la gare avant la mise à disposition du véhicule et du chauffeur.',
+                    'texte'  => 'Le paiement doit être effectué en totalité avant la mise à disposition du véhicule et du chauffeur.',
                 ],
                 [
                     'numero' => 3,
                     'titre'  => 'Passagers',
-                    'texte'  => 'La liste des passagers doit être complète avant la date de départ. La compagnie se réserve le droit de refuser tout passager non enregistré.',
+                    'texte'  => 'La liste des passagers doit être complète avant la date de départ.',
                 ],
                 [
                     'numero' => 4,
                     'titre'  => 'Annulation',
-                    'texte'  => 'Toute annulation doit être notifiée à la compagnie au moins 48h avant la date de départ.',
+                    'texte'  => 'Toute annulation doit être notifiée au prestataire au moins 48h avant la date de départ.',
                 ],
                 [
                     'numero' => 5,
                     'titre'  => 'Responsabilité',
-                    'texte'  => 'CAR225 et la compagnie ne sauraient être tenus responsables de tout incident imputable au non-respect de ce règlement par le demandeur.',
+                    'texte'  => 'CAR225 et le prestataire ne sauraient être tenus responsables de tout incident imputable au non-respect de ce règlement par le demandeur.',
                 ],
             ],
         ]);
@@ -152,6 +163,31 @@ class ConvoiApiController extends Controller
             ]);
 
         return response()->json(['success' => true, 'compagnies' => $compagnies]);
+    }
+
+    /**
+     * GET /api/user/convois-form/particuliers
+     * Liste des particuliers validés pour le formulaire de création de convoi
+     */
+    public function particuliers(): JsonResponse
+    {
+        $particuliers = \App\Models\Particulier::where('statut', 'valide')
+            ->orderBy('name')
+            ->get()
+            ->map(fn($p) => [
+                'id'                 => $p->id,
+                'name'               => $p->name,
+                'prenom'             => $p->prenom,
+                'full_name'          => $p->full_name,
+                'contact'            => $p->contact,
+                'email'              => $p->email,
+                'immatriculation'    => $p->immatriculation,
+                'nombre_place_car'   => $p->nombre_place_car,
+                'photo_proprietaire' => $p->photo_proprietaire_url,
+                'photo_car'          => $p->photo_complete_car_url,
+            ]);
+
+        return response()->json(['success' => true, 'particuliers' => $particuliers]);
     }
 
     /**
@@ -192,7 +228,7 @@ class ConvoiApiController extends Controller
     {
         $user = Auth::user();
 
-        $query = Convoi::with(['compagnie', 'itineraire', 'gare'])
+        $query = Convoi::with(['compagnie', 'particulier', 'itineraire', 'gare'])
             ->withCount('passagers')
             ->where('user_id', $user->id)
             ->latest();
@@ -206,20 +242,24 @@ class ConvoiApiController extends Controller
         return response()->json([
             'success' => true,
             'data'    => $convois->map(fn($c) => [
-                'id'              => $c->id,
-                'reference'       => $c->reference,
-                'statut'          => $c->statut,
-                'montant'         => $c->montant,
-                'nombre_personnes'=> $c->nombre_personnes,
-                'passagers_count' => $c->passagers_count,
-                'lieu_depart'     => $c->lieu_depart,
-                'lieu_retour'     => $c->lieu_retour,
-                'date_depart'     => $c->date_depart,
-                'heure_depart'    => $c->heure_depart ? substr($c->heure_depart, 0, 5) : null,
-                'created_at'      => $c->created_at?->toIso8601String(),
-                'compagnie'       => $c->compagnie ? ['id' => $c->compagnie->id, 'name' => $c->compagnie->name] : null,
-                'gare'            => $c->gare ? ['id' => $c->gare->id, 'nom_gare' => $c->gare->nom_gare] : null,
-                'itineraire'      => $c->itineraire ? [
+                'id'                     => $c->id,
+                'reference'              => $c->reference,
+                'statut'                 => $c->statut,
+                'montant'                => $c->montant,
+                'montant_propose_client' => $c->montant_propose_client,
+                'dernier_offreur'        => $c->dernier_offreur,
+                'nombre_personnes'       => $c->nombre_personnes,
+                'passagers_count'        => $c->passagers_count,
+                'lieu_depart'            => $c->lieu_depart,
+                'lieu_retour'            => $c->lieu_retour,
+                'date_depart'            => $c->date_depart,
+                'heure_depart'           => $c->heure_depart ? substr($c->heure_depart, 0, 5) : null,
+                'created_at'             => $c->created_at?->toIso8601String(),
+                'type_transporteur'      => $c->particulier_id ? 'particulier' : ($c->compagnie_id ? 'compagnie' : ($c->particulier ? 'particulier' : 'compagnie')),
+                'compagnie'              => $c->compagnie ? ['id' => $c->compagnie->id, 'name' => $c->compagnie->name] : null,
+                'particulier'            => $c->particulier ? ['id' => $c->particulier->id, 'full_name' => $c->particulier->full_name, 'contact' => $c->particulier->contact] : null,
+                'gare'                   => $c->gare ? ['id' => $c->gare->id, 'nom_gare' => $c->gare->nom_gare] : null,
+                'itineraire'             => $c->itineraire ? [
                     'point_depart' => $c->itineraire->point_depart,
                     'point_arrive' => $c->itineraire->point_arrive,
                 ] : null,
@@ -235,13 +275,17 @@ class ConvoiApiController extends Controller
 
     /**
      * POST /api/user/convois
-     * Créer une nouvelle demande de convoi
+     * Créer une nouvelle demande de convoi (Compagnie ou Particulier)
      */
     public function store(Request $request): JsonResponse
     {
+        $typeTransporteur = $request->input('type_transporteur', $request->has('compagnie_id') ? 'compagnie' : 'particulier');
+
         $validated = $request->validate([
-            'compagnie_id'     => 'required|exists:compagnies,id',
-            'gare_id'          => 'required|exists:gares,id',
+            'type_transporteur' => 'nullable|in:compagnie,particulier',
+            'compagnie_id'     => 'required_if:type_transporteur,compagnie|nullable|exists:compagnies,id',
+            'gare_id'          => 'required_if:type_transporteur,compagnie|nullable|exists:gares,id',
+            'particulier_id'    => 'nullable|exists:particuliers,id',
             'itineraire_id'    => 'nullable|exists:itineraires,id',
             'lieu_depart'      => 'required_without:itineraire_id|nullable|string|max:255',
             'lieu_retour'      => 'required_without:itineraire_id|nullable|string|max:255',
@@ -251,7 +295,8 @@ class ConvoiApiController extends Controller
             'date_retour'      => 'nullable|date|after_or_equal:date_depart',
             'heure_retour'     => 'nullable|date_format:H:i|required_with:date_retour',
         ], [
-            'gare_id.required'             => 'Veuillez choisir votre gare la plus proche.',
+            'compagnie_id.required_if'     => 'Veuillez choisir la compagnie.',
+            'gare_id.required_if'          => 'Veuillez choisir votre gare la plus proche.',
             'lieu_depart.required_without' => 'Le lieu de départ est obligatoire si aucun itinéraire n\'est sélectionné.',
             'lieu_retour.required_without' => 'Le lieu d\'arrivée est obligatoire si aucun itinéraire n\'est sélectionné.',
             'nombre_personnes.min'         => 'Le minimum est de 10 personnes pour un convoi.',
@@ -259,8 +304,10 @@ class ConvoiApiController extends Controller
             'heure_retour.required_with'   => 'L\'heure de retour est obligatoire si vous indiquez une date de retour.',
         ]);
 
+        $isParticulier = ($typeTransporteur === 'particulier');
+
         // Résoudre les lieux via itinéraire si fourni
-        if (!empty($validated['itineraire_id'])) {
+        if (!$isParticulier && !empty($validated['itineraire_id'])) {
             $itineraire = Itineraire::findOrFail($validated['itineraire_id']);
             $lieuDepart = $itineraire->point_depart;
             $lieuRetour = $itineraire->point_arrive;
@@ -272,9 +319,10 @@ class ConvoiApiController extends Controller
         $user   = Auth::user();
         $convoi = Convoi::create([
             'user_id'          => $user->id,
-            'compagnie_id'     => $validated['compagnie_id'],
-            'gare_id'          => $validated['gare_id'],
-            'itineraire_id'    => $validated['itineraire_id'] ?? null,
+            'compagnie_id'     => !$isParticulier ? $validated['compagnie_id'] : null,
+            'gare_id'          => !$isParticulier ? $validated['gare_id'] : null,
+            'particulier_id'   => ($isParticulier && !empty($validated['particulier_id'])) ? $validated['particulier_id'] : null,
+            'itineraire_id'    => !$isParticulier ? ($validated['itineraire_id'] ?? null) : null,
             'lieu_depart'      => $lieuDepart,
             'lieu_retour'      => $lieuRetour,
             'nombre_personnes' => $validated['nombre_personnes'],
@@ -286,24 +334,68 @@ class ConvoiApiController extends Controller
             'statut'           => 'en_attente',
         ]);
 
-        // Notification push confirmation
-        try {
-            if ($user->fcm_token) {
-                $dateDepart = Carbon::parse($convoi->date_depart)->format('d/m/Y');
-                app(\App\Services\FcmService::class)->sendNotification(
-                    $user->fcm_token,
-                    'Demande de convoi envoyée 📋',
-                    "Réf. {$convoi->reference} · {$lieuDepart} → {$lieuRetour} · Départ le {$dateDepart}. La gare examine votre demande.",
-                    ['type' => 'convoi_en_attente', 'convoi_id' => (string) $convoi->id]
-                );
+        if ($isParticulier) {
+            if (!empty($validated['particulier_id'])) {
+                $particulier = \App\Models\Particulier::find($validated['particulier_id']);
+                if ($particulier) {
+                    try {
+                        $particulier->notify(new \App\Notifications\NewConvoiRequestForParticulierNotification($convoi));
+                    } catch (\Exception $e) { Log::error('Mail new convoi particulier: ' . $e->getMessage()); }
+
+                    try {
+                        if ($particulier->fcm_token) {
+                            app(\App\Services\FcmService::class)->sendNotification(
+                                $particulier->fcm_token,
+                                'Nouvelle demande de convoi disponible 📋',
+                                "Réf. {$convoi->reference} · {$lieuDepart} → {$lieuRetour} · {$convoi->nombre_personnes} personnes.",
+                                ['type' => 'nouveau_convoi_particulier', 'convoi_id' => (string) $convoi->id]
+                            );
+                        }
+                    } catch (\Exception $e) { Log::error('FCM new convoi particulier: ' . $e->getMessage()); }
+
+                    try {
+                        $smsMsg = "CAR225 : Vous avez recu une nouvelle demande de convoi ref {$convoi->reference} ({$lieuDepart} -> {$lieuRetour}) pour {$convoi->nombre_personnes} personnes. Connectez-vous sur votre espace.";
+                        app(\App\Services\SmsService::class)->sendSms($particulier->contact, $smsMsg);
+                    } catch (\Exception $e) { Log::error('SMS new convoi particulier: ' . $e->getMessage()); }
+                }
+            } else {
+                $particuliers = \App\Models\Particulier::where('statut', 'valide')->get();
+                foreach ($particuliers as $p) {
+                    try {
+                        $p->notify(new \App\Notifications\NewConvoiRequestForParticulierNotification($convoi));
+                    } catch (\Exception $e) { Log::error('Mail new convoi particulier (all): ' . $e->getMessage()); }
+
+                    try {
+                        if ($p->fcm_token) {
+                            app(\App\Services\FcmService::class)->sendNotification(
+                                $p->fcm_token,
+                                'Nouvelle demande de convoi disponible 📋',
+                                "Réf. {$convoi->reference} · {$lieuDepart} → {$lieuRetour} · {$convoi->nombre_personnes} personnes.",
+                                ['type' => 'nouveau_convoi_particulier', 'convoi_id' => (string) $convoi->id]
+                            );
+                        }
+                    } catch (\Exception $e) { Log::error('FCM new convoi particulier (all): ' . $e->getMessage()); }
+                }
             }
-        } catch (\Exception $e) {
-            Log::error('FCM API store convoi: ' . $e->getMessage());
+        } else {
+            try {
+                if ($user->fcm_token) {
+                    $dateDepart = Carbon::parse($convoi->date_depart)->format('d/m/Y');
+                    app(\App\Services\FcmService::class)->sendNotification(
+                        $user->fcm_token,
+                        'Demande de convoi envoyée 📋',
+                        "Réf. {$convoi->reference} · {$lieuDepart} → {$lieuRetour} · Départ le {$dateDepart}. La gare examine votre demande.",
+                        ['type' => 'convoi_en_attente', 'convoi_id' => (string) $convoi->id]
+                    );
+                }
+            } catch (\Exception $e) {
+                Log::error('FCM API store convoi: ' . $e->getMessage());
+            }
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'Votre demande de convoi a été envoyée à la gare.',
+            'message' => 'Votre demande de convoi a été transmise avec succès.',
             'convoi'  => $this->formatConvoi($convoi),
         ], 201);
     }
@@ -403,6 +495,71 @@ class ConvoiApiController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Montant refusé. Le convoi a été annulé. Vous pouvez faire une nouvelle demande.',
+            'convoi'  => $this->formatConvoi($convoi->fresh()),
+        ]);
+    }
+
+    /**
+     * POST /api/user/convois/{id}/proposer-montant
+     * Le client propose son propre prix au chauffeur particulier
+     */
+    public function proposerMontant(Request $request, int $id): JsonResponse
+    {
+        $convoi = Convoi::where('user_id', Auth::id())->findOrFail($id);
+
+        if ($convoi->statut !== 'valide') {
+            return response()->json(['success' => false, 'message' => 'Ce convoi ne peut pas faire l\'objet d\'une négociation (statut actuel : ' . $convoi->statut . ').'], 422);
+        }
+
+        if (!$convoi->particulier_id) {
+            return response()->json(['success' => false, 'message' => 'Cette fonctionnalité est réservée aux convois avec transporteur particulier.'], 422);
+        }
+
+        $request->validate([
+            'montant_propose' => 'required|numeric|min:100',
+        ], [
+            'montant_propose.required' => 'Veuillez renseigner le montant proposé.',
+            'montant_propose.min'      => 'Le montant doit être de 100 FCFA minimum.',
+        ]);
+
+        $convoi->update([
+            'montant_propose_client' => $request->montant_propose,
+            'dernier_offreur'        => 'client',
+            'statut'                 => 'en_attente',
+        ]);
+
+        $particulier = $convoi->particulier;
+        if ($particulier) {
+            $depart   = $convoi->lieu_depart ?? ($convoi->itineraire->point_depart ?? 'N/A');
+            $arrivee  = $convoi->lieu_retour ?? ($convoi->itineraire->point_arrive ?? 'N/A');
+            $montantF = number_format($request->montant_propose, 0, ',', ' ');
+
+            // SMS
+            try {
+                $smsMsg = "CAR225 : Le client {$convoi->demandeur_nom} vous propose {$montantF} FCFA pour le convoi {$convoi->reference} ({$depart} -> {$arrivee}). Connectez-vous pour accepter ou faire une contre-offre.";
+                app(\App\Services\SmsService::class)->sendSms($particulier->contact, $smsMsg);
+            } catch (\Exception $e) {
+                Log::error('SMS negociation client convoi API: ' . $e->getMessage());
+            }
+
+            // FCM Push
+            try {
+                if ($particulier->fcm_token) {
+                    app(\App\Services\FcmService::class)->sendNotification(
+                        $particulier->fcm_token,
+                        'Nouvelle offre de prix reçue 💰',
+                        "Le client propose {$montantF} FCFA pour le convoi {$convoi->reference}.",
+                        ['type' => 'offre_negociation_client', 'convoi_id' => (string) $convoi->id]
+                    );
+                }
+            } catch (\Exception $e) {
+                Log::error('FCM negociation client convoi API: ' . $e->getMessage());
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Votre proposition de montant a bien été transmise au transporteur particulier.',
             'convoi'  => $this->formatConvoi($convoi->fresh()),
         ]);
     }

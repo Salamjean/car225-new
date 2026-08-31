@@ -134,7 +134,8 @@ Route::prefix('user')->group(function () {
             Route::post('/',   [\App\Http\Controllers\Api\User\ConvoiApiController::class, 'store']);
             Route::get('/{id}',[\App\Http\Controllers\Api\User\ConvoiApiController::class, 'show']);
 
-            // Actions sur le montant (statut valide)
+            // Actions sur le montant (statut valide / négociation)
+            Route::post('/{id}/proposer-montant', [\App\Http\Controllers\Api\User\ConvoiApiController::class, 'proposerMontant']);
             Route::post('/{id}/accepter-montant', [\App\Http\Controllers\Api\User\ConvoiApiController::class, 'accepterMontant']);
             Route::post('/{id}/refuser-montant',  [\App\Http\Controllers\Api\User\ConvoiApiController::class, 'refuserMontant']);
 
@@ -143,8 +144,9 @@ Route::prefix('user')->group(function () {
             Route::delete('/{id}/passagers/{passagerId}',     [\App\Http\Controllers\Api\User\ConvoiApiController::class, 'deletePassager']);
         });
 
-        // Données formulaire convois (compagnies / gares / itinéraires / règlement)
+        // Données formulaire convois (compagnies / particuliers / gares / itinéraires / règlement)
         Route::get('/convois-form/compagnies',                   [\App\Http\Controllers\Api\User\ConvoiApiController::class, 'compagnies']);
+        Route::get('/convois-form/particuliers',                  [\App\Http\Controllers\Api\User\ConvoiApiController::class, 'particuliers']);
         Route::get('/convois-form/compagnies/{id}/gares',        [\App\Http\Controllers\Api\User\ConvoiApiController::class, 'garesByCompagnie']);
         Route::get('/convois-form/compagnies/{id}/itineraires',  [\App\Http\Controllers\Api\User\ConvoiApiController::class, 'itinerairesByCompagnie']);
         Route::get('/convois-form/reglement',                    [\App\Http\Controllers\Api\User\ConvoiApiController::class, 'reglement']);
@@ -341,6 +343,28 @@ Route::prefix('caisse')->group(function () {
         Route::get('/profile', [\App\Http\Controllers\Api\Caisse\CaisseController::class, 'profile']);
         Route::post('/profile', [\App\Http\Controllers\Api\Caisse\CaisseController::class, 'updateProfile']);
         Route::post('/change-password', [\App\Http\Controllers\Api\Caisse\CaisseController::class, 'changePassword']);
+    });
+});
+
+// ============================================================================
+// PARTICULIER API ROUTES
+// ============================================================================
+
+Route::prefix('particulier')->group(function () {
+    Route::middleware('auth:sanctum')->group(function () {
+        // Profil & FCM Token
+        Route::get('/profile', [\App\Http\Controllers\Api\Particulier\ConvoiApiController::class, 'profile']);
+        Route::post('/fcm-token', [\App\Http\Controllers\Api\Particulier\ConvoiApiController::class, 'updateFcmToken']);
+
+        // Convois
+        Route::get('/convois', [\App\Http\Controllers\Api\Particulier\ConvoiApiController::class, 'index']);
+        Route::get('/convois/{id}', [\App\Http\Controllers\Api\Particulier\ConvoiApiController::class, 'show']);
+        Route::post('/convois/{id}/valider', [\App\Http\Controllers\Api\Particulier\ConvoiApiController::class, 'valider']);
+        Route::post('/convois/{id}/refuser', [\App\Http\Controllers\Api\Particulier\ConvoiApiController::class, 'refuser']);
+        Route::post('/convois/{id}/accepter-offre-client', [\App\Http\Controllers\Api\Particulier\ConvoiApiController::class, 'accepterOffreClient']);
+        Route::post('/convois/{id}/contre-proposer', [\App\Http\Controllers\Api\Particulier\ConvoiApiController::class, 'contreProposer']);
+        Route::post('/convois/{id}/solder', [\App\Http\Controllers\Api\Particulier\ConvoiApiController::class, 'solder']);
+        Route::post('/convois/{id}/update-statut', [\App\Http\Controllers\Api\Particulier\ConvoiApiController::class, 'updateStatut']);
     });
 });
 

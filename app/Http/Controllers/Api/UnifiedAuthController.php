@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Particulier;
 use App\Models\Agent;
 use App\Models\Personnel;
 use App\Models\Caisse;
@@ -14,8 +15,8 @@ use Illuminate\Support\Facades\Hash;
 class UnifiedAuthController extends Controller
 {
     /**
-     * Connexion unifiée via code_id.
-     * Cherche dans les 5 tables et retourne le rôle + token.
+     * Connexion unifiée via code_id, email ou contact.
+     * Cherche dans les 6 tables et retourne le rôle + token.
      */
     public function login(Request $request)
     {
@@ -37,6 +38,7 @@ class UnifiedAuthController extends Controller
         // Rechercher dans chaque table par ordre de priorité
         $searchOrder = [
             ['model' => User::class, 'role' => 'user', 'guard' => 'web'],
+            ['model' => Particulier::class, 'role' => 'particulier', 'guard' => 'particulier'],
             ['model' => Agent::class, 'role' => 'agent', 'guard' => 'agent'],
             ['model' => Personnel::class, 'role' => 'chauffeur', 'guard' => 'chauffeur'],
             ['model' => Caisse::class, 'role' => 'caisse', 'guard' => 'caisse'],
@@ -47,13 +49,14 @@ class UnifiedAuthController extends Controller
             $query = $search['model']::where('code_id', $loginValue);
 
             if ($search['role'] === 'user') {
-                // Pour l'utilisateur : contact ou code_id
+                // Pour l'utilisateur client : contact ou code_id
                 $query->orWhere('contact', $loginValue);
+            } elseif ($search['role'] === 'particulier') {
+                // Pour le particulier : contact, mail ou code_id
+                $query->orWhere('email', $loginValue)->orWhere('contact', $loginValue);
             } else {
                 // Pour caisse, hotesse, personnel et agent : mail ou code_id
                 $query->orWhere('email', $loginValue);
-                // Optionnellement on peut aussi garder le contact pour la flexibilité si besoin, 
-                // mais la consigne dit "mail et code_id"
             }
 
             $entity = $query->first();
@@ -107,6 +110,16 @@ class UnifiedAuthController extends Controller
             }
         }
 
+        if ($role === 'particulier') {
+            if ($entity->statut !== 'valide') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Votre compte particulier est en attente de validation ou a été rejeté.',
+                    'statut'  => $entity->statut,
+                ], 403);
+            }
+        }
+
         // Vérifier si agent/caisse est archivé
         if (in_array($role, ['agent', 'caisse', 'hotesse'])) {
             if ($entity->archived_at !== null) {
@@ -128,14 +141,20 @@ class UnifiedAuthController extends Controller
         // Construire le profil selon le rôle
         $profile = $this->buildProfile($entity, $role);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Connexion réussie',
-            'role' => $role,
-            'profile' => $profile,
-            'token' => $token,
+        $responsePayload = [
+            'success'    => true,
+            'message'    => 'Connexion réussie',
+            'role'       => $role,
+            'profile'    => $profile,
+            'token'      => $token,
             'token_type' => 'Bearer',
-        ]);
+        ];
+
+        if ($role === 'particulier' && isset($entity->must_change_password)) {
+            $responsePayload['must_change_password'] = (bool) $entity->must_change_password;
+        }
+
+        return response()->json($responsePayload);
     }
 
     /**
@@ -158,6 +177,17 @@ class UnifiedAuthController extends Controller
                     ? (str_starts_with($entity->photo_profile_path, 'http') ? $entity->photo_profile_path : asset('storage/' . $entity->photo_profile_path))
                     : null;
                 $base['solde'] = $entity->solde ?? '0.00';
+                break;
+
+            case 'particulier':
+                $base['full_name']            = $entity->full_name;
+                $base['immatriculation']      = $entity->immatriculation;
+                $base['nombre_place_car']     = $entity->nombre_place_car;
+                $base['photo_proprietaire']   = $entity->photo_proprietaire_url;
+                $base['photo_car']            = $entity->photo_complete_car_url;
+                $base['solde_convoie']        = $entity->solde_convoie ?? '0.00';
+                $base['must_change_password'] = (bool) $entity->must_change_password;
+                $base['statut']               = $entity->statut;
                 break;
 
             case 'agent':
@@ -200,3 +230,4 @@ class UnifiedAuthController extends Controller
         return $base;
     }
 }
+
