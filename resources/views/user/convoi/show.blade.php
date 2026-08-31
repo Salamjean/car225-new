@@ -438,7 +438,7 @@
             @endif
           <form action="{{ route('user.convoi.store-passengers', $convoi) }}" method="POST" id="mainConvoiForm" class="space-y-6">
             @csrf
-          <input type="hidden" name="is_garant" id="hiddenIsGarant" value="{{ ($convoi->is_garant || !$convoi->passagers_soumis) ? '1' : '0' }}">
+          <input type="hidden" name="is_garant" id="hiddenIsGarant" value="{{ $convoi->is_garant ? '1' : '0' }}">
 
             @if ($errors->any())
             <div class="rounded-2xl bg-red-50 border border-red-200 px-5 py-4 text-red-700 text-sm font-semibold">
@@ -490,7 +490,7 @@
                         <label class="flex items-start gap-4 cursor-pointer">
                             <div class="relative flex-shrink-0 mt-0.5">
                                 <input type="checkbox" id="toggleGarant"
-                                    {{ ($convoi->is_garant || !$convoi->passagers_soumis) ? 'checked' : '' }}
+                                    {{ $convoi->is_garant ? 'checked' : '' }}
                                     class="sr-only peer">
                                 <div class="w-10 h-6 bg-gray-200 rounded-full peer-checked:bg-[#e94f1b] transition-colors duration-200 peer-focus:ring-2 peer-focus:ring-[#e94f1b]/30"></div>
                                 <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 peer-checked:translate-x-4"></div>

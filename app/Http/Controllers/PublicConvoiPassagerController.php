@@ -19,11 +19,11 @@ class PublicConvoiPassagerController extends Controller
     {
         $convoi = Convoi::where('passenger_form_token', $token)->firstOrFail();
 
-        if ($convoi->statut !== 'paye' || $convoi->is_garant) {
+        if (!in_array($convoi->statut, ['confirme', 'paye', 'en_cours']) || $convoi->is_garant) {
             abort(403, 'Ce formulaire n\'est plus accessible.');
         }
 
-        $convoi->load(['compagnie', 'gare', 'itineraire', 'passagers']);
+        $convoi->load(['compagnie', 'particulier', 'gare', 'itineraire', 'passagers']);
 
         // Récupérer ou générer le device_id via cookie
         $cookieName = $this->cookieName($token);
@@ -65,7 +65,7 @@ class PublicConvoiPassagerController extends Controller
     {
         $convoi = Convoi::where('passenger_form_token', $token)->firstOrFail();
 
-        if ($convoi->statut !== 'paye' || $convoi->is_garant) {
+        if (!in_array($convoi->statut, ['confirme', 'paye', 'en_cours']) || $convoi->is_garant) {
             abort(403, 'Ce formulaire n\'est plus accessible.');
         }
 
@@ -86,7 +86,7 @@ class PublicConvoiPassagerController extends Controller
         $deviceId   = $request->input('device_id');
         $cookieName = $this->cookieName($token);
 
-        $convoi->load(['passagers', 'gare']);
+        $convoi->load(['passagers', 'gare', 'particulier']);
 
         // Vérifier si ce device a déjà un slot
         $existingPassager = $convoi->passagers()->where('device_id', $deviceId)->first();
@@ -128,6 +128,11 @@ class PublicConvoiPassagerController extends Controller
                 'device_id'       => $deviceId,
             ]);
             $isNewRegistration = true;
+
+            // Si toutes les places sont désormais prises, marquer passagers_soumis
+            if (($totalRegistered + 1) >= $convoi->nombre_personnes) {
+                $convoi->update(['passagers_soumis' => true]);
+            }
         }
 
         // ── Envoi SMS au passager (UNIQUEMENT pour une nouvelle inscription) 
@@ -137,7 +142,7 @@ class PublicConvoiPassagerController extends Controller
                 $arrivee    = $convoi->lieu_retour ?? ($convoi->itineraire->point_arrive ?? 'N/A');
                 $dateDepart = $convoi->date_depart ? \Carbon\Carbon::parse($convoi->date_depart)->format('d/m/Y') : 'N/A';
                 $hDepart    = $convoi->heure_depart ? substr($convoi->heure_depart, 0, 5) : '';
-                $lieu       = $convoi->lieu_rassemblement;
+                $lieu       = $convoi->lieu_rassemblement ?: 'À définir';
 
                 $smsBody = "Bonjour {$request->prenoms}, vous etes enregistre pour le convoi CAR225 ref {$convoi->reference}.\n"
                          . "Trajet : {$depart} -> {$arrivee}\n"
@@ -168,7 +173,7 @@ class PublicConvoiPassagerController extends Controller
     public function confirmation(string $token)
     {
         $convoi = Convoi::where('passenger_form_token', $token)->firstOrFail();
-        $convoi->load(['compagnie', 'gare', 'itineraire']);
+        $convoi->load(['compagnie', 'particulier', 'gare', 'itineraire', 'passagers']);
 
         // Récupérer le device_id pour afficher les infos du passager
         $cookieName = $this->cookieName($token);

@@ -29,9 +29,11 @@
 
         <h1 class="text-2xl font-black text-gray-900 mb-2">Inscription confirmée !</h1>
         <p class="text-gray-500 font-semibold text-sm mb-6">
-            Vos informations ont bien été transmises à la gare
+            Vos informations ont bien été transmises
             @if($convoi->gare)
-                <strong class="text-gray-700">{{ $convoi->gare->nom_gare }}</strong>.
+                à la gare <strong class="text-gray-700">{{ $convoi->gare->nom_gare }}</strong>.
+            @elseif($convoi->particulier)
+                au transporteur <strong class="text-gray-700">{{ $convoi->particulier->full_name }}</strong>.
             @endif
             Vous serez contacté prochainement pour la suite.
         </p>

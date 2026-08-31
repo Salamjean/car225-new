@@ -1278,6 +1278,7 @@ Route::middleware('particulier')->prefix('particulier')->name('particulier.')->g
     Route::post('/convois/{convoi}/annuler', [App\Http\Controllers\Particulier\ParticulierDashboardController::class, 'annulerConvoi'])->name('convoi.annuler');
     Route::post('/convois/{convoi}/accepter-offre-client', [App\Http\Controllers\Particulier\ParticulierDashboardController::class, 'accepterOffreClient'])->name('convoi.accepter-offre-client');
     Route::post('/convois/{convoi}/contre-proposer', [App\Http\Controllers\Particulier\ParticulierDashboardController::class, 'contreProposer'])->name('convoi.contre-proposer');
+    Route::post('/convois/{convoi}/solder', [App\Http\Controllers\Particulier\ParticulierDashboardController::class, 'solder'])->name('convoi.solder');
     Route::get('/profile', [App\Http\Controllers\Particulier\ParticulierDashboardController::class, 'profile'])->name('profile');
     Route::post('/profile/update', [App\Http\Controllers\Particulier\ParticulierDashboardController::class, 'updateProfile'])->name('profile.update');
 });

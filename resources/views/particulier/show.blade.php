@@ -314,6 +314,27 @@
                         </div>
                     @endif
 
+                    <!-- ACTIONS FOR CONFIRME -->
+                    @if($convoi->statut === 'confirme')
+                        <div class="p-4 bg-indigo-50 border border-indigo-200 rounded-2xl space-y-3">
+                            <div class="text-center">
+                                <span class="text-xs font-black uppercase text-indigo-700 block mb-1">
+                                    <i class="fas fa-clock me-1"></i> Convoi confirmé par le client
+                                </span>
+                                <p class="text-xs text-indigo-600 font-medium">
+                                    Le client a accepté votre tarif de <strong>{{ number_format($convoi->montant, 0, ',', ' ') }} FCFA</strong>.
+                                    Une fois le règlement perçu, confirmez l'encaissement ci-dessous.
+                                </p>
+                            </div>
+                            <form action="{{ route('particulier.convoi.solder', $convoi) }}" method="POST">
+                                @csrf
+                                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md">
+                                    <i class="fas fa-check-double"></i> Confirmer la réception du paiement
+                                </button>
+                            </form>
+                        </div>
+                    @endif
+
                     @if($convoi->statut === 'valide')
                         <div class="p-3 bg-blue-50 border border-blue-100 rounded-xl text-center space-y-1">
                             <p class="text-xs font-semibold text-blue-700"><i class="fas fa-clock me-1"></i> En attente de confirmation par le client.</p>

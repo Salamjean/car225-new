@@ -117,6 +117,10 @@
                         <div class="text-white/50 text-xs font-semibold mt-2">
                             <i class="fas fa-building mr-1"></i>{{ $convoi->gare->nom_gare }}
                         </div>
+                        @elseif($convoi->particulier)
+                        <div class="text-white/50 text-xs font-semibold mt-2">
+                            <i class="fas fa-car mr-1"></i>{{ $convoi->particulier->full_name }}
+                        </div>
                         @endif
                     </div>
                 </div>

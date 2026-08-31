@@ -29,11 +29,11 @@ class ConvoiController extends Controller
     {
         $compagnies = Compagnie::where('statut', 'actif')
             ->orderBy('name')
-            ->get(['id', 'name', 'sigle']);
+            ->get(['id', 'name', 'sigle', 'path_logo']);
 
         $particuliers = \App\Models\Particulier::where('statut', 'valide')
             ->orderBy('name')
-            ->get(['id', 'name', 'prenom', 'immatriculation', 'nombre_place_car']);
+            ->get();
 
         return view('user.convoi.create', compact('compagnies', 'particuliers'));
     }
@@ -230,7 +230,12 @@ class ConvoiController extends Controller
     public function show(Convoi $convoi)
     {
         abort_if($convoi->user_id !== Auth::id(), 403);
-        $convoi->load(['compagnie', 'itineraire', 'passagers', 'gare', 'chauffeur', 'vehicule', 'user']);
+
+        if (!$convoi->passenger_form_token && in_array($convoi->statut, ['confirme', 'paye', 'en_cours'])) {
+            $convoi->update(['passenger_form_token' => bin2hex(random_bytes(24))]);
+        }
+
+        $convoi->load(['compagnie', 'particulier', 'itineraire', 'passagers', 'gare', 'chauffeur', 'vehicule', 'user']);
         $authUser = Auth::user();
         return view('user.convoi.show', compact('convoi', 'authUser'));
     }

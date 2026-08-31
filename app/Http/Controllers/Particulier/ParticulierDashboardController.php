@@ -393,6 +393,48 @@ class ParticulierDashboardController extends Controller
     }
 
     /**
+     * Solder le convoi : confirmer la réception du paiement par le particulier
+     */
+    public function solder(Request $request, Convoi $convoi)
+    {
+        $particulier = Auth::guard('particulier')->user();
+
+        if ($convoi->particulier_id !== $particulier->id) {
+            abort(403);
+        }
+
+        if ($convoi->statut !== 'confirme') {
+            return back()->with('error', 'Ce convoi ne peut pas être soldé (statut : ' . $convoi->statut . ').');
+        }
+
+        $convoi->update(['statut' => 'paye']);
+        $particulier->increment('solde_convoie', $convoi->montant);
+
+        // Notifier le client par SMS / FCM
+        if ($convoi->user) {
+            $user = $convoi->user;
+            $montantF = number_format($convoi->montant, 0, ',', ' ');
+            $smsMsg = "Bonjour " . ($user->prenom ?? $user->name) . ",\n"
+                    . "Le transporteur {$particulier->full_name} a CONFIRME la reception de votre paiement de {$montantF} FCFA pour le convoi ref {$convoi->reference}.\n"
+                    . "Bon voyage avec CAR225 !";
+            try { app(\App\Services\SmsService::class)->sendSms($user->contact, $smsMsg); } catch (\Exception $e) { Log::error('SMS solder particulier: ' . $e->getMessage()); }
+
+            if ($user->fcm_token) {
+                try {
+                    app(\App\Services\FcmService::class)->sendNotification(
+                        $user->fcm_token,
+                        'Paiement validé par le transporteur ✅',
+                        "Votre paiement de {$montantF} FCFA pour le convoi {$convoi->reference} a été validé.",
+                        ['type' => 'paiement_confirme_particulier', 'convoi_id' => (string) $convoi->id]
+                    );
+                } catch (\Exception $e) { Log::error('FCM solder particulier: ' . $e->getMessage()); }
+            }
+        }
+
+        return back()->with('success', 'Paiement confirmé avec succès. Le convoi est maintenant au statut "Payé" et prêt à démarrer.');
+    }
+
+    /**
      * Profil du particulier
      */
     public function profile()
